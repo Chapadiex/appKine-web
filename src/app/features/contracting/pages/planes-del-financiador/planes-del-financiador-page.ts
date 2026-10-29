@@ -15,6 +15,9 @@ import { catchError, of } from 'rxjs';
 
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { tipoDeAlertaContracting } from '../feedback-de-contracting';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreatePlanCoberturaRequest } from '../../../../api/generated/model/create-plan-cobertura-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -42,12 +45,13 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -105,9 +109,10 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-planes-del-financiador-page',
   imports: [
     CabeceraDePagina,
-    Migas,
+    Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     Filtros,
@@ -123,7 +128,14 @@ type TipoAccion = 'editar' | 'baja';
   styleUrl: '../../contracting.css',
 })
 export class PlanesDelFinanciadorPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Planes' },
+  ]);
+
   private readonly api = inject(ContractingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly ruta = inject(ActivatedRoute);
   private readonly tenantContext = inject(TenantContextStore);
@@ -151,9 +163,22 @@ export class PlanesDelFinanciadorPage {
     tipo: 'cargando',
   });
 
+  /** Texto de la busqueda. Filtra en pantalla: el backend no busca planes y la lista llega entera. */
+  protected readonly busqueda = signal('');
+
+  /** Lo que se ve: lo que trajo el servidor, filtrado por nombre o codigo. */
   protected readonly planes = computed<readonly PlanCoberturaResponse[]>(() => {
     const actual = this.estado();
-    return actual.tipo === 'listo' ? actual.pagina : [];
+    const todos = actual.tipo === 'listo' ? actual.pagina : [];
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    if (texto === '') {
+      return todos;
+    }
+    return todos.filter((plan) =>
+      [plan.nombre, plan.codigo].some((valor) =>
+        (valor ?? '').toLocaleLowerCase('es').includes(texto),
+      ),
+    );
   });
 
   /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina planes. */
@@ -201,6 +226,11 @@ export class PlanesDelFinanciadorPage {
       Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
   );
 
+  /** Si la lista vacia es por la busqueda o los filtros, y no porque no haya planes (UX-14). */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
@@ -221,10 +251,11 @@ export class PlanesDelFinanciadorPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+  /** Un choque con algo existente (codigo en uso, version vieja) es advertencia; lo demas, error. */
+  protected readonly tipoDeAlerta = computed(() => tipoDeAlertaContracting(this.causaAccion()));
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     codigo: ['', [textoRequerido]],
@@ -309,9 +340,17 @@ export class PlanesDelFinanciadorPage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda, el estado y la fecha a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.fecha.set(this.diaDeLaSede.hoy());
+    this.cargar();
+  }
+
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       codigo: '',
       nombre: '',
@@ -336,7 +375,6 @@ export class PlanesDelFinanciadorPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -434,10 +472,11 @@ export class PlanesDelFinanciadorPage {
     this.api.crearPlan(this.financiadorId, cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El plan quedó dado de alta. Si su vigencia arranca mas adelante va a figurar como ' +
-            'activo pero todavía sin vigencia: es correcto, y empieza a ofrecerse solo ese día.',
-        );
+        this.avisos.exito('Plan dado de alta', {
+          descripcion:
+            `${cuerpo.nombre}. Si su vigencia arranca más adelante figura como activo pero ` +
+            'todavía sin vigencia: empieza a ofrecerse ese día.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -462,15 +501,20 @@ export class PlanesDelFinanciadorPage {
       return;
     }
 
+    const nombre = cambios.nombre ?? this.planEnPanel()?.nombre ?? '';
     this.empezarEnvio();
 
     this.api.editarPlan(this.financiadorId, panel.id, cambios).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'Los datos del plan quedaron guardados. Si le pusiste fecha de fin, el plan sigue ' +
-            'ACTIVO: cerrar la vigencia no es darlo de baja, y ese último día todavía se ofrece.',
-        );
+        // Cerrar la vigencia es la confusion clasica con la baja: el aviso lo aclara justo ahi.
+        this.avisos.exito('Cambios guardados', {
+          descripcion:
+            cambios.vigenciaHasta !== undefined
+              ? 'El plan sigue activo: cerrar la vigencia no es darlo de baja, y ese último día ' +
+                'todavía se ofrece.'
+              : nombre,
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -483,16 +527,17 @@ export class PlanesDelFinanciadorPage {
       return;
     }
 
+    const nombre = this.planEnPanel()?.nombre ?? 'El plan';
     this.empezarEnvio();
 
     this.api.darDeBajaPlan(this.financiadorId, panel.id, { reason: motivo }).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El plan quedó dado de baja. Las coberturas ya firmadas bajo él siguen resolviendo con ' +
-            'su copia congelada: lo único que se impide es elegirlo de ahora en más. Su código y ' +
-            'su nombre quedan libres para un plan nuevo del mismo financiador.',
-        );
+        this.avisos.exito(`${nombre} quedó dado de baja`, {
+          descripcion:
+            'Las coberturas ya firmadas siguen resolviendo con su copia congelada. Su código y ' +
+            'su nombre quedan libres.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -598,7 +643,6 @@ export class PlanesDelFinanciadorPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   /** El financiador, solo para el encabezado. Un fallo aca no rompe la pantalla. */
@@ -611,7 +655,6 @@ export class PlanesDelFinanciadorPage {
 
   private reiniciar(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
     this.fecha.set(this.diaDeLaSede.hoy());
     this.financiador.set(null);

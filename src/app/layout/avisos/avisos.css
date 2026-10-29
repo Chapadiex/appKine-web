@@ -1,0 +1,130 @@
+/*
+  Avisos globales: arriba a la derecha, debajo de la barra superior, en la capa superior. `inset`,
+  `margin`, `border` y `background` anulan el centrado y el recuadro que el navegador le da a todo
+  `[popover]`.
+*/
+:host {
+  position: fixed;
+  inset: calc(var(--alto-barra-superior) + var(--esp-5)) var(--esp-6) auto auto;
+  z-index: 50;
+  width: min(24rem, calc(100vw - 2 * var(--esp-6)));
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-texto);
+  overflow: visible;
+}
+
+.avisos__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+}
+
+.aviso {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--esp-4);
+  padding: var(--esp-5) var(--esp-4) var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--aviso-color);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: 0 8px 24px rgb(16 38 63 / 0.16);
+  animation: aviso-entra 0.18s ease-out;
+}
+
+.aviso--exito {
+  --aviso-color: var(--color-exito);
+}
+
+.aviso--info {
+  --aviso-color: var(--color-acento);
+}
+
+.aviso--advertencia {
+  --aviso-color: var(--color-aviso);
+}
+
+.aviso--error {
+  --aviso-color: var(--color-peligro);
+}
+
+.aviso__icono {
+  margin-top: 1px;
+  color: var(--aviso-color);
+  font-size: var(--tipo-lg);
+}
+
+.aviso__textos {
+  min-width: 0;
+}
+
+.aviso__titulo {
+  margin: 0;
+  font-weight: var(--peso-medio);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.aviso__descripcion {
+  margin: var(--esp-2) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.aviso__accion {
+  margin-top: var(--esp-3);
+  padding: var(--esp-2) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.aviso__cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+}
+
+.aviso__cerrar:hover {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso {
+    animation: none;
+  }
+}
+
+/* En el telefono, a lo ancho de la pantalla. */
+@media (max-width: 40rem) {
+  :host {
+    inset: calc(var(--alto-barra-superior) + var(--esp-4)) var(--esp-4) auto var(--esp-4);
+    width: auto;
+  }
+}

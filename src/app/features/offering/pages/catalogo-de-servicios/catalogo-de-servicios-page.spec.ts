@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const KINE = {
   id: 1,
@@ -90,6 +91,11 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
     expect(anfitrion.textContent).toContain('Kinesiologia respiratoria');
     expect(anfitrion.textContent).toContain('Bienestar');
+    // Patron de listado (UX-14): conteo en la toolbar y pie estandar.
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 servicios',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
 
     expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
@@ -145,8 +151,26 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No hay servicios que coincidan',
+    // Vacio filtrado (UX-14): no es "no hay ninguno", y ofrece limpiar.
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos servicios');
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '0 servicios',
+    );
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === RUTA_SERVICIOS && peticion.params.get('estado') === 'ACTIVO',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Todavía no hay servicios activos en el catálogo',
     );
   });
 
@@ -167,7 +191,7 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No hay servicios que coincidan',
+      'No encontramos servicios',
     );
   });
 
@@ -262,6 +286,43 @@ describe('CatalogoDeServiciosPage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  it('un código en uso se muestra pegado a los campos, no como error general (UX-12)', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-codigo', 'KRES');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
+    elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
+    elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === RUTA_SERVICIOS,
+      )
+      .flush(
+        {
+          type: 'https://akine.app/problems/servicio-codigo-taken',
+          status: 409,
+          detail: 'codigo en uso',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const alerta = anfitrion.querySelector('#alta-servicio-duplicado');
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('Ya hay un servicio vigente con ese código');
+    const codigo = anfitrion.querySelector('#alta-servicio-codigo');
+    expect(codigo?.getAttribute('aria-invalid')).toBe('true');
+    expect(codigo?.getAttribute('aria-describedby')).toBe('alta-servicio-duplicado');
+    // Una sola alerta: el duplicado no se repite como error general arriba del formulario.
+    expect(anfitrion.querySelectorAll('app-alerta').length).toBe(1);
+  });
 
   it('el 403 de una mutacion explica que el catalogo es de la plataforma, y no cierra sesión', async () => {
     // Ocultar es UX: con el boton a la vista (rol revocado a mitad de sesion, por ejemplo) el
@@ -452,8 +513,11 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // El mensaje de exito es donde el usuario confirma que las ofertas vivas no se rompieron.
-    expect(anfitrion.textContent).toContain('siguen funcionando');
+    // El aviso de exito es donde el usuario confirma que las ofertas vivas no se rompieron.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Servicio dado de baja');
+    expect(aviso?.descripcion).toContain('siguen funcionando');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un 409 sin tipo propio en la baja muestra el detail del backend y deja el panel abierto', async () => {
@@ -574,7 +638,12 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('quedaron guardados');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Cambios guardados']);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   async function montar(): Promise<ComponentFixture<CatalogoDeServiciosPage>> {

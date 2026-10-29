@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { SuscripcionDeCentroPage } from './suscripcion-de-centro-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -84,7 +85,9 @@ describe('SuscripcionDeCentroPage', () => {
     httpMock.expectOne(LECTURA).flush(suscripcion(8, 'PROFESIONAL'));
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('El centro paso al plan Profesional.');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Plan cambiado');
+    expect(aviso?.descripcion).toContain('pasó al plan Profesional.');
     expect(texto(fixture, '[data-testid="suscripcion-excedidos"]')).toContain(
       'MAX_SEDES: 3 en uso, el plan admite 2',
     );
@@ -107,7 +110,8 @@ describe('SuscripcionDeCentroPage', () => {
     httpMock.expectOne(LECTURA).flush(suscripcion(9));
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se aplico nada');
+    // Con el panel abierto, el rechazo va arriba del formulario.
+    expect(texto(fixture, 'form app-alerta')).toContain('No se aplico nada');
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('9');
   });
 
@@ -134,7 +138,9 @@ describe('SuscripcionDeCentroPage', () => {
 
   it('busca por texto y estado, y página con el filtro enviado, no con el que se escribe', async () => {
     const fixture = await abrir([KINESIO_NORTE, centro(5, 'Kinesio Sur')], 2, 25);
-    expect(texto(fixture, '[data-testid="suscripcion-total-centros"]')).toBe('25 centros');
+    // UX-14: el total en la toolbar (no en un parrafo suelto) y el pie estandar.
+    expect(texto(fixture, '.filtros-barra__resultados')).toBe('25 centros');
+    expect(texto(fixture, '.paginacion-pie__resumen')).toBe('Mostrando 1–10 de 25');
 
     escribir(fixture, '  norte ');
     elegir(fixture, '#suscripcion-filtro-estado', 'SUSPENDIDA');
@@ -156,7 +162,22 @@ describe('SuscripcionDeCentroPage', () => {
     expect(pagina2.request.params.get('page')).toBe('1');
     pagina2.flush(pagina([], 1, 2, 21));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningún centro coincide con la búsqueda');
+    expect(texto(fixture, 'app-estado-vacio')).toContain('Ningún centro coincide con la búsqueda');
+
+    // "Limpiar filtros" del vacio: sin texto ni estado, desde la primera pagina.
+    const limpiar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        'app-estado-vacio button',
+      ),
+    ].find((boton) => boton.textContent?.includes('Limpiar filtros'))!;
+    limpiar.click();
+    const limpio = httpMock.expectOne((r) => r.url === LISTADO);
+    expect(limpio.request.params.has('q')).toBe(false);
+    expect(limpio.request.params.has('status')).toBe(false);
+    expect(limpio.request.params.get('page')).toBe('0');
+    expect(limpio.request.params.get('size')).toBe('10');
+    limpio.flush(pagina([KINESIO_NORTE], 0, 1, 1));
+    await estabilizar(fixture);
   });
 
   it('si el listado falla lo dice y deja reintentar', async () => {

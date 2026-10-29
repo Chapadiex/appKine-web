@@ -11,6 +11,7 @@ import { SubscriptionResponseStatusEnum } from '../../../../api/generated/model/
 import { SubscriptionTransitionResponse } from '../../../../api/generated/model/subscription-transition-response';
 import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -61,7 +62,7 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [CabeceraDePagina, Ayuda, DatePipe, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, DatePipe, RouterLink, Alerta],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })

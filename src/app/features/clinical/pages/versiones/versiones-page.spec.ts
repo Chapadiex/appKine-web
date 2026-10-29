@@ -152,7 +152,9 @@ describe('VersionesPage', () => {
 
   it('sin versiones lo dice como un estado, no como un error', async () => {
     const fixture = await montar([], { ...CERRADA, numeroSesion: undefined, cierre: undefined });
-    expect(texto(fixture)).toContain('todavía no tiene versiones');
+    const vacio = fixture.nativeElement.querySelector('app-estado-vacio') as HTMLElement | null;
+    expect(vacio?.textContent).toContain('todavía no tiene versiones');
+    expect(vacio?.getAttribute('role')).toBe('status');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
   });
 
@@ -170,7 +172,7 @@ describe('VersionesPage', () => {
     httpMock.match((p) => p.url === VERSIONES);
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('No se pudieron leer las versiones');
+    expect(texto(fixture)).toContain('No pudimos leer las versiones');
   });
 
   it(

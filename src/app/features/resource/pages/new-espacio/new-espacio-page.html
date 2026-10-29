@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Dar de alta un espacio">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Espacios y boxes', ruta: '/espacios' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
@@ -24,21 +23,6 @@
       <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
     </p>
   </section>
-} @else if (hecho()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-ok">
-    <h2 id="titulo-alta-ok">Listo</h2>
-    <p class="estado estado--ok" role="status">
-      <b>{{ espacioCreado() }}</b> quedo dado de alta en {{ nombreDeLaSede() }}.
-    </p>
-    <p class="ayuda">
-      Si le pusiste una fecha de inicio futura, va a figurar como
-      <b>activo pero todavía sin servicio</b> hasta esa fecha, y hasta entonces no se va a ofrecer
-      para reservar. El listado lo explica fila por fila.
-    </p>
-    <p class="acciones">
-      <a class="boton" routerLink="/espacios">Ver los espacios de la sede</a>
-    </p>
-  </section>
 } @else {
   <section class="tarjeta" aria-label="Datos del espacio">
     <!--
@@ -46,7 +30,37 @@
       ventana de vigencia, que casi siempre queda como viene, plegada.
     -->
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-      <div class="campo">
+      <!--
+        Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). El
+        nombre repetido va junto al campo.
+      -->
+      @if ((mensajeError() && !errorEnElNombre()) || espera.activa()) {
+        <app-alerta tipo="error" titulo="No pudimos dar de alta el espacio">
+          @if (mensajeError() && !errorEnElNombre()) {
+            <p>{{ mensajeError() }}</p>
+          }
+          @if (espera.activa()) {
+            <p>Demasiados intentos. Podés volver a intentar en {{ espera.segundos() }} segundos.</p>
+          }
+          <!--
+            Sin `Idempotency-Key` -y es lo que el contrato define para esta operacion- un corte de
+            red deja la duda de si el alta entro. Se dice que hay que releer, en vez de invitar a
+            reenviar a ciegas.
+          -->
+          @if (dudaPorRed()) {
+            <p>
+              El pedido pudo haber llegado igual antes de cortarse.
+              <b>Antes de volver a intentarlo, revisa el listado</b>: si el espacio ya esta, no lo
+              cargues de nuevo.
+            </p>
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" routerLink="/espacios">Revisar el listado</a>
+            </p>
+          }
+        </app-alerta>
+      }
+
+      <div class="campo campo--4">
         <label for="espacio-name">Nombre del espacio</label>
         <input
           id="espacio-name"
@@ -62,12 +76,19 @@
         @if (mostrarError('name')) {
           <p class="campo__error" id="espacio-name-error">El espacio necesita un nombre.</p>
         }
-        @if (errorEnElNombre()) {
-          <p class="campo__error" id="espacio-name-conflicto" role="alert">
-            {{ mensajeError() }}
-          </p>
-        }
       </div>
+
+      <!-- Nombre en uso: pegado al campo que lo produjo (UX-12). -->
+      @if (errorEnElNombre()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ya hay un espacio con ese nombre"
+          id="espacio-name-conflicto"
+        >
+          <p>{{ mensajeError() }}</p>
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="espacio-tipo">Tipo de espacio</label>
@@ -101,7 +122,7 @@
         }
       </div>
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--12">
         <label for="espacio-notes">
           Observación <span class="campo__opcional">(opcional)</span>
         </label>
@@ -127,8 +148,8 @@
           Cuando el espacio <b>se ofrece para reservar</b>; es distinto de la baja.
         </p>
 
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
+        <div class="grilla-campos">
+          <div class="campo campo--3">
             <label for="espacio-validFrom">
               En servicio desde <span class="campo__opcional">(opcional)</span>
             </label>
@@ -145,7 +166,7 @@
             </p>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="espacio-validUntil">
               En servicio hasta <span class="campo__opcional">(opcional)</span>
             </label>
@@ -174,35 +195,5 @@
         <a class="boton boton--secundario" routerLink="/espacios">Cancelar</a>
       </div>
     </form>
-
-    <div aria-live="polite">
-      @if (espera.activa()) {
-        <p class="estado estado--error" role="alert">
-          Demasiados intentos. Podés volver a intentar en {{ espera.segundos() }} segundos.
-        </p>
-      }
-
-      @if (mensajeError(); as mensaje) {
-        @if (!errorEnElNombre()) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
-        <!--
-          Sin `Idempotency-Key` -y es lo que el contrato define para esta operacion- un corte de
-          red deja la duda de si el alta entro. Se dice que hay que releer, en vez de invitar a
-          reenviar a ciegas.
-        -->
-        @if (dudaPorRed()) {
-          <p class="ayuda">
-            El pedido pudo haber llegado igual antes de cortarse.
-            <b>Antes de volver a intentarlo, revisa el listado</b>: si el espacio ya esta, no lo
-            cargues de nuevo.
-          </p>
-          <p class="acciones">
-            <a class="boton boton--secundario" routerLink="/espacios">Revisar el listado</a>
-          </p>
-        }
-      }
-    </div>
   </section>
 }

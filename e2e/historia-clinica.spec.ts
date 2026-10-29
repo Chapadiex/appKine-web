@@ -138,8 +138,13 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     const timeline = page.getByRole('list', { name: /Hechos clínicos/ });
     await expect(timeline.getByRole('button', { name: /Entrada clinica/ }).first()).toBeVisible();
 
-    // Solo adjuntos: el servidor recibe el origen y no devuelve entradas.
-    await abrirFiltros(page);
+    // Solo adjuntos: el servidor recibe el origen y no devuelve entradas. Los casos clinicos
+    // tienen su propio embudo, mas arriba: se abre el del timeline.
+    await abrirFiltros(
+      page
+        .getByRole('region')
+        .filter({ has: page.getByRole('heading', { name: 'Timeline clínico', level: 2 }) }),
+    );
     const filtrada = page.waitForResponse(
       (r) => r.url().includes('/timeline') && r.url().includes('origen=ADJUNTO_CLINICO'),
     );

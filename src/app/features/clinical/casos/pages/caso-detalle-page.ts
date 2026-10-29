@@ -8,8 +8,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
 import { CasoClinico } from '../../../../api/generated/model/caso-clinico';
@@ -31,6 +31,10 @@ import { CasosApi } from '../casos-api';
 import { ErrorCaso, errorDeCausaCaso, traducirErrorCaso } from '../casos-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 interface Integrante {
   readonly membershipId: number;
@@ -60,12 +64,19 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink, PedidoDeMotivo],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PedidoDeMotivo, Alerta, NgTemplateOutlet],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
 export class CasoDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Historia clínica', ruta: this.visita.rutaHistoria() },
+    { etiqueta: 'Caso clínico' },
+  ]);
+
   private readonly api = inject(CasosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
   protected readonly visita = inject(VisitaClinica);
@@ -89,8 +100,12 @@ export class CasoDetallePage {
   protected readonly habilitados = signal<readonly ProfesionalHabilitado[]>([]);
 
   protected readonly enVuelo = signal<Operacion | null>(null);
+  /**
+   * Rechazo de una operacion, y cual fue: se muestra arriba de la tarjeta que la mando (UX-12).
+   * Lo que sale bien es un aviso global.
+   */
   protected readonly errorDeOperacion = signal<ErrorCaso | null>(null);
-  protected readonly aviso = signal('');
+  protected readonly operacionRechazada = signal<Operacion | null>(null);
 
   // Edicion
   protected readonly diagnostico = signal('');
@@ -176,6 +191,7 @@ export class CasoDetallePage {
         },
         this.visita.motivo(),
       ),
+      'Caso actualizado',
       'Se guardaron el diagnostico y el objetivo.',
     );
   }
@@ -220,7 +236,8 @@ export class CasoDetallePage {
         caso.version ?? 0,
         this.visita.motivo(),
       ),
-      'Se guardo el equipo del caso.',
+      'Equipo del caso guardado',
+      '',
     );
   }
 
@@ -236,12 +253,14 @@ export class CasoDetallePage {
       this.ejecutar(
         'cerrar',
         this.api.cerrar(caso.id, motivo, version, this.visita.motivo()),
-        'El caso quedo cerrado. Sigue en la historia y se puede reabrir con motivo.',
+        'Caso cerrado',
+        'Sigue en la historia y se puede reabrir con motivo.',
       );
     } else {
       this.ejecutar(
         'reabrir',
         this.api.reabrir(caso.id, motivo, version, this.visita.motivo()),
+        'Caso reabierto',
         'El caso volvio a estar activo.',
       );
     }
@@ -249,17 +268,22 @@ export class CasoDetallePage {
 
   // ---------------------------------------------------------------------------------------
 
-  private ejecutar(operacion: Operacion, pedido: Observable<CasoClinico>, exito: string): void {
+  private ejecutar(
+    operacion: Operacion,
+    pedido: Observable<CasoClinico>,
+    titulo: string,
+    descripcion: string,
+  ): void {
     this.enVuelo.set(operacion);
     this.errorDeOperacion.set(null);
-    this.aviso.set('');
+    this.operacionRechazada.set(null);
     pedido.subscribe({
       next: (caso) => {
         this.enVuelo.set(null);
         this.mostrar(caso);
         this.motivo.set('');
         this.intentoMotivo.set(false);
-        this.aviso.set(exito);
+        this.avisos.exito(titulo, descripcion === '' ? undefined : { descripcion });
         this.cargarEventos(caso.id);
       },
       error: (error: unknown) => {
@@ -270,8 +294,23 @@ export class CasoDetallePage {
           return;
         }
         this.errorDeOperacion.set(traducido);
+        this.operacionRechazada.set(operacion);
       },
     });
+  }
+
+  /** Titulo de la alerta del rechazo, segun la operacion. */
+  protected tituloDelRechazo(): string {
+    switch (this.operacionRechazada()) {
+      case 'equipo':
+        return 'No pudimos guardar el equipo';
+      case 'editar':
+        return 'No pudimos guardar los cambios del caso';
+      case 'cerrar':
+        return 'No pudimos cerrar el caso';
+      default:
+        return 'No pudimos reabrir el caso';
+    }
   }
 
   private cargar(): void {
@@ -283,7 +322,7 @@ export class CasoDetallePage {
     }
     this.estado.set({ tipo: 'cargando' });
     this.errorDeOperacion.set(null);
-    this.aviso.set('');
+    this.operacionRechazada.set(null);
     this.pedido?.unsubscribe();
     const motivo = this.visita.motivo();
     this.pedido = forkJoin({

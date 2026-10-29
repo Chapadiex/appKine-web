@@ -10,24 +10,34 @@
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (aviso(); as mensaje) {
-    <p
-      class="estado"
-      [class.estado--ok]="mensaje.ok"
-      [class.estado--error]="!mensaje.ok"
-      [attr.role]="mensaje.ok ? null : 'alert'"
-    >
-      {{ mensaje.texto }}
-    </p>
-  }
-</div>
+<section class="tarjeta" aria-label="Bandeja de solicitudes">
+  <!--
+    Toolbar de la tabla (UX-14): la bandeja llega entera y se busca aca, por lo pedido o por el
+    centro; "Mostrar" es un filtro avanzado y va al servidor.
+  -->
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['solicitud', 'solicitudes']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="solicitudes-busqueda">Pedido, código o centro</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="solicitudes-busqueda"
+          name="solicitudes-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por pedido, código o centro"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
 
-<section class="tarjeta" aria-labelledby="titulo-bandeja">
-  <h2 id="titulo-bandeja">Bandeja</h2>
-
-  <!-- Regla de filtros (plan §3.4): la bandeja no tiene búsqueda por texto; solo el embudo. -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-bandeja">Mostrar</label>
       <select
@@ -49,12 +59,28 @@
         <p class="estado estado--cargando">Cargando las solicitudes&hellip;</p>
       }
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <app-alerta tipo="error" titulo="No pudimos leer las solicitudes">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          </p>
+        </app-alerta>
       }
       @case ('listo') {
-        @if (solicitudes().length === 0) {
-          <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
+        @if (tabla.total() === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="No hay solicitudes pendientes."
+            texto="Cuando un centro pida sumar un concepto al catálogo común, aparece acá."
+          />
+        } @else if (tabla.total() === 0) {
+          <app-estado-vacio
+            titulo="No hay solicitudes con el filtro elegido."
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catálogo">
             <table class="tabla">
@@ -64,7 +90,15 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Recibida</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="fecha"
+                  >
+                    Recibida
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Pedido</th>
@@ -78,7 +112,9 @@
                     [class.fila--revocada]="solicitud.estado === 'RECHAZADA'"
                     [class.fila--seleccionada]="seleccionada()?.id === solicitud.id"
                   >
-                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
+                    </td>
                     <td>{{ nombreDeCentro(solicitud) }}</td>
                     <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
                     <th scope="row">
@@ -110,15 +146,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} solicitudes</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de solicitudes"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de solicitudes" />
         }
       }
     }
@@ -184,6 +212,21 @@
         </div>
       } @else {
         <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+          <!--
+            Error general de la resolucion: arriba del formulario, a la vista. Un codigo o un nombre
+            ya publicados van pegados a su campo; una especialidad dada de baja, debajo del select.
+          -->
+          @if (
+            errorAccion() &&
+            causaAccion() !== 'codigo-tomado' &&
+            causaAccion() !== 'nombre-tomado' &&
+            causaAccion() !== 'especialidad-inactiva'
+          ) {
+            <app-alerta tipo="error" titulo="No pudimos resolver la solicitud">
+              <p>{{ errorAccion() }}</p>
+            </app-alerta>
+          }
+
           <h3>
             {{
               desenlace() === 'APROBAR' ? 'Aprobar y publicar el concepto' : 'Rechazar el pedido'
@@ -191,7 +234,7 @@
           </h3>
 
           @if (desenlace() === 'APROBAR') {
-            <div class="campo">
+            <div class="campo campo--3">
               <label for="resolucion-codigo">Código con el que se publica</label>
               <input
                 id="resolucion-codigo"
@@ -199,10 +242,11 @@
                 formControlName="codigo"
                 autocomplete="off"
                 [attr.aria-invalid]="causaAccion() === 'codigo-tomado' ? 'true' : null"
+                [attr.aria-describedby]="
+                  causaAccion() === 'codigo-tomado' ? 'resolucion-codigo-en-uso' : null
+                "
               />
-              @if (causaAccion() === 'codigo-tomado') {
-                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-              } @else {
+              @if (causaAccion() !== 'codigo-tomado') {
                 <p class="ayuda">
                   Precargado con el propuesto. Si queda vacío se usa el propuesto, y sin ninguno el
                   servidor no puede publicar.
@@ -210,7 +254,18 @@
               }
             </div>
 
-            <div class="campo">
+            @if (causaAccion() === 'codigo-tomado') {
+              <app-alerta
+                class="campo--ancho"
+                tipo="advertencia"
+                titulo="Ese código ya está publicado"
+                id="resolucion-codigo-en-uso"
+              >
+                <p>{{ errorAccion() }}</p>
+              </app-alerta>
+            }
+
+            <div class="campo campo--6">
               <label for="resolucion-nombre">Nombre con el que se publica</label>
               <input
                 id="resolucion-nombre"
@@ -220,13 +275,29 @@
                 [attr.aria-invalid]="
                   mostrarError('nombre') || causaAccion() === 'nombre-tomado' ? 'true' : null
                 "
+                [attr.aria-describedby]="
+                  causaAccion() === 'nombre-tomado'
+                    ? 'resolucion-nombre-en-uso'
+                    : mostrarError('nombre')
+                      ? 'resolucion-nombre-error'
+                      : null
+                "
               />
-              @if (causaAccion() === 'nombre-tomado') {
-                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-              } @else if (mostrarError('nombre')) {
-                <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+              @if (mostrarError('nombre') && causaAccion() !== 'nombre-tomado') {
+                <p class="campo__error" id="resolucion-nombre-error">El nombre es obligatorio.</p>
               }
             </div>
+
+            @if (causaAccion() === 'nombre-tomado') {
+              <app-alerta
+                class="campo--ancho"
+                tipo="advertencia"
+                titulo="Ese nombre ya está publicado"
+                id="resolucion-nombre-en-uso"
+              >
+                <p>{{ errorAccion() }}</p>
+              </app-alerta>
+            }
 
             <div class="campo campo--ancho">
               <label for="resolucion-descripcion">Descripción (opcional)</label>
@@ -238,13 +309,13 @@
             </div>
 
             @if (esPractica()) {
-              <div class="campo campo--ancho">
+              <div class="campo campo--6">
                 <label for="resolucion-especialidad">Especialidad del catálogo común</label>
                 @switch (especialidades().tipo) {
                   @case ('error') {
-                    <p class="estado estado--error" role="alert">
-                      No se pudieron leer las especialidades del catálogo común.
-                    </p>
+                    <app-alerta tipo="error" titulo="No pudimos leer las especialidades">
+                      <p>Sin la lista del catálogo común no se puede elegir la especialidad.</p>
+                    </app-alerta>
                   }
                   @case ('cargando') {
                     <p class="estado estado--cargando">Cargando especialidades&hellip;</p>
@@ -258,6 +329,11 @@
                       ? 'true'
                       : null
                   "
+                  [attr.aria-describedby]="
+                    mostrarError('especialidadId') || causaAccion() === 'especialidad-inactiva'
+                      ? 'resolucion-especialidad-error'
+                      : null
+                  "
                 >
                   <option value="">Elegí la especialidad</option>
                   @for (especialidad of opcionesDeEspecialidad(); track especialidad.id) {
@@ -269,8 +345,12 @@
                     </option>
                   }
                 </select>
-                @if (mostrarError('especialidadId')) {
-                  <p class="campo__error" role="alert">
+                @if (causaAccion() === 'especialidad-inactiva') {
+                  <p class="campo__error" id="resolucion-especialidad-error">
+                    {{ errorAccion() }}
+                  </p>
+                } @else if (mostrarError('especialidadId')) {
+                  <p class="campo__error" id="resolucion-especialidad-error">
                     Una práctica del catálogo común necesita su especialidad.
                   </p>
                 }
@@ -287,22 +367,20 @@
               rows="3"
               formControlName="nota"
               [attr.aria-invalid]="mostrarError('nota') ? 'true' : null"
-              aria-describedby="resolucion-nota-ayuda"
+              [attr.aria-describedby]="
+                mostrarError('nota')
+                  ? 'resolucion-nota-error resolucion-nota-ayuda'
+                  : 'resolucion-nota-ayuda'
+              "
             ></textarea>
             @if (mostrarError('nota')) {
-              <p class="campo__error" role="alert">La nota es obligatoria.</p>
+              <p class="campo__error" id="resolucion-nota-error">La nota es obligatoria.</p>
             }
             <p class="ayuda" id="resolucion-nota-ayuda">
               El centro la ve en sus pedidos. Si el concepto ya existe en el catálogo común, decilo
               acá y rechazá.
             </p>
           </div>
-
-          @if (
-            errorAccion() && causaAccion() !== 'codigo-tomado' && causaAccion() !== 'nombre-tomado'
-          ) {
-            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-          }
 
           <p class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">

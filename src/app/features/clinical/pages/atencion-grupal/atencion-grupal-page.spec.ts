@@ -14,6 +14,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const CLASE = 40;
@@ -152,6 +153,48 @@ describe('AtencionGrupalPage', () => {
     expect(boton(fixture, /Iniciar para todos/).textContent).toContain('(1)');
   });
 
+  it('sigue el patron de listado: accion arriba, busqueda con resultados, orden y pie (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    // La accion principal vive en la cabecera de la pantalla, no dentro de la tarjeta.
+    expect(boton(fixture, /Iniciar para todos/).closest('app-cabecera-de-pagina')).not.toBeNull();
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '3 participantes',
+    );
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–3 de 3',
+    );
+
+    const participante = raiz.querySelector(
+      'th.tabla__columna-ordenable button',
+    ) as HTMLButtonElement;
+    participante.click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('ascending');
+
+    escribir(fixture, '#busqueda-participantes', 'maría');
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Sintetica, Maria');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 participante',
+    );
+
+    escribir(fixture, '#busqueda-participantes', 'nadie');
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos participantes',
+    );
+    boton(fixture, /^Limpiar la búsqueda$/).click();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(3);
+  });
+
+  it('sin asistencia tomada lo dice con el estado vacio y no ofrece iniciar', async () => {
+    const fixture = await montar({ ...PANEL_CLINICO, participantes: [] });
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Todavía no hay asistencia registrada');
+    expect(botones(fixture, /Iniciar para todos/)).toHaveLength(0);
+  });
+
   it('los nombres salen del panel: no pide el detalle operativo de la asistencia', async () => {
     const fixture = await montar();
     http.expectNone((r) => r.url.endsWith('/detalle-operativo'));
@@ -262,7 +305,8 @@ describe('AtencionGrupalPage', () => {
     responderRecarga();
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain(
+    // UX-12: el resultado es un aviso global.
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toBe(
       'Sintetica, Maria quedo derivada al caso clínico 1. Ya se puede iniciar su atención.',
     );
     expect(texto(fixture)).toContain('Derivada al caso clínico 1');
@@ -296,7 +340,9 @@ describe('AtencionGrupalPage', () => {
       .flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE', yaExistia: true });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('ya estaba derivada al caso clínico 1');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toContain(
+      'ya estaba derivada al caso clínico 1',
+    );
   });
 
   it('derivar sin relación asistencial pide el motivo en el panel y reintenta con el', async () => {
@@ -322,7 +368,9 @@ describe('AtencionGrupalPage', () => {
     reintento.flush({ id: 30, casoClinicoId: 7, numeroCaso: 1, estado: 'VIGENTE' });
     responderRecarga();
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('quedo derivada al caso clínico 1');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toContain(
+      'quedo derivada al caso clínico 1',
+    );
   });
 
   it('sin derivaciones, la tarjeta de derivaciones ofrece derivar', async () => {
@@ -371,6 +419,10 @@ describe('AtencionGrupalPage', () => {
     const resultado = texto(fixture);
     expect(resultado).toContain('Se abrieron 1 atención.');
     expect(resultado).toContain('1 no se pudieron abrir');
+    // Ademas del detalle en pantalla, el resultado se anuncia: advertencia porque alguna fallo.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('advertencia');
+    expect(aviso?.titulo).toBe('Se abrió 1 atención');
     expect(resultado).toMatch(/Sintetica, Ana\s*: No tiene una derivación clínica vigente/);
     expect(navegar).not.toHaveBeenCalled();
   });

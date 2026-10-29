@@ -19,6 +19,9 @@ import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { tipoDeAlertaContracting } from '../feedback-de-contracting';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { ConvenioResponse } from '../../../../api/generated/model/convenio-response';
 import { CreateConvenioRequest } from '../../../../api/generated/model/create-convenio-request';
@@ -51,7 +54,8 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -114,10 +118,12 @@ type TipoAccion = 'editar' | 'baja';
   imports: [
     CabeceraDePagina,
     Pestanas,
+    Alerta,
     Ayuda,
     ColumnaOrdenable,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Filtros,
     FiltrosRapidos,
     AccionesDeFila,
@@ -134,6 +140,7 @@ export class ConveniosDeLaSedePage {
   protected readonly pestanas = PESTANAS_DE_CONTRATACION;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CONTRATACION;
   private readonly api = inject(ConveniosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(ContractingApi);
   private readonly tenantContext = inject(TenantContextStore);
@@ -170,12 +177,25 @@ export class ConveniosDeLaSedePage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
-  /** Lo que se ve: la lista entera filtrada por el estado elegido arriba de la tabla. */
+  /**
+   * Texto de la busqueda. Filtra en pantalla por financiador, nombre o codigo: el backend no busca
+   * convenios y la lista llega entera.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Lo que se ve: la lista entera filtrada por el estado elegido y por la busqueda. */
   protected readonly convenios = computed<readonly ConvenioResponse[]>(() => {
     const elegido = this.filtroRapido();
-    return elegido === 'TODOS'
-      ? this.cargados()
-      : this.cargados().filter((convenio) => convenio.estado === elegido);
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    return this.cargados()
+      .filter((convenio) => elegido === 'TODOS' || convenio.estado === elegido)
+      .filter(
+        (convenio) =>
+          texto === '' ||
+          [this.nombreDelFinanciador(convenio), convenio.nombre, convenio.codigo].some((valor) =>
+            (valor ?? '').toLocaleLowerCase('es').includes(texto),
+          ),
+      );
   });
 
   /** Filtros rapidos con conteo: "Activos 8 · Dados de baja 2 · Todos 10". */
@@ -244,6 +264,15 @@ export class ConveniosDeLaSedePage {
     Number(this.fecha() !== this.diaDeLaSede.hoy()),
   );
 
+  /**
+   * Si el listado viene recortado por la busqueda o la fecha. Sin eso, una sede sin convenios es
+   * "todavia no hay"; con eso, "no hay con estos filtros" (UX-14). El estado elegido no cuenta: la
+   * lista se pide entera y `cargados` ya dice si la sede tiene alguno.
+   */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
@@ -264,10 +293,11 @@ export class ConveniosDeLaSedePage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+  /** Un choque con algo existente (periodo solapado, version vieja) es advertencia; lo demas, error. */
+  protected readonly tipoDeAlerta = computed(() => tipoDeAlertaContracting(this.causaAccion()));
 
   /**
    * El alta pide moneda; la edicion no.
@@ -371,6 +401,15 @@ export class ConveniosDeLaSedePage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda, el estado y la fecha a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroRapido.set('ACTIVO');
+    this.fecha.set(this.diaDeLaSede.hoy());
+    this.cargar();
+  }
+
   protected elegirEstado(valor: string): void {
     const elegido = valor === 'INACTIVO' || valor === 'TODOS' ? valor : 'ACTIVO';
     this.cerrarPanel();
@@ -402,7 +441,6 @@ export class ConveniosDeLaSedePage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.planes.set([]);
     this.formularioAlta.reset({
       codigo: '',
@@ -431,7 +469,6 @@ export class ConveniosDeLaSedePage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -528,10 +565,11 @@ export class ConveniosDeLaSedePage {
     this.api.crearConvenio(consultorioId, cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El convenio quedó firmado en esta sede. Todavía no resuelve ningún precio: para eso hay ' +
-            'que cargarle los aranceles de cada práctica, desde el botón Aranceles de su fila.',
-        );
+        this.avisos.exito('Convenio firmado', {
+          descripcion:
+            `${cuerpo.nombre}. Todavía no resuelve ningún precio: cargale los aranceles de cada ` +
+            'práctica desde Aranceles, en su fila.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -557,15 +595,20 @@ export class ConveniosDeLaSedePage {
       return;
     }
 
+    const nombre = cambios.nombre ?? this.convenioEnPanel()?.nombre ?? '';
     this.empezarEnvio();
 
     this.api.editarConvenio(consultorioId, panel.id, cambios).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'Los datos del convenio quedaron guardados. Si le pusiste fecha de fin, el convenio sigue ' +
-            'ACTIVO: cerrar la vigencia no es darlo de baja, y ese último día todavía resuelve.',
-        );
+        // Cerrar la vigencia es la confusion clasica con la baja: el aviso lo aclara justo ahi.
+        this.avisos.exito('Cambios guardados', {
+          descripcion:
+            cambios.vigenciaHasta !== undefined
+              ? 'El convenio sigue activo: cerrar la vigencia no es darlo de baja, y ese último ' +
+                'día todavía resuelve.'
+              : nombre,
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -579,17 +622,17 @@ export class ConveniosDeLaSedePage {
       return;
     }
 
+    const nombre = this.convenioEnPanel()?.nombre ?? 'El convenio';
     this.empezarEnvio();
 
     this.api.darDeBajaConvenio(consultorioId, panel.id, { reason: motivo }).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El convenio quedó dado de baja. Sus aranceles conservan sus filas y dejan de resolver ' +
-            'porque su convenio dejó de resolver; lo ya liquidado bajo él sigue explicándose con su ' +
-            'copia congelada. El código y el período quedan libres para firmar otro convenio con el ' +
-            'mismo plan.',
-        );
+        this.avisos.exito(`${nombre} quedó dado de baja`, {
+          descripcion:
+            'Sus aranceles dejan de resolver; lo ya liquidado sigue explicándose con su copia ' +
+            'congelada. El código y el período quedan libres.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -704,7 +747,6 @@ export class ConveniosDeLaSedePage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   /**
@@ -723,7 +765,6 @@ export class ConveniosDeLaSedePage {
 
   private reiniciar(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.filtroRapido.set('ACTIVO');
     this.fecha.set(this.diaDeLaSede.hoy());
     this.financiadores.set([]);

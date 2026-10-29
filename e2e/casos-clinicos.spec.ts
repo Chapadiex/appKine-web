@@ -33,7 +33,10 @@ test.describe('Casos clinicos (D-b)', () => {
   test('abrir, editar, cambiar el equipo dos veces, cerrar y reabrir', async ({ page }) => {
     await abrirHistoriaConMotivo(page, sembrada);
     const casos = page.getByRole('region', { name: 'Casos clínicos' });
-    await expect(casos.getByText('No hay casos activos.')).toBeVisible();
+    // Sin casos, el estado vacio del listado (UX-14) y no una tabla vacia.
+    await expect(
+      casos.getByRole('status').getByText('Todavía no hay casos clínicos'),
+    ).toBeVisible();
 
     // --- Alta compacta ---------------------------------------------------------------------
     await casos.getByText('Abrir un caso').click();
@@ -73,20 +76,23 @@ test.describe('Casos clinicos (D-b)', () => {
       .getByRole('textbox', { name: 'Diagnostico presuntivo' })
       .fill('Lumbalgia mecanica sintetica, sin irradiacion');
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
-    await expect(page.getByText('Se guardaron el diagnostico y el objetivo.')).toBeVisible();
+    // UX-12: el resultado de cada operacion es un aviso global, en la region de notificaciones.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones' });
+    await expect(notificaciones.getByText('Caso actualizado')).toBeVisible();
 
     // --- Equipo: dos cambios seguidos sin releer (#109) -----------------------------------
     await equipo
       .getByRole('combobox', { name: new RegExp(`Rol de .*${sembrada.nombreProfesional}`) })
       .selectOption('TRATANTE');
     await page.getByRole('button', { name: 'Guardar el equipo' }).click();
-    await expect(page.getByText('Se guardo el equipo del caso.')).toBeVisible();
+    await expect(notificaciones.getByText('Equipo del caso guardado')).toBeVisible();
 
     await equipo
       .getByRole('combobox', { name: new RegExp(`Rol de .*${sembrada.nombreProfesional}`) })
       .selectOption('RESPONSABLE');
     await page.getByRole('button', { name: 'Guardar el equipo' }).click();
-    await expect(page.getByText('Se guardo el equipo del caso.')).toBeVisible();
+    // El aviso del primer guardado puede seguir a la vista: se mira el ultimo.
+    await expect(notificaciones.getByText('Equipo del caso guardado').last()).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
 
     const historial = page.getByRole('list', { name: 'Movimientos del caso' });
@@ -104,11 +110,14 @@ test.describe('Casos clinicos (D-b)', () => {
     // Un caso cerrado no se edita ni cambia de equipo: solo se reabre.
     await expect(page.getByRole('button', { name: 'Guardar el equipo' })).toHaveCount(0);
 
-    // En la historia aparece en historicos.
+    // En la historia sigue en el listado, marcado como cerrado.
     await page.getByRole('link', { name: 'Historia clínica', exact: true }).click();
-    const cerrados = page.getByRole('list', { name: 'Casos cerrados' });
-    await expect(cerrados.getByRole('link', { name: /Caso 1/ })).toBeVisible();
-    await cerrados.getByRole('link', { name: /Caso 1/ }).click();
+    const cerrado = page
+      .getByRole('region', { name: 'Casos de la historia' })
+      .getByRole('row')
+      .filter({ hasText: 'Cerrado' });
+    await expect(cerrado.getByRole('link', { name: /Caso 1/ })).toBeVisible();
+    await cerrado.getByRole('link', { name: /Caso 1/ }).click();
 
     // --- Reapertura con motivo ---------------------------------------------------------------
     await page
@@ -130,7 +139,7 @@ test.describe('Casos clinicos (D-b)', () => {
   }) => {
     await abrirHistoriaConMotivo(page, sembrada);
     const casos = page.getByRole('region', { name: 'Casos clínicos' });
-    await expect(casos.getByRole('list', { name: 'Casos activos' })).toBeVisible();
+    await expect(casos.getByRole('region', { name: 'Casos de la historia' })).toBeVisible();
     await casos.getByText('Abrir un caso').click();
     await casos
       .getByRole('combobox', { name: 'Oferta que motiva el caso' })

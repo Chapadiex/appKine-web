@@ -105,7 +105,12 @@ describe('ArancelEfectivoPage', () => {
 
   it('cuando resuelve muestra el importe con sus dos partes y la derivacion', async () => {
     const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    // Antes de consultar, la columna de la respuesta dice que va a aparecer ahi (UX-14).
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('Todavía no consultaste');
+
     await consultar(fixture, RESUELTO);
+    expect(raiz.querySelector('app-estado-vacio')).toBeNull();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('ARS 12000.00');
@@ -170,7 +175,7 @@ describe('ArancelEfectivoPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
     // Ni un cartel de error ni un vacio: el servidor respondio 200 y esto es el desenlace mas
     // frecuente de todos.
-    expect(anfitrion.querySelector('.estado--error')).toBeNull();
+    expect(anfitrion.querySelector('app-alerta')).toBeNull();
     expect(anfitrion.textContent).toContain('No hay convenio vigente');
     expect(anfitrion.textContent).toContain('se cobra como particular');
   });
@@ -277,8 +282,9 @@ describe('ArancelEfectivoPage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.querySelector('.estado--error')).not.toBeNull();
-    expect(anfitrion.textContent).toContain('hace falta administrar convenios');
+    const alerta = anfitrion.querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos consultar el arancel');
+    expect(alerta?.textContent).toContain('hace falta administrar convenios');
   });
 
   it('dejar el financiador en vacío limpia el plan y no pide nada', async () => {

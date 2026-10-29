@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -282,6 +283,28 @@ describe('CuentaCorrientePage', () => {
     expect(texto(fixture)).toContain('al cerrar una atención');
   });
 
+  it('busca por prestación, cuenta en la barra y ofrece limpiar si no encuentra', async () => {
+    const fixture = await montar([PENDIENTE]);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const resultados = () => raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim();
+
+    expect(resultados()).toBe('1 deuda');
+    const buscador = raiz.querySelector<HTMLInputElement>('#buscar-deuda')!;
+    buscador.value = 'kinesiologia';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(resultados()).toBe('1 deuda');
+
+    buscador.value = 'no existe';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No hay deudas con esa búsqueda',
+    );
+    apretar(fixture, 'Limpiar filtros');
+    expect(raiz.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+  });
+
   it('un 403 al cargar dice que falta el permiso, no un error generico', async () => {
     tenantContext.select({
       organizationId: 1,
@@ -439,7 +462,9 @@ describe('CuentaCorrientePage', () => {
     ]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('no se borra');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('Se anulo la deuda de');
+    expect(aviso?.descripcion).toContain('no se borra');
     expect(texto(fixture)).toContain('Anulada');
   });
 
@@ -476,7 +501,9 @@ describe('CuentaCorrientePage', () => {
     responderListado(httpMock.expectOne(esListado()), [{ ...PENDIENTE, saldo: 5500.5 }]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se movio la caja');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('Se imputo el saldo a favor');
+    expect(aviso?.descripcion).toContain('No se movio la caja');
     expect(texto(fixture)).toContain('2.000,00');
   });
 

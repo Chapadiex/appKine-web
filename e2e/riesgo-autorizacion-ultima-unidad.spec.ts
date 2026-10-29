@@ -48,7 +48,7 @@ function dato(panel: Locator, termino: string): Locator {
 async function abrirElSaldo(page: Page, personaId: number, numero: string): Promise<Locator> {
   await navegar(page, `/pacientes/${personaId}/autorizaciones`);
   await page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) })
     .getByRole('button', { name: 'Saldo y consumos' })

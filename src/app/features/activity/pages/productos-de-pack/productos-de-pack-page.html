@@ -19,30 +19,45 @@
   }
 </app-cabecera-de-pagina>
 
-<!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
-<app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
-  <div class="campo">
-    <label class="opcion-casilla" for="productos-incluir-bajas">
-      <input
-        id="productos-incluir-bajas"
-        type="checkbox"
-        [checked]="incluirBajas()"
-        (change)="cambiarIncluirBajas($any($event.target).checked)"
-      />
-      Mostrar también los dados de baja
-    </label>
-  </div>
-</app-filtros>
+<!-- Listado (UX-14 §1): busqueda, Filtros y contador, la tabla y su pie, en una sola tarjeta. -->
+<section class="tarjeta" aria-label="Productos de la sede">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="productos() === null ? null : tabla.total()"
+    [unidad]="['producto', 'productos']"
+    limpiable
+    (limpiar)="cambiarIncluirBajas(false)"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="productos-busqueda">Buscar productos</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="productos-busqueda"
+          type="search"
+          placeholder="Buscar por nombre u oferta..."
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+    <div class="campo">
+      <label class="opcion-casilla" for="productos-incluir-bajas">
+        <input
+          id="productos-incluir-bajas"
+          type="checkbox"
+          [checked]="incluirBajas()"
+          (change)="cambiarIncluirBajas($any($event.target).checked)"
+        />
+        Mostrar también los dados de baja
+      </label>
+    </div>
+  </app-filtros>
 
-<div aria-live="polite">
-  @if (aviso(); as texto) {
-    <p class="estado estado--ok" akineFocoAlMontar>{{ texto }}</p>
-  }
   @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-error-productos">
-      <h2 id="titulo-error-productos">No se pudieron leer los productos</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudieron leer los productos">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (fallo.causa === 'sin-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
         } @else {
@@ -50,111 +65,109 @@
             Reintentar
           </button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
-</div>
 
-<div>
   @if (productos() === null && !error()) {
     <p class="estado estado--cargando" aria-live="polite">Leyendo los productos…</p>
   } @else if (productos()?.length === 0 && !error()) {
-    <p class="estado estado--vacio">
-      Esta sede no tiene productos{{ incluirBajas() ? '' : ' vigentes' }}.
-    </p>
-  } @else if (productos(); as lista) {
-    @if (lista.length > 0) {
-      <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-productos">
-        <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de la sede</h2>
-        <table class="tabla">
-          <thead>
-            <tr>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="producto">Producto</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="oferta">Oferta</th>
-              <th scope="col">Creditos</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
-              <th scope="col">Vale</th>
-              <th scope="col">Se vende</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+    <app-estado-vacio
+      [titulo]="'Esta sede no tiene productos' + (incluirBajas() ? '' : ' vigentes')"
+      texto="Un producto define qué pack o abono se vende."
+    >
+      @if (puedeGestionar()) {
+        <button type="button" class="boton" (click)="abrirAlta()">Nuevo producto</button>
+      }
+    </app-estado-vacio>
+  } @else if (productos() !== null && tabla.total() === 0) {
+    <app-estado-vacio titulo="No encontramos productos" texto="Probá con otra búsqueda.">
+      <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+        Limpiar filtros
+      </button>
+    </app-estado-vacio>
+  } @else if (productos() !== null) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de productos">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="producto">Producto</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="oferta">Oferta</th>
+            <th scope="col" class="tabla__col--secundaria">Creditos</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
+            <th scope="col" class="tabla__col--secundaria">Vale</th>
+            <th scope="col" class="tabla__col--secundaria">Se vende</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            @if (puedeGestionar()) {
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (producto of tabla.visibles(); track producto.id) {
+            <tr
+              [class.fila--revocada]="producto.active === false"
+              [class.fila--seleccionada]="(enEdicion() ?? productoEnPanel())?.id === producto.id"
+            >
+              <td>
+                {{ producto.nombre }}
+                @if (producto.descripcion) {
+                  <div class="ayuda">{{ producto.descripcion }}</div>
+                }
+              </td>
+              <td>{{ tipoDeProducto(producto) }}</td>
+              <td>{{ nombreDeOferta(producto) }}</td>
+              <td class="tabla__col--secundaria">{{ creditos(producto.creditos) }}</td>
+              <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
+              <td class="tabla__col--secundaria">
+                {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} días
+              </td>
+              <td class="tabla__col--secundaria">{{ ventana(producto) }}</td>
+              <td>
+                @if (producto.active === false) {
+                  <span class="marca-estado marca-estado--revocada">Dado de baja</span>
+                  @if (producto.deactivationReason) {
+                    <div class="ayuda">Motivo: {{ producto.deactivationReason }}</div>
+                  }
+                } @else {
+                  <span class="marca-estado marca-estado--activa">Vigente</span>
+                }
+              </td>
               @if (puedeGestionar()) {
-                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                <td class="tabla__acciones">
+                  @if (producto.active !== false) {
+                    <app-acciones-de-fila [de]="producto.nombre ?? ''">
+                      <button
+                        principal
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        [attr.aria-label]="'Editar ' + producto.nombre"
+                        (click)="abrirEdicion(producto)"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        [attr.aria-label]="'Dar de baja ' + producto.nombre"
+                        (click)="abrirBaja(producto)"
+                      >
+                        Dar de baja
+                      </button>
+                    </app-acciones-de-fila>
+                  }
+                </td>
               }
             </tr>
-          </thead>
-          <tbody>
-            @for (producto of tabla.visibles(); track producto.id) {
-              <tr
-                [class.fila--revocada]="producto.active === false"
-                [class.fila--seleccionada]="(enEdicion() ?? productoEnPanel())?.id === producto.id"
-              >
-                <td>
-                  {{ producto.nombre }}
-                  @if (producto.descripcion) {
-                    <div class="ayuda">{{ producto.descripcion }}</div>
-                  }
-                </td>
-                <td>{{ tipoDeProducto(producto) }}</td>
-                <td>{{ nombreDeOferta(producto) }}</td>
-                <td>{{ creditos(producto.creditos) }}</td>
-                <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
-                <td>
-                  {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} días
-                </td>
-                <td>{{ ventana(producto) }}</td>
-                <td>
-                  @if (producto.active === false) {
-                    <span class="marca-estado marca-estado--revocada">Dado de baja</span>
-                    @if (producto.deactivationReason) {
-                      <div class="ayuda">Motivo: {{ producto.deactivationReason }}</div>
-                    }
-                  } @else {
-                    <span class="marca-estado marca-estado--activa">Vigente</span>
-                  }
-                </td>
-                @if (puedeGestionar()) {
-                  <td class="tabla__acciones">
-                    @if (producto.active !== false) {
-                      <app-acciones-de-fila [de]="producto.nombre ?? ''">
-                        <button
-                          principal
-                          type="button"
-                          class="boton boton--secundario boton--chico"
-                          [attr.aria-label]="'Editar ' + producto.nombre"
-                          (click)="abrirEdicion(producto)"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          class="accion--peligro"
-                          [attr.aria-label]="'Dar de baja ' + producto.nombre"
-                          (click)="abrirBaja(producto)"
-                        >
-                          Dar de baja
-                        </button>
-                      </app-acciones-de-fila>
-                    }
-                  </td>
-                }
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          }
+        </tbody>
+      </table>
+    </div>
 
-      <div class="tabla-pie">
-        <span>{{ tabla.total() }} productos</span>
-        <app-paginacion
-          [paginaActual]="tabla.pagina()"
-          [totalPaginas]="tabla.totalPaginas()"
-          etiqueta="Paginas de productos"
-          (cambioDePagina)="tabla.irA($event)"
-        />
-      </div>
-    }
+    <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de productos" />
   }
-</div>
+</section>
 
 <!--
   Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes el formulario
@@ -166,6 +179,16 @@
     (cerrar)="cancelarFormulario()"
   >
     <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <!-- Error general del guardado: arriba del formulario, a la vista mientras se corrige. -->
+      @if (errorAccion(); as fallo) {
+        <app-alerta
+          tipo="error"
+          [titulo]="enEdicion() ? 'No pudimos guardar el producto' : 'No pudimos crear el producto'"
+        >
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+
       @if (enEdicion(); as producto) {
         <p class="ayuda ayuda--fija">
           {{ tipoDeProducto(producto) }} sobre la oferta <b>{{ nombreDeOferta(producto) }}</b
@@ -209,14 +232,12 @@
             }
           </p>
           @if (invalido('ofertaId')) {
-            <p class="estado estado--error" id="producto-ofertaId-error">
-              Elegí la oferta del producto.
-            </p>
+            <p class="campo__error" id="producto-ofertaId-error">Elegí la oferta del producto.</p>
           }
         </div>
       }
 
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="producto-nombre">Nombre</label>
         <input
           id="producto-nombre"
@@ -228,13 +249,13 @@
           [attr.aria-describedby]="descritoPor('nombre')"
         />
         @if (invalido('nombre')) {
-          <p class="estado estado--error" id="producto-nombre-error">El nombre es obligatorio.</p>
+          <p class="campo__error" id="producto-nombre-error">El nombre es obligatorio.</p>
         } @else if (errorDelServidor('nombre'); as mensaje) {
-          <p class="estado estado--error" id="producto-nombre-error">{{ mensaje }}</p>
+          <p class="campo__error" id="producto-nombre-error">{{ mensaje }}</p>
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="producto-descripcion">Descripción (opcional)</label>
         <input
           id="producto-descripcion"
@@ -245,113 +266,108 @@
         />
       </div>
 
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="producto-creditos">{{
-            tipoElegido() === 'ABONO' ? 'Asistencias por periodo' : 'Creditos'
-          }}</label>
-          <input
-            id="producto-creditos"
-            type="number"
-            min="1"
-            formControlName="creditos"
-            [attr.aria-invalid]="invalido('creditos')"
-            [attr.aria-describedby]="descritoPor('creditos')"
-          />
-          @if (invalido('creditos')) {
-            <p class="estado estado--error" id="producto-creditos-error">
-              Tiene que ser al menos 1.
-            </p>
-          }
-        </div>
-        <div class="campo">
-          <label for="producto-precio">Precio</label>
-          <input
-            id="producto-precio"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            formControlName="precio"
-            [attr.aria-invalid]="invalido('precio')"
-            [attr.aria-describedby]="descritoPor('precio')"
-          />
-          @if (invalido('precio')) {
-            <p class="estado estado--error" id="producto-precio-error">
-              Un importe mayor que cero, con hasta dos decimales.
-            </p>
-          }
-        </div>
-        <div class="campo">
-          <label for="producto-moneda">Moneda</label>
-          <input
-            id="producto-moneda"
-            type="text"
-            maxlength="3"
-            autocomplete="off"
-            formControlName="moneda"
-            [attr.aria-invalid]="invalido('moneda')"
-            aria-describedby="producto-moneda-ayuda"
-          />
-          <p class="ayuda" id="producto-moneda-ayuda">Tres letras, como ARS o USD.</p>
-        </div>
-        <div class="campo">
-          <label for="producto-vigencia-dias">{{
-            tipoElegido() === 'ABONO' ? 'Dias maximos del periodo' : 'Dias de vigencia'
-          }}</label>
-          <input
-            id="producto-vigencia-dias"
-            type="number"
-            min="1"
-            formControlName="vigenciaDias"
-            [attr.aria-invalid]="invalido('vigenciaDias')"
-            [attr.aria-describedby]="descritoPor('vigenciaDias', 'producto-vigencia-dias-ayuda')"
-          />
-          <p class="ayuda ayuda--fija" id="producto-vigencia-dias-ayuda">
-            @if (tipoElegido() === 'ABONO') {
-              Lo mas largo que puede durar el periodo de un abono; al vender se puede elegir menos.
-            } @else {
-              Días corridos desde la compra, contando el de la compra.
-            }
+      <div class="campo">
+        <label for="producto-creditos">{{
+          tipoElegido() === 'ABONO' ? 'Asistencias por periodo' : 'Creditos'
+        }}</label>
+        <input
+          id="producto-creditos"
+          type="number"
+          min="1"
+          formControlName="creditos"
+          [attr.aria-invalid]="invalido('creditos')"
+          [attr.aria-describedby]="descritoPor('creditos')"
+        />
+        @if (invalido('creditos')) {
+          <p class="campo__error" id="producto-creditos-error">Tiene que ser al menos 1.</p>
+        }
+      </div>
+      <div class="campo campo--2">
+        <label for="producto-precio">Precio</label>
+        <input
+          id="producto-precio"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="precio"
+          [attr.aria-invalid]="invalido('precio')"
+          [attr.aria-describedby]="descritoPor('precio')"
+        />
+        @if (invalido('precio')) {
+          <p class="campo__error" id="producto-precio-error">
+            Un importe mayor que cero, con hasta dos decimales.
           </p>
-          @if (invalido('vigenciaDias')) {
-            <p class="estado estado--error" id="producto-vigenciaDias-error">
-              Entre 1 y 3660 días.
-            </p>
-          }
-        </div>
+        }
       </div>
-
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="producto-desde">Se vende desde</label>
-          <input
-            id="producto-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="invalido('vigenciaDesde')"
-            [attr.aria-describedby]="descritoPor('vigenciaDesde')"
-          />
-          @if (invalido('vigenciaDesde')) {
-            <p class="estado estado--error" id="producto-vigenciaDesde-error">
-              Indica desde cuando se vende.
-            </p>
-          }
-        </div>
-        <div class="campo">
-          <label for="producto-hasta">Se vende hasta (opcional)</label>
-          <input
-            id="producto-hasta"
-            type="date"
-            formControlName="vigenciaHasta"
-            aria-describedby="producto-hasta-ayuda"
-          />
-          <p class="ayuda" id="producto-hasta-ayuda">Vacío: se vende sin fecha de fin.</p>
-        </div>
+      <div class="campo campo--2">
+        <label for="producto-moneda">Moneda</label>
+        <input
+          id="producto-moneda"
+          type="text"
+          maxlength="3"
+          autocomplete="off"
+          formControlName="moneda"
+          [attr.aria-invalid]="invalido('moneda')"
+          aria-describedby="producto-moneda-ayuda"
+        />
+        <p class="ayuda" id="producto-moneda-ayuda">Tres letras, como ARS o USD.</p>
       </div>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as fallo) {
-          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      <div class="campo">
+        <label for="producto-vigencia-dias">{{
+          tipoElegido() === 'ABONO' ? 'Dias maximos del periodo' : 'Dias de vigencia'
+        }}</label>
+        <input
+          id="producto-vigencia-dias"
+          type="number"
+          min="1"
+          formControlName="vigenciaDias"
+          [attr.aria-invalid]="invalido('vigenciaDias')"
+          [attr.aria-describedby]="descritoPor('vigenciaDias', 'producto-vigencia-dias-ayuda')"
+        />
+        <p class="ayuda ayuda--fija" id="producto-vigencia-dias-ayuda">
+          @if (tipoElegido() === 'ABONO') {
+            Lo mas largo que puede durar el periodo de un abono; al vender se puede elegir menos.
+          } @else {
+            Días corridos desde la compra, contando el de la compra.
+          }
+        </p>
+        @if (invalido('vigenciaDias')) {
+          <p class="campo__error" id="producto-vigenciaDias-error">Entre 1 y 3660 días.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="producto-desde">Se vende desde</label>
+        <input
+          id="producto-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="invalido('vigenciaDesde')"
+          [attr.aria-describedby]="descritoPor('vigenciaDesde')"
+        />
+        @if (invalido('vigenciaDesde')) {
+          <p class="campo__error" id="producto-vigenciaDesde-error">
+            Indica desde cuando se vende.
+          </p>
+        }
+      </div>
+      <div class="campo">
+        <label for="producto-hasta">Se vende hasta (opcional)</label>
+        <input
+          id="producto-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          [attr.aria-invalid]="hastaAntesDeDesde() ? 'true' : null"
+          [attr.aria-describedby]="
+            hastaAntesDeDesde()
+              ? 'producto-hasta-ayuda producto-hasta-error'
+              : 'producto-hasta-ayuda'
+          "
+        />
+        <p class="ayuda" id="producto-hasta-ayuda">Vacío: se vende sin fecha de fin.</p>
+        @if (hastaAntesDeDesde()) {
+          <p class="campo__error" id="producto-hasta-error">
+            La fecha hasta la que se vende no puede ser anterior a la fecha desde.
+          </p>
         }
       </div>
 
@@ -370,6 +386,11 @@
 @if (productoEnPanel(); as producto) {
   @if (panel().tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + producto.nombre" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja el producto">
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="producto-baja-motivo"
         [titulo]="'Dar de baja ' + producto.nombre"
@@ -383,11 +404,6 @@
         (confirmado)="confirmarBaja($event)"
         (cancelado)="cerrarPanel()"
       />
-      <div aria-live="polite">
-        @if (errorAccion(); as fallo) {
-          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

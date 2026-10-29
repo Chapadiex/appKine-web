@@ -1,6 +1,4 @@
-<app-cabecera-de-pagina titulo="Plan de tratamiento">
-  <app-migas enLinea [migas]="migas()" />
-</app-cabecera-de-pagina>
+<app-cabecera-de-pagina titulo="Plan de tratamiento"> </app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -14,17 +12,16 @@
   @case ('error') {
     @if (estado(); as e) {
       @if (e.tipo === 'error') {
-        <section class="tarjeta" role="alert" aria-labelledby="titulo-error-plan">
-          <h2 id="titulo-error-plan">No se pudo abrir el plan</h2>
-          <p class="estado estado--error">{{ e.error.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos abrir el plan">
+          <p>{{ e.error.mensaje }}</p>
           @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'no-encontrado') {
-            <div class="acciones">
+            <p class="alerta__acciones">
               <button type="button" class="boton boton--secundario" (click)="releer()">
                 Reintentar
               </button>
-            </div>
+            </p>
           }
-        </section>
+        </app-alerta>
       }
     }
   }
@@ -39,12 +36,6 @@
       </p>
     }
 
-    <p class="estado estado--ok" role="status">{{ aviso() }}</p>
-    <!-- Con el editor abierto, el rechazo se muestra dentro del panel, que es lo que esta a la vista. -->
-    @if (editor() === null) {
-      <ng-container *ngTemplateOutlet="rechazo" />
-    }
-
     @if (planes().length === 0) {
       <section class="tarjeta" aria-labelledby="titulo-sin-plan">
         <h2 id="titulo-sin-plan">Este caso todavía no tiene plan</h2>
@@ -54,17 +45,21 @@
         </p>
       </section>
     } @else {
-      <div class="campo">
-        <label for="plan-elegido">Plan</label>
-        <select
-          id="plan-elegido"
-          [value]="planId() ?? ''"
-          (change)="elegirPlan($any($event.target).value)"
-        >
-          @for (p of planes(); track p.id) {
-            <option [value]="p.id">Plan {{ p.numeroPlan }} · {{ rotuloDeEstado(p.estado) }}</option>
-          }
-        </select>
+      <div class="grilla-12">
+        <div class="campo campo--4">
+          <label for="plan-elegido">Plan</label>
+          <select
+            id="plan-elegido"
+            [value]="planId() ?? ''"
+            (change)="elegirPlan($any($event.target).value)"
+          >
+            @for (p of planes(); track p.id) {
+              <option [value]="p.id">
+                Plan {{ p.numeroPlan }} · {{ rotuloDeEstado(p.estado) }}
+              </option>
+            }
+          </select>
+        </div>
       </div>
     }
 
@@ -247,6 +242,13 @@
           @if (p.estado !== 'FINALIZADO' && casoActivo()) {
             <section class="tarjeta" aria-labelledby="titulo-transiciones">
               <h2 id="titulo-transiciones">Estado del plan</h2>
+              <!--
+                El rechazo de una transicion, arriba de los botones que la mandaron (UX-12). Con el
+                editor abierto, va dentro del panel.
+              -->
+              @if (editor() === null) {
+                <ng-container *ngTemplateOutlet="rechazo" />
+              }
               <div class="acciones">
                 @if (p.estado === 'BORRADOR') {
                   <button type="button" class="boton" [disabled]="enVuelo()" (click)="activar()">
@@ -321,8 +323,8 @@
         [titulo]="e.modo === 'crear' ? 'Crear un plan' : 'Modificar el plan'"
         (cerrar)="cerrarEditor()"
       >
-        <ng-container *ngTemplateOutlet="rechazo" />
         <form (submit)="$event.preventDefault(); guardar()">
+          <ng-container *ngTemplateOutlet="rechazo" />
           <div class="campo">
             <label for="plan-objetivos">Objetivos</label>
             <textarea
@@ -348,29 +350,27 @@
               (input)="indicaciones.set($any($event.target).value)"
             ></textarea>
           </div>
-          <div class="fila-editable">
-            <div class="campo">
-              <label for="plan-frecuencia">Sesiones por semana (propuesta)</label>
-              <input
-                id="plan-frecuencia"
-                type="number"
-                min="1"
-                inputmode="numeric"
-                [value]="frecuencia()"
-                (input)="frecuencia.set($any($event.target).value)"
-              />
-            </div>
-            <div class="campo">
-              <label for="plan-duracion">Duración estimada (semanas)</label>
-              <input
-                id="plan-duracion"
-                type="number"
-                min="1"
-                inputmode="numeric"
-                [value]="duracion()"
-                (input)="duracion.set($any($event.target).value)"
-              />
-            </div>
+          <div class="campo">
+            <label for="plan-frecuencia">Sesiones por semana (propuesta)</label>
+            <input
+              id="plan-frecuencia"
+              type="number"
+              min="1"
+              inputmode="numeric"
+              [value]="frecuencia()"
+              (input)="frecuencia.set($any($event.target).value)"
+            />
+          </div>
+          <div class="campo">
+            <label for="plan-duracion">Duración estimada (semanas)</label>
+            <input
+              id="plan-duracion"
+              type="number"
+              min="1"
+              inputmode="numeric"
+              [value]="duracion()"
+              (input)="duracion.set($any($event.target).value)"
+            />
           </div>
 
           <fieldset>
@@ -380,42 +380,42 @@
               declara si ya se conoce.
             </p>
             @for (fila of filas(); track $index; let i = $index) {
-              <div class="fila-editable">
-                <div class="campo">
-                  <label [for]="'item-oferta-' + i">Oferta del item {{ i + 1 }}</label>
-                  <select
-                    [id]="'item-oferta-' + i"
-                    [value]="fila.ofertaId ?? ''"
-                    (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
-                  >
-                    <option value="">Elegí una oferta</option>
-                    @for (oferta of elegibles(); track oferta.id) {
-                      <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="campo">
-                  <label [for]="'item-planificadas-' + i">Sesiones planificadas</label>
-                  <input
-                    [id]="'item-planificadas-' + i"
-                    type="number"
-                    min="1"
-                    inputmode="numeric"
-                    [value]="fila.planificadas"
-                    (input)="editarFila(i, 'planificadas', $any($event.target).value)"
-                  />
-                </div>
-                <div class="campo">
-                  <label [for]="'item-autorizadas-' + i">Autorizadas (opcional)</label>
-                  <input
-                    [id]="'item-autorizadas-' + i"
-                    type="number"
-                    min="0"
-                    inputmode="numeric"
-                    [value]="fila.autorizadas"
-                    (input)="editarFila(i, 'autorizadas', $any($event.target).value)"
-                  />
-                </div>
+              <div class="campo campo--6">
+                <label [for]="'item-oferta-' + i">Oferta del item {{ i + 1 }}</label>
+                <select
+                  [id]="'item-oferta-' + i"
+                  [value]="fila.ofertaId ?? ''"
+                  (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
+                >
+                  <option value="">Elegí una oferta</option>
+                  @for (oferta of elegibles(); track oferta.id) {
+                    <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+                  }
+                </select>
+              </div>
+              <div class="campo">
+                <label [for]="'item-planificadas-' + i">Sesiones planificadas</label>
+                <input
+                  [id]="'item-planificadas-' + i"
+                  type="number"
+                  min="1"
+                  inputmode="numeric"
+                  [value]="fila.planificadas"
+                  (input)="editarFila(i, 'planificadas', $any($event.target).value)"
+                />
+              </div>
+              <div class="campo">
+                <label [for]="'item-autorizadas-' + i">Autorizadas (opcional)</label>
+                <input
+                  [id]="'item-autorizadas-' + i"
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  [value]="fila.autorizadas"
+                  (input)="editarFila(i, 'autorizadas', $any($event.target).value)"
+                />
+              </div>
+              <div class="campo campo--2 campo--accion">
                 <button
                   type="button"
                   class="boton boton--secundario"
@@ -431,13 +431,15 @@
                 Cada item necesita una oferta y una cantidad planificada mayor que cero.
               </p>
             }
-            <button type="button" class="boton boton--secundario" (click)="agregarFila()">
-              Agregar un item
-            </button>
+            <div class="acciones">
+              <button type="button" class="boton boton--secundario" (click)="agregarFila()">
+                Agregar un item
+              </button>
+            </div>
           </fieldset>
 
           @if (e.modo === 'modificar' && plan()?.estado !== 'BORRADOR') {
-            <div class="campo">
+            <div class="campo campo--12">
               <label for="plan-motivo-modificacion">Motivo de la modificacion (opcional)</label>
               <input
                 id="plan-motivo-modificacion"
@@ -464,24 +466,41 @@
 
 <ng-template #rechazo>
   @if (errorDeOperacion(); as problema) {
-    <div class="tarjeta" role="alert">
-      <p class="estado estado--error">{{ problema.mensaje }}</p>
-      <div class="acciones">
-        @if (problema.planQueOcupaId; as otro) {
-          <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
-            Ir al plan que ocupa el lugar
-          </button>
-        }
-        @if (
-          problema.causa === 'version-vieja' ||
-          problema.causa === 'transicion-invalida' ||
-          problema.causa === 'conflicto'
-        ) {
-          <button type="button" class="boton boton--secundario" (click)="releer()">
-            Releer el plan
-          </button>
-        }
-      </div>
-    </div>
+    <!-- Otro plan vigente o una version vieja son conflictos con lo que ya existe: advertencia. -->
+    <app-alerta
+      [tipo]="
+        problema.planQueOcupaId ||
+        problema.causa === 'version-vieja' ||
+        problema.causa === 'conflicto'
+          ? 'advertencia'
+          : 'error'
+      "
+      [titulo]="tituloDelError()"
+    >
+      <p>{{ problema.mensaje }}</p>
+      @if (
+        problema.planQueOcupaId ||
+        problema.causa === 'version-vieja' ||
+        problema.causa === 'transicion-invalida' ||
+        problema.causa === 'conflicto'
+      ) {
+        <p class="alerta__acciones">
+          @if (problema.planQueOcupaId; as otro) {
+            <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
+              Ir al plan que ocupa el lugar
+            </button>
+          }
+          @if (
+            problema.causa === 'version-vieja' ||
+            problema.causa === 'transicion-invalida' ||
+            problema.causa === 'conflicto'
+          ) {
+            <button type="button" class="boton boton--secundario" (click)="releer()">
+              Releer el plan
+            </button>
+          }
+        </p>
+      }
+    </app-alerta>
   }
 </ng-template>

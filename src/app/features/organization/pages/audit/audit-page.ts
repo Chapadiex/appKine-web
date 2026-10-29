@@ -17,9 +17,16 @@ import { AuditoriaService } from '../../../../api/generated/api/auditoria.servic
 import { AuditEventResponse } from '../../../../api/generated/model/audit-event-response';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { ListAuditEventsRequestParams } from '../../../../api/generated/api/auditoria.serviceInterface';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
@@ -44,8 +51,6 @@ type FiltroElegido = 'entidad' | 'actor' | 'ventana';
 const DIAS_MAXIMOS = 90;
 
 const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
-
-const POR_PAGINA = 20;
 
 /**
  * Consulta de la auditoria de la organizacion activa (M24, AKINE-01.03).
@@ -74,7 +79,18 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, ReactiveFormsModule, RouterLink, Paginacion],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ColumnaOrdenable,
+    ReactiveFormsModule,
+    RouterLink,
+    Paginacion,
+    Alerta,
+    EstadoVacio,
+    Filtros,
+    Icono,
+  ],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })
@@ -95,6 +111,9 @@ export class AuditPage {
   /** Los cinco valores derivados del estado, con los nombres que la plantilla ya usaba. */
   private readonly vista = vistaDeListado<AuditEventResponse>(this.estado);
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /**
    * Orden de los resultados, pedido al servidor (DP-45). Sin el, del hecho mas nuevo al mas viejo.
@@ -198,6 +217,28 @@ export class AuditPage {
     this.consultar();
   }
 
+  /** Otro tamaño de pagina: vuelve a la primera con el mismo filtro. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.paginaActual.set(0);
+    this.consultar();
+  }
+
+  /**
+   * "Limpiar filtros" del vacio: el formulario vuelve a su estado de entrada y la pantalla a
+   * "elegi un filtro", que es lo que muestra sin consulta.
+   */
+  protected limpiarFiltros(): void {
+    this.formulario.reset();
+    this.paginaActual.set(0);
+    this.detalle.set(null);
+    this.errorVentana.set(null);
+    this.intentos.set(0);
+    this.estado.set(
+      this.tenantContext.organizationId() === null ? { tipo: 'sin-contexto' } : { tipo: 'inicial' },
+    );
+  }
+
   protected irAPagina(numero: number): void {
     if (numero < 0 || numero >= this.totalPaginas()) {
       return;
@@ -206,7 +247,7 @@ export class AuditPage {
     this.consultar();
   }
 
-  private consultar(): void {
+  protected consultar(): void {
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });
@@ -250,7 +291,7 @@ export class AuditPage {
     const base: ListAuditEventsRequestParams = {
       orgId,
       page: this.paginaActual(),
-      size: POR_PAGINA,
+      size: this.porPagina(),
       q: textoDeBusqueda(valores.q),
       sort: this.orden.sort(),
     };

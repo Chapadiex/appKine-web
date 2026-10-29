@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -104,7 +105,9 @@ describe('CajaPage', () => {
     pedido.flush(JORNADA);
 
     await responderAbierta(fixture, []);
-    expect(texto(fixture)).toContain('Caja abierta.');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Caja abierta');
+    expect(aviso?.descripcion).toContain('250,50');
     expect(texto(fixture)).toContain('Todavía no hay movimientos');
   });
 
@@ -124,6 +127,22 @@ describe('CajaPage', () => {
     expect(tira).toContain('efectivo$700,50·otrosmedios$2.000,00');
     expect(tira).toContain('Movimientos4');
     expect(tira).toContain('entró$700,50·salió$200,00');
+    // UX-14: la jornada es una banda de indicadores, no una tarjeta; los movimientos se ordenan
+    // y tienen el pie estandar.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.banda-de-caja')?.classList.contains('tarjeta')).toBe(false);
+    expect(raiz.querySelectorAll('.banda-de-caja dl.cifras')).toHaveLength(1);
+    expect(contenido).toContain('Mostrando 1–2 de 2');
+    Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button'))
+      .find((b) => b.textContent?.trim() === 'Concepto')!
+      .click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Cambio para el día');
+    Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button'))
+      .find((b) => b.textContent?.trim() === 'Concepto')!
+      .click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Cobro N.º 14');
   });
 
   it('registra un movimiento manual con clave de idempotencia y relee la caja', async () => {
@@ -146,7 +165,9 @@ describe('CajaPage', () => {
     pedido.flush({ ...MANUAL, id: 600, tipo: 'EGRESO' });
 
     await recargarAbierta(fixture, []);
-    expect(texto(fixture)).toContain('Movimiento registrado.');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Movimiento registrado');
+    expect(aviso?.descripcion).toContain('Articulos de limpieza');
   });
 
   it('un egreso que deja el cajon en negativo muestra el rechazo y no relee', async () => {
@@ -164,7 +185,12 @@ describe('CajaPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('deja el cajon en negativo');
+    // En la seccion del movimiento, arriba de sus campos: es donde se corrige el importe.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-labelledby="titulo-movimiento"] app-alerta',
+    );
+    expect(alerta?.textContent).toContain('No pudimos registrar el movimiento');
+    expect(alerta?.textContent).toContain('deja el cajon en negativo');
   });
 
   it('revertir exige motivo y lo manda', async () => {
@@ -201,6 +227,8 @@ describe('CajaPage', () => {
     ]);
     expect(texto(fixture)).toContain('Revertido');
     expect(botones(fixture, 'Revertir')).toHaveLength(0);
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Movimiento revertido');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un arqueo que no cuadra pide motivo y manda el teorico que se mostraba', async () => {
@@ -235,6 +263,7 @@ describe('CajaPage', () => {
     expect(contenido).toContain('Arqueo registrado');
     expect(contenido).toContain('Faltante de');
     expect(contenido).toContain('La caja está cerrada');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Caja cerrada');
   });
 
   it('si el teorico cambio mientras se contaba, no cierra y ofrece recargar', async () => {
@@ -254,7 +283,11 @@ describe('CajaPage', () => {
     );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('el saldo teorico cambio');
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-labelledby="titulo-cierre"] app-alerta',
+    );
+    expect(alerta?.className).toContain('alerta--advertencia');
+    expect(alerta?.textContent).toContain('el saldo teorico cambio');
     apretar(fixture, 'Recargar la caja');
     await recargarAbierta(fixture, []);
   });

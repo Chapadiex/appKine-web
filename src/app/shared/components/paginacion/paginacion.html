@@ -1,21 +1,51 @@
-@if (totalPaginas() > 1) {
-  <nav class="paginacion" [attr.aria-label]="etiqueta()">
-    <button
-      type="button"
-      class="boton boton--secundario"
-      [disabled]="paginaActual() === 0"
-      (click)="ir(paginaActual() - 1)"
-    >
-      Anterior
-    </button>
-    <span class="ayuda">Página {{ paginaActual() + 1 }} de {{ totalPaginas() }}</span>
-    <button
-      type="button"
-      class="boton boton--secundario"
-      [disabled]="paginaActual() + 1 >= totalPaginas()"
-      (click)="ir(paginaActual() + 1)"
-    >
-      Siguiente
-    </button>
-  </nav>
+@if (visible()) {
+  @if (resumen(); as texto) {
+    <p class="paginacion-pie__resumen" aria-live="polite">{{ texto }}</p>
+  }
+  @if (conSelector()) {
+    <label class="paginacion-pie__por-pagina">
+      <span>Filas por página</span>
+      <select [value]="'' + porPagina()" (change)="elegirPorPagina($any($event.target).value)">
+        @for (opcion of opciones; track opcion) {
+          <option [value]="'' + opcion">{{ opcion }}</option>
+        }
+      </select>
+    </label>
+  }
+  @if (pasos().length > 0) {
+    <nav class="paginacion" [attr.aria-label]="etiqueta()">
+      <button
+        type="button"
+        class="paginacion__paso paginacion__paso--flecha"
+        [disabled]="paginaActual() === 0"
+        (click)="ir(paginaActual() - 1)"
+      >
+        <span aria-hidden="true">‹</span>
+        <span class="visualmente-oculto">Página anterior</span>
+      </button>
+      @for (paso of pasos(); track $index) {
+        @if (paso.tipo === 'pagina') {
+          <button
+            type="button"
+            class="paginacion__paso"
+            [attr.aria-current]="paso.numero === paginaActual() ? 'page' : null"
+            (click)="ir(paso.numero)"
+          >
+            <span class="visualmente-oculto">Página </span>{{ paso.numero + 1 }}
+          </button>
+        } @else {
+          <span class="paginacion__salto" aria-hidden="true">…</span>
+        }
+      }
+      <button
+        type="button"
+        class="paginacion__paso paginacion__paso--flecha"
+        [disabled]="paginaActual() + 1 >= totalPaginas()"
+        (click)="ir(paginaActual() + 1)"
+      >
+        <span aria-hidden="true">›</span>
+        <span class="visualmente-oculto">Página siguiente</span>
+      </button>
+    </nav>
+  }
 }

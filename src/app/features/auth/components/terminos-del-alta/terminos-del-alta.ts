@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { TerminosVigentes } from '../../models/terminos-vigentes';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /**
  * Casilla "Acepto los términos y condiciones" de un alta (DP-45): registro e invitacion con
@@ -14,6 +15,7 @@ import { TerminosVigentes } from '../../models/terminos-vigentes';
 @Component({
   selector: 'app-terminos-del-alta',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [Alerta],
   template: `
     @let t = terminos();
     @switch (t.estado().tipo) {
@@ -21,15 +23,14 @@ import { TerminosVigentes } from '../../models/terminos-vigentes';
         <p class="ayuda">Leyendo los términos y condiciones vigentes&hellip;</p>
       }
       @case ('error') {
-        <div class="terminos__fallo">
-          <p class="estado estado--error" role="alert">
-            No pudimos leer los términos y condiciones vigentes, y sin ellos no se puede crear la
-            cuenta.
+        <app-alerta tipo="error" titulo="No pudimos leer los términos">
+          <p>Sin los términos y condiciones vigentes no se puede crear la cuenta.</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="t.cargar()">
+              Reintentar
+            </button>
           </p>
-          <button type="button" class="boton boton--secundario" (click)="t.cargar()">
-            Reintentar
-          </button>
-        </div>
+        </app-alerta>
       }
       @case ('listo') {
         @if (t.versionExigida(); as version) {
@@ -67,17 +68,6 @@ import { TerminosVigentes } from '../../models/terminos-vigentes';
     }
   `,
   styles: `
-    .terminos__fallo {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--esp-4);
-    }
-
-    .terminos__fallo .estado {
-      margin: 0;
-    }
-
     .campo .terminos__casilla {
       display: flex;
       align-items: center;

@@ -1,0 +1,94 @@
+/*
+  Sin caja propia: la ruta participa directo de la fila de la barra superior, que es la que la
+  acota para que no empuje a la sede ni al perfil.
+*/
+:host {
+  display: contents;
+}
+
+/* Rotulo de la pantalla: una linea, se corta antes que empujar a la sede o al perfil. */
+.titulo {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  Ruta de navegacion: una sola linea. Los pasos anteriores, en el tono suave de un dato; la
+  pantalla, con el peso del titulo. Si no entra, se corta cada paso con "…" antes que empujar a la
+  sede: la pantalla actual es la que mas lugar se queda.
+*/
+.ubicacion {
+  min-width: 0;
+}
+
+.ubicacion__lista {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ubicacion__paso {
+  display: inline-flex;
+  flex-shrink: 1;
+  align-items: center;
+  gap: var(--esp-3);
+  min-width: 0;
+  max-width: 14rem;
+  white-space: nowrap;
+}
+
+.ubicacion__paso--actual {
+  flex-shrink: 0.5;
+  max-width: none;
+}
+
+.ubicacion .titulo {
+  display: block;
+}
+
+/* El separador lo dibuja el CSS y no se lee: el lector anuncia la lista de pasos. */
+.ubicacion__paso + .ubicacion__paso::before {
+  content: '/' / '';
+  color: var(--color-texto-suave);
+}
+
+.ubicacion__enlace {
+  display: inline-block;
+  overflow: hidden;
+  padding-block: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  text-decoration: none;
+  text-overflow: ellipsis;
+}
+
+.ubicacion__enlace:hover {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+@media (max-width: 39.99rem) {
+  /*
+    De la ruta queda solo el paso anterior, como "volver": "‹ Padrón". La pantalla ya la dice su
+    propio `h1`, justo debajo.
+  */
+  .ubicacion__paso:not(.ubicacion__paso--padre) {
+    display: none;
+  }
+
+  /* Gana al "/" de `.ubicacion__paso + .ubicacion__paso` aun con los atributos del encapsulado. */
+  .ubicacion__paso + .ubicacion__paso.ubicacion__paso--padre::before,
+  .ubicacion__paso.ubicacion__paso--padre::before {
+    content: '‹' / '';
+    color: var(--color-texto-suave);
+  }
+}

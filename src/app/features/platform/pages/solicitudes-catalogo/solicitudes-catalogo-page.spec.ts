@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { SolicitudesCatalogoPage } from './solicitudes-catalogo-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -107,8 +108,10 @@ describe('SolicitudesCatalogoPage', () => {
       httpMock.expectOne(esListado).flush([]);
       fixture.detectChanges();
 
-      expect(anfitrion.textContent).toContain('ya esta publicado en el catalogo comun');
-      expect(anfitrion.textContent).toContain('concepto 77');
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.titulo).toBe('Solicitud aprobada');
+      expect(aviso?.descripcion).toContain('ya está publicado en el catálogo común');
+      expect(aviso?.descripcion).toContain('concepto 77');
     },
     TIMEOUT_AXE,
   );
@@ -135,7 +138,10 @@ describe('SolicitudesCatalogoPage', () => {
 
     const codigo = anfitrion.querySelector('#resolucion-codigo');
     expect(codigo?.getAttribute('aria-invalid')).toBe('true');
-    expect(anfitrion.textContent).toContain('La solicitud sigue pendiente');
+    expect(codigo?.getAttribute('aria-describedby')).toBe('resolucion-codigo-en-uso');
+    const alerta = anfitrion.querySelector('#resolucion-codigo-en-uso');
+    expect(alerta?.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta?.textContent).toContain('La solicitud sigue pendiente');
     // No se relee la bandeja: el formulario queda para corregir.
   });
 
@@ -164,8 +170,35 @@ describe('SolicitudesCatalogoPage', () => {
     httpMock.expectOne(esListado).flush([]);
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Otra persona resolvio');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('Otra persona resolvio');
     expect(anfitrion.querySelector('#resolucion-nota')).toBeNull();
+  });
+
+  it('UX-14: busca en la bandeja, con el total en la toolbar, el pie y "Limpiar filtros"', async () => {
+    const { fixture, anfitrion } = await montar([PRACTICA, ESPECIALIDAD]);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 solicitudes',
+    );
+    expect(anfitrion.textContent).toContain('Mostrando 1–2 de 2');
+
+    escribir(anfitrion, '#solicitudes-busqueda', 'drenaje', 'input');
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 solicitud',
+    );
+
+    escribir(anfitrion, '#solicitudes-busqueda', 'nada parecido', 'input');
+    fixture.detectChanges();
+    const vacio = anfitrion.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('No hay solicitudes con el filtro elegido.');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
   });
 
   it('el filtro relee la bandeja con el estado elegido', async () => {

@@ -42,9 +42,17 @@ import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante'
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+import { publicarMigas } from '../../../../core/services/migas.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -126,8 +134,13 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-atencion-grupal-page',
   imports: [
-    Migas,
     CabeceraDePagina,
+    ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PieDeTabla,
+    Alerta,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,
@@ -141,7 +154,14 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   styleUrl: '../../atencion.css',
 })
 export class AtencionGrupalPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Asistencia', ruta: '/asistencia' },
+    { etiqueta: 'Asistencia de la clase', ruta: `/asistencia/${this.claseId()}` },
+  ]);
+
   private readonly api = inject(AtencionGrupalApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -173,7 +193,6 @@ export class AtencionGrupalPage {
   // --- Derivacion (AKINE-08.04) ---------------------------------------------------------------
   /** Participante cuya derivacion a un Caso se esta armando, o `null`. */
   protected readonly derivando = signal<FilaDeAtencion | null>(null);
-  protected readonly avisoDeDerivacion = signal<string | null>(null);
   /**
    * Los derivados en esta visita y a que Caso, para decirlo en su fila: el panel no trae las
    * derivaciones —son lectura clinica— y la atencion todavia no existe.
@@ -211,6 +230,25 @@ export class AtencionGrupalPage {
     return (listo.panel.participantes ?? []).map(aFila);
   });
 
+  /** Lo que se escribe en la busqueda de participantes (UX-14). Acota la tabla, no el lote. */
+  protected readonly busqueda = signal('');
+
+  /** Los participantes que coinciden con la busqueda, por nombre, sin tildes ni mayusculas. */
+  private readonly coincidentes = computed(() => {
+    const texto = normalizar(this.busqueda().trim());
+    return texto === ''
+      ? this.filas()
+      : this.filas().filter((fila) => normalizar(fila.nombre).includes(texto));
+  });
+
+  /** La tabla de participantes: orden por columna y el pie estandar (UX-14). */
+  protected readonly tabla = tablaLocal(this.coincidentes, {
+    columnas: {
+      participante: (fila) => fila.nombre,
+      asistencia: (fila) => fila.asistencia,
+    },
+  });
+
   /** Los que estuvieron y todavia no tienen ninguna atencion: lo que "Iniciar para todos" manda. */
   protected readonly pendientes = computed(() =>
     this.filas().filter((fila) => fila.estuvo && fila.atenciones.length === 0),
@@ -246,7 +284,6 @@ export class AtencionGrupalPage {
         this.errorDeAccion.set(null);
         this.cerrarDerivaciones();
         this.derivando.set(null);
-        this.avisoDeDerivacion.set(null);
         this.derivadas.set(new Map());
         this.motivo.set(null);
         this.pidiendoMotivo.set(false);
@@ -370,7 +407,10 @@ export class AtencionGrupalPage {
         next: (resultado) => {
           this.enVuelo.set(null);
           const resumen = resumirLote(resultado, nombres);
+          // El resultado queda como contenido —los fallos traen su salida—, y ademas se anuncia
+          // con un aviso global (UX-12).
           this.lote.set(resumen);
+          this.avisarLote(resumen);
           if (this.motivo() === null && pideMotivo(resultado)) {
             this.pidiendoMotivo.set(true);
             this.reintento = () => this.iniciarParaTodos();
@@ -637,7 +677,6 @@ export class AtencionGrupalPage {
   /** Abre la tarjeta para derivar al participante a un Caso. Cierra la de sus derivaciones. */
   protected abrirDerivacion(fila: FilaDeAtencion): void {
     this.cerrarDerivaciones();
-    this.avisoDeDerivacion.set(null);
     this.derivando.set(fila);
   }
 
@@ -650,11 +689,26 @@ export class AtencionGrupalPage {
     this.derivando.set(null);
     this.errorDeAccion.set(null);
     this.derivadas.update((actual) => new Map(actual).set(fila.inscripcionId, caso));
-    const verbo = derivacion.yaExistia === true ? 'ya estaba derivada' : 'quedo derivada';
-    this.avisoDeDerivacion.set(
-      `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atención.`,
-    );
+    const yaExistia = derivacion.yaExistia === true;
+    const verbo = yaExistia ? 'ya estaba derivada' : 'quedo derivada';
+    // El panel de derivar ya se cerro: el resultado es un aviso global (UX-12).
+    this.avisos.exito(yaExistia ? 'Ya estaba derivada' : 'Participante derivada', {
+      descripcion: `${fila.nombre} ${verbo} al ${caso}. Ya se puede iniciar su atención.`,
+    });
     this.cargar();
+  }
+
+  /** Anuncia el resultado del lote: exito si se abrieron todas, advertencia si alguna fallo. */
+  private avisarLote(resumen: ResultadoDeLote): void {
+    const abiertas =
+      resumen.exitosos === 1 ? 'Se abrió 1 atención' : `Se abrieron ${resumen.exitosos} atenciones`;
+    if (resumen.fallos.length === 0) {
+      this.avisos.exito(abiertas);
+    } else {
+      this.avisos.advertencia(abiertas, {
+        descripcion: `${resumen.fallos.length} no se pudieron abrir: el detalle está en la pantalla.`,
+      });
+    }
   }
 
   /** La tarjeta de derivar necesita motivo de acceso: se pide aca, el mismo de toda la visita. */
@@ -734,4 +788,12 @@ function pideMotivo(resultado: ResultadoDeAtencionGrupal): boolean {
       item.atencion === undefined &&
       traducirFalloDeAtencion(item.problemType, item.detalle).causa === 'requiere-justificacion',
   );
+}
+
+/** Sin mayusculas ni tildes: "garcia" encuentra "García". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }

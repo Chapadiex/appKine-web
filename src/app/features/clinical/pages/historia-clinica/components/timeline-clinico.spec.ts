@@ -150,7 +150,9 @@ describe('TimelineClinico', () => {
     expect(conDesde.request.params.has('hasta')).toBe(false);
     conDesde.flush({ eventos: [] });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ningún hecho clínico coincide con los filtros.');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('Ningún hecho clínico coincide con los filtros.');
 
     fecha(fixture, '#timeline-hasta', '2026-08-31');
     httpMock.expectNone((r) => r.url === TIMELINE);

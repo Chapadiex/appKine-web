@@ -18,6 +18,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { ProductosDePackPage } from './productos-de-pack-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const URL_PRODUCTOS = `/api/v1/consultorios/${CONSULTORIO}/productos`;
 
@@ -39,6 +40,14 @@ const PACK = {
   active: true,
   version: 3,
 };
+
+/** Titulos y descripciones de los avisos globales publicados (UX-12). */
+function avisos(): string {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => `${aviso.titulo}. ${aviso.descripcion ?? ''}`)
+    .join(' | ');
+}
 
 describe('ProductosDePackPage', () => {
   let httpMock: HttpTestingController;
@@ -86,6 +95,13 @@ describe('ProductosDePackPage', () => {
       expect(texto).toContain('40.000');
       expect(texto).toContain('Desde el 01/10/2026, sin fin');
       expect(texto).toContain('Vigente');
+      // Patron de listado (UX-14): contador en la barra, pie estandar, en la misma tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 producto');
+      expect(raiz.querySelector('section.tarjeta .paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -129,7 +145,7 @@ describe('ProductosDePackPage', () => {
     responder([{ ...PACK, id: 11, nombre: 'Abono mensual', tipo: 'ABONO', ofertaId: 44 }]);
     await asentar(fixture);
     const texto = textoDe(fixture);
-    expect(texto).toContain('Se creo "Abono mensual" (abono)');
+    expect(avisos()).toContain('Abono creado. "Abono mensual"');
     expect(texto).toContain('Periodo de hasta 60 días');
     expect(texto).toContain('Abono');
   });
@@ -161,7 +177,7 @@ describe('ProductosDePackPage', () => {
       pedido.flush({ ...PACK, id: 10, nombre: 'Pack 4' });
       responder([PACK]);
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Se creo "Pack 4". Todavía nadie tiene saldo');
+      expect(avisos()).toContain('Producto creado. "Pack 4". Todavía nadie tiene saldo');
     },
     TIMEOUT_AXE,
   );
@@ -243,7 +259,8 @@ describe('ProductosDePackPage', () => {
     pedido.flush({ ...PACK, precio: 45000 });
     responder();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Los pases ya vendidos no cambian.');
+    expect(avisos()).toContain('Cambios guardados');
+    expect(avisos()).toContain('Los pases ya vendidos no cambian.');
   });
 
   it('da de baja con motivo y avisa que no cascadea', async () => {
@@ -261,9 +278,10 @@ describe('ProductosDePackPage', () => {
     pedido.flush({ ...PACK, active: false });
     responder();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Los pases vendidos conservan su saldo');
-    // El aviso se lleva el foco: el panel de la baja ya no esta.
-    expect(document.activeElement?.textContent).toContain('Los pases vendidos conservan su saldo');
+    expect(avisos()).toContain('Producto dado de baja');
+    expect(avisos()).toContain('Los pases vendidos conservan su saldo');
+    // El panel de la baja ya no esta: el foco vuelve a "Nuevo producto", no al cuerpo.
+    expect(document.activeElement?.id).toBe('boton-nuevo-producto');
   });
 
   it('incluir bajas relee con el filtro y muestra el motivo', async () => {
@@ -277,6 +295,24 @@ describe('ProductosDePackPage', () => {
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Dado de baja');
     expect(textoDe(fixture)).toContain('Motivo: Viejo');
+
+    // "Limpiar filtros" vuelve a los vigentes y relee.
+    clickear(fixture, 'Limpiar filtros');
+    responder([PACK]);
+    await asentar(fixture);
+    expect(textoDe(fixture)).not.toContain('Dado de baja');
+  });
+
+  it('la búsqueda filtra por nombre u oferta y, sin coincidencias, ofrece limpiarla', async () => {
+    const fixture = await montar([PACK, { ...PACK, id: 10, nombre: 'Abono libre' }]);
+    escribir(fixture, '#productos-busqueda', 'abono');
+    expect(textoDe(fixture)).toContain('Abono libre');
+    expect(textoDe(fixture)).not.toContain('Pack Pilates 8');
+    escribir(fixture, '#productos-busqueda', 'zzz');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos productos');
+    clickear(fixture, 'Limpiar filtros');
+    expect(textoDe(fixture)).toContain('Pack Pilates 8');
   });
 
   it('sin producto:manage no ofrece alta ni acciones', async () => {

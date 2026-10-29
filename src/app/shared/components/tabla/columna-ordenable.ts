@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  ViewEncapsulation,
+} from '@angular/core';
 
 import { Icono } from '../icono/icono';
 import { Ordenable } from './orden-de-servidor';
@@ -20,6 +26,8 @@ import { Ordenable } from './orden-de-servidor';
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'th[appOrdenable]',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  styleUrl: './columna-ordenable.css',
   imports: [Icono],
   host: {
     class: 'tabla__columna-ordenable',

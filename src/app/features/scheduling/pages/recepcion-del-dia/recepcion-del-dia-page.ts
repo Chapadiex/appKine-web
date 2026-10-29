@@ -39,8 +39,10 @@ import {
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -50,6 +52,8 @@ import {
   FiltrosRapidos,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
@@ -74,6 +78,17 @@ interface AccionDeFila {
 
 /** Las dos transiciones que piden un motivo antes de mandarse. */
 type TipoDePanel = 'particular' | 'anular' | 'retiro';
+
+/**
+ * Como se anuncia una transicion que salio bien (UX-12): aviso global con un titulo concreto y,
+ * si suma, la consecuencia en la descripcion. Una validacion observada no es un error, pero
+ * tampoco un exito liso: se anuncia como advertencia.
+ */
+interface ResultadoDeTransicion {
+  readonly tipo?: 'exito' | 'advertencia';
+  readonly titulo: string;
+  readonly descripcion: string;
+}
 
 /** Errores tras los que la fila que se ve quedo vieja y conviene releerla sola. */
 const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
@@ -162,7 +177,10 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
 @Component({
   selector: 'app-recepcion-del-dia-page',
   imports: [
-    Paginacion,
+    Alerta,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
     ColumnaOrdenable,
     Ayuda,
     CabeceraDePagina,
@@ -180,6 +198,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
 })
 export class RecepcionDelDiaPage {
   private readonly api = inject(SchedulingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
@@ -215,7 +234,6 @@ export class RecepcionDelDiaPage {
 
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
 
-  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
   /**
    * Busqueda del canvas sobre la lista ya leida: paciente o documento. Filtra en pantalla, no
    * vuelve a pedir nada; los contadores del dia siguen contando la lista entera.
@@ -241,19 +259,46 @@ export class RecepcionDelDiaPage {
     ];
   });
 
+  /**
+   * Filtro avanzado por prestacion (UX-14): las del dia que ya se leyo, sin pedir nada. La elegida
+   * se conserva al cambiar de dia, y sigue en la lista aunque ese dia no la tenga.
+   */
+  protected readonly prestacion = signal('');
+
+  protected readonly prestaciones = computed(() => {
+    const nombres = new Set(
+      this.turnos()
+        .map((t) => t.ofertaNombre ?? '')
+        .filter((n) => n !== ''),
+    );
+    if (this.prestacion() !== '') {
+      nombres.add(this.prestacion());
+    }
+    return [...nombres].sort((a, b) => a.localeCompare(b, 'es'));
+  });
+
+  /** Filtros avanzados fuera de su valor por defecto: el contador del boton "Filtros". */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.prestacion() !== ''));
+
   protected readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLocaleLowerCase('es');
     const grupo = this.filtroDeRecepcion();
+    const prestacion = this.prestacion();
     return this.turnos().filter(
       (t) =>
         (grupo === 'todos' || grupoDeRecepcion(t) === grupo) &&
+        (prestacion === '' || t.ofertaNombre === prestacion) &&
         (texto === '' ||
           `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto)),
     );
   });
 
+  /**
+   * Orden y paginado de la lista completa (UX-14 §1): el servidor no la pagina. Arranca en 10 filas
+   * como toda tabla de AKINE; el mostrador encuentra a quien llega por la busqueda o el estado, y si
+   * quiere ver el dia entero de un vistazo sube a 50 o 100 desde el pie.
+   */
   protected readonly tabla = tablaLocal(this.filtrados, {
-    porPagina: 50,
     columnas: {
       hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
       paciente: (turno) => turno.personaNombre ?? null,
@@ -261,8 +306,17 @@ export class RecepcionDelDiaPage {
     },
   });
   protected readonly cargando = signal(false);
-  protected readonly error = signal<ErrorAgenda | null>(null);
-  protected readonly exito = signal<string | null>(null);
+  /** Error al LEER el dia: va en el lugar de la lista, con su salida (UX-12). */
+  protected readonly errorDeCarga = signal<ErrorAgenda | null>(null);
+
+  /**
+   * Error de la transicion mandada desde el panel de motivo: queda arriba del panel, que sigue
+   * abierto. Un aviso global quedaria inerte detras del panel modal (UX-12 §5).
+   */
+  protected readonly errorDelPanel = signal<{
+    readonly titulo: string;
+    readonly error: ErrorAgenda;
+  } | null>(null);
 
   /** Id del turno con un pedido en vuelo, o `null`. Es por fila: el resto sigue operable. */
   protected readonly enVuelo = signal<number | null>(null);
@@ -332,6 +386,13 @@ export class RecepcionDelDiaPage {
     this.cambiarDia(zona === '' ? this.diaDeLaSede.hoy() : hoyEnZona(zona));
   }
 
+  /** "Limpiar filtros" del estado vacio filtrado: la busqueda, el estado y la prestacion. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroDeRecepcion.set('todos');
+    this.prestacion.set('');
+  }
+
   /** Relee el dia. Es tambien la accion de `recargar-dia`. */
   protected cargar(): void {
     const consultorioId = this.tenantContext.consultorioId();
@@ -340,6 +401,7 @@ export class RecepcionDelDiaPage {
     }
 
     this.cargando.set(true);
+    this.errorDeCarga.set(null);
     this.api.turnosDelDia(consultorioId, this.dia()).subscribe({
       next: (agenda) => {
         if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
@@ -351,9 +413,16 @@ export class RecepcionDelDiaPage {
       },
       error: (error: unknown) => {
         this.cargando.set(false);
-        this.error.set(traducirErrorRecepcion(error));
+        this.errorDeCarga.set(traducirErrorRecepcion(error));
       },
     });
+  }
+
+  /** "Volver a leer el día" desde un error: cierra el panel, que quedo sobre una fila vieja. */
+  protected releerDia(): void {
+    this.cerrarPanel();
+    this.errorDeCarga.set(null);
+    this.cargar();
   }
 
   /**
@@ -383,9 +452,14 @@ export class RecepcionDelDiaPage {
     this.transicion(
       turno,
       (c, t) => this.api.registrarLlegada(c, t),
-      () =>
-        `Llegada registrada para ${nombre(turno)}. Falta validar como se atiende; la atención se ` +
-        'registra desde la pantalla clínica.',
+      () => ({
+        titulo: 'Llegada registrada',
+        descripcion:
+          `${nombre(turno)}. Falta validar como se atiende; la atención se registra desde la ` +
+          'pantalla clínica.',
+      }),
+      'No pudimos registrar la llegada',
+      () => this.marcarLlegada(turno),
       true,
     );
   }
@@ -397,9 +471,19 @@ export class RecepcionDelDiaPage {
       (c, t) => this.api.validarRecepcion(c, t, { expectedVersion: versionDe(turno) }),
       (recepcion) =>
         recepcion.estado === RecepcionEstadoEnum.OBSERVADA
-          ? `La validacion de ${nombre(turno)} quedo observada. No impide pasar a espera; ` +
-            'también se puede continuar como Particular.'
-          : `Recepción de ${nombre(turno)} validada: ya se sabe como se atiende.`,
+          ? {
+              tipo: 'advertencia',
+              titulo: 'Validación observada',
+              descripcion:
+                `La validacion de ${nombre(turno)} quedo observada. No impide pasar a espera; ` +
+                'también se puede continuar como Particular.',
+            }
+          : {
+              titulo: 'Recepción validada',
+              descripcion: `${nombre(turno)}: ya se sabe como se atiende.`,
+            },
+      'No pudimos validar la recepción',
+      () => this.validar(turno),
     );
   }
 
@@ -407,12 +491,18 @@ export class RecepcionDelDiaPage {
     this.transicion(
       turno,
       (c, t) => this.api.pasarAEspera(c, t, versionDe(turno)),
-      () =>
-        `${nombre(turno)} paso a la sala de espera: aguarda ser llamado.` +
-        // El prepago pendiente avisa y no bloquea (DP-06): el servidor deja constancia en el evento.
-        (this.prepagoPendiente(turno)
-          ? ' Paso sin el prepago que exige la prestación; quedo registrado en la recepción.'
-          : ''),
+      () => ({
+        titulo: 'Pasó a la sala de espera',
+        descripcion:
+          `${nombre(turno)} aguarda ser llamado.` +
+          // El prepago pendiente avisa y no bloquea (DP-06): el servidor deja constancia en el
+          // evento.
+          (this.prepagoPendiente(turno)
+            ? ' Paso sin el prepago que exige la prestación; quedo registrado en la recepción.'
+            : ''),
+      }),
+      'No pudimos pasar a espera',
+      () => this.pasarAEspera(turno),
     );
   }
 
@@ -420,17 +510,24 @@ export class RecepcionDelDiaPage {
     this.transicion(
       turno,
       (c, t) => this.api.llamar(c, t, versionDe(turno)),
-      () =>
-        `${nombre(turno)} fue llamado. Llamar no registra la atención: eso lo hace la Sesión, ` +
-        'desde la pantalla clínica.',
+      () => ({
+        titulo: 'Paciente llamado',
+        descripcion:
+          `${nombre(turno)}. Llamar no registra la atención: eso lo hace la Sesión, desde la ` +
+          'pantalla clínica.',
+      }),
+      'No pudimos llamar al paciente',
+      () => this.llamar(turno),
     );
   }
 
   protected abrirPanel(turno: TurnoDelDia, tipo: TipoDePanel): void {
+    this.errorDelPanel.set(null);
     this.panel.set({ turno, tipo });
   }
 
   protected cerrarPanel(): void {
+    this.errorDelPanel.set(null);
     this.panel.set(null);
   }
 
@@ -452,26 +549,37 @@ export class RecepcionDelDiaPage {
         turno,
         (c, t) =>
           this.api.atenderComoParticular(c, t, { expectedVersion: versionDe(turno), motivo }),
-        () => `${nombre(turno)} se atiende como Particular. La cobertura de su ficha no cambio.`,
+        () => ({
+          titulo: 'Se atiende como Particular',
+          descripcion: `${nombre(turno)}. La cobertura de su ficha no cambio.`,
+        }),
+        'No pudimos pasarlo a Particular',
       );
     } else if (tipo === 'retiro') {
       this.transicion(
         turno,
         (c, t) => this.api.retirarRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
-        () =>
-          `${nombre(turno)} se retiro sin ser atendido. La llegada consta y el turno no cambia; ` +
-          'si vuelve, la atención se puede abrir igual desde la pantalla clínica.',
+        () => ({
+          titulo: 'Retiro registrado',
+          descripcion:
+            `${nombre(turno)} se retiro sin ser atendido. La llegada consta y el turno no ` +
+            'cambia; si vuelve, la atención se puede abrir igual desde la pantalla clínica.',
+        }),
+        'No pudimos registrar el retiro',
       );
     } else {
       this.transicion(
         turno,
         (c, t) => this.api.anularRecepcion(c, t, { expectedVersion: versionDe(turno), motivo }),
-        () =>
-          `Llegada de ${nombre(turno)} anulada: el check-in fue un error y la llegada no vale. ` +
-          'Queda en el historial de la recepción.',
+        () => ({
+          titulo: 'Llegada anulada',
+          descripcion:
+            `${nombre(turno)}: el check-in fue un error y la llegada no vale. Queda en el ` +
+            'historial de la recepción.',
+        }),
+        'No pudimos anular la llegada',
       );
     }
-    this.cerrarPanel();
   }
 
   // -------------------------------------------------------------------------------------
@@ -683,8 +791,8 @@ export class RecepcionDelDiaPage {
 
   private reiniciar(): void {
     this.turnos.set([]);
-    this.error.set(null);
-    this.exito.set(null);
+    this.errorDeCarga.set(null);
+    this.errorDelPanel.set(null);
     this.enVuelo.set(null);
     this.panel.set(null);
     this.timezone.set('');
@@ -697,11 +805,18 @@ export class RecepcionDelDiaPage {
    * <b>objeto nuevo</b> —mutar en su lugar no re-renderiza nada—. Una recepcion `ANULADA` deja de
    * ser la vigente, asi que la fila vuelve a no tenerla, que es lo que el servidor diria al
    * releer.
+   *
+   * <p><b>Feedback (UX-12).</b> Lo que sale bien es un aviso global; si vino del panel de motivo,
+   * el panel se cierra recien ahi. Si falla desde el panel, el error queda arriba del panel
+   * abierto; si fue una accion de la fila, es un aviso global de error con "Releer" cuando la fila
+   * quedo vieja, o "Reintentar" cuando reintentar tiene sentido.
    */
   private transicion(
     turno: TurnoDelDia,
     peticion: (consultorioId: number, turnoId: number) => Observable<Recepcion>,
-    mensaje: (recepcion: Recepcion) => string,
+    resultado: (recepcion: Recepcion) => ResultadoDeTransicion,
+    tituloDelError: string,
+    reintentar: (() => void) | null = null,
     releerTurno = false,
   ): void {
     const consultorioId = this.tenantContext.consultorioId();
@@ -709,13 +824,21 @@ export class RecepcionDelDiaPage {
     if (consultorioId === null || turnoId === undefined) {
       return;
     }
+    const desdeElPanel = this.panel() !== null;
     this.enVuelo.set(turnoId);
-    this.error.set(null);
-    this.exito.set(null);
+    this.errorDelPanel.set(null);
     peticion(consultorioId, turnoId).subscribe({
       next: (recepcion) => {
         this.enVuelo.set(null);
-        this.exito.set(mensaje(recepcion));
+        if (desdeElPanel) {
+          this.cerrarPanel();
+        }
+        const { tipo, titulo, descripcion } = resultado(recepcion);
+        if (tipo === 'advertencia') {
+          this.avisos.advertencia(titulo, { descripcion });
+        } else {
+          this.avisos.exito(titulo, { descripcion });
+        }
         const vigente = recepcion.estado === RecepcionEstadoEnum.ANULADA ? undefined : recepcion;
         this.fusionar(turnoId, {
           recepcion: vigente,
@@ -732,12 +855,41 @@ export class RecepcionDelDiaPage {
       error: (error: unknown) => {
         this.enVuelo.set(null);
         const traducido = traducirErrorRecepcion(error);
-        this.error.set(traducido);
-        if (CAUSAS_QUE_RELEEN.has(traducido.causa)) {
+        const releer = CAUSAS_QUE_RELEEN.has(traducido.causa);
+        if (releer) {
           this.refrescarFila(turnoId);
         }
+        if (desdeElPanel && this.panel() !== null) {
+          this.errorDelPanel.set({ titulo: tituloDelError, error: traducido });
+          return;
+        }
+        this.avisarError(tituloDelError, traducido, releer ? null : reintentar);
       },
     });
+  }
+
+  /** Aviso global de error de una accion de la fila, con la salida que corresponde. */
+  private avisarError(
+    titulo: string,
+    traducido: ErrorAgenda,
+    reintentar: (() => void) | null,
+  ): void {
+    const descripcion = traducido.motivo
+      ? `${traducido.mensaje} Lo que dijo el servidor: ${traducido.motivo}`
+      : traducido.mensaje;
+    if (traducido.accion === 'recargar-dia') {
+      this.avisos.error(titulo, {
+        descripcion,
+        accion: { etiqueta: 'Releer el día', ejecutar: () => this.releerDia() },
+      });
+    } else if (reintentar !== null && (traducido.causa === 'red' || traducido.causa === 'otro')) {
+      this.avisos.error(titulo, {
+        descripcion,
+        accion: { etiqueta: 'Reintentar', ejecutar: reintentar },
+      });
+    } else {
+      this.avisos.error(titulo, { descripcion });
+    }
   }
 
   /**

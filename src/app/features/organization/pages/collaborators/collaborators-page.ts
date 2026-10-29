@@ -14,7 +14,12 @@ import { MembershipGrantResponse } from '../../../../api/generated/model/members
 import { MembershipPageResponse } from '../../../../api/generated/model/membership-page-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
 import { ImpactoDeDesvinculacion, resumenDeImpacto } from '../../models/impacto-de-desvinculacion';
@@ -41,6 +46,9 @@ import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListMembershipsRequestParams } from '../../../../api/generated/api/colaboradores.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
 
@@ -49,14 +57,6 @@ type Otorgables =
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'listo'; readonly codigos: readonly string[] }
   | { readonly tipo: 'error' };
-
-/**
- * Cuantos colaboradores se piden por pagina.
- *
- * <p>Muy por debajo del tope de 100 que el backend recorta: la tabla se lee de un vistazo y
- * cada fila trae acciones. Pedir 100 no ahorraria un request en ningun centro real.
- */
-const POR_PAGINA = 20;
 
 /**
  * Gestion de colaboradores de la organizacion activa (M05, AKINE-01.03).
@@ -90,6 +90,8 @@ const POR_PAGINA = 20;
   selector: 'app-collaborators-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     DatePipe,
     Pestanas,
     Ayuda,
@@ -100,6 +102,8 @@ const POR_PAGINA = 20;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
+    Filtros,
     ConfirmacionConMotivo,
     PanelLateral,
   ],
@@ -112,6 +116,7 @@ export class CollaboratorsPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly colaboradores = inject(ColaboradoresService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -134,6 +139,9 @@ export class CollaboratorsPage {
    */
   private readonly vista = vistaDeListado<MembershipResponse>(this.estado);
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** Lo que se busca en el nombre y el correo de la cuenta (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
@@ -163,8 +171,12 @@ export class CollaboratorsPage {
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
+  /**
+   * Se intento dar de baja un permiso con el motivo vacio: el error del campo motivo lo dice
+   * con esas palabras, porque el campo es compartido con el alta.
+   */
+  protected readonly bajaSinMotivo = signal(false);
 
   /** Permisos adicionales de la fila abierta en el panel `permisos`. `null` mientras carga. */
   protected readonly grants = signal<readonly MembershipGrantResponse[] | null>(null);
@@ -244,7 +256,6 @@ export class CollaboratorsPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.paginaActual.set(0);
         this.busqueda.set('');
         this.orden.reiniciar();
@@ -308,7 +319,7 @@ export class CollaboratorsPage {
       .listMemberships({
         orgId,
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -342,6 +353,17 @@ export class CollaboratorsPage {
     this.recargarDesdeElPrincipio();
   }
 
+  /** "Limpiar filtros" del vacio: la unica condicion del listado es la busqueda. */
+  protected limpiarBusqueda(): void {
+    this.buscar('');
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.recargarDesdeElPrincipio();
+  }
+
   private recargarDesdeElPrincipio(): void {
     this.cerrarPanel();
     this.paginaActual.set(0);
@@ -361,7 +383,6 @@ export class CollaboratorsPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo, rol: colaborador.roleCode });
 
     if (tipo === 'editar') {
@@ -393,6 +414,7 @@ export class CollaboratorsPage {
     this.enviando.set(false);
     this.errorAccion.set(null);
     this.intentos.set(0);
+    this.bajaSinMotivo.set(false);
     this.formularioGrant.reset({ permissionCode: '', reason: '', validUntil: '' });
   }
 
@@ -424,6 +446,18 @@ export class CollaboratorsPage {
     return `Revocar el vinculo de ${cuenta}`;
   }
 
+  /** Verbo de la alerta de error del panel de motivo: "No pudimos suspender el vinculo". */
+  protected verboDelPanel(): string {
+    const tipo = this.panel()?.tipo;
+    if (tipo === 'suspender') {
+      return 'suspender el vínculo';
+    }
+    if (tipo === 'reactivar') {
+      return 'reactivar el vínculo';
+    }
+    return 'revocar el vínculo';
+  }
+
   /**
    * Suspender, reactivar o revocar: las tres mandan `MembershipReasonRequest`.
    *
@@ -442,19 +476,30 @@ export class CollaboratorsPage {
       membershipReasonRequest: { reason: motivo },
     };
 
+    const nombre = this.nombreDelPanel();
+
     if (panel.tipo === 'suspender') {
-      this.ejecutar(this.colaboradores.suspendMembership(parametros), 'Colaborador suspendido.');
+      this.ejecutar(
+        this.colaboradores.suspendMembership(parametros),
+        'Colaborador suspendido',
+        nombre,
+      );
       return;
     }
 
     if (panel.tipo === 'reactivar') {
-      this.ejecutar(this.colaboradores.reactivateMembership(parametros), 'Colaborador reactivado.');
+      this.ejecutar(
+        this.colaboradores.reactivateMembership(parametros),
+        'Colaborador reactivado',
+        nombre,
+      );
       return;
     }
 
     this.ejecutar(
       this.colaboradores.revokeMembership(parametros),
-      'Vinculo revocado. La fila queda en el listado, con el motivo.',
+      'Vínculo revocado',
+      `${nombre}. Sigue en el listado, con el motivo.`,
     );
   }
 
@@ -478,7 +523,8 @@ export class CollaboratorsPage {
         membershipId: panel.id,
         changeMembershipRequest: this.armarCambio(),
       }),
-      'Cambio aplicado.',
+      'Rol o alcance actualizado',
+      this.nombreDelPanel(),
     );
   }
 
@@ -595,7 +641,7 @@ export class CollaboratorsPage {
 
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.exito.set(null);
+    this.bajaSinMotivo.set(false);
 
     this.colaboradores
       .assignMembershipGrant({ orgId, membershipId: panel.id, assignGrantRequest: cuerpo })
@@ -603,7 +649,12 @@ export class CollaboratorsPage {
         next: () => {
           this.enviando.set(false);
           this.intentos.set(0);
-          this.exito.set('Permiso adicional otorgado.');
+          // El panel de permisos queda abierto a proposito: es la lista de los vigentes, y lo
+          // que se acaba de otorgar tiene que aparecer en ella. El aviso se ve igual (capa
+          // superior, por encima del panel).
+          this.avisos.exito('Permiso otorgado', {
+            descripcion: `${valores.permissionCode} · ${this.nombreDelPanel()}`,
+          });
           this.formularioGrant.reset({ permissionCode: '', reason: '', validUntil: '' });
           this.cargarGrants(panel.id);
         },
@@ -636,37 +687,47 @@ export class CollaboratorsPage {
       // el contrato la exige. Sin esto el usuario se comeria un 400 por un campo que ve.
       this.intentos.update((valor) => valor + 1);
       this.formularioGrant.controls.reason.markAsTouched();
-      this.errorAccion.set('Escribi el motivo antes de dar de baja el permiso.');
+      this.bajaSinMotivo.set(true);
       this.enfocar('#grant-reason');
       return;
     }
 
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.exito.set(null);
+    this.bajaSinMotivo.set(false);
 
     this.colaboradores
       .revokeMembershipGrant({ orgId, membershipId: panel.id, permissionCode, reason })
       .subscribe({
         next: () => {
           this.enviando.set(false);
-          this.exito.set('Permiso adicional dado de baja.');
+          this.avisos.exito('Permiso dado de baja', {
+            descripcion: `${permissionCode} · ${this.nombreDelPanel()}`,
+          });
           this.cargarGrants(panel.id);
         },
         error: (error: unknown) => this.fallar(error),
       });
   }
 
-  /** Envia una mutacion que, al salir bien, cierra el panel y relee el listado. */
-  private ejecutar(peticion: Observable<unknown>, hecho: string): void {
+  /** Nombre del colaborador del panel abierto, para la descripcion de los avisos. */
+  private nombreDelPanel(): string {
+    const colaborador = this.colaboradorEnPanel();
+    return colaborador === null ? '' : this.nombreDe(colaborador);
+  }
+
+  /**
+   * Envia una mutacion que, al salir bien, cierra el panel, relee el listado y publica el
+   * aviso global (UX-12): el resultado no queda escrito en la pantalla.
+   */
+  private ejecutar(peticion: Observable<unknown>, titulo: string, descripcion: string): void {
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.exito.set(null);
 
     peticion.subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(hecho);
+        this.avisos.exito(titulo, { descripcion });
         // Se relee en vez de parchear la fila en memoria: el backend pudo cambiar mas de lo
         // que se pidio -validFrom, revokedBy, el estado- y una copia optimista mostraria un
         // estado que no es el que quedo guardado.

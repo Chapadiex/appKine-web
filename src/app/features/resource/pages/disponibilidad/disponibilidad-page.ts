@@ -7,12 +7,16 @@ import { EspacioAvailabilityResponse } from '../../../../api/generated/model/esp
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import { traducirErrorEspacio } from '../../models/espacio-errors';
 import { aCampoLocal, aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -58,7 +62,18 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
  */
 @Component({
   selector: 'app-disponibilidad-page',
-  imports: [CabeceraDePagina, Paginacion, ColumnaOrdenable, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
+    Icono,
+    ColumnaOrdenable,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './disponibilidad-page.html',
   styleUrl: '../../resource.css',
 })
@@ -83,7 +98,19 @@ export class DisponibilidadPage {
   protected readonly enServicio = this.vista.filas;
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
-  protected readonly tabla = tablaLocal(this.enServicio, {
+  /**
+   * Busqueda por nombre sobre el resultado ya consultado (UX-14). Es local: la consulta devuelve
+   * la lista entera de la ventana, asi que filtrar no vuelve a pedir nada.
+   */
+  protected readonly busqueda = signal('');
+
+  private readonly filtrados = computed(() => {
+    const buscado = normalizar(this.busqueda());
+    const filas = this.enServicio();
+    return buscado === '' ? filas : filas.filter((e) => normalizar(e.name).includes(buscado));
+  });
+
+  protected readonly tabla = tablaLocal(this.filtrados, {
     columnas: {
       espacio: (espacio) => espacio.name ?? null,
       tipo: (espacio) => this.etiquetaDeTipo(espacio.tipo),
@@ -115,6 +142,7 @@ export class DisponibilidadPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.estado.set({ tipo: 'inicial' });
+        this.busqueda.set('');
         this.errorVentana.set(null);
         this.ventanaConsultada.set(null);
         this.intentos.set(0);
@@ -225,4 +253,13 @@ export class DisponibilidadPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Sin mayusculas, acentos ni espacios a los costados: "Gimnásio " encuentra "gimnasio". */
+function normalizar(texto: string | null | undefined): string {
+  return (texto ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }

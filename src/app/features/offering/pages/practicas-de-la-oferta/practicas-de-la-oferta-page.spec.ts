@@ -9,6 +9,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS, rutaOfertas } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -127,7 +128,11 @@ describe('PracticasDeLaOfertaPage', () => {
     });
     reemplazo.flush({ ...CARGADA, ofertaVersion: 8, practicaPrincipalId: 200 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Guardamos las prácticas de la oferta.');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Prácticas guardadas']);
   });
 
   it('el 403 de la búsqueda culpa al catalogo (catalogo:read) y no a la oferta', async () => {

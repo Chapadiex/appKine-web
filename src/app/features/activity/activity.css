@@ -6,70 +6,12 @@
  * literal: todo sale de los tokens de `:root`, que ya traen su equivalente en modo oscuro.
  */
 
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-6);
-  align-items: flex-end;
-}
-
-.filtros .campo {
-  flex: 1 1 12rem;
-}
-
-/* La semana: un bloque por dia, los siete, aunque esten vacios. */
-.dias {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.dia {
-  padding: var(--esp-5) 0;
-  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
-}
-
-.dia:last-child {
-  border-bottom: none;
-}
-
-.dia__fecha {
-  font-size: var(--tipo-md);
-  font-weight: var(--peso-semi);
-  margin: 0 0 var(--esp-3);
-  text-transform: capitalize;
-}
-
-.clases {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--esp-3);
-}
-
-.clase {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-3) var(--esp-6);
-  align-items: baseline;
-}
-
-.clase__hora {
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--peso-semi);
-}
-
 .lista-personas {
   list-style: none;
   margin: var(--esp-4) 0 0;
   padding: 0;
   display: grid;
   gap: var(--esp-2);
-}
-
-.conflicto {
-  border-left: var(--borde-acento) solid var(--color-peligro);
 }
 
 .historial {
@@ -97,65 +39,47 @@
 
 /* --- Restyle al canvas de Actividades (UX-01, 22/10/2026) ------------------------------- */
 
-/* Clases de la semana: busqueda con embudo a la izquierda, la semana y sus botones a la derecha. */
-.barra-semana {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--esp-5) var(--esp-7);
-}
-
-.barra-semana__filtros {
-  flex: 1 1 20rem;
-  min-width: 0;
-}
-
-.barra-semana__semana {
-  display: flex;
+/*
+ * Navegador de la semana, en la cabecera (UX-14 §3): ‹ Semana del lunes 12/10 al domingo 18/10 ›
+ * Esta semana. Los formularios de la feature ya no tienen grilla propia: usan la de 12 columnas
+ * de design-system.css.
+ */
+.navegador-semana {
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--esp-4) var(--esp-5);
-  margin-left: auto;
+  gap: var(--esp-2);
 }
 
-.barra-semana__rango {
+.navegador-semana__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
-  display: inline-block;
+  cursor: pointer;
 }
 
-.barra-semana .acciones {
-  margin-top: 0;
+.navegador-semana__boton:hover {
+  background: var(--color-superficie-sutil);
 }
 
-/* Formularios en grilla: tres columnas que bajan a una en pantallas angostas. */
-.grilla-campos--tres {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (max-width: 40rem) {
-  .grilla-campos--tres {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.grilla-campos + .grilla-campos,
-.grilla-campos + .cuando,
-.cuando + .grilla-campos {
-  margin-top: var(--esp-6);
-}
-
-.cuando {
-  margin: var(--esp-6) 0 0;
-  padding: 0;
-  border: 0;
-}
-
-.cuando > legend {
-  padding: 0;
-  margin-bottom: var(--esp-4);
-  font-size: var(--tipo-xs);
+.navegador-semana__rango {
+  padding: 0 var(--esp-4);
+  font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+
+.navegador-semana__rango::first-letter {
+  text-transform: uppercase;
 }
 
 /*
@@ -172,11 +96,11 @@
   justify-content: flex-end;
 }
 
-/* Columnas de dos paneles (lista + formulario / detalle + lateral). */
+/* Columnas de dos paneles: los participantes a lo ancho, al costado inscribir e instructores. */
 .dos-paneles {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--esp-7);
+  gap: var(--esp-6);
   align-items: flex-start;
 }
 
@@ -188,6 +112,57 @@
 .dos-paneles__lateral {
   flex: 2 1 20rem;
   min-width: 0;
+}
+
+/*
+ * Banda de la clase (UX-14): los datos y los cupos en una franja, sin tarjeta. La barra del cupo
+ * es refuerzo; el dato son las cifras.
+ */
+.banda-clase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4) var(--esp-8);
+  margin: 0 0 var(--esp-6);
+}
+
+.banda-clase .datos-en-linea {
+  margin: 0;
+}
+
+.banda-clase__cupos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-6);
+}
+
+.banda-clase__cupos .cupo {
+  width: 8rem;
+}
+
+.cifras-en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  margin: 0;
+  font-size: var(--tipo-sm);
+}
+
+.cifras-en-linea > div {
+  display: flex;
+  gap: var(--esp-2);
+}
+
+.cifras-en-linea dt {
+  color: var(--color-texto-suave);
+}
+
+.cifras-en-linea dd {
+  margin: 0;
+  font-weight: var(--peso-semi);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Fila de datos de la clase bajo el titulo: separados por espacio, en texto suave. */
@@ -224,16 +199,7 @@
   background: var(--color-acento);
 }
 
-.barra-semana__rango::first-letter {
-  text-transform: uppercase;
-}
-
 /* Paneles laterales del detalle de una clase (refactor UX/UI del 28/10/2026). */
 .clase__nota {
   margin: 0 0 var(--esp-6);
-}
-
-.clase__error {
-  margin-top: var(--esp-5);
-  padding-left: var(--esp-5);
 }

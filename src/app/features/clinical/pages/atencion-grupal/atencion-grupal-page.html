@@ -1,8 +1,4 @@
 <app-cabecera-de-pagina titulo="Atención clínica: {{ titulo() }}">
-  <app-migas
-    enLinea
-    [migas]="[{ etiqueta: 'Asistencia de la clase', ruta: '/asistencia/' + claseId() }]"
-  />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cada participante que estuvo y fue derivado a un caso clínico tiene <b>su propia atención</b>,
@@ -10,6 +6,24 @@
       atención de cada uno.
     </p>
   </app-ayuda>
+  <!-- La accion principal, arriba a la derecha (UX-14): abre las atenciones que faltan. -->
+  @if (clinica() && filas().length > 0) {
+    <div cabeceraAcciones>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="enVuelo() !== null || pendientes().length === 0"
+        aria-describedby="ayuda-iniciar-todos"
+        (click)="iniciarParaTodos()"
+      >
+        @if (enVuelo() === 'lote') {
+          Abriendo atenciones…
+        } @else {
+          Iniciar para todos ({{ pendientes().length }})
+        }
+      </button>
+    </div>
+  }
 </app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
@@ -18,15 +32,14 @@
   }
   @case ('error') {
     @if (error(); as fallo) {
-      <section class="tarjeta" role="alert" aria-labelledby="titulo-error-grupal">
-        <h2 id="titulo-error-grupal">No se pudo cargar la atención de la clase</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        <div class="acciones">
+      <app-alerta tipo="error" titulo="No pudimos cargar la atención de la clase">
+        <p>{{ fallo.mensaje }}</p>
+        <p class="alerta__acciones">
           <button type="button" class="boton boton--secundario" (click)="cargar()">
             Reintentar
           </button>
-        </div>
-      </section>
+        </p>
+      </app-alerta>
     }
   }
   @case ('listo') {
@@ -55,7 +68,8 @@
         @if (lote(); as resumen) {
           <section class="tarjeta" aria-labelledby="titulo-resultado-atenciones" akineFocoAlMontar>
             <h2 id="titulo-resultado-atenciones">Resultado</h2>
-            <p class="estado estado--ok">
+            <!-- El resultado del lote es contenido (los fallos traen su salida); ademas, aviso. -->
+            <p>
               Se abrieron {{ resumen.exitosos }}
               {{ resumen.exitosos === 1 ? 'atención' : 'atenciones' }}.
             </p>
@@ -128,47 +142,60 @@
           </section>
         }
       </div>
+      <!--
+        El rechazo de iniciar queda en la pantalla, arriba de los participantes, y no en un aviso
+        global: cuando la salida es un panel (derivar, elegir derivacion), el aviso quedaria detras.
+      -->
       @if (errorDeAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos iniciar la atención">
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
       }
-      <div aria-live="polite">
-        @if (avisoDeDerivacion(); as aviso) {
-          <p class="estado estado--ok" akineFocoAlMontar>{{ aviso }}</p>
-        }
-      </div>
 
-      <section class="tarjeta" aria-labelledby="titulo-participantes-grupal">
-        <div class="encabezado-tarjeta">
-          <h2 id="titulo-participantes-grupal">Participantes</h2>
-          @if (filas().length > 0) {
-            <div class="acciones">
-              <button
-                type="button"
-                class="boton"
-                [disabled]="enVuelo() !== null || pendientes().length === 0"
-                aria-describedby="ayuda-iniciar-todos"
-                (click)="iniciarParaTodos()"
-              >
-                @if (enVuelo() === 'lote') {
-                  Abriendo atenciones…
-                } @else {
-                  Iniciar para todos ({{ pendientes().length }})
-                }
-              </button>
-            </div>
-          }
-        </div>
-
+      <section class="tarjeta" aria-label="Participantes">
         @if (filas().length === 0) {
-          <p class="estado estado--vacio">
-            Todavía no hay asistencia registrada. Se atiende a quien estuvo: primero se toma lista.
-          </p>
+          <app-estado-vacio
+            titulo="Todavía no hay asistencia registrada"
+            texto="Se atiende a quien estuvo: primero se toma lista."
+          />
         } @else {
           <p id="ayuda-iniciar-todos" class="ayuda">
             «Iniciar para todos» abre la atención de quien estuvo y todavía no tiene ninguna. Las
             que fallen se listan con su causa, sin deshacer a las demás.
           </p>
 
+          <!-- Toolbar del listado (UX-14): busqueda por nombre y el contador en la misma fila. -->
+          <app-filtros
+            sinAvanzados
+            [resultados]="tabla.total()"
+            [unidad]="['participante', 'participantes']"
+          >
+            <div class="campo" filtro-principal>
+              <label class="visualmente-oculto" for="busqueda-participantes"
+                >Buscar participantes</label
+              >
+              <div class="campo-busqueda">
+                <app-icono class="campo-busqueda__icono" nombre="buscar" />
+                <input
+                  id="busqueda-participantes"
+                  type="search"
+                  placeholder="Buscar por apellido o nombre"
+                  autocomplete="off"
+                  [value]="busqueda()"
+                  (input)="busqueda.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+          </app-filtros>
+        }
+
+        @if (filas().length > 0 && tabla.total() === 0) {
+          <app-estado-vacio titulo="No encontramos participantes" texto="Probá con otra búsqueda.">
+            <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+              Limpiar la búsqueda
+            </button>
+          </app-estado-vacio>
+        } @else if (filas().length > 0) {
           <div
             class="tabla-scroll"
             tabindex="0"
@@ -181,14 +208,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Participante</th>
-                  <th scope="col">Asistencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="participante">
+                    Participante
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="asistencia">Asistencia</th>
                   <th scope="col">Atención</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (fila of filas(); track fila.inscripcionId) {
+                @for (fila of tabla.visibles(); track fila.inscripcionId) {
                   <tr [class.fila--seleccionada]="filaEnPanel() === fila.inscripcionId">
                     <td>{{ fila.nombre }}</td>
                     <td>{{ fila.asistencia }}</td>
@@ -293,6 +322,7 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de participantes" />
         }
       </section>
 
@@ -318,7 +348,9 @@
               </p>
             }
             @if (panel.error; as fallo) {
-              <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+              <app-alerta tipo="error" titulo="No pudimos completar la operación">
+                <p>{{ fallo.mensaje }}</p>
+              </app-alerta>
             }
             @if (avisoDeReversion(); as aviso) {
               <p class="estado estado--ok" role="status" akineFocoAlMontar>{{ aviso }}</p>
@@ -482,11 +514,7 @@
 
 <!-- El pedido de motivo de acceso: en la pagina o dentro del panel abierto. -->
 <ng-template #pedidoDeMotivo>
-  <section
-    class="tarjeta tarjeta--angosta"
-    aria-labelledby="titulo-motivo-grupal"
-    akineFocoAlMontar="campo"
-  >
+  <section class="tarjeta" aria-labelledby="titulo-motivo-grupal" akineFocoAlMontar="campo">
     <h2 id="titulo-motivo-grupal">Declara el motivo del acceso</h2>
     <p class="aviso-irreversible">
       No figura que atiendas a algún participante en esta sede. Para abrir su atención o ver sus
@@ -494,7 +522,7 @@
       en esta pantalla.
     </p>
     <form (submit)="$event.preventDefault(); declararMotivo()">
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="motivo-acceso-grupal">Motivo del acceso</label>
         <input
           id="motivo-acceso-grupal"

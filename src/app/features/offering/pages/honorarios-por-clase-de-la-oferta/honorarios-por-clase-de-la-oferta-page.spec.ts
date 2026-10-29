@@ -7,6 +7,7 @@ import { HonorariosPorClaseDeLaOfertaPage } from './honorarios-por-clase-de-la-o
 import { rutaOfertas } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -91,6 +92,10 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(contenido).toContain('Dada de baja');
     expect(contenido).toContain('Tarifa mal cargada');
     expect(botones(fixture, 'Cambiar fin')).toHaveLength(2);
+    // Pie estandar (UX-14).
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.paginacion-pie')?.textContent,
+    ).toContain('Mostrando 1–3 de 3');
   });
 
   it('el alta manda importe, moneda propuesta y vigencia; el solapamiento explica la salida', async () => {
@@ -118,6 +123,9 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     );
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('cerrale la vigencia a la actual el día anterior');
+    // UX-12: el choque va pegado a las fechas que lo producen.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('#alta-honorario-solapado');
+    expect(alerta?.textContent).toContain('cerrale la vigencia a la actual el día anterior');
   });
 
   it('sin precio de lista propone ARS, la moneda vacía no se manda, y el alta relee la grilla', async () => {
@@ -149,7 +157,11 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     alta.flush({ ...VIGENTE, id: 900 });
     responderCarga({ id: OFERTA, nombreComercial: 'Yoga', estado: 'ACTIVO' });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('La tarifa quedo cargada');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Tarifa cargada']);
   });
 
   it('el importe vacío o cero no manda nada', async () => {
@@ -184,7 +196,9 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     cierre.flush({ ...VIGENTE, vigenciaHasta: '2026-10-31', version: 3 });
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('La tarifa rige hasta el');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe(
+      'Tarifa vigente hasta el 31 de octubre de 2026',
+    );
 
     botones(fixture, 'Cambiar fin')[1].click();
     fixture.detectChanges();
@@ -197,7 +211,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     reapertura.flush(VIGENTE);
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('La tarifa quedo sin fin previsto.');
+    expect(TestBed.inject(AvisosStore).avisos()[1]?.titulo).toBe('Tarifa sin fin previsto');
   });
 
   it('un 409 de versión relee la grilla y deja el panel abierto', async () => {
@@ -262,7 +276,9 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
       .flush(null, { status: 204, statusText: 'No Content' });
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('no entran en ninguna liquidación hasta que cargues otra');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Tarifa dada de baja');
+    expect(aviso?.descripcion).toContain('no entran en ninguna liquidación hasta que cargues otra');
   });
 
   it('sin consultorio:manage muestra el 403 del backend con reintento', async () => {
@@ -289,6 +305,8 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     httpMock.expectOne((p: HttpRequest<unknown>) => p.url === rutaOfertas(SEDE)).flush([]);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('sus clases no entran en ninguna liquidación');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Cargar la primera tarifa');
     expect(texto(fixture)).toContain('de esta oferta por cada participante');
   });
 

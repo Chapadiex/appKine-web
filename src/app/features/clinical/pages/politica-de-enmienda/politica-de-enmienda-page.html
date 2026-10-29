@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Política de enmienda">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Organización', ruta: '/organizacion' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cuántos días desde el cierre se puede enmendar una sesión en esta organización. Pasada la
@@ -12,15 +11,6 @@
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo la política&hellip;</p>
 }
-
-<div aria-live="polite">
-  @if (exito()) {
-    <p class="estado estado--ok">{{ exito() }}</p>
-  }
-  @if (error(); as problema) {
-    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
-  }
-</div>
 
 @if (politica(); as actual) {
   <div class="politica__columnas">
@@ -38,7 +28,20 @@
       </p>
 
       <form (submit)="$event.preventDefault(); guardar()">
-        <div class="campo">
+        <!-- UX-12: el rechazo, arriba del formulario. Una version vieja es un conflicto. -->
+        @if (errorDeGuardado(); as problema) {
+          <app-alerta
+            [tipo]="problema.causa === 'version-vieja' ? 'advertencia' : 'error'"
+            [titulo]="
+              problema.causa === 'version-vieja'
+                ? 'La política cambió mientras la editabas'
+                : 'No pudimos guardar la ventana'
+            "
+          >
+            <p>{{ problema.mensaje }}</p>
+          </app-alerta>
+        }
+        <div class="campo campo--6">
           <label for="politica-dias">Días para enmendar</label>
           <div class="busqueda-fila politica__dias">
             <input
@@ -49,7 +52,9 @@
               [max]="maxima"
               [value]="dias()"
               (input)="dias.set($any($event.target).value)"
-              aria-describedby="politica-dias-ayuda"
+              [attr.aria-describedby]="
+                diasValidos() ? 'politica-dias-ayuda' : 'politica-dias-error politica-dias-ayuda'
+              "
               [attr.aria-invalid]="diasValidos() ? null : 'true'"
             />
             <span class="ayuda" aria-hidden="true">días desde el cierre</span>
@@ -58,7 +63,7 @@
             De {{ minima }} a {{ maxima }} días.
           </p>
           @if (!diasValidos()) {
-            <p class="campo__error" role="alert">
+            <p class="campo__error" id="politica-dias-error" role="alert">
               Indicá un número entero de {{ minima }} a {{ maxima }}.
             </p>
           }
@@ -110,6 +115,13 @@
       }
     </aside>
   </div>
-} @else if (error() && !cargando()) {
-  <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+} @else if (error(); as problema) {
+  @if (!cargando()) {
+    <app-alerta tipo="error" titulo="No pudimos leer la política">
+      <p>{{ problema.mensaje }}</p>
+      <p class="alerta__acciones">
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      </p>
+    </app-alerta>
+  }
 }

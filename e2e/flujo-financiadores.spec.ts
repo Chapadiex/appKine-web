@@ -58,6 +58,9 @@ test.describe('Financiadores y planes contra el backend real', () => {
     });
     await expect(fila).toContainText(`Código ${codigo}`);
     await expect(fila).toContainText('Activo');
+    // Patron de listado (UX-14): el conteo en la toolbar y el pie estandar debajo de la tabla.
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 financiador');
+    await expect(page.locator('.paginacion-pie__resumen')).toHaveText('Mostrando 1–1 de 1');
     await fila.getByRole('link', { name: 'Planes' }).click();
 
     // --- Alta del plan, con copago y autorizacion previa ------------------------------------
@@ -87,6 +90,7 @@ test.describe('Financiadores y planes contra el backend real', () => {
         name: new RegExp(plan),
       }),
     ).toBeVisible();
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 plan');
 
     // --- Lo que guardo el servidor ----------------------------------------------------------
     const planes = await api.exigir<PlanGuardado[] | { content: PlanGuardado[] }>(

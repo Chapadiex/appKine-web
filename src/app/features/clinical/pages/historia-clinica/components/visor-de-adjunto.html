@@ -11,16 +11,16 @@
     <p class="estado estado--cargando" role="status">Bajando el archivo…</p>
   }
   @case ('error') {
-    <div role="alert">
-      <p class="estado estado--error">{{ error()?.mensaje }}</p>
+    <app-alerta tipo="error" titulo="No pudimos abrir el adjunto">
+      <p>{{ error()?.mensaje }}</p>
       @if (error()?.causa !== 'adjunto-no-disponible') {
-        <div class="acciones">
+        <p class="alerta__acciones">
           <button type="button" class="boton boton--secundario" (click)="abrir()">
             Reintentar
           </button>
-        </div>
+        </p>
       }
-    </div>
+    </app-alerta>
   }
   @case ('listo') {
     @if (archivo(); as a) {

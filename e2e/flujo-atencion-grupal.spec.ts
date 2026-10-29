@@ -134,7 +134,12 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     expect(derivada.status()).toBe(201);
     const derivacion = (await derivada.json()) as { id: number; casoClinicoId: number };
     expect(derivacion.casoClinicoId).toBe(caso.id);
-    await expect(page.getByText(/quedo derivada al caso clínico 1/)).toBeVisible();
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones' })
+        .getByText(/quedo derivada al caso clínico 1/),
+    ).toBeVisible();
     await expect(fila).toContainText('Derivada al caso clínico 1');
 
     // --- Iniciar atención: sin relacion asistencial el backend puede pedir motivo ---------

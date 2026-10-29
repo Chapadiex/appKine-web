@@ -12,8 +12,15 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Una fila de casilla, igual para profesionales y para espacios. */
 interface Candidato {
@@ -63,12 +70,29 @@ interface Candidato {
  */
 @Component({
   selector: 'app-habilitaciones-de-la-oferta-page',
-  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    RouterLink,
+    PermisoDirective,
+    Alerta,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
+  ],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
 export class HabilitacionesDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Habilitaciones' },
+  ]);
+
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly contexto = inject(TenantContextStore);
   private readonly ruta = inject(ActivatedRoute);
 
@@ -81,7 +105,6 @@ export class HabilitacionesDeLaOfertaPage {
   protected readonly estado = signal<EstadoDeListado<HabilitacionesResponse>>({ tipo: 'cargando' });
   protected readonly oferta = signal<OfertaResponse | null>(null);
   protected readonly guardando = signal(false);
-  protected readonly exito = signal<string | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
 
@@ -100,6 +123,17 @@ export class HabilitacionesDeLaOfertaPage {
   >([]);
   private ultimaConfiguracion: HabilitacionesResponse | null = null;
   protected readonly candidatosEspacio = signal<readonly Candidato[]>([]);
+
+  /**
+   * Orden por nombre y pie estandar (UX-14). Solo por nombre: ordenar por "habilitado" haria
+   * saltar la fila al marcar su casilla.
+   */
+  protected readonly tablaProfesionales = tablaLocal(this.candidatosProfesional, {
+    columnas: { nombre: (candidato) => candidato.etiqueta },
+  });
+  protected readonly tablaEspacios = tablaLocal(this.candidatosEspacio, {
+    columnas: { nombre: (candidato) => candidato.etiqueta },
+  });
 
   /**
    * Lo que la pantalla va a producir si se guarda AHORA.
@@ -240,7 +274,7 @@ export class HabilitacionesDeLaOfertaPage {
   }
 
   protected guardarProfesionales(): void {
-    this.guardar((consultorioId, version) =>
+    this.guardar('Profesionales habilitados guardados', (consultorioId, version) =>
       this.api.fijarProfesionalesHabilitados(
         consultorioId,
         this.ofertaId,
@@ -251,7 +285,7 @@ export class HabilitacionesDeLaOfertaPage {
   }
 
   protected guardarEspacios(): void {
-    this.guardar((consultorioId, version) =>
+    this.guardar('Espacios habilitados guardados', (consultorioId, version) =>
       this.api.fijarEspaciosHabilitados(
         consultorioId,
         this.ofertaId,
@@ -269,6 +303,7 @@ export class HabilitacionesDeLaOfertaPage {
    * dejaria la grilla mostrando algo que ya no es cierto.
    */
   private guardar(
+    tituloDeExito: string,
     operacion: (
       consultorioId: number,
       version: number,
@@ -286,7 +321,6 @@ export class HabilitacionesDeLaOfertaPage {
     }
 
     this.guardando.set(true);
-    this.exito.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
 
@@ -295,7 +329,7 @@ export class HabilitacionesDeLaOfertaPage {
         this.guardando.set(false);
         this.estado.set({ tipo: 'listo', pagina: respuesta });
         this.sincronizarCasillas(respuesta);
-        this.exito.set('Guardamos la configuración de la oferta.');
+        this.avisos.exito(tituloDeExito);
 
         // Guardar HACE AVANZAR la version de la oferta: el backend la carga con incremento
         // forzado, porque si no la version se queda quieta y el control optimista no serializa a

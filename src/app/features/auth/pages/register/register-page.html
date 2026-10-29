@@ -20,42 +20,44 @@
       @if (estado().tipo === 'enviando') {
         <p class="acceso-aviso acceso-aviso--ok">Creando la cuenta&hellip;</p>
       }
-      @if (estado().tipo === 'error') {
-        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
-      }
     </div>
 
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="registro-firstName">Nombre</label>
-          <input
-            id="registro-firstName"
-            type="text"
-            formControlName="firstName"
-            autocomplete="given-name"
-            [attr.aria-invalid]="mostrarError('firstName')"
-            [attr.aria-describedby]="mostrarError('firstName') ? 'registro-firstName-error' : null"
-          />
-          @if (mostrarError('firstName')) {
-            <p class="campo__error" id="registro-firstName-error">Escribí tu nombre.</p>
-          }
-        </div>
+      <!-- Error del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+      @if (estado().tipo === 'error') {
+        <app-alerta tipo="error" titulo="No pudimos crear la cuenta">
+          <p>{{ mensajeError() }}</p>
+        </app-alerta>
+      }
 
-        <div class="campo">
-          <label for="registro-lastName">Apellido</label>
-          <input
-            id="registro-lastName"
-            type="text"
-            formControlName="lastName"
-            autocomplete="family-name"
-            [attr.aria-invalid]="mostrarError('lastName')"
-            [attr.aria-describedby]="mostrarError('lastName') ? 'registro-lastName-error' : null"
-          />
-          @if (mostrarError('lastName')) {
-            <p class="campo__error" id="registro-lastName-error">Escribí tu apellido.</p>
-          }
-        </div>
+      <div class="campo">
+        <label for="registro-firstName">Nombre</label>
+        <input
+          id="registro-firstName"
+          type="text"
+          formControlName="firstName"
+          autocomplete="given-name"
+          [attr.aria-invalid]="mostrarError('firstName')"
+          [attr.aria-describedby]="mostrarError('firstName') ? 'registro-firstName-error' : null"
+        />
+        @if (mostrarError('firstName')) {
+          <p class="campo__error" id="registro-firstName-error">Escribí tu nombre.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="registro-lastName">Apellido</label>
+        <input
+          id="registro-lastName"
+          type="text"
+          formControlName="lastName"
+          autocomplete="family-name"
+          [attr.aria-invalid]="mostrarError('lastName')"
+          [attr.aria-describedby]="mostrarError('lastName') ? 'registro-lastName-error' : null"
+        />
+        @if (mostrarError('lastName')) {
+          <p class="campo__error" id="registro-lastName-error">Escribí tu apellido.</p>
+        }
       </div>
 
       <div class="campo">

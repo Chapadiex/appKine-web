@@ -2,10 +2,12 @@
   <h2 id="titulo-instructores">Instructores</h2>
 
   @if (errorDeLectura(); as fallo) {
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
-      <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-    </div>
+    <app-alerta tipo="error" titulo="No pudimos leer los instructores">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      </p>
+    </app-alerta>
   } @else if (instructores() === null) {
     <p class="estado estado--cargando">Leyendo los instructores…</p>
   } @else {
@@ -22,14 +24,6 @@
       instructores. Un adicional no ocupa agenda: la clase solo bloquea el horario del principal.
     </p>
 
-    <div aria-live="polite">
-      @if (aviso()) {
-        <p id="aviso-instructores" class="estado estado--ok" role="status" tabindex="-1">
-          {{ aviso() }}
-        </p>
-      }
-    </div>
-
     @if (puedeGestionar() && !editando()) {
       <div class="acciones">
         <button
@@ -45,6 +39,11 @@
 
     @if (editando()) {
       <form class="panel-instructores" (submit)="$event.preventDefault(); guardar()" novalidate>
+        @if (errorDeAccion(); as fallo) {
+          <app-alerta tipo="error" titulo="No pudimos guardar los instructores">
+            <p>{{ fallo.mensaje }}</p>
+          </app-alerta>
+        }
         <fieldset class="grupo">
           <legend id="instructores-titulo-panel" tabindex="-1">Instructores adicionales</legend>
           @if (candidatos() === null) {
@@ -69,10 +68,6 @@
         <p class="ayuda">
           Se guarda la lista completa: lo que destildes deja de ser instructor de la clase.
         </p>
-
-        @if (errorDeAccion(); as fallo) {
-          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        }
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">

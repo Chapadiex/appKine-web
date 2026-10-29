@@ -25,19 +25,22 @@ import { PrecioParticularResponse } from '../../../../api/generated/model/precio
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { OfferingApi } from '../../services/offering-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { precioEnPalabras } from '../../models/etiquetas-de-offering';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -69,10 +72,12 @@ interface SituacionDelPrecio {
   selector: 'app-precios-particulares-de-la-oferta-page',
   imports: [
     CabeceraDePagina,
-    Migas,
+
+    Alerta,
     Pestanas,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     ReactiveFormsModule,
@@ -86,7 +91,14 @@ interface SituacionDelPrecio {
   styleUrl: '../../offering.css',
 })
 export class PreciosParticularesDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Precios particulares' },
+  ]);
+
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly contexto = inject(TenantContextStore);
   private readonly ruta = inject(ActivatedRoute);
@@ -160,10 +172,12 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /** Vigencia que choca con otro precio (UX-12): va pegada a las fechas, no arriba. */
+  protected readonly solapado = computed(() => this.causaAccion() === 'precio-solapado');
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     importe: ['', [Validators.required, Validators.min(0)]],
@@ -183,7 +197,6 @@ export class PreciosParticularesDeLaOfertaPage {
       this.contexto.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.oferta.set(null);
         this.cargar();
       });
@@ -246,7 +259,6 @@ export class PreciosParticularesDeLaOfertaPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       importe: '',
       moneda: this.oferta()?.moneda ?? '',
@@ -262,7 +274,6 @@ export class PreciosParticularesDeLaOfertaPage {
       return;
     }
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id: precio.id, tipo });
     if (tipo === 'fin') {
       this.original.set(precio);
@@ -322,10 +333,10 @@ export class PreciosParticularesDeLaOfertaPage {
     this.api.crearPrecioParticular(consultorioId, this.ofertaId, cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El precio quedo cargado. Los días que cubre manda sobre el precio de lista; lo ya ' +
-            'devengado no cambia.',
-        );
+        this.avisos.exito('Precio cargado', {
+          descripcion:
+            'En los días que cubre manda sobre el precio de lista; lo ya devengado no cambia.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -360,10 +371,11 @@ export class PreciosParticularesDeLaOfertaPage {
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set(
+          this.avisos.exito(
             hasta === ''
-              ? 'El precio quedo sin fin previsto.'
-              : `El precio rige hasta el ${enPalabras(hasta)} inclusive.`,
+              ? 'Precio sin fin previsto'
+              : `Precio vigente hasta el ${enPalabras(hasta)}`,
+            { descripcion: hasta === '' ? undefined : 'Ese día inclusive.' },
           );
           this.cargar();
         },
@@ -387,10 +399,11 @@ export class PreciosParticularesDeLaOfertaPage {
     this.api.darDeBajaPrecioParticular(consultorioId, this.ofertaId, panel.id, motivo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El precio quedo dado de baja y su periodo quedo libre. Esos días vuelve a regir el ' +
-            'precio de lista, salvo que cargues otro.',
-        );
+        this.avisos.exito('Precio dado de baja', {
+          descripcion:
+            'Su período quedó libre: esos días vuelve a regir el precio de lista, salvo que ' +
+            'cargues otro.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -426,7 +439,6 @@ export class PreciosParticularesDeLaOfertaPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   private enfocar(selector: string): void {

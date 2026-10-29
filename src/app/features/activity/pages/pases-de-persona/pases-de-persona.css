@@ -1,13 +1,3 @@
-/* Listado: tabla y pie en una sola tarjeta. */
-.tarjeta--listado .tabla-scroll {
-  margin-inline: calc(-1 * var(--esp-8));
-  border-block: var(--borde-fino) solid var(--color-borde);
-}
-
-.tarjeta--listado .tabla {
-  margin: 0;
-}
-
 /* Nota del panel de ajuste: el saldo y la regla, a la vista antes de los campos. */
 .pases__nota {
   margin: 0 0 var(--esp-6);

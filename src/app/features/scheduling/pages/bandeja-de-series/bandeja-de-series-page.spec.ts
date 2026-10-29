@@ -7,7 +7,8 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
-import { BandejaDeSeriesPage, FILAS_POR_PAGINA } from './bandeja-de-series-page';
+import { FILAS_POR_PAGINA_INICIAL } from '../../../../shared/components/paginacion/paginacion';
+import { BandejaDeSeriesPage } from './bandeja-de-series-page';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -35,8 +36,13 @@ const FILA = {
   estado: 'VIGENTE',
 };
 
-function pagina(content: unknown[], totalPages = 1, page = 0): object {
-  return { content, page, size: FILAS_POR_PAGINA, totalElements: content.length, totalPages };
+function pagina(
+  content: unknown[],
+  totalPages = 1,
+  page = 0,
+  totalElements = content.length,
+): object {
+  return { content, page, size: FILAS_POR_PAGINA_INICIAL, totalElements, totalPages };
 }
 
 /**
@@ -68,7 +74,8 @@ describe('BandejaDeSeriesPage', () => {
       const pedido = esperarListado();
       expect(pedido.request.params.get('estado')).toBe('VIGENTE');
       expect(pedido.request.params.get('page')).toBe('0');
-      expect(pedido.request.params.get('size')).toBe(String(FILAS_POR_PAGINA));
+      // UX-14: 10 filas por pagina de entrada, como toda tabla de AKINE.
+      expect(pedido.request.params.get('size')).toBe('10');
       expect(pedido.request.params.has('personaId')).toBe(false);
       // Dos filas de la misma oferta: una sola lectura de habilitaciones.
       pedido.flush(pagina([FILA, { ...FILA, id: 8, personaNombre: 'Gomez, Luis' }]));
@@ -78,7 +85,13 @@ describe('BandejaDeSeriesPage', () => {
       await asentar(fixture);
 
       const texto = textoDe(fixture);
-      expect(texto).toContain('2 series');
+      // El contador vive en la toolbar, en la misma fila que la busqueda (UX-14 §1).
+      expect(html(fixture).querySelector('.filtros-barra__resultados')?.textContent).toBe(
+        '2 series',
+      );
+      expect(html(fixture).querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+        'Mostrando 1–2 de 2',
+      );
       expect(texto).toContain('Perez, Ana');
       expect(texto).toContain('DNI 30111222');
       expect(texto).toContain('Lic. Diaz');
@@ -99,7 +112,7 @@ describe('BandejaDeSeriesPage', () => {
     esperarListado().flush(pagina([{ ...FILA, profesionalId: undefined }], 3));
     await asentar(fixture);
 
-    clickear(fixture, 'Siguiente');
+    clickear(fixture, 'Página siguiente');
     const segunda = esperarListado();
     expect(segunda.request.params.get('page')).toBe('1');
     segunda.flush(pagina([], 3, 1));
@@ -115,7 +128,9 @@ describe('BandejaDeSeriesPage', () => {
     expect(todas.request.params.get('page')).toBe('0');
     todas.flush(pagina([]));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No hay series que cumplan ese filtro');
+    expect(html(fixture).querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos series',
+    );
 
     const campo = (fixture.nativeElement as HTMLElement).querySelector(
       '#series-busqueda',
@@ -137,6 +152,51 @@ describe('BandejaDeSeriesPage', () => {
     expect(textoDe(fixture)).toContain('Ninguna serie coincide con la búsqueda');
   });
 
+  it('cambia las filas por página en el servidor y vuelve a la primera', async () => {
+    const fixture = await montar();
+    esperarListado().flush(pagina([FILA], 3, 0, 27));
+    httpMock.expectOne(URL_HABILITACIONES).flush({ ofertaId: OFERTA, profesionales: [] });
+    await asentar(fixture);
+    expect(html(fixture).querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–10 de 27',
+    );
+
+    const selector = html(fixture).querySelector(
+      '.paginacion-pie__por-pagina select',
+    ) as HTMLSelectElement;
+    selector.value = '25';
+    selector.dispatchEvent(new Event('change'));
+    const pedido = esperarListado();
+    expect(pedido.request.params.get('size')).toBe('25');
+    expect(pedido.request.params.get('page')).toBe('0');
+    pedido.flush(pagina([], 1));
+  });
+
+  it('distingue "todavía no hay" de "no hay con estos filtros" y limpia los filtros', async () => {
+    const fixture = await montar();
+    esperarListado().flush(pagina([]));
+    await asentar(fixture);
+    expect(html(fixture).querySelector('app-estado-vacio')?.textContent).toContain(
+      'No hay series vigentes',
+    );
+    expect(html(fixture).querySelector('table')).toBeNull();
+
+    const campo = html(fixture).querySelector('#series-busqueda') as HTMLInputElement;
+    campo.value = 'Zarate';
+    campo.dispatchEvent(new Event('change'));
+    esperarListado().flush(pagina([]));
+    await asentar(fixture);
+    expect(html(fixture).querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos series',
+    );
+
+    clickear(fixture, 'Limpiar filtros');
+    const limpio = esperarListado();
+    expect(limpio.request.params.has('q')).toBe(false);
+    expect(limpio.request.params.get('estado')).toBe('VIGENTE');
+    limpio.flush(pagina([]));
+  });
+
   it('la persona que llega por URL se filtra y toma el nombre de la primera fila', async () => {
     const fixture = await montar({ personaId: '128', estado: 'FINALIZADA' });
     const pedido = esperarListado();
@@ -155,7 +215,9 @@ describe('BandejaDeSeriesPage', () => {
     const fixture = await montar();
     esperarListado().flush(null, { status: 500, statusText: 'Server Error' });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No se pudieron leer las series');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-alerta')?.textContent,
+    ).toContain('No pudimos leer las series');
     clickear(fixture, 'Reintentar');
     esperarListado().flush(pagina([]));
   });
@@ -184,6 +246,10 @@ describe('BandejaDeSeriesPage', () => {
 
   function esperarListado(): ReturnType<HttpTestingController['expectOne']> {
     return httpMock.expectOne((p: HttpRequest<unknown>) => p.url === URL_SERIES);
+  }
+
+  function html(fixture: ComponentFixture<BandejaDeSeriesPage>): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
   }
 
   function textoDe(fixture: ComponentFixture<BandejaDeSeriesPage>): string {

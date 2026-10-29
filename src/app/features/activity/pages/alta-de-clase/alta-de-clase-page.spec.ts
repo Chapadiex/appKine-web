@@ -19,6 +19,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { AltaDeClasePage, sumarMinutos } from './alta-de-clase-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PROGRAMAR = `/api/v1/consultorios/${CONSULTORIO}/clases/ofertas/42`;
 const HABILITACIONES = `${URL_OFERTAS}/42/habilitaciones`;
@@ -126,6 +127,10 @@ describe('AltaDeClasePage', () => {
       pedido.flush({ id: 70 });
       await asentar(fixture);
       expect(navegar).toHaveBeenCalledWith('/clases/70');
+      // Pantalla propia de alta: navega y publica el aviso global (UX-12).
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.titulo).toBe('Clase programada');
+      expect(aviso?.descripcion).toContain('Pilates reformer');
     },
     TIMEOUT_AXE,
   );
@@ -198,7 +203,14 @@ describe('AltaDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Pediste 12 lugares y el limite es 6');
+    // Conflicto con el cupo: advertencia pegada al campo que lo produjo, no al pie.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#clase-conflicto-cupo')?.textContent).toContain(
+      'Pediste 12 lugares y el limite es 6',
+    );
+    expect(raiz.querySelector('#clase-capacidad')?.getAttribute('aria-describedby')).toContain(
+      'clase-conflicto-cupo',
+    );
 
     enviar();
     const segundo = httpMock.expectOne(PROGRAMAR);
@@ -217,7 +229,9 @@ describe('AltaDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('El box ya tiene un turno u otra clase');
+    expect(raiz.querySelector('#clase-conflicto-horario')?.textContent).toContain(
+      'El box ya tiene un turno u otra clase',
+    );
   });
 
   it('valida antes de mandar: oferta obligatoria y fin posterior al inicio', async () => {
@@ -265,7 +279,12 @@ describe('AltaDeClasePage', () => {
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
-    expect(textoDe(fixture)).toContain('La hora de fin tiene que ser posterior');
+    // Es un dato a corregir: va en el campo de fin, que apunta al mensaje.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#clase-fin-error.campo__error')?.textContent).toContain(
+      'La hora de fin tiene que ser posterior',
+    );
+    expect(raiz.querySelector('#clase-fin')?.getAttribute('aria-invalid')).toBe('true');
     httpMock.expectNone(PROGRAMAR);
   });
 
@@ -277,7 +296,10 @@ describe('AltaDeClasePage', () => {
       .expectOne((p) => p.url === URL_OFERTAS)
       .flush(null, { status: 500, statusText: 'Server Error' });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No pudimos completar la operación');
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos leer las ofertas grupales');
+    expect(alerta?.textContent).toContain('No pudimos completar la operación');
+    expect(alerta?.textContent).toContain('Reintentar');
   });
 });
 

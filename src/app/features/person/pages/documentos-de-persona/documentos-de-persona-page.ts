@@ -11,10 +11,16 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import {
@@ -44,8 +50,6 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { ListarAdjuntosDePersonaRequestParams } from '../../../../api/generated/api/adjuntos.serviceInterface';
-
-const TAMANO_DE_PAGINA = 20;
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'reclasificar' | 'baja';
@@ -104,6 +108,7 @@ type TipoAccion = 'reclasificar' | 'baja';
 @Component({
   selector: 'app-documentos-de-persona-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
@@ -111,6 +116,7 @@ type TipoAccion = 'reclasificar' | 'baja';
     Icono,
     ReactiveFormsModule,
     ConfirmacionConMotivo,
+    EstadoVacio,
     Paginacion,
     PanelLateral,
     PermisoDirective,
@@ -122,6 +128,7 @@ type TipoAccion = 'reclasificar' | 'baja';
 export class DocumentosDePersonaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(AdjuntosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly personas = inject(PersonApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
@@ -162,6 +169,9 @@ export class DocumentosDePersonaPage {
   );
   protected readonly pagina = signal(0);
 
+  /** Filas por pagina: viaja como `size` y el usuario la cambia desde el pie (UX-14). */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<
     CamposDeSort<ListarAdjuntosDePersonaRequestParams['sort']>
@@ -181,9 +191,13 @@ export class DocumentosDePersonaPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaPersona | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /** El archivo no se acepto (tipo real o tamano): es un dato a corregir, va junto al campo. */
+  protected readonly archivoRechazado = computed(
+    () => this.causaAccion() === 'archivo-no-aceptado',
+  );
 
   protected readonly adjuntos = computed<readonly AdjuntoResponse[]>(() => {
     const actual = this.estado();
@@ -298,7 +312,7 @@ export class DocumentosDePersonaPage {
         categoria: categoria === '' ? undefined : categoria,
         filtro: this.filtro(),
         pagina: this.pagina(),
-        tamano: TAMANO_DE_PAGINA,
+        tamano: this.porPagina(),
         sort: this.orden.sort(),
       })
       .subscribe({
@@ -322,6 +336,20 @@ export class DocumentosDePersonaPage {
 
   protected cambiarFiltro(valor: string): void {
     this.filtro.set(valor === 'TODOS' ? 'TODOS' : 'VIGENTES');
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  /** Vuelve categoria y estado a su valor por defecto. */
+  protected limpiarFiltros(): void {
+    this.filtroCategoria.set('');
+    this.filtro.set('VIGENTES');
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.pagina.set(0);
     this.cargar();
   }
@@ -368,12 +396,13 @@ export class DocumentosDePersonaPage {
       .subscribe({
         next: (adjunto) => {
           this.enviando.set(false);
-          this.subidaAbierta.set(false);
+          this.cerrarPaneles();
           this.archivo.set(null);
-          this.exito.set(
-            `Se guardo ${nombreDeAdjunto(adjunto)}. Recorda que un documento adjunto no completa ` +
-              'ningún dato de la ficha: si es una credencial, la cobertura hay que cargarla aparte.',
-          );
+          this.avisos.exito('Documento subido', {
+            descripcion:
+              `${nombreDeAdjunto(adjunto)}. No completa ningún dato de la ficha: si es una ` +
+              'credencial, la cobertura hay que cargarla aparte.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallo(error),
@@ -415,7 +444,21 @@ export class DocumentosDePersonaPage {
             'documento',
         );
       },
-      error: (error: unknown) => this.fallo(error),
+      // Accion de fila, sin formulario: el rechazo va al aviso global (UX-12). Antes se escribia en
+      // `errorAccion`, que con todo cerrado no se veia en ningun lado.
+      error: (error: unknown) => {
+        const traducido = traducirErrorPersona(error);
+        const recargar = hayQueRecargar(traducido.causa);
+        const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+        this.avisos.error('No pudimos descargar el documento', {
+          descripcion: traducido.mensaje,
+          accion: recargar
+            ? { etiqueta: 'Recargar los documentos', ejecutar: () => this.cargar() }
+            : reintentable
+              ? { etiqueta: 'Reintentar', ejecutar: () => this.descargar(adjunto) }
+              : undefined,
+        });
+      },
     });
   }
 
@@ -454,8 +497,8 @@ export class DocumentosDePersonaPage {
       .subscribe({
         next: () => {
           this.enviando.set(false);
-          this.panel.set(null);
-          this.exito.set('Se actualizo la clasificacion del documento.');
+          this.cerrarPaneles();
+          this.avisos.exito('Clasificación actualizada');
           this.cargar();
         },
         error: (error: unknown) => this.fallo(error),
@@ -484,11 +527,11 @@ export class DocumentosDePersonaPage {
     this.api.darDeBaja(personaId, abierto.id, motivo).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.panel.set(null);
-        this.exito.set(
-          'El documento quedo dado de baja. El archivo no se borro: se sigue pudiendo descargar, ' +
-            'y aparece filtrando por "Todos".',
-        );
+        this.cerrarPaneles();
+        this.avisos.exito('Documento dado de baja', {
+          descripcion:
+            'El archivo no se borro: se sigue pudiendo descargar, y aparece filtrando por "Todos".',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -525,7 +568,6 @@ export class DocumentosDePersonaPage {
   private limpiarAvisos(): void {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   private reiniciar(): void {
@@ -535,6 +577,7 @@ export class DocumentosDePersonaPage {
     this.filtroCategoria.set('');
     this.filtro.set('VIGENTES');
     this.pagina.set(0);
+    this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();
   }
 }

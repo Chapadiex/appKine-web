@@ -35,7 +35,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       await expect(
         plataforma.getByRole('heading', { name: 'Catálogo de financiadores', level: 1 }),
       ).toBeVisible();
-      await plataforma.getByRole('button', { name: 'Nuevo financiador' }).click();
+      await plataforma.getByRole('button', { name: 'Nuevo financiador' }).first().click();
       await plataforma.getByLabel('Código', { exact: true }).fill(codigo);
       await plataforma.getByLabel('Nombre', { exact: true }).fill(nombre);
       await plataforma.getByLabel('Tipo de financiador').selectOption({ value: 'OBRA_SOCIAL' });
@@ -44,7 +44,11 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       const creada = await alta;
       expect(creada.status(), await creada.text()).toBe(201);
       catalogoId = ((await creada.json()) as { id: number }).id;
-      await expect(plataforma.getByText(`${nombre} quedo en el catalogo`)).toBeVisible();
+      await expect(
+        plataforma
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText(`${nombre}. Los centros ya lo pueden agregar.`),
+      ).toBeVisible();
 
       await plataforma
         .getByRole('button', { name: `Agregar un plan a ${nombre}`, exact: true })

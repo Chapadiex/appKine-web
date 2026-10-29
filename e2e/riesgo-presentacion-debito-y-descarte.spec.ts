@@ -141,7 +141,9 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await filaDelLote(page, debitada).getByRole('button', { name: 'Quitar' }).click();
     expect((await quita).status()).toBeLessThan(300);
     await expect(
-      page.getByText('Se quito la prestación del lote. Vuelve a estar disponible.'),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Prestación quitada del lote', { exact: true }),
     ).toBeVisible();
     await expect(filaDelLote(page, debitada)).toHaveCount(0);
     await expect(filaElegible(page, debitada)).toHaveCount(1);
@@ -187,7 +189,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await agregar(page, debitada);
 
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Lote presentado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Presentado')).toContainText('19.200,00');
 
     // Presentado, el lote es evidencia: no se descarta ni se le quitan prestaciones.
@@ -221,7 +227,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     rechazo = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
     await page.getByRole('button', { name: 'Confirmar el débito' }).click();
     expect((await rechazo).status()).toBeLessThan(300);
-    await expect(page.getByText(/Debito registrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Debito registrado', { exact: true }),
+    ).toBeVisible();
     await expect(filaDelLote(page, debitada)).toContainText('Debitada');
     await expect(filaDelLote(page, debitada)).toContainText('Débito: Afiliado sin credencial');
     await expect(dato(page, 'Saldo')).toContainText('9.600,00');
@@ -247,12 +257,20 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     // Factura, pago por lo aceptado, conciliar.
     await page.getByLabel('Número de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
-    await expect(page.getByText('Factura registrada.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Factura registrada', { exact: true }),
+    ).toBeVisible();
     await page.locator('#pago-importe').fill(String(FINANCIADOR));
     await page.locator('#pago-medio').selectOption({ label: 'Transferencia' });
     await page.getByLabel('Referencia (opcional)').fill(`TRF-${presentacionId}`);
     await page.getByRole('button', { name: 'Registrar el pago' }).click();
-    await expect(page.getByText(/Pago registrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago registrado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
     const cierre = respuestaDe(page, 'POST', /\/conciliacion$/);
     await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
@@ -296,7 +314,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     await abrirBorrador(page, propio, financiador);
     await agregar(page, parcial);
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Lote presentado', { exact: true }),
+    ).toBeVisible();
 
     // Debito por una parte de lo presentado.
     await filaDelLote(page, parcial).getByRole('button', { name: 'Registrar débito' }).click();
@@ -305,7 +327,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     const debito = respuestaDe(page, 'POST', /\/items\/\d+\/debito$/);
     await page.getByRole('button', { name: 'Confirmar el débito' }).click();
     expect((await debito).status()).toBeLessThan(300);
-    await expect(page.getByText(/Debito registrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Debito registrado', { exact: true }),
+    ).toBeVisible();
     await expect(filaDelLote(page, parcial)).toContainText('Debitada en parte');
     await expect(filaDelLote(page, parcial)).toContainText('Sigue en el lote');
     await expect(filaDelLote(page, parcial)).toContainText('Débito: Sesion sin firma');
@@ -330,11 +356,19 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
 
     await page.getByLabel('Número de factura').fill(`0001-${randomUUID().slice(0, 8)}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
-    await expect(page.getByText('Factura registrada.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Factura registrada', { exact: true }),
+    ).toBeVisible();
     await page.locator('#pago-importe').fill(String(COBRADO));
     await page.locator('#pago-medio').selectOption({ label: 'Transferencia' });
     await page.getByRole('button', { name: 'Registrar el pago' }).click();
-    await expect(page.getByText(/Pago registrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago registrado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
     await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
     await expect(

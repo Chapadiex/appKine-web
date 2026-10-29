@@ -8,16 +8,16 @@
   <p class="estado estado--cargando">Cargando la ficha...</p>
 } @else if (errorDeCarga(); as mensaje) {
   <app-cabecera-de-ficha [modelo]="cabecera()" />
-  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-  @if (faltaContexto()) {
-    <p class="acciones">
-      <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+  <app-alerta tipo="error" titulo="No pudimos leer la ficha">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
+        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      } @else {
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
     </p>
-  } @else {
-    <p class="acciones">
-      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-    </p>
-  }
+  </app-alerta>
 } @else if (persona(); as ficha) {
   <app-cabecera-de-ficha [modelo]="cabecera()">
     <app-ayuda cabeceraAyuda titulo="Esta ficha no muestra nada clínico">
@@ -59,12 +59,6 @@
       </ng-container>
     }
   </app-cabecera-de-ficha>
-
-  <div aria-live="polite">
-    @if (exito(); as mensaje) {
-      <p class="estado estado--ok">{{ mensaje }}</p>
-    }
-  </div>
 
   @if (personaInactiva(ficha)) {
     <p class="estado" role="status">
@@ -116,14 +110,13 @@
         <dt>Perfil clínico</dt>
         <dd>{{ ficha.esPaciente ? 'Paciente' : 'Persona' }}</dd>
       </div>
+      @if (ficha.notas) {
+        <div class="ficha-datos__ancho">
+          <dt>Observaciones administrativas</dt>
+          <dd class="ficha-notas">{{ ficha.notas }}</dd>
+        </div>
+      }
     </dl>
-
-    @if (ficha.notas) {
-      <p class="ficha-notas">
-        <b>Observaciones administrativas:</b>
-        {{ ficha.notas }}
-      </p>
-    }
   </section>
 
   <!-- Resumen: tarjetas de un vistazo, cada una con su entrada a la pantalla hermana. -->
@@ -276,6 +269,25 @@
       "
       (cerrar)="cerrarPaneles()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta
+          tipo="error"
+          [titulo]="
+            tipo === 'perfil'
+              ? 'No pudimos dar de baja el perfil'
+              : 'No pudimos dar de baja la ficha'
+          "
+        >
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar la ficha
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       @if (tipo === 'perfil') {
         <akine-confirmacion-con-motivo
           idCampo="baja-perfil"
@@ -310,19 +322,6 @@
           </p>
         </akine-confirmacion-con-motivo>
       }
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          @if (hayQueRecargar()) {
-            <p class="acciones">
-              <button type="button" class="boton boton--secundario" (click)="cargar()">
-                Recargar la ficha
-              </button>
-            </p>
-          }
-        }
-      </div>
     </app-panel-lateral>
   }
 }

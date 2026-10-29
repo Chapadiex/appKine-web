@@ -150,7 +150,12 @@ test.describe('Asistencia de clases contra el backend real', () => {
     const cierre = respuestaDe(page, 'POST', /\/clases\/\d+\/cierre$/);
     await page.getByRole('button', { name: 'Cerrar clase' }).click();
     expect((await cierre).status()).toBe(200);
-    await expect(page.getByText(/Clase cerrada/)).toBeVisible();
+    // UX-12: el resultado del cierre es un aviso global.
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Clase cerrada', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('Realizada', { exact: true })).toBeVisible();
 
     const final = await api.exigir<{ estado: string; presentes: number; ausentes: number }>(

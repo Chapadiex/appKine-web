@@ -1,5 +1,5 @@
 import { PersonaResponse } from '../../api/generated/model/persona-response';
-import { modeloDeCabeceraDePersona } from './cabecera-de-persona';
+import { migasDePersona, modeloDeCabeceraDePersona } from './cabecera-de-persona';
 import {
   PERMISO_COBRO_REGISTER,
   PERMISO_HC_READ,
@@ -43,7 +43,33 @@ describe('modeloDeCabeceraDePersona', () => {
     expect(m.titulo).toBe('Sintetica, Lucia');
     expect(m.datos).toEqual(['DNI 30111222']);
     expect(m.marcas.map((x) => x.texto)).toEqual(['Activa', 'Paciente']);
-    expect(m.migas).toEqual([{ etiqueta: 'Padrón', ruta: '/pacientes' }]);
+    // En la ficha el nombre es la pantalla actual de la ruta de navegacion.
+    expect(migasDePersona({ personaId: '7', persona: PACIENTE, actual: 'ficha' }, con())).toEqual([
+      { etiqueta: 'Padrón', ruta: '/pacientes' },
+      { etiqueta: 'Sintetica, Lucia' },
+    ]);
+  });
+
+  it('en una pestana el nombre lleva a la ficha y la pantalla agrega sus pasos', () => {
+    expect(
+      migasDePersona(
+        {
+          personaId: '7',
+          persona: PACIENTE,
+          actual: 'cuenta-corriente',
+          masMigas: [{ etiqueta: 'Cuenta corriente', ruta: '/pacientes/7/cuenta-corriente' }],
+        },
+        con(PERMISO_PACIENTE_READ),
+      ),
+    ).toEqual([
+      { etiqueta: 'Padrón', ruta: '/pacientes' },
+      { etiqueta: 'Sintetica, Lucia', ruta: '/pacientes/7' },
+      { etiqueta: 'Cuenta corriente', ruta: '/pacientes/7/cuenta-corriente' },
+    ]);
+    // Sin la ficha cargada todavia, el nombre no se inventa.
+    expect(migasDePersona({ personaId: '7', persona: null, actual: 'coberturas' }, con())).toEqual([
+      { etiqueta: 'Padrón', ruta: '/pacientes' },
+    ]);
   });
 
   it('sin hc:read no ofrece la historia clinica, y a una persona que no es paciente tampoco', () => {
@@ -68,7 +94,9 @@ describe('modeloDeCabeceraDePersona', () => {
       con(),
     );
     expect(etiquetas(m)).toEqual(['Cuenta corriente']);
-    expect(m.migas).toEqual([]);
+    expect(
+      migasDePersona({ personaId: '7', persona: PACIENTE, actual: 'cuenta-corriente' }, con()),
+    ).toEqual([]);
     expect(m.rutaTitulo).toBeNull();
   });
 

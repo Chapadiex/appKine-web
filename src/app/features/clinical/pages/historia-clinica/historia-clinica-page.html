@@ -29,7 +29,9 @@
         sesión, o se puede abrir ahora para cargar antecedentes o adjuntos antes de atenderla.
       </p>
       @if (errorAlAbrir(); as problema) {
-        <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos abrir la historia clínica">
+          <p>{{ problema.mensaje }}</p>
+        </app-alerta>
       }
       <div class="acciones">
         <button type="button" class="boton" [disabled]="abriendo()" (click)="abrirHistoria()">
@@ -44,17 +46,16 @@
   }
 
   @case ('error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error">
-      <h2 id="titulo-error">No se pudo abrir la historia clínica</h2>
-      <p class="estado estado--error">{{ error()?.mensaje }}</p>
+    <app-alerta tipo="error" titulo="No pudimos abrir la historia clínica">
+      <p>{{ error()?.mensaje }}</p>
       @if (error()?.causa !== 'sin-permiso' && error()?.causa !== 'sin-contexto') {
-        <div class="acciones">
+        <p class="alerta__acciones">
           <button type="button" class="boton boton--secundario" (click)="reintentar()">
             Reintentar
           </button>
-        </div>
+        </p>
       }
-    </section>
+    </app-alerta>
   }
 
   @case ('lista') {

@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import {
   LiquidacionDeHonorarios,
@@ -22,6 +21,13 @@ import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { publicarMigas } from '../../../../core/services/migas.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+
 /**
  * Una liquidacion de honorarios por clase confirmada, con su snapshot (DP-38, CA-M22-007-06).
  *
@@ -31,11 +37,16 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
  */
 @Component({
   selector: 'app-liquidacion-detalle-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta, EstadoVacio, ColumnaOrdenable, PieDeTabla],
   templateUrl: './liquidacion-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Honorarios', ruta: '/egresos/honorarios' },
+  ]);
+
   private readonly api = inject(EgresosApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -51,6 +62,18 @@ export class LiquidacionDetallePage {
 
   protected readonly liquidacion = signal<LiquidacionDeHonorarios | null>(null);
   protected readonly error = signal<ErrorEgreso | null>(null);
+  /** El detalle por clase: orden y paginas en el cliente (UX-14). */
+  protected readonly tabla = tablaLocal(
+    computed(() => this.liquidacion()?.clases ?? []),
+    {
+      columnas: {
+        fecha: (linea) => linea.fecha,
+        clase: (linea) => linea.titulo || linea.ofertaNombre,
+        presentes: (linea) => linea.presentes,
+        corresponde: (linea) => linea.importeColaborador,
+      },
+    },
+  );
   protected readonly liberada = computed(
     () => this.liquidacion()?.estado === LiquidacionDeHonorariosEstadoEnum.LIBERADA,
   );

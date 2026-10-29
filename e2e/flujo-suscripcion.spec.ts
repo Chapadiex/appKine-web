@@ -118,7 +118,11 @@ test.describe('Suscripcion contra el backend real', () => {
           planCode: 'PROFESIONAL',
           expectedVersion: inicial.version,
         });
-        await expect(plataforma.getByText(/El centro paso al plan/)).toBeVisible();
+        await expect(
+          plataforma
+            .getByRole('region', { name: 'Notificaciones', exact: true })
+            .getByText('Plan cambiado'),
+        ).toBeVisible();
         await expect(plataforma.getByTestId('suscripcion-plan')).not.toHaveText(inicial.planName);
       } finally {
         await plataforma.context().close();

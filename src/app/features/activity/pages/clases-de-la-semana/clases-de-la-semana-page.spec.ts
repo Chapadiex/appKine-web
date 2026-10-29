@@ -84,7 +84,14 @@ describe('ClasesDeLaSemanaPage', () => {
 
       const texto = textoDe(fixture);
       expect(texto).toContain('Semana del lunes 12/10 al domingo 18/10');
-      expect(texto).toContain('1 clase');
+      // Patron de listado (UX-14): contador en la barra de la tabla, pie estandar, todo en una tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('1 clase');
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
+      expect(raiz.querySelector('section.tarjeta .tabla')).not.toBeNull();
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
       expect(texto).toContain('18:00 a 19:00');
       expect(texto).toContain('Pilates reformer');
       expect(texto).toContain('Lic. Diaz');
@@ -111,7 +118,9 @@ describe('ClasesDeLaSemanaPage', () => {
     );
     primero.flush([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No hay clases esta semana.');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('No hay clases esta semana');
     expect(textoDe(fixture)).not.toContain('Programar clase');
 
     clickear(fixture, 'Semana siguiente');
@@ -172,6 +181,36 @@ describe('ClasesDeLaSemanaPage', () => {
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Funcional');
     expect(textoDe(fixture)).not.toContain('Yoga suave');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.filtros-barra__resultados')
+        ?.textContent,
+    ).toContain('1 clase');
+  });
+
+  it('pagina de a 10 y, sin coincidencias, ofrece limpiar los filtros', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-01');
+    esperarClases().flush(
+      Array.from({ length: 12 }, (_, i) => ({ ...CLASE, id: i + 1, titulo: `Clase ${i + 1}` })),
+    );
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(10);
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–10 de 12',
+    );
+    clickear(fixture, 'Página siguiente');
+    await asentar(fixture);
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(2);
+
+    const busqueda = raiz.querySelector('#clases-busqueda') as HTMLInputElement;
+    busqueda.value = 'zzz';
+    busqueda.dispatchEvent(new Event('input'));
+    await asentar(fixture);
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('No encontramos clases');
+    clickear(fixture, 'Limpiar filtros');
+    await asentar(fixture);
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(10);
   });
 
   it('un error de lectura se muestra y se reintenta', async () => {

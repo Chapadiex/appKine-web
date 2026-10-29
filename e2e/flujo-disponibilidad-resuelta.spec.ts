@@ -44,12 +44,21 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await page.getByRole('button', { name: 'Ver que espacios hay' }).click();
     expect((await consulta).status()).toBe(200);
 
+    // UX-14: busqueda por nombre en el resultado y la cuenta en la barra de la tabla.
+    await page.getByLabel('Nombre del espacio').fill(entero);
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 espacio en servicio');
     const tabla = page.getByRole('region', {
       name: 'Espacios en servicio en el periodo consultado',
     });
     await expect(tabla.getByRole('row', { name: new RegExp(entero) })).toContainText(
       '6 personas a la vez',
     );
+    await page.getByLabel('Nombre del espacio').fill(vence);
+    await expect(
+      page.getByText('Ningún espacio en servicio coincide con la búsqueda.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Limpiar filtros' }).click();
+    await expect(page.getByLabel('Nombre del espacio')).toHaveValue('');
     await expect(tabla.getByRole('row', { name: new RegExp(vence) })).toHaveCount(0);
   });
 

@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { CatalogoFinanciadoresPage } from './catalogo-financiadores-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -76,7 +77,31 @@ describe('CatalogoFinanciadoresPage', () => {
     expect(pedido.request.params.get('tipo')).toBe('PREPAGA');
     pedido.flush([]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('Ninguna entrada del catálogo coincide');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Ninguna entrada del catálogo coincide',
+    );
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '0 financiadores',
+    );
+
+    // UX-14: "Limpiar filtros" del vacio vuelve a la consulta de entrada.
+    [...host.querySelectorAll<HTMLButtonElement>('app-estado-vacio button')]
+      .find((b) => b.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = httpMock.expectOne((p) => p.url === CATALOGO);
+    expect(limpio.request.params.has('q')).toBe(false);
+    expect(limpio.request.params.has('tipo')).toBe(false);
+    expect(limpio.request.params.get('estado')).toBe('ACTIVO');
+    limpio.flush([OSDE]);
+    await asentar(fixture);
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 financiador',
+    );
+    // Los planes de la entrada: tabla interna con orden y pie.
+    const planes = host.querySelector('app-planes-del-catalogo')!;
+    expect(planes.querySelectorAll('th[appOrdenable]').length).toBe(3);
+    expect(planes.textContent).toContain('Mostrando 1–');
   });
 
   it('da de alta un financiador y relee', async () => {
@@ -106,7 +131,10 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([OSDE]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('quedo en el catalogo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Financiador agregado al catálogo');
+    expect(aviso?.descripcion).toBe('IOSFA. Los centros ya lo pueden agregar.');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('edita sin el código y con la versión leida', async () => {
@@ -146,7 +174,33 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([OSDE]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('Otro cambio llego a esta entrada');
+    // El panel se cerro para releer: el motivo va al aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('Otro cambio llego a esta entrada');
+  });
+
+  it('un nombre en uso queda pegado al campo, con el panel abierto', async () => {
+    const fixture = await montar();
+    boton(fixture, 'Editar OSDE')?.click();
+    fixture.detectChanges();
+    enviarFormulario(fixture);
+    httpMock
+      .expectOne((p) => p.method === 'PUT')
+      .flush(
+        { type: 'https://akine.app/problems/financiador-nombre-taken', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await asentar(fixture);
+
+    const alerta = fixture.nativeElement.querySelector(
+      '#catalogo-financiador-en-uso',
+    ) as HTMLElement;
+    expect(alerta.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta.textContent).toContain('Ese nombre ya lo usa otra entrada vigente');
+    const nombre = campo(fixture, '#catalogo-financiador-nombre');
+    expect(nombre.getAttribute('aria-invalid')).toBe('true');
+    expect(nombre.getAttribute('aria-describedby')).toBe('catalogo-financiador-en-uso');
   });
 
   it('la baja exige motivo', async () => {
@@ -164,7 +218,11 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('se dio de baja del catalogo');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Financiador dado de baja del catálogo']);
   });
 
   it('planes: alta, edicion y baja', async () => {

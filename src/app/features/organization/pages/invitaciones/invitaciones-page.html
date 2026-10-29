@@ -36,20 +36,34 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta" aria-labelledby="titulo-listado-invitaciones">
-  <h2 id="titulo-listado-invitaciones">Invitaciones enviadas</h2>
-
+<section class="tarjeta" aria-label="Invitaciones enviadas">
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    va solo el embudo; "Mostrar" es un filtro avanzado.
+    Toolbar de la tabla (UX-14): el backend no busca por texto, pero la lista llega entera y el
+    email se busca aca; "Mostrar" es un filtro avanzado y va al servidor.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['invitación', 'invitaciones']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="invitaciones-busqueda">Email de la persona</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="invitaciones-busqueda"
+          name="invitaciones-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por email"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-invitacion">Mostrar</label>
       <select
@@ -78,27 +92,46 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Una invitación la emite una organización concreta, así que hay que indicar cual. Tu sesión
-          sigue abierta: solo falta elegir donde estas trabajando.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio
+          titulo="Todavía no elegiste un consultorio."
+          texto="Una invitación la emite una organización concreta, así que hay que indicar cual. Tu sesión sigue abierta: solo falta elegir donde estas trabajando."
+        >
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer las invitaciones">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
-        @if (filas().length === 0) {
-          <p class="estado estado--vacio">No hay invitaciones con el filtro elegido.</p>
+        @if (tabla.total() === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="No hay invitaciones pendientes"
+            texto="Invitá a alguien para que se sume al equipo."
+          >
+            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+              Invitar a alguien
+            </button>
+          </app-estado-vacio>
+        } @else if (tabla.total() === 0) {
+          <app-estado-vacio
+            titulo="No hay invitaciones con el filtro elegido."
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -117,7 +150,15 @@
                     Persona invitada
                   </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="rol">Rol propuesto</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="enviada">Enviada</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="enviada"
+                  >
+                    Enviada
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -135,7 +176,9 @@
                       }
                     </th>
                     <td>{{ etiquetaDeRol(invitacion.roleCode) }}</td>
-                    <td>{{ formatearInstante(invitacion.createdAt) ?? 'Sin fecha' }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ formatearInstante(invitacion.createdAt) ?? 'Sin fecha' }}
+                    </td>
                     <td>
                       <span class="marca-estado">{{ rotuloDeEstado(invitacion) }}</span>
 
@@ -192,19 +235,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} invitaciones</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de invitaciones"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
-
-          @if (errorAccion() && cancelacionAbierta() === null && !altaAbierta()) {
-            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-          }
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de invitaciones" />
         }
       }
     }
@@ -218,7 +249,14 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva invitación" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo campo--ancho">
+      <!-- Error general del alta (no del email): arriba del formulario, a la vista. -->
+      @if (errorAccion() && !errorEnElEmail()) {
+        <app-alerta tipo="error" titulo="No pudimos enviar la invitación">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
+      <div class="campo campo--6">
         <label for="invitacion-email">Email de la persona</label>
         <input
           id="invitacion-email"
@@ -226,22 +264,51 @@
           formControlName="email"
           autocomplete="off"
           [attr.aria-describedby]="
-            errorEnElEmail() || mostrarError('email') ? null : 'invitacion-email-ayuda'
+            errorEnElEmail()
+              ? 'invitacion-email-en-uso'
+              : mostrarError('email')
+                ? 'invitacion-email-error'
+                : 'invitacion-email-ayuda'
           "
           [attr.aria-invalid]="mostrarError('email') || errorEnElEmail() ? 'true' : null"
         />
-        @if (errorEnElEmail()) {
-          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-        } @else if (mostrarError('email')) {
-          <p class="campo__error">Escribí un correo válido.</p>
-        } @else {
+        <!-- Con un conflicto, lo que se ve es la alerta pegada abajo, con su salida. -->
+        @if (mostrarError('email') && !errorEnElEmail()) {
+          <p class="campo__error" id="invitacion-email-error">Escribí un correo válido.</p>
+        } @else if (!errorEnElEmail()) {
           <p class="ayuda" id="invitacion-email-ayuda">
             Le llega el enlace y queda como su usuario. No hace falta que ya tenga cuenta.
           </p>
         }
       </div>
 
-      <div class="campo">
+      <!--
+        Conflicto con algo que ya existe (una invitacion pendiente o un vinculo): pegado al email
+        que lo produjo, con la salida si la hay. Lo que hay que cambiar es el email, no el rol.
+      -->
+      @if (errorEnElEmail()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          id="invitacion-email-en-uso"
+          [titulo]="
+            causaAccion() === 'ya-vinculado'
+              ? 'Esta persona ya trabaja en la organización'
+              : 'Ya hay una invitación pendiente para este email'
+          "
+        >
+          <p>{{ errorAccion() }}</p>
+          @if (causaAccion() === 'ya-vinculado') {
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" routerLink="/organizacion/colaboradores"
+                >Ver colaboradores</a
+              >
+            </p>
+          }
+        </app-alerta>
+      }
+
+      <div class="campo campo--4">
         <label for="invitacion-rol">Rol con el que entraria</label>
         <select
           id="invitacion-rol"
@@ -257,7 +324,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="invitacion-alcance">Donde trabajaria</label>
         <select
           id="invitacion-alcance"
@@ -271,10 +338,6 @@
           "Toda la organización" incluye las sedes que abras mas adelante.
         </p>
       </div>
-
-      @if (errorAccion() && !errorEnElEmail()) {
-        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-      }
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -299,6 +362,12 @@
     [subtitulo]="invitacion.email ?? null"
     (cerrar)="cerrarPaneles()"
   >
+    @if (errorAccion()) {
+      <app-alerta tipo="error" titulo="No pudimos cancelar la invitación">
+        <p>{{ errorAccion() }}</p>
+      </app-alerta>
+    }
+
     <app-confirmacion-con-motivo
       idCampo="cancelar-invitacion-motivo"
       [titulo]="'Cancelar la invitación a ' + invitacion.email"
@@ -310,9 +379,5 @@
       (confirmado)="enviarCancelacion($event)"
       (cancelado)="cerrarPaneles()"
     />
-
-    @if (errorAccion()) {
-      <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-    }
   </app-panel-lateral>
 }

@@ -14,6 +14,7 @@ import {
 } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -303,7 +304,7 @@ describe('ExcepcionesPage', () => {
     listado().flush(VIGENTES);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La apertura quedo cargada');
+    expect(titulosDeAvisos()).toContain('Apertura cargada');
   });
 
   /**
@@ -367,7 +368,7 @@ describe('ExcepcionesPage', () => {
     listado().flush(VIGENTES);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La apertura quedo cargada');
+    expect(titulosDeAvisos()).toContain('Apertura cargada');
   });
 
   /** Mover las fechas con el aviso abierto obliga a verificar de nuevo: son otros feriados. */
@@ -527,7 +528,7 @@ describe('ExcepcionesPage', () => {
     listado().flush(VIGENTES);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La apertura quedo cargada');
+    expect(titulosDeAvisos()).toContain('Apertura cargada');
   });
 
   it('si no se puede leer el calendario, la apertura de sede se frena y lo dice', async () => {
@@ -593,8 +594,8 @@ describe('ExcepcionesPage', () => {
     listado().flush(VIGENTES);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('El cierre quedo cargado');
-    expect(texto(fixture)).not.toContain('Turnos para revisar');
+    // Sin turnos afectados no hay aviso de turnos que hacer.
+    expect(titulosDeAvisos()).toEqual(['Cierre cargado']);
   });
 
   it('un cierre de sede que deja turnos afuera nombra a cada profesional y espera confirmación', async () => {
@@ -649,7 +650,11 @@ describe('ExcepcionesPage', () => {
     await estabilizar(fixture);
 
     // ExcepcionResponse no trae la cuenta: el aviso la atribuye a la consulta previa.
-    expect(texto(fixture)).toContain('Según la consulta previa, 2 turnos pendientes quedaban');
+    const turnos = TestBed.inject(AvisosStore)
+      .avisos()
+      .find((aviso) => aviso.titulo === 'Turnos para revisar');
+    expect(turnos?.tipo).toBe('advertencia');
+    expect(turnos?.descripcion).toContain('Según la consulta previa, 2 turnos pendientes quedaban');
   });
 
   it('las fechas incoherentes y la franja a medias no salen a la red', async () => {
@@ -825,6 +830,45 @@ describe('ExcepcionesPage', () => {
     expect(contenido).toContain('Todavía no elegiste un consultorio');
     expect(contenido).toContain('Tu sesión sigue abierta');
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('patrón de listado (UX-14): periodo y resultados en la tarjeta de la tabla, con pie', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const tarjeta = host.querySelector('section.tarjeta');
+    expect(tarjeta?.querySelector('#form-ventana app-filtros')).not.toBeNull();
+    expect(tarjeta?.querySelector('table')).not.toBeNull();
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 excepciones vigentes',
+    );
+    expect(host.querySelector('.tabla-pie')).toBeNull();
+    expect(host.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(host.querySelectorAll('th[appOrdenable]').length).toBe(5);
+  });
+
+  it('sin resultados con un profesional elegido ofrece limpiar el filtro', async () => {
+    const fixture = await montar([]);
+    const host: HTMLElement = fixture.nativeElement;
+
+    // Sin filtro: la respuesta "no hay" con la carga a mano.
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Cargar la primera excepción',
+    );
+
+    seleccionar(fixture, '#filtro-alcance', String(ANA_ID));
+    listado().flush([]);
+    await estabilizar(fixture);
+
+    const vacio = host.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('con ese alcance');
+    abrir(fixture, 'Limpiar filtros');
+    const limpio = listado();
+    expect(limpio.request.params.get('membershipId')).toBeNull();
+    limpio.flush(VIGENTES);
+    await estabilizar(fixture);
+    expect(host.querySelector<HTMLSelectElement>('#filtro-alcance')?.value).toBe('');
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
   });
 
   it('la pantalla vacía dice que el horario cargado se aplica tal cual', async () => {
@@ -1050,4 +1094,11 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   }
   formulario.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
+}
+
+/** Titulos de los avisos globales publicados (UX-12): el shell los dibuja, el spec mira el store. */
+function titulosDeAvisos(): string[] {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => aviso.titulo);
 }

@@ -129,7 +129,9 @@ test.describe('Notificaciones fallidas con reintento contra el backend real', ()
     await filaFallida.getByRole('button', { name: `Reintentar la notificación ${id}` }).click();
     expect((await reintento).status()).toBeLessThan(300);
     await expect(
-      page.getByRole('status').filter({ hasText: `La notificación ${id} (Turno reservado` }),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`La notificación ${id} (Turno reservado`, { exact: false }),
     ).toBeVisible();
     // Ya no esta fallida: el listado se relee y la fila sale de la vista por defecto.
     await expect(filaFallida).toHaveCount(0);

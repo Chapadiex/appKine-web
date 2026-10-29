@@ -18,6 +18,7 @@ import {
 } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -232,9 +233,13 @@ describe('OfertasDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'quedo dada de alta en esta sede',
-    );
+    // UX-12: el resultado va al aviso global y el panel se cierra; no queda abierto para el mensaje.
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Oferta publicada']);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el alta ofrece POR_CLASE, explica que devenga con la asistencia y lo manda (U-39)', async () => {
@@ -420,12 +425,15 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Ya existe una oferta con ese nombre comercial');
+    // Arriba del formulario, dentro de la alerta: al pie lo tapaba la barra de acciones.
+    const alerta = anfitrion.querySelector('form app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos publicar la oferta');
+    expect(alerta?.textContent).toContain('Ya existe una oferta con ese nombre comercial');
     // El panel sigue abierto con lo escrito: cerrarlo obligaria a tipear todo de nuevo.
     expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
       'Kinesio respiratoria',
     );
-    expect(anfitrion.textContent).not.toContain('quedo dada de alta en esta sede');
+    expect(TestBed.inject(AvisosStore).avisos()).toEqual([]);
   });
 
   it('un 429 dice cuantos segundos hay que esperar, no "intenta mas tarde"', async () => {
@@ -488,9 +496,52 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('table')).toBeNull();
-    expect(anfitrion.textContent).toContain('todavía no tiene ofertas que coincidan con el filtro');
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Esta sede todavía no tiene ofertas activas');
     // Una tabla con encabezados y sin filas no dice si el filtro tapa todo o si no hay nada.
-    expect(anfitrion.textContent).toContain('esta sede no ofrece nada para reservar');
+    expect(vacio?.textContent).toContain('esta sede no ofrece nada para reservar');
+    // "Todavía no hay": la accion es el alta, no limpiar filtros.
+    expect(vacio?.textContent).toContain('Publicar el primer servicio');
+    expect(vacio?.textContent).not.toContain('Limpiar filtros');
+  });
+
+  it('el listado sigue el patron: resultados en la toolbar, pie estandar y sin titulo repetido', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE, AUN_NO] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 ofertas',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('section.tarjeta')?.getAttribute('aria-label')).toBe(
+      'Ofertas cargadas en esta sede',
+    );
+  });
+
+  it('la busqueda acota en el navegador y el vacio filtrado ofrece limpiar los filtros', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE, AUN_NO] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    escribir(fixture, '#busqueda-ofertas', 'pilates');
+    expect(anfitrion.querySelectorAll('tbody > tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 oferta',
+    );
+
+    escribir(fixture, '#busqueda-ofertas', 'yoga');
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos ofertas');
+    const limpiar = [...(vacio?.querySelectorAll('button') ?? [])].find((boton) =>
+      boton.textContent?.includes('Limpiar filtros'),
+    );
+    limpiar?.click();
+    fixture.detectChanges();
+
+    // Solo cambio la busqueda local: limpiar no vuelve a pedir el listado.
+    httpMock.expectNone(esListado());
+    expect(anfitrion.querySelectorAll('tbody > tr').length).toBe(2);
+    expect(anfitrion.querySelector<HTMLInputElement>('#busqueda-ofertas')?.value).toBe('');
   });
 
   it('una oferta dada de baja no ofrece acciones y muestra por que se dio de baja', async () => {
@@ -849,7 +900,10 @@ describe('OfertasDeLaSedePage', () => {
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Exige prepago en recepción.');
-    expect(texto).toContain('Es un aviso, no impide atenderlo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('exito');
+    expect(aviso?.titulo).toContain('exige prepago');
+    expect(aviso?.descripcion).toContain('Es un aviso, no impide atenderlo');
     expect(textoDeBotones(fixture)).toContain('Dejar de exigir prepago');
   });
 
@@ -874,8 +928,12 @@ describe('OfertasDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('No se cambio la politica de prepago');
+    // Accion de fila sin formulario: aviso global de error, sin "Reintentar" ante concurrencia
+    // (repetir el clic a ciegas podria deshacer lo que dejo el otro puesto).
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos cambiar la política de prepago');
+    expect(aviso?.accion).toBeNull();
     expect(textoDeBotones(fixture)).toContain('Exigir prepago');
   });
 

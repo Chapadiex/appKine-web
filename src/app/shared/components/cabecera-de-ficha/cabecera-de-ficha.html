@@ -1,10 +1,15 @@
 @let m = modelo();
 <app-cabecera-de-pagina [titulo]="titulo() ?? m.titulo">
-  @if (migas().length > 0) {
-    <app-migas enLinea [migas]="migas()" />
-  }
   <ng-content select="app-ayuda, akine-ayuda" ngProjectAs="app-ayuda" />
-  @if (titulo() === null) {
+  <!--
+    En una hermana el titulo es el de la seccion: la persona sigue a la vista como dato (la ruta de
+    navegacion de la barra superior la nombra y enlaza a su ficha).
+  -->
+  @if (titulo() !== null) {
+    <span class="cabecera-ficha__dato cabecera-ficha__persona" [title]="persona()">{{
+      persona()
+    }}</span>
+  } @else {
     @for (dato of m.datos; track $index) {
       <span class="cabecera-ficha__dato">{{ dato }}</span>
     }

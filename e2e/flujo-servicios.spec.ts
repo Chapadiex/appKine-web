@@ -55,7 +55,9 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       expect(servicio.status(), await servicio.text()).toBe(201);
       servicioId = ((await servicio.json()) as { id: number }).id;
       await expect(
-        plataforma.getByText('El servicio quedo dado de alta en el catalogo global'),
+        plataforma
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText('Servicio agregado al catálogo'),
       ).toBeVisible();
 
       // --- El centro arma su oferta sobre ese servicio ---
@@ -71,7 +73,11 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       const oferta = await altaDeLaOferta;
       expect(oferta.status(), await oferta.text()).toBe(201);
       ofertaId = ((await oferta.json()) as { id: number }).id;
-      await expect(page.getByText('La oferta quedo dada de alta en esta sede.')).toBeVisible();
+      await expect(
+        page
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText('Oferta publicada'),
+      ).toBeVisible();
 
       await abrirFiltros(page);
       await page.getByLabel('Servicio', { exact: true }).selectOption(String(servicioId));
@@ -88,7 +94,11 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       const habilitacion = respuestaDe(page, 'PUT', /\/habilitaciones\/profesionales$/);
       await page.getByRole('button', { name: 'Guardar los profesionales' }).click();
       expect((await habilitacion).status()).toBe(200);
-      await expect(page.getByText('Guardamos la configuración de la oferta.')).toBeVisible();
+      await expect(
+        page
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText('Profesionales habilitados guardados'),
+      ).toBeVisible();
 
       // --- Precio particular desde hoy ---
       await navegar(page, `/servicios/ofertas/${ofertaId}/precios`);

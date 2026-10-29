@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -200,8 +201,11 @@ describe('ReservaDeTurnoPage', () => {
       motivo: 'el profesional dejo de atender ese día',
     });
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Lo que cambio: el profesional dejo de atender ese día');
+    // Conflicto con lo que ya existe: advertencia ARRIBA del formulario, con su salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('Ese horario dejó de estar disponible');
+    expect(alerta?.textContent).toContain('Lo que cambio: el profesional dejo de atender ese día');
 
     clickear(fixture, 'Recargar la agenda');
     httpMock.expectOne(esAgenda()).flush(DIA);
@@ -340,6 +344,12 @@ describe('ReservaDeTurnoPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    // UX-12: el resultado va al aviso global, y la tarjeta del turno queda porque es el paso
+    // siguiente (confirmar, registrar la atencion).
+    const avisos = TestBed.inject(AvisosStore);
+    expect(avisos.avisos()[0]?.titulo).toBe('Turno reservado');
+    expect(avisos.avisos()[0]?.descripcion).toContain('Todavía falta confirmarlo');
+
     clickear(fixture, 'Confirmar el turno');
     httpMock
       .expectOne(
@@ -351,8 +361,10 @@ describe('ReservaDeTurnoPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Turno confirmado');
+    expect(avisos.avisos().map((aviso) => aviso.titulo)).toEqual([
+      'Turno reservado',
+      'Turno confirmado',
+    ]);
     // AKINE-05.03 quedo fuera de alcance por DP-10: no hay endpoint de cancelacion y por eso no
     // hay boton. Un boton que termina en 404 promete algo que el producto no tiene.
     expect(botonPorTexto(fixture, 'Cancelar')).toBeNull();

@@ -6,7 +6,11 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { NotificacionesService } from '../../../../api/generated/api/notificaciones.service';
 import { NotificationPageResponse } from '../../../../api/generated/model/notification-page-response';
 import { NotificationResponse } from '../../../../api/generated/model/notification-response';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
@@ -26,6 +30,8 @@ import {
 } from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -34,8 +40,6 @@ import {
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListNotificationsRequestParams } from '../../../../api/generated/api/notificaciones.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-
-const POR_PAGINA = 20;
 
 /**
  * Notificaciones de la organizacion que no salieron, con reintento por fila (RF-M26-005).
@@ -65,6 +69,8 @@ const POR_PAGINA = 20;
     ColumnaOrdenable,
     RouterLink,
     Paginacion,
+    EstadoVacio,
+    Alerta,
   ],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
@@ -75,6 +81,7 @@ export class NotificacionesPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly notificaciones = inject(NotificacionesService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   protected readonly estadosFiltrables = ESTADOS_FILTRABLES;
@@ -94,6 +101,9 @@ export class NotificacionesPage {
   protected readonly faltaContexto = this.vista.faltaContexto;
 
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** El tipo de notificacion, o el destinatario exacto (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
@@ -118,8 +128,6 @@ export class NotificacionesPage {
 
   /** Id de la fila que se esta reintentando; deshabilita todos los botones mientras tanto. */
   protected readonly reintentando = signal<number | null>(null);
-  protected readonly exito = signal<string | null>(null);
-  protected readonly errorReintento = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -128,8 +136,6 @@ export class NotificacionesPage {
         this.paginaActual.set(0);
         this.busqueda.set('');
         this.orden.reiniciar();
-        this.exito.set(null);
-        this.errorReintento.set(null);
         this.consultar();
       });
     });
@@ -156,6 +162,19 @@ export class NotificacionesPage {
     this.consultarDesdeElPrincipio();
   }
 
+  /** "Limpiar filtros": sin busqueda y con los estados de entrada (Fallida + Agotada). */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.elegidos.set(new Set(ESTADOS_POR_DEFECTO));
+    this.consultarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.consultarDesdeElPrincipio();
+  }
+
   private consultarDesdeElPrincipio(): void {
     this.paginaActual.set(0);
     this.consultar();
@@ -175,28 +194,32 @@ export class NotificacionesPage {
       return;
     }
     const notificationId = fila.id;
-    this.exito.set(null);
-    this.errorReintento.set(null);
     this.reintentando.set(notificationId);
 
     this.notificaciones.retryNotification({ orgId, notificationId }).subscribe({
       next: () => {
         this.reintentando.set(null);
-        this.exito.set(
-          `La notificación ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
-            'volvio a la cola de envio. Sale en el próximo ciclo; el negocio que la origino no se repite.',
-        );
+        // UX-12: accion de una fila, sin formulario: el resultado va al aviso global.
+        this.avisos.exito('Notificación en la cola de envío', {
+          descripcion:
+            `La notificación ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
+            'sale en el próximo ciclo; el negocio que la origino no se repite.',
+        });
         this.consultar();
       },
       error: (error: unknown) => {
         this.reintentando.set(null);
-        this.errorReintento.set(traducirErrorDeReintento(error, notificationId));
+        // Sin "Reintentar" en el aviso: el listado se relee y, si la fila sigue admitiendo
+        // reintento, su propio boton es la salida.
+        this.avisos.error('No pudimos reintentar la notificación', {
+          descripcion: traducirErrorDeReintento(error, notificationId),
+        });
         this.consultar();
       },
     });
   }
 
-  private consultar(): void {
+  protected consultar(): void {
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });
@@ -213,7 +236,7 @@ export class NotificacionesPage {
         orgId,
         estado: ESTADOS_FILTRABLES.filter((estado) => this.elegidos().has(estado)),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })

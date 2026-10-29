@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Caso clínico">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Historia clínica', ruta: visita.rutaHistoria() }]" />
   @if (estado().tipo === 'listo' && caso(); as c) {
     <div cabeceraAcciones>
       <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
@@ -19,21 +18,20 @@
   }
 
   @case ('error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-caso">
-      @if (estado(); as e) {
-        @if (e.tipo === 'error') {
-          <h2 id="titulo-error-caso">No se pudo abrir el caso</h2>
-          <p class="estado estado--error">{{ e.error.mensaje }}</p>
+    @if (estado(); as e) {
+      @if (e.tipo === 'error') {
+        <app-alerta tipo="error" titulo="No pudimos abrir el caso">
+          <p>{{ e.error.mensaje }}</p>
           @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'no-encontrado') {
-            <div class="acciones">
+            <p class="alerta__acciones">
               <button type="button" class="boton boton--secundario" (click)="releer()">
                 Reintentar
               </button>
-            </div>
+            </p>
           }
-        }
+        </app-alerta>
       }
-    </section>
+    }
   }
 
   @case ('listo') {
@@ -85,20 +83,6 @@
         </div>
       </section>
 
-      <p class="estado estado--ok" role="status">{{ aviso() }}</p>
-      @if (errorDeOperacion(); as problema) {
-        <div class="tarjeta" role="alert">
-          <p class="estado estado--error">{{ problema.mensaje }}</p>
-          @if (problema.causa === 'version-vieja' || problema.causa === 'conflicto') {
-            <div class="acciones">
-              <button type="button" class="boton boton--secundario" (click)="releer()">
-                Releer el caso
-              </button>
-            </div>
-          }
-        </div>
-      }
-
       <div class="historia__columnas">
         <div class="historia__principal">
           <section class="tarjeta" aria-labelledby="titulo-equipo">
@@ -111,6 +95,9 @@
                 </p>
               </app-ayuda>
             </div>
+            @if (operacionRechazada() === 'equipo') {
+              <ng-container *ngTemplateOutlet="rechazo" />
+            }
             @if (equipo().length === 0) {
               <p class="estado estado--vacio">El caso no tiene equipo asignado.</p>
             } @else {
@@ -145,8 +132,9 @@
             }
 
             @if (activo()) {
-              <div class="fila-editable">
-                <div class="campo">
+              <!-- Grilla de 12 columnas (UX-14): el profesional, su rol y el boton en una fila. -->
+              <div class="grilla-12">
+                <div class="campo campo--6">
                   <label for="equipo-nuevo">Sumar un profesional</label>
                   <select
                     id="equipo-nuevo"
@@ -159,7 +147,7 @@
                     }
                   </select>
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label for="equipo-rol">Rol</label>
                   <select
                     id="equipo-rol"
@@ -171,14 +159,16 @@
                     }
                   </select>
                 </div>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="nuevoIntegrante() === null"
-                  (click)="sumar()"
-                >
-                  Sumar
-                </button>
+                <div class="campo campo--3 campo--accion">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="nuevoIntegrante() === null"
+                    (click)="sumar()"
+                  >
+                    Sumar
+                  </button>
+                </div>
               </div>
               <div class="acciones">
                 <button
@@ -221,6 +211,9 @@
             <section class="tarjeta" aria-labelledby="titulo-editar-caso">
               <h2 id="titulo-editar-caso">Editar el caso</h2>
               <form (submit)="$event.preventDefault(); guardarEdicion()">
+                @if (operacionRechazada() === 'editar') {
+                  <ng-container *ngTemplateOutlet="rechazo" />
+                }
                 <div class="campo">
                   <label for="caso-editar-diagnostico">Diagnostico presuntivo</label>
                   <textarea
@@ -228,10 +221,15 @@
                     rows="3"
                     [value]="diagnostico()"
                     [attr.aria-invalid]="faltaDiagnostico()"
+                    [attr.aria-describedby]="
+                      faltaDiagnostico() ? 'caso-editar-diagnostico-error' : null
+                    "
                     (input)="diagnostico.set($any($event.target).value)"
                   ></textarea>
                   @if (faltaDiagnostico()) {
-                    <p class="campo__error">El diagnostico presuntivo es obligatorio.</p>
+                    <p class="campo__error" id="caso-editar-diagnostico-error">
+                      El diagnostico presuntivo es obligatorio.
+                    </p>
                   }
                 </div>
                 <div class="campo">
@@ -272,6 +270,9 @@
               </app-ayuda>
             </div>
             <form (submit)="$event.preventDefault(); cerrarOReabrir()">
+              @if (operacionRechazada() === 'cerrar' || operacionRechazada() === 'reabrir') {
+                <ng-container *ngTemplateOutlet="rechazo" />
+              }
               <div class="campo">
                 <label for="caso-motivo">
                   {{ activo() ? 'Motivo del cierre' : 'Motivo de la reapertura' }}
@@ -302,3 +303,29 @@
     }
   }
 }
+
+<!--
+  El rechazo de una operacion, arriba de la tarjeta o del formulario que la mando (UX-12). Una
+  version vieja es un conflicto con lo que ya existe: advertencia, con la salida.
+-->
+<ng-template #rechazo>
+  @if (errorDeOperacion(); as problema) {
+    <app-alerta
+      [tipo]="
+        problema.causa === 'version-vieja' || problema.causa === 'conflicto'
+          ? 'advertencia'
+          : 'error'
+      "
+      [titulo]="tituloDelRechazo()"
+    >
+      <p>{{ problema.mensaje }}</p>
+      @if (problema.causa === 'version-vieja' || problema.causa === 'conflicto') {
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="releer()">
+            Releer el caso
+          </button>
+        </p>
+      }
+    </app-alerta>
+  }
+</ng-template>

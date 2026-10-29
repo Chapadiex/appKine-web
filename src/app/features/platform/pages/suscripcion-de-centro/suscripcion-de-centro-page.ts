@@ -9,7 +9,11 @@ import { LimitUsageResponse } from '../../../../api/generated/model/limit-usage-
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 import { PlatformOrganizationResponse } from '../../../../api/generated/model/platform-organization-response';
 import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -27,6 +31,8 @@ import {
 } from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type Estado =
   | { readonly tipo: 'inicial' }
@@ -47,14 +53,6 @@ type Listado =
   | { readonly tipo: 'cargando' }
   | ({ readonly tipo: 'listo' } & PaginaDeCentros)
   | { readonly tipo: 'error'; readonly error: ErrorSuscripcion };
-
-interface Resultado {
-  readonly ok: boolean;
-  readonly texto: string;
-  readonly excedidos: readonly LimitUsageResponse[];
-}
-
-const TAMANO_DE_PAGINA = 20;
 
 /**
  * La suscripcion de un centro y el cambio de plan, para la administracion de plataforma (PLA-06).
@@ -86,12 +84,15 @@ const TAMANO_DE_PAGINA = 20;
     PanelLateral,
     Pestanas,
     Paginacion,
+    EstadoVacio,
+    Alerta,
   ],
   templateUrl: './suscripcion-de-centro-page.html',
 })
 export class SuscripcionDeCentroPage {
   private readonly plataforma = inject(PlataformaService);
   private readonly suscripciones = inject(SuscripcionesService);
+  private readonly avisos = inject(AvisosStore);
   private readonly catalogoDePlanes = inject(PlanesService);
 
   protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
@@ -102,6 +103,12 @@ export class SuscripcionDeCentroPage {
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  /** La ultima busqueda enviada tenia texto o estado: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = signal(false);
 
   /**
    * Orden del listado de centros, pedido al servidor (DP-45): vuelve a la primera pagina con el
@@ -117,7 +124,13 @@ export class SuscripcionDeCentroPage {
   protected readonly planesNoDisponibles = signal(false);
   protected readonly planElegido = signal('');
   protected readonly enviando = signal(false);
-  protected readonly resultado = signal<Resultado | null>(null);
+  /** Rechazo del ultimo cambio de plan: va arriba del formulario, dentro del panel (UX-12). */
+  protected readonly errorCambio = signal<string | null>(null);
+  /**
+   * Limites del plan nuevo que el uso actual ya supera. Es una consecuencia del cambio que tiene
+   * que seguir a la vista mientras el panel este abierto, no un aviso que se va solo.
+   */
+  protected readonly excedidos = signal<readonly LimitUsageResponse[]>([]);
 
   /** El filtro de la ultima busqueda enviada: paginar no toma lo que se esta escribiendo. */
   private filtroAplicado: Pick<ListPlatformOrganizationsRequestParams, 'q' | 'status'> = {};
@@ -161,6 +174,20 @@ export class SuscripcionDeCentroPage {
       ...(q === '' ? {} : { q }),
       ...(status === '' ? {} : { status }),
     };
+    this.hayFiltros.set(q !== '' || status !== '');
+    this.listar(0);
+  }
+
+  /** "Limpiar filtros": sin texto ni estado, todos los centros desde la primera pagina. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroDeEstado.set('');
+    this.buscar();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera con el filtro ya aplicado. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.listar(0);
   }
 
@@ -171,7 +198,8 @@ export class SuscripcionDeCentroPage {
   protected elegir(centro: PlatformOrganizationResponse): void {
     if (centro.id === undefined) return;
     this.centro.set(centro);
-    this.resultado.set(null);
+    this.errorCambio.set(null);
+    this.excedidos.set([]);
     this.leer();
   }
 
@@ -180,7 +208,8 @@ export class SuscripcionDeCentroPage {
     this.pedido?.unsubscribe();
     this.centro.set(null);
     this.estado.set({ tipo: 'inicial' });
-    this.resultado.set(null);
+    this.errorCambio.set(null);
+    this.excedidos.set([]);
   }
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {
@@ -205,7 +234,9 @@ export class SuscripcionDeCentroPage {
       return;
     }
     this.enviando.set(true);
-    this.resultado.set(null);
+    this.errorCambio.set(null);
+    this.excedidos.set([]);
+    const centro = this.centro()?.name ?? 'El centro';
     this.suscripciones
       .changeSubscriptionPlan({
         orgId,
@@ -214,22 +245,25 @@ export class SuscripcionDeCentroPage {
       .subscribe({
         next: (respuesta) => {
           this.enviando.set(false);
-          const excedidos = (respuesta.warnings ?? []).filter((w) => w.exceeded !== false);
-          this.resultado.set({
-            ok: true,
-            texto:
-              respuesta.applied === false
-                ? 'Ese plan ya era el vigente: no hubo cambio.'
-                : `El centro paso al plan ${this.nombreDePlan(planCode)}.`,
-            excedidos,
-          });
+          this.excedidos.set((respuesta.warnings ?? []).filter((w) => w.exceeded !== false));
+          // El panel queda abierto a proposito: es el detalle de la suscripcion, y la relectura
+          // muestra el plan y la version nuevos. El resultado va al aviso global.
+          if (respuesta.applied === false) {
+            this.avisos.info('Ese plan ya era el vigente', {
+              descripcion: `${centro}: no hubo cambio.`,
+            });
+          } else {
+            this.avisos.exito('Plan cambiado', {
+              descripcion: `${centro} pasó al plan ${this.nombreDePlan(planCode)}.`,
+            });
+          }
           // La version nueva sale de la relectura, que es la misma fuente que uso este envio.
           this.leer();
         },
         error: (error: unknown) => {
           this.enviando.set(false);
           const traducido = traducirErrorSuscripcion(error);
-          this.resultado.set({ ok: false, texto: traducido.mensaje, excedidos: [] });
+          this.errorCambio.set(traducido.mensaje);
           if (traducido.causa === 'version-vieja') this.leer();
         },
       });
@@ -261,7 +295,7 @@ export class SuscripcionDeCentroPage {
         ...this.filtroAplicado,
         sort: this.orden.sort(),
         page: pagina,
-        size: TAMANO_DE_PAGINA,
+        size: this.porPagina(),
       })
       .subscribe({
         next: (respuesta) => {
@@ -279,7 +313,7 @@ export class SuscripcionDeCentroPage {
       });
   }
 
-  private leer(): void {
+  protected leer(): void {
     const orgId = this.centro()?.id;
     if (orgId === undefined) return;
     this.estado.set({ tipo: 'cargando' });

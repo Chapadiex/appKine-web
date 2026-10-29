@@ -14,53 +14,55 @@
 
 <!-- ================================ Filtros =================================== -->
 
+<!--
+  Filtros frecuentes a la vista (UX-14): reporte y rango de fechas en una fila de la grilla de 12
+  columnas, con "Generar" al lado.
+-->
 <section class="tarjeta" aria-labelledby="titulo-filtros-reporte">
-  <h2 id="titulo-filtros-reporte">Qué reporte y qué período</h2>
+  <h2 id="titulo-filtros-reporte" class="visualmente-oculto">Qué reporte y qué período</h2>
   <form [formGroup]="filtro" (ngSubmit)="generar()" novalidate>
-    <div class="campos-en-linea">
-      <div class="campo campo--reporte">
-        <label for="reporte-codigo">Reporte</label>
-        <select id="reporte-codigo" formControlName="reporte">
-          @for (opcion of opciones(); track opcion.codigo) {
-            <option [value]="opcion.codigo">{{ opcion.nombre }}</option>
-          }
-        </select>
-      </div>
+    <div class="campo campo--4">
+      <label for="reporte-codigo">Reporte</label>
+      <select id="reporte-codigo" formControlName="reporte">
+        @for (opcion of opciones(); track opcion.codigo) {
+          <option [value]="opcion.codigo">{{ opcion.nombre }}</option>
+        }
+      </select>
+    </div>
 
-      <div class="campo">
-        <label for="reporte-desde">Desde</label>
-        <input
-          id="reporte-desde"
-          type="date"
-          formControlName="desde"
-          [attr.aria-invalid]="problemaDeRango() ? 'true' : null"
-          aria-describedby="ayuda-rango"
-        />
-      </div>
+    <div class="campo">
+      <label for="reporte-desde">Desde</label>
+      <input
+        id="reporte-desde"
+        type="date"
+        formControlName="desde"
+        [attr.aria-invalid]="errorDeRango() ? 'true' : null"
+        [attr.aria-describedby]="errorDeRango() ? 'ayuda-rango error-rango' : 'ayuda-rango'"
+      />
+    </div>
 
-      <div class="campo">
-        <label for="reporte-hasta">Hasta</label>
-        <input
-          id="reporte-hasta"
-          type="date"
-          formControlName="hasta"
-          [attr.aria-invalid]="problemaDeRango() ? 'true' : null"
-          aria-describedby="ayuda-rango"
-        />
-      </div>
+    <div class="campo">
+      <label for="reporte-hasta">Hasta</label>
+      <input
+        id="reporte-hasta"
+        type="date"
+        formControlName="hasta"
+        [attr.aria-invalid]="errorDeRango() ? 'true' : null"
+        [attr.aria-describedby]="errorDeRango() ? 'ayuda-rango error-rango' : 'ayuda-rango'"
+      />
+    </div>
 
-      <div class="acciones acciones--filtro">
-        <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
-          Generar reporte
-        </button>
-      </div>
+    <div class="acciones acciones--filtro">
+      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+        Generar reporte
+      </button>
     </div>
 
     <p id="ayuda-rango" class="ayuda">
       Los dos días se incluyen. Como máximo {{ maximoDias }} días, en la zona horaria de la sede.
     </p>
-    @if (problemaDeRango(); as problema) {
-      <p class="campo__error" role="alert">{{ problema }}</p>
+    @if (errorDeRango(); as problema) {
+      <p class="campo__error" id="error-rango" role="alert">{{ problema }}</p>
     }
 
     @if (seccionesPrevistas().length > 0) {
@@ -92,16 +94,22 @@
   <p class="estado estado--cargando">Calculando el reporte…</p>
 }
 
+<!-- El reporte no se pudo generar: en el lugar del resultado, con la salida (UX-12). -->
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-reporte">
-    <h2 id="titulo-error-reporte">No se pudo generar el reporte</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    @if (fallo.causa === 'sin-contexto') {
-      <div class="acciones">
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      </div>
-    }
-  </section>
+  @if (fallo.causa !== 'rango-invalido') {
+    <app-alerta tipo="error" titulo="No se pudo generar el reporte">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="generar()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  }
 }
 
 @if (reporte(); as r) {
@@ -122,9 +130,6 @@
         </button>
       </div>
     </div>
-    @if (errorExport(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-    }
     <p class="ayuda ayuda--fija">
       Del {{ fecha(r.desde) }} al {{ fecha(r.hasta) }}
       @if (r.zona) {
@@ -177,9 +182,14 @@
     <p class="estado estado--cargando">Armando el gráfico de evolución…</p>
   }
   @if (errorDeSerie(); as fallo) {
-    <p class="estado estado--error" role="status">
-      No se pudo armar el gráfico de evolución: {{ fallo.mensaje }}
-    </p>
+    <app-alerta tipo="error" titulo="No se pudo armar el gráfico de evolución">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="reintentarSerie()">
+          Reintentar
+        </button>
+      </p>
+    </app-alerta>
   }
   @if (serieMostrada(); as serie) {
     <section class="tarjeta" aria-labelledby="titulo-evolucion">
@@ -286,34 +296,11 @@
 
       @if (seccion.columnas && seccion.columnas.length > 0) {
         @if (seccion.filas && seccion.filas.length > 0) {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            [attr.aria-labelledby]="'titulo-detalle-' + i"
-          >
-            <h3 [id]="'titulo-detalle-' + i" class="visualmente-oculto">
-              Detalle de {{ tituloDeSeccion(seccion.seccion, seccion.titulo) }}
-            </h3>
-            <table class="tabla">
-              <thead>
-                <tr>
-                  @for (columna of seccion.columnas; track $index) {
-                    <th scope="col">{{ columna }}</th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (fila of seccion.filas; track $index) {
-                  <tr>
-                    @for (valorDeCelda of fila; track $index) {
-                      <td [class.importe]="esImporte(valorDeCelda)">{{ celda(valorDeCelda) }}</td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <app-tabla-de-detalle
+            [columnas]="seccion.columnas"
+            [filas]="seccion.filas"
+            [etiqueta]="'Detalle de ' + tituloDeSeccion(seccion.seccion, seccion.titulo)"
+          />
         } @else {
           <p class="estado estado--vacio">Sin detalle en el período.</p>
         }

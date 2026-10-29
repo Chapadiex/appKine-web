@@ -26,20 +26,18 @@
   }
 </app-cabecera-de-ficha>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta tarjeta--listado" aria-labelledby="titulo-filtros-documentos">
-  <h2 id="titulo-filtros-documentos" class="visualmente-oculto">Documentos cargados</h2>
-
+<section class="tarjeta tarjeta--listado" aria-label="Documentos cargados">
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    categoria y estado van solos detras del embudo.
+    Patron de listados (UX-14). El listado no tiene busqueda por texto en el backend, asi que
+    categoria y estado van solos detras de "Filtros", con el contador de resultados al lado.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="cargando() || mensajeError() ? null : totalDocumentos()"
+    [unidad]="['documento', 'documentos']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <div class="campo">
       <label for="documentos-filtro-categoria">Categoría</label>
       <select
@@ -81,38 +79,55 @@
   }
 
   @if (cargando()) {
-    <p class="estado">Cargando los documentos...</p>
+    <p class="estado estado--cargando">Cargando los documentos...</p>
   } @else if (mensajeError(); as mensaje) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <p class="acciones">
-        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+    <app-alerta tipo="error" titulo="No pudimos leer los documentos">
+      <p>{{ mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (faltaContexto()) {
+          <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
       </p>
-    } @else {
-      <p class="acciones">
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-      </p>
-    }
+    </app-alerta>
+  } @else if (adjuntos().length === 0 && filtrosAvanzadosActivos() === 0) {
+    <app-estado-vacio
+      titulo="Todavía no hay documentos cargados"
+      texto="Es un caso normal: los documentos se cargan cuando el paciente los trae."
+    >
+      @if (!fichaCerrada()) {
+        <button type="button" class="boton" (click)="abrirSubida()" *akinePermiso="permisoManage">
+          Subir el primer documento
+        </button>
+      }
+    </app-estado-vacio>
   } @else if (adjuntos().length === 0) {
-    <p class="estado">
-      No hay documentos cargados con estos filtros. Que no haya ninguno es un caso normal: los
-      documentos se cargan cuando el paciente los trae.
-    </p>
+    <app-estado-vacio
+      titulo="No hay documentos con estos filtros"
+      texto="Probá con otra categoría o incluí los dados de baja."
+    >
+      <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+        Limpiar filtros
+      </button>
+    </app-estado-vacio>
   } @else {
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-documentos">
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de documentos">
       <table class="tabla">
-        <caption id="caption-documentos">
-          {{
-            totalDocumentos()
-          }}
-          documento(s) según los filtros aplicados
-        </caption>
         <thead>
           <tr>
             <th scope="col" appOrdenable [tabla]="orden" columna="titulo">Documento</th>
             <th scope="col" appOrdenable [tabla]="orden" columna="categoria">Categoría</th>
-            <th scope="col">Archivo</th>
-            <th scope="col" appOrdenable [tabla]="orden" columna="tamano">Tamaño</th>
+            <th scope="col" class="tabla__col--secundaria">Archivo</th>
+            <th
+              scope="col"
+              class="tabla__col--secundaria"
+              appOrdenable
+              [tabla]="orden"
+              columna="tamano"
+            >
+              Tamaño
+            </th>
             <th scope="col" appOrdenable [tabla]="orden" columna="subidoEn">Cargado</th>
             <th scope="col">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -123,8 +138,8 @@
             <tr [class.fila--seleccionada]="adjuntoEnPanel()?.id === adjunto.id">
               <td>{{ nombreDeAdjunto(adjunto) }}</td>
               <td>{{ nombreDeCategoria(adjunto.categoria) }}</td>
-              <td>{{ adjunto.nombreArchivo }}</td>
-              <td>{{ tamanoEnPalabras(adjunto.tamanoBytes) }}</td>
+              <td class="tabla__col--secundaria">{{ adjunto.nombreArchivo }}</td>
+              <td class="tabla__col--secundaria">{{ tamanoEnPalabras(adjunto.tamanoBytes) }}</td>
               <td>{{ fechaEnPalabras(adjunto.subidoEn) }}</td>
               <td>
                 @if (adjuntoInactivo(adjunto)) {
@@ -183,33 +198,17 @@
       </table>
     </div>
 
-    <akine-paginacion
+    <app-paginacion
       [paginaActual]="pagina()"
       [totalPaginas]="totalPaginas()"
+      [total]="totalDocumentos()"
+      [porPagina]="porPagina()"
       etiqueta="Páginas de documentos"
       (cambioDePagina)="irAPagina($event)"
+      (cambioDePorPagina)="cambiarPorPagina($event)"
     />
   }
 </section>
-
-<!--
-  Error de una accion sin ningun panel abierto. El caso concreto es "Descargar", que es la unica
-  accion de fila que no abre nada: su rechazo se escribia en `errorAccion` y el unico lugar donde
-  eso se renderizaba era dentro del formulario de subida y de los dos paneles, asi que con todo
-  cerrado -el estado normal al tocar Descargar- el boton parecia no hacer nada.
--->
-@if (errorAccion(); as mensaje) {
-  @if (panel() === null && !subidaAbierta()) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    @if (hayQueRecargar()) {
-      <p class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar los documentos
-        </button>
-      </p>
-    }
-  }
-}
 
 <!--
   Subida, reclasificacion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes la
@@ -218,6 +217,12 @@
 @if (subidaAbierta()) {
   <app-panel-lateral titulo="Subir un documento" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioSubida" (ngSubmit)="subir()" novalidate>
+      @if (errorAccion() && !archivoRechazado()) {
+        <app-alerta tipo="error" titulo="No pudimos subir el documento">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="subida-archivo">Archivo</label>
         <input
@@ -225,7 +230,12 @@
           type="file"
           accept="application/pdf,image/png,image/jpeg"
           (change)="elegirArchivo($event.target)"
-          aria-describedby="subida-archivo-ayuda"
+          [attr.aria-invalid]="archivoRechazado() ? 'true' : null"
+          [attr.aria-describedby]="
+            archivoRechazado()
+              ? 'subida-archivo-ayuda subida-archivo-error'
+              : 'subida-archivo-ayuda'
+          "
         />
         <p class="ayuda ayuda--fija" id="subida-archivo-ayuda">
           @if (archivo(); as elegido) {
@@ -234,14 +244,20 @@
             PDF, PNG o JPEG. El tipo se verifica <b>por el contenido</b>, no por la extensión.
           }
         </p>
+        @if (archivoRechazado()) {
+          <p class="campo__error" id="subida-archivo-error">{{ errorAccion() }}</p>
+        }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="subida-categoria">Categoría</label>
         <select
           id="subida-categoria"
           formControlName="categoria"
           [attr.aria-invalid]="mostrarErrorSubida('categoria') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorSubida('categoria') ? 'subida-categoria-error' : null
+          "
         >
           <option value="">Elegí una categoría</option>
           @for (categoria of categorias; track categoria) {
@@ -249,11 +265,11 @@
           }
         </select>
         @if (mostrarErrorSubida('categoria')) {
-          <p class="estado estado--error">Elegí la categoría del documento.</p>
+          <p class="campo__error" id="subida-categoria-error">Elegí la categoría del documento.</p>
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="subida-titulo">Título <span class="campo__opcional">(opcional)</span></label>
         <input
           id="subida-titulo"
@@ -262,12 +278,6 @@
           aria-describedby="subida-titulo-ayuda"
         />
         <p class="ayuda" id="subida-titulo-ayuda">Sin título, se muestra el nombre del archivo.</p>
-      </div>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
       </div>
 
       <div class="acciones">
@@ -294,7 +304,20 @@
       </p>
 
       <form [formGroup]="formularioClasificacion" (ngSubmit)="reclasificar()" novalidate>
-        <div class="campo">
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos reclasificar el documento">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar los documentos
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
+        <div class="campo campo--4">
           <label for="reclasificar-categoria-{{ adjunto.id }}">Categoría</label>
           <select id="reclasificar-categoria-{{ adjunto.id }}" formControlName="categoria">
             @for (categoria of categorias; track categoria) {
@@ -303,22 +326,9 @@
           </select>
         </div>
 
-        <div class="campo">
+        <div class="campo campo--6">
           <label for="reclasificar-titulo-{{ adjunto.id }}">Título</label>
           <input id="reclasificar-titulo-{{ adjunto.id }}" type="text" formControlName="titulo" />
-        </div>
-
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            @if (hayQueRecargar()) {
-              <p class="acciones">
-                <button type="button" class="boton boton--secundario" (click)="cargar()">
-                  Recargar los documentos
-                </button>
-              </p>
-            }
-          }
         </div>
 
         <div class="acciones">
@@ -336,6 +346,18 @@
       [titulo]="'Dar de baja ' + nombreDeAdjunto(adjunto)"
       (cerrar)="cerrarPaneles()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja el documento">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar los documentos
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="baja-adjunto-{{ adjunto.id }}"
         titulo="Dar de baja {{ nombreDeAdjunto(adjunto) }}"
@@ -347,12 +369,6 @@
         (confirmado)="confirmarBaja($event)"
         (cancelado)="cerrarPaneles()"
       />
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

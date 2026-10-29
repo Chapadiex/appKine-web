@@ -58,7 +58,10 @@ import {
 } from '../../models/etiquetas-de-atencion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
 const ESPERA_AUTOSAVE = 1_500;
@@ -164,8 +167,9 @@ const ESPERA_AUTOSAVE = 1_500;
 @Component({
   selector: 'app-atencion-page',
   imports: [
-    Migas,
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     RouterLink,
     MedicionesDeSesion,
@@ -177,7 +181,16 @@ const ESPERA_AUTOSAVE = 1_500;
   styleUrl: '../../atencion.css',
 })
 export class AtencionPage {
+  /** Ruta de navegacion de la barra superior. */
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const rutaClase = this.rutaDeLaClase();
+    return rutaClase
+      ? [{ etiqueta: 'Atención clínica de la clase', ruta: rutaClase }]
+      : [{ etiqueta: 'Agenda', ruta: '/agenda' }];
+  });
+
   private readonly api = inject(ClinicalApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly permisos = inject(PermissionsStore);
@@ -224,7 +237,6 @@ export class AtencionPage {
   protected readonly casoNuevo = signal<number | null>(null);
   /** `true` mientras el cambio de caso viaja con la version de la sesion. */
   protected readonly cambiandoCaso = signal(false);
-  protected readonly avisoCaso = signal('');
 
   /**
    * `true` cuando la oferta exige caso clinico (RF-M10-007, DP-43): no se ofrece "Sin caso", porque
@@ -243,7 +255,6 @@ export class AtencionPage {
   protected readonly enviandoReemplazo = signal(false);
   protected readonly profesionales = signal<readonly ProfesionalElegible[]>([]);
   protected readonly profesionalNuevo = signal<number | null>(null);
-  protected readonly avisoReemplazo = signal('');
   protected readonly reemplazoSinDestino = computed(
     () =>
       this.profesionalNuevo() === null || this.profesionalNuevo() === this.sesion()?.profesionalId,
@@ -320,7 +331,7 @@ export class AtencionPage {
    * <p>Es el unico requerido que se valida aca, y se valida para poder senalar el campo exacto en
    * vez de gastar un 400 para decir algo que ya se sabe. La autoridad sigue siendo el backend.
    */
-  protected readonly avisoCierre = signal<string | null>(null);
+  protected readonly avisoCierre = signal<'asistencia' | 'nota' | null>(null);
 
   /**
    * `true` cuando la atencion ya se cerro.
@@ -470,12 +481,10 @@ export class AtencionPage {
     this.eligiendoCaso.set(false);
     this.casoElegido.set(null);
     this.casoIgnorado.set(false);
-    this.avisoCaso.set('');
     this.requiereCaso.set(false);
     this.ofertaConsultada = null;
     this.personaDelTurno.set(null);
     this.reemplazando.set(false);
-    this.avisoReemplazo.set('');
   }
 
   protected elegirCaso(valor: string): void {
@@ -542,7 +551,6 @@ export class AtencionPage {
   protected elegirCasoNuevo(valor: string): void {
     const id = Number(valor);
     this.casoNuevo.set(valor !== '' && Number.isFinite(id) && id > 0 ? id : null);
-    this.avisoCaso.set('');
   }
 
   /**
@@ -561,7 +569,6 @@ export class AtencionPage {
     const casoId = this.casoNuevo();
     this.cambiandoCaso.set(true);
     this.error.set(null);
-    this.avisoCaso.set('');
 
     this.api.cambiarCaso(consultorioId, sesionId, casoId, this.version()).subscribe({
       next: (sesion) => {
@@ -570,11 +577,13 @@ export class AtencionPage {
         this.sesion.set(sesion);
         this.version.set(sesion.version ?? 0);
         this.casoNuevo.set(sesion.casoId ?? null);
-        this.avisoCaso.set(
-          sesion.casoId === undefined
-            ? 'La atención quedo sin caso.'
-            : `La atención quedo asociada al ${this.numeroDeCaso(sesion.casoId)}.`,
-        );
+        // UX-12: el resultado es un aviso global; el selector ya muestra el caso vigente.
+        this.avisos.exito('Caso de la atención guardado', {
+          descripcion:
+            sesion.casoId === undefined
+              ? 'La atención quedo sin caso.'
+              : `La atención quedo asociada al ${this.numeroDeCaso(sesion.casoId)}.`,
+        });
       },
       error: (error: unknown) => {
         this.cambiandoCaso.set(false);
@@ -633,7 +642,7 @@ export class AtencionPage {
       return;
     }
     this.reemplazando.set(true);
-    this.avisoReemplazo.set('');
+    this.error.set(null);
     this.profesionalNuevo.set(null);
     this.api
       .profesionalesParaReemplazo(organizationId, consultorioId, this.sesion()?.ofertaId)
@@ -642,6 +651,7 @@ export class AtencionPage {
 
   protected cancelarReemplazo(): void {
     this.reemplazando.set(false);
+    this.error.set(null);
   }
 
   protected elegirProfesional(valor: string): void {
@@ -677,12 +687,14 @@ export class AtencionPage {
           this.sesion.set(sesion);
           this.version.set(sesion.version ?? 0);
           const nombre = this.nombreDelProfesional(sesion.profesionalId);
-          this.avisoReemplazo.set(
-            'La atención ahora la continua ' +
+          // El panel se cerro; el resultado va al aviso global (UX-12).
+          this.avisos.exito('Profesional reemplazado', {
+            descripcion:
+              'La atención ahora la continua ' +
               nombre +
               '. Desde acá solo ese profesional puede guardarla; el anterior va a ver que la ' +
               'atención es de otro profesional.',
-          );
+          });
         },
         error: (error: unknown) => {
           this.enviandoReemplazo.set(false);
@@ -887,19 +899,16 @@ export class AtencionPage {
       return;
     }
 
+    // Validacion en el campo (UX-12): el texto vive en la plantilla, debajo de cada uno.
     if (asistencia === null) {
-      this.avisoCierre.set(
-        'Falta decir si el paciente vino. Sin eso no se sabe si hubo prestación, y es lo unico ' +
-          'que el cierre siempre necesita.',
-      );
+      this.avisoCierre.set('asistencia');
+      enfocarDespuesDePintar('input[name="asistencia"]');
       return;
     }
 
     if (this.faltaNota()) {
-      this.avisoCierre.set(
-        'El paciente vino, así que hace falta la nota de cierre: es lo unico que registra que se ' +
-          'hizo en la sesión.',
-      );
+      this.avisoCierre.set('nota');
+      enfocarDespuesDePintar('#cierre-nota');
       return;
     }
 
@@ -922,6 +931,11 @@ export class AtencionPage {
       next: (sesion) => {
         this.cerrando.set(false);
         this.adoptarCerrada(sesion);
+        this.avisos.exito('Atención cerrada', {
+          ...(sesion.numeroSesion === undefined
+            ? {}
+            : { descripcion: `Sesión ${sesion.numeroSesion} de la historia clínica.` }),
+        });
       },
       error: (error: unknown) => {
         this.cerrando.set(false);
@@ -1073,4 +1087,13 @@ function idPositivo(valor: string | undefined): number | null {
 function textoOAusente(valor: string): string | undefined {
   const limpio = valor.trim();
   return limpio === '' ? undefined : limpio;
+}
+
+/**
+ * Lleva el foco al campo que falta, cuando ya se pinto su error (UX-12): el boton de cierre esta
+ * al pie y el campo, arriba. `setTimeout` y no un microtask: el error recien existe despues del
+ * ciclo de deteccion que dispara el signal.
+ */
+function enfocarDespuesDePintar(selector: string): void {
+  setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus());
 }

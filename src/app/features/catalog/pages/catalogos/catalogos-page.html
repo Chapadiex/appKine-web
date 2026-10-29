@@ -4,6 +4,22 @@
       <p>
         {{ tipoActual.descripcion }}
       </p>
+      <!--
+        La distincion que esta pantalla no puede aplanar (ADR-0021) se nombra en cada fila (columna
+        De quien es, y "La mantiene AKINE" en las de la plataforma). La explicacion completa va al
+        "?" de la pantalla: el listado ya no repite el titulo en un h2 (UX-14).
+      -->
+      <p class="ayuda-contextual__subtitulo">Hay dos catalogos en esta lista, y es a proposito</p>
+      <p>
+        Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son la
+        base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar ni dar
+        de baja desde acá, y por eso sus filas no traen acciones.
+      </p>
+      <p>
+        Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
+        organización y los administras desde esta misma tabla. Si necesitas que algo entre al
+        catalogo comun, pedilo a la plataforma desde Solicitudes.
+      </p>
     </app-ayuda>
     <div cabeceraAcciones>
       <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">Pedir un alta</a>
@@ -18,40 +34,18 @@
     <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
   </app-cabecera-de-pagina>
 
-  <div aria-live="polite">
-    @if (exito(); as mensaje) {
-      <p class="estado estado--ok">{{ mensaje }}</p>
-    }
-  </div>
-
-  <section class="tarjeta" aria-labelledby="titulo-listado-catalogo">
-    <!--
-      La distincion que esta pantalla no puede aplanar (ADR-0021) se nombra en cada fila (columna
-      De quien es, y "La mantiene AKINE" en las de la plataforma). La explicacion completa, que
-      antes era una tarjeta fija arriba de todo, va al "?" del listado (refactor UX/UI del
-      28/10/2026).
-    -->
-    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-listado-catalogo">{{ tipoActual.plural }} que este centro puede usar</h2>
-      <app-ayuda titulo="Hay dos catalogos en esta lista, y es a proposito">
-        <p>
-          Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son
-          la base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar
-          ni dar de baja desde acá, y por eso sus filas no traen acciones.
-        </p>
-        <p>
-          Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-          organización y los administras desde esta misma tabla. Si necesitas que algo entre al
-          catalogo comun, pedilo a la plataforma desde Solicitudes.
-        </p>
-      </app-ayuda>
-    </div>
-
+  <section class="tarjeta" [attr.aria-label]="tipoActual.plural + ' que este centro puede usar'">
     <!--
       Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado, alcance y
-      especialidad, que casi nunca se tocan, detras del embudo.
+      especialidad, que casi nunca se tocan, detras de "Filtros". El total, en la misma fila.
     -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="estado().tipo === 'listo' ? totalConceptos() : null"
+      [unidad]="[tipoActual.singular, tipoActual.plural.toLowerCase()]"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
       <div class="campo" filtro-principal>
         <label class="visualmente-oculto" for="busqueda-catalogo">Buscar</label>
         <div class="campo-busqueda">
@@ -135,23 +129,43 @@
         }
 
         @case ('error') {
-          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-          @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-          } @else {
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-          }
+          <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              @if (faltaContexto()) {
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              } @else {
+                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              }
+            </p>
+          </app-alerta>
         }
 
         @case ('listo') {
-          @if (conceptosDeLaPagina().length === 0) {
-            <p class="estado estado--vacio">
-              No hay {{ tipoActual.plural.toLowerCase() }} que coincidan con lo que buscaste.
-            </p>
+          @if (conceptosDeLaPagina().length === 0 && hayFiltros()) {
+            <app-estado-vacio
+              [titulo]="'No hay ' + tipoActual.plural.toLowerCase() + ' que coincidan'"
+              texto="Probá con otra búsqueda o filtros."
+            >
+              <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
+            </app-estado-vacio>
+          } @else if (conceptosDeLaPagina().length === 0) {
+            <app-estado-vacio
+              [titulo]="'Todavía no hay ' + tipoActual.plural.toLowerCase() + ' en el catálogo'"
+              texto="Ni de la plataforma ni de este centro."
+            >
+              <button
+                *akinePermiso="permisoManage"
+                type="button"
+                class="boton"
+                (click)="abrirAlta()"
+              >
+                Dar de alta un concepto del centro
+              </button>
+            </app-estado-vacio>
           } @else {
-            <p class="ayuda ayuda--fija">{{ totalConceptos() }} en total.</p>
-
             <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clínico">
               <table class="tabla">
                 <caption class="visualmente-oculto">
@@ -269,8 +283,11 @@
             <app-paginacion
               [paginaActual]="paginaActual()"
               [totalPaginas]="totalPaginas()"
-              [etiqueta]="'Paginas del catalogo de ' + tipoActual.plural.toLowerCase()"
+              [total]="totalConceptos()"
+              [porPagina]="porPagina()"
+              [etiqueta]="'Páginas del catálogo de ' + tipoActual.plural.toLowerCase()"
               (cambioDePagina)="irAPagina($event)"
+              (cambioDePorPagina)="cambiarPorPagina($event)"
             />
           }
         }
@@ -302,7 +319,14 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-        <div class="campo">
+        <!-- Error general del alta: arriba del formulario (UX-12). Lo repetido va junto al campo. -->
+        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
+          <app-alerta tipo="error" titulo="No pudimos dar de alta el concepto">
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
+
+        <div class="campo campo--2">
           <label for="alta-catalogo-codigo">Código</label>
           <input
             id="alta-catalogo-codigo"
@@ -318,11 +342,7 @@
                   : 'alta-catalogo-codigo-ayuda'
             "
           />
-          @if (errorEnElCodigo()) {
-            <p class="campo__error" id="alta-catalogo-codigo-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('codigo')) {
+          @if (mostrarErrorAlta('codigo')) {
             <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
           } @else {
             <p class="ayuda" id="alta-catalogo-codigo-ayuda">
@@ -332,7 +352,19 @@
           }
         </div>
 
-        <div class="campo">
+        <!-- Código en uso: pegado al campo que lo produjo (UX-12). -->
+        @if (errorEnElCodigo()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese código ya está en uso"
+            id="alta-catalogo-codigo-conflicto"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
+
+        <div class="campo campo--4">
           <label for="alta-catalogo-name">Nombre</label>
           <input
             id="alta-catalogo-name"
@@ -348,17 +380,24 @@
                   : null
             "
           />
-          @if (errorEnElNombre()) {
-            <p class="campo__error" id="alta-catalogo-name-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('name')) {
+          @if (mostrarErrorAlta('name')) {
             <p class="campo__error" id="alta-catalogo-name-error">El nombre es obligatorio.</p>
           }
         </div>
 
+        @if (errorEnElNombre()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese nombre ya está en uso"
+            id="alta-catalogo-name-conflicto"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
+
         @if (tipoActual.exigeEspecialidad) {
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="alta-catalogo-especialidad">Especialidad</label>
             <select
               id="alta-catalogo-especialidad"
@@ -391,7 +430,7 @@
           </div>
         }
 
-        <div class="campo">
+        <div class="campo campo--12">
           <label for="alta-catalogo-descripcion">Descripción (opcional)</label>
           <input
             id="alta-catalogo-descripcion"
@@ -401,7 +440,7 @@
           />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="alta-catalogo-desde">Vigente desde (opcional)</label>
           <input id="alta-catalogo-desde" type="datetime-local" formControlName="validFrom" />
           <p class="ayuda">
@@ -410,14 +449,10 @@
           </p>
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="alta-catalogo-hasta">Vigente hasta (opcional)</label>
           <input id="alta-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
         </div>
-
-        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
-          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-        }
 
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
@@ -444,7 +479,20 @@
         (cerrar)="cerrarPanel()"
       >
         <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
-          <div class="campo">
+          @if (errorAccion() && !errorEnElNombre()) {
+            <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
+              <p>{{ errorAccion() }}</p>
+              @if (hayQueRecargar()) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton" (click)="cargar()">
+                    Recargar el listado
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
+          <div class="campo campo--4">
             <label for="editar-catalogo-name">Nombre</label>
             <input
               id="editar-catalogo-name"
@@ -452,10 +500,9 @@
               formControlName="name"
               autocomplete="off"
               [attr.aria-invalid]="mostrarErrorEdicion('name') || errorEnElNombre() ? 'true' : null"
+              [attr.aria-describedby]="errorEnElNombre() ? 'editar-catalogo-name-conflicto' : null"
             />
-            @if (errorEnElNombre()) {
-              <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-            } @else if (mostrarErrorEdicion('name')) {
+            @if (mostrarErrorEdicion('name')) {
               <p class="campo__error">El nombre es obligatorio.</p>
             } @else {
               <p class="ayuda">
@@ -465,7 +512,18 @@
             }
           </div>
 
-          <div class="campo">
+          @if (errorEnElNombre()) {
+            <app-alerta
+              class="campo--ancho"
+              tipo="advertencia"
+              titulo="Ese nombre ya está en uso"
+              id="editar-catalogo-name-conflicto"
+            >
+              <p>{{ errorAccion() }}</p>
+            </app-alerta>
+          }
+
+          <div class="campo campo--12">
             <label for="editar-catalogo-descripcion">Descripción</label>
             <input
               id="editar-catalogo-descripcion"
@@ -476,12 +534,12 @@
             <p class="ayuda">Vaciar el campo borra la descripción.</p>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="editar-catalogo-desde">Vigente desde</label>
             <input id="editar-catalogo-desde" type="datetime-local" formControlName="validFrom" />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="editar-catalogo-hasta">Vigente hasta</label>
             <input id="editar-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
           </div>
@@ -502,10 +560,6 @@
             </p>
           </div>
 
-          @if (errorAccion() && !errorEnElNombre()) {
-            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-          }
-
           <p class="acciones">
             <button type="submit" class="boton" [disabled]="enviando() || edicionBloqueada()">
               {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -518,9 +572,6 @@
             >
               Cancelar
             </button>
-            @if (hayQueRecargar()) {
-              <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
-            }
           </p>
         </form>
       </app-panel-lateral>
@@ -528,6 +579,18 @@
 
     @if (panel()?.tipo === 'baja') {
       <app-panel-lateral [titulo]="'Dar de baja ' + concepto.name" (cerrar)="cerrarPanel()">
+        @if (errorAccion()) {
+          <app-alerta tipo="error" titulo="No pudimos dar de baja el concepto">
+            <p>{{ errorAccion() }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
         <app-confirmacion-con-motivo
           idCampo="baja-catalogo-motivo"
           [titulo]="'Dar de baja ' + concepto.name"
@@ -544,15 +607,6 @@
             significado; si vuelve a hacer falta se da de alta uno nuevo.
           </p>
         </app-confirmacion-con-motivo>
-
-        @if (errorAccion()) {
-          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-        }
-        @if (hayQueRecargar()) {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Recargar el listado
-          </button>
-        }
       </app-panel-lateral>
     }
   }

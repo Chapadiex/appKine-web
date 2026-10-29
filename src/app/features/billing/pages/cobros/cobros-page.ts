@@ -18,6 +18,8 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { PERMISO_CAJA_OPERATE, PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ReintegrarSaldoAFavorMedioEnum } from '../../../../api/generated/model/reintegrar-saldo-a-favor';
@@ -40,7 +42,10 @@ import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
@@ -90,10 +95,15 @@ interface OperacionAbierta {
   selector: 'app-cobros-page',
   imports: [
     PanelLateral,
+
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
+    Icono,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
@@ -105,6 +115,7 @@ interface OperacionAbierta {
 export class CobrosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -117,6 +128,7 @@ export class CobrosPage {
     personaId: this.personaId(),
     persona: null,
     actual: 'cuenta-corriente',
+    masMigas: [{ etiqueta: 'Cuenta corriente', ruta: this.rutaCuenta() }],
   }));
 
   protected readonly medioEnPalabras = medioEnPalabras;
@@ -128,7 +140,6 @@ export class CobrosPage {
   /** El comprobante abierto, releido del servidor. `null` cuando no hay ninguno. */
   protected readonly comprobante = signal<Cobro | null>(null);
   protected readonly abriendo = signal<number | null>(null);
-  protected readonly errorDetalle = signal<ErrorCobro | null>(null);
 
   // -------------------------------------------------------------------------------------
   // F-3: anulacion y reintegro. Los dos mueven la caja y piden los dos permisos.
@@ -162,7 +173,6 @@ export class CobrosPage {
   });
   protected readonly enviando = signal(false);
   protected readonly errorOperacion = signal<ErrorCobro | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly importeReintegro = signal('');
   protected readonly medioReintegro = signal<ReintegrarSaldoAFavorMedioEnum>(
@@ -212,7 +222,16 @@ export class CobrosPage {
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
-  protected readonly tabla = tablaLocal(this.cobros, {
+  /** Busqueda por numero de comprobante, sobre la lista completa (no viaja al servidor). */
+  protected readonly busqueda = signal('');
+  protected readonly cobrosBuscados = computed<readonly Cobro[]>(() => {
+    const texto = this.busqueda().replace(/\D/g, '');
+    return texto === ''
+      ? this.cobros()
+      : this.cobros().filter((cobro) => String(cobro.comprobanteNumero ?? '').includes(texto));
+  });
+
+  protected readonly tabla = tablaLocal(this.cobrosBuscados, {
     columnas: {
       comprobante: (cobro) => cobro.comprobanteNumero ?? null,
       fecha: (cobro) => cobro.cobradoEn ?? null,
@@ -243,9 +262,7 @@ export class CobrosPage {
       untracked(() => {
         // Un comprobante de otra organizacion abierto en pantalla es una fuga de tenant.
         this.comprobante.set(null);
-        this.errorDetalle.set(null);
         this.cerrarOperacion();
-        this.exito.set(null);
         this.cargar();
       });
     });
@@ -287,7 +304,6 @@ export class CobrosPage {
     }
 
     this.comprobante.set(null);
-    this.errorDetalle.set(null);
     this.abriendo.set(cobro.id);
 
     this.api.verCobro(consultorioId, cobro.id).subscribe({
@@ -298,7 +314,11 @@ export class CobrosPage {
       },
       error: (error: unknown) => {
         this.abriendo.set(null);
-        this.errorDetalle.set(traducirErrorCobro(error));
+        // Boton de fila, sin formulario: aviso global. El listado sigue en pie.
+        this.avisos.error('No pudimos abrir el comprobante', {
+          descripcion: traducirErrorCobro(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.abrir(cobro) },
+        });
       },
     });
   }
@@ -306,7 +326,6 @@ export class CobrosPage {
   protected cerrar(): void {
     const abierto = this.comprobante()?.id;
     this.comprobante.set(null);
-    this.errorDetalle.set(null);
     this.enfocarBotonDelComprobante(abierto);
   }
 
@@ -341,7 +360,6 @@ export class CobrosPage {
 
   protected abrirOperacion(tipo: OperacionAbierta['tipo'], cobro: Cobro): void {
     this.cerrarOperacion();
-    this.exito.set(null);
     this.operacion.set({ tipo, cobro });
   }
 
@@ -397,9 +415,9 @@ export class CobrosPage {
     this.api.anularCobro(consultorioId, abierta.cobro.id, motivo).subscribe({
       next: () =>
         this.terminar(
-          `Se anulo el comprobante N.º ${cobro.comprobanteNumero}. Sus imputaciones devolvieron ` +
-            'saldo a las deudas y sus movimientos de caja se revirtieron. El número queda usado: ' +
-            'no se borra nada.',
+          `Se anulo el comprobante N.º ${cobro.comprobanteNumero}`,
+          'Sus imputaciones devolvieron saldo a las deudas y sus movimientos de caja se ' +
+            'revirtieron. El número queda usado: no se borra nada.',
         ),
       error: (error: unknown) => this.fallar(error, 'anular'),
     });
@@ -439,8 +457,8 @@ export class CobrosPage {
         next: (reintegro) =>
           this.terminar(
             `Se devolvieron ${this.importe(cobro, reintegro.importe)} por ` +
-              `${medioEnPalabras(reintegro.medio)}. Al cobro le quedan ` +
-              `${this.importe(cobro, reintegro.saldoAFavorRestante)} a favor.`,
+              medioEnPalabras(reintegro.medio),
+            `Al cobro le quedan ${this.importe(cobro, reintegro.saldoAFavorRestante)} a favor.`,
           ),
         error: (error: unknown) => this.fallar(error, 'reintegrar'),
       });
@@ -449,14 +467,13 @@ export class CobrosPage {
   private enviar(): void {
     this.enviando.set(true);
     this.errorOperacion.set(null);
-    this.exito.set(null);
   }
 
-  /** Cerro bien: se cierra el panel y se RELEE, porque saldo, estado y version cambiaron. */
-  private terminar(mensaje: string): void {
+  /** Cerro bien: se cierra el panel, se avisa y se RELEE, porque saldo, estado y version cambiaron. */
+  private terminar(titulo: string, descripcion: string): void {
     this.enviando.set(false);
     this.cerrarOperacion();
-    this.exito.set(mensaje);
+    this.avisos.exito(titulo, { descripcion });
     this.cargar();
   }
 

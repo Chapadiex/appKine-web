@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="{{ egreso()?.concepto ?? 'Egreso' }}">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
   @if (egreso(); as e) {
     <span [class]="claseDeEstado(e.estado)">{{ estadoEnPalabras(e.estado) }}</span>
   }
@@ -18,10 +17,9 @@
 
 @if (carga(); as estado) {
   @if (estado.tipo === 'error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
-      <h2 id="titulo-error-carga">No se pudo cargar el egreso</h2>
-      <p class="estado estado--error">{{ estado.error.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudo cargar el egreso">
+      <p>{{ estado.error.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (estado.error.causa === 'sin-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
         } @else {
@@ -29,20 +27,21 @@
             Reintentar
           </button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
 }
 
-<div aria-live="polite">
-  @if (aviso(); as texto) {
-    <p class="estado estado--ok" role="status">{{ texto }}</p>
-  }
-  @if (errorOperacion(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-rechazo">
-      <h2 id="titulo-rechazo">No se pudo completar la operación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
+<!--
+  Rechazo de una operacion (UX-12): donde se hizo —la correccion, la confirmacion, el pago o el
+  panel de anulacion—, arriba de sus campos. El exito va al aviso global. Una version vieja
+  ("recargar") es advertencia: alguien cambio el egreso mientras tanto.
+-->
+<ng-template #alertaDeOperacion let-fallo let-titulo="titulo">
+  <app-alerta [tipo]="fallo.recargar ? 'advertencia' : 'error'" [titulo]="titulo">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.irACaja || fallo.recargar) {
+      <p class="alerta__acciones">
         @if (fallo.irACaja) {
           <a class="boton" routerLink="/caja">Ir a la caja</a>
         }
@@ -51,10 +50,10 @@
             Recargar el egreso
           </button>
         }
-      </div>
-    </section>
-  }
-</div>
+      </p>
+    }
+  </app-alerta>
+</ng-template>
 
 @if (egreso(); as e) {
   <!-- Franja de resumen (refactor UX/UI del 28/10/2026): lo que se mira primero, arriba. -->
@@ -204,110 +203,124 @@
               </span>
             </summary>
             <form [formGroup]="edicion" (ngSubmit)="guardar()" novalidate>
-              <div class="grilla-compacta">
-                <div class="campo campo--ancho">
-                  <label for="edicion-concepto">Concepto</label>
-                  <input
-                    id="edicion-concepto"
-                    type="text"
-                    autocomplete="off"
-                    maxlength="200"
-                    formControlName="concepto"
-                    [attr.aria-invalid]="campoDeEdicionInvalido('concepto') ? 'true' : null"
-                  />
-                  @if (campoDeEdicionInvalido('concepto')) {
-                    <p class="campo__error" role="alert">El concepto es obligatorio.</p>
-                  }
-                </div>
-                <div class="campo">
-                  <label for="edicion-categoria">Categoría</label>
-                  <select id="edicion-categoria" formControlName="categoria">
-                    @for (opcion of categorias; track opcion) {
-                      <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="campo">
-                  <label for="edicion-importe">Importe total</label>
-                  <input
-                    id="edicion-importe"
-                    type="text"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    formControlName="importe"
-                    [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
-                  />
-                  @if (campoDeEdicionInvalido('importe')) {
-                    <p class="campo__error" role="alert">Un importe mayor que cero.</p>
-                  }
-                </div>
-                <div class="campo">
-                  <label for="edicion-oferta">Servicio u oferta</label>
-                  <select id="edicion-oferta" formControlName="ofertaId">
-                    <option value="">Sin imputar a un servicio</option>
-                    @for (oferta of ofertasElegibles(); track oferta.id) {
-                      <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-                    }
-                  </select>
-                </div>
-                <!-- La moneda, como el beneficiario, queda la del alta: la correccion no la cambia. -->
-                <p class="ayuda campo--ancho">
-                  Moneda: {{ e.moneda }}. No se corrige en el borrador.
-                </p>
+              @if (falloEn('editar'); as fallo) {
+                <ng-container
+                  [ngTemplateOutlet]="alertaDeOperacion"
+                  [ngTemplateOutletContext]="{
+                    $implicit: fallo,
+                    titulo: 'No pudimos guardar los cambios',
+                  }"
+                />
+              }
+              <div class="campo campo--6">
+                <label for="edicion-concepto">Concepto</label>
+                <input
+                  id="edicion-concepto"
+                  type="text"
+                  autocomplete="off"
+                  maxlength="200"
+                  formControlName="concepto"
+                  [attr.aria-invalid]="campoDeEdicionInvalido('concepto') ? 'true' : null"
+                  [attr.aria-describedby]="
+                    campoDeEdicionInvalido('concepto') ? 'edicion-concepto-error' : null
+                  "
+                />
+                @if (campoDeEdicionInvalido('concepto')) {
+                  <p class="campo__error" id="edicion-concepto-error" role="alert">
+                    El concepto es obligatorio.
+                  </p>
+                }
               </div>
-
-              <div class="grilla-compacta">
-                <div class="campo">
-                  <label for="edicion-periodo-desde">Período liquidado desde</label>
-                  <input id="edicion-periodo-desde" type="date" formControlName="periodoDesde" />
-                </div>
-                <div class="campo">
-                  <label for="edicion-periodo-hasta">Período liquidado hasta</label>
-                  <input
-                    id="edicion-periodo-hasta"
-                    type="date"
-                    formControlName="periodoHasta"
-                    [attr.aria-invalid]="campoDeEdicionInvalido('periodo') ? 'true' : null"
-                  />
-                  @if (campoDeEdicionInvalido('periodo')) {
-                    <p class="campo__error" role="alert">
-                      El período va completo y no puede terminar antes de empezar.
-                    </p>
+              <div class="campo">
+                <label for="edicion-categoria">Categoría</label>
+                <select id="edicion-categoria" formControlName="categoria">
+                  @for (opcion of categorias; track opcion) {
+                    <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
                   }
-                </div>
+                </select>
+              </div>
+              <div class="campo campo--2">
+                <label for="edicion-importe">Importe total</label>
+                <input
+                  id="edicion-importe"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  formControlName="importe"
+                  [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
+                  [attr.aria-describedby]="
+                    campoDeEdicionInvalido('importe') ? 'edicion-importe-error' : null
+                  "
+                />
+                @if (campoDeEdicionInvalido('importe')) {
+                  <p class="campo__error" id="edicion-importe-error" role="alert">
+                    Un importe mayor que cero.
+                  </p>
+                }
+              </div>
+              <div class="campo campo--4">
+                <label for="edicion-oferta">Servicio u oferta</label>
+                <select id="edicion-oferta" formControlName="ofertaId">
+                  <option value="">Sin imputar a un servicio</option>
+                  @for (oferta of ofertasElegibles(); track oferta.id) {
+                    <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+                  }
+                </select>
+              </div>
+              <!-- La moneda, como el beneficiario, queda la del alta: la correccion no la cambia. -->
+              <p class="ayuda">Moneda: {{ e.moneda }}. No se corrige en el borrador.</p>
+
+              <div class="campo">
+                <label for="edicion-periodo-desde">Período liquidado desde</label>
+                <input id="edicion-periodo-desde" type="date" formControlName="periodoDesde" />
+              </div>
+              <div class="campo">
+                <label for="edicion-periodo-hasta">Período liquidado hasta</label>
+                <input
+                  id="edicion-periodo-hasta"
+                  type="date"
+                  formControlName="periodoHasta"
+                  [attr.aria-invalid]="campoDeEdicionInvalido('periodo') ? 'true' : null"
+                  [attr.aria-describedby]="
+                    campoDeEdicionInvalido('periodo') ? 'edicion-periodo-hasta-error' : null
+                  "
+                />
+                @if (campoDeEdicionInvalido('periodo')) {
+                  <p class="campo__error" id="edicion-periodo-hasta-error" role="alert">
+                    El período va completo y no puede terminar antes de empezar.
+                  </p>
+                }
               </div>
 
               <fieldset class="grupo">
                 <legend>Comprobante</legend>
-                <div class="grilla-compacta">
-                  <div class="campo">
-                    <label for="edicion-comprobante-tipo">Tipo</label>
-                    <input
-                      id="edicion-comprobante-tipo"
-                      type="text"
-                      autocomplete="off"
-                      maxlength="40"
-                      formControlName="comprobanteTipo"
-                    />
-                  </div>
-                  <div class="campo">
-                    <label for="edicion-comprobante-numero">Número</label>
-                    <input
-                      id="edicion-comprobante-numero"
-                      type="text"
-                      autocomplete="off"
-                      maxlength="40"
-                      formControlName="comprobanteNumero"
-                    />
-                  </div>
-                  <div class="campo">
-                    <label for="edicion-comprobante-fecha">Fecha</label>
-                    <input
-                      id="edicion-comprobante-fecha"
-                      type="date"
-                      formControlName="comprobanteFecha"
-                    />
-                  </div>
+                <div class="campo campo--2">
+                  <label for="edicion-comprobante-tipo">Tipo</label>
+                  <input
+                    id="edicion-comprobante-tipo"
+                    type="text"
+                    autocomplete="off"
+                    maxlength="40"
+                    formControlName="comprobanteTipo"
+                  />
+                </div>
+                <div class="campo campo--2">
+                  <label for="edicion-comprobante-numero">Número</label>
+                  <input
+                    id="edicion-comprobante-numero"
+                    type="text"
+                    autocomplete="off"
+                    maxlength="40"
+                    formControlName="comprobanteNumero"
+                  />
+                </div>
+                <div class="campo">
+                  <label for="edicion-comprobante-fecha">Fecha</label>
+                  <input
+                    id="edicion-comprobante-fecha"
+                    type="date"
+                    formControlName="comprobanteFecha"
+                  />
                 </div>
               </fieldset>
 
@@ -327,34 +340,43 @@
 
       <!-- ================================ Pagos ================================ -->
 
-      <div class="tarjeta tarjeta--tabla">
-        <div class="tarjeta__cabecera">
-          <h2 id="titulo-tabla-pagos">Pagos</h2>
-        </div>
+      <section class="tarjeta">
+        <h2 id="titulo-tabla-pagos">Pagos</h2>
         @if (pagos().length === 0) {
-          <p class="estado estado--vacio">Todavía no hay pagos de este egreso.</p>
+          <app-estado-vacio
+            titulo="Todavía no hay pagos de este egreso"
+            [texto]="admitePago() ? 'Registrá el primero desde «Registrar un pago».' : null"
+          />
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-pagos">
             <table class="tabla">
               <thead>
                 <tr>
-                  <th scope="col">Pagado</th>
-                  <th scope="col">Medio</th>
-                  <th scope="col">Referencia</th>
-                  <th scope="col" class="importe">Importe</th>
-                  <th scope="col">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tablaPagos" columna="pagado">Pagado</th>
+                  <th scope="col" appOrdenable [tabla]="tablaPagos" columna="medio">Medio</th>
+                  <th scope="col" class="tabla__col--secundaria">Referencia</th>
+                  <th
+                    scope="col"
+                    class="importe"
+                    appOrdenable
+                    [tabla]="tablaPagos"
+                    columna="importe"
+                  >
+                    Importe
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tablaPagos" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (p of pagos(); track p.id) {
+                @for (p of tablaPagos.visibles(); track p.id) {
                   <tr
                     [class.fila--revocada]="!pagoVigente(p)"
                     [class.fila--seleccionada]="pagoAnulando() === p.id"
                   >
                     <td class="celda-fecha">{{ instante(p.pagadoEn) }}</td>
                     <td>{{ medioEnPalabras(p.medio) }}</td>
-                    <td>{{ p.referencia }}</td>
+                    <td class="tabla__col--secundaria">{{ p.referencia }}</td>
                     <td class="importe">{{ importe(p.importe) }}</td>
                     <td>
                       @if (pagoVigente(p)) {
@@ -383,8 +405,9 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tablaPagos" etiqueta="Páginas de pagos" />
         }
-      </div>
+      </section>
     </div>
 
     <aside class="dos-columnas__lateral">
@@ -393,6 +416,15 @@
       @if (esBorrador()) {
         <section class="tarjeta tarjeta--destacada" aria-labelledby="titulo-confirmacion">
           <h2 id="titulo-confirmacion">Confirmar</h2>
+          @if (falloEn('confirmar'); as fallo) {
+            <ng-container
+              [ngTemplateOutlet]="alertaDeOperacion"
+              [ngTemplateOutletContext]="{
+                $implicit: fallo,
+                titulo: 'No pudimos confirmar el egreso',
+              }"
+            />
+          }
           <p class="ayuda">
             Confirmar no mueve plata: deja el egreso firme y habilita los pagos. Exige el tipo y el
             número de comprobante guardados.
@@ -430,39 +462,49 @@
             </app-ayuda>
           </div>
           <form [formGroup]="pago" (ngSubmit)="pagar()" novalidate>
-            <div class="grilla-compacta">
-              <div class="campo">
-                <label for="pago-importe">Importe del pago</label>
-                <input
-                  id="pago-importe"
-                  type="text"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  formControlName="importe"
-                  [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
-                />
-                @if (importeDePagoInvalido()) {
-                  <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+            @if (falloEn('pagar'); as fallo) {
+              <ng-container
+                [ngTemplateOutlet]="alertaDeOperacion"
+                [ngTemplateOutletContext]="{
+                  $implicit: fallo,
+                  titulo: 'No pudimos registrar el pago',
+                }"
+              />
+            }
+            <div class="campo campo--3">
+              <label for="pago-importe">Importe del pago</label>
+              <input
+                id="pago-importe"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                formControlName="importe"
+                [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
+                [attr.aria-describedby]="importeDePagoInvalido() ? 'pago-importe-error' : null"
+              />
+              @if (importeDePagoInvalido()) {
+                <p class="campo__error" id="pago-importe-error" role="alert">
+                  Un importe mayor que cero.
+                </p>
+              }
+            </div>
+            <div class="campo campo--3">
+              <label for="pago-medio">Medio</label>
+              <select id="pago-medio" formControlName="medio">
+                @for (opcion of medios; track opcion) {
+                  <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
                 }
-              </div>
-              <div class="campo">
-                <label for="pago-medio">Medio</label>
-                <select id="pago-medio" formControlName="medio">
-                  @for (opcion of medios; track opcion) {
-                    <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
-                  }
-                </select>
-              </div>
-              <div class="campo campo--ancho">
-                <label for="pago-referencia">Referencia (transferencia o recibo)</label>
-                <input
-                  id="pago-referencia"
-                  type="text"
-                  autocomplete="off"
-                  maxlength="80"
-                  formControlName="referencia"
-                />
-              </div>
+              </select>
+            </div>
+            <div class="campo campo--6">
+              <label for="pago-referencia">Referencia (transferencia o recibo)</label>
+              <input
+                id="pago-referencia"
+                type="text"
+                autocomplete="off"
+                maxlength="80"
+                formControlName="referencia"
+              />
             </div>
 
             @if (medioElegido() === EFECTIVO) {
@@ -534,6 +576,12 @@
     [subtitulo]="importe(pagoAAnular.importe) + ' · ' + medioEnPalabras(pagoAAnular.medio)"
     (cerrar)="cancelarAnulacionDePago()"
   >
+    @if (falloEn('anular-pago'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos anular el pago' }"
+      />
+    }
     <app-confirmacion-con-motivo
       [idCampo]="'motivo-anular-pago-' + pagoAAnular.id"
       titulo="Anular el pago"
@@ -545,13 +593,6 @@
       (confirmado)="anularPago($event)"
       (cancelado)="cancelarAnulacionDePago()"
     />
-    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      @if (fallo.irACaja) {
-        <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
-      }
-    }
   </app-panel-lateral>
 }
 
@@ -561,6 +602,12 @@
     [subtitulo]="e.concepto ?? null"
     (cerrar)="cancelarAnulacion()"
   >
+    @if (falloEn('anular'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos anular el egreso' }"
+      />
+    }
     <app-confirmacion-con-motivo
       idCampo="motivo-anular-egreso"
       titulo="Anular el egreso"
@@ -576,12 +623,5 @@
       (confirmado)="anular($event)"
       (cancelado)="cancelarAnulacion()"
     />
-    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      @if (fallo.irACaja) {
-        <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
-      }
-    }
   </app-panel-lateral>
 }

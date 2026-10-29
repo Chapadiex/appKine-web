@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { NotificacionesPage } from './notificaciones-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { NotificationPageResponse } from '../../../../api/generated/model/notification-page-response';
 import { EstadoNotificacion, TipoNotificacion } from '../../models/notificaciones';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -84,7 +85,12 @@ describe('NotificacionesPage', () => {
     expect(contenido).toContain('Conexion rechazada');
     // Solo la fila reintentable ofrece el boton.
     expect(fixture.nativeElement.querySelector('.marca-estado--suspendida')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.tabla-pie')).toBeTruthy();
+    // UX-14: el total en la toolbar y el pie estandar con el resumen.
+    expect(
+      fixture.nativeElement.querySelector('.filtros-barra__resultados')?.textContent?.trim(),
+    ).toBe('2 notificaciones');
+    expect(contenido).toContain('Mostrando 1–2 de 2');
+    expect(pedido.request.params.get('size')).toBe('10');
     expect(botones(fixture)).toHaveLength(1);
   });
 
@@ -132,7 +138,19 @@ describe('NotificacionesPage', () => {
     const ordenado = esperarListado();
     expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe('intentos,asc');
     expect(ordenado.request.params.get('q')).toBe('invitacion');
-    ordenado.flush(PAGINA);
+    ordenado.flush({ ...PAGINA, content: [], totalElements: 0, totalPages: 0 });
+    await estabilizar(fixture);
+
+    // Vacio con busqueda: "Limpiar filtros" vuelve a la consulta de entrada.
+    const vacio = raiz.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('coincide con la búsqueda');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = esperarListado();
+    expect(limpio.request.params.has('q')).toBe(false);
+    expect(limpio.request.params.getAll('estado')).toEqual(['FALLIDA', 'AGOTADA']);
+    limpio.flush(PAGINA);
   });
 
   it('reintentar confirma y relee el listado', async () => {
@@ -147,8 +165,9 @@ describe('NotificacionesPage', () => {
     esperarListado().flush({ ...PAGINA, content: [], totalElements: 0 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La notificación 42');
-    expect(texto(fixture)).toContain('volvio a la cola de envio');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Notificación en la cola de envío');
+    expect(aviso?.descripcion).toContain('La notificación 42');
   });
 
   it('el 409 nombra el estado actual en español y relee', async () => {
@@ -166,7 +185,9 @@ describe('NotificacionesPage', () => {
     esperarListado().flush(PAGINA);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('ya no admite reintento: ahora esta Enviada');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('ya no admite reintento: ahora esta Enviada');
   });
 
   it(

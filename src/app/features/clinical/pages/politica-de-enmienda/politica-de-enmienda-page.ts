@@ -7,7 +7,9 @@ import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-erro
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Rango del contrato: de 1 a 3650 dias. */
 export const VENTANA_MINIMA = 1;
@@ -26,12 +28,13 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [Migas, CabeceraDePagina, Ayuda],
+  imports: [CabeceraDePagina, Ayuda, Alerta],
   templateUrl: './politica-de-enmienda-page.html',
   styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })
 export class PoliticaDeEnmiendaPage {
   private readonly api = inject(ClinicalApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   protected readonly minima = VENTANA_MINIMA;
@@ -42,8 +45,10 @@ export class PoliticaDeEnmiendaPage {
   protected readonly cargando = signal(false);
   protected readonly enviando = signal(false);
   protected readonly dias = signal('');
+  /** Error al LEER la politica: en el lugar del contenido, con Reintentar (UX-12). */
   protected readonly error = signal<ErrorAtencion | null>(null);
-  protected readonly exito = signal('');
+  /** Rechazo del guardado: arriba del formulario, a la vista mientras se corrige. */
+  protected readonly errorDeGuardado = signal<ErrorAtencion | null>(null);
 
   protected readonly diasValidos = computed(() => {
     const n = Number(this.dias());
@@ -88,21 +93,21 @@ export class PoliticaDeEnmiendaPage {
       return;
     }
     this.enviando.set(true);
-    this.error.set(null);
-    this.exito.set('');
+    this.errorDeGuardado.set(null);
     this.api.fijarPoliticaDeEnmienda(Number(this.dias()), actual.version ?? undefined).subscribe({
       next: (politica) => {
         this.enviando.set(false);
         this.adoptar(politica);
-        this.exito.set(
-          `Listo: las sesiones se pueden enmendar durante ${politica.ventanaDias ?? this.dias()} ` +
+        this.avisos.exito('Ventana de enmienda guardada', {
+          descripcion:
+            `Las sesiones se pueden enmendar durante ${politica.ventanaDias ?? this.dias()} ` +
             'días desde su cierre, también las que ya estaban cerradas.',
-        );
+        });
       },
       error: (error: unknown) => {
         this.enviando.set(false);
         const traducido = traducirErrorDePolitica(error);
-        this.error.set(traducido);
+        this.errorDeGuardado.set(traducido);
         if (traducido.causa === 'version-vieja') {
           this.cargar();
         }

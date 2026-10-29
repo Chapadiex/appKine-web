@@ -49,6 +49,8 @@ import {
 import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaExcepcion, traducirErrorExcepcion } from '../../models/excepcion-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
 import { ImpactoPrevio, avisoDeExcepcion, turnosPrevistos } from '../../models/turnos-afectados';
 import {
@@ -77,6 +79,10 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
@@ -157,6 +163,8 @@ const MOTIVOS: readonly {
   selector: 'app-excepciones-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     PanelLateral,
     AccionesDeFila,
     Ayuda,
@@ -167,12 +175,16 @@ const MOTIVOS: readonly {
     PermisoDirective,
     ConfirmacionConMotivo,
     ImpactoPrevioPanel,
+    EstadoVacio,
+    PieDeTabla,
+    ColumnaOrdenable,
   ],
   templateUrl: './excepciones-page.html',
   styleUrl: '../../resource.css',
 })
 export class ExcepcionesPage {
   private readonly excepciones = inject(ExcepcionesDeDisponibilidadService);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly destroyRef = inject(DestroyRef);
   private readonly calendario = inject(CalendarioDeSedeService);
@@ -286,6 +298,17 @@ export class ExcepcionesPage {
   protected readonly faltaContexto = this.vista.faltaContexto;
   protected readonly vigentes = this.vista.filas;
 
+  /** Orden y pagina de la tabla (UX-14). El periodo llega entero: se pagina aca. */
+  protected readonly tabla = tablaLocal(this.vigentes, {
+    columnas: {
+      tipo: (excepcion) => excepcion.tipo ?? null,
+      alcance: (excepcion) => this.alcanceDe(excepcion),
+      fechas: (excepcion) => excepcion.fechaDesde ?? null,
+      franja: (excepcion) => excepcion.horaDesde ?? null,
+      motivo: (excepcion) => this.etiquetaDeMotivo(excepcion.motivo),
+    },
+  });
+
   /** La ventana efectivamente consultada, para encabezar el resultado. */
   protected readonly ventanaConsultada = signal<{
     readonly desde: string;
@@ -310,7 +333,6 @@ export class ExcepcionesPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaExcepcion | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /**
@@ -334,12 +356,6 @@ export class ExcepcionesPage {
 
   /** El cuerpo de alta sobre el que se calculo {@link impacto}. */
   private readonly cuerpoDelImpacto = signal<CreateExcepcionRequest | null>(null);
-
-  /**
-   * Turnos que el alta o la baja dejo fuera de horario, segun la consulta previa, o `null`.
-   * `ExcepcionResponse` no trae la cuenta: ver `avisoDeExcepcion`.
-   */
-  protected readonly avisoTurnos = signal<string | null>(null);
 
   /** Si el alta espera la confirmacion de su impacto. */
   protected readonly altaConImpacto = computed(() => {
@@ -393,7 +409,6 @@ export class ExcepcionesPage {
 
         this.cerrarAlta();
         this.bajaAbierta.set(null);
-        this.exito.set(null);
         this.filtroMembership.set(inicial.membershipId);
         this.proponerVentana(inicial);
         this.cargarProfesionales();
@@ -505,9 +520,13 @@ export class ExcepcionesPage {
     return etiquetaDeFecha(sumarDias(excepcion.fechaHasta ?? '', -1));
   }
 
+  /** "Limpiar filtros": vuelve a ver solo las de toda la sede, en el mismo periodo. */
+  protected limpiarFiltros(): void {
+    this.cambiarFiltro('');
+  }
+
   protected cambiarFiltro(valor: string): void {
     this.filtroMembership.set(valor === '' ? null : Number(valor));
-    this.exito.set(null);
     this.consultar();
   }
 
@@ -574,8 +593,6 @@ export class ExcepcionesPage {
 
   protected abrirAlta(): void {
     this.bajaAbierta.set(null);
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
     const desde = this.formularioVentana.getRawValue().desde || this.diaDeLaSede.hoy();
     this.formularioAlta.reset({
       tipo: String(CreateExcepcionRequestTipoEnum.CIERRE),
@@ -652,7 +669,6 @@ export class ExcepcionesPage {
     this.pendiente.set(cuerpo);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     if (
       cuerpo.tipo === CreateExcepcionRequestTipoEnum.APERTURA &&
@@ -808,12 +824,12 @@ export class ExcepcionesPage {
         // El alta responde 201 o 200 —es idempotente sin `Idempotency-Key`— y los dos son
         // exito: un reintento de red que devuelve 200 igual dejo la excepcion cargada.
         this.cerrarAlta();
-        this.exito.set(
+        this.publicarResultado(
           cuerpo.tipo === CreateExcepcionRequestTipoEnum.APERTURA
-            ? 'La apertura quedo cargada.'
-            : 'El cierre quedo cargado.',
+            ? 'Apertura cargada'
+            : 'Cierre cargado',
+          avisoDeExcepcion(previsto),
         );
-        this.avisoTurnos.set(avisoDeExcepcion(previsto));
         this.consultar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -862,8 +878,6 @@ export class ExcepcionesPage {
       return;
     }
     this.cerrarAlta();
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
     this.bajaAbierta.set(id);
     this.consultarImpactoDeBaja(id);
   }
@@ -907,7 +921,6 @@ export class ExcepcionesPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.excepciones
       .deactivateExcepcion({
@@ -918,11 +931,11 @@ export class ExcepcionesPage {
       .subscribe({
         next: () => {
           this.cerrarBaja();
-          this.exito.set(
-            'La excepción quedo dada de baja. La fila no se borra: sobrevive con sus fechas, su ' +
-              'motivo y su autor.',
+          this.publicarResultado(
+            'Excepción dada de baja',
+            avisoDeExcepcion(previsto),
+            'Sobrevive con sus fechas, su motivo y su autor.',
           );
-          this.avisoTurnos.set(avisoDeExcepcion(previsto));
           this.consultar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -932,6 +945,25 @@ export class ExcepcionesPage {
   // =====================================================================================
   // Auxiliares
   // =====================================================================================
+
+  /**
+   * Resultado de un alta o una baja (UX-12): el exito y, si la consulta previa encontro turnos que
+   * quedan fuera de horario, un aviso de atencion que queda hasta que lo cierren.
+   * `ExcepcionResponse` no trae la cuenta: ver `avisoDeExcepcion`.
+   */
+  private publicarResultado(
+    titulo: string,
+    turnosParaRevisar: string | null,
+    descripcion?: string,
+  ): void {
+    this.avisos.exito(titulo, { descripcion });
+    if (turnosParaRevisar !== null) {
+      this.avisos.advertencia('Turnos para revisar', {
+        descripcion: turnosParaRevisar,
+        duracion: null,
+      });
+    }
+  }
 
   private fallar(error: unknown): void {
     const traducido = traducirErrorExcepcion(error);

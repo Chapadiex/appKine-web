@@ -9,6 +9,7 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { VisitaClinica } from '../../services/visita-clinica';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 12;
 const HC = 88;
@@ -145,6 +146,7 @@ describe('HistoriaClinicaPage', () => {
 
     expect(texto(fixture)).toContain('Prueba, Lucia');
     expect(texto(fixture)).toContain('Todavía no hay hechos clínicos registrados');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Historia clínica abierta');
   });
 
   it('sin permiso no ofrece reintentar: no es algo que se resuelva insistiendo', async () => {

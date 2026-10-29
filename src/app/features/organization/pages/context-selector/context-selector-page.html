@@ -10,7 +10,9 @@
     el canje falla con 404 y sigue en pantalla mientras la lista se recarga.
   -->
   @if (aviso(); as texto) {
-    <p class="acceso-aviso acceso-aviso--error" role="alert">{{ texto }}</p>
+    <app-alerta tipo="advertencia">
+      <p>{{ texto }}</p>
+    </app-alerta>
   }
 
   <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
@@ -80,8 +82,12 @@
       }
 
       @case ('error') {
-        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
-        <button type="button" class="boton boton--bloque" (click)="cargar()">Reintentar</button>
+        <app-alerta tipo="error" titulo="No pudimos continuar">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          </p>
+        </app-alerta>
       }
     }
   </div>

@@ -15,6 +15,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 7;
 const FICHA = `/api/v1/personas/${PERSONA}`;
@@ -129,8 +130,35 @@ describe('DocumentosDePersonaPage', () => {
   it('una lista vacía no es un error y dice que es normal', async () => {
     const fixture = await montar([]);
 
-    expect(texto(fixture)).toContain('No hay documentos cargados');
-    expect(texto(fixture)).toContain('cuando el paciente los trae');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Todavía no hay documentos cargados');
+    expect(vacio?.textContent).toContain('cuando el paciente los trae');
+  });
+
+  it('el listado sigue el patrón de UX-14: resultados en la barra, pie y vacío filtrado', async () => {
+    const fixture = await montar([CREDENCIAL]);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 documento',
+    );
+    expect(raiz.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–1 de 1');
+    expect(raiz.querySelector('caption')).toBeNull();
+
+    elegirEn(fixture, '#documentos-filtro-estado', 'TODOS');
+    const filtrado = httpMock.expectOne(esListado());
+    expect(filtrado.request.params.get('size')).toBe('10');
+    filtrado.flush(pagina([]));
+    await estabilizar(fixture);
+
+    const vacio = raiz.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay documentos con estos filtros');
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const limpio = httpMock.expectOne(esListado());
+    expect(limpio.request.urlWithParams).not.toContain('incluirDadosDeBaja');
+    limpio.flush(pagina([CREDENCIAL]));
+    await estabilizar(fixture);
   });
 
   // -------------------------------------------------------------------------------------
@@ -156,8 +184,12 @@ describe('DocumentosDePersonaPage', () => {
     responderListado(httpMock.expectOne(esListado()), []);
     await estabilizar(fixture);
 
-    // El exito repite la regla que produce el error mas caro del modulo.
-    expect(texto(fixture)).toContain('no completa ningún dato de la ficha');
+    // El exito repite la regla que produce el error mas caro del modulo. Va al aviso global y el
+    // panel se cierra (UX-12).
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Documento subido');
+    expect(aviso?.descripcion).toContain('No completa ningún dato de la ficha');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('sin archivo elegido no manda nada', async () => {
@@ -199,6 +231,10 @@ describe('DocumentosDePersonaPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('pesa mas de lo que se admite');
+    // Es un dato a corregir (elegir otro archivo): va junto al campo, no en un cartel general.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#subida-archivo-error.campo__error')).not.toBeNull();
+    expect(raiz.querySelector('#subida-archivo')?.getAttribute('aria-invalid')).toBe('true');
     // Decirle que cambie el formato lo manda a exportar el mismo escaneo a otro tipo y a fallar de
     // nuevo por el mismo motivo.
     expect(texto(fixture)).not.toContain('solo se aceptan PDF, PNG y JPEG');
@@ -298,7 +334,9 @@ describe('DocumentosDePersonaPage', () => {
     responderListado(httpMock.expectOne(esListado()), []);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('El archivo no se borro');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Documento dado de baja');
+    expect(aviso?.descripcion).toContain('El archivo no se borro');
   });
 
   it('un documento dado de baja se puede descargar y no se puede reclasificar', async () => {
@@ -449,12 +487,16 @@ describe('DocumentosDePersonaPage', () => {
     expect(texto(fixture)).not.toContain('Se guardo');
     expect(texto(fixture)).toContain('Credencial OSDE');
     // El aviso se ve CON TODOS LOS PANELES CERRADOS, que es el estado normal al tocar
-    // "Descargar": antes solo se renderizaba dentro de la subida y de los dos paneles de fila,
-    // asi que el boton parecia no hacer nada.
+    // "Descargar": es el aviso global de error (UX-12), que dibuja el shell.
     // Y dice el problema real, no el generico: el `type` viaja dentro de un Blob porque la
     // descarga usa `responseType: 'blob'`, y es lo unico que le dice al operador que NO vuelva a
     // subir el archivo sobre esta fila.
-    expect(texto(fixture)).toContain('No lo vuelvas a subir sobre esta fila');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos descargar el documento');
+    expect(aviso?.descripcion).toContain('No lo vuelvas a subir sobre esta fila');
+    // Reintentar no arregla un binario perdido: no se ofrece.
+    expect(aviso?.accion).toBeNull();
     // Y no se entrega ningun archivo: un `download` disparado sobre un error guardaria el
     // ProblemDetail con nombre de PDF.
     expect(descarga.revocar).not.toHaveBeenCalled();
@@ -685,7 +727,7 @@ describe('DocumentosDePersonaPage', () => {
     return {
       content: contenido,
       page: 0,
-      size: 20,
+      size: 10,
       totalElements: contenido.length,
       totalPages: 1,
     };

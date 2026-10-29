@@ -1,4 +1,6 @@
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   ETIQUETA_PESTANAS_DE_SERVICIOS,
   PESTANAS_DE_SERVICIOS,
@@ -36,7 +38,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -92,12 +95,15 @@ const ESPERA_DE_BUSQUEDA = 250;
   selector: 'app-catalogo-de-servicios-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -111,6 +117,7 @@ export class CatalogoDeServiciosPage {
   protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -172,6 +179,11 @@ export class CatalogoDeServiciosPage {
     Number(this.filtroEstado() !== 'ACTIVO'),
   );
 
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
@@ -203,7 +215,6 @@ export class CatalogoDeServiciosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /** `true` cuando el rechazo fue por no tener rol de plataforma. Ver el javadoc de la clase. */
@@ -213,6 +224,9 @@ export class CatalogoDeServiciosPage {
 
   /** Errores que solo se resuelven releyendo el listado. */
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /** Código o nombre en uso (UX-12): va pegado a los campos, no como error general. */
+  protected readonly duplicado = computed(() => this.causaAccion() === 'servicio-duplicado');
 
   /** Lo que el usuario tipea, antes del debounce. Ver {@link ESPERA_DE_BUSQUEDA}. */
   private readonly tecleado = new Subject<string>();
@@ -299,9 +313,16 @@ export class CatalogoDeServiciosPage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda y el filtro de estado a su valor inicial y relee. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.cargar();
+  }
+
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       codigo: '',
       nombre: '',
@@ -322,7 +343,6 @@ export class CatalogoDeServiciosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -410,15 +430,15 @@ export class CatalogoDeServiciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.crearServicio(cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El servicio quedo dado de alta en el catalogo global: lo ven todos los centros. Para ' +
-            'que se ofrezca en una sede hay que crear su oferta.',
-        );
+        this.avisos.exito('Servicio agregado al catálogo', {
+          descripcion:
+            `${cuerpo.nombre}. Lo ven todos los centros; para ofrecerlo en una sede, creá su ` +
+            'oferta.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -447,12 +467,11 @@ export class CatalogoDeServiciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.editarServicio(panel.id, cambios).subscribe({
-      next: () => {
+      next: (actualizado) => {
         this.cerrarPanel();
-        this.exito.set('Los datos del servicio quedaron guardados.');
+        this.avisos.exito('Cambios guardados', { descripcion: actualizado.nombre ?? undefined });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -476,15 +495,16 @@ export class CatalogoDeServiciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.darDeBajaServicio(panel.id, motivo).subscribe({
       next: () => {
+        const nombre = this.servicioEnPanel()?.nombre;
         this.cerrarPanel();
-        this.exito.set(
-          'El servicio quedo dado de baja. Las ofertas que ya lo usan siguen funcionando; lo que ' +
-            'no se puede es crear ofertas nuevas sobre el.',
-        );
+        this.avisos.exito('Servicio dado de baja', {
+          descripcion:
+            `${nombre ? nombre + '. ' : ''}Las ofertas que ya lo usan siguen funcionando; no se ` +
+            'pueden crear ofertas nuevas sobre él.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),

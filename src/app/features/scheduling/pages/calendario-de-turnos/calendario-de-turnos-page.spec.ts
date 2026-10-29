@@ -144,25 +144,30 @@ describe('CalendarioDeTurnosPage', () => {
     httpMock.expectOne(esCalendario(CONSULTORIO)).flush({ timezone: ZONA, turnos: [] });
     await asentar(fixture);
 
-    expect(raiz(fixture).textContent).toContain('Esta semana no tiene turnos reservados');
+    // UX-14: el vacio es `app-estado-vacio`, no un parrafo suelto.
+    expect(raiz(fixture).querySelector('app-estado-vacio')?.textContent).toContain(
+      'Esta semana no tiene turnos reservados',
+    );
     expect(raiz(fixture).querySelector('.calendario__semana')).toBeNull();
   });
 
-  it('un error se explica y "Volver a intentar" vuelve a pedir la misma semana', async () => {
+  it('un error se explica en el lugar y "Reintentar" vuelve a pedir la misma semana', async () => {
     const fixture = montar('2026-10-26');
     httpMock
       .expectOne(esCalendario(CONSULTORIO))
       .flush(null, { status: 0, statusText: 'Unknown Error' });
     await asentar(fixture);
 
-    expect(raiz(fixture).textContent).toContain('No se pudieron leer los turnos de la semana');
-    botonQueDice(fixture, 'Volver a intentar').click();
+    expect(raiz(fixture).querySelector('app-alerta')?.textContent).toContain(
+      'No pudimos leer los turnos de la semana',
+    );
+    botonQueDice(fixture, 'Reintentar').click();
     const reintento = httpMock.expectOne(esCalendario(CONSULTORIO));
     expect(reintento.request.params.get('desde')).toBe('2026-10-26');
     reintento.flush({ timezone: ZONA, turnos: DE_LA_SEMANA });
     await asentar(fixture);
 
-    expect(raiz(fixture).textContent).not.toContain('No se pudieron leer');
+    expect(raiz(fixture).textContent).not.toContain('No pudimos leer');
     expect(raiz(fixture).textContent).toContain('Ramírez, Ana');
   });
 

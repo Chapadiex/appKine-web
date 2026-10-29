@@ -11,6 +11,7 @@ import { FranjaResueltaResponse } from '../../../../api/generated/model/franja-r
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
 import {
   TEXTO_LISTA_INCOMPLETA,
@@ -40,6 +41,10 @@ import {
   PESTANAS_DE_HORARIOS,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una semana: es la ventana que se mira para responder "por que el martes esta vacio". */
@@ -86,7 +91,17 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [CabeceraDePagina, Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    Pestanas,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+    EstadoVacio,
+    PieDeTabla,
+    ColumnaOrdenable,
+  ],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })
@@ -163,6 +178,14 @@ export class HorarioEfectivoPage {
 
   private readonly vista = vistaDeListado<DiaEfectivoResponse>(this.estado);
   protected readonly dias = this.vista.filas;
+
+  /** Orden y pagina de los dias (UX-14). La ventana llega entera: se pagina aca. */
+  protected readonly tabla = tablaLocal(this.dias, {
+    columnas: {
+      dia: (dia) => dia.fecha ?? null,
+      estado: (dia) => this.atiende(dia),
+    },
+  });
   protected readonly mensajeError = this.vista.mensajeError;
   protected readonly faltaContexto = this.vista.faltaContexto;
 

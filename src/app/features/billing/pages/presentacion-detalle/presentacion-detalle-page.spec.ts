@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -135,14 +136,14 @@ describe('PresentacionDetallePage', () => {
     expect(alta.request.body).toEqual({ obligacionId: 9002 });
     alta.flush({ id: 502 });
     await responderBorrador(fixture, { ...BORRADOR, items: [ITEM, { ...ITEM, id: 502 }] }, []);
-    expect(contenido(fixture)).toContain('Se agrego la prestación al lote.');
+    expect(titulosDeAvisos()).toContain('Prestación agregada al lote');
 
     apretarPrimero(fixture, 'Quitar');
     const baja = httpMock.expectOne(`${DETALLE}/items/501`);
     expect(baja.request.method).toBe('DELETE');
     baja.flush(null);
     await responderBorrador(fixture, BORRADOR, [ELEGIBLE]);
-    expect(contenido(fixture)).toContain('Vuelve a estar disponible');
+    expect(titulosDeAvisos()).toContain('Prestación quitada del lote');
   });
 
   it('confirmar con hallazgos muestra el error del servidor y vuelve a pedir la revision', async () => {
@@ -216,7 +217,7 @@ describe('PresentacionDetallePage', () => {
     await estabilizar(fixture);
 
     const texto = contenido(fixture);
-    expect(texto).toContain('Pago registrado');
+    expect(titulosDeAvisos()).toContain('Pago registrado');
     expect(texto).toContain('7.000,00');
     expect(texto).toContain('ref. trf-123');
   });
@@ -233,7 +234,7 @@ describe('PresentacionDetallePage', () => {
     httpMock.expectOne(DETALLE).flush(PRESENTADA);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Debito registrado');
+    expect(titulosDeAvisos()).toContain('Debito registrado');
 
     escribir(fixture, '#factura-numero', '0001-00000042');
     enviarFormulario(fixture, '#factura-numero');
@@ -260,7 +261,12 @@ describe('PresentacionDetallePage', () => {
     );
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('Quedan 12000.00 sin explicar.');
+    // En la seccion del cierre, arriba de su boton.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-labelledby="titulo-cierre"] app-alerta',
+    );
+    expect(alerta?.textContent).toContain('No pudimos cerrar el lote');
+    expect(alerta?.textContent).toContain('Quedan 12000.00 sin explicar.');
   });
 
   it('exportar baja el CSV con el nombre de Content-Disposition y revoca el objectURL', async () => {
@@ -307,7 +313,11 @@ describe('PresentacionDetallePage', () => {
     );
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('No se pudo completar la operación');
+    // Boton sin formulario: el error va al aviso global, con el mensaje del servidor.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos exportar el CSV');
+    expect(aviso?.descripcion).toContain('No tenés permiso para gestionar presentaciones');
   });
 
   it(
@@ -358,7 +368,7 @@ describe('PresentacionDetallePage', () => {
     httpMock.expectOne(DETALLE).flush(PRESENTADA);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Lote presentado');
+    expect(titulosDeAvisos()).toContain('Lote presentado');
   });
 
   it('el 409 presentacion-con-hallazgos puede traer SIN_AUTORIZACION', async () => {
@@ -424,10 +434,15 @@ describe('PresentacionDetallePage', () => {
 
     filtrar(fixture, 'DEBITADO_PARCIAL');
     expect(anfitrion.querySelectorAll('tbody tr')).toHaveLength(1);
+    // El contador va en la barra de filtros, pegado a la tabla (UX-14).
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 prestación',
+    );
     expect(contenido(fixture)).toContain('Debitada en parte');
 
     filtrar(fixture, 'ACEPTADO_PARCIAL');
     expect(contenido(fixture)).toContain('Ninguna prestación del lote está en ese estado.');
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain('Limpiar filtros');
 
     filtrar(fixture, '');
     expect(anfitrion.querySelectorAll('.tabla tbody tr')).toHaveLength(2);
@@ -468,7 +483,9 @@ describe('PresentacionDetallePage', () => {
     httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('las debitadas en parte, por lo presentado menos lo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Lote cerrado');
+    expect(aviso?.descripcion).toContain('las debitadas en parte, por lo presentado menos lo');
   });
 
   it(
@@ -540,6 +557,12 @@ describe('PresentacionDetallePage', () => {
   async function estabilizar(fixture: ComponentFixture<PresentacionDetallePage>): Promise<void> {
     await fixture.whenStable();
     fixture.detectChanges();
+  }
+
+  function titulosDeAvisos(): string[] {
+    return TestBed.inject(AvisosStore)
+      .avisos()
+      .map((aviso) => aviso.titulo);
   }
 
   function contenido(fixture: ComponentFixture<PresentacionDetallePage>): string {

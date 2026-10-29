@@ -14,54 +14,59 @@
       <p class="estado estado--cargando">Cargando los datos de la historia…</p>
     }
     @if (mensajeError(); as mensaje) {
-      <p class="estado estado--error">{{ mensaje }}</p>
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="reintentar()">
-          Reintentar
-        </button>
-      </div>
+      <app-alerta tipo="error" titulo="No pudimos leer los datos de la historia">
+        <p>{{ mensaje }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="reintentar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
     }
 
     @if (lectura(); as l) {
       @if (!l.datos.tieneHistoriaClinica) {
-        <p class="estado">Esta persona todavía no tiene historia clínica.</p>
+        <app-estado-vacio
+          titulo="Esta persona todavía no tiene historia clínica"
+          texto="La historia clínica se maneja en el módulo clínico."
+        />
       } @else {
         <dl class="detalle">
           <dt>Historia abierta el</dt>
           <dd>{{ fecha(l.datos.abiertaEn) || 'Sin fecha registrada' }}</dd>
         </dl>
 
-        @if ((l.datos.casos ?? []).length === 0) {
-          <p class="estado">La historia no tiene casos abiertos ni cerrados.</p>
+        @if (casos().length === 0) {
+          <app-estado-vacio titulo="La historia no tiene casos abiertos ni cerrados" />
         } @else {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-labelledby="caption-casos-administrativos"
-          >
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Casos de la historia">
             <table class="tabla">
-              <caption id="caption-casos-administrativos">
-                Casos de la historia
-              </caption>
               <thead>
                 <tr>
-                  <th scope="col">Caso</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Oferta</th>
-                  <th scope="col">Abierto</th>
-                  <th scope="col">Cerrado</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="caso">Caso</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="estado">Estado</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="oferta">Oferta</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="abierto">Abierto</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tablaDeCasos"
+                    columna="cerrado"
+                  >
+                    Cerrado
+                  </th>
                   <th scope="col">Equipo vigente</th>
                 </tr>
               </thead>
               <tbody>
-                @for (caso of l.datos.casos; track caso.id) {
+                @for (caso of tablaDeCasos.visibles(); track caso.id) {
                   <tr>
                     <td>N.º {{ caso.numeroCaso }}</td>
                     <td>{{ caso.estado === 'ACTIVO' ? 'Activo' : 'Cerrado' }}</td>
                     <td>{{ nombreDeOferta(caso) }}</td>
                     <td>{{ fecha(caso.abiertoEn) }}</td>
-                    <td>{{ fecha(caso.cerradoEn) || '—' }}</td>
+                    <td class="tabla__col--secundaria">{{ fecha(caso.cerradoEn) || '—' }}</td>
                     <td>
                       @for (miembro of equipoVigente(caso); track miembro.id; let ultimo = $last) {
                         {{ nombreDeProfesional(miembro) }} ({{ rolEnPalabras(miembro) }}){{
@@ -76,6 +81,7 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tablaDeCasos" etiqueta="Páginas de casos de la historia" />
         }
       }
     }

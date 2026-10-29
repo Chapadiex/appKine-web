@@ -37,6 +37,8 @@ import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
 import {
   ImpactoPrevio,
@@ -68,6 +70,8 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
@@ -117,6 +121,8 @@ interface DiaConBloques {
   selector: 'app-horario-semanal-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     PanelLateral,
     AccionesDeFila,
     Ayuda,
@@ -127,12 +133,15 @@ interface DiaConBloques {
     PermisoDirective,
     ConfirmacionConMotivo,
     ImpactoPrevioPanel,
+    EstadoVacio,
+    Filtros,
   ],
   templateUrl: './horario-semanal-page.html',
   styleUrl: '../../resource.css',
 })
 export class HorarioSemanalPage {
   private readonly disponibilidad = inject(DisponibilidadProfesionalService);
+  private readonly avisos = inject(AvisosStore);
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -269,17 +278,7 @@ export class HorarioSemanalPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaBloque | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
-
-  /**
-   * Turnos que la ultima edicion o baja pudo dejar fuera de horario, ya redactado, o `null`.
-   *
-   * <p>Vive al lado de {@link exito} y se limpia con el: es la otra mitad del mismo resultado.
-   * El numero es el de la respuesta de la mutacion, no el de la consulta previa: ver
-   * `turnos-afectados.ts`.
-   */
-  protected readonly avisoTurnos = signal<string | null>(null);
 
   /**
    * Consulta previa de impacto del panel abierto (A-11), o `null` si todavia no se pidio.
@@ -314,6 +313,9 @@ export class HorarioSemanalPage {
     return enConflicto !== null && enConflicto.id !== null && enConflicto.id === bloque.id;
   }
 
+  /** Solapamiento con otro bloque (UX-12): va pegado al día y las horas, no arriba. */
+  protected readonly solapado = computed(() => this.causaAccion() === 'solapado');
+
   /** Errores que solo se resuelven releyendo el horario. */
   protected readonly hayQueRecargar = computed(() => {
     const causa = this.causaAccion();
@@ -341,8 +343,6 @@ export class HorarioSemanalPage {
 
         this.cerrarPanel();
         this.altaAbierta.set(false);
-        this.exito.set(null);
-        this.avisoTurnos.set(null);
         this.membershipElegido.set(inicial);
         this.estado.set({ tipo: 'inicial' });
         this.cargarProfesionales();
@@ -412,8 +412,6 @@ export class HorarioSemanalPage {
     const membershipId = Number(valor);
     this.cerrarPanel();
     this.altaAbierta.set(false);
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
 
     if (valor === '' || !Number.isFinite(membershipId)) {
       this.membershipElegido.set(null);
@@ -463,8 +461,6 @@ export class HorarioSemanalPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
     this.formularioAlta.reset({
       diaSemana: '1',
       horaDesde: '',
@@ -492,8 +488,6 @@ export class HorarioSemanalPage {
 
     this.cerrarPanel();
     this.altaAbierta.set(false);
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -588,7 +582,9 @@ export class HorarioSemanalPage {
       .subscribe({
         next: () => {
           this.cerrarAlta();
-          this.exito.set('El bloque quedo cargado en el horario semanal.');
+          this.avisos.exito('Bloque agregado al horario', {
+            descripcion: this.nombreDelProfesional(),
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -695,8 +691,10 @@ export class HorarioSemanalPage {
       .subscribe({
         next: (bloque) => {
           this.cerrarPanel();
-          this.exito.set('Los cambios del bloque quedaron guardados.');
-          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados, previsto));
+          this.publicarResultado(
+            'Cambios del bloque guardados',
+            avisoDeTurnosAfectados(bloque.turnosAfectados, previsto),
+          );
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -734,11 +732,11 @@ export class HorarioSemanalPage {
       .subscribe({
         next: (bloque) => {
           this.cerrarPanel();
-          this.exito.set(
-            'El bloque quedo dado de baja. La fila no se borra: sobrevive con su motivo y su ' +
-              'autor en la auditoria.',
+          this.publicarResultado(
+            'Bloque dado de baja',
+            avisoDeTurnosAfectados(bloque.turnosAfectados, previsto),
+            'Sobrevive con su motivo y su autor en la auditoría.',
           );
-          this.avisoTurnos.set(avisoDeTurnosAfectados(bloque.turnosAfectados, previsto));
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -839,13 +837,31 @@ export class HorarioSemanalPage {
     return cambios;
   }
 
+  /**
+   * Resultado de una edicion o una baja (UX-12): el exito y, si la mutacion dejo turnos fuera de
+   * horario, un aviso de atencion que queda hasta que lo cierren. Es la otra mitad del mismo
+   * resultado y el numero es el de la respuesta de la mutacion, no el de la consulta previa: ver
+   * `turnos-afectados.ts`.
+   */
+  private publicarResultado(
+    titulo: string,
+    turnosParaRevisar: string | null,
+    descripcion?: string,
+  ): void {
+    this.avisos.exito(titulo, { descripcion });
+    if (turnosParaRevisar !== null) {
+      this.avisos.advertencia('Turnos para revisar', {
+        descripcion: turnosParaRevisar,
+        duracion: null,
+      });
+    }
+  }
+
   private empezarEnvio(): void {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.conflicto.set(null);
-    this.exito.set(null);
-    this.avisoTurnos.set(null);
   }
 
   /**

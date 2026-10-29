@@ -30,8 +30,9 @@ import { formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_COLABORADORES,
@@ -40,6 +41,9 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -95,8 +99,11 @@ const ROLES = [
   selector: 'app-invitaciones-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Pestanas,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ColumnaOrdenable,
     Ayuda,
     Icono,
@@ -117,6 +124,7 @@ export class InvitacionesPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly invitaciones = inject(InvitacionesService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -142,12 +150,31 @@ export class InvitacionesPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaInvitacion | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly filas = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.invitaciones : [];
+  });
+
+  /**
+   * Busqueda por email (UX-14). El backend no tiene `q` para este listado, pero la lista llega
+   * entera: se filtra aca, sobre lo que ya esta en pantalla.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Hay busqueda o un estado distinto del de entrada: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'PENDIENTE',
+  );
+
+  /** Las filas que coinciden con la busqueda: es lo que ordena y pagina la tabla. */
+  protected readonly filasBuscadas = computed(() => {
+    const buscado = normalizar(this.busqueda());
+    const filas = this.filas();
+    return buscado === ''
+      ? filas
+      : filas.filter((invitacion) => normalizar(invitacion.email ?? '').includes(buscado));
   });
 
   /**
@@ -160,7 +187,7 @@ export class InvitacionesPage {
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
-  protected readonly tabla = tablaLocal(this.filas, {
+  protected readonly tabla = tablaLocal(this.filasBuscadas, {
     columnas: {
       persona: (invitacion) => invitacion.email,
       rol: (invitacion) => this.etiquetaDeRol(invitacion.roleCode),
@@ -203,11 +230,19 @@ export class InvitacionesPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPaneles();
-        this.exito.set(null);
         this.filtro.set('PENDIENTE');
+        this.busqueda.set('');
         this.cargar();
       });
     });
+  }
+
+  /** "Limpiar filtros": vuelve la busqueda y el estado a su valor de entrada. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtro() !== 'PENDIENTE') {
+      this.cambiarFiltro('PENDIENTE');
+    }
   }
 
   /**
@@ -293,7 +328,6 @@ export class InvitacionesPage {
 
   protected abrirAlta(): void {
     this.cerrarPaneles();
-    this.exito.set(null);
     this.formularioAlta.enable();
     this.formularioAlta.reset({ email: '', roleCode: 'PROFESIONAL', alcance: 'SEDE' });
     this.altaAbierta.set(true);
@@ -306,7 +340,6 @@ export class InvitacionesPage {
       return;
     }
     this.cerrarPaneles();
-    this.exito.set(null);
     this.cancelacionAbierta.set(id);
   }
 
@@ -353,17 +386,17 @@ export class InvitacionesPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.invitaciones
       .createColaboradorInvitacion({ orgId, createInvitacionRequest: cuerpo })
       .subscribe({
         next: () => {
           this.cerrarPaneles();
-          this.exito.set(
-            'La invitación salio por correo. Va a figurar como pendiente hasta que la persona ' +
-              'responda: el vinculo se crea cuando acepta, no ahora.',
-          );
+          this.avisos.exito('Invitación enviada', {
+            descripcion:
+              `${cuerpo.email}. Figura como pendiente hasta que responda: el vínculo se crea ` +
+              'cuando acepta, no ahora.',
+          });
           this.filtro.set('PENDIENTE');
           this.cargar();
         },
@@ -374,9 +407,13 @@ export class InvitacionesPage {
   /**
    * Rota el token y vuelve a mandar el correo.
    *
-   * <p>El mensaje de exito dice que el enlace anterior dejo de servir, porque es un efecto que
+   * <p>El aviso de exito dice que el enlace anterior dejo de servir, porque es un efecto que
    * el usuario no pidio y que importa: si el invitado tenia el correo viejo abierto, ese enlace
    * ya no funciona.
+   *
+   * <p>Es un boton de fila, sin formulario: el error tambien va al aviso global (UX-12), con
+   * "Reintentar" solo si reintentar puede cambiar algo (red o falla del servidor) y "Recargar"
+   * si la fila quedo vieja (la invitacion ya se resolvio o no existe).
    */
   protected reenviar(invitacion: InvitacionResponse): void {
     const orgId = this.tenantContext.organizationId();
@@ -387,18 +424,32 @@ export class InvitacionesPage {
 
     this.cerrarPaneles();
     this.enviando.set(true);
-    this.exito.set(null);
 
     this.invitaciones.resendColaboradorInvitacion({ orgId, invitacionId: id }).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.exito.set(
-          'Le mandamos un enlace nuevo. El anterior dejo de servir en el mismo acto, así que si ' +
-            'todavía tenia el correo viejo abierto, tiene que usar el último.',
-        );
+        this.avisos.exito('Invitación reenviada', {
+          descripcion:
+            `Le mandamos un enlace nuevo a ${invitacion.email ?? 'la persona'}. El anterior dejó ` +
+            'de servir en el mismo acto: si todavía tenía el correo viejo abierto, tiene que usar ' +
+            'el último.',
+        });
         this.cargar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) => {
+        this.enviando.set(false);
+        const traducido = traducirErrorInvitacion(error);
+        const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+        const filaVieja = traducido.causa === 'ya-resuelta' || traducido.causa === 'no-encontrado';
+        this.avisos.error('No pudimos reenviar la invitación', {
+          descripcion: traducido.mensaje,
+          accion: reintentable
+            ? { etiqueta: 'Reintentar', ejecutar: () => this.reenviar(invitacion) }
+            : filaVieja
+              ? { etiqueta: 'Recargar', ejecutar: () => this.cargar() }
+              : undefined,
+        });
+      },
     });
   }
 
@@ -412,7 +463,7 @@ export class InvitacionesPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
+    const email = this.invitacionEnPanel()?.email;
 
     this.invitaciones
       .cancelColaboradorInvitacion({
@@ -423,10 +474,11 @@ export class InvitacionesPage {
       .subscribe({
         next: () => {
           this.cerrarPaneles();
-          this.exito.set(
-            'La invitación quedo cancelada y su enlace dejo de servir. Podés volver a invitar a ' +
-              'esa persona mas adelante.',
-          );
+          this.avisos.exito('Invitación cancelada', {
+            descripcion:
+              `${email ?? 'Su enlace'}: el enlace dejó de servir. Podés volver a invitar a esa ` +
+              'persona más adelante.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -443,4 +495,13 @@ export class InvitacionesPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable: sin mayusculas, sin tildes y sin espacios de los costados. */
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
 }

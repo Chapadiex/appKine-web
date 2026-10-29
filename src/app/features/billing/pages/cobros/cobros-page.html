@@ -1,8 +1,4 @@
-<app-cabecera-de-ficha
-  [modelo]="cabecera()"
-  titulo="Cobros registrados"
-  [migasDeSeccion]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]"
->
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Cobros registrados">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Dinero recibido de esta persona en <b>todo el centro</b>. Es la otra mitad de la cuenta
@@ -19,77 +15,105 @@
   </div>
 </app-cabecera-de-ficha>
 
-@if (cargando()) {
-  <p class="estado estado--cargando">Cargando los cobros…</p>
-}
-
-@if (exito(); as mensaje) {
-  <p class="estado estado--ok" role="status">{{ mensaje }}</p>
-}
-
 @if (mensajeError(); as mensaje) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cobros">
-    <h2 id="titulo-error-cobros">No se pudieron cargar los cobros</h2>
-    <p class="estado estado--error">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudieron cargar los cobros">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      </div>
-    } @else {
-      <div class="acciones">
+      } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      }
+    </p>
+  </app-alerta>
+}
+
+@if (!mensajeError()) {
+  <section class="tarjeta" aria-labelledby="titulo-listado-cobros">
+    <h2 id="titulo-listado-cobros" class="visualmente-oculto">Listado de cobros</h2>
+    <!-- Patron de listado (UX-14 §1): busqueda y contador pegados a la tabla, en la misma tarjeta. -->
+    <app-filtros
+      sinAvanzados
+      [resultados]="cargando() || mensajeError() ? null : tabla.total()"
+      [unidad]="['cobro', 'cobros']"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="buscar-cobro">Número de comprobante</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="buscar-cobro"
+            type="search"
+            autocomplete="off"
+            inputmode="numeric"
+            placeholder="Buscar por número de comprobante"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
       </div>
+    </app-filtros>
+
+    @if (cargando()) {
+      <p class="estado estado--cargando">Cargando los cobros…</p>
     }
-  </section>
-}
 
-@if (vacia()) {
-  <p class="estado estado--vacio">
-    Esta persona no tiene ningún cobro registrado.
-    <a class="enlace" [routerLink]="rutaCobrar()">Registrar un cobro</a>.
-  </p>
-}
+    @if (vacia()) {
+      <app-estado-vacio
+        titulo="Esta persona no tiene ningún cobro registrado"
+        texto="Lo que pague va a aparecer acá con su comprobante."
+      >
+        <a class="boton" [routerLink]="rutaCobrar()">Registrar un cobro</a>
+      </app-estado-vacio>
+    } @else if (cobros().length > 0 && tabla.total() === 0) {
+      <app-estado-vacio
+        titulo="No hay cobros con ese número"
+        texto="Probá con otro número de comprobante."
+      >
+        <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
+    }
 
-@if (cobros().length > 0) {
-  <section class="tarjeta tarjeta--listado" aria-label="Listado de cobros">
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-cobros">
-      <h2 id="titulo-tabla-cobros" class="visualmente-oculto">Cobros de la persona</h2>
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="comprobante">Comprobante</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha y hora</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="total">Total</th>
-            <th scope="col">Medios</th>
-            <th scope="col">Deudas imputadas</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="saldoAFavor">Saldo a favor</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (cobro of tabla.visibles(); track cobro.id) {
-            <tr [class.fila--seleccionada]="cobroEnOperacion()?.id === cobro.id">
-              <td>N.º {{ cobro.comprobanteNumero }}</td>
-              <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
-              <td class="importe">{{ importe(cobro, cobro.total) }}</td>
-              <td>{{ cobro.medios?.length }}</td>
-              <td>{{ cobro.imputaciones?.length }}</td>
-              <td class="importe">{{ importe(cobro, cobro.saldoAFavor ?? 0) }}</td>
-              <!--
+    @if (tabla.total() > 0) {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cobros de la persona">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="comprobante">Comprobante</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha y hora</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="total">Total</th>
+              <th scope="col" class="tabla__col--secundaria">Medios</th>
+              <th scope="col" class="tabla__col--secundaria">Deudas imputadas</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="saldoAFavor">Saldo a favor</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cobro of tabla.visibles(); track cobro.id) {
+              <tr [class.fila--seleccionada]="cobroEnOperacion()?.id === cobro.id">
+                <td>N.º {{ cobro.comprobanteNumero }}</td>
+                <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
+                <td class="importe">{{ importe(cobro, cobro.total) }}</td>
+                <td class="tabla__col--secundaria">{{ cobro.medios?.length }}</td>
+                <td class="tabla__col--secundaria">{{ cobro.imputaciones?.length }}</td>
+                <td class="importe">{{ importe(cobro, cobro.saldoAFavor ?? 0) }}</td>
+                <!--
               Desde el contrato 0.90.0 el listado trae tambien los anulados: siguen siendo
               comprobantes emitidos, y la fila lo dice en vez de desaparecer. Va en su propia
               celda para que la del comprobante siga siendo solo el numero.
             -->
-              <td>
-                @if (estaAnulado(cobro)) {
-                  <span class="marca-estado marca-estado--revocada">Anulado</span>
-                } @else {
-                  <span class="marca-estado marca-estado--activa">Vigente</span>
-                }
-              </td>
-              <td class="tabla__acciones">
-                <!--
+                <td>
+                  @if (estaAnulado(cobro)) {
+                    <span class="marca-estado marca-estado--revocada">Anulado</span>
+                  } @else {
+                    <span class="marca-estado marca-estado--activa">Vigente</span>
+                  }
+                </td>
+                <td class="tabla__acciones">
+                  <!--
                   Tres acciones: menu "⋯" (decidido el 22/10/2026). Ver el comprobante queda a la
                   vista; anular y reintegrar mueven la caja y piden DOS permisos: cobro:register y
                   caja:operate (la directiva acepta cualquiera de los que recibe, asi que se
@@ -100,171 +124,152 @@
                   explicacion al lado en vez de esconderse: un boton que desaparece en una fila y
                   no en otra no le dice a nadie por que.
                 -->
-                @if (puedeAnularYReintegrar()) {
-                  <app-acciones-de-fila [de]="'comprobante N.º ' + cobro.comprobanteNumero">
-                    @if (esElAbierto(cobro)) {
-                      <button
-                        principal
-                        type="button"
-                        class="boton boton--secundario boton--chico"
-                        [id]="'comprobante-' + cobro.id"
-                        (click)="cerrar()"
-                      >
-                        Cerrar el comprobante
-                      </button>
-                    } @else {
-                      <button
-                        principal
-                        type="button"
-                        class="boton boton--secundario boton--chico"
-                        [id]="'comprobante-' + cobro.id"
-                        [disabled]="abriendo() === cobro.id"
-                        (click)="abrir(cobro)"
-                      >
-                        Ver el comprobante
-                      </button>
-                    }
-                    <button
-                      type="button"
-                      class="accion--peligro"
-                      [disabled]="motivoParaNoAnular(cobro) !== null"
-                      [attr.aria-describedby]="
-                        motivoParaNoAnular(cobro) !== null ? 'no-anular-' + cobro.id : null
-                      "
-                      (click)="abrirOperacion('anular', cobro)"
-                    >
-                      Anular
-                    </button>
-                    <button
-                      type="button"
-                      [disabled]="motivoParaNoReintegrar(cobro) !== null"
-                      [attr.aria-describedby]="
-                        motivoParaNoReintegrar(cobro) !== null ? 'no-reintegrar-' + cobro.id : null
-                      "
-                      (click)="abrirOperacion('reintegrar', cobro)"
-                    >
-                      Reintegrar saldo a favor
-                    </button>
-                    @if (motivoParaNoAnular(cobro); as porQue) {
-                      <span class="ayuda" [id]="'no-anular-' + cobro.id">
-                        No se puede anular: {{ porQue }}
-                      </span>
-                    }
-                    @if (motivoParaNoReintegrar(cobro); as porQue) {
-                      <span class="ayuda" [id]="'no-reintegrar-' + cobro.id">
-                        Nada para reintegrar: {{ porQue }}
-                      </span>
-                    }
-                  </app-acciones-de-fila>
-                } @else {
-                  <div>
-                    @if (esElAbierto(cobro)) {
-                      <button
-                        type="button"
-                        class="boton boton--secundario boton--chico"
-                        [id]="'comprobante-' + cobro.id"
-                        (click)="cerrar()"
-                      >
-                        Cerrar el comprobante
-                      </button>
-                    } @else {
-                      <button
-                        type="button"
-                        class="boton boton--secundario boton--chico"
-                        [id]="'comprobante-' + cobro.id"
-                        [disabled]="abriendo() === cobro.id"
-                        (click)="abrir(cobro)"
-                      >
-                        Ver el comprobante
-                      </button>
-                    }
-                  </div>
-                }
-              </td>
-            </tr>
-
-            @if (esElAbierto(cobro)) {
-              <!--
-                Detalle de lectura del comprobante: se queda como fila expandible y no va a un panel
-                lateral. Se lee contra la fila (que cobro es) y no tiene nada que completar.
-              -->
-              <tr class="fila-panel">
-                <td colspan="8">
-                  @if (comprobante(); as detalle) {
-                    <h3>Comprobante N.º {{ detalle.comprobanteNumero }}</h3>
-                    <p class="ayuda">
-                      Releido del servidor recien. El número es correlativo por sede: es lo que el
-                      paciente se lleva.
-                    </p>
-
-                    <dl class="detalle">
-                      <dt>Cobrado</dt>
-                      <dd>{{ instanteEnPalabras(detalle.cobradoEn) }}</dd>
-
-                      <dt>Total</dt>
-                      <dd class="importe">{{ importe(detalle, detalle.total) }}</dd>
-                    </dl>
-
-                    <h4>Como entro la plata</h4>
-                    <ul class="lista-comprobante">
-                      @for (medio of detalle.medios; track $index) {
-                        <li>
-                          {{ medioEnPalabras(medio.medio) }} —
-                          <span class="importe">{{ importe(detalle, medio.importe) }}</span>
-                          @if (medio.referencia) {
-                            <span class="ayuda">(ref. {{ medio.referencia }})</span>
-                          }
-                        </li>
+                  @if (puedeAnularYReintegrar()) {
+                    <app-acciones-de-fila [de]="'comprobante N.º ' + cobro.comprobanteNumero">
+                      @if (esElAbierto(cobro)) {
+                        <button
+                          principal
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [id]="'comprobante-' + cobro.id"
+                          (click)="cerrar()"
+                        >
+                          Cerrar el comprobante
+                        </button>
+                      } @else {
+                        <button
+                          principal
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [id]="'comprobante-' + cobro.id"
+                          [disabled]="abriendo() === cobro.id"
+                          (click)="abrir(cobro)"
+                        >
+                          Ver el comprobante
+                        </button>
                       }
-                    </ul>
-
-                    <h4>Contra que deudas se aplico</h4>
-                    <ul class="lista-comprobante">
-                      @for (imputacion of detalle.imputaciones; track $index) {
-                        <li>
-                          Deuda #{{ imputacion.obligacionId }} —
-                          <span class="importe">{{ importe(detalle, imputacion.importe) }}</span>
-                        </li>
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        [disabled]="motivoParaNoAnular(cobro) !== null"
+                        [attr.aria-describedby]="
+                          motivoParaNoAnular(cobro) !== null ? 'no-anular-' + cobro.id : null
+                        "
+                        (click)="abrirOperacion('anular', cobro)"
+                      >
+                        Anular
+                      </button>
+                      <button
+                        type="button"
+                        [disabled]="motivoParaNoReintegrar(cobro) !== null"
+                        [attr.aria-describedby]="
+                          motivoParaNoReintegrar(cobro) !== null
+                            ? 'no-reintegrar-' + cobro.id
+                            : null
+                        "
+                        (click)="abrirOperacion('reintegrar', cobro)"
+                      >
+                        Reintegrar saldo a favor
+                      </button>
+                      @if (motivoParaNoAnular(cobro); as porQue) {
+                        <span class="ayuda" [id]="'no-anular-' + cobro.id">
+                          No se puede anular: {{ porQue }}
+                        </span>
                       }
-                    </ul>
-
-                    <p class="ayuda">
-                      El saldo que quedo en cada deuda vive en la obligacion, no acá: esto dice
-                      cuanto aplico <b>este</b> cobro.
-                    </p>
+                      @if (motivoParaNoReintegrar(cobro); as porQue) {
+                        <span class="ayuda" [id]="'no-reintegrar-' + cobro.id">
+                          Nada para reintegrar: {{ porQue }}
+                        </span>
+                      }
+                    </app-acciones-de-fila>
+                  } @else {
+                    <div>
+                      @if (esElAbierto(cobro)) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [id]="'comprobante-' + cobro.id"
+                          (click)="cerrar()"
+                        >
+                          Cerrar el comprobante
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [id]="'comprobante-' + cobro.id"
+                          [disabled]="abriendo() === cobro.id"
+                          (click)="abrir(cobro)"
+                        >
+                          Ver el comprobante
+                        </button>
+                      }
+                    </div>
                   }
                 </td>
               </tr>
+
+              @if (esElAbierto(cobro)) {
+                <!--
+                Detalle de lectura del comprobante: se queda como fila expandible y no va a un panel
+                lateral. Se lee contra la fila (que cobro es) y no tiene nada que completar.
+              -->
+                <tr class="fila-panel">
+                  <td colspan="8">
+                    @if (comprobante(); as detalle) {
+                      <h3>Comprobante N.º {{ detalle.comprobanteNumero }}</h3>
+                      <p class="ayuda">
+                        Releido del servidor recien. El número es correlativo por sede: es lo que el
+                        paciente se lleva.
+                      </p>
+
+                      <dl class="detalle">
+                        <dt>Cobrado</dt>
+                        <dd>{{ instanteEnPalabras(detalle.cobradoEn) }}</dd>
+
+                        <dt>Total</dt>
+                        <dd class="importe">{{ importe(detalle, detalle.total) }}</dd>
+                      </dl>
+
+                      <h4>Como entro la plata</h4>
+                      <ul class="lista-comprobante">
+                        @for (medio of detalle.medios; track $index) {
+                          <li>
+                            {{ medioEnPalabras(medio.medio) }} —
+                            <span class="importe">{{ importe(detalle, medio.importe) }}</span>
+                            @if (medio.referencia) {
+                              <span class="ayuda">(ref. {{ medio.referencia }})</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+
+                      <h4>Contra que deudas se aplico</h4>
+                      <ul class="lista-comprobante">
+                        @for (imputacion of detalle.imputaciones; track $index) {
+                          <li>
+                            Deuda #{{ imputacion.obligacionId }} —
+                            <span class="importe">{{ importe(detalle, imputacion.importe) }}</span>
+                          </li>
+                        }
+                      </ul>
+
+                      <p class="ayuda">
+                        El saldo que quedo en cada deuda vive en la obligacion, no acá: esto dice
+                        cuanto aplico <b>este</b> cobro.
+                      </p>
+                    }
+                  </td>
+                </tr>
+              }
             }
-          }
-        </tbody>
-      </table>
-    </div>
-    <div class="tabla-pie">
-      <span>{{ tabla.total() }} cobros</span>
-      <app-paginacion
-        [paginaActual]="tabla.pagina()"
-        [totalPaginas]="tabla.totalPaginas()"
-        etiqueta="Páginas de cobros"
-        (cambioDePagina)="tabla.irA($event)"
-      />
-    </div>
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de cobros" />
+    }
   </section>
 }
-
-<div aria-live="polite">
-  @if (errorDetalle(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-error-detalle">
-      <h2 id="titulo-error-detalle">No se pudo abrir el comprobante</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar los cobros
-        </button>
-      </div>
-    </section>
-  }
-</div>
 
 <!--
   Anular y reintegrar en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abrian en una
@@ -277,6 +282,16 @@
       [subtitulo]="'Por ' + importe(cobro, cobro.total)"
       (cerrar)="cerrarOperacion()"
     >
+      @if (errorOperacion()) {
+        <app-alerta tipo="error" titulo="No pudimos anular el cobro">
+          <p>{{ mensajeDelRechazo() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
+              Recargar los cobros
+            </button>
+          </p>
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         [idCampo]="'anular-cobro-' + cobro.id"
         [mostrarTitulo]="false"
@@ -301,14 +316,6 @@
           este la plata.
         </p>
       </akine-confirmacion-con-motivo>
-      @if (errorOperacion()) {
-        <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
-            Recargar los cobros
-          </button>
-        </div>
-      }
     </app-panel-lateral>
   }
   @if (operacion()?.tipo === 'reintegrar') {
@@ -317,6 +324,17 @@
       (cerrar)="cerrarOperacion()"
     >
       <form (submit)="$event.preventDefault(); confirmarReintegro()">
+        @if (errorOperacion()) {
+          <app-alerta tipo="error" titulo="No pudimos reintegrar el saldo a favor">
+            <p>{{ mensajeDelRechazo() }}</p>
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
+                Recargar los cobros
+              </button>
+            </p>
+          </app-alerta>
+        }
+
         <p class="ayuda ayuda--fija">
           Devuelve en dinero parte de lo que el paciente dejo a favor. Saldo a favor disponible:
           <b class="importe">{{ importe(cobro, cobro.saldoAFavor) }}</b
@@ -332,15 +350,18 @@
             autocomplete="off"
             [value]="importeReintegro()"
             [attr.aria-invalid]="reintegroIntentado() && problemaDelImporte() !== null"
-            [attr.aria-describedby]="'reintegro-importe-ayuda-' + cobro.id"
+            [attr.aria-describedby]="
+              reintegroIntentado() && problemaDelImporte()
+                ? 'reintegro-importe-error-' + cobro.id + ' reintegro-importe-ayuda-' + cobro.id
+                : 'reintegro-importe-ayuda-' + cobro.id
+            "
             (input)="editarReintegro('importe', $any($event.target).value)"
           />
+          @if (reintegroIntentado() && problemaDelImporte(); as problema) {
+            <p class="campo__error" [id]="'reintegro-importe-error-' + cobro.id">{{ problema }}</p>
+          }
           <p class="ayuda ayuda--fija" [id]="'reintegro-importe-ayuda-' + cobro.id">
-            @if (reintegroIntentado() && problemaDelImporte(); as problema) {
-              <span class="estado--error">{{ problema }}</span>
-            } @else {
-              Hasta {{ importe(cobro, cobro.saldoAFavor) }}.
-            }
+            Hasta {{ importe(cobro, cobro.saldoAFavor) }}.
           </p>
         </div>
 
@@ -377,15 +398,20 @@
             maxlength="280"
             [value]="motivoReintegro()"
             [attr.aria-invalid]="reintegroIntentado() && faltaMotivo()"
-            [attr.aria-describedby]="'reintegro-motivo-ayuda-' + cobro.id"
+            [attr.aria-describedby]="
+              reintegroIntentado() && faltaMotivo()
+                ? 'reintegro-motivo-error-' + cobro.id + ' reintegro-motivo-ayuda-' + cobro.id
+                : 'reintegro-motivo-ayuda-' + cobro.id
+            "
             (input)="editarReintegro('motivo', $any($event.target).value)"
           ></textarea>
+          @if (reintegroIntentado() && faltaMotivo()) {
+            <p class="campo__error" [id]="'reintegro-motivo-error-' + cobro.id">
+              El motivo es obligatorio.
+            </p>
+          }
           <p class="ayuda ayuda--fija" [id]="'reintegro-motivo-ayuda-' + cobro.id">
-            @if (reintegroIntentado() && faltaMotivo()) {
-              <span class="estado--error">El motivo es obligatorio.</span>
-            } @else {
-              Queda en el reintegro y en la auditoria.
-            }
+            Queda en el reintegro y en la auditoria.
           </p>
         </div>
 
@@ -403,20 +429,11 @@
           />
         </div>
 
-        @if (errorOperacion()) {
-          <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-        }
-
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">Reintegrar</button>
           <button type="button" class="boton boton--secundario" (click)="cerrarOperacion()">
             Cancelar
           </button>
-          @if (errorOperacion()) {
-            <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
-              Recargar los cobros
-            </button>
-          }
         </div>
       </form>
     </app-panel-lateral>

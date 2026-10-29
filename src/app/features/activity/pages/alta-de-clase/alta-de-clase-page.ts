@@ -28,6 +28,8 @@ import {
 import { OpcionDeEspacio, instanteDesdeHoraDeSede } from '../../models/clases';
 import { RUTA_CLASES, rutaDeClase } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -57,23 +59,24 @@ const DURACION_POR_DEFECTO = 60;
  */
 @Component({
   selector: 'app-alta-de-clase-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './alta-de-clase-page.html',
   styleUrl: '../../activity.css',
 })
 export class AltaDeClasePage {
+  protected readonly RUTA_CLASES = RUTA_CLASES;
+
   private readonly api = inject(ActivityApi);
   private readonly tenant = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
   /** `?fecha=YYYY-MM-DD`: el dia desde el que se llego. */
   readonly fecha = input('', { transform: (valor: string | undefined) => valor ?? '' });
-
-  protected readonly RUTA_CLASES = RUTA_CLASES;
 
   protected readonly formulario = this.fb.group({
     ofertaId: ['', Validators.required],
@@ -92,7 +95,29 @@ export class AltaDeClasePage {
   protected readonly ofertaElegida = signal<OfertaResponse | null>(null);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorActividad | null>(null);
+  /** Las ofertas no se pudieron leer: sin ellas no hay clase que programar. */
+  protected readonly errorDeOfertas = signal<ErrorActividad | null>(null);
+  /** La hora de fin no es posterior a la de inicio: se dice en el campo de fin (UX-12). */
+  protected readonly finAntesDeInicio = signal(false);
   protected readonly intentado = signal(false);
+
+  /**
+   * Cual de los datos choca con algo que ya existe (UX-12): se muestra pegado a esos campos y no
+   * como error general del formulario.
+   */
+  protected readonly conflicto = computed<'oferta' | 'horario' | 'cupo' | null>(() => {
+    switch (this.error()?.causa) {
+      case 'clase-no-programable':
+        return 'oferta';
+      case 'recurso-ocupado':
+      case 'horario-no-disponible':
+        return 'horario';
+      case 'clase-capacidad-no-admitida':
+        return 'cupo';
+      default:
+        return null;
+    }
+  });
 
   protected readonly exigeProfesional = computed(
     () => this.ofertaElegida()?.requiereProfesional ?? false,
@@ -136,15 +161,16 @@ export class AltaDeClasePage {
   protected cargarOfertas(): void {
     const consultorioId = this.tenant.consultorioId();
     if (consultorioId === null) {
-      this.error.set(errorSinContextoDeActividad());
+      this.errorDeOfertas.set(errorSinContextoDeActividad());
       return;
     }
-    this.error.set(null);
+    this.errorDeOfertas.set(null);
+    this.ofertas.set(null);
     this.api.ofertasGrupales(consultorioId).subscribe({
       next: (ofertas) => this.ofertas.set(ofertas),
       error: (error: unknown) => {
         this.ofertas.set([]);
-        this.error.set(traducirErrorActividad(error));
+        this.errorDeOfertas.set(traducirErrorActividad(error));
       },
     });
   }
@@ -160,13 +186,17 @@ export class AltaDeClasePage {
 
   /** La ayuda del cupo siempre; el error, cuando lo hay (del formulario o del servidor). */
   protected descripcionDeCapacidad(): string {
-    return this.invalido('capacidad') || this.errorDelServidor('capacidad') !== ''
-      ? 'clase-capacidad-ayuda clase-capacidad-error'
-      : 'clase-capacidad-ayuda';
+    const conError = this.invalido('capacidad') || this.errorDelServidor('capacidad') !== '';
+    return (
+      'clase-capacidad-ayuda' +
+      (conError ? ' clase-capacidad-error' : '') +
+      (this.conflicto() === 'cupo' ? ' clase-conflicto-cupo' : '')
+    );
   }
 
   protected programar(): void {
     this.intentado.set(true);
+    this.finAntesDeInicio.set(false);
     const consultorioId = this.tenant.consultorioId();
     if (consultorioId === null) {
       this.error.set(errorSinContextoDeActividad());
@@ -186,13 +216,14 @@ export class AltaDeClasePage {
     const inicio = instanteDesdeHoraDeSede(valor.fecha, valor.horaInicio, zona);
     const fin = instanteDesdeHoraDeSede(valor.fecha, valor.horaFin, zona);
     if (inicio === null || fin === null || fin <= inicio) {
-      this.error.set({
-        mensaje: 'La hora de fin tiene que ser posterior a la de inicio.',
-        causa: 'validacion',
-        accion: 'corregir',
-        motivo: '',
-        campos: {},
-      });
+      this.error.set(null);
+      this.finAntesDeInicio.set(true);
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>('#clase-fin')?.focus(),
+        {
+          injector: this.injector,
+        },
+      );
       return;
     }
     const profesionalId = Number(valor.profesionalId);
@@ -211,6 +242,15 @@ export class AltaDeClasePage {
       .subscribe({
         next: (clase) => {
           this.enviando.set(false);
+          // Pantalla propia de alta: navega y publica el aviso, que vive en el shell (UX-12).
+          this.avisos.exito('Clase programada', {
+            descripcion: [
+              this.ofertaElegida()?.nombreComercial,
+              `${valor.fecha} de ${valor.horaInicio} a ${valor.horaFin}`,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          });
           this.router
             .navigateByUrl(clase.id !== undefined ? rutaDeClase(clase.id) : RUTA_CLASES)
             .catch((error: unknown) => console.error('No se pudo abrir la clase', error));

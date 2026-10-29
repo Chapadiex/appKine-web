@@ -340,8 +340,8 @@ async function correr(
       }
     }
 
-    // Texto dentro de un `dialog` modal abierto (el panel lateral, UX-11): axe no resuelve el
-    // apilado de la capa superior y devuelve `incomplete` (`elmPartiallyObscuring` o `bgOverlap`)
+    // Texto dentro de la capa superior -un `dialog` modal abierto (el panel lateral, UX-11) o el
+    // `popover` de los avisos globales (UX-12)-: axe no resuelve el apilado de esa capa y devuelve `incomplete` (`elmPartiallyObscuring` o `bgOverlap`)
     // para algunos nodos,
     // aunque `elementsFromPoint` del navegador muestra que nada los tapa. No se toleran: se miden
     // con la misma aritmetica contra el primer fondo opaco, que dentro del panel es el suyo.
@@ -350,10 +350,10 @@ async function correr(
         const datos = (nodo.any as { data?: { messageKey?: string } }[])[0]?.data;
         const elemento = document.querySelector(nodo.target[0] ?? '');
         const tapado = ['bgOverlap', 'elmPartiallyObscuring'].includes(datos?.messageKey ?? '');
-        if (!tapado || elemento?.closest('dialog[open]') == null) {
+        if (!tapado || elemento?.closest('dialog[open], [popover]:popover-open') == null) {
           return true;
         }
-        medidos.push(medir(elemento, `dialog ${nodo.target.join(' ')}`));
+        medidos.push(medir(elemento, `capa superior ${nodo.target.join(' ')}`));
         return false;
       });
     }

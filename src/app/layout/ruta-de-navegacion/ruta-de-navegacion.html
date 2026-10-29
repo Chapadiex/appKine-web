@@ -1,0 +1,22 @@
+<!--
+  El ultimo paso es un `p` y no un `h1`: el `h1` es de la pantalla, que lo acompana con su ayuda y
+  su alta. Con pasos anteriores es una ruta de navegacion (`nav` con nombre, `aria-current` en la
+  pantalla actual); en una seccion del menu, solo el titulo.
+-->
+@let m = migas();
+@if (m.enlaces.length > 0) {
+  <nav class="ubicacion" aria-label="Ubicación">
+    <ol class="ubicacion__lista">
+      @for (enlace of m.enlaces; track enlace.ruta; let ultimo = $last) {
+        <li class="ubicacion__paso" [class.ubicacion__paso--padre]="ultimo">
+          <a class="ubicacion__enlace" [routerLink]="enlace.ruta">{{ enlace.etiqueta }}</a>
+        </li>
+      }
+      <li class="ubicacion__paso ubicacion__paso--actual">
+        <span class="titulo" aria-current="page">{{ m.actual }}</span>
+      </li>
+    </ol>
+  </nav>
+} @else if (m.actual) {
+  <p class="titulo">{{ m.actual }}</p>
+}

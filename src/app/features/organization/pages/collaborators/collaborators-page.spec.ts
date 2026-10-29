@@ -5,6 +5,8 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideRouter } from '@angular/router';
 
 import { CollaboratorsPage } from './collaborators-page';
@@ -205,7 +207,11 @@ describe('CollaboratorsPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Colaborador suspendido');
+    // UX-12: el resultado va al aviso global y el panel se cierra.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('exito');
+    expect(aviso?.titulo).toBe('Colaborador suspendido');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un conflicto del backend se muestra con su mensaje y deja el panel abierto', async () => {
@@ -232,7 +238,9 @@ describe('CollaboratorsPage', () => {
 
     // El panel sigue abierto con el motivo escrito: cerrarlo obligaria a rehacer todo para
     // leer el mensaje, y el conflicto puede resolverse cambiando de fila, no de motivo.
-    expect(texto(fixture)).toContain('No podés revocar al último administrador');
+    const alerta = fixture.nativeElement.querySelector('app-alerta') as HTMLElement;
+    expect(alerta.textContent).toContain('No pudimos revocar el vínculo');
+    expect(alerta.textContent).toContain('No podés revocar al último administrador');
     expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
   });
 
@@ -306,6 +314,11 @@ describe('CollaboratorsPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain('no tiene permisos adicionales');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Permiso dado de baja']);
   });
 
   it(
@@ -500,12 +513,20 @@ describe('CollaboratorsPage', () => {
       pedido.flush({ ...PAGINA, totalElements: 45, totalPages: 3 }),
     );
     const host: HTMLElement = fixture.nativeElement;
+    // UX-14: el total en la toolbar, el pie estandar y nada de parrafo de conteo.
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '45 vínculos',
+    );
+    expect(texto(fixture)).toContain('Mostrando 1–10 de 45');
+    expect(texto(fixture)).not.toContain('vínculos en total');
     host
       .querySelector<HTMLButtonElement>(
-        'nav[aria-label="Paginas de colaboradores"] button:last-child',
+        'nav[aria-label="Páginas de colaboradores"] button:last-child',
       )!
       .click();
-    httpMock.expectOne(esListado(1)).flush({ ...PAGINA, page: 1, totalPages: 3 });
+    const segunda = httpMock.expectOne(esListado(1));
+    expect(segunda.request.params.get('size')).toBe('10');
+    segunda.flush({ ...PAGINA, page: 1, totalPages: 3 });
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -518,11 +539,17 @@ describe('CollaboratorsPage', () => {
     buscado.flush({ ...PAGINA, content: [], totalElements: 0, totalPages: 0 });
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('Ningún colaborador coincide con la búsqueda.');
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Ningún colaborador coincide con la búsqueda.',
+    );
 
-    busqueda.value = '';
-    busqueda.dispatchEvent(new Event('change'));
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
+    // "Limpiar filtros" del vacio vuelve a la lista sin busqueda.
+    [...host.querySelectorAll<HTMLButtonElement>('app-estado-vacio button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = httpMock.expectOne(esListado(1));
+    expect(limpio.request.params.has('q')).toBe(false);
+    limpio.flush(PAGINA);
     await fixture.whenStable();
     fixture.detectChanges();
 

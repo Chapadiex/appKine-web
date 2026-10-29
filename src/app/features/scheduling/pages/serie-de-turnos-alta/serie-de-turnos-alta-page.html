@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Reservar una serie de turnos">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una serie reserva el mismo horario todas las semanas. Cada turno queda como un turno propio:
@@ -23,7 +22,8 @@
 @if (serie(); as creada) {
   <section class="tarjeta" aria-labelledby="titulo-serie-creada">
     <h2 id="titulo-serie-creada">Serie reservada</h2>
-    <p class="estado estado--ok">
+    <!-- El resultado va al aviso global (UX-12); el detalle de las fechas es el contenido. -->
+    <p>
       Se reservaron {{ creada.turnos?.length ?? 0 }} turnos. Cada uno queda reservado y falta
       confirmarlo, como un turno suelto.
     </p>
@@ -67,39 +67,46 @@
           }
         </div>
 
-        <div class="campo">
-          <label for="serie-persona">Documento, apellido, nombre o teléfono</label>
-          <input
-            id="serie-persona"
-            name="serie-persona"
-            type="search"
-            autocomplete="off"
-            (input)="buscarPersona($any($event.target).value)"
-          />
+        <div class="grilla-12">
+          <div class="campo campo--6">
+            <label for="serie-persona">Documento, apellido, nombre o teléfono</label>
+            <input
+              id="serie-persona"
+              name="serie-persona"
+              type="search"
+              autocomplete="off"
+              (input)="buscarPersona($any($event.target).value)"
+            />
+          </div>
+          @if (errorDeBusqueda(); as fallo) {
+            <app-alerta tipo="error" titulo="No pudimos buscar en el padrón">
+              <p>{{ fallo.mensaje }}</p>
+            </app-alerta>
+          }
+          @if (candidatas().length > 0) {
+            <ul class="lista-personas">
+              @for (candidata of candidatas(); track candidata.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="elegirPersona(candidata)"
+                  >
+                    {{ candidata.apellido }}, {{ candidata.nombre }}
+                    @if (candidata.numeroDocumento) {
+                      — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else if (buscoPersonas()) {
+            <p class="estado estado--vacio">
+              Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
+              primero en el padrón.
+            </p>
+          }
         </div>
-        @if (candidatas().length > 0) {
-          <ul class="lista-personas">
-            @for (candidata of candidatas(); track candidata.id) {
-              <li>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="elegirPersona(candidata)"
-                >
-                  {{ candidata.apellido }}, {{ candidata.nombre }}
-                  @if (candidata.numeroDocumento) {
-                    — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
-                  }
-                </button>
-              </li>
-            }
-          </ul>
-        } @else if (buscoPersonas()) {
-          <p class="estado estado--vacio">
-            Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
-            primero en el padrón.
-          </p>
-        }
       </div>
 
       <div class="tarjeta__cuerpo" role="group" aria-labelledby="titulo-regla">
@@ -125,7 +132,7 @@
           </div>
         </fieldset>
 
-        <div class="grilla-campos grilla-campos--dos">
+        <div class="grilla-12">
           <div class="campo">
             <label for="serie-hora">Hora de inicio (hora de la sede)</label>
             <input
@@ -147,7 +154,7 @@
           </div>
         </div>
 
-        <fieldset class="grupo">
+        <fieldset class="grupo grilla-12">
           <legend>Hasta cuándo</legend>
           <label class="opcion-radio" for="serie-fin-cantidad">
             <input
@@ -211,74 +218,92 @@
     </section>
 
     <div class="columnas__mitad">
+      <!-- La regla no sirve para previsualizar: lo que hay que corregir, arriba de la vista previa. -->
+      @if (aviso(); as texto) {
+        <app-alerta tipo="advertencia" titulo="Revisá la regla de la serie">
+          <p>{{ texto }}</p>
+        </app-alerta>
+      }
       <div aria-live="polite">
-        @if (aviso(); as texto) {
-          <p class="estado estado--vacio">{{ texto }}</p>
-        }
         @if (previsualizando()) {
           <p class="estado estado--cargando">Leyendo la agenda de cada fecha…</p>
         }
-        @if (error(); as fallo) {
-          <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
-            <h2 id="titulo-conflicto-serie">No se pudo reservar la serie</h2>
-            <p class="estado estado--error">{{ fallo.mensaje }}</p>
-            @switch (fallo.accion) {
-              @case ('revisar-ocurrencias') {
-                <div class="acciones">
-                  <button type="button" class="boton" (click)="previsualizar()">
-                    Volver a previsualizar
-                  </button>
-                </div>
-              }
-              @case ('activar-perfil') {
-                <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
-                  <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
-                </div>
-              }
-              @case ('reintentar-con-clave-nueva') {
-                <div class="acciones">
-                  <button type="button" class="boton" [disabled]="enviando()" (click)="reservar()">
-                    Volver a intentar
-                  </button>
-                </div>
-              }
-              @case ('elegir-contexto') {
-                <div class="acciones">
-                  <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-                </div>
-              }
-            }
-          </section>
-        }
       </div>
+      <!--
+        El rechazo, arriba de la vista previa y de su boton "Reservar" (UX-12). Una fecha sin lugar
+        es un conflicto con lo que ya existe: advertencia, marcada tambien en la tabla.
+      -->
+      @if (error(); as fallo) {
+        <app-alerta
+          [tipo]="esConflicto() ? 'advertencia' : 'error'"
+          [titulo]="esConflicto() ? 'Una fecha de la serie no tiene lugar' : tituloDelError()"
+        >
+          <p>{{ fallo.mensaje }}</p>
+          @switch (fallo.accion) {
+            @case ('revisar-ocurrencias') {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="previsualizar()">
+                  Volver a previsualizar
+                </button>
+              </p>
+            }
+            @case ('activar-perfil') {
+              <p class="alerta__acciones" *akinePermiso="PERMISO_PACIENTE_READ">
+                <a class="boton boton--secundario" routerLink="/pacientes"
+                  >Activar el perfil de paciente</a
+                >
+              </p>
+            }
+            @case ('reintentar-con-clave-nueva') {
+              <p class="alerta__acciones">
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="reservar()"
+                >
+                  Volver a intentar
+                </button>
+              </p>
+            }
+            @case ('elegir-contexto') {
+              <p class="alerta__acciones">
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                  >Elegir contexto de trabajo</a
+                >
+              </p>
+            }
+          }
+        </app-alerta>
+      }
 
-      <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-previsualizacion">
+      <!-- UX-14: la vista previa es una tabla con el patron de listados (orden, pie y vacio). -->
+      <section class="tarjeta" aria-labelledby="titulo-previsualizacion">
         @if (previsualizacion(); as prevista) {
-          <div class="tarjeta__barra">
-            <h2 id="titulo-previsualizacion">
-              {{ prevista.length }} turnos · {{ textoDeDias(diasSemana()) }} a las {{ hora() }}
-            </h2>
-          </div>
-          <div class="tarjeta__cuerpo">
-            <p class="ayuda">
-              Es una lectura de la agenda de hoy: al reservar, el servidor vuelve a revisar cada
-              fecha y, si una ya no tiene lugar, no reserva ninguna.
+          <h2 id="titulo-previsualizacion">
+            {{ prevista.length }} turnos · {{ textoDeDias(diasSemana()) }} a las {{ hora() }}
+          </h2>
+          <p class="ayuda">
+            Es una lectura de la agenda de hoy: al reservar, el servidor vuelve a revisar cada fecha
+            y, si una ya no tiene lugar, no reserva ninguna.
+          </p>
+          @if (conflictos() > 0) {
+            <!-- Conflicto con turnos que ya existen: advertencia pegada a la tabla que lo marca. -->
+            <app-alerta
+              tipo="advertencia"
+              [titulo]="conflictos() + ' de ' + prevista.length + ' fechas no tienen lugar'"
+            >
+              <p>Cambiá el día, la hora o la fecha de inicio: la serie entra entera o no entra.</p>
+            </app-alerta>
+          }
+          @if (feriados() > 0) {
+            <p class="ayuda ayuda--fija">
+              {{ feriados() }} fecha(s) caen en feriado: se omitirán y el resto se reserva igual.
+              @if (reservables() === 0) {
+                Como todas caen en feriado, no queda ninguna para reservar.
+              }
             </p>
-            @if (conflictos() > 0) {
-              <p class="estado estado--error">
-                {{ conflictos() }} de {{ prevista.length }} fechas no tienen lugar. Cambiá el día,
-                la hora o la fecha de inicio: la serie entra entera o no entra.
-              </p>
-            }
-            @if (feriados() > 0) {
-              <p class="ayuda ayuda--fija">
-                {{ feriados() }} fecha(s) caen en feriado: se omitirán y el resto se reserva igual.
-                @if (reservables() === 0) {
-                  Como todas caen en feriado, no queda ninguna para reservar.
-                }
-              </p>
-            }
-          </div>
+          }
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
             <table class="tabla">
               <caption class="visualmente-oculto">
@@ -286,15 +311,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">N°</th>
-                  <th scope="col">Fecha</th>
-                  <th scope="col">Lugar</th>
+                  <th scope="col" appOrdenable [tabla]="tablaPrevista" columna="numero">N°</th>
+                  <th scope="col" appOrdenable [tabla]="tablaPrevista" columna="fecha">Fecha</th>
+                  <th scope="col" appOrdenable [tabla]="tablaPrevista" columna="lugar">Lugar</th>
                 </tr>
               </thead>
               <tbody>
-                @for (ocurrencia of prevista; track ocurrencia.fecha; let i = $index) {
+                @for (fila of tablaPrevista.visibles(); track fila.ocurrencia.fecha) {
+                  @let ocurrencia = fila.ocurrencia;
                   <tr [class.fila--revocada]="ocurrencia.fecha === fechaRechazada()">
-                    <td>{{ i + 1 }}</td>
+                    <td>{{ fila.numero }}</td>
                     <td>{{ fechaEnPalabras(ocurrencia.fecha) }}</td>
                     <td>
                       @if (ocurrencia.fecha === fechaRechazada()) {
@@ -316,8 +342,9 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tablaPrevista" etiqueta="Páginas de la vista previa" />
 
-          <div class="tarjeta__pie">
+          <div class="acciones">
             @if (persona() === null) {
               <p class="tarjeta__pie-nota">Falta elegir a quién se le reserva.</p>
             }
@@ -326,15 +353,11 @@
             </button>
           </div>
         } @else {
-          <div class="tarjeta__barra">
-            <h2 id="titulo-previsualizacion">Vista previa</h2>
-          </div>
-          <div class="tarjeta__cuerpo">
-            <p class="estado estado--vacio">
-              Elegí los días, la hora y hasta cuándo, y tocá «Previsualizar los turnos» para ver
-              cada fecha antes de reservar.
-            </p>
-          </div>
+          <h2 id="titulo-previsualizacion">Vista previa</h2>
+          <app-estado-vacio
+            titulo="Todavía no hay vista previa"
+            texto="Elegí los días, la hora y hasta cuándo, y tocá «Previsualizar los turnos» para ver cada fecha antes de reservar."
+          />
         }
       </section>
     </div>

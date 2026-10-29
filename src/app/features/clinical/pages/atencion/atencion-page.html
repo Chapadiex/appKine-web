@@ -1,9 +1,4 @@
 <app-cabecera-de-pagina titulo="Atención clínica">
-  @if (rutaDeLaClase(); as rutaClase) {
-    <app-migas enLinea [migas]="[{ etiqueta: 'Atención clínica de la clase', ruta: rutaClase }]" />
-  } @else {
-    <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
-  }
   @if (sesion()) {
     <span
       class="marca-estado"
@@ -31,7 +26,7 @@
   atencion abierta el caso se puede cambiar desde la tarjeta de la atencion.
 -->
 @if (eligiendoCaso()) {
-  <section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-caso">
+  <section class="tarjeta" aria-labelledby="titulo-caso">
     <h2 id="titulo-caso">Antes de empezar: caso clínico</h2>
     <p class="ayuda">
       El paciente tiene casos clínicos activos. Elegí a cuál pertenece esta atención, o seguí sin
@@ -82,62 +77,75 @@
   </section>
 }
 
+<!--
+  El problema de la atencion, ARRIBA del editor (UX-12): a la vista mientras se resuelve. La
+  version vieja y la atencion ya cerrada son conflictos con lo que ya existe (advertencia), no
+  fallas. Con el panel de reemplazo abierto, el rechazo se ve dentro del panel.
+-->
 @if (error(); as problema) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema">
-    <h2 id="titulo-problema">
-      @if (hayConflicto()) {
-        Otra pestaña guardó antes que vos
-      } @else if (problema.causa === 'sesion-cerrada') {
-        La atención ya estaba cerrada
-      } @else {
-        No se pudo completar
+  @if (!reemplazando()) {
+    <app-alerta
+      [tipo]="hayConflicto() || problema.causa === 'sesion-cerrada' ? 'advertencia' : 'error'"
+      [titulo]="
+        hayConflicto()
+          ? 'Otra pestaña guardó antes que vos'
+          : problema.causa === 'sesion-cerrada'
+            ? 'La atención ya estaba cerrada'
+            : 'No pudimos completar la operación'
+      "
+    >
+      <p>{{ problema.mensaje }}</p>
+
+      @if (problema.motivo) {
+        <p>Motivo que dio el servidor: {{ problema.motivo }}</p>
       }
-    </h2>
 
-    <p class="estado estado--error">{{ problema.mensaje }}</p>
+      @if (problema.causa === 'caso-requerido' && personaDelTurno(); as persona) {
+        <p class="alerta__acciones">
+          <a
+            class="boton boton--secundario"
+            [routerLink]="['/historia-clinica', 'personas', persona]"
+          >
+            Abrir un caso en la historia clínica del paciente
+          </a>
+        </p>
+      }
 
-    @if (problema.motivo) {
-      <p class="ayuda ayuda--fija">Motivo que dio el servidor: {{ problema.motivo }}</p>
-    }
+      @if (problema.causa === 'oferta-sin-precio' && problema.ofertaId) {
+        <p class="alerta__acciones">
+          <a
+            class="boton boton--secundario"
+            [routerLink]="['/servicios/ofertas', problema.ofertaId, 'precios']"
+          >
+            Cargar el precio de la oferta
+          </a>
+        </p>
+      }
 
-    @if (problema.causa === 'caso-requerido' && personaDelTurno(); as persona) {
-      <div class="acciones">
-        <a
-          class="boton boton--secundario"
-          [routerLink]="['/historia-clinica', 'personas', persona]"
-        >
-          Abrir un caso en la historia clínica del paciente
-        </a>
-      </div>
-    }
-
-    @if (problema.causa === 'oferta-sin-precio' && problema.ofertaId) {
-      <div class="acciones">
-        <a
-          class="boton boton--secundario"
-          [routerLink]="['/servicios/ofertas', problema.ofertaId, 'precios']"
-        >
-          Cargar el precio de la oferta
-        </a>
-      </div>
-    }
-
-    @if (hayConflicto()) {
-      <p class="ayuda">
-        Lo que escribiste sigue en pantalla y no se mandó a ningún lado. Al releer vas a ver lo que
-        guardó la otra pestaña <b>al lado</b> de lo tuyo, para elegir con qué quedarte.
-      </p>
-      <div class="acciones">
-        <button type="button" class="boton" [disabled]="guardando()" (click)="releerParaComparar()">
-          Releer y comparar
-        </button>
-      </div>
-    } @else if (problema.causa === 'no-encontrado' || problema.causa === 'otro') {
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="abrir()">Reintentar</button>
-      </div>
-    }
-  </section>
+      @if (hayConflicto()) {
+        <p>
+          Lo que escribiste sigue en pantalla y no se mandó a ningún lado. Al releer vas a ver lo
+          que guardó la otra pestaña <b>al lado</b> de lo tuyo, para elegir con qué quedarte.
+        </p>
+        <p class="alerta__acciones">
+          <button
+            type="button"
+            class="boton"
+            [disabled]="guardando()"
+            (click)="releerParaComparar()"
+          >
+            Releer y comparar
+          </button>
+        </p>
+      } @else if (problema.causa === 'no-encontrado' || problema.causa === 'otro') {
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="abrir()">
+            Reintentar
+          </button>
+        </p>
+      }
+    </app-alerta>
+  }
 }
 
 @if (notasDelServidor() !== null) {
@@ -301,13 +309,6 @@
               }
             </button>
           </div>
-          @if (avisoCaso(); as aviso) {
-            <p class="ayuda ayuda--fija" role="status">{{ aviso }}</p>
-          }
-        }
-
-        @if (avisoReemplazo(); as aviso) {
-          <p class="estado estado--ok" role="status">{{ aviso }}</p>
         }
 
         @if (!cerrada() && !esGrupal() && puedeReasignar()) {
@@ -335,6 +336,15 @@
               subtitulo="Queda registrado quién reemplazó a quién y por qué. El turno no cambia."
               (cerrar)="cancelarReemplazo()"
             >
+              <!-- El rechazo, arriba del panel: el resto de la pantalla queda detras (UX-12). -->
+              @if (error(); as problema) {
+                <app-alerta tipo="error" titulo="No pudimos reemplazar al profesional">
+                  <p>{{ problema.mensaje }}</p>
+                  @if (problema.motivo) {
+                    <p>Motivo que dio el servidor: {{ problema.motivo }}</p>
+                  }
+                </app-alerta>
+              }
               <div class="campo">
                 <label for="atencion-profesional-nuevo">Profesional que continúa</label>
                 <select
@@ -369,17 +379,6 @@
                 (confirmado)="reemplazar($event)"
                 (cancelado)="cancelarReemplazo()"
               />
-              <!-- El rechazo se ve dentro del panel: el resto de la pantalla queda detras. -->
-              <div aria-live="polite">
-                @if (error(); as problema) {
-                  <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
-                  @if (problema.motivo) {
-                    <p class="ayuda ayuda--fija">
-                      Motivo que dio el servidor: {{ problema.motivo }}
-                    </p>
-                  }
-                }
-              </div>
             </app-panel-lateral>
           }
         }
@@ -548,8 +547,12 @@
               </div>
             </fieldset>
 
-            <div class="grilla-campos grilla-campos--dos">
-              <div class="campo">
+            <!--
+              Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. La zona y el lado
+              van juntos; los textos clinicos, mas anchos.
+            -->
+            <div class="grilla-12">
+              <div class="campo campo--4">
                 <label for="atencion-zona"
                   >Zona <span class="campo__opcional">(opcional)</span></label
                 >
@@ -577,7 +580,7 @@
                 </p>
               </div>
 
-              <div class="campo">
+              <div class="campo campo--4">
                 <label for="atencion-lateralidad">
                   Lateralidad <span class="campo__opcional">(opcional)</span>
                 </label>
@@ -617,23 +620,23 @@
               </div>
             </fieldset>
 
-            <div class="campo">
-              <label for="atencion-objetivo">
-                Objetivo de esta sesión <span class="campo__opcional">(opcional)</span>
-              </label>
-              <input
-                id="atencion-objetivo"
-                name="atencion-objetivo"
-                type="text"
-                maxlength="500"
-                [value]="objetivoSesion()"
-                (input)="objetivoSesion.set($any($event.target).value)"
-              />
-            </div>
+            <div class="grilla-12">
+              <div class="campo campo--12">
+                <label for="atencion-objetivo">
+                  Objetivo de esta sesión <span class="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  id="atencion-objetivo"
+                  name="atencion-objetivo"
+                  type="text"
+                  maxlength="500"
+                  [value]="objetivoSesion()"
+                  (input)="objetivoSesion.set($any($event.target).value)"
+                />
+              </div>
 
-            @if (completa()) {
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
+              @if (completa()) {
+                <div class="campo campo--6">
                   <label for="atencion-motivo">
                     Motivo clínico <span class="campo__opcional">(opcional)</span>
                   </label>
@@ -652,7 +655,7 @@
                   </p>
                 </div>
 
-                <div class="campo">
+                <div class="campo campo--6">
                   <label for="atencion-limitacion">
                     Limitación funcional <span class="campo__opcional">(opcional)</span>
                   </label>
@@ -665,8 +668,8 @@
                     (input)="limitacionFuncional.set($any($event.target).value)"
                   />
                 </div>
-              </div>
-            }
+              }
+            </div>
 
             <div class="pie-tarjeta">
               <button
@@ -747,7 +750,12 @@
           <section class="tarjeta paso" aria-labelledby="titulo-cierre">
             <h2 id="titulo-cierre" class="paso__titulo">Cerrar la atención</h2>
 
-            <fieldset class="grupo-plano">
+            <fieldset
+              class="grupo-plano"
+              [attr.aria-describedby]="
+                avisoCierre() === 'asistencia' ? 'cierre-asistencia-error' : null
+              "
+            >
               <legend>Asistencia</legend>
               <p class="ayuda">
                 Lo único que el cierre siempre necesita.
@@ -767,6 +775,12 @@
                   </label>
                 }
               </div>
+              @if (avisoCierre() === 'asistencia') {
+                <p class="campo__error" id="cierre-asistencia-error">
+                  Falta decir si el paciente vino. Sin eso no se sabe si hubo prestación, y es lo
+                  unico que el cierre siempre necesita.
+                </p>
+              }
             </fieldset>
 
             @if (presente()) {
@@ -777,11 +791,21 @@
                   name="cierre-nota"
                   rows="4"
                   maxlength="2000"
-                  aria-describedby="ayuda-cierre-nota"
-                  [attr.aria-invalid]="faltaNota() && avisoCierre() !== null"
+                  [attr.aria-describedby]="
+                    avisoCierre() === 'nota' && faltaNota()
+                      ? 'cierre-nota-error ayuda-cierre-nota'
+                      : 'ayuda-cierre-nota'
+                  "
+                  [attr.aria-invalid]="avisoCierre() === 'nota' && faltaNota() ? 'true' : null"
                   [value]="notaDeCierre()"
                   (input)="notaDeCierre.set($any($event.target).value)"
                 ></textarea>
+                @if (avisoCierre() === 'nota' && faltaNota()) {
+                  <p class="campo__error" id="cierre-nota-error">
+                    El paciente vino, así que hace falta la nota de cierre: es lo unico que registra
+                    que se hizo en la sesión.
+                  </p>
+                }
                 <p id="ayuda-cierre-nota" class="ayuda">
                   Qué se hizo en la sesión. Hace falta porque el paciente vino: es lo único que
                   registra la prestación.
@@ -807,8 +831,8 @@
                     >Respuesta, tolerancia, indicaciones y próxima conducta (opcionales)</span
                   >
                 </summary>
-                <div class="grilla-campos grilla-campos--dos">
-                  <div class="campo">
+                <div class="grilla-12">
+                  <div class="campo campo--6">
                     <label for="cierre-respuesta">
                       Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
                     </label>
@@ -822,7 +846,7 @@
                     />
                   </div>
 
-                  <div class="campo">
+                  <div class="campo campo--3">
                     <label for="cierre-tolerancia">
                       Tolerancia <span class="campo__opcional">(opcional)</span>
                     </label>
@@ -861,7 +885,7 @@
                     <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
                   </div>
 
-                  <div class="campo">
+                  <div class="campo campo--4">
                     <label for="cierre-conducta">
                       Próxima conducta <span class="campo__opcional">(opcional)</span>
                     </label>
@@ -901,10 +925,6 @@
               la deja sin poder editarse: después solo se corrige con una enmienda.
               <b>No cobra nada</b>: lo económico se maneja aparte.
             </p>
-
-            @if (avisoCierre(); as aviso) {
-              <p class="estado estado--error" role="alert">{{ aviso }}</p>
-            }
 
             <div class="pie-tarjeta">
               <button type="button" class="boton" [disabled]="cerrando()" (click)="cerrar()">

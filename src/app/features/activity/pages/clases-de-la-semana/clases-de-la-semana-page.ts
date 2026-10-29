@@ -23,13 +23,15 @@ import {
 import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import {
   FiltroRapido,
   FiltrosRapidos,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -56,12 +58,14 @@ interface DiaDeClases {
   selector: 'app-clases-de-la-semana-page',
   imports: [
     CabeceraDePagina,
+    Alerta,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
     FiltrosRapidos,
     Icono,
-    Paginacion,
+    EstadoVacio,
+    PieDeTabla,
     RouterLink,
     PermisoDirective,
   ],
@@ -153,7 +157,6 @@ export class ClasesDeLaSemanaPage {
 
   /** Orden y paginado de la lista completa de la semana: el servidor no pagina las clases. */
   protected readonly tabla = tablaLocal(this.filas, {
-    porPagina: 10,
     columnas: {
       clase: (c) => nombreDeClase(c),
       fecha: (c) => c.inicio,
@@ -223,6 +226,12 @@ export class ClasesDeLaSemanaPage {
 
   protected buscar(texto: string): void {
     this.busqueda.set(texto);
+  }
+
+  /** "Limpiar filtros" del estado vacio filtrado: sin busqueda y con todas las clases. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroDeEstado.set('todas');
   }
 
   /** "Mie 21/10": el dia de la clase, en la zona de la sede. */

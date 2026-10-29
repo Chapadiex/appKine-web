@@ -22,7 +22,7 @@ import { VisitaClinica } from '../services/visita-clinica';
       </p>
 
       <form (submit)="$event.preventDefault(); justificar()">
-        <div class="campo">
+        <div class="campo campo--6">
           <label for="motivo-acceso">Motivo del acceso</label>
           <input
             id="motivo-acceso"

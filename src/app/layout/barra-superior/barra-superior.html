@@ -22,12 +22,14 @@
     </button>
 
     <!--
-      Donde se esta. `p` y no `h1`: el `h1` es de la pantalla, que lo acompana con su ayuda y su
-      alta. Este rotulo sale del `title` de la ruta, asi que existe en todas.
+      Donde se esta: la ruta de navegacion (`app-ruta-de-navegacion`) llega despues de la primera
+      pintura, como la sede y el perfil. Hasta entonces, el titulo de la pantalla, que es su ultimo
+      paso: la barra no salta. `p` y no `h1`: el `h1` es de la pantalla.
     -->
-    @if (titulo()) {
+    @if (!rutaMontada() && titulo()) {
       <p class="titulo">{{ titulo() }}</p>
     }
+    <ng-container #anclaRuta />
   </div>
 
   <!--

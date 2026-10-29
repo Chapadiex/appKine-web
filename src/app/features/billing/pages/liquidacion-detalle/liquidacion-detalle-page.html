@@ -1,11 +1,4 @@
 <app-cabecera-de-pagina titulo="Liquidación de honorarios">
-  <app-migas
-    enLinea
-    [migas]="[
-      { etiqueta: 'Egresos', ruta: '/egresos' },
-      { etiqueta: 'Liquidar honorarios', ruta: '/egresos/honorarios' },
-    ]"
-  />
   @if (liquidacion()) {
     <span
       class="marca-estado"
@@ -23,17 +16,16 @@
 </app-cabecera-de-pagina>
 
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-liquidacion">
-    <h2 id="titulo-error-liquidacion">No se pudo cargar la liquidación</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo cargar la liquidación">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.causa === 'sin-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 } @else if (liquidacion() === null) {
   <p class="estado estado--cargando">Cargando la liquidación…</p>
 }
@@ -51,8 +43,15 @@
     </p>
   }
 
-  <!-- DP-45: totales que calcula el servidor; lo pagado y lo pendiente son del egreso, hoy. -->
+  <!--
+    DP-45: totales que calcula el servidor; lo pagado y lo pendiente son del egreso, hoy. Una sola
+    banda de indicadores (UX-14 §3).
+  -->
   <dl class="cifras" aria-labelledby="titulo-resumen-liquidacion">
+    <div>
+      <dt>Estado</dt>
+      <dd class="cifras__texto">{{ liberada() ? 'Liberada' : 'Vigente' }}</dd>
+    </div>
     <div>
       <dt>Total liquidado</dt>
       <dd class="importe">{{ importe(l.resumen?.importeTotal ?? l.importeTotal) }}</dd>
@@ -79,13 +78,6 @@
         <dd>{{ l.resumen?.totalPresentes }}</dd>
       </div>
     }
-  </dl>
-
-  <dl class="cifras">
-    <div>
-      <dt>Estado</dt>
-      <dd class="cifras__texto">{{ liberada() ? 'Liberada' : 'Vigente' }}</dd>
-    </div>
     <div>
       <dt>Egreso</dt>
       <dd class="cifras__texto">
@@ -101,45 +93,59 @@
     </div>
   </dl>
 
-  <div class="tarjeta tarjeta--tabla">
-    <div class="tarjeta__cabecera">
-      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-clases-liquidadas">Detalle por clase</h2>
-        <app-ayuda titulo="Detalle por clase">
-          <p>
-            Es la foto del momento de confirmar: una tarifa nueva o una asistencia corregida después
-            no la cambian.
-          </p>
-        </app-ayuda>
-      </div>
+  <section class="tarjeta">
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-clases-liquidadas">Detalle por clase</h2>
+      <app-ayuda titulo="Detalle por clase">
+        <p>
+          Es la foto del momento de confirmar: una tarifa nueva o una asistencia corregida después
+          no la cambian.
+        </p>
+      </app-ayuda>
     </div>
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-clases-liquidadas">
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th scope="col">Fecha</th>
-            <th scope="col">Clase</th>
-            <th scope="col" class="numero">Presentes</th>
-            <th scope="col" class="importe">Por participante</th>
-            <th scope="col" class="importe">Total de la clase</th>
-            <th scope="col">Reparto</th>
-            <th scope="col" class="importe">Le corresponde</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (linea of l.clases ?? []; track linea.claseId) {
+    @if (tabla.total() === 0) {
+      <app-estado-vacio titulo="La liquidación no tiene clases" />
+    } @else {
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        aria-labelledby="titulo-clases-liquidadas"
+      >
+        <table class="tabla">
+          <thead>
             <tr>
-              <td class="celda-fecha">{{ fecha(linea.fecha) }}</td>
-              <td>{{ linea.titulo || linea.ofertaNombre }}</td>
-              <td class="numero">{{ linea.presentes }}</td>
-              <td class="importe">{{ importe(linea.importePorParticipante) }}</td>
-              <td class="importe">{{ importe(linea.importeClase) }}</td>
-              <td>{{ parteEnPalabras(linea) }}</td>
-              <td class="importe">{{ importe(linea.importeColaborador) }}</td>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="clase">Clase</th>
+              <th scope="col" class="numero" appOrdenable [tabla]="tabla" columna="presentes">
+                Presentes
+              </th>
+              <th scope="col" class="importe tabla__col--secundaria">Por participante</th>
+              <th scope="col" class="importe tabla__col--secundaria">Total de la clase</th>
+              <th scope="col" class="tabla__col--secundaria">Reparto</th>
+              <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="corresponde">
+                Le corresponde
+              </th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </div>
+          </thead>
+          <tbody>
+            @for (linea of tabla.visibles(); track linea.claseId) {
+              <tr>
+                <td class="celda-fecha">{{ fecha(linea.fecha) }}</td>
+                <td>{{ linea.titulo || linea.ofertaNombre }}</td>
+                <td class="numero">{{ linea.presentes }}</td>
+                <td class="importe tabla__col--secundaria">
+                  {{ importe(linea.importePorParticipante) }}
+                </td>
+                <td class="importe tabla__col--secundaria">{{ importe(linea.importeClase) }}</td>
+                <td class="tabla__col--secundaria">{{ parteEnPalabras(linea) }}</td>
+                <td class="importe">{{ importe(linea.importeColaborador) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de clases liquidadas" />
+    }
+  </section>
 }

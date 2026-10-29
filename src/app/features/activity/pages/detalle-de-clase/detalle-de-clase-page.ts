@@ -47,13 +47,18 @@ import {
   nombreDeClase,
   OpcionDeEspacio,
 } from '../../models/clases';
-import { RUTA_CLASES } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const ESPERA_DE_BUSQUEDA_MS = 300;
 
@@ -91,9 +96,12 @@ type Panel =
 @Component({
   selector: 'app-detalle-de-clase-page',
   imports: [
-    Migas,
     CabeceraDePagina,
+    Alerta,
     Ayuda,
+    ColumnaOrdenable,
+    EstadoVacio,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -106,6 +114,7 @@ type Panel =
 })
 export class DetalleDeClasePage {
   private readonly api = inject(ActivityApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -115,7 +124,6 @@ export class DetalleDeClasePage {
 
   readonly claseId = input('');
 
-  protected readonly RUTA_CLASES = RUTA_CLASES;
   protected readonly textoDeEstado = textoDeEstadoDeClase;
   protected readonly textoDeInscripcion = textoDeEstadoDeInscripcion;
   protected readonly textoDeEvento = textoDeEventoDeClase;
@@ -137,8 +145,36 @@ export class DetalleDeClasePage {
 
   protected readonly cargando = signal(false);
   protected readonly errorDeLectura = signal<ErrorActividad | null>(null);
+  /** Error de la operacion del panel abierto (reprogramar, cancelar, dar de baja). */
   protected readonly errorDeAccion = signal<ErrorActividad | null>(null);
-  protected readonly aviso = signal('');
+  /** Error de la busqueda o de la inscripcion: se muestra en "Inscribir a una persona". */
+  protected readonly errorDeInscripcion = signal<ErrorActividad | null>(null);
+  /** Los participantes no se pudieron leer: se dice en su seccion, con Reintentar. */
+  protected readonly errorDeParticipantes = signal<ErrorActividad | null>(null);
+  /** La hora de fin de la reprogramacion no es posterior a la de inicio (UX-12: en el campo). */
+  protected readonly finAntesDeInicio = signal(false);
+
+  /**
+   * Que dato de la reprogramacion choca con algo que ya existe: se muestra pegado a esos campos
+   * (UX-12) y no como error general del panel.
+   */
+  protected readonly conflictoDeReprogramacion = computed<'horario' | 'cupo' | null>(() => {
+    switch (this.errorDeAccion()?.causa) {
+      case 'recurso-ocupado':
+      case 'horario-no-disponible':
+        return 'horario';
+      case 'clase-capacidad-no-admitida':
+        return 'cupo';
+      default:
+        return null;
+    }
+  });
+
+  /** La persona elegida choca con la clase: no hay lugar, o ya esta anotada. */
+  protected readonly conflictoDeInscripcion = computed(() => {
+    const causa = this.errorDeInscripcion()?.causa;
+    return causa === 'clase-completa' || causa === 'ya-inscripta';
+  });
   protected readonly enviando = signal(false);
   protected readonly panel = signal<Panel>({ tipo: 'ninguno' });
 
@@ -180,6 +216,13 @@ export class DetalleDeClasePage {
       return estado !== 'LISTA_ESPERA' && estado !== 'CANCELADA';
     }),
   );
+  /** Orden y paginado de los inscriptos con lugar (UX-14): la lista llega entera. */
+  protected readonly tablaDeInscriptos = tablaLocal(this.conLugar, {
+    columnas: {
+      persona: (p) => this.nombreDe(p),
+      estado: (p) => this.textoDeInscripcion(p.inscripcion?.estado),
+    },
+  });
   protected readonly enEspera = computed(() =>
     (this.participantes() ?? [])
       .filter((p) => p.inscripcion?.estado === 'LISTA_ESPERA')
@@ -262,17 +305,18 @@ export class DetalleDeClasePage {
     if (consultorioId === null || claseId === null) {
       return;
     }
+    this.errorDeParticipantes.set(null);
     this.api.participantes(consultorioId, claseId).subscribe({
       next: (participantes) => this.participantes.set(participantes),
       error: (error: unknown) => {
         this.participantes.set([]);
-        this.errorDeAccion.set(traducirErrorActividad(error));
+        this.errorDeParticipantes.set(traducirErrorActividad(error));
       },
     });
   }
 
   /** Relee clase, cupos, historial y participantes despues de cualquier escritura. */
-  private releer(): void {
+  protected releer(): void {
     this.cargar();
   }
 
@@ -326,6 +370,7 @@ export class DetalleDeClasePage {
       espacioId: clase.espacioId !== undefined ? String(clase.espacioId) : '',
     });
     this.errorDeAccion.set(null);
+    this.finAntesDeInicio.set(false);
     this.panel.set({ tipo: 'reprogramar' });
     const consultorioId = this.tenant.consultorioId();
     if (consultorioId !== null) {
@@ -355,18 +400,34 @@ export class DetalleDeClasePage {
   }
 
   /**
-   * El resultado de una accion, con el foco: el boton que la disparo suele desaparecer con ella
-   * (la persona elegida, la confirmacion de la fila, el panel) y el foco caeria al `body`.
+   * El resultado de una accion va al aviso global (UX-12). El foco no se pierde: el boton que la
+   * disparo suele desaparecer con ella (la persona elegida, la confirmacion de la fila), asi que
+   * quien llama dice a donde llevarlo.
    */
-  private avisar(texto: string): void {
-    this.aviso.set(texto);
-    this.enfocarDespues('#aviso-clase');
+  private avisar(titulo: string, descripcion: string, foco: string | null): void {
+    this.avisos.exito(titulo, descripcion === '' ? undefined : { descripcion });
+    if (foco !== null) {
+      this.enfocarDespues(foco);
+    }
+  }
+
+  /** Mensaje del backend y su detalle, en una linea, para la descripcion de un aviso. */
+  private descripcionDe(fallo: ErrorActividad): string {
+    return fallo.motivo ? `${fallo.mensaje} Detalle: ${fallo.motivo}` : fallo.mensaje;
   }
 
   private enfocarDespues(selector: string): void {
-    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
-      injector: this.injector,
-    });
+    afterNextRender(
+      () => {
+        const destino = this.host.nativeElement.querySelector<HTMLElement>(selector);
+        // El `h1` de la cabecera no es enfocable por si mismo: se lo vuelve, solo por programa.
+        if (destino !== null && !destino.hasAttribute('tabindex')) {
+          destino.setAttribute('tabindex', '-1');
+        }
+        destino?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   protected reprogramar(): void {
@@ -381,15 +442,12 @@ export class DetalleDeClasePage {
     const inicio = instanteDesdeHoraDeSede(valor.fecha, valor.horaInicio, zona);
     const fin = instanteDesdeHoraDeSede(valor.fecha, valor.horaFin, zona);
     if (inicio === null || fin === null || fin <= inicio) {
-      this.errorDeAccion.set({
-        mensaje: 'La hora de fin tiene que ser posterior a la de inicio.',
-        causa: 'validacion',
-        accion: 'corregir',
-        motivo: '',
-        campos: {},
-      });
+      this.errorDeAccion.set(null);
+      this.finAntesDeInicio.set(true);
+      this.enfocarDespues('#reprogramar-fin');
       return;
     }
+    this.finAntesDeInicio.set(false);
     this.enviando.set(true);
     this.errorDeAccion.set(null);
     this.api
@@ -404,8 +462,12 @@ export class DetalleDeClasePage {
       .subscribe({
         next: () => {
           this.enviando.set(false);
-          this.panel.set({ tipo: 'ninguno' });
-          this.avisar('Clase reprogramada. Si cambio el horario, los inscriptos reciben un aviso.');
+          this.cerrarPanel();
+          this.avisar(
+            'Clase reprogramada',
+            'Si cambio el horario, los inscriptos reciben un aviso.',
+            null,
+          );
           this.releer();
         },
         error: (error: unknown) => this.fallo(error),
@@ -423,9 +485,12 @@ export class DetalleDeClasePage {
     this.api.cancelar(consultorioId, clase.id, motivo).subscribe({
       next: () => {
         this.enviando.set(false);
+        // Cancelada, la clase ya no ofrece el menu que abrio el panel: el foco va al titulo.
         this.panel.set({ tipo: 'ninguno' });
         this.avisar(
-          'Clase cancelada. Las inscripciones quedaron canceladas y los inscriptos reciben un aviso.',
+          'Clase cancelada',
+          'Las inscripciones quedaron canceladas y los inscriptos reciben un aviso.',
+          'h1',
         );
         this.releer();
       },
@@ -450,7 +515,7 @@ export class DetalleDeClasePage {
           this.candidatas.set(pagina.content ?? []);
           this.buscoPersonas.set(true);
         },
-        error: (error: unknown) => this.errorDeAccion.set(traducirErrorActividad(error)),
+        error: (error: unknown) => this.errorDeInscripcion.set(traducirErrorActividad(error)),
       });
     }, ESPERA_DE_BUSQUEDA_MS);
   }
@@ -459,13 +524,13 @@ export class DetalleDeClasePage {
     this.persona.set(candidata);
     this.candidatas.set([]);
     this.buscoPersonas.set(false);
-    this.errorDeAccion.set(null);
+    this.errorDeInscripcion.set(null);
     this.claveDeInscripcion = nuevaClaveDeIntento();
   }
 
   protected quitarPersona(): void {
     this.persona.set(null);
-    this.errorDeAccion.set(null);
+    this.errorDeInscripcion.set(null);
   }
 
   protected cambiarAceptaEspera(valor: boolean): void {
@@ -486,7 +551,7 @@ export class DetalleDeClasePage {
       this.claveDeInscripcion = nuevaClaveDeIntento();
     }
     this.enviando.set(true);
-    this.errorDeAccion.set(null);
+    this.errorDeInscripcion.set(null);
     this.api
       .inscribir(consultorioId, claseId, {
         personaId: persona.id,
@@ -497,7 +562,9 @@ export class DetalleDeClasePage {
         next: (resultado) => {
           this.enviando.set(false);
           const nombre = [persona.apellido, persona.nombre].filter(Boolean).join(', ');
-          this.avisar(mensajeDeInscripcion(nombre, resultado.inscripcion));
+          const { titulo, descripcion } = avisoDeInscripcion(nombre, resultado.inscripcion);
+          // La persona elegida desaparece con su boton: el foco vuelve a la busqueda.
+          this.avisar(titulo, descripcion, '#inscribir-persona');
           this.persona.set(null);
           this.aceptaEspera.set(false);
           this.claveDeInscripcion = nuevaClaveDeIntento();
@@ -508,7 +575,11 @@ export class DetalleDeClasePage {
           if (traducido.accion === 'reintentar-con-clave-nueva') {
             this.claveDeInscripcion = nuevaClaveDeIntento();
           }
-          this.fallo(error, traducido);
+          this.enviando.set(false);
+          this.errorDeInscripcion.set(traducido);
+          if (traducido.accion === 'recargar') {
+            this.releer();
+          }
         },
       });
   }
@@ -521,14 +592,29 @@ export class DetalleDeClasePage {
       return;
     }
     this.enviando.set(true);
-    this.errorDeAccion.set(null);
     this.api.confirmar(consultorioId, claseId, inscripcionId).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.avisar(`Inscripción de ${this.nombreDe(participante)} confirmada.`);
+        // El boton de la fila desaparece: el foco va al titulo de los participantes.
+        this.avisar('Inscripción confirmada', this.nombreDe(participante), '#titulo-participantes');
         this.releer();
       },
-      error: (error: unknown) => this.fallo(error),
+      // Accion de fila, sin formulario: aviso global (UX-12). Si la clase quedo vieja se relee
+      // sola; un fallo de red se puede reintentar.
+      error: (error: unknown) => {
+        this.enviando.set(false);
+        const traducido = traducirErrorActividad(error);
+        const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+        this.avisos.error('No pudimos confirmar la inscripción', {
+          descripcion: this.descripcionDe(traducido),
+          accion: reintentable
+            ? { etiqueta: 'Reintentar', ejecutar: () => this.confirmar(participante) }
+            : undefined,
+        });
+        if (traducido.accion === 'recargar') {
+          this.releer();
+        }
+      },
     });
   }
 
@@ -560,12 +646,14 @@ export class DetalleDeClasePage {
         const quien = (this.participantes() ?? []).find(
           (p) => p.inscripcion?.id !== undefined && p.inscripcion.id === promovida?.id,
         );
+        // La fila puede cambiar de lista: el foco va al titulo de los participantes.
         this.avisar(
-          `Se dio de baja a ${this.nombreDe(participante ?? undefined)}.` +
-            (promovida
-              ? ` ${this.nombreDe(quien) || `La persona #${promovida.personaId}`} entro desde la ` +
+          `Se dio de baja a ${this.nombreDe(participante ?? undefined)}`,
+          promovida
+            ? `${this.nombreDe(quien) || `La persona #${promovida.personaId}`} entro desde la ` +
                 'lista de espera y recibe un aviso.'
-              : ''),
+            : '',
+          '#titulo-participantes',
         );
         this.releer();
       },
@@ -577,7 +665,6 @@ export class DetalleDeClasePage {
 
   private fallo(error: unknown, traducido = traducirErrorActividad(error)): void {
     this.enviando.set(false);
-    this.aviso.set('');
     this.errorDeAccion.set(traducido);
     if (traducido.accion === 'recargar') {
       this.releer();
@@ -596,7 +683,8 @@ export class DetalleDeClasePage {
     this.participantes.set(null);
     this.espacios.set([]);
     this.errorDeAccion.set(null);
-    this.aviso.set('');
+    this.errorDeInscripcion.set(null);
+    this.errorDeParticipantes.set(null);
     this.persona.set(null);
     this.panel.set({ tipo: 'ninguno' });
   }
@@ -633,13 +721,16 @@ export class DetalleDeClasePage {
   }
 }
 
-function mensajeDeInscripcion(nombre: string, inscripcion: Inscripcion | undefined): string {
+function avisoDeInscripcion(
+  nombre: string,
+  inscripcion: Inscripcion | undefined,
+): { titulo: string; descripcion: string } {
   const quien = nombre || 'La persona';
   if (inscripcion?.estado === 'LISTA_ESPERA') {
-    return (
-      `${quien} quedo en la lista de espera, posicion ${inscripcion.posicionEspera ?? '?'}. Entra ` +
-      'sola si alguien se da de baja.'
-    );
+    return {
+      titulo: `${quien} quedo en la lista de espera, posicion ${inscripcion.posicionEspera ?? '?'}`,
+      descripcion: 'Entra sola si alguien se da de baja.',
+    };
   }
-  return `${quien} quedo inscripta con lugar.`;
+  return { titulo: `${quien} quedo inscripta con lugar`, descripcion: '' };
 }

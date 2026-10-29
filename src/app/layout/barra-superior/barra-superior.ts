@@ -34,18 +34,20 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
  * cambia segun el rol no es la barra sino lo que hay adentro: las sedes habilitadas y el rol que
  * muestra el perfil. Lleva ademas el boton que abre la barra lateral en tablet.
  *
- * <p><b>El titulo sale del `title` de la ruta</b> ("AKINE - Caja diaria" → "Caja diaria"), que
- * toda pantalla declara para la pestana del navegador. Asi no hace falta que cada pantalla lo
- * publique, y la barra y la pestana no pueden decir cosas distintas.
+ * <p><b>Donde estoy es una ruta de navegacion</b> (29/10/2026): "Padrón / Pérez, Ana /
+ * Coberturas del paciente", que dibuja {@link RutaDeNavegacion}. Llega despues de la primera
+ * pintura, como la sede y el perfil; hasta entonces la barra muestra el titulo de la pantalla, que
+ * sale del `title` de la ruta ("AKINE - Caja diaria" → "Caja diaria") y es el ultimo paso de esa
+ * ruta, asi que la barra no salta.
  *
  * <p><b>Sin contexto, es la unica salida.</b> Con un token `pre_context` ninguna seccion
  * responde, asi que el unico enlace util es el que resuelve eso; un administrador de plataforma
  * no es miembro de ningun centro y este es su camino a la consola (AKINE-A-7). El perfil, con
  * "Cerrar sesion", esta tambien ahi.
  *
- * <p><b>Sede y perfil llegan despues de la primera pintura.</b> La carga inicial esta al borde de
- * su presupuesto (425 kB) y los dos desplegables suman casi 20 kB: se bajan en un chunk aparte
- * con un `import()` y se montan en sus anclas. No van en `@defer`, que suma su runtime (~7 kB) a
+ * <p><b>Ruta, sede y perfil llegan despues de la primera pintura.</b> La carga inicial esta al
+ * borde de su presupuesto (430 kB) y los tres suman mas de 20 kB: se bajan en chunks aparte con un
+ * `import()` y se montan en sus anclas. No van en `@defer`, que suma su runtime (~7 kB) a
  * la carga inicial. Mientras tanto la barra muestra el nombre de la sede y el lugar del avatar.
  */
 @Component({
@@ -94,6 +96,7 @@ export class BarraSuperior {
   /** Ya estan los componentes de verdad: las reservas de lugar se van. */
   protected readonly derechaMontada = computed(() => this.desplegables() !== null);
 
+  /** El titulo de la pantalla: lo que la barra muestra hasta que llega la ruta de navegacion. */
   protected readonly titulo = toSignal(
     this.router.events.pipe(
       filter((evento) => evento instanceof NavigationEnd),
@@ -102,6 +105,12 @@ export class BarraSuperior {
     ),
     { initialValue: '' },
   );
+
+  private readonly anclaRuta = viewChild('anclaRuta', { read: ViewContainerRef });
+  private readonly ruta = signal<Type<unknown> | null>(null);
+
+  /** Ya esta la ruta de navegacion: el titulo de reserva se va. */
+  protected readonly rutaMontada = computed(() => this.ruta() !== null);
 
   constructor() {
     afterNextRender(() => {
@@ -112,6 +121,11 @@ export class BarraSuperior {
         ([sede, perfil]) =>
           this.desplegables.set({ sede: sede.SelectorDeSede, perfil: perfil.MenuDePerfil }),
         // Sin el chunk (red caida, despliegue nuevo) queda la reserva con el nombre de la sede.
+        () => undefined,
+      );
+      import('../ruta-de-navegacion/ruta-de-navegacion').then(
+        (m) => this.ruta.set(m.RutaDeNavegacion),
+        // Sin el chunk queda el titulo de la pantalla, sin los pasos anteriores.
         () => undefined,
       );
     });
@@ -133,6 +147,14 @@ export class BarraSuperior {
           perfil.createComponent(desplegables.perfil);
         }
       });
+    });
+
+    effect(() => {
+      const ruta = this.ruta();
+      const ancla = this.anclaRuta();
+      if (ruta !== null && ancla !== undefined && ancla.length === 0) {
+        untracked(() => ancla.createComponent(ruta));
+      }
     });
   }
 

@@ -17,6 +17,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { PasesDePersonaPage } from './pases-de-persona-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 512;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}`;
@@ -57,6 +58,14 @@ const PRODUCTOS = [
   ABONO,
 ];
 
+/** Titulos y descripciones de los avisos globales publicados (UX-12). */
+function avisos(): string {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => `${aviso.titulo}. ${aviso.descripcion ?? ''}`)
+    .join(' | ');
+}
+
 describe('PasesDePersonaPage', () => {
   let httpMock: HttpTestingController;
 
@@ -84,14 +93,15 @@ describe('PasesDePersonaPage', () => {
   }
 
   /** Una pagina del ledger con la forma del contrato 0.116.0. */
-  function pagina(content: unknown[], page = 0, totalElements = content.length, size = 20) {
+  function pagina(content: unknown[], page = 0, totalElements = content.length, size = 10) {
     return { content, page, size, totalElements, totalPages: Math.ceil(totalElements / size) };
   }
 
-  function pedirMovimientos(page = 0, paseId = 77) {
+  function pedirMovimientos(page = 0, paseId = 77, size = 10) {
     const pedido = httpMock.expectOne((r) => r.url === `${BASE}/pases/${paseId}/movimientos`);
     expect(pedido.request.params.get('page')).toBe(String(page));
-    expect(pedido.request.params.get('size')).toBe('20');
+    // UX-14: el ledger arranca en 10 filas por pagina, como toda tabla de AKINE.
+    expect(pedido.request.params.get('size')).toBe(String(size));
     return pedido;
   }
 
@@ -121,6 +131,17 @@ describe('PasesDePersonaPage', () => {
       expect(texto).toContain('5 de 8');
       expect(texto).toContain('Del 01/10/2026 al 29/11/2026');
       expect(texto).toContain('Activo');
+      // Patron de listado (UX-14): contador en la barra, pie estandar, en la misma tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 pase');
+      expect(raiz.querySelector('section.tarjeta .paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
+      escribir(fixture, '#pases-busqueda', 'zzz');
+      expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('No encontramos pases');
+      clickear(fixture, 'Limpiar filtros');
+      expect(textoDe(fixture)).toContain('5 de 8');
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -128,7 +149,9 @@ describe('PasesDePersonaPage', () => {
 
   it('sin pases lo dice; solo ofrece productos vigentes para vender', async () => {
     const fixture = await montar([]);
-    expect(textoDe(fixture)).toContain('no compró ningún pase en esta sede');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('no compró ningún pase en esta sede');
     const opciones = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll('#vender-producto option'),
     ].map((o) => o.textContent?.replace(/\s+/g, ' ').trim());
@@ -208,10 +231,12 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([PASE]);
     await asentar(fixture);
-    const texto = textoDe(fixture);
-    expect(texto).toContain('Se vendio "Pack Pilates 8": 8 creditos hasta el 29/11/2026');
-    expect(texto).toContain('Quedo una deuda de');
-    expect(texto).toContain('Cobrar desde la cuenta corriente');
+    // UX-12: el resultado va al aviso global, con la salida a cobrar.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Pase vendido');
+    expect(aviso?.descripcion).toContain('"Pack Pilates 8": 8 creditos hasta el 29/11/2026');
+    expect(aviso?.descripcion).toContain('Quedo una deuda de');
+    expect(aviso?.accion?.etiqueta).toBe('Cobrar desde la cuenta corriente');
   });
 
   it('producto no vendible muestra el motivo del servidor', async () => {
@@ -297,7 +322,11 @@ describe('PasesDePersonaPage', () => {
     const clave = primero.request.body.idempotencyKey as string;
     primero.flush(...conflicto('abono-periodo-superpuesto'));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('ya tiene ese abono en un periodo que se superpone');
+    // Conflicto con otro abono: pegado al periodo que lo produjo.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#vender-periodo-superpuesto')
+        ?.textContent,
+    ).toContain('ya tiene ese abono en un periodo que se superpone');
 
     escribir(fixture, '#vender-periodo-desde', '2026-11-14');
     clickear(fixture, 'Vender pase');
@@ -316,7 +345,7 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([PASE]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('del 14/11/2026 al 14/12/2026');
+    expect(avisos()).toContain('del 14/11/2026 al 14/12/2026');
   });
 
   it(
@@ -418,7 +447,8 @@ describe('PasesDePersonaPage', () => {
       responderPases([{ ...PASE, creditosDisponibles: 0, version: 5 }]);
       await asentar(fixture);
       const texto = textoDe(fixture);
-      expect(texto).toContain('ahora tiene 0 creditos de 8');
+      expect(avisos()).toContain('Saldo ajustado');
+      expect(avisos()).toContain('ahora tiene 0 creditos de 8');
       expect(texto).toContain('ajuste manual');
       expect(texto).toContain('Motivo: Cortesia');
     },
@@ -469,8 +499,8 @@ describe('PasesDePersonaPage', () => {
       responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false }]);
       await asentar(fixture);
       const texto = textoDe(fixture);
-      expect(texto).toContain('Se anulo "Pack Pilates 8" y su saldo se descarto.');
-      expect(texto).toContain('quedo anulada: no se borra, sigue en la cuenta corriente');
+      expect(avisos()).toContain('Pase anulado. "Pack Pilates 8": su saldo se descarto.');
+      expect(avisos()).toContain('quedo anulada: no se borra, sigue en la cuenta corriente');
       // Un pase anulado ya no ofrece anularse ni ajustarse.
       expect(texto).not.toContain('Ajustar saldo');
       expect(boton(fixture, 'Anular Pack Pilates 8')).toBeNull();
@@ -488,8 +518,8 @@ describe('PasesDePersonaPage', () => {
       .flush({ anulado: false, pase: { ...PASE, estado: 'ANULADO', anulable: false } });
     responderPases();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('ya estaba anulado: no se cambio nada');
-    expect(textoDe(fixture)).toContain('La venta no tenia deuda.');
+    expect(avisos()).toContain('ya estaba anulado. No se cambio nada.');
+    expect(avisos()).toContain('La venta no tenia deuda.');
   });
 
   it('una deuda con cobros no deja anular y lleva a la cuenta corriente', async () => {
@@ -565,43 +595,69 @@ describe('PasesDePersonaPage', () => {
     }));
   }
 
+  /** Resumen del pie del ledger: "Mostrando 1–10 de 45". */
+  function resumenDelLedger(fixture: ComponentFixture<unknown>): string {
+    return (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.panel-lateral .paginacion-pie__resumen',
+      )?.textContent ?? ''
+    );
+  }
+
+  function paginaActualDelLedger(fixture: ComponentFixture<unknown>): string {
+    return (
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('nav[aria-label="Páginas de movimientos del pase"] [aria-current="page"]')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim() ?? ''
+    );
+  }
+
   it(
     'el ledger se lee de a páginas, del mas viejo al mas nuevo, con la posicion dicha en texto',
     async () => {
       const fixture = await montar();
       clickear(fixture, 'Ver movimientos');
       expect(textoDe(fixture)).toContain('Leyendo los movimientos');
-      pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
+      pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas viejo al mas nuevo.');
-      expect(textoDe(fixture)).toContain('Página 1 de 3');
-      const nav = (fixture.nativeElement as HTMLElement).querySelector(
-        'nav[aria-label="Páginas de movimientos del pase"]',
-      );
-      expect(nav).not.toBeNull();
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 45');
+      expect(textoDe(fixture)).toContain('Del mas viejo al mas nuevo.');
+      expect(paginaActualDelLedger(fixture)).toBe('Página 1');
       await esperarSinViolaciones(fixture.nativeElement);
 
-      clickear(fixture, 'Siguiente');
+      clickear(fixture, 'Página siguiente');
       // Mientras llega la otra pagina se sigue viendo la anterior, marcada como ocupada.
       const region = (fixture.nativeElement as HTMLElement).querySelector(
         '[aria-label="Movimientos del pase"]',
       );
       expect(region?.getAttribute('aria-busy')).toBe('true');
-      expect(textoDe(fixture)).toContain('Página 2 de 3');
-      pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
+      expect(paginaActualDelLedger(fixture)).toBe('Página 2');
+      pedirMovimientos(1).flush(pagina(movimientosDe(11, 10), 1, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 21 a 40 de 45');
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 11–20 de 45');
       expect(region?.getAttribute('aria-busy')).toBe('false');
 
       // Una respuesta vieja no pisa la pagina pedida despues.
-      clickear(fixture, 'Siguiente');
+      clickear(fixture, 'Página siguiente');
       const tercera = pedirMovimientos(2);
-      clickear(fixture, 'Anterior');
+      clickear(fixture, 'Página anterior');
       const segunda = pedirMovimientos(1);
-      segunda.flush(pagina(movimientosDe(21, 20), 1, 45));
-      tercera.flush(pagina(movimientosDe(41, 5), 2, 45));
+      segunda.flush(pagina(movimientosDe(11, 10), 1, 45));
+      tercera.flush(pagina(movimientosDe(21, 10), 2, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 21 a 40 de 45');
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 11–20 de 45');
+
+      // Filas por pagina: va como `size` y vuelve a la primera pagina.
+      const filas = (fixture.nativeElement as HTMLElement).querySelector(
+        '.panel-lateral .paginacion-pie__por-pagina select',
+      ) as HTMLSelectElement;
+      filas.value = '25';
+      filas.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      pedirMovimientos(0, 77, 25).flush(pagina(movimientosDe(1, 25), 0, 45, 25));
+      await asentar(fixture);
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 1–25 de 45');
 
       clickear(fixture, 'Cerrar movimientos');
       expect(textoDe(fixture)).not.toContain('Saldo actual');
@@ -612,10 +668,10 @@ describe('PasesDePersonaPage', () => {
   it('el ledger se puede pedir del mas nuevo al mas viejo, desde la primera página', async () => {
     const fixture = await montar();
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 45));
     await asentar(fixture);
-    clickear(fixture, 'Siguiente');
-    pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
+    clickear(fixture, 'Página siguiente');
+    pedirMovimientos(1).flush(pagina(movimientosDe(11, 10), 1, 45));
     await asentar(fixture);
 
     for (const sort of ['ocurridoEn,asc', 'ocurridoEn,desc']) {
@@ -624,18 +680,19 @@ describe('PasesDePersonaPage', () => {
         .click();
       const pedido = pedirMovimientos(0);
       expect(decodeURIComponent(pedido.request.params.get('sort')!)).toBe(sort);
-      pedido.flush(pagina(movimientosDe(1, 20), 0, 45));
+      pedido.flush(pagina(movimientosDe(1, 10), 0, 45));
       await asentar(fixture);
     }
-    expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas nuevo al mas viejo.');
+    expect(textoDe(fixture)).toContain('Del mas nuevo al mas viejo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 45');
   });
 
   it('después de un ajuste el ledger termina en la página del movimiento nuevo', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('20 movimientos, del mas viejo al mas nuevo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 10');
 
     clickear(fixture, 'Ajustar saldo');
     escribir(fixture, '#ajuste-cantidad', '1');
@@ -644,18 +701,18 @@ describe('PasesDePersonaPage', () => {
     httpMock
       .expectOne(AJUSTES)
       .flush({ pase: { ...PASE, creditosDisponibles: 6, version: 5 }, movimientos: [] });
-    // 20 + 1 movimientos: el nuevo es el primero de la segunda pagina.
-    pedirMovimientos(1).flush(pagina(movimientosDe(21, 1), 1, 21));
+    // 10 + 1 movimientos: el nuevo es el primero de la segunda pagina.
+    pedirMovimientos(1).flush(pagina(movimientosDe(11, 1), 1, 11));
     responderPases([{ ...PASE, creditosDisponibles: 6, version: 5 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Movimientos 21 a 21 de 21');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 11–11 de 11');
     expect(textoDe(fixture)).toContain('Saldo actual: 6 creditos de 8');
   });
 
   it('una página que ya no existe lleva a la última', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
     clickear(fixture, 'Anular');
     escribir(fixture, '#anulacion-motivo', 'Vendido por error');
@@ -665,11 +722,11 @@ describe('PasesDePersonaPage', () => {
       pase: { ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false },
     });
     // Se esperaba un movimiento mas y no hubo: la pagina 1 llega vacia y se lee la ultima.
-    pedirMovimientos(1).flush(pagina([], 1, 20));
+    pedirMovimientos(1).flush(pagina([], 1, 10));
     responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false }]);
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('20 movimientos, del mas viejo al mas nuevo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 10');
   });
 
   it('vende un abono con renovacion automática; pedirla o no cambia la clave', async () => {
@@ -702,7 +759,7 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Se va a renovar solo al terminar el periodo.');
+    expect(avisos()).toContain('Se va a renovar solo al terminar el periodo.');
     // Despues de vender, la casilla vuelve a apagada.
     escribir(fixture, '#vender-producto', '10');
     expect(
@@ -791,6 +848,23 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el enlace a un periodo que la busqueda deja afuera lo vuelve a mostrar y lo enfoca', async () => {
+    const fixture = await montar([
+      { ...ABONO_NOV, nombre: 'Abono de noviembre' },
+      { ...ABONO_OCT, nombre: 'Abono de octubre', renovadoPorPaseId: 21 },
+    ]);
+    escribir(fixture, '#pases-busqueda', 'noviembre');
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#pase-20')).toBeNull();
+
+    [...raiz.querySelectorAll<HTMLAnchorElement>('a.enlace')]
+      .find((a) => (a.textContent ?? '').includes('periodo del 01/10/2026'))!
+      .click();
+    await asentar(fixture);
+    expect(raiz.querySelector<HTMLInputElement>('#pases-busqueda')?.value).toBe('');
+    expect(document.activeElement?.id).toBe('pase-20');
+  });
+
   it('DP-40: la renovacion apagada por desvinculacion del autorizante se explica', async () => {
     const fixture = await montar([
       {
@@ -846,8 +920,8 @@ describe('PasesDePersonaPage', () => {
     prender.flush({ ...ABONO_SIN, renovacionAutomatica: true, version: 3 });
     responderPases([{ ...ABONO_SIN, renovacionAutomatica: true, version: 3 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('"Abono yoga" se va a renovar solo');
-    expect(textoDe(fixture)).toContain('31/10/2026');
+    expect(avisos()).toContain('Renovación automática activada. "Abono yoga"');
+    expect(avisos()).toContain('31/10/2026');
 
     boton(fixture, 'Desactivar la renovación automática de Abono yoga')!.click();
     const apagar = httpMock.expectOne(`${BASE}/pases/31/renovacion`);
@@ -855,7 +929,7 @@ describe('PasesDePersonaPage', () => {
     apagar.flush({ ...ABONO_SIN, version: 4 });
     responderPases([{ ...ABONO_SIN, version: 4 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('"Abono yoga" ya no se renueva solo.');
+    expect(avisos()).toContain('Renovación automática desactivada. "Abono yoga"');
   });
 
   it('YA_RENOVADO tiene su mensaje y relee los pases', async () => {
@@ -869,9 +943,10 @@ describe('PasesDePersonaPage', () => {
       { ...ABONO_NOV, renuevaPaseId: 31 },
     ]);
     await asentar(fixture);
-    const texto = textoDe(fixture);
-    expect(texto).toContain('este periodo del abono ya se renovo');
-    expect(texto).toContain('hacelo sobre el periodo siguiente');
+    // Accion de fila: aviso global de error con el mensaje del backend.
+    expect(avisos()).toContain('No pudimos activar la renovación');
+    expect(avisos()).toContain('este periodo del abono ya se renovo');
+    expect(avisos()).toContain('hacelo sobre el periodo siguiente');
     expect(boton(fixture, 'Activar la renovación automática de Abono yoga')).toBeNull();
   });
 

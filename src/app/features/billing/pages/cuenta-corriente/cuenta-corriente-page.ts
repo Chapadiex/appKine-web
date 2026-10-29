@@ -41,10 +41,14 @@ import {
 } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
@@ -102,11 +106,14 @@ type EstadoCuenta =
   selector: 'app-cuenta-corriente-page',
   imports: [
     PanelLateral,
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
@@ -117,6 +124,7 @@ type EstadoCuenta =
 export class CuentaCorrientePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
@@ -189,7 +197,6 @@ export class CuentaCorrientePage {
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorObligacion | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly obligaciones = computed<readonly Obligacion[]>(() => {
     const actual = this.estado();
@@ -201,7 +208,21 @@ export class CuentaCorrientePage {
    * saldo corrido—, asi que reordenar no cambia lo que dice ninguna fila; sin orden elegido queda
    * el del servidor.
    */
-  protected readonly tabla = tablaLocal(this.obligaciones, {
+  /** Busqueda por prestacion o concepto, sobre la lista completa (no viaja al servidor). */
+  protected readonly busqueda = signal('');
+  protected readonly obligacionesBuscadas = computed<readonly Obligacion[]>(() => {
+    const texto = normalizar(this.busqueda());
+    if (texto === '') {
+      return this.obligaciones();
+    }
+    return this.obligaciones().filter((obligacion) =>
+      normalizar(
+        `${obligacion.snapshotNombre ?? ''} ${conceptoEnPalabras(obligacion.concepto)}`,
+      ).includes(texto),
+    );
+  });
+
+  protected readonly tabla = tablaLocal(this.obligacionesBuscadas, {
     columnas: {
       devengada: (obligacion) => obligacion.devengadaEn ?? null,
       prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
@@ -268,6 +289,16 @@ export class CuentaCorrientePage {
   protected readonly conSaldoAFavor = computed<readonly Cobro[]>(() =>
     (this.cobros() ?? []).filter((c) => !estaAnulado(c) && saldoAFavorEnCentavos(c) > 0),
   );
+
+  /** Cobros con saldo a favor: tabla interna chica, con orden y pie (UX-14). */
+  protected readonly tablaAFavor = tablaLocal(this.conSaldoAFavor, {
+    columnas: {
+      comprobante: (cobro) => cobro.comprobanteNumero ?? null,
+      cobrado: (cobro) => cobro.cobradoEn ?? null,
+      total: (cobro) => cobro.total ?? null,
+      saldo: (cobro) => cobro.saldoAFavor ?? null,
+    },
+  });
 
   /** El cobro cuyo saldo se esta imputando, o `null`. */
   protected readonly imputando = signal<Cobro | null>(null);
@@ -470,16 +501,18 @@ export class CuentaCorrientePage {
 
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.exito.set(null);
 
     this.api.anular(consultorioId, obligacion.id, motivo, obligacion.version ?? 0).subscribe({
       next: (anulada) => {
         this.enviando.set(false);
         this.objetivo.set(null);
-        this.exito.set(
-          `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)} por ` +
-            `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
-            'con su motivo: no se borra.',
+        this.avisos.exito(
+          `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)}`,
+          {
+            descripcion:
+              `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
+              'con su motivo: no se borra.',
+          },
         );
         this.cargar();
       },
@@ -493,7 +526,6 @@ export class CuentaCorrientePage {
   protected cerrarPanel(): void {
     this.objetivo.set(null);
     this.errorAccion.set(null);
-    this.exito.set(null);
   }
 
   // -------------------------------------------------------------------------------------
@@ -573,7 +605,6 @@ export class CuentaCorrientePage {
     this.enviandoImputacion.set(true);
     this.errorImputacion.set(null);
     this.imputadasAntesDelRechazo.set(0);
-    this.exito.set(null);
 
     concat(...pedidos).subscribe({
       error: (error: unknown) => {
@@ -584,10 +615,13 @@ export class CuentaCorrientePage {
         this.enviandoImputacion.set(false);
         const cuantas = pedidos.length;
         this.cerrarImputacion();
-        this.exito.set(
-          `Se imputo el saldo a favor del comprobante N.º ${cobro.comprobanteNumero} a ` +
-            `${cuantas === 1 ? 'una deuda' : `${cuantas} deudas`}. No se movio la caja: la plata ` +
-            'entro cuando se cobro.',
+        this.avisos.exito(
+          `Se imputo el saldo a favor del comprobante N.º ${cobro.comprobanteNumero}`,
+          {
+            descripcion:
+              `A ${cuantas === 1 ? 'una deuda' : `${cuantas} deudas`}. No se movio la caja: la ` +
+              'plata entro cuando se cobro.',
+          },
         );
         this.cargar();
       },
@@ -604,4 +638,13 @@ export class CuentaCorrientePage {
     const id = Number(this.personaId());
     return Number.isFinite(id) && id > 0 ? id : null;
   }
+}
+
+/** Para buscar sin distinguir mayusculas ni tildes. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }

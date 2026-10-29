@@ -21,6 +21,8 @@ import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   ETIQUETA_PESTANAS_DE_CATALOGO,
   PESTANAS_DE_CATALOGO,
@@ -30,11 +32,11 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -72,11 +74,13 @@ type Estado =
   selector: 'app-solicitudes-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     PanelLateral,
-    Migas,
     Pestanas,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     Filtros,
@@ -92,6 +96,7 @@ export class SolicitudesPage {
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -113,7 +118,6 @@ export class SolicitudesPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaCatalogo | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly solicitudes = computed(() => {
@@ -121,8 +125,28 @@ export class SolicitudesPage {
     return actual.tipo === 'listo' ? actual.solicitudes : [];
   });
 
-  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina pedidos. */
-  protected readonly tabla = tablaLocal(this.solicitudes, {
+  /** Busqueda local por nombre o código propuesto (UX-14): la lista llega entera. */
+  protected readonly busqueda = signal('');
+
+  /** Lo que muestra la tabla: lo cargado, acotado por la busqueda. */
+  protected readonly filtradas = computed(() => {
+    const texto = normalizar(this.busqueda().trim());
+    return texto === ''
+      ? this.solicitudes()
+      : this.solicitudes().filter((solicitud) =>
+          normalizar(
+            `${solicitud.nombrePropuesto ?? ''} ${solicitud.codigoPropuesto ?? ''}`,
+          ).includes(texto),
+        );
+  });
+
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina pedidos. */
+  protected readonly tabla = tablaLocal(this.filtradas, {
     columnas: {
       nombre: (solicitud) => solicitud.nombrePropuesto,
       tipo: (solicitud) => this.etiquetaDeTipo(solicitud),
@@ -159,8 +183,8 @@ export class SolicitudesPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarAlta();
-        this.exito.set(null);
         this.filtroEstado.set('TODAS');
+        this.busqueda.set('');
         this.cargar();
       });
     });
@@ -203,8 +227,15 @@ export class SolicitudesPage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda y el estado a su valor inicial; relee si el estado habia cambiado. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtroEstado() !== 'TODAS') {
+      this.cambiarFiltro('TODAS');
+    }
+  }
+
   protected abrirAlta(): void {
-    this.exito.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.intentos.set(0);
@@ -261,16 +292,15 @@ export class SolicitudesPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo.createCatalogoSolicitud({ createCatalogoSolicitudRequest: cuerpo }).subscribe({
       next: () => {
         this.cerrarAlta();
-        this.exito.set(
-          'Tu pedido quedo registrado. Lo resuelve la plataforma: vas a ver como quedo en este ' +
-            'mismo listado. Mientras tanto, si lo necesitas ya, podés darlo de alta como un ' +
+        this.avisos.exito('Pedido enviado a la plataforma', {
+          descripcion:
+            'Vas a ver cómo se resuelve en este listado. Si lo necesitás ya, dalo de alta como ' +
             'concepto de tu centro.',
-        );
+        });
         this.cargar();
       },
       error: (error: unknown) => {
@@ -311,4 +341,12 @@ export class SolicitudesPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable para la busqueda: minusculas y sin acentos. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }

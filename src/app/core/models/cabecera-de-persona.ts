@@ -1,4 +1,5 @@
 import { PersonaResponse } from '../../api/generated/model/persona-response';
+import type { Miga } from '../services/migas.store';
 import type { ModeloDeCabeceraDeFicha } from '../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import type { Pestana } from '../../shared/components/pestanas/pestanas';
 import {
@@ -46,6 +47,12 @@ export interface DatosDeCabeceraDePersona {
 
   /** Si la pantalla sabe que es paciente sin tener la ficha. */
   readonly esPaciente?: boolean | null;
+
+  /**
+   * Pasos de la ruta de navegacion entre la persona y la pantalla, cuando la pantalla cuelga de
+   * una pestana: "Cuenta corriente" en Cobros registrados.
+   */
+  readonly masMigas?: readonly Miga[];
 }
 
 /** Las pantallas del padron: se llega con `paciente:read`, asi que en ellas se ofrece siempre. */
@@ -120,7 +127,6 @@ export function modeloDeCabeceraDePersona(
   const documento = persona ? documentoDePersona(persona) : (datos.documentoAlternativo ?? null);
   const inactiva = persona?.estado === 'INACTIVO';
   return {
-    migas: padron ? [{ etiqueta: 'Padrón', ruta: '/pacientes' }] : [],
     titulo: persona ? nombreDePersona(persona) : datos.nombreAlternativo || 'Ficha de la persona',
     rutaTitulo: padron ? rutaFicha : null,
     datos: documento ? [documento] : [],
@@ -133,4 +139,29 @@ export function modeloDeCabeceraDePersona(
     pestanas,
     etiquetaPestanas: 'Secciones de la persona',
   };
+}
+
+/**
+ * La ruta de navegacion de la barra superior: "Padrón / Pérez, Ana / <pantalla>". En la ficha, el
+ * nombre es la pantalla actual. Sin `paciente:read` fuera del padron no hay ni "Padrón" ni enlace
+ * a la ficha: se ofreceria una pantalla que responde "sin permiso".
+ */
+export function migasDePersona(
+  datos: DatosDeCabeceraDePersona,
+  tiene: (permiso: string) => boolean,
+): Miga[] {
+  const padron = PANTALLAS_DEL_PADRON.includes(datos.actual) || tiene(PERMISO_PACIENTE_READ);
+  if (!padron) {
+    return [...(datos.masMigas ?? [])];
+  }
+  const nombre = datos.persona ? nombreDePersona(datos.persona) : datos.nombreAlternativo || null;
+  const migas: Miga[] = [{ etiqueta: 'Padrón', ruta: '/pacientes' }];
+  if (nombre !== null) {
+    migas.push(
+      datos.actual === 'ficha'
+        ? { etiqueta: nombre }
+        : { etiqueta: nombre, ruta: `/pacientes/${datos.personaId}` },
+    );
+  }
+  return [...migas, ...(datos.masMigas ?? [])];
 }

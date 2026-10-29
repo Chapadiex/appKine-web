@@ -81,10 +81,15 @@
   tambien; las tablas usan todo.
 */
 .contenido {
+  /*
+    Todo el ancho util entre la barra lateral y el borde, con 24 px de margen (UX-14). Nada de
+    columnas centradas de 700 px en una pantalla de 1.500: cada pantalla decide su grilla.
+  */
   width: 100%;
-  max-width: 96rem;
+  min-width: 0;
   margin: 0;
-  padding: var(--esp-5) var(--esp-8) var(--esp-9);
+  padding: var(--esp-6) var(--esp-8) var(--esp-9);
+  container-type: inline-size;
 }
 
 /* Sin barra lateral (login, selector de contexto) la pagina si se centra: es una tarjeta sola. */

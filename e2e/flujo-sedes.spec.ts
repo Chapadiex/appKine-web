@@ -82,12 +82,14 @@ test.describe('Sedes contra el backend real', () => {
     await page.getByRole('button', { name: 'Crear la sede' }).click();
     const creada = await alta;
     expect(creada.status(), await creada.text()).toBe(201);
-    await expect(page.getByText(`La sede "${nombre}" quedo creada.`)).toBeVisible();
-    await expect(page.getByText('Se creo junto con su primer box.')).toBeVisible();
-    await expect(page.getByText(/El horario general quedo cargado/)).toBeVisible();
+    // UX-12: el alta vuelve sola al listado y el resultado va al aviso global.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Sede creada')).toBeVisible();
+    await expect(avisos.getByText(/Se creo junto con su primer box/)).toBeVisible();
+    await expect(avisos.getByText(/El horario general quedo cargado/)).toBeVisible();
 
     // --- Baja con motivo desde el listado ---
-    await page.getByRole('link', { name: 'Volver al listado de sedes' }).click();
+    await expect(page).toHaveURL(/\/organizacion\/sedes$/);
     const region = page.getByRole('region', { name: 'Sedes de la organización' });
     const fila = region.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
@@ -98,9 +100,8 @@ test.describe('Sedes contra el backend real', () => {
     const baja = respuestaDe(page, 'POST', /\/consultorios\/\d+\/deactivate$/);
     await page.getByRole('button', { name: 'Confirmar la baja' }).click();
     expect((await baja).status()).toBe(200);
-    await expect(
-      page.getByText('La sede quedo dada de baja. Sigue en el listado, con el motivo.'),
-    ).toBeVisible();
+    await expect(avisos.getByText('Sede dada de baja')).toBeVisible();
+    await expect(avisos.getByText(/Sigue en el listado, con el motivo/)).toBeVisible();
 
     await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo las dadas de baja' });

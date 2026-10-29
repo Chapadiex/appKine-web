@@ -1,10 +1,4 @@
 <app-cabecera-de-pagina titulo="Versiones de la atención">
-  @if (sesion()?.turnoId; as turnoId) {
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Atención', ruta: ['/atencion', 'turnos', turnoId] }]"
-    />
-  }
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cada enmienda deja una versión nueva y la anterior queda intacta. La versión 1 es lo que se
@@ -34,13 +28,12 @@
 }
 
 @if (error(); as problema) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema-versiones">
-    <h2 id="titulo-problema-versiones">No se pudieron leer las versiones</h2>
-    <p class="estado estado--error">{{ problema.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No pudimos leer las versiones">
+    <p>{{ problema.mensaje }}</p>
+    <p class="alerta__acciones">
       <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (sesion(); as atencion) {
@@ -74,17 +67,18 @@
         </section>
 
         @if (versiones().length === 0 && !cargando()) {
-          <p class="estado estado--vacio">
-            Esta atención todavía no tiene versiones: se versiona a partir del cierre.
-          </p>
+          <app-estado-vacio
+            titulo="Esta atención todavía no tiene versiones"
+            texto="Se versiona a partir del cierre: la versión 1 es lo que se asienta al cerrar."
+          />
         }
 
         @if (versiones().length > 1) {
           <section class="tarjeta" aria-labelledby="titulo-comparar">
             <h2 id="titulo-comparar">Qué cambió</h2>
 
-            <div class="comparar-versiones">
-              <div class="campo">
+            <div class="grilla-12">
+              <div class="campo campo--3">
                 <label for="version-antes">Versión anterior</label>
                 <select id="version-antes" (change)="elegirAntes($any($event.target).value)">
                   @for (version of versionesRecientesPrimero(); track version.numeroVersion) {
@@ -97,7 +91,7 @@
                   }
                 </select>
               </div>
-              <div class="campo">
+              <div class="campo campo--3">
                 <label for="version-despues">Versión posterior</label>
                 <select id="version-despues" (change)="elegirDespues($any($event.target).value)">
                   @for (version of versionesRecientesPrimero(); track version.numeroVersion) {

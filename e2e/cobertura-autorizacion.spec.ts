@@ -49,7 +49,7 @@ function dia(dias: number): string {
  */
 function filaDeAutorizacion(page: Page, numero: string) {
   return page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) });
 }
@@ -175,8 +175,8 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
 
     // --- 5. Orden medica ----------------------------------------------------------------
     await page.goto(`/pacientes/${personaId}/autorizaciones`);
-    const ordenes = page.getByRole('region', { name: 'Órdenes médicas' });
-    await ordenes.getByRole('button', { name: 'Registrar una orden' }).click();
+    // Las altas van en la cabecera de la pantalla, arriba a la derecha (UX-14).
+    await page.getByRole('button', { name: 'Registrar una orden', exact: true }).click();
     // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
     const altaDeOrden = page.getByRole('dialog', { name: 'Registrar una orden' });
     await altaDeOrden.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
@@ -188,7 +188,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await altaDeOrden.getByLabel('Sesiones prescriptas').fill('10');
     await altaDeOrden.getByRole('button', { name: 'Registrar orden' }).click();
 
-    const tablaOrdenes = page.getByRole('table', { name: /orden\(es\) del paciente/ });
+    const tablaOrdenes = page.getByRole('region', { name: 'Listado de órdenes' });
     await expect(tablaOrdenes.getByRole('cell', { name: 'ORD-1', exact: true })).toBeVisible();
 
     // --- 6. Autorizacion aprobada, vigente, respaldada por la orden ------------------------
@@ -311,10 +311,8 @@ async function registrarAutorizacion(
     hasta: string;
   },
 ): Promise<void> {
-  await page
-    .getByRole('region', { name: 'Autorizaciones' })
-    .getByRole('button', { name: 'Registrar una autorización' })
-    .click();
+  // Las altas van en la cabecera de la pantalla, arriba a la derecha (UX-14).
+  await page.getByRole('button', { name: 'Registrar una autorización', exact: true }).click();
   // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
   const formulario = page.getByRole('dialog', { name: 'Registrar una autorización' });
   await formulario.getByLabel('Número').fill(datos.numero);

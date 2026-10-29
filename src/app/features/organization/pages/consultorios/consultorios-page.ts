@@ -21,7 +21,11 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RUTA_SELECTOR_CONTEXTO } from '../../../../core/models/rutas';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
@@ -36,6 +40,8 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -59,14 +65,6 @@ const CAMPOS_INSTITUCIONALES = [
   'phone',
   'contactEmail',
 ] as const;
-
-/**
- * Cuantas sedes se piden por pagina.
- *
- * <p>Muy por debajo del tope de 100 que el backend recorta. Ningun centro real tiene
- * decenas de sedes, y cada fila trae acciones: una tabla mas larga no se lee mejor.
- */
-const POR_PAGINA = 20;
 
 /**
  * Sedes (consultorios) de la organizacion activa (M01, AKINE-02.01).
@@ -103,6 +101,8 @@ const POR_PAGINA = 20;
   selector: 'app-consultorios-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     Icono,
     Filtros,
@@ -111,6 +111,7 @@ const POR_PAGINA = 20;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
     ConfirmacionConMotivo,
     AccionesDeFila,
     PanelLateral,
@@ -123,6 +124,7 @@ export class ConsultoriosPage {
   private readonly consultorios = inject(ConsultoriosService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -144,8 +146,16 @@ export class ConsultoriosPage {
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
   /** Lo que se busca en el nombre de la sede (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
+
+  /** Hay busqueda o filtro fuera de su valor por defecto: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'ACTIVO',
+  );
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<
@@ -184,7 +194,6 @@ export class ConsultoriosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaConsultorio | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /** Datos de la sede. `slotMinutes` va como texto: el `input` siempre entrega texto. */
@@ -211,7 +220,6 @@ export class ConsultoriosPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
         this.busqueda.set('');
@@ -236,7 +244,7 @@ export class ConsultoriosPage {
         orgId,
         estado: this.filtro(),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -264,6 +272,19 @@ export class ConsultoriosPage {
 
   protected buscar(texto: string): void {
     this.busqueda.set(texto);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** "Limpiar filtros": vuelve la busqueda y el estado a su valor por defecto. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtro.set('ACTIVO');
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.recargarDesdeElPrincipio();
   }
 
@@ -298,7 +319,6 @@ export class ConsultoriosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.pestanaEdicion.set('general');
     this.panel.set({ id, tipo });
 
@@ -362,7 +382,7 @@ export class ConsultoriosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
+    const nombre = this.formularioEdicion.controls.name.value.trim();
 
     this.consultorios
       .updateConsultorio({
@@ -373,7 +393,7 @@ export class ConsultoriosPage {
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set('Los datos de la sede quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: nombre });
           // Las sedes alimentan selectores de otras pantallas: un nombre editado que quedara
           // cacheado seguiria mostrandose viejo hasta el proximo cambio de contexto.
           this.sedesDelContexto.invalidar();
@@ -401,8 +421,8 @@ export class ConsultoriosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
+    const nombre = this.sedesDeLaPagina().find((sede) => sede.id === panel.id)?.name ?? 'La sede';
     const eraLaDelContexto = this.esLaDelContexto(panel.id);
 
     this.consultorios
@@ -430,15 +450,17 @@ export class ConsultoriosPage {
                 // creyendo que sigue teniendo un contexto util. Se le dice, aunque no haya
                 // mucho mas que hacer desde aca.
                 console.error('No se pudo abrir el selector de contexto tras la baja', error);
-                this.errorAccion.set(
-                  'La sede quedo dada de baja, pero no pudimos abrir la pantalla para elegir otra. ' +
-                    'Entra a "Elegir contexto" desde el menu.',
-                );
+                this.avisos.error('No pudimos abrir la pantalla para elegir otra sede', {
+                  descripcion: `${nombre} quedo dada de baja. Entra a "Elegir contexto" desde el menu.`,
+                  duracion: null,
+                });
               });
             return;
           }
 
-          this.exito.set('La sede quedo dada de baja. Sigue en el listado, con el motivo.');
+          this.avisos.exito('Sede dada de baja', {
+            descripcion: `${nombre}. Sigue en el listado, con el motivo.`,
+          });
           this.sedesDelContexto.asegurarCargadas();
           this.cargar();
         },

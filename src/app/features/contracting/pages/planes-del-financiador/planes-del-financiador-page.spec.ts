@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -213,9 +214,10 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'cerrar la vigencia no es darlo de baja',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toContain('cerrar la vigencia no es darlo de baja');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el alta manda todos los campos cuando estan completos', async () => {
@@ -255,9 +257,9 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'activo pero todavía sin vigencia',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Plan dado de alta');
+    expect(aviso?.descripcion).toContain('activo pero todavía sin vigencia');
   });
 
   it('el alta sin los obligatorios no manda nada', async () => {
@@ -358,9 +360,9 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'siguen resolviendo con su copia congelada',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('quedó dado de baja');
+    expect(aviso?.descripcion).toContain('siguen resolviendo con su copia congelada');
   });
 
   it('el 409 conflict relee y deja el panel abierto con lo escrito', async () => {
@@ -395,8 +397,9 @@ describe('PlanesDelFinanciadorPage', () => {
     );
   });
 
-  it('el filtro de estado recarga, y el vacío explica que sin plan no hay convenio', async () => {
+  it('el filtro de estado recarga, y el vacío filtrado ofrece limpiar los filtros', async () => {
     const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
 
     cambiarSelect(fixture, '#filtro-estado-plan', 'TODOS');
     httpMock
@@ -408,8 +411,50 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'no se puede firmar ningún convenio',
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos planes');
+    const limpiar = [...(vacio?.querySelectorAll('button') ?? [])].find(
+      (boton) => (boton.textContent ?? '').trim() === 'Limpiar filtros',
+    ) as HTMLButtonElement;
+    limpiar.click();
+    fixture.detectChanges();
+    httpMock.expectOne(esListado()).flush([VIGENTE, VIGENCIA_CERRADA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector<HTMLSelectElement>('#filtro-estado-plan')?.value).toBe('ACTIVO');
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  it('sin ningún plan explica que sin plan no hay convenio y ofrece el alta', async () => {
+    const fixture = await montar(OSDE, []);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+
+    expect(vacio?.textContent).toContain('Este financiador todavía no tiene planes');
+    expect(vacio?.textContent).toContain('no se puede firmar ningún convenio');
+    expect(vacio?.textContent).toContain('Dar de alta el primero');
+  });
+
+  it('busca en pantalla por nombre o código y sigue el patrón de listado', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 planes',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–2 de 2',
+    );
+
+    const buscador = anfitrion.querySelector<HTMLInputElement>('#buscar-plan')!;
+    buscador.value = String(VIGENTE.codigo);
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    // Filtra sin pedir de nuevo: httpMock.verify() lo comprueba al terminar.
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 plan',
     );
   });
 
@@ -472,6 +517,7 @@ describe('PlanesDelFinanciadorPage', () => {
 
   async function montar(
     financiador: Record<string, unknown> = OSDE,
+    planes: readonly unknown[] = [VIGENTE, VIGENCIA_CERRADA],
   ): Promise<ComponentFixture<PlanesDelFinanciadorPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -486,7 +532,7 @@ describe('PlanesDelFinanciadorPage', () => {
     const fixture = TestBed.createComponent(PlanesDelFinanciadorPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([VIGENTE, VIGENCIA_CERRADA]);
+    httpMock.expectOne(esListado()).flush(planes);
     httpMock.expectOne(`${RUTA_FINANCIADORES}/${FINANCIADOR}`).flush(financiador);
     await fixture.whenStable();
     fixture.detectChanges();

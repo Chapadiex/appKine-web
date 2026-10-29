@@ -1,7 +1,23 @@
+<!--
+  Rechazo de una operacion (UX-12): donde se hizo —la revision, la factura, el pago, el cierre o
+  el panel—, arriba de sus campos. Los botones de fila y el CSV avisan en el aviso global. Una
+  version vieja ("recargar") es advertencia: alguien cambio el lote mientras tanto.
+-->
+<ng-template #alertaDeOperacion let-fallo let-titulo="titulo">
+  <app-alerta [tipo]="fallo.recargar ? 'advertencia' : 'error'" [titulo]="titulo">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.recargar) {
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar el lote
+        </button>
+      </p>
+    }
+  </app-alerta>
+</ng-template>
+
 @if (lote() === null) {
-  <app-cabecera-de-pagina titulo="Lote de presentación">
-    <app-migas enLinea [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
-  </app-cabecera-de-pagina>
+  <app-cabecera-de-pagina titulo="Lote de presentación"> </app-cabecera-de-pagina>
 }
 
 @if (carga().tipo === 'cargando' && lote() === null) {
@@ -10,10 +26,9 @@
 
 @if (carga(); as estadoCarga) {
   @if (estadoCarga.tipo === 'error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lote">
-      <h2 id="titulo-error-lote">No se pudo cargar el lote</h2>
-      <p class="estado estado--error">{{ estadoCarga.error.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudo cargar el lote">
+      <p>{{ estadoCarga.error.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (estadoCarga.error.causa === 'sin-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
         } @else {
@@ -21,8 +36,8 @@
             Reintentar
           </button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
 }
 
@@ -30,7 +45,6 @@
   <app-cabecera-de-pagina
     titulo="Lote {{ p.numero ? 'N.º ' + p.numero : 'en borrador' }} a {{ p.financiadorNombre }}"
   >
-    <app-migas enLinea [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
     <span [class]="claseDeEstado(p.estado)" aria-hidden="true">{{
       estadoEnPalabras(p.estado)
     }}</span>
@@ -93,38 +107,19 @@
     </div>
   </dl>
 
-  <div aria-live="polite">
-    @if (aviso(); as texto) {
-      <p class="estado estado--ok" role="status">{{ texto }}</p>
-    }
-    @if (errorOperacion(); as fallo) {
-      <section class="tarjeta" aria-labelledby="titulo-error-operacion">
-        <h2 id="titulo-error-operacion">No se pudo completar la operación</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.recargar) {
-          <div class="acciones">
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el lote
-            </button>
-          </div>
-        }
-      </section>
-    }
-  </div>
-
   <!-- ============================ Prestaciones del lote ============================ -->
 
-  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-items">
-    <div class="tarjeta__cabecera">
-      <h2 id="titulo-items">Prestaciones del lote</h2>
-    </div>
+  <section class="tarjeta" aria-labelledby="titulo-items">
+    <h2 id="titulo-items">Prestaciones del lote</h2>
 
     @if (items().length > 0) {
       <!-- Regla de filtros (plan §3.4): sin busqueda por texto, el "Mostrar" va detras del embudo. -->
       <app-filtros
-        class="tarjeta__cuerpo"
-        [soloAvanzados]="true"
         [activos]="filtrosAvanzadosActivos()"
+        [resultados]="tablaItems.total()"
+        [unidad]="['prestación', 'prestaciones']"
+        limpiable
+        (limpiar)="filtrarItems('')"
       >
         <div class="campo">
           <label for="filtro-estado-item">Mostrar</label>
@@ -143,12 +138,16 @@
     }
 
     @if (items().length === 0) {
-      <p class="estado estado--vacio">
-        El lote no tiene prestaciones todavía.
-        @if (esBorrador()) {
-          Agregalas desde la bandeja de abajo.
-        }
-      </p>
+      <app-estado-vacio
+        titulo="El lote no tiene prestaciones todavía"
+        [texto]="esBorrador() ? 'Agregalas desde la bandeja de abajo.' : null"
+      />
+    } @else if (itemsVisibles().length === 0) {
+      <app-estado-vacio titulo="Ninguna prestación del lote está en ese estado.">
+        <button type="button" class="boton boton--secundario" (click)="filtrarItems('')">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
     } @else {
       <div
         class="tabla-scroll"
@@ -161,7 +160,15 @@
             <tr>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestación</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="fecha">Fecha</th>
-              <th scope="col" appOrdenable [tabla]="tablaItems" columna="paciente">Paciente</th>
+              <th
+                scope="col"
+                class="tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tablaItems"
+                columna="paciente"
+              >
+                Paciente
+              </th>
               <th scope="col" class="importe" appOrdenable [tabla]="tablaItems" columna="importe">
                 Importe
               </th>
@@ -193,7 +200,7 @@
                   }
                 </td>
                 <td class="celda-fecha">{{ fecha(item.fechaPrestacion) }}</td>
-                <td>Persona #{{ item.personaId }}</td>
+                <td class="tabla__col--secundaria">Persona #{{ item.personaId }}</td>
                 <td class="importe">
                   {{ importe(item.importePresentado) }}
                   @if (item.importeDebitado) {
@@ -236,18 +243,7 @@
           </tbody>
         </table>
       </div>
-      <div class="tabla-pie">
-        <span>{{ tablaItems.total() }} prestaciones</span>
-        <app-paginacion
-          [paginaActual]="tablaItems.pagina()"
-          [totalPaginas]="tablaItems.totalPaginas()"
-          etiqueta="Páginas de prestaciones"
-          (cambioDePagina)="tablaItems.irA($event)"
-        />
-      </div>
-      @if (itemsVisibles().length === 0) {
-        <p class="estado estado--vacio">Ninguna prestación del lote está en ese estado.</p>
-      }
+      <app-pie-de-tabla [tabla]="tablaItems" etiqueta="Páginas de prestaciones" />
     }
   </section>
 
@@ -302,6 +298,12 @@
           }
         </ul>
       }
+      @if (falloEn('confirmar'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos presentar el lote' }"
+        />
+      }
       <!-- Jerarquia: presentar es la principal; revisar, secundaria; descartar, destructiva y aparte. -->
       <div class="acciones">
         <button
@@ -326,16 +328,14 @@
       </div>
     </section>
 
-    <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-elegibles">
-      <div class="tarjeta__cabecera">
-        <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
-      </div>
+    <section class="tarjeta" aria-labelledby="titulo-elegibles">
+      <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
       <p class="ayuda ayuda--fija">
         Deudas a cargo de {{ p.financiadorNombre }} devengadas en el período del lote y que no están
         en otro lote vivo.
       </p>
       @if (elegibles().length === 0) {
-        <p class="estado estado--vacio">No hay prestaciones para agregar en este período.</p>
+        <app-estado-vacio titulo="No hay prestaciones para agregar en este período" />
       } @else {
         <div
           class="tabla-scroll"
@@ -352,7 +352,13 @@
                 <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="devengada">
                   Devengada
                 </th>
-                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="paciente">
+                <th
+                  scope="col"
+                  class="tabla__col--secundaria"
+                  appOrdenable
+                  [tabla]="tablaElegibles"
+                  columna="paciente"
+                >
                   Paciente
                 </th>
                 <th
@@ -385,7 +391,7 @@
                     }
                   </td>
                   <td class="celda-fecha">{{ instante(obligacion.devengadaEn) }}</td>
-                  <td>Persona #{{ obligacion.personaId }}</td>
+                  <td class="tabla__col--secundaria">Persona #{{ obligacion.personaId }}</td>
                   <td class="importe">{{ importe(obligacion.saldo) }}</td>
                   <td class="tabla__acciones">
                     <button
@@ -402,15 +408,7 @@
             </tbody>
           </table>
         </div>
-        <div class="tabla-pie">
-          <span>{{ tablaElegibles.total() }} prestaciones elegibles</span>
-          <app-paginacion
-            [paginaActual]="tablaElegibles.pagina()"
-            [totalPaginas]="tablaElegibles.totalPaginas()"
-            etiqueta="Páginas de prestaciones elegibles"
-            (cambioDePagina)="tablaElegibles.irA($event)"
-          />
-        </div>
+        <app-pie-de-tabla [tabla]="tablaElegibles" etiqueta="Páginas de prestaciones elegibles" />
       }
     </section>
   }
@@ -424,18 +422,39 @@
         <section class="tarjeta" aria-labelledby="titulo-factura">
           <h2 id="titulo-factura">Factura del lote</h2>
           <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
-            <div class="grilla-compacta">
-              <div class="campo">
-                <label for="factura-numero">Número de factura</label>
-                <input id="factura-numero" type="text" formControlName="numero" />
-                @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
-                  <p class="campo__error" role="alert">El número es obligatorio.</p>
-                }
-              </div>
-              <div class="campo">
-                <label for="factura-fecha">Fecha</label>
-                <input id="factura-fecha" type="date" formControlName="fecha" />
-              </div>
+            @if (falloEn('factura'); as fallo) {
+              <ng-container
+                [ngTemplateOutlet]="alertaDeOperacion"
+                [ngTemplateOutletContext]="{
+                  $implicit: fallo,
+                  titulo: 'No pudimos registrar la factura',
+                }"
+              />
+            }
+            <div class="campo campo--3">
+              <label for="factura-numero">Número de factura</label>
+              <input
+                id="factura-numero"
+                type="text"
+                formControlName="numero"
+                [attr.aria-invalid]="
+                  factura.controls.numero.touched && factura.controls.numero.invalid ? 'true' : null
+                "
+                [attr.aria-describedby]="
+                  factura.controls.numero.touched && factura.controls.numero.invalid
+                    ? 'factura-numero-error'
+                    : null
+                "
+              />
+              @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
+                <p class="campo__error" id="factura-numero-error" role="alert">
+                  El número es obligatorio.
+                </p>
+              }
+            </div>
+            <div class="campo">
+              <label for="factura-fecha">Fecha</label>
+              <input id="factura-fecha" type="date" formControlName="fecha" />
             </div>
             <div class="acciones">
               <button type="submit" class="boton" [disabled]="operando() !== null">
@@ -457,38 +476,55 @@
           </app-ayuda>
         </div>
         <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
-          <div class="grilla-compacta">
-            <div class="campo">
-              <label for="pago-importe">Importe</label>
-              <input
-                id="pago-importe"
-                type="number"
-                min="0.01"
-                step="0.01"
-                formControlName="importe"
-              />
-              @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
-                <p class="campo__error" role="alert">El importe tiene que ser mayor que cero.</p>
+          @if (falloEn('pago'); as fallo) {
+            <ng-container
+              [ngTemplateOutlet]="alertaDeOperacion"
+              [ngTemplateOutletContext]="{
+                $implicit: fallo,
+                titulo: 'No pudimos registrar el pago',
+              }"
+            />
+          }
+          <div class="campo">
+            <label for="pago-importe">Importe</label>
+            <input
+              id="pago-importe"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="importe"
+              [attr.aria-invalid]="
+                pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
+              "
+              [attr.aria-describedby]="
+                pago.controls.importe.touched && pago.controls.importe.invalid
+                  ? 'pago-importe-error'
+                  : null
+              "
+            />
+            @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
+              <p class="campo__error" id="pago-importe-error" role="alert">
+                El importe tiene que ser mayor que cero.
+              </p>
+            }
+          </div>
+          <div class="campo">
+            <label for="pago-medio">Medio</label>
+            <select id="pago-medio" formControlName="medio">
+              @for (m of medios; track m) {
+                <option [value]="m">{{ medioEnPalabras(m) }}</option>
               }
-            </div>
-            <div class="campo">
-              <label for="pago-medio">Medio</label>
-              <select id="pago-medio" formControlName="medio">
-                @for (m of medios; track m) {
-                  <option [value]="m">{{ medioEnPalabras(m) }}</option>
-                }
-              </select>
-            </div>
-            <div class="campo">
-              <label for="pago-fecha">Fecha del pago</label>
-              <input id="pago-fecha" type="date" formControlName="fechaPago" />
-            </div>
-            <div class="campo">
-              <label for="pago-referencia"
-                >Referencia <span class="campo__opcional">(opcional)</span></label
-              >
-              <input id="pago-referencia" type="text" formControlName="referencia" />
-            </div>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="pago-fecha">Fecha del pago</label>
+            <input id="pago-fecha" type="date" formControlName="fechaPago" />
+          </div>
+          <div class="campo campo--3">
+            <label for="pago-referencia"
+              >Referencia <span class="campo__opcional">(opcional)</span></label
+            >
+            <input id="pago-referencia" type="text" formControlName="referencia" />
           </div>
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="operando() !== null">
@@ -508,6 +544,12 @@
             </p>
           </app-ayuda>
         </div>
+        @if (falloEn('conciliar'); as fallo) {
+          <ng-container
+            [ngTemplateOutlet]="alertaDeOperacion"
+            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar el lote' }"
+          />
+        }
         <div class="acciones">
           <button
             type="button"
@@ -553,6 +595,12 @@
     (cerrar)="cerrarPaneles()"
   >
     <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
+      @if (falloEn('debito'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos registrar el débito' }"
+        />
+      }
       <p class="ayuda">
         Registrá lo que el financiador no reconoce. La deuda de la prestación sigue pendiente y se
         puede volver a presentar.
@@ -561,16 +609,27 @@
         <label for="debito-importe">Importe debitado</label>
         <input id="debito-importe" type="number" min="0.01" step="0.01" formControlName="importe" />
       </div>
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="debito-motivo">Motivo informado por el financiador</label>
-        <input id="debito-motivo" type="text" formControlName="motivo" />
+        <input
+          id="debito-motivo"
+          type="text"
+          formControlName="motivo"
+          [attr.aria-invalid]="
+            debito.controls.motivo.touched && debito.controls.motivo.invalid ? 'true' : null
+          "
+          [attr.aria-describedby]="
+            debito.controls.motivo.touched && debito.controls.motivo.invalid
+              ? 'debito-motivo-error'
+              : null
+          "
+        />
         @if (debito.controls.motivo.touched && debito.controls.motivo.invalid) {
-          <p class="campo__error" role="alert">El motivo es obligatorio.</p>
+          <p class="campo__error" id="debito-motivo-error" role="alert">
+            El motivo es obligatorio.
+          </p>
         }
       </div>
-      @if (errorOperacion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="operando() !== null">
           Confirmar el débito
@@ -585,6 +644,12 @@
 
 @if (anulando()) {
   <app-panel-lateral titulo="Descartar el borrador" (cerrar)="cerrarPaneles()">
+    @if (falloEn('anular'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos descartar el borrador' }"
+      />
+    }
     <app-confirmacion-con-motivo
       idCampo="anular-presentacion-motivo"
       titulo="Descartar el borrador"
@@ -596,8 +661,5 @@
       (confirmado)="anular($event)"
       (cancelado)="cerrarPaneles()"
     />
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-    }
   </app-panel-lateral>
 }

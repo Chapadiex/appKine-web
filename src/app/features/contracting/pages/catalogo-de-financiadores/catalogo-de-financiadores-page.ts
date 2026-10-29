@@ -11,12 +11,15 @@ import { traducirErrorContracting } from '../../models/contracting-errors';
 import { TIPOS_DE_FINANCIADOR, etiquetaDeTipo } from '../../models/etiquetas-de-contracting';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -41,20 +44,28 @@ type Estado =
   selector: 'app-catalogo-de-financiadores-page',
   imports: [
     CabeceraDePagina,
-    Migas,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Ayuda,
     Filtros,
     Icono,
     RouterLink,
+    Alerta,
   ],
   templateUrl: './catalogo-de-financiadores-page.html',
   styleUrl: '../../contracting.css',
 })
 export class CatalogoDeFinanciadoresPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Catálogo de financiadores' },
+  ]);
+
   private readonly api = inject(ContractingApi);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -66,9 +77,13 @@ export class CatalogoDeFinanciadoresPage {
   protected readonly filtroTipo = signal<FiltroTipo | ''>('');
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== ''));
+  /**
+   * Si el listado mostrado salio de una busqueda o un tipo. La busqueda se aplica con el submit,
+   * asi que no alcanza con mirar lo tipeado: un vacio con filtros aplicados ofrece limpiarlos.
+   */
+  protected readonly hayFiltrosAplicados = signal(false);
   /** Id de la entrada con una adopcion en vuelo, o `null`. */
   protected readonly adoptando = signal<number | null>(null);
-  protected readonly errorAccion = signal<string | null>(null);
   /** Listado en vuelo: una busqueda nueva lo cancela, para que la respuesta vieja no pise a la nueva. */
   private pedidoDeListado: Subscription | null = null;
 
@@ -97,7 +112,6 @@ export class CatalogoDeFinanciadoresPage {
       // Otro centro adopta otras cosas: `financiadorAdoptadoId` es de la organizacion del contexto.
       this.tenantContext.contextEpoch();
       untracked(() => {
-        this.errorAccion.set(null);
         this.adoptando.set(null);
         this.cargar();
       });
@@ -108,6 +122,7 @@ export class CatalogoDeFinanciadoresPage {
     this.estado.set({ tipo: 'cargando' });
     const q = this.busqueda().trim();
     const tipo = this.filtroTipo();
+    this.hayFiltrosAplicados.set(q !== '' || tipo !== '');
     this.pedidoDeListado?.unsubscribe();
     this.pedidoDeListado = this.api
       .listarCatalogo({ q: q === '' ? undefined : q, tipo: tipo === '' ? undefined : tipo })
@@ -121,16 +136,26 @@ export class CatalogoDeFinanciadoresPage {
       });
   }
 
+  /** Vuelve la busqueda y el tipo a su valor por defecto y relee el catalogo entero. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroTipo.set('');
+    this.cargar();
+  }
+
   protected adoptar(entrada: CatalogoFinanciadorResponse): void {
     const id = entrada.id;
     if (id === undefined || this.adoptando() !== null) {
       return;
     }
     this.adoptando.set(id);
-    this.errorAccion.set(null);
     this.api.adoptarDelCatalogo(id).subscribe({
       next: (adopcion) => {
         this.adoptando.set(null);
+        // El aviso vive en el shell: sobrevive a la navegacion a los planes de la copia.
+        this.avisos.exito(`${entrada.nombre ?? 'El financiador'} agregado al centro`, {
+          descripcion: 'Es una copia propia: los cambios posteriores del catálogo no la modifican.',
+        });
         const copia = adopcion.financiador?.id;
         if (copia === undefined) {
           this.cargar();
@@ -140,7 +165,11 @@ export class CatalogoDeFinanciadoresPage {
       },
       error: (error: unknown) => {
         this.adoptando.set(null);
-        this.errorAccion.set(traducirErrorContracting(error, 'financiador').mensaje);
+        // Boton de fila, sin formulario: aviso global con la salida.
+        this.avisos.error(`No pudimos agregar ${entrada.nombre ?? 'el financiador'} al centro`, {
+          descripcion: traducirErrorContracting(error, 'financiador').mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.adoptar(entrada) },
+        });
         // Una entrada dada de baja entre la lectura y el click ya no se lista: se relee.
         this.cargar();
       },

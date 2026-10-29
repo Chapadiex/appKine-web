@@ -50,12 +50,6 @@
 </section>
 
 <div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<div aria-live="polite">
   @switch (estado().tipo) {
     @case ('inicial') {
       <p class="estado estado--vacio">Elegí un período y consultá.</p>
@@ -77,14 +71,16 @@
     }
 
     @case ('error') {
-      <section class="tarjeta">
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="consultar()">Reintentar</button>
-        }
-      </section>
+      <app-alerta tipo="error" titulo="No pudimos leer el calendario de la sede">
+        <p>{{ mensajeError() }}</p>
+        <p class="alerta__acciones">
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+          }
+        </p>
+      </app-alerta>
     }
 
     @case ('listo') {
@@ -106,6 +102,13 @@
         }
 
         <form id="form-politica" [formGroup]="formularioPolitica" (ngSubmit)="guardar()" novalidate>
+          <!-- Error del guardado: arriba del formulario, a la vista (UX-12). -->
+          @if (errorPolitica(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos guardar la política de feriados">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <label class="opcion-casilla">
             <input
               id="calendario-cierra"
@@ -162,12 +165,6 @@
           @if (modoLectura()) {
             <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
           }
-
-          <div aria-live="polite">
-            @if (errorPolitica(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
-          </div>
         </form>
       </section>
 
@@ -192,6 +189,12 @@
               (ngSubmit)="guardarHorario()"
               novalidate
             >
+              @if (errorHorario(); as mensaje) {
+                <app-alerta tipo="error" titulo="No pudimos guardar el horario general">
+                  <p>{{ mensaje }}</p>
+                </app-alerta>
+              }
+
               <app-editor-de-franjas
                 idBase="calendario-horario"
                 [franjas]="formularioHorario"
@@ -241,10 +244,12 @@
             }
           }
 
+          <!--
+            Consecuencia del ultimo guardado que no entra en un aviso global: la lista de turnos
+            que quedaron fuera del horario y el camino a la agenda. Queda a la vista hasta el
+            proximo guardado.
+          -->
           <div aria-live="polite">
-            @if (exitoHorario(); as mensaje) {
-              <p class="estado estado--ok">{{ mensaje }}</p>
-            }
             @if (avisoImpactoHorario(); as aviso) {
               <div class="aviso-apertura" role="status">
                 <p>
@@ -263,9 +268,6 @@
                 }
               </div>
             }
-            @if (errorHorario(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
           </div>
         </section>
 
@@ -273,22 +275,30 @@
           <h2 id="titulo-feriados">Feriados del periodo</h2>
 
           @if (feriados().length === 0) {
-            <p class="estado estado--vacio">
-              No hay feriados del calendario nacional entre
-              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-            </p>
+            <app-estado-vacio
+              titulo="No hay feriados del calendario nacional en este período."
+              [texto]="
+                'Entre el ' +
+                etiquetaDeFecha(ventanaConsultada()?.desde) +
+                ' y el ' +
+                etiquetaDeFecha(ventanaConsultada()?.hasta) +
+                ' (exclusivo) no cae ninguno.'
+              "
+            />
           } @else {
-            <p class="ayuda ayuda--fija">
-              {{ feriados().length }} feriados entre
-              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-              @if (quedaAbiertoEnFeriados()) {
+            <!-- UX-14: cuantos son lo dice el pie de la tabla; aca queda solo la consecuencia. -->
+            @if (quedaAbiertoEnFeriados()) {
+              <p class="ayuda ayuda--fija">
                 Con la politica actual <b>no</b> recortan la agenda: son informativos.
-              }
-            </p>
+              </p>
+            }
 
-            <div class="tabla-scroll">
+            <div
+              class="tabla-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Listado de feriados del periodo"
+            >
               <table class="tabla">
                 <caption class="visualmente-oculto">
                   Feriados del calendario nacional que caen en el periodo consultado
@@ -312,15 +322,7 @@
               </table>
             </div>
 
-            <div class="tabla-pie">
-              <span>{{ tabla.total() }} feriados</span>
-              <app-paginacion
-                [paginaActual]="tabla.pagina()"
-                [totalPaginas]="tabla.totalPaginas()"
-                etiqueta="Paginas de feriados"
-                (cambioDePagina)="tabla.irA($event)"
-              />
-            </div>
+            <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de feriados" />
           }
         </section>
       </div>

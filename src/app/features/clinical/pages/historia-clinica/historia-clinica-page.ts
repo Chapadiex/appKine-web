@@ -24,6 +24,8 @@ import { NuevoAdjunto } from './components/nuevo-adjunto';
 import { TimelineClinico, claveDe } from './components/timeline-clinico';
 import { VisorDeAdjunto } from './components/visor-de-adjunto';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -54,6 +56,7 @@ type Estado =
 @Component({
   selector: 'app-historia-clinica-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     TimelineClinico,
@@ -69,6 +72,7 @@ type Estado =
 })
 export class HistoriaClinicaPage {
   private readonly api = inject(HistoriaClinicaApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly visita = inject(VisitaClinica);
 
@@ -156,6 +160,7 @@ export class HistoriaClinicaPage {
       next: (historia) => {
         this.abriendo.set(false);
         this.estado.set({ tipo: 'lista', historia });
+        this.avisos.exito('Historia clínica abierta');
       },
       error: (error: unknown) => {
         this.abriendo.set(false);

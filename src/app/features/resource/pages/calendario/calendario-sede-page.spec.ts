@@ -9,6 +9,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS, rutaCalendarioSede } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -178,7 +179,9 @@ describe('CalendarioSedePage', () => {
     await estabilizar(fixture);
 
     const despues = texto(fixture);
-    expect(despues).toContain('la sede pasa a atender los feriados');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('La sede atiende los feriados');
+    expect(aviso?.descripcion).toContain('salvo que cargues un cierre');
     // Vacia significa "no se pregunto", nunca "no hay feriados": la lista que ya estaba sigue.
     expect(despues).toContain('Día del maestro');
     expect(despues).toContain('son informativos');
@@ -202,7 +205,7 @@ describe('CalendarioSedePage', () => {
     guardado.flush({ ...POLITICA, feriados: [], version: 5 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('vuelve a cerrar los feriados');
+    expect(titulosDeAvisos()).toEqual(['La sede cierra los feriados']);
   });
 
   /**
@@ -356,7 +359,7 @@ describe('CalendarioSedePage', () => {
       });
       await estabilizar(fixture);
 
-      expect(texto(fixture)).toContain('el horario general quedo guardado');
+      expect(titulosDeAvisos()).toEqual(['Horario general guardado']);
       expect(texto(fixture)).not.toContain('Hay cambios sin guardar en el horario');
       expect(texto(fixture)).toContain('Navidad');
       // Sin impacto en la respuesta no hay aviso: en cero no se muestra nada.
@@ -425,7 +428,7 @@ describe('CalendarioSedePage', () => {
       put.flush({ ...POLITICA, feriados: [], horarioGeneral: [] });
       await estabilizar(fixture);
 
-      expect(texto(fixture)).toContain('ya no tiene horario general declarado');
+      expect(titulosDeAvisos()).toEqual(['Horario general borrado']);
       expect(fixture.nativeElement.querySelector('#calendario-horario-desde-0')).toBeNull();
     });
 
@@ -578,4 +581,11 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   }
   formulario.dispatchEvent(new Event('submit'));
   fixture.detectChanges();
+}
+
+/** Titulos de los avisos globales publicados (UX-12): el shell los dibuja, el spec mira el store. */
+function titulosDeAvisos(): string[] {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => aviso.titulo);
 }

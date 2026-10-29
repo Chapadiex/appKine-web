@@ -10,6 +10,7 @@ import {
 } from '../../../../core/models/rutas';
 import { SessionService } from '../../../../core/services/session.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Destino por defecto cuando la sesion ya quedo con contexto. */
 const DESTINO_POR_DEFECTO = '/organizacion';
@@ -27,7 +28,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
  */
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [Alerta, ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

@@ -26,13 +26,19 @@ import {
 } from '../../../../api/generated/model/create-catalogo-concepto-request';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateCatalogoConceptoRequest } from '../../../../api/generated/model/update-catalogo-concepto-request';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   DatosDeTipo,
   ETIQUETA_PESTANAS_DE_CATALOGO,
@@ -70,9 +76,6 @@ type FiltroAlcance = 'TODOS' | 'GLOBAL' | 'ORGANIZACION';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
-
-/** Cuantos conceptos se piden por pagina. Por debajo del tope de 100 que el backend recorta. */
-const POR_PAGINA = 20;
 
 /**
  * Cuanto se espera antes de buscar mientras el usuario escribe.
@@ -121,6 +124,8 @@ const TOPE_DE_ESPECIALIDADES = 100;
   selector: 'app-catalogos-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     AccionesDeFila,
     Pestanas,
     Ayuda,
@@ -131,6 +136,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
     ConfirmacionConMotivo,
     PanelLateral,
   ],
@@ -151,6 +157,7 @@ export class CatalogosPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -194,6 +201,14 @@ export class CatalogosPage {
       Number(this.filtroEspecialidad() !== null),
   );
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina, elegidas en el pie (UX-14). Viajan como `size`; el tope del backend es 100. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<CamposDeSort<SearchCatalogoRequestParams['sort']>>(
@@ -247,7 +262,6 @@ export class CatalogosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaCatalogo | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /**
@@ -363,7 +377,7 @@ export class CatalogosPage {
         alcance: this.filtroAlcance(),
         especialidadId: especialidadId ?? undefined,
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         sort: this.orden.sort(),
       })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
@@ -421,9 +435,28 @@ export class CatalogosPage {
     this.cargar();
   }
 
+  /** Cambia las filas por pagina desde el pie: vuelve a la primera y relee. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.cerrarPanel();
+    this.porPagina.set(cantidad);
+    this.paginaActual.set(0);
+    this.cargar();
+  }
+
+  /** Vuelve busqueda y filtros a su valor inicial, en la primera pagina, y relee. */
+  protected limpiarFiltros(): void {
+    this.epocaDeBusqueda.update((valor) => valor + 1);
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.filtroAlcance.set('TODOS');
+    this.filtroEspecialidad.set(null);
+    this.paginaActual.set(0);
+    this.cargar();
+  }
+
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.enable();
     this.formularioAlta.reset({
       codigo: '',
@@ -444,7 +477,6 @@ export class CatalogosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -544,17 +576,15 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .createCatalogoConcepto({ tipo: datos.slug, createCatalogoConceptoRequest: cuerpo })
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set(
-            `La ${datos.singular} quedo dada de alta para este centro. Solo la ve tu ` +
-              'organización: los conceptos de la plataforma los mantiene AKINE.',
-          );
+          this.avisos.exito('Concepto agregado al catálogo del centro', {
+            descripcion: `${cuerpo.name} (${datos.singular}). Solo lo ve tu organización.`,
+          });
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
         },
@@ -585,7 +615,6 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .updateCatalogoConcepto({
@@ -594,9 +623,9 @@ export class CatalogosPage {
         updateCatalogoConceptoRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (actualizado) => {
           this.cerrarPanel();
-          this.exito.set('Los datos del concepto quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: actualizado.name ?? undefined });
           this.cargar();
         },
         error: (error: unknown) => this.fallarEdicion(error, datos.slug, panel.id),
@@ -620,7 +649,6 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .deactivateCatalogoConcepto({
@@ -630,11 +658,13 @@ export class CatalogosPage {
       })
       .subscribe({
         next: () => {
+          const nombre = this.conceptoEnPanel()?.name;
           this.cerrarPanel();
-          this.exito.set(
-            'El concepto quedo dado de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'registro con el conserva su significado. Su código y su nombre quedan libres.',
-          );
+          this.avisos.exito('Concepto dado de baja', {
+            descripcion:
+              `${nombre ? nombre + '. ' : ''}Lo ya registrado con él conserva su significado; ` +
+              'su código y su nombre quedan libres.',
+          });
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
         },
@@ -774,7 +804,6 @@ export class CatalogosPage {
   private reiniciar(): void {
     this.epocaDeBusqueda.update((valor) => valor + 1);
     this.cerrarPanel();
-    this.exito.set(null);
     this.busqueda.set('');
     this.filtroEstado.set('ACTIVO');
     this.filtroAlcance.set('TODOS');

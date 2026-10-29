@@ -36,9 +36,12 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -104,12 +107,14 @@ type EstadoDeCoberturas =
 @Component({
   selector: 'app-coberturas-del-paciente-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    EstadoVacio,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -124,6 +129,7 @@ type EstadoDeCoberturas =
 export class CoberturasDelPacientePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CoberturasApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly personas = inject(PersonApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
@@ -179,9 +185,24 @@ export class CoberturasDelPacientePage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaPersona | null>(null);
-  protected readonly exito = signal<string | null>(null);
+
+  /** Una FINANCIADA sin plan: se nombra en el campo, no en un cartel del formulario. */
+  protected readonly faltaPlan = signal(false);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /**
+   * El rechazo choca con algo que ya existe y se muestra pegado a los campos que lo produjeron
+   * (UX-12), no como error general del formulario.
+   */
+  protected readonly esConflictoDeCampo = computed(() => {
+    const causa = this.causaAccion();
+    return (
+      causa === 'plan-no-seleccionable' ||
+      causa === 'cobertura-superpuesta' ||
+      causa === 'cobertura-principal-superpuesta'
+    );
+  });
 
   /** `true` cuando el rechazo se arregla activando el perfil, y la pantalla ofrece el enlace. */
   protected readonly faltaPerfil = computed(() => this.causaAccion() === 'sin-perfil-paciente');
@@ -424,7 +445,7 @@ export class CoberturasDelPacientePage {
       // Una FINANCIADA sin plan no tiene sentido y la base la rechaza. Se corta aca para nombrar
       // el campo, en vez de mandar un cuerpo que produce un 400 sobre un parametro.
       this.formularioAlta.markAllAsTouched();
-      this.errorAccion.set('Elegí el plan de la cobertura financiada.');
+      this.faltaPlan.set(true);
       return;
     }
 
@@ -449,8 +470,8 @@ export class CoberturasDelPacientePage {
     this.api.agregar(id, cuerpo).subscribe({
       next: (creada) => {
         this.enviando.set(false);
-        this.altaAbierta.set(false);
-        this.exito.set(`Se agrego la cobertura ${coberturaEnUnaLinea(creada)}.`);
+        this.cerrarPaneles();
+        this.avisos.exito('Cobertura agregada', { descripcion: coberturaEnUnaLinea(creada) });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -503,8 +524,8 @@ export class CoberturasDelPacientePage {
     this.api.editar(personaId, original.id, cuerpo).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.panel.set(null);
-        this.exito.set('Se guardaron los cambios de la cobertura.');
+        this.cerrarPaneles();
+        this.avisos.exito('Cambios guardados', { descripcion: coberturaEnUnaLinea(original) });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -528,14 +549,19 @@ export class CoberturasDelPacientePage {
     this.api.marcarPrincipal(personaId, id, principal).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.exito.set(
-          principal
-            ? 'Quedo marcada como cobertura principal.'
-            : 'Se quito la marca de principal. El paciente puede no tener ninguna preferida.',
-        );
+        if (principal) {
+          this.avisos.exito('Cobertura marcada como principal', {
+            descripcion: coberturaEnUnaLinea(cobertura),
+          });
+        } else {
+          this.avisos.exito('Marca de principal quitada', {
+            descripcion: 'El paciente puede no tener ninguna preferida.',
+          });
+        }
         this.cargar();
       },
-      error: (error: unknown) => this.fallo(error),
+      error: (error: unknown) =>
+        this.falloDeFila(error, () => this.cambiarPrincipal(cobertura, principal)),
     });
   }
 
@@ -566,11 +592,12 @@ export class CoberturasDelPacientePage {
     this.api.darDeBaja(personaId, abierto.id, motivo).subscribe({
       next: () => {
         this.enviando.set(false);
-        this.panel.set(null);
-        this.exito.set(
-          'La cobertura quedo dada de baja. No se borro: sigue explicando con que se atendio al ' +
-            'paciente antes, y aparece filtrando por "Todas".',
-        );
+        this.cerrarPaneles();
+        this.avisos.exito('Cobertura dada de baja', {
+          descripcion:
+            'No se borro: sigue explicando con que se atendio al paciente antes, y aparece ' +
+            'filtrando por "Todas".',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -597,6 +624,11 @@ export class CoberturasDelPacientePage {
     return this.formularioAlta.getRawValue().tipo === 'FINANCIADA';
   }
 
+  /** Se intento mandar una FINANCIADA sin plan y el plan sigue sin elegir. */
+  protected mostrarFaltaPlan(): boolean {
+    return this.faltaPlan() && this.formularioAlta.controls.planId.value === '';
+  }
+
   protected mostrarErrorAlta(campo: string): boolean {
     const control = this.formularioAlta.get(campo);
     return control !== null && control.invalid && (control.touched || control.dirty);
@@ -617,10 +649,40 @@ export class CoberturasDelPacientePage {
     this.senalada.set(traducido.referenciaId);
   }
 
+  /**
+   * Error de una accion de fila (marcar o quitar principal): no hay formulario donde mostrarlo, va
+   * al aviso global. La fila que estorba, si el 409 la nombra, queda resaltada en la tabla.
+   */
+  private falloDeFila(error: unknown, reintentar: () => void): void {
+    this.enviando.set(false);
+    const traducido = traducirErrorPersona(error);
+    this.senalada.set(traducido.referenciaId);
+    const recargar = hayQueRecargar(traducido.causa);
+    const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+    this.avisos.error('No pudimos cambiar la cobertura principal', {
+      descripcion: traducido.mensaje,
+      accion: recargar
+        ? { etiqueta: 'Recargar las coberturas', ejecutar: () => this.cargar() }
+        : reintentable
+          ? { etiqueta: 'Reintentar', ejecutar: reintentar }
+          : undefined,
+    });
+  }
+
+  /**
+   * Cierra el panel y deja a la vista la fila que el 409 senalo (la cobertura que se superpone).
+   * No limpia la senal: es justamente lo que el operador quiere ver.
+   */
+  protected verSenalada(): void {
+    const senalada = this.senalada();
+    this.cerrarPaneles();
+    this.senalada.set(senalada);
+  }
+
   private limpiarAvisos(): void {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
+    this.faltaPlan.set(false);
     this.senalada.set(null);
   }
 

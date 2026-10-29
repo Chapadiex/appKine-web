@@ -12,8 +12,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable } from 'rxjs';
 
 import { Egreso } from '../../../../api/generated/model/egreso';
@@ -51,8 +51,15 @@ import { CajaApi } from '../../services/caja-api';
 import { EgresosApi } from '../../services/egresos-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -76,6 +83,9 @@ const CAMPOS_DE_LIQUIDACION = [
 ] as const;
 
 type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
+
+/** El rechazo de una operacion y donde se hizo: se muestra ahi (UX-12). */
+type FalloDeEgreso = ErrorEgreso & { readonly en: Operacion };
 
 /**
  * Un egreso: correccion del borrador, confirmacion, pagos y anulaciones (M22, RF-M22-001/002/005,
@@ -103,8 +113,12 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
   imports: [
     CabeceraDePagina,
     PanelLateral,
-    Migas,
     Ayuda,
+    Alerta,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -113,8 +127,14 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresoDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Egresos', ruta: '/egresos' },
+  ]);
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(EgresosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly cajaApi = inject(CajaApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -142,8 +162,7 @@ export class EgresoDetallePage {
   protected readonly ofertas = signal<readonly OfertaResponse[]>([]);
   protected readonly caja = signal<SituacionDeCaja | null>(null);
   protected readonly operando = signal<Operacion | null>(null);
-  protected readonly errorOperacion = signal<ErrorEgreso | null>(null);
-  protected readonly aviso = signal<string | null>(null);
+  protected readonly errorOperacion = signal<FalloDeEgreso | null>(null);
   protected readonly anulando = signal(false);
   protected readonly pagoAnulando = signal<number | null>(null);
 
@@ -200,6 +219,15 @@ export class EgresoDetallePage {
     () => admiteAnulacion(this.egreso()) && !this.conPagosVigentes(),
   );
   protected readonly pagos = computed<readonly PagoDeEgreso[]>(() => this.egreso()?.pagos ?? []);
+  /** Pagos del egreso: tabla interna chica, con orden y pie (UX-14). */
+  protected readonly tablaPagos = tablaLocal(this.pagos, {
+    columnas: {
+      pagado: (p) => p.pagadoEn,
+      medio: (p) => medioEnPalabras(p.medio),
+      importe: (p) => p.importe,
+      estado: (p) => pagoVigente(p),
+    },
+  });
 
   /** Sin tipo y numero de comprobante el backend no confirma (`egreso-sin-comprobante`). */
   protected readonly faltaComprobante = computed(() => {
@@ -232,7 +260,6 @@ export class EgresoDetallePage {
         this.ofertas.set([]);
         this.caja.set(null);
         this.errorOperacion.set(null);
-        this.aviso.set(null);
         this.cerrarPaneles();
         this.cargar();
         this.cargarOfertas();
@@ -265,7 +292,12 @@ export class EgresoDetallePage {
     }
     this.api.ver(ids.consultorioId, ids.egresoId).subscribe({
       next: (egreso) => this.aplicar(egreso),
-      error: (error: unknown) => this.errorOperacion.set(traducirErrorEgreso(error)),
+      // Releer despues de operar no es una operacion del usuario: aviso global con la salida.
+      error: (error: unknown) =>
+        this.avisos.error('No pudimos releer el egreso', {
+          descripcion: traducirErrorEgreso(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.recargar() },
+        }),
     });
   }
 
@@ -310,7 +342,8 @@ export class EgresoDetallePage {
         comprobanteFecha: v.comprobanteFecha || undefined,
         ofertaId: v.ofertaId === '' ? undefined : Number(v.ofertaId),
       }),
-      'Cambios guardados. El egreso sigue en borrador.',
+      'Cambios guardados',
+      'El egreso sigue en borrador.',
     );
   }
 
@@ -322,7 +355,8 @@ export class EgresoDetallePage {
     this.operar(
       'confirmar',
       this.api.confirmar(ids.consultorioId, ids.egresoId),
-      'Egreso confirmado. Ya no se corrige y admite pagos.',
+      'Egreso confirmado',
+      'Ya no se corrige y admite pagos.',
     );
   }
 
@@ -347,14 +381,14 @@ export class EgresoDetallePage {
         referencia: v.referencia.trim() || undefined,
         idempotencyKey: this.claveDePago,
       }),
-      efectivo
-        ? 'Pago registrado. El efectivo salio del cajon: la caja lo muestra como egreso.'
-        : 'Pago registrado.',
+      'Pago registrado',
+      efectivo ? 'El efectivo salio del cajon: la caja lo muestra como egreso.' : undefined,
     );
   }
 
   protected pedirAnulacionDePago(pago: PagoDeEgreso): void {
     this.cerrarPaneles();
+    this.errorOperacion.set(null);
     this.pagoAnulando.set(pago.id ?? null);
   }
 
@@ -367,8 +401,8 @@ export class EgresoDetallePage {
     this.operar(
       'anular-pago',
       this.api.anularPago(ids.consultorioId, ids.egresoId, pagoId, motivo),
-      'Pago anulado. La plata vuelve al cajon como reversión en la jornada de hoy y el saldo ' +
-        'vuelve al egreso.',
+      'Pago anulado',
+      'La plata vuelve al cajon como reversión en la jornada de hoy y el saldo vuelve al egreso.',
     );
   }
 
@@ -387,6 +421,7 @@ export class EgresoDetallePage {
 
   protected pedirAnulacion(): void {
     this.cerrarPaneles();
+    this.errorOperacion.set(null);
     this.anulando.set(true);
   }
 
@@ -403,7 +438,8 @@ export class EgresoDetallePage {
     this.operar(
       'anular',
       this.api.anular(ids.consultorioId, ids.egresoId, motivo),
-      'Egreso anulado. Queda en el historial con su motivo.',
+      'Egreso anulado',
+      'Queda en el historial con su motivo.',
     );
   }
 
@@ -513,15 +549,19 @@ export class EgresoDetallePage {
     });
   }
 
-  private operar(operacion: Operacion, pedido: Observable<unknown>, exito: string): void {
+  private operar(
+    operacion: Operacion,
+    pedido: Observable<unknown>,
+    titulo: string,
+    descripcion?: string,
+  ): void {
     this.operando.set(operacion);
     this.errorOperacion.set(null);
-    this.aviso.set(null);
     pedido.subscribe({
       next: (respuesta) => {
         this.operando.set(null);
         this.cerrarPaneles();
-        this.aviso.set(exito);
+        this.avisos.exito(titulo, descripcion === undefined ? undefined : { descripcion });
         if (operacion === 'editar') {
           // La correccion devuelve el egreso con su version nueva: la proxima sale con esa.
           this.aplicar(respuesta as Egreso);
@@ -535,9 +575,15 @@ export class EgresoDetallePage {
         if (operacion === 'pagar' && traducido.renovarClave === true) {
           this.claveDePago = nuevaClaveDeIntento();
         }
-        this.errorOperacion.set(traducido);
+        this.errorOperacion.set({ ...traducido, en: operacion });
       },
     });
+  }
+
+  /** El rechazo de la operacion `en`, si fue la ultima en fallar. */
+  protected falloEn(en: Operacion): ErrorEgreso | null {
+    const fallo = this.errorOperacion();
+    return fallo?.en === en ? fallo : null;
   }
 
   private periodoInvalido(): boolean {

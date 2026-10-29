@@ -43,7 +43,7 @@ function dato(panel: Locator, termino: string): Locator {
 
 function filaDeAutorizacion(page: Page, numero: string): Locator {
   return page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) });
 }
@@ -142,7 +142,11 @@ test.describe('Saldo, ledger y alerta de una autorizacion contra el backend real
     const anulacion = respuestaDe(page, 'DELETE', /\/obligaciones\/\d+$/);
     await page.getByRole('button', { name: 'Anular la deuda' }).click();
     expect((await anulacion).status()).toBe(200);
-    await expect(page.getByText(/Se anulo la deuda de/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(/Se anulo la deuda de/),
+    ).toBeVisible();
 
     panel = await abrirElSaldo(page, persona.id, numero);
     await expect(dato(panel, 'Consumidas')).toHaveText('1');
@@ -159,7 +163,12 @@ test.describe('Saldo, ledger y alerta de una autorizacion contra el backend real
     const reversion = respuestaDe(page, 'POST', /\/autorizaciones\/\d+\/reversiones$/);
     await panel.getByRole('button', { name: 'Confirmar la reversión' }).click();
     expect((await reversion).status()).toBeLessThan(300);
-    await expect(panel.getByText(`Se revirtio el consumo #${consumoId}`)).toBeVisible();
+    // UX-12: el resultado de la reversion es un aviso global; el panel sigue con el ledger.
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`Consumo #${consumoId} revertido`, { exact: true }),
+    ).toBeVisible();
 
     await expect(dato(panel, 'Consumidas')).toHaveText('0');
     await expect(dato(panel, 'Disponibles')).toHaveText(String(CANTIDAD));

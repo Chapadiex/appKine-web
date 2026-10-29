@@ -16,6 +16,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { InstructoresDeClaseComponent } from './instructores-de-clase';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const ID = 70;
 const URL = `${URL_CLASES}/${ID}/instructores`;
@@ -126,8 +127,12 @@ describe('InstructoresDeClaseComponent', () => {
     expect(pedido.request.body).toEqual({ adicionales: [62] });
     pedido.flush({ ...INSTRUCTORES, adicionales: [{ membershipId: 62, nombre: 'Lic. Sosa' }] });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('La clase quedo con 2 instructores');
+    // UX-12: el resultado va al aviso global y el formulario se cierra.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('La clase quedo con 2 instructores');
+    expect(aviso?.descripcion).toContain('partes iguales');
     expect(textoDe(fixture)).toContain('Lic. Sosa');
+    expect(textoDe(fixture)).not.toContain('Guardar los instructores');
   });
 
   it('una clase con honorarios liquidados explica que hay que anular el egreso', async () => {
@@ -190,7 +195,9 @@ describe('InstructoresDeClaseComponent', () => {
       .expectOne((p) => p.method === 'PUT')
       .flush({ claseId: ID, principalMembershipId: 55, adicionales: [] });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('sin instructores adicionales');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe(
+      'La clase quedo sin instructores adicionales',
+    );
   });
 
   it('un error de lectura permite reintentar', async () => {

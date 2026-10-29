@@ -20,11 +20,17 @@ import { EspaciosService } from '../../../../api/generated/api/espacios.service'
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateEspacioRequest } from '../../../../api/generated/model/update-espacio-request';
 import { CausaEspacio, traducirErrorEspacio } from '../../models/espacio-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { SituacionDeServicio, situacionDeServicio } from '../../models/situacion-de-servicio';
 import { TIPOS_DE_ESPACIO, etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import {
@@ -54,14 +60,6 @@ type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
-
-/**
- * Cuantos espacios se piden por pagina.
- *
- * <p>Por debajo del tope de 100 que el backend recorta. Una sede con mas de veinte boxes
- * existe, pero cada fila trae vigencia, estado y acciones: una tabla mas larga no se lee mejor.
- */
-const POR_PAGINA = 20;
 
 /**
  * Espacios y boxes de la sede activa (M04, AKINE-02.02).
@@ -101,6 +99,8 @@ const POR_PAGINA = 20;
   selector: 'app-espacios-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     Icono,
     Filtros,
@@ -112,6 +112,7 @@ const POR_PAGINA = 20;
     ConfirmacionConMotivo,
     PanelLateral,
     AccionesDeFila,
+    EstadoVacio,
   ],
   templateUrl: './espacios-page.html',
   styleUrl: '../../resource.css',
@@ -119,6 +120,7 @@ const POR_PAGINA = 20;
 export class EspaciosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -142,8 +144,26 @@ export class EspaciosPage {
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
+  /**
+   * Filas por pagina (UX-14): viaja como `size`. Las opciones del pie (10 a 100) quedan dentro del
+   * tope de 100 que el backend recorta.
+   */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
   /** Lo que se busca en el nombre del espacio (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
+
+  /** Hay busqueda o filtro fuera de su valor por defecto: el vacio es "no hay con esto". */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'ACTIVO',
+  );
+
+  /** Titulo del vacio filtrado: dice que fue lo que no encontro. */
+  protected readonly tituloSinResultados = computed(() => {
+    if (this.busqueda().trim() !== '') return 'Ningún espacio coincide con la búsqueda.';
+    if (this.filtro() === 'INACTIVO') return 'No hay espacios dados de baja en esta sede.';
+    return 'No hay espacios que mostrar con este filtro.';
+  });
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<CamposDeSort<ListEspaciosRequestParams['sort']>>(() =>
@@ -178,7 +198,6 @@ export class EspaciosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaEspacio | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /**
@@ -243,7 +262,6 @@ export class EspaciosPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
         this.busqueda.set('');
@@ -273,7 +291,7 @@ export class EspaciosPage {
         consultorioId,
         estado: this.filtro(),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -301,6 +319,19 @@ export class EspaciosPage {
     const elegido: FiltroEstado =
       valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
     this.filtro.set(elegido);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Vuelve la busqueda y el filtro a su valor por defecto ("Limpiar filtros"). */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtro.set('ACTIVO');
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera y recarga. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.recargarDesdeElPrincipio();
   }
 
@@ -335,7 +366,6 @@ export class EspaciosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -402,7 +432,6 @@ export class EspaciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.espacios
       .updateEspacio({
@@ -412,9 +441,9 @@ export class EspaciosPage {
         updateEspacioRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (actualizado) => {
           this.cerrarPanel();
-          this.exito.set('Los datos del espacio quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: actualizado.name ?? undefined });
           this.cargar();
         },
         error: (error: unknown) => this.fallarEdicion(error, orgId, consultorioId, panel.id),
@@ -442,7 +471,6 @@ export class EspaciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.espacios
       .deactivateEspacio({
@@ -453,11 +481,13 @@ export class EspaciosPage {
       })
       .subscribe({
         next: () => {
+          const nombre = this.espacioEnPanel()?.name;
           this.cerrarPanel();
-          this.exito.set(
-            'El espacio quedo dado de baja. Sigue en el listado, con su motivo, y su nombre ' +
-              'queda libre para un espacio nuevo de esta sede.',
-          );
+          this.avisos.exito('Espacio dado de baja', {
+            descripcion:
+              `${nombre ? nombre + '. ' : ''}Sigue en el listado con su motivo; su nombre queda ` +
+              'libre para un espacio nuevo.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),

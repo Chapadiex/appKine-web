@@ -153,7 +153,10 @@ test.describe('Clases grupales contra el backend real', () => {
     for (const persona of personas.slice(0, CUPO)) {
       await inscribir(persona);
       await expect(
-        page.getByText(`${persona.apellido}, ${persona.nombre} quedo inscripta con lugar.`),
+        // UX-12: el resultado de la inscripcion es un aviso global.
+        page
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText(`${persona.apellido}, ${persona.nombre} quedo inscripta con lugar`),
       ).toBeVisible();
     }
     const llena = await cuposDe(claseId);
@@ -169,9 +172,11 @@ test.describe('Clases grupales contra el backend real', () => {
     await expect(page.getByText(`Ocupados ${CUPO} de ${CUPO}.`)).toBeVisible();
     await page.getByRole('button', { name: 'Anotar en la lista de espera' }).click();
     await expect(
-      page.getByText(
-        `${tercera.apellido}, ${tercera.nombre} quedo en la lista de espera, posicion 1.`,
-      ),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(
+          `${tercera.apellido}, ${tercera.nombre} quedo en la lista de espera, posicion 1`,
+        ),
     ).toBeVisible();
     await expect(page.getByRole('list', { name: /Lista de espera/ })).toContainText(
       `${tercera.apellido}, ${tercera.nombre} — posicion 1`,
@@ -196,9 +201,11 @@ test.describe('Clases grupales contra el backend real', () => {
     await page.getByRole('button', { name: 'Dar de baja', exact: true }).click();
     expect((await baja).status()).toBe(200);
     await expect(
-      page.getByText(
-        `${tercera.apellido}, ${tercera.nombre} entro desde la lista de espera y recibe un aviso.`,
-      ),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(
+          `${tercera.apellido}, ${tercera.nombre} entro desde la lista de espera y recibe un aviso.`,
+        ),
     ).toBeVisible();
 
     const participantes = await api.exigir<Participante[]>(
@@ -239,7 +246,11 @@ test.describe('Clases grupales contra el backend real', () => {
     const cancelada = respuestaDe(page, 'POST', /\/clases\/\d+\/cancelacion$/);
     await page.getByRole('button', { name: 'Cancelar la clase' }).click();
     expect((await cancelada).status()).toBe(200);
-    await expect(page.getByText(/^Clase cancelada\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Clase cancelada', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('Cancelada', { exact: true })).toBeVisible();
     claseCreada = null;
 

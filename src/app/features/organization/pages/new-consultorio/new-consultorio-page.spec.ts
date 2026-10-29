@@ -1,9 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { NewConsultorioPage } from './new-consultorio-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -40,6 +41,8 @@ describe('NewConsultorioPage', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
+    // El alta exitosa vuelve al listado de sedes, que esta prueba no registra.
+    vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
       organizationName: 'Belgrano',
@@ -94,7 +97,11 @@ describe('NewConsultorioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('La sede "Sede Norte" quedo creada');
+    // UX-12: un solo aviso de exito, y la pantalla vuelve al listado de sedes.
+    const avisos = TestBed.inject(AvisosStore).avisos();
+    expect(avisos.map((aviso) => aviso.titulo)).toEqual(['Sede creada']);
+    expect(avisos[0]?.descripcion).toContain('Sede Norte');
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenCalledWith('/organizacion/sedes');
   });
 
   /**
@@ -190,8 +197,9 @@ describe('NewConsultorioPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(texto(fixture)).toContain('Se creo junto con su primer box');
-      expect(texto(fixture)).toContain('ningún turno se ofrece fuera de ese horario');
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.descripcion).toContain('Se creo junto con su primer box');
+      expect(aviso?.descripcion).toContain('ningún turno se ofrece fuera de ese horario');
     });
 
     it('dos franjas del mismo día que se pisan no dejan avanzar', () => {

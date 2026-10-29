@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -53,7 +54,7 @@ const SIN_DOCUMENTO = {
 const PAGINA = {
   content: [SIN_PERFIL, PACIENTE, SIN_DOCUMENTO],
   page: 0,
-  size: 20,
+  size: 10,
   totalElements: 3,
   totalPages: 1,
 };
@@ -157,9 +158,12 @@ describe('PadronDePersonasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // El mensaje de exito aclara que todavia no es paciente: es el momento donde el operador
-    // podria suponer lo contrario.
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavía no es paciente');
+    // El aviso de exito aclara que todavia no es paciente: es el momento donde el operador
+    // podria suponer lo contrario. El panel se cerro: no queda abierto solo para el mensaje.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Persona registrada correctamente');
+    expect(aviso?.descripcion).toContain('Todavía no es paciente');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el 409 de posible duplicado muestra las fichas y ofrece confirmar', async () => {
@@ -262,7 +266,7 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Ese documento ya esta en el padron');
+    expect(texto).toContain('Este documento ya está registrado');
     expect(texto).toContain('Perez, Ana Maria');
 
     // Ofrecerlo seria un callejon: el operador confirmaria y recibiria el mismo error otra vez.
@@ -412,13 +416,93 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
     httpMock
       .expectOne(esListado())
-      .flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+      .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('No hay personas que coincidan');
-    expect(texto).not.toContain('No pudimos completar');
+    const raiz = fixture.nativeElement as HTMLElement;
+    const vacio = raiz.querySelector('app-estado-vacio');
+    // Sin busqueda ni filtros es "todavia no hay": invita al alta, no a limpiar.
+    expect(vacio?.textContent).toContain('Todavía no hay personas en el padrón');
+    expect(vacio?.textContent).toContain('Dar de alta la primera persona');
+    expect(raiz.querySelector('table')).toBeNull();
+    expect(raiz.textContent).not.toContain('No pudimos completar');
+  });
+
+  it('una búsqueda sin coincidencias ofrece limpiar los filtros, y limpiar vuelve al padrón', async () => {
+    const fixture = await montar();
+
+    escribirYCambiar(fixture, '#padron-busqueda', 'Nadie');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.params.get('q') === 'Nadie')
+      .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const vacio = raiz.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay personas que coincidan con la búsqueda');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '0 personas',
+    );
+
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const limpia = httpMock.expectOne(esListado());
+    expect(limpia.request.params.get('q')).toBeNull();
+    expect(limpia.request.params.get('page')).toBe('0');
+    limpia.flush(PAGINA);
+  });
+
+  it('búsqueda, filtros, resultados, tabla y pie van en la misma tarjeta (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const tarjeta = raiz.querySelector('section.tarjeta[aria-label="Padrón de personas"]');
+    expect(tarjeta?.querySelector('app-filtros #padron-busqueda')).not.toBeNull();
+    expect(tarjeta?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '3 personas',
+    );
+    expect(tarjeta?.querySelector('table.tabla')).not.toBeNull();
+    expect(tarjeta?.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–3 de 3');
+    // Sin titulo que repita el de la pantalla ni contador suelto arriba de la tabla.
+    expect(tarjeta?.querySelector('h2')).toBeNull();
+    expect(raiz.querySelector('caption')).toBeNull();
+  });
+
+  it('pide 10 por página y el pie cambia las filas por página volviendo a la primera', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_MANAGE] });
+    const fixture = TestBed.createComponent(PadronDePersonasPage);
+    fixture.detectChanges();
+    const primera = httpMock.expectOne(esListado());
+    expect(primera.request.params.get('size')).toBe('10');
+    primera.flush({ ...PAGINA, size: 10, totalElements: 47, totalPages: 5 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–10 de 47');
+
+    botonPorTexto(fixture, 'Página siguiente')?.click();
+    fixture.detectChanges();
+    const segunda = httpMock.expectOne(esListado());
+    expect(segunda.request.params.get('page')).toBe('1');
+    segunda.flush({ ...PAGINA, page: 1, size: 10, totalElements: 47, totalPages: 5 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    elegir(fixture, '.paginacion-pie__por-pagina select', '25');
+    const conMas = httpMock.expectOne(esListado());
+    expect(conMas.request.params.get('size')).toBe('25');
+    expect(conMas.request.params.get('page')).toBe('0');
+    conMas.flush({ ...PAGINA, size: 25, totalElements: 47, totalPages: 2 });
   });
 
   it('una persona dada de baja no ofrece acciones, y su ficha se sigue viendo', async () => {
@@ -492,7 +576,12 @@ describe('PadronDePersonasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('ya es paciente');
+    // El resultado va al aviso global, no al cuerpo de la pantalla.
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Perez, Ana Maria ya es paciente']);
   });
 
   it(

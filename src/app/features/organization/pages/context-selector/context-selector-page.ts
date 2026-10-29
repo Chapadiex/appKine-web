@@ -13,6 +13,7 @@ import { PARAM_MOTIVO, avisoDelMotivo } from '../../models/motivo-de-seleccion';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContext } from '../../../../core/services/tenant-context.store';
 import { RUTA_LOGIN } from '../../../../core/models/rutas';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Destino cuando nadie pidio volver a ningun lado. */
 const DESTINO_POR_DEFECTO = '/organizacion';
@@ -62,7 +63,7 @@ type EstadoContextos =
  * token que todavia no lo acompania.
  */
 @Component({
-  imports: [],
+  imports: [Alerta],
   selector: 'app-context-selector-page',
   templateUrl: './context-selector-page.html',
   styleUrls: ['../../organization.css', '../../../../shared/styles/acceso.css'],

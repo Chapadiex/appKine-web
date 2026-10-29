@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Reservar turno">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Un turno es una <b>reserva</b> de agenda. No dice que la atención haya ocurrido: eso lo
@@ -17,6 +16,86 @@
   <div class="columnas__principal">
     <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-persona">
       <div class="tarjeta__cuerpo">
+        <!--
+          El rechazo de la reserva, ARRIBA del formulario (UX-12): a la vista mientras se corrige.
+          Cada conflicto lleva a UNA accion distinta. Es la razon por la que el backend los publica
+          como tipos separados y no como un `conflict` generico: con un solo tipo, todo esto seria
+          un cartel sin salida.
+        -->
+        @if (error(); as fallo) {
+          <app-alerta [tipo]="rechazo()?.tipo ?? 'error'" [titulo]="rechazo()?.titulo ?? null">
+            <p>{{ fallo.mensaje }}</p>
+            @switch (accion()) {
+              @case ('recargar-agenda') {
+                @if (fallo.motivo) {
+                  <p>Lo que cambio: {{ fallo.motivo }}</p>
+                }
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="recargar()">
+                    Recargar la agenda
+                  </button>
+                </p>
+              }
+              @case ('ofrecer-siguiente') {
+                <p>Ese horario admite {{ fallo.cupoTotal }} reservas y ya no queda ninguna.</p>
+                @if (siguienteConCupo(); as siguiente) {
+                  <p class="alerta__acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="tomarElSiguiente()"
+                    >
+                      Tomar el siguiente: {{ hora(siguiente.desde) }}
+                    </button>
+                  </p>
+                } @else {
+                  <p>
+                    No queda ningún horario posterior con cupo este día. Volvé a la agenda y probá
+                    otra fecha.
+                  </p>
+                }
+              }
+              @case ('elegir-otro') {
+                <p>
+                  El recurso ocupado es el <b>{{ fallo.recurso }}</b
+                  >. Elegí otro horario, o el mismo horario con otro profesional.
+                </p>
+                <p class="alerta__acciones">
+                  <a class="boton boton--secundario" routerLink="/agenda"
+                    >Elegir otro horario o profesional</a
+                  >
+                </p>
+              }
+              @case ('activar-perfil') {
+                <p class="alerta__acciones" *akinePermiso="PERMISO_PACIENTE_READ">
+                  <a class="boton boton--secundario" routerLink="/pacientes"
+                    >Activar el perfil de paciente</a
+                  >
+                </p>
+              }
+              @case ('reintentar-con-clave-nueva') {
+                <p class="alerta__acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="enviando()"
+                    (click)="reintentar()"
+                  >
+                    Volver a intentar la reserva
+                  </button>
+                </p>
+              }
+              @case ('elegir-contexto') {
+                <p class="alerta__acciones">
+                  <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                    >Elegir contexto de trabajo</a
+                  >
+                </p>
+              }
+            }
+          </app-alerta>
+        }
+
         <h2 id="titulo-persona" class="rotulo-bloque">Paciente *</h2>
 
         <!-- La ficha del canvas: quien queda elegido, con sus iniciales. -->
@@ -34,64 +113,73 @@
         </div>
 
         @if (!reservado()) {
-          <div class="campo">
-            <label for="reserva-persona">Documento, apellido, nombre o teléfono</label>
-            <input
-              id="reserva-persona"
-              name="reserva-persona"
-              type="search"
-              autocomplete="off"
-              (input)="buscarPersona($any($event.target).value)"
-            />
-          </div>
-
-          @if (candidatas().length > 0) {
-            <ul class="lista-personas">
-              @for (candidata of candidatas(); track candidata.id) {
-                <li>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="elegirPersona(candidata)"
-                  >
-                    {{ candidata.apellido }}, {{ candidata.nombre }}
-                    @if (candidata.numeroDocumento) {
-                      — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
-                    }
-                  </button>
-                </li>
-              }
-            </ul>
-          } @else if (buscoPersonas()) {
-            <p class="estado estado--vacio">
-              Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
-              primero en el padrón.
-            </p>
-          }
-
-          @if (persona() !== null && coberturas().length > 0) {
-            <div class="campo">
-              <label for="reserva-cobertura"
-                >Cobertura con la que se piensa atender (opcional)</label
-              >
-              <select
-                id="reserva-cobertura"
-                aria-describedby="reserva-cobertura-ayuda"
-                (change)="elegirCobertura($any($event.target).value)"
-              >
-                <option value="" [selected]="coberturaId() === null">Sin elegir</option>
-                @for (cobertura of coberturas(); track cobertura.id) {
-                  <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
-                    {{ coberturaParaReservar(cobertura) }}
-                  </option>
-                }
-              </select>
-              <p class="ayuda" id="reserva-cobertura-ayuda">
-                Solo las vigentes el día del turno. Sin elegir, la recepción usa la primera que
-                aplique; lo elegido es una preferencia que la recepción revisa al validar.
-              </p>
+          <!-- UX-14 §2: el paciente y la cobertura ocupan media fila cada uno, no el ancho entero. -->
+          <div class="grilla-12">
+            <div class="campo campo--6">
+              <label for="reserva-persona">Documento, apellido, nombre o teléfono</label>
+              <input
+                id="reserva-persona"
+                name="reserva-persona"
+                type="search"
+                autocomplete="off"
+                (input)="buscarPersona($any($event.target).value)"
+              />
             </div>
-          }
+
+            @if (errorDeBusqueda(); as fallo) {
+              <app-alerta tipo="error" titulo="No pudimos buscar en el padrón">
+                <p>{{ fallo.mensaje }}</p>
+              </app-alerta>
+            }
+
+            @if (candidatas().length > 0) {
+              <ul class="lista-personas">
+                @for (candidata of candidatas(); track candidata.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="elegirPersona(candidata)"
+                    >
+                      {{ candidata.apellido }}, {{ candidata.nombre }}
+                      @if (candidata.numeroDocumento) {
+                        — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (buscoPersonas()) {
+              <p class="estado estado--vacio">
+                Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
+                primero en el padrón.
+              </p>
+            }
+
+            @if (persona() !== null && coberturas().length > 0) {
+              <div class="campo campo--6">
+                <label for="reserva-cobertura"
+                  >Cobertura con la que se piensa atender (opcional)</label
+                >
+                <select
+                  id="reserva-cobertura"
+                  aria-describedby="reserva-cobertura-ayuda"
+                  (change)="elegirCobertura($any($event.target).value)"
+                >
+                  <option value="" [selected]="coberturaId() === null">Sin elegir</option>
+                  @for (cobertura of coberturas(); track cobertura.id) {
+                    <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
+                      {{ coberturaParaReservar(cobertura) }}
+                    </option>
+                  }
+                </select>
+                <p class="ayuda" id="reserva-cobertura-ayuda">
+                  Solo las vigentes el día del turno. Sin elegir, la recepción usa la primera que
+                  aplique; lo elegido es una preferencia que la recepción revisa al validar.
+                </p>
+              </div>
+            }
+          </div>
 
           <!--
             Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. Es otra
@@ -125,78 +213,6 @@
         </div>
       }
     </section>
-
-    <div aria-live="polite">
-      @if (exito(); as mensaje) {
-        <p class="estado estado--ok">{{ mensaje }}</p>
-      }
-
-      @if (error(); as fallo) {
-        <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
-          <h2 id="titulo-conflicto">No se pudo reservar</h2>
-          <p class="estado estado--error">{{ fallo.mensaje }}</p>
-
-          <!--
-            Cada uno de los cinco conflictos lleva a UNA accion distinta. Es la razon por la que el
-            backend los publica como tipos separados y no como un `conflict` generico: con un solo
-            tipo, todo esto seria un cartel sin salida.
-          -->
-          @switch (accion()) {
-            @case ('recargar-agenda') {
-              @if (fallo.motivo) {
-                <p class="ayuda ayuda--fija">Lo que cambio: {{ fallo.motivo }}</p>
-              }
-              <div class="acciones">
-                <button type="button" class="boton" (click)="recargar()">Recargar la agenda</button>
-              </div>
-            }
-            @case ('ofrecer-siguiente') {
-              <p class="ayuda ayuda--fija">
-                Ese horario admite {{ fallo.cupoTotal }} reservas y ya no queda ninguna.
-              </p>
-              @if (siguienteConCupo(); as siguiente) {
-                <div class="acciones">
-                  <button type="button" class="boton" (click)="tomarElSiguiente()">
-                    Tomar el siguiente: {{ hora(siguiente.desde) }}
-                  </button>
-                </div>
-              } @else {
-                <p class="ayuda">
-                  No queda ningún horario posterior con cupo este día. Volvé a la agenda y probá
-                  otra fecha.
-                </p>
-              }
-            }
-            @case ('elegir-otro') {
-              <p class="ayuda ayuda--fija">
-                El recurso ocupado es el <b>{{ fallo.recurso }}</b
-                >. Elegí otro horario, o el mismo horario con otro profesional.
-              </p>
-              <div class="acciones">
-                <a class="boton" routerLink="/agenda">Elegir otro horario o profesional</a>
-              </div>
-            }
-            @case ('activar-perfil') {
-              <div class="acciones" *akinePermiso="PERMISO_PACIENTE_READ">
-                <a class="boton" routerLink="/pacientes">Activar el perfil de paciente</a>
-              </div>
-            }
-            @case ('reintentar-con-clave-nueva') {
-              <div class="acciones">
-                <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
-                  Volver a intentar la reserva
-                </button>
-              </div>
-            }
-            @case ('elegir-contexto') {
-              <div class="acciones">
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-              </div>
-            }
-          }
-        </section>
-      }
-    </div>
 
     @if (turno(); as reserva) {
       <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-turno">
@@ -269,7 +285,22 @@
         <p class="estado estado--cargando">Releyendo la agenda de este día…</p>
       }
 
-      @if (slot(); as elegido) {
+      @if (errorDeAgenda(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos leer la agenda de este día">
+          <p>{{ fallo.mensaje }}</p>
+          <p class="alerta__acciones">
+            @if (fallo.accion === 'elegir-contexto') {
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir contexto de trabajo</a
+              >
+            } @else {
+              <button type="button" class="boton boton--secundario" (click)="recargar()">
+                Reintentar
+              </button>
+            }
+          </p>
+        </app-alerta>
+      } @else if (slot(); as elegido) {
         <p class="resumen-lateral__destacado">{{ fechaEnPalabras(fecha()) }}</p>
         <dl class="detalle">
           <dt>Horario</dt>

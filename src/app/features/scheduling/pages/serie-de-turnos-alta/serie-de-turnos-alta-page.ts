@@ -32,7 +32,13 @@ import {
 } from '../../models/series';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -68,7 +74,16 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, PermisoDirective],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    RouterLink,
+    PermisoDirective,
+    Alerta,
+    ColumnaOrdenable,
+    EstadoVacio,
+    PieDeTabla,
+  ],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -77,6 +92,7 @@ export class SerieDeTurnosAltaPage {
 
   private readonly agendaApi = inject(SchedulingApi);
   private readonly seriesApi = inject(SeriesApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` los liga solos. */
@@ -108,12 +124,42 @@ export class SerieDeTurnosAltaPage {
   protected readonly fechaHasta = signal('');
 
   protected readonly previsualizacion = signal<readonly OcurrenciaPrevista[] | null>(null);
+
+  /**
+   * La vista previa como tabla con orden y pie (UX-14 §1). Cada fecha conserva su numero dentro de
+   * la serie aunque se ordene por lugar para juntar las que no entran.
+   */
+  private readonly ocurrenciasNumeradas = computed(() =>
+    (this.previsualizacion() ?? []).map((ocurrencia, indice) => ({
+      ocurrencia,
+      numero: indice + 1,
+    })),
+  );
+
+  protected readonly tablaPrevista = tablaLocal(this.ocurrenciasNumeradas, {
+    columnas: {
+      numero: (fila) => fila.numero,
+      fecha: (fila) => fila.ocurrencia.fecha,
+      lugar: (fila) => fila.ocurrencia.estado,
+    },
+  });
   protected readonly previsualizando = signal(false);
   protected readonly aviso = signal('');
 
   protected readonly serie = signal<SerieDeTurnos | null>(null);
   protected readonly enviando = signal(false);
+  /**
+   * Rechazo de leer la oferta, de previsualizar o de reservar: arriba de la vista previa, que es
+   * donde esta el boton que lo produjo (UX-12). El titulo dice cual de las tres fallo.
+   */
   protected readonly error = signal<ErrorSerie | null>(null);
+  protected readonly tituloDelError = signal('');
+
+  /** Error al buscar en el padron: va pegado al buscador. */
+  protected readonly errorDeBusqueda = signal<ErrorSerie | null>(null);
+
+  /** Una fecha de la serie sin lugar es un conflicto con lo que ya existe, no una falla. */
+  protected readonly esConflicto = computed(() => this.error()?.accion === 'revisar-ocurrencias');
 
   private readonly claveDeIntento = signal('');
 
@@ -193,7 +239,8 @@ export class SerieDeTurnosAltaPage {
             this.hora.set(horaEnZona(this.inicio(), agenda.timezone ?? ''));
           }
         },
-        error: (error: unknown) => this.error.set(traducirErrorSerie(error)),
+        error: (error: unknown) =>
+          this.fallar('No pudimos leer la agenda de la oferta', traducirErrorSerie(error)),
       });
 
     this.agendaApi.habilitaciones(consultorioId, ofertaId).subscribe({
@@ -214,12 +261,13 @@ export class SerieDeTurnosAltaPage {
       return;
     }
     this.busquedaPendiente = setTimeout(() => {
+      this.errorDeBusqueda.set(null);
       this.agendaApi.buscarPersonas(texto).subscribe({
         next: (pagina) => {
           this.candidatas.set(pagina.content ?? []);
           this.buscoPersonas.set(true);
         },
-        error: (error: unknown) => this.error.set(traducirErrorSerie(error)),
+        error: (error: unknown) => this.errorDeBusqueda.set(traducirErrorSerie(error)),
       });
     }, ESPERA_DE_BUSQUEDA_MS);
   }
@@ -324,7 +372,10 @@ export class SerieDeTurnosAltaPage {
       },
       error: (error: unknown) => {
         this.previsualizando.set(false);
-        this.error.set(traducirErrorSerie(error, this.timezone()));
+        this.fallar(
+          'No pudimos previsualizar la serie',
+          traducirErrorSerie(error, this.timezone()),
+        );
       },
     });
   }
@@ -359,17 +410,30 @@ export class SerieDeTurnosAltaPage {
     this.seriesApi.crear(consultorioId, cuerpo).subscribe({
       next: (serie) => {
         this.enviando.set(false);
+        // El detalle de lo reservado sigue siendo el contenido de la pantalla (que fechas, cuales
+        // se omitieron); el resultado, ademas, va al aviso global (UX-12).
         this.serie.set(serie);
+        const persona = this.persona();
+        this.avisos.exito('Serie reservada', {
+          descripcion:
+            (persona === null ? '' : `${persona.apellido ?? ''}, ${persona.nombre ?? ''} · `) +
+            `${serie.turnos?.length ?? 0} turnos reservados. Falta confirmar cada uno.`,
+        });
       },
       error: (error: unknown) => {
         this.enviando.set(false);
         const traducido = traducirErrorSerie(error, this.timezone());
-        this.error.set(traducido);
+        this.fallar('No pudimos reservar la serie', traducido);
         if (traducido.accion === 'reintentar-con-clave-nueva') {
           this.claveDeIntento.set('');
         }
       },
     });
+  }
+
+  private fallar(titulo: string, error: ErrorSerie): void {
+    this.tituloDelError.set(titulo);
+    this.error.set(error);
   }
 
   protected readonly textoDeOcurrenciaOmitida = textoDeOcurrenciaOmitida;

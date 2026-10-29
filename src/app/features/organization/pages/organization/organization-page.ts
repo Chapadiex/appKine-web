@@ -7,6 +7,7 @@ import { OrganizacionesService } from '../../../../api/generated/api/organizacio
 import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -50,7 +51,7 @@ type EstadoOrganizacion =
  */
 @Component({
   selector: 'app-organization-page',
-  imports: [CabeceraDePagina, Ayuda, Icono, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Icono, RouterLink, Alerta],
   templateUrl: './organization-page.html',
   styleUrls: ['../../organization.css', './organization-page.css'],
 })

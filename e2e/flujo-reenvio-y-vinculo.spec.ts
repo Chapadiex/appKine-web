@@ -70,9 +70,12 @@ test.describe('Reenvio de activacion y vinculo directo contra el backend real', 
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { membershipId } = (await creado.json()) as { membershipId: number };
-    await expect(page.getByText(`Vinculo creado (número ${membershipId}).`)).toBeVisible();
-
-    await page.getByRole('link', { name: 'Volver al listado' }).click();
+    // UX-12: vuelve solo al listado y el resultado va al aviso global, con el numero del vinculo.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Colaborador vinculado')).toBeVisible();
+    await expect(
+      avisos.getByText(`Vínculo número ${membershipId}.`, { exact: false }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/organizacion\/colaboradores$/);
     await expect(page.getByRole('row').filter({ hasText: centro.emailProfesional })).toContainText(
       'Profesional',

@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 
 import { ConsultoriosPage } from './consultorios-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -134,7 +135,10 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('quedaron guardados');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toBe('Sede Centro Nueva');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   /**
@@ -384,6 +388,65 @@ describe('ConsultoriosPage', () => {
     expect(host.querySelector('th[appOrdenable]')!.getAttribute('aria-sort')).toBe('descending');
   });
 
+  it('UX-14: el total va en la toolbar, el pie dice "Mostrando" y cambia las filas por página', async () => {
+    const fixture = await montarCon({ ...PAGINA, totalElements: 23, totalPages: 3 });
+    const host: HTMLElement = fixture.nativeElement;
+
+    // Sin parrafo suelto de conteo: el total vive en la fila de la busqueda.
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('23 sedes');
+    expect(texto(fixture)).not.toContain('con el filtro elegido');
+    expect(host.querySelector('section h2')).toBeNull();
+    expect(texto(fixture)).toContain('Mostrando 1–10 de 23');
+
+    const select = host.querySelector<HTMLSelectElement>('.paginacion-pie select')!;
+    select.value = '25';
+    select.dispatchEvent(new Event('change'));
+    const pedido = httpMock.expectOne(esListado(1));
+    expect(pedido.request.params.get('size')).toBe('25');
+    expect(pedido.request.params.get('page')).toBe('0');
+    pedido.flush(PAGINA);
+    await fixture.whenStable();
+  });
+
+  it('UX-14: el vacío con filtros ofrece "Limpiar filtros", que vuelve a la búsqueda por defecto', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    escribir(fixture, '#sedes-busqueda', 'nada');
+    host.querySelector('#sedes-busqueda')!.dispatchEvent(new Event('change'));
+    httpMock
+      .expectOne(esListado(1))
+      .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const vacio = host.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('Ninguna sede coincide con la búsqueda.');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = httpMock.expectOne(esListado(1));
+    expect(limpio.request.params.get('q')).toBeNull();
+    expect(limpio.request.params.get('estado')).toBe('ACTIVO');
+    limpio.flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  it('UX-14: sin sedes y sin filtros, el vacío invita a abrir la primera', async () => {
+    const fixture = await montarCon({
+      content: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+    });
+    const vacio: HTMLElement = fixture.nativeElement.querySelector('app-estado-vacio');
+    expect(vacio.textContent).toContain('No hay sedes todavía');
+    expect(vacio.querySelector('a[href="/organizacion/sedes/nueva"]')).not.toBeNull();
+  });
+
   it('un email mal formado bloquea el PATCH en vez de gastar un rechazo del backend', async () => {
     // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
     // veria un error generico en vez del campo marcado. Por eso se afirma que no hay peticion,
@@ -481,7 +544,9 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Sigue en el listado, con el motivo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Sede dada de baja');
+    expect(aviso?.descripcion).toContain('Sigue en el listado, con el motivo');
   });
 
   it('si la navegacion posterior a la baja falla, el fallo no queda en silencio', async () => {
@@ -506,10 +571,12 @@ describe('ConsultoriosPage', () => {
     fixture.detectChanges();
 
     expect(consola).toHaveBeenCalled();
-    // Y se dice EN LA PANTALLA. El exito de la baja cierra el panel, asi que el aviso se escribe
-    // sin ningun panel abierto: mientras `errorAccion` solo se renderizaba dentro de los paneles,
-    // el unico rastro de esto era la consola del navegador, que el usuario no mira.
-    expect(texto(fixture)).toContain('no pudimos abrir la pantalla para elegir otra');
+    // Y se le dice al usuario: el exito de la baja cerro el panel, asi que va al aviso global
+    // (UX-12), que no se va solo. Sin esto el unico rastro era la consola del navegador.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos abrir la pantalla para elegir otra sede');
+    expect(aviso?.duracion).toBeNull();
     consola.mockRestore();
   });
 
@@ -616,7 +683,7 @@ describe('ConsultoriosPage', () => {
     return (peticion: HttpRequest<unknown>) =>
       peticion.method === 'GET' &&
       peticion.url === `/api/v1/organizations/${orgId}/consultorios` &&
-      peticion.params.get('size') === '20';
+      peticion.params.get('size') !== '100';
   }
 });
 

@@ -1,10 +1,4 @@
 <app-cabecera-de-pagina titulo="Enmendar la atención">
-  @if (sesion()?.turnoId; as turnoId) {
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Atención', ruta: ['/atencion', 'turnos', turnoId] }]"
-    />
-  }
   @if (cerrada()) {
     <span class="marca-estado marca-estado--activa">Cerrada</span>
   }
@@ -48,23 +42,26 @@
   </p>
 }
 
+<!-- UX-12: el problema, arriba del formulario. Otra enmienda en el medio es un conflicto. -->
 @if (error(); as problema) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema-enmienda">
-    <h2 id="titulo-problema-enmienda">
-      @if (hayConflicto()) {
-        Alguien enmendó esta atención mientras la corregías
-      } @else {
-        No se pudo enmendar
-      }
-    </h2>
-    <p class="estado estado--error">{{ problema.mensaje }}</p>
+  <app-alerta
+    [tipo]="hayConflicto() ? 'advertencia' : 'error'"
+    [titulo]="
+      hayConflicto()
+        ? 'Alguien enmendó esta atención mientras la corregías'
+        : errorAlLeer()
+          ? 'No pudimos leer la atención'
+          : 'No pudimos registrar la enmienda'
+    "
+  >
+    <p>{{ problema.mensaje }}</p>
     @if (hayConflicto()) {
-      <p class="ayuda">
+      <p>
         No se guardó nada. Al releer, el formulario vuelve a cargarse con la versión nueva —lo que
         corregiste se reemplaza— y el motivo que escribiste se conserva.
       </p>
     }
-    <div class="acciones">
+    <p class="alerta__acciones">
       <button type="button" class="boton boton--secundario" (click)="cargar()">
         @if (hayConflicto()) {
           Releer la última versión
@@ -72,8 +69,8 @@
           Reintentar
         }
       </button>
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (sesion() && !cerrada()) {
@@ -101,11 +98,18 @@
         name="enmienda-motivo"
         rows="3"
         maxlength="1000"
-        aria-describedby="ayuda-enmienda-motivo"
-        [attr.aria-invalid]="aviso() !== '' && motivo().trim() === ''"
+        [attr.aria-describedby]="
+          campoDelAviso() === 'motivo' && motivo().trim() === ''
+            ? 'enmienda-motivo-error ayuda-enmienda-motivo'
+            : 'ayuda-enmienda-motivo'
+        "
+        [attr.aria-invalid]="campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'true' : null"
         [value]="motivo()"
         (input)="motivo.set($any($event.target).value)"
       ></textarea>
+      @if (campoDelAviso() === 'motivo' && motivo().trim() === '') {
+        <p class="campo__error" id="enmienda-motivo-error">{{ aviso() }}</p>
+      }
       <p id="ayuda-enmienda-motivo" class="ayuda">
         Obligatorio. Es lo que el historial muestra para explicar por qué cambió el registro.
       </p>
@@ -119,8 +123,9 @@
   <section class="tarjeta" aria-labelledby="titulo-enmienda-evaluacion">
     <h2 id="titulo-enmienda-evaluacion">Evaluación</h2>
 
-    <div class="grilla-campos grilla-campos--dos">
-      <div class="campo">
+    <!-- Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. -->
+    <div class="grilla-12">
+      <div class="campo campo--2">
         <label for="enmienda-dolor">Dolor (0 a 10)</label>
         <select
           id="enmienda-dolor"
@@ -134,7 +139,7 @@
         </select>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="enmienda-zona">Zona del dolor</label>
         <input
           id="enmienda-zona"
@@ -145,7 +150,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-lateralidad">Lateralidad</label>
         <select
           id="enmienda-lateralidad"
@@ -160,7 +165,7 @@
         </select>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-evolucion">Evolución</label>
         <select id="enmienda-evolucion" (change)="evolucion.set($any($event.target).value)">
           <option value="" [selected]="evolucion() === ''">Sin cargar</option>
@@ -171,21 +176,19 @@
           }
         </select>
       </div>
-    </div>
 
-    <div class="campo">
-      <label for="enmienda-objetivo">Objetivo de la sesión</label>
-      <input
-        id="enmienda-objetivo"
-        type="text"
-        maxlength="500"
-        [value]="objetivoSesion()"
-        (input)="objetivoSesion.set($any($event.target).value)"
-      />
-    </div>
+      <div class="campo campo--12">
+        <label for="enmienda-objetivo">Objetivo de la sesión</label>
+        <input
+          id="enmienda-objetivo"
+          type="text"
+          maxlength="500"
+          [value]="objetivoSesion()"
+          (input)="objetivoSesion.set($any($event.target).value)"
+        />
+      </div>
 
-    <div class="grilla-campos grilla-campos--dos">
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="enmienda-motivo-clinico">Motivo clínico</label>
         <input
           id="enmienda-motivo-clinico"
@@ -196,7 +199,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="enmienda-limitacion">Limitación funcional</label>
         <input
           id="enmienda-limitacion"
@@ -212,27 +215,37 @@
   <section class="tarjeta" aria-labelledby="titulo-enmienda-cierre">
     <h2 id="titulo-enmienda-cierre">Resultado de la sesión</h2>
 
-    <div class="campo">
-      <label for="enmienda-nota">Nota de cierre</label>
-      <textarea
-        id="enmienda-nota"
-        rows="4"
-        maxlength="2000"
-        aria-describedby="ayuda-enmienda-nota"
-        [value]="notaDeCierre()"
-        (input)="notaDeCierre.set($any($event.target).value)"
-      ></textarea>
-      <p id="ayuda-enmienda-nota" class="ayuda">
-        @if (presente()) {
-          El paciente vino: la nota no puede quedar vacía.
-        } @else {
-          El paciente no vino.
-        }
-      </p>
-    </div>
-
-    <div class="grilla-campos grilla-campos--dos">
+    <div class="grilla-12">
       <div class="campo">
+        <label for="enmienda-nota">Nota de cierre</label>
+        <textarea
+          id="enmienda-nota"
+          rows="4"
+          maxlength="2000"
+          [attr.aria-describedby]="
+            campoDelAviso() === 'nota' && notaDeCierre().trim() === ''
+              ? 'enmienda-nota-error ayuda-enmienda-nota'
+              : 'ayuda-enmienda-nota'
+          "
+          [attr.aria-invalid]="
+            campoDelAviso() === 'nota' && notaDeCierre().trim() === '' ? 'true' : null
+          "
+          [value]="notaDeCierre()"
+          (input)="notaDeCierre.set($any($event.target).value)"
+        ></textarea>
+        @if (campoDelAviso() === 'nota' && notaDeCierre().trim() === '') {
+          <p class="campo__error" id="enmienda-nota-error">{{ aviso() }}</p>
+        }
+        <p id="ayuda-enmienda-nota" class="ayuda">
+          @if (presente()) {
+            El paciente vino: la nota no puede quedar vacía.
+          } @else {
+            El paciente no vino.
+          }
+        </p>
+      </div>
+
+      <div class="campo campo--6">
         <label for="enmienda-respuesta">Respuesta al tratamiento</label>
         <input
           id="enmienda-respuesta"
@@ -243,7 +256,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-tolerancia">Tolerancia</label>
         <select id="enmienda-tolerancia" (change)="tolerancia.set($any($event.target).value)">
           <option value="" [selected]="tolerancia() === ''">Sin cargar</option>
@@ -266,7 +279,7 @@
         ></textarea>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="enmienda-conducta">Próxima conducta</label>
         <select id="enmienda-conducta" (change)="proximaConducta.set($any($event.target).value)">
           <option value="" [selected]="proximaConducta() === ''">Sin cargar</option>
@@ -291,6 +304,11 @@
           </p>
         </app-ayuda>
       </div>
+      @if (campoDelAviso() === 'tratamientos') {
+        <app-alerta tipo="error" titulo="Revisá los tratamientos">
+          <p>{{ aviso() }}</p>
+        </app-alerta>
+      }
 
       <ol class="lista-tratamientos">
         @for (t of tratamientos(); track t.tratamientoId ?? $index; let i = $index) {
@@ -309,8 +327,8 @@
             </label>
 
             @if (!t.quitado) {
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
+              <div class="grilla-12">
+                <div class="campo campo--4">
                   <label [for]="'enmienda-tecnica-' + i">Técnica de {{ t.practicaNombre }}</label>
                   <input
                     [id]="'enmienda-tecnica-' + i"
@@ -320,7 +338,7 @@
                     (input)="cambiarTratamiento(i, { tecnica: $any($event.target).value })"
                   />
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label [for]="'enmienda-zona-trat-' + i">Zona de {{ t.practicaNombre }}</label>
                   <input
                     [id]="'enmienda-zona-trat-' + i"
@@ -330,7 +348,7 @@
                     (input)="cambiarTratamiento(i, { zona: $any($event.target).value })"
                   />
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label [for]="'enmienda-lado-trat-' + i">Lado de {{ t.practicaNombre }}</label>
                   <select
                     [id]="'enmienda-lado-trat-' + i"
@@ -344,7 +362,7 @@
                     }
                   </select>
                 </div>
-                <div class="campo">
+                <div class="campo campo--2">
                   <label [for]="'enmienda-duracion-' + i">
                     Duración de {{ t.practicaNombre }}, en minutos
                   </label>
@@ -358,9 +376,9 @@
                 </div>
               </div>
               @for (p of t.parametros; track $index; let j = $index) {
-                <div class="parametro">
+                <div class="parametro grilla-12">
                   @if (p.tipoDato === TipoParametro.BOOLEANO) {
-                    <div class="campo">
+                    <div class="campo campo--4">
                       <label [for]="'enmienda-param-' + i + '-' + j">{{ p.clave }}</label>
                       <select
                         [id]="'enmienda-param-' + i + '-' + j"
@@ -379,7 +397,7 @@
                       </select>
                     </div>
                   } @else {
-                    <div class="campo">
+                    <div class="campo campo--4">
                       <label [for]="'enmienda-param-' + i + '-' + j">
                         {{ p.clave }}{{ p.unidad ? ' (' + p.unidad + ')' : '' }}
                       </label>
@@ -429,9 +447,14 @@
           </p>
         </app-ayuda>
       </div>
+      @if (campoDelAviso() === 'mediciones') {
+        <app-alerta tipo="error" titulo="Revisá el examen físico">
+          <p>{{ aviso() }}</p>
+        </app-alerta>
+      }
 
       @for (m of mediciones(); track m.definicionId + '-' + m.lateralidad; let i = $index) {
-        <fieldset class="grupo">
+        <fieldset class="grupo-plano grilla-12">
           <legend>{{ m.nombre }} ({{ ladoLegible(m.lateralidad) }})</legend>
           <label class="opcion-radio">
             <input
@@ -443,7 +466,7 @@
           </label>
           @if (!m.quitada) {
             @if (m.tipo === 'BOOLEANO') {
-              <div class="campo">
+              <div class="campo campo--3">
                 <label [for]="'enmienda-medicion-' + i">Presente</label>
                 <select
                   [id]="'enmienda-medicion-' + i"
@@ -462,7 +485,7 @@
                 </select>
               </div>
             } @else {
-              <div class="campo">
+              <div class="campo campo--3">
                 <label [for]="'enmienda-medicion-' + i">
                   Valor{{ m.unidad ? ' en ' + m.unidad : '' }}
                 </label>
@@ -492,7 +515,6 @@
         <p>Cada enmienda crea una versión nueva; ninguna versión anterior se borra.</p>
       </app-ayuda>
     </div>
-    <p role="status" [class]="aviso() ? 'estado estado--error' : 'ayuda'">{{ aviso() }}</p>
     <div class="pie-tarjeta">
       @if (sesion(); as atencion) {
         <a

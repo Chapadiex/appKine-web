@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 7;
 const FICHA = `/api/v1/personas/${PERSONA}`;
@@ -186,11 +187,53 @@ describe('OrdenesYAutorizacionesPage', () => {
     });
 
     const filas = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('#caption-autorizaciones ~ tbody tr'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[aria-label="Listado de autorizaciones"] tbody tr',
+      ),
     ).map((fila) => fila.textContent ?? '');
     expect(filas).toHaveLength(2);
     expect(filas[0]).not.toContain('a revisar');
     expect(filas[1]).toContain('2 consumos a revisar');
+  });
+
+  it('cada listado sigue el patrón de UX-14: búsqueda, resultados, pie y vacío', async () => {
+    const fixture = await montar({
+      ordenes: [ORDEN],
+      autorizaciones: [PENDIENTE, { ...PENDIENTE, id: 99, numero: 'AUT-99' }],
+    });
+    const raiz = fixture.nativeElement as HTMLElement;
+    const autorizaciones = raiz.querySelector('section[aria-labelledby="titulo-autorizaciones"]');
+
+    expect(autorizaciones?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 autorizaciones',
+    );
+    expect(autorizaciones?.querySelector('app-paginacion')?.textContent).toContain(
+      'Mostrando 1–2 de 2',
+    );
+    expect(raiz.querySelector('caption')).toBeNull();
+    // Las altas van arriba a la derecha, en la cabecera, no dentro de cada tarjeta.
+    expect(autorizaciones?.textContent).not.toContain('Registrar una autorización');
+    expect(raiz.querySelector('app-cabecera-de-ficha')?.textContent).toContain(
+      'Registrar una autorización',
+    );
+
+    const busqueda = raiz.querySelector('#autorizaciones-busqueda') as HTMLInputElement;
+    busqueda.value = 'aut-99';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(autorizaciones?.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(autorizaciones?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 autorización',
+    );
+
+    busqueda.value = 'no existe';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const vacio = autorizaciones?.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos autorizaciones');
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(autorizaciones?.querySelectorAll('tbody tr')).toHaveLength(2);
   });
 
   // -------------------------------------------------------------------------------------
@@ -228,7 +271,11 @@ describe('OrdenesYAutorizacionesPage', () => {
     });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Aprobada es terminal');
+    // UX-12: el panel se cierra y el resultado va al aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Autorización aprobada');
+    expect(aviso?.descripcion).toContain('Aprobada es terminal');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('observar sin motivo no manda nada: sin motivo el mostrador no sabe que corregir', async () => {
@@ -295,7 +342,10 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     // Es tambien la respuesta a la aprobacion concurrente: el segundo en llegar encuentra la
     // autorizacion ya resuelta.
-    expect(texto(fixture)).toContain('no admite la acción APROBAR');
+    // Error general del panel: arriba del formulario, con la salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form > app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos registrar la respuesta');
+    expect(alerta?.textContent).toContain('no admite la acción APROBAR');
     expect(rotulosDeBoton(fixture)).toContain('Recargar');
   });
 
@@ -320,6 +370,14 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.fila-senalada').length).toBe(
       1,
     );
+    // El conflicto va pegado a la vigencia, como advertencia, con la salida a la fila que estorba.
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alerta = raiz.querySelector(`#resolver-superpuesta-${PENDIENTE.id}`);
+    expect(alerta?.getAttribute('tipo')).toBe('advertencia');
+    expect(raiz.querySelector('form > app-alerta[tipo="error"]')).toBeNull();
+    apretar(fixture, 'Ver la autorización');
+    expect(raiz.querySelector('app-panel-lateral')).toBeNull();
+    expect(raiz.querySelectorAll('.fila-senalada').length).toBe(1);
   });
 
   // -------------------------------------------------------------------------------------
@@ -404,7 +462,9 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
 
     // El archivo sigue en la ficha: desvincular no es dar de baja el documento.
-    expect(texto(fixture)).toContain('El archivo sigue estando en la ficha');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Documento desvinculado');
+    expect(aviso?.descripcion).toContain('El archivo sigue estando en la ficha');
   });
 
   it('corregir una orden manda la versión y dice que el paciente no se cambia', async () => {
@@ -664,7 +724,7 @@ describe('OrdenesYAutorizacionesPage', () => {
       apretar(fixture, 'Historial');
       const primera = httpMock.expectOne(esHistorial(PENDIENTE.id));
       expect(primera.request.params.get('page')).toBe('0');
-      expect(primera.request.params.get('size')).toBe('20');
+      expect(primera.request.params.get('size')).toBe('10');
       primera.flush({
         autorizacionId: PENDIENTE.id,
         estadoActual: 'APROBADA',
@@ -672,9 +732,9 @@ describe('OrdenesYAutorizacionesPage', () => {
         vencida: true,
         vencidaDesde: '2027-01-01',
         page: 0,
-        size: 20,
+        size: 10,
         totalElements: 21,
-        totalPages: 2,
+        totalPages: 3,
         content: [
           {
             id: 1,
@@ -704,13 +764,22 @@ describe('OrdenesYAutorizacionesPage', () => {
       expect(contenido).toContain('Cantidad: 1');
       expect(contenido).toContain('Cuenta 42');
       expect(contenido).toContain('Vencida');
-      expect(contenido).toContain('Página 1 de 2');
+      // El pie estandar de UX-14: "Mostrando 1–10 de 21" y los botones de pagina.
+      expect(contenido).toContain('Mostrando 1–10 de 21');
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
 
-      apretar(fixture, 'Hechos siguientes');
+      (
+        Array.from(
+          (fixture.nativeElement as HTMLElement).querySelectorAll('.paginacion button'),
+        ) as HTMLButtonElement[]
+      )
+        .find((b) => b.textContent?.includes('Página siguiente'))
+        ?.click();
+      fixture.detectChanges();
       const segunda = httpMock.expectOne(esHistorial(PENDIENTE.id));
       expect(segunda.request.params.get('page')).toBe('1');
-      segunda.flush({ page: 1, size: 20, totalElements: 21, totalPages: 2, content: [] });
+      expect(segunda.request.params.get('size')).toBe('10');
+      segunda.flush({ page: 1, size: 10, totalElements: 21, totalPages: 3, content: [] });
       await estabilizar(fixture);
 
       apretar(fixture, 'Cerrar el historial');
@@ -744,7 +813,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     // Solo el listado de autorizaciones: la pantalla no vuelve a "cargando" y el panel sigue abierto.
     httpMock.expectOne(esListado(AUTORIZACIONES)).flush([{ ...PENDIENTE, saldo: 20 }]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se revirtio el consumo #1');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Consumo #1 revertido');
 
     apretar(fixture, 'Cerrar el saldo');
     expect(texto(fixture)).not.toContain('Saldo y consumos de la autorización AUT-1');

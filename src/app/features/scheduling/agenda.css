@@ -10,17 +10,6 @@
  * oscuro. Un `#rrggbb` suelto aca seria un color que no se adapta y que nadie vuelve a revisar.
  */
 
-/* Los cuatro filtros del buscador, uno al lado del otro cuando entran. */
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-6);
-}
-
-.filtros .campo {
-  flex: 1 1 14rem;
-}
-
 /*
  * La grilla: un bloque por dia, TODOS los dias de la ventana.
  *
@@ -34,7 +23,7 @@
 }
 
 .dia {
-  padding: var(--esp-6) 0;
+  padding: var(--esp-5) 0;
   border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
@@ -43,7 +32,7 @@
 }
 
 .dia__fecha {
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
   margin: 0 0 var(--esp-4);
   text-transform: capitalize;
@@ -150,16 +139,6 @@ button.slot--libre:focus-visible {
   padding: 0;
 }
 
-/*
- * El bloque de conflicto de la reserva.
- *
- * Se destaca con borde propio porque es donde vive la accion que resuelve el problema, y esa
- * accion es lo que separa un rechazo util de un callejon.
- */
-.conflicto {
-  border-left: var(--borde-acento) solid var(--color-peligro);
-}
-
 /* ======================================================================================
  * Diseño del canvas (UX-01, 21/10/2026): Agenda, Reservar, Series, Serie, Recepción y Ciclo.
  *
@@ -210,32 +189,6 @@ button.slot--libre:focus-visible {
   overflow: hidden;
 }
 
-.tarjeta__barra {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  padding: var(--esp-5) var(--esp-6);
-  border-bottom: var(--borde-fino) solid var(--color-borde);
-}
-
-.tarjeta__barra > h2 {
-  margin: 0;
-  font-size: var(--tipo-md);
-  font-weight: var(--peso-fuerte);
-}
-
-/* Los filtros arriba de una tarjeta plana: la barra de `app-filtros` ya trae su margen inferior. */
-.tarjeta__cuerpo--filtros {
-  padding-bottom: 0;
-}
-
-.tarjeta__barra-fin {
-  margin-left: auto;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-}
-
 .tarjeta__cuerpo {
   padding: var(--esp-6);
 }
@@ -269,21 +222,6 @@ button.slot--libre:focus-visible {
   margin: 0 auto 0 0;
   color: var(--color-texto-suave);
   font-size: var(--tipo-2xs);
-}
-
-/* La tabla pegada a los bordes de una tarjeta plana. */
-.tarjeta--plana > .tabla-scroll {
-  margin: 0;
-}
-
-.tarjeta--plana > .tabla-pie {
-  margin: 0;
-  padding: var(--esp-4) var(--esp-6);
-}
-
-.tarjeta__paginacion {
-  display: block;
-  padding: 0 var(--esp-6) var(--esp-5);
 }
 
 /* Navegador de fecha del canvas: ‹ Hoy › y el rango en palabras. */
@@ -348,26 +286,43 @@ button.slot--libre:focus-visible {
   outline-offset: var(--foco-offset);
 }
 
-/* La grilla del buscador: un renglón por día, la fecha a la izquierda y los horarios a la derecha. */
-.tarjeta--plana .dias {
-  padding: 0 var(--esp-6);
-}
-
-.tarjeta--plana .dia__fecha {
-  font-size: var(--tipo-sm);
-}
-
+/*
+ * La grilla del buscador: un renglón por día, la fecha a la izquierda y los horarios a la derecha.
+ * Es la grilla de la agenda, no la de un formulario (UX-14 §2): se queda.
+ */
 @media (min-width: 48rem) {
-  .tarjeta--plana .dia {
+  .dia {
     display: grid;
     grid-template-columns: 11rem minmax(0, 1fr);
     gap: var(--esp-6);
     align-items: start;
   }
 
-  .tarjeta--plana .dia__fecha {
+  .dia__fecha {
     margin: var(--esp-3) 0 0;
   }
+}
+
+/* El nombre de la oferta y la duración, entre la toolbar y la grilla del buscador. */
+.agenda__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-6);
+  padding-bottom: var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.tarjeta .agenda__encabezado > h2 {
+  margin: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.agenda__nota {
+  margin-left: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
 }
 
 /* Los huecos con la paleta del calendario del canvas: libre en el celeste de la marca. */
@@ -397,7 +352,7 @@ button.slot[aria-pressed='true'] {
   flex-wrap: wrap;
   gap: var(--esp-6);
   margin: 0;
-  padding: var(--esp-4) var(--esp-6);
+  padding: var(--esp-4) 0 0;
   border-top: var(--borde-fino) solid var(--color-borde);
   list-style: none;
   color: var(--color-marca-texto-suave);
@@ -638,10 +593,20 @@ button.slot[aria-pressed='true'] {
   font-weight: var(--peso-normal);
 }
 
-/* Buscador de la barra de la recepcion: un .campo sin margen y de ancho fijo. */
-.tarjeta__barra .campo--barra {
-  margin: 0;
-  width: min(20rem, 100%);
+/*
+ * Debajo de la toolbar de la recepcion: el dia en palabras, cuantos esperan y la zona de las horas.
+ * Una linea chica: no compite con la tabla.
+ */
+.recepcion__resumen {
+  margin: 0 0 var(--esp-4);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* El filtro por persona que llega por URL a la bandeja de series, debajo de la toolbar. */
+.filtro-persona {
+  margin: 0 0 var(--esp-4);
+  font-size: var(--tipo-sm);
 }
 
 .recepcion__fecha {

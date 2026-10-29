@@ -5,6 +5,7 @@ import { EventoDeAgenda } from '../../../../api/generated/model/evento-de-agenda
 import { horaEnZona } from '../../models/etiquetas-de-agenda';
 import { ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
 import { SchedulingApi } from '../../services/scheduling-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Estados de una clase, tal como los publica la agenda unificada. */
 const ESTADOS: Readonly<Record<string, string>> = {
@@ -26,7 +27,7 @@ const ESTADOS: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-clases-del-dia',
-  imports: [RouterLink],
+  imports: [Alerta, RouterLink],
   templateUrl: './clases-del-dia.html',
 })
 export class ClasesDelDia {

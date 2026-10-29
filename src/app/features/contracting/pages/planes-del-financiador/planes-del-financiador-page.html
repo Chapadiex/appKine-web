@@ -1,9 +1,5 @@
 @if (financiador(); as ficha) {
   <app-cabecera-de-pagina titulo="Planes de {{ ficha.nombre }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
-    />
     @if (financiadorInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
@@ -20,10 +16,6 @@
     no se pudo leer el encabezado en vez de inventar un nombre o dejar el titulo vacio.
   -->
   <app-cabecera-de-pagina titulo="Planes del financiador #{{ financiadorId }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
-    />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
@@ -69,12 +61,6 @@
   </p>
 </ng-template>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 @if (financiadorInactivo()) {
   <p class="estado estado--vacio">
     Este financiador está dado de baja, así que <b>no admite planes nuevos</b>. Sus planes actuales
@@ -83,16 +69,34 @@
   </p>
 }
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-planes">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-planes">Planes cargados</h2>
-  </div>
-
+<section class="tarjeta tarjeta--tabla" aria-label="Planes del financiador">
   <!--
-    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
-    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+    Toolbar de la tabla (UX-14). El backend no busca planes por texto, pero la lista llega entera:
+    la busqueda filtra en pantalla por nombre o codigo. Estado y fecha de vigencia, detras del
+    embudo; la fecha cuenta como activa si no es hoy: cambia la columna Situacion.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['plan', 'planes']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="buscar-plan">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-plan"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o código"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-plan">Mostrar</label>
       <select
@@ -136,30 +140,50 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio titulo="Todavía no elegiste un consultorio.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los planes">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
-        @if (planes().length === 0) {
-          <p class="estado estado--vacio">
-            Este financiador no tiene planes que coincidan con el filtro.
-          </p>
-          <p class="ayuda">
-            Sin al menos un plan no se puede firmar ningún convenio con este financiador: el
-            convenio se firma <b>contra un plan</b>, y eso es lo que hace que la resolución del
-            arancel tenga como mucho una candidata para cada fecha.
-          </p>
+        @if (planes().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Este financiador todavía no tiene planes"
+            texto="Sin al menos un plan no se puede firmar ningún convenio con este financiador: el convenio se firma contra un plan, y eso es lo que hace que la resolución del arancel tenga como mucho una candidata para cada fecha."
+          >
+            @if (!financiadorInactivo()) {
+              <button
+                type="button"
+                class="boton"
+                *akinePermiso="permisoManage"
+                (click)="abrirAlta()"
+              >
+                Dar de alta el primero
+              </button>
+            }
+          </app-estado-vacio>
+        } @else if (planes().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos planes"
+            texto="Este financiador no tiene planes que coincidan con el filtro. Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Planes de cobertura">
             <table class="tabla">
@@ -174,7 +198,7 @@
                   <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="copago">
                     Copago
                   </th>
-                  <th scope="col">Requisitos</th>
+                  <th scope="col" class="tabla__col--secundaria">Requisitos</th>
                   <th scope="col">Situación</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -202,7 +226,7 @@
                     </th>
                     <td>{{ ventanaEnPalabras(plan) }}</td>
                     <td class="importe">{{ importeEnPalabras(plan.copago, plan.moneda) }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       <ul class="requisitos-lista">
                         @if (plan.requiereAutorizacion) {
                           <li>Requiere autorización previa</li>
@@ -263,15 +287,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} planes</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de planes"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de planes" />
         }
       }
     }
@@ -285,7 +301,14 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo plan" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo">
+      <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige. -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de alta el plan">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <div class="campo campo--2">
         <label for="alta-plan-codigo">Código</label>
         <input
           id="alta-plan-codigo"
@@ -293,17 +316,23 @@
           formControlName="codigo"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
-          aria-describedby="alta-plan-codigo-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('codigo')
+              ? 'alta-plan-codigo-error alta-plan-codigo-ayuda'
+              : 'alta-plan-codigo-ayuda'
+          "
         />
         @if (mostrarErrorAlta('codigo')) {
-          <p class="campo__error" role="alert">El código es obligatorio.</p>
+          <p class="campo__error" id="alta-plan-codigo-error" role="alert">
+            El código es obligatorio.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="alta-plan-codigo-ayuda">
           <b>No se puede cambiar después.</b> Único dentro de este financiador.
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-plan-nombre">Nombre</label>
         <input
           id="alta-plan-nombre"
@@ -311,9 +340,12 @@
           formControlName="nombre"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          [attr.aria-describedby]="mostrarErrorAlta('nombre') ? 'alta-plan-nombre-error' : null"
         />
         @if (mostrarErrorAlta('nombre')) {
-          <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          <p class="campo__error" id="alta-plan-nombre-error" role="alert">
+            El nombre es obligatorio.
+          </p>
         }
       </div>
 
@@ -324,9 +356,14 @@
           type="date"
           formControlName="vigenciaDesde"
           [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('vigenciaDesde') ? 'alta-plan-desde-error' : null
+          "
         />
         @if (mostrarErrorAlta('vigenciaDesde')) {
-          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="alta-plan-desde-error" role="alert">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
 
@@ -360,7 +397,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-plan-moneda">Moneda</label>
         <input
           id="alta-plan-moneda"
@@ -378,39 +415,41 @@
           Más datos del plan
           <span class="seccion-plegable__resumen">Descripción y requisitos (opcionales)</span>
         </summary>
-        <div class="campo">
-          <label for="alta-plan-descripcion">Descripción (opcional)</label>
-          <input
-            id="alta-plan-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-autorizacion">
+        <div class="grilla-campos">
+          <div class="campo campo--12">
+            <label for="alta-plan-descripcion">Descripción (opcional)</label>
             <input
-              id="alta-plan-autorizacion"
-              type="checkbox"
-              formControlName="requiereAutorizacion"
+              id="alta-plan-descripcion"
+              type="text"
+              formControlName="descripcion"
+              autocomplete="off"
             />
-            Requiere autorización previa
-          </label>
-        </div>
+          </div>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-credencial">
-            <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
-            Requiere credencial
-          </label>
+          <div class="campo campo--3">
+            <label class="opcion-casilla" for="alta-plan-autorizacion">
+              <input
+                id="alta-plan-autorizacion"
+                type="checkbox"
+                formControlName="requiereAutorizacion"
+              />
+              Requiere autorización previa
+            </label>
+          </div>
+
+          <div class="campo campo--3">
+            <label class="opcion-casilla" for="alta-plan-credencial">
+              <input
+                id="alta-plan-credencial"
+                type="checkbox"
+                formControlName="requiereCredencial"
+              />
+              Requiere credencial
+            </label>
+          </div>
+          <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
         </div>
-        <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
       </details>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
 
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -433,17 +472,34 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral [titulo]="'Editar ' + plan.nombre" (cerrar)="cerrarPanel()">
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <!--
+          Error de la edicion arriba del formulario. La version vieja (409) es una advertencia:
+          ya se releyo el listado y lo escrito sigue en pantalla para volver a guardar.
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos guardar los cambios">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda">
           Se guarda <b>solo lo que cambies</b>. Una fecha en "vigente hasta"
           <b>cierra la vigencia</b> y el plan sigue activo; borrar esa fecha <b>no la saca</b>.
         </p>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-plan-codigo">Código</label>
           <input id="editar-plan-codigo" type="text" [value]="plan.codigo ?? ''" disabled />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-plan-nombre">Nombre</label>
           <input
             id="editar-plan-nombre"
@@ -451,9 +507,14 @@
             formControlName="nombre"
             autocomplete="off"
             [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorEdicion('nombre') ? 'editar-plan-nombre-error' : null
+            "
           />
           @if (mostrarErrorEdicion('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            <p class="campo__error" id="editar-plan-nombre-error" role="alert">
+              El nombre es obligatorio.
+            </p>
           }
         </div>
 
@@ -486,7 +547,7 @@
           />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-plan-moneda">Moneda</label>
           <input
             id="editar-plan-moneda"
@@ -502,42 +563,40 @@
             Más datos del plan
             <span class="seccion-plegable__resumen">Descripción y requisitos</span>
           </summary>
-          <div class="campo">
-            <label for="editar-plan-descripcion">Descripción</label>
-            <input
-              id="editar-plan-descripcion"
-              type="text"
-              formControlName="descripcion"
-              autocomplete="off"
-            />
-          </div>
-
-          <div class="campo">
-            <label class="opcion-casilla" for="editar-plan-autorizacion">
+          <div class="grilla-campos">
+            <div class="campo campo--12">
+              <label for="editar-plan-descripcion">Descripción</label>
               <input
-                id="editar-plan-autorizacion"
-                type="checkbox"
-                formControlName="requiereAutorizacion"
+                id="editar-plan-descripcion"
+                type="text"
+                formControlName="descripcion"
+                autocomplete="off"
               />
-              Requiere autorización previa
-            </label>
-          </div>
+            </div>
 
-          <div class="campo">
-            <label class="opcion-casilla" for="editar-plan-credencial">
-              <input
-                id="editar-plan-credencial"
-                type="checkbox"
-                formControlName="requiereCredencial"
-              />
-              Requiere credencial
-            </label>
+            <div class="campo campo--3">
+              <label class="opcion-casilla" for="editar-plan-autorizacion">
+                <input
+                  id="editar-plan-autorizacion"
+                  type="checkbox"
+                  formControlName="requiereAutorizacion"
+                />
+                Requiere autorización previa
+              </label>
+            </div>
+
+            <div class="campo campo--3">
+              <label class="opcion-casilla" for="editar-plan-credencial">
+                <input
+                  id="editar-plan-credencial"
+                  type="checkbox"
+                  formControlName="requiereCredencial"
+                />
+                Requiere credencial
+              </label>
+            </div>
           </div>
         </details>
-
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
 
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
@@ -551,11 +610,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el listado
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -563,6 +617,18 @@
 
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + plan.nombre" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de baja el plan">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el listado
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-plan-motivo"
         [titulo]="'Dar de baja ' + plan.nombre"
@@ -581,13 +647,6 @@
           quedan libres.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
-      }
     </app-panel-lateral>
   }
 }

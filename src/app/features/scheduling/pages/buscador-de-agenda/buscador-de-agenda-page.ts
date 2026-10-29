@@ -25,9 +25,13 @@ import {
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -74,12 +78,13 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [Ayuda, CabeceraDePagina, Filtros, RouterLink, Pestanas],
+  imports: [Ayuda, CabeceraDePagina, EstadoVacio, Filtros, RouterLink, Pestanas, Alerta],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })
 export class BuscadorDeAgendaPage {
   private readonly api = inject(SchedulingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
@@ -109,10 +114,6 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
-  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
-  protected readonly filtrosAvanzadosActivos = computed(() =>
-    Number(this.profesionalId() !== null),
-  );
   protected readonly desde = signal(this.diaDeLaSede.hoy());
   protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
 
@@ -376,7 +377,10 @@ export class BuscadorDeAgendaPage {
       })
       .catch((error: unknown) => {
         console.error('No se pudo abrir la pantalla de reserva', error);
-        this.error.set('No pudimos abrir la pantalla de reserva. Volvé a intentar.');
+        // Una accion sin formulario: aviso global, con Reintentar (UX-12).
+        this.avisos.error('No pudimos abrir la reserva', {
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.reservar(dia, slot) },
+        });
       });
   }
 

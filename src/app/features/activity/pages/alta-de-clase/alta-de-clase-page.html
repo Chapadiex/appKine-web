@@ -9,167 +9,233 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
-
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
-  <h2>Datos de la clase</h2>
+  <!-- Error general de la operacion: arriba del formulario, a la vista mientras se corrige. -->
+  @if (error(); as fallo) {
+    @if (conflicto() === null) {
+      <app-alerta tipo="error" titulo="No pudimos programar la clase">
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.motivo) {
+          <p>Detalle: {{ fallo.motivo }}</p>
+        }
+        @if (fallo.accion === 'elegir-contexto') {
+          <p class="alerta__acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </p>
+        }
+      </app-alerta>
+    }
+  }
 
   @if (ofertas() === null) {
     <p class="estado estado--cargando" aria-live="polite">Leyendo las ofertas grupales…</p>
-  } @else if (ofertas()!.length === 0 && !error()) {
+  } @else if (errorDeOfertas(); as fallo) {
+    <app-alerta tipo="error" titulo="No pudimos leer las ofertas grupales">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.accion === 'elegir-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargarOfertas()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  } @else if (ofertas()!.length === 0) {
     <p class="estado estado--vacio">
       Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
       grupal: se crea en Servicios.
     </p>
   }
 
-  <div class="grilla-campos grilla-campos--dos">
-    <div class="campo">
-      <label for="clase-oferta">Oferta grupal</label>
-      <select
-        id="clase-oferta"
-        formControlName="ofertaId"
-        [attr.aria-invalid]="invalido('ofertaId')"
-        [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
-      >
-        <option value="">Elegí una oferta</option>
-        @for (oferta of ofertas() ?? []; track oferta.id) {
-          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+  <!--
+    Grilla de 12 (UX-14): oferta, titulo y profesional en una fila; fecha, horas, cupo y box en la
+    siguiente. Sin profesional, oferta y titulo se reparten la fila.
+  -->
+  <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
+    <label for="clase-oferta">Oferta grupal</label>
+    <select
+      id="clase-oferta"
+      formControlName="ofertaId"
+      [attr.aria-invalid]="invalido('ofertaId') || conflicto() === 'oferta'"
+      [attr.aria-describedby]="
+        invalido('ofertaId')
+          ? 'clase-oferta-error'
+          : conflicto() === 'oferta'
+            ? 'clase-conflicto-oferta'
+            : null
+      "
+    >
+      <option value="">Elegí una oferta</option>
+      @for (oferta of ofertas() ?? []; track oferta.id) {
+        <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+      }
+    </select>
+    @if (invalido('ofertaId')) {
+      <p class="campo__error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
+    }
+  </div>
+  <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
+    <label for="clase-titulo">Título (opcional)</label>
+    <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
+  </div>
+
+  @if (exigeProfesional()) {
+    <div class="campo campo--4">
+      <label for="clase-profesional">Profesional a cargo</label>
+      <select id="clase-profesional" formControlName="profesionalId">
+        <option value="">Elegí un profesional</option>
+        @for (profesional of profesionales(); track profesional.membershipId) {
+          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
         }
       </select>
-      @if (invalido('ofertaId')) {
-        <p class="estado estado--error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
+      <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
+    </div>
+  }
+
+  <!-- La oferta no admite clases (no es grupal, esta de baja o fuera de vigencia). -->
+  @if (conflicto() === 'oferta') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Esa oferta no admite clases"
+      id="clase-conflicto-oferta"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
       }
-    </div>
-    <div class="campo">
-      <label for="clase-titulo">Título (opcional)</label>
-      <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
-    </div>
+    </app-alerta>
+  }
+
+  <div class="campo">
+    <label for="clase-fecha">Fecha</label>
+    <input
+      id="clase-fecha"
+      type="date"
+      formControlName="fecha"
+      [attr.aria-invalid]="invalido('fecha')"
+      [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
+    />
+    @if (invalido('fecha')) {
+      <p class="campo__error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
+    }
   </div>
-
-  <fieldset class="cuando">
-    <legend>Cuándo</legend>
-    <div class="grilla-campos grilla-campos--tres">
-      <div class="campo">
-        <label for="clase-fecha">Fecha</label>
-        <input
-          id="clase-fecha"
-          type="date"
-          formControlName="fecha"
-          [attr.aria-invalid]="invalido('fecha')"
-          [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
-        />
-        @if (invalido('fecha')) {
-          <p class="estado estado--error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
-        }
-      </div>
-      <div class="campo">
-        <label for="clase-inicio">Hora de inicio</label>
-        <input
-          id="clase-inicio"
-          type="time"
-          formControlName="horaInicio"
-          [attr.aria-invalid]="invalido('horaInicio')"
-          [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
-        />
-        @if (invalido('horaInicio')) {
-          <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
-        }
-      </div>
-      <div class="campo">
-        <label for="clase-fin">Hora de fin</label>
-        <input
-          id="clase-fin"
-          type="time"
-          formControlName="horaFin"
-          [attr.aria-invalid]="invalido('horaFin')"
-          [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
-        />
-        @if (invalido('horaFin')) {
-          <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
-        }
-      </div>
-    </div>
-    <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
-  </fieldset>
-
-  <div class="grilla-campos grilla-campos--tres">
-    @if (exigeProfesional()) {
-      <div class="campo">
-        <label for="clase-profesional">Profesional a cargo</label>
-        <select id="clase-profesional" formControlName="profesionalId">
-          <option value="">Elegí un profesional</option>
-          @for (profesional of profesionales(); track profesional.membershipId) {
-            <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
-          }
-        </select>
-        <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
-      </div>
+  <div class="campo">
+    <label for="clase-inicio">Hora de inicio</label>
+    <input
+      id="clase-inicio"
+      type="time"
+      formControlName="horaInicio"
+      [attr.aria-invalid]="invalido('horaInicio')"
+      [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
+    />
+    @if (invalido('horaInicio')) {
+      <p class="campo__error" id="clase-inicio-error">Indica a que hora empieza.</p>
     }
-
-    @if (ofertaElegida(); as oferta) {
-      <div class="campo">
-        <label for="clase-espacio">Box</label>
-        <select
-          id="clase-espacio"
-          formControlName="espacioId"
-          [attr.aria-invalid]="errorDelServidor('espacioId') !== '' ? true : null"
-          [attr.aria-describedby]="
-            errorDelServidor('espacioId') !== ''
-              ? 'clase-espacio-ayuda clase-espacio-error'
-              : 'clase-espacio-ayuda'
-          "
-        >
-          <option value="">
-            {{ oferta.requiereEspacio ? 'Que el sistema elija uno libre' : 'Sin box' }}
-          </option>
-          @for (espacio of espacios(); track espacio.espacioId) {
-            <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
-          }
-        </select>
-        <p class="ayuda" id="clase-espacio-ayuda">
-          Un box elegido tiene que estar habilitado y libre: si no lo esta, la clase no se programa
-          en otro.
-        </p>
-        @if (errorDelServidor('espacioId'); as mensaje) {
-          <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
-        }
-      </div>
-    }
-    <div class="campo">
-      <label for="clase-capacidad">Cupo</label>
-      <input
-        id="clase-capacidad"
-        type="number"
-        min="1"
-        formControlName="capacidad"
-        [attr.aria-invalid]="invalido('capacidad') || errorDelServidor('capacidad') !== ''"
-        [attr.aria-describedby]="descripcionDeCapacidad()"
-      />
-      <p class="ayuda" id="clase-capacidad-ayuda">
-        No puede superar la capacidad de la oferta ni la del box.
+  </div>
+  <div class="campo">
+    <label for="clase-fin">Hora de fin</label>
+    <input
+      id="clase-fin"
+      type="time"
+      formControlName="horaFin"
+      [attr.aria-invalid]="invalido('horaFin') || finAntesDeInicio() || conflicto() === 'horario'"
+      [attr.aria-describedby]="
+        invalido('horaFin') || finAntesDeInicio()
+          ? 'clase-fin-error'
+          : conflicto() === 'horario'
+            ? 'clase-conflicto-horario'
+            : null
+      "
+    />
+    @if (invalido('horaFin')) {
+      <p class="campo__error" id="clase-fin-error">Indica a que hora termina.</p>
+    } @else if (finAntesDeInicio()) {
+      <p class="campo__error" id="clase-fin-error">
+        La hora de fin tiene que ser posterior a la de inicio.
       </p>
-      @if (invalido('capacidad')) {
-        <p class="estado estado--error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
-      } @else if (errorDelServidor('capacidad'); as mensaje) {
-        <p class="estado estado--error" id="clase-capacidad-error">{{ mensaje }}</p>
-      }
-    </div>
-  </div>
-
-  <div aria-live="polite">
-    @if (error(); as fallo) {
-      <div class="conflicto tarjeta" role="alert">
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.motivo) {
-          <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-        }
-        @if (fallo.accion === 'elegir-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        }
-      </div>
     }
   </div>
+
+  <div class="campo">
+    <label for="clase-capacidad">Cupo</label>
+    <input
+      id="clase-capacidad"
+      type="number"
+      min="1"
+      formControlName="capacidad"
+      [attr.aria-invalid]="invalido('capacidad') || errorDelServidor('capacidad') !== ''"
+      [attr.aria-describedby]="descripcionDeCapacidad()"
+    />
+    <p class="ayuda" id="clase-capacidad-ayuda">
+      No puede superar la capacidad de la oferta ni la del box.
+    </p>
+    @if (invalido('capacidad')) {
+      <p class="campo__error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
+    } @else if (errorDelServidor('capacidad'); as mensaje) {
+      <p class="campo__error" id="clase-capacidad-error">{{ mensaje }}</p>
+    }
+  </div>
+  @if (ofertaElegida(); as oferta) {
+    <div class="campo campo--4">
+      <label for="clase-espacio">Box</label>
+      <select
+        id="clase-espacio"
+        formControlName="espacioId"
+        [attr.aria-invalid]="errorDelServidor('espacioId') !== '' ? true : null"
+        [attr.aria-describedby]="
+          errorDelServidor('espacioId') !== ''
+            ? 'clase-espacio-ayuda clase-espacio-error'
+            : 'clase-espacio-ayuda'
+        "
+      >
+        <option value="">
+          {{ oferta.requiereEspacio ? 'Que el sistema elija uno libre' : 'Sin box' }}
+        </option>
+        @for (espacio of espacios(); track espacio.espacioId) {
+          <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+        }
+      </select>
+      <p class="ayuda" id="clase-espacio-ayuda">
+        Un box elegido tiene que estar habilitado y libre: si no lo esta, la clase no se programa en
+        otro.
+      </p>
+      @if (errorDelServidor('espacioId'); as mensaje) {
+        <p class="campo__error" id="clase-espacio-error">{{ mensaje }}</p>
+      }
+    </div>
+  }
+
+  <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
+
+  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
+  @if (conflicto() === 'horario') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese horario no está libre"
+      id="clase-conflicto-horario"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
+      }
+    </app-alerta>
+  }
+
+  <!-- El cupo no entra en la oferta o en el box, o queda por debajo de los ya inscriptos. -->
+  @if (conflicto() === 'cupo') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese cupo no se puede usar"
+      id="clase-conflicto-cupo"
+    >
+      <p>{{ error()?.mensaje }}</p>
+    </app-alerta>
+  }
 
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">

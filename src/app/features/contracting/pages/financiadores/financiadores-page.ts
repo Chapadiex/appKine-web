@@ -40,7 +40,8 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import {
@@ -52,6 +53,10 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { tipoDeAlertaContracting } from '../feedback-de-contracting';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -104,8 +109,10 @@ type TipoAccion = 'editar' | 'baja';
   imports: [
     CabeceraDePagina,
     Pestanas,
+    Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Ayuda,
     Filtros,
     FiltrosRapidos,
@@ -124,6 +131,7 @@ export class FinanciadoresPage {
   protected readonly pestanas = PESTANAS_DE_CONTRATACION;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CONTRATACION;
   private readonly api = inject(ContractingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -214,6 +222,14 @@ export class FinanciadoresPage {
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== null));
 
+  /**
+   * Si lo que trajo el servidor ya viene recortado por la busqueda o el tipo. Sin eso, una lista
+   * vacia es "todavia no hay"; con eso, es "no hay con estos filtros" (UX-14).
+   */
+  protected readonly hayBusqueda = computed(
+    () => this.busqueda().trim() !== '' || this.filtroTipo() !== null,
+  );
+
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
@@ -239,10 +255,11 @@ export class FinanciadoresPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+  /** Un choque con algo existente (codigo en uso, version vieja) es advertencia; lo demas, error. */
+  protected readonly tipoDeAlerta = computed(() => tipoDeAlertaContracting(this.causaAccion()));
 
   /**
    * El texto del buscador, en un `FormGroup` y no en una referencia de plantilla.
@@ -332,6 +349,16 @@ export class FinanciadoresPage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda, el tipo y el estado a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.formularioBusqueda.reset({ q: '' });
+    this.busqueda.set('');
+    this.filtroTipo.set(null);
+    this.filtroRapido.set('ACTIVO');
+    this.cargar();
+  }
+
   protected elegirEstado(valor: string): void {
     const elegido = valor === 'INACTIVO' || valor === 'TODOS' ? valor : 'ACTIVO';
     this.cerrarPanel();
@@ -347,7 +374,6 @@ export class FinanciadoresPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       codigo: '',
       nombre: '',
@@ -368,7 +394,6 @@ export class FinanciadoresPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -454,11 +479,11 @@ export class FinanciadoresPage {
     this.api.crearFinanciador(cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El financiador quedó dado de alta. Todavía no tiene planes: para poder firmar un ' +
-            'convenio con el hace falta al menos uno, porque el convenio se firma contra un plan ' +
-            'y no contra el financiador entero.',
-        );
+        this.avisos.exito('Financiador dado de alta', {
+          descripcion:
+            `${cuerpo.nombre}. Todavía no tiene planes: para firmar un convenio hace falta al ` +
+            'menos uno, porque el convenio se firma contra un plan.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -483,12 +508,13 @@ export class FinanciadoresPage {
       return;
     }
 
+    const nombre = cambios.nombre ?? this.original()?.nombre ?? '';
     this.empezarEnvio();
 
     this.api.editarFinanciador(panel.id, cambios).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set('Los datos del financiador quedaron guardados.');
+        this.avisos.exito('Cambios guardados', nombre === '' ? undefined : { descripcion: nombre });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -498,7 +524,7 @@ export class FinanciadoresPage {
   /**
    * Da de baja el financiador del panel abierto.
    *
-   * <p>El mensaje de exito repite lo que el panel ya habia advertido: que <b>no cascadea</b>. Es
+   * <p>El aviso de exito repite lo que el panel ya habia advertido: que <b>no cascadea</b>. Es
    * deliberado — quien acaba de dar de baja una obra social necesita saber, en ese momento, que
    * sus convenios siguen resolviendo; enterarse dos meses despues por una factura es la version
    * cara de la misma informacion.
@@ -509,17 +535,17 @@ export class FinanciadoresPage {
       return;
     }
 
+    const nombre = this.financiadorEnPanel()?.nombre ?? 'El financiador';
     this.empezarEnvio();
 
     this.api.darDeBajaFinanciador(panel.id, { reason: motivo }).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El financiador quedó dado de baja. Sus planes conservan sus filas y las coberturas y ' +
-            'convenios ya firmados siguen resolviendo: lo único que se impide es crear planes ' +
-            'nuevos bajo él y ofrecerlo en selecciones nuevas. No hay reactivación, pero su código ' +
-            'queda libre para un alta nueva.',
-        );
+        this.avisos.exito(`${nombre} quedó dado de baja`, {
+          descripcion:
+            'Sus planes, coberturas y convenios ya firmados siguen resolviendo: solo se impide ' +
+            'crear planes nuevos y ofrecerlo en selecciones nuevas. Su código queda libre.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -633,13 +659,11 @@ export class FinanciadoresPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   /** Deja la pantalla como recien entrada: sin panel, sin filtros, sin busqueda. */
   private reiniciar(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.filtroRapido.set('ACTIVO');
     this.filtroTipo.set(null);
     this.busqueda.set('');

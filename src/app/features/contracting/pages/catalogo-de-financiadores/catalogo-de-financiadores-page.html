@@ -1,8 +1,4 @@
 <app-cabecera-de-pagina titulo="Catálogo de financiadores">
-  <app-migas
-    enLinea
-    [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
-  />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Obras sociales, prepagas y ART que la plataforma ya tiene cargadas. Agregar una al centro crea
@@ -13,59 +9,59 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (errorAccion(); as mensaje) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-entradas-catalogo">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-entradas-catalogo">Financiadores del catálogo</h2>
-  </div>
-
-  <!-- Busqueda dentro de la tarjeta del listado (refactor UX/UI del 28/10/2026): una tarjeta, no dos. -->
-  <form
-    class="formulario--libre catalogo__busqueda"
-    aria-label="Buscar en el catálogo"
-    (submit)="$event.preventDefault(); cargar()"
+<section class="tarjeta tarjeta--tabla" aria-label="Financiadores del catálogo">
+  <!--
+    Toolbar de la tabla (UX-14): la busqueda, el boton que la aplica, el tipo detras del embudo y
+    el conteo en la misma fila. La busqueda va con el submit (Enter o "Buscar"), no con cada tecla.
+  -->
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['financiador', 'financiadores']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
   >
-    <!-- Regla de filtros (plan §3.4): la busqueda a la vista; el tipo, detras del embudo. -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
-      <div class="campo" filtro-principal>
-        <label class="visualmente-oculto" for="catalogo-busqueda">Nombre, código o CUIT</label>
-        <div class="campo-busqueda">
-          <app-icono class="campo-busqueda__icono" nombre="buscar" />
-          <input
-            id="catalogo-busqueda"
-            type="search"
-            autocomplete="off"
-            placeholder="Buscar por nombre, código o CUIT"
-            [value]="busqueda()"
-            (input)="busqueda.set($any($event.target).value)"
-          />
-        </div>
+    <form
+      id="catalogo-buscar"
+      class="campo"
+      filtro-principal
+      aria-label="Buscar en el catálogo"
+      (submit)="$event.preventDefault(); cargar()"
+    >
+      <label class="visualmente-oculto" for="catalogo-busqueda">Nombre, código o CUIT</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="catalogo-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre, código o CUIT"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
       </div>
-      <div class="campo">
-        <label for="catalogo-tipo">Tipo</label>
-        <select
-          id="catalogo-tipo"
-          [value]="filtroTipo()"
-          (change)="filtroTipo.set($any($event.target).value)"
-        >
-          <option value="">Todos</option>
-          @for (tipo of tipos; track tipo.valor) {
-            <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
-          }
-        </select>
-      </div>
-    </app-filtros>
-    <button type="submit" class="boton boton--secundario">Buscar</button>
-  </form>
+    </form>
+    <button type="submit" form="catalogo-buscar" class="boton boton--secundario" filtro-frecuente>
+      Buscar
+    </button>
+    <div class="campo">
+      <label for="catalogo-tipo">Tipo</label>
+      <select
+        id="catalogo-tipo"
+        [value]="filtroTipo()"
+        (change)="filtroTipo.set($any($event.target).value)"
+      >
+        <option value="">Todos</option>
+        @for (tipo of tipos; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
+      </select>
+    </div>
+  </app-filtros>
 
   <div aria-live="polite">
     @if (!puedeAdoptar()) {
-      <p class="estado estado--vacio">
+      <p class="ayuda">
         Podés mirar el catálogo. Agregar un financiador al centro necesita permiso para administrar
         convenios en esta sede.
       </p>
@@ -76,12 +72,28 @@
         <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
       }
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          </p>
+        </app-alerta>
       }
       @case ('listo') {
-        @if (entradas().length === 0) {
-          <p class="estado estado--vacio">Ninguna entrada del catálogo coincide con la búsqueda.</p>
+        @if (entradas().length === 0 && !hayFiltrosAplicados()) {
+          <app-estado-vacio
+            titulo="El catálogo todavía no tiene financiadores"
+            texto="Cuando la plataforma cargue obras sociales, prepagas o ART, vas a poder agregarlas al centro desde acá."
+          />
+        } @else if (entradas().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos financiadores en el catálogo"
+            texto="Ninguna entrada del catálogo coincide con la búsqueda. Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -97,7 +109,7 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th scope="col">CUIT</th>
+                  <th scope="col" class="tabla__col--secundaria">CUIT</th>
                   <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="planes">
                     Planes
                   </th>
@@ -114,7 +126,7 @@
                       <span class="celda-secundaria">Código {{ entrada.codigo }}</span>
                     </th>
                     <td>{{ etiquetaDeTipo(entrada.tipo) }}</td>
-                    <td>{{ entrada.cuit || 'Sin CUIT' }}</td>
+                    <td class="tabla__col--secundaria">{{ entrada.cuit || 'Sin CUIT' }}</td>
                     <td class="importe">{{ cantidadDePlanes(entrada) }}</td>
                     <td>
                       @if (entrada.financiadorAdoptadoId; as copia) {
@@ -151,15 +163,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} financiadores</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de financiadores"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de financiadores" />
         }
       }
     }

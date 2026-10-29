@@ -11,6 +11,7 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso-administrativo-response';
 import { DerivacionDeParticipante } from '../../../../api/generated/model/derivacion-de-participante';
@@ -65,7 +66,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-derivar-participante',
-  imports: [RouterLink, FocoAlMontar],
+  imports: [Alerta, RouterLink, FocoAlMontar],
   templateUrl: './derivar-participante.html',
   styleUrl: '../../atencion.css',
 })

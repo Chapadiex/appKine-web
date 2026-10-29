@@ -43,7 +43,10 @@ import {
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Un tratamiento de la version vigente mientras se corrige. */
 interface TratamientoEnEdicion {
@@ -105,14 +108,23 @@ interface MedicionEnEdicion {
  */
 @Component({
   selector: 'app-enmienda-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './enmienda-page.html',
   styleUrl: '../../atencion.css',
 })
 export class EnmiendaPage {
+  /** Ruta de navegacion de la barra superior. */
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const turnoId = this.sesion()?.turnoId;
+    return turnoId === undefined
+      ? []
+      : [{ etiqueta: 'Atención clínica', ruta: ['/atencion', 'turnos', turnoId] }];
+  });
+
   private readonly api = inject(ClinicalApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly permisos = inject(PermissionsStore);
 
   readonly sesionId = input.required<string>();
@@ -132,7 +144,16 @@ export class EnmiendaPage {
   protected readonly cargando = signal(false);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorAtencion | null>(null);
+  /**
+   * Lo que falta corregir antes de mandar, y donde (UX-12): el motivo y la nota se marcan en su
+   * campo; un tratamiento o una medicion, arriba de su seccion. Nunca al pie del formulario.
+   */
   protected readonly aviso = signal('');
+  /** `true` si el error es de leer la atencion y no de mandar la enmienda: cambia el titulo. */
+  protected readonly errorAlLeer = signal(false);
+  protected readonly campoDelAviso = signal<
+    'motivo' | 'nota' | 'tratamientos' | 'mediciones' | null
+  >(null);
 
   // --- El formulario entero -------------------------------------------------------------
   protected readonly motivo = signal('');
@@ -219,6 +240,7 @@ export class EnmiendaPage {
       },
       error: (error: unknown) => {
         this.cargando.set(false);
+        this.errorAlLeer.set(true);
         this.error.set(traducirErrorAtencion(error));
       },
     });
@@ -295,27 +317,31 @@ export class EnmiendaPage {
     }
     const motivo = this.motivo().trim();
     if (motivo === '') {
-      this.aviso.set(
+      this.senalar(
+        'motivo',
         'Falta el motivo. Sin el, una correccion es indistinguible de un cambio silencioso.',
+        '#enmienda-motivo',
       );
       return;
     }
     if (this.presente() && this.notaDeCierre().trim() === '') {
-      this.aviso.set(
+      this.senalar(
+        'nota',
         'El paciente vino, así que la nota de cierre no puede quedar vacía: es lo que registra ' +
           'que se hizo.',
+        '#enmienda-nota',
       );
       return;
     }
 
     const tratamientos = this.tratamientosTocados() ? this.tratamientosParaEnviar() : undefined;
     if (typeof tratamientos === 'string') {
-      this.aviso.set(tratamientos);
+      this.senalar('tratamientos', tratamientos, '#titulo-enmienda-tratamientos');
       return;
     }
     const mediciones = this.medicionesTocadas() ? this.medicionesParaEnviar() : undefined;
     if (typeof mediciones === 'string') {
-      this.aviso.set(mediciones);
+      this.senalar('mediciones', mediciones, '#titulo-enmienda-mediciones');
       return;
     }
 
@@ -341,17 +367,42 @@ export class EnmiendaPage {
     this.enviando.set(true);
     this.error.set(null);
     this.aviso.set('');
+    this.campoDelAviso.set(null);
     this.api.enmendar(consultorioId, sesion.id, cuerpo).subscribe({
       next: () => {
         this.enviando.set(false);
+        // El aviso vive en el shell: sobrevive a la navegacion a las versiones (UX-12).
+        this.avisos.exito('Enmienda guardada', {
+          descripcion: 'Quedó como una versión nueva; la anterior se sigue pudiendo leer.',
+        });
         this.router
           .navigate(['/atencion', 'sesiones', sesion.id, 'versiones'])
           .catch(() => undefined);
       },
       error: (error: unknown) => {
         this.enviando.set(false);
+        this.errorAlLeer.set(false);
         this.error.set(traducirErrorAtencion(error));
       },
+    });
+  }
+
+  /** Marca lo que falta en su lugar y lleva el foco ahi: el boton de enviar esta al pie. */
+  private senalar(
+    campo: 'motivo' | 'nota' | 'tratamientos' | 'mediciones',
+    texto: string,
+    foco: string,
+  ): void {
+    this.aviso.set(texto);
+    this.campoDelAviso.set(campo);
+    // `setTimeout`: el error recien se pinta despues del ciclo de deteccion que dispara el signal.
+    setTimeout(() => {
+      const destino = document.querySelector<HTMLElement>(foco);
+      // Un titulo de seccion no recibe foco por si solo: se lo hace enfocable solo por codigo.
+      if (destino !== null && !/^(TEXTAREA|INPUT)$/.test(destino.tagName)) {
+        destino.setAttribute('tabindex', '-1');
+      }
+      destino?.focus();
     });
   }
 

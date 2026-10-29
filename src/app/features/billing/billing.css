@@ -53,14 +53,10 @@
 }
 
 /*
- * Un medio de pago. En pantalla ancha los tres campos van en fila porque se cargan de corrido
- * —medio, importe, referencia— y apilarlos obliga a recorrer la pantalla entera por cada medio.
+ * Un medio de pago. Los tres campos van en fila (grilla de 12 columnas, UX-14) porque se cargan
+ * de corrido —medio, importe, referencia—; aca solo el separador entre un medio y el siguiente.
  */
 .linea-medio {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-5);
-  align-items: flex-start;
   padding: var(--esp-4) 0;
   border-bottom: var(--borde-fino) solid var(--color-borde);
 }
@@ -69,13 +65,8 @@
   border-bottom: none;
 }
 
-.linea-medio .campo {
-  margin-bottom: 0;
-  min-width: 12rem;
-}
-
 .linea-medio .acciones {
-  margin-top: var(--esp-6);
+  margin: 0;
 }
 
 /* Listas de texto: las vinetas quedan porque son enumeraciones reales, no navegacion. */
@@ -88,20 +79,4 @@
 .lista-faltantes li,
 .lista-comprobante li {
   margin-bottom: var(--esp-3);
-}
-
-/*
- * Presentaciones a financiadores (M21): filtros y formularios cortos en fila.
- *
- * Los campos de un filtro se completan de corrido y se leen juntos; apilados obligan a recorrer
- * la pantalla entera para cambiar una fecha. En pantalla angosta envuelven solos.
- */
-.campos-en-linea {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--esp-5);
-}
-
-.campos-en-linea > .campo {
-  flex: 1 1 12rem;
 }

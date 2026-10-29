@@ -1,8 +1,18 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Pase } from '../../../../api/generated/model/pase';
 import { PaginaDeMovimientosDePase } from '../../../../api/generated/model/pagina-de-movimientos-de-pase';
@@ -20,7 +30,14 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
@@ -30,7 +47,6 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { ListarMovimientosDePaseRequestParams } from '../../../../api/generated/api/pases.serviceInterface';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
-import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { formatearFecha, formatearInstante } from '../../../../shared/utils/instantes';
 import {
@@ -47,8 +63,10 @@ import {
   renovacionApagadaPorAutorizante,
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
-import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
+import { PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /**
  * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
@@ -105,14 +123,18 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 @Component({
   selector: 'app-pases-de-persona-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PieDeTabla,
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
     Paginacion,
-    FocoAlMontar,
     AccionesDeFila,
     PanelLateral,
   ],
@@ -121,10 +143,13 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 })
 export class PasesDePersonaPage {
   private readonly api = inject(PasesApi);
+  private readonly avisos = inject(AvisosStore);
+  private readonly router = inject(Router);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly documento = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -151,12 +176,21 @@ export class PasesDePersonaPage {
     actual: 'pases',
   }));
   protected readonly pases = signal<readonly Pase[] | null>(null);
+  /** Busqueda por nombre del pase, sobre la lista completa de la persona. */
+  protected readonly busqueda = signal('');
   /**
-   * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 20: el enlace "renovado
-   * desde el periodo…" salta a otra fila de la tabla, y tiene que estar en la misma pagina.
+   * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 10: el enlace "renovado
+   * desde el periodo…" salta a otra fila de la tabla, y conviene que este a la vista. Si quedo en
+   * otra pagina o fuera de la busqueda, `irAPase` la muestra antes de enfocarla.
    */
   protected readonly tabla = tablaLocal(
-    computed(() => this.pases() ?? []),
+    computed(() => {
+      const texto = this.busqueda().trim().toLowerCase();
+      const todos = this.pases() ?? [];
+      return texto === ''
+        ? todos
+        : todos.filter((pase) => (pase.nombre ?? '').toLowerCase().includes(texto));
+    }),
     {
       porPagina: 100,
       columnas: {
@@ -188,22 +222,23 @@ export class PasesDePersonaPage {
   protected readonly productoElegido = signal('');
   protected readonly enviando = signal(false);
   protected readonly errorVenta = signal<ErrorPase | null>(null);
-  protected readonly venta = signal<ResultadoDeVenta | null>(null);
+  /**
+   * Que dato de la venta falta o esta mal, para decirlo en su campo (UX-12) y no en un cartel de
+   * la seccion. `null` cuando el rechazo es general (del servidor).
+   */
+  protected readonly campoDeVenta = signal<'producto' | 'desde' | 'hasta' | null>(null);
   protected readonly periodoDesde = signal('');
   protected readonly periodoHasta = signal('');
   protected readonly renovarAlVender = signal(false);
 
   /** El pase cuya renovacion se esta cambiando, para deshabilitar solo ese boton. */
   protected readonly renovando = signal<number | null>(null);
-  protected readonly errorRenovacion = signal<ErrorPase | null>(null);
 
   protected readonly accion = signal<Accion | null>(null);
   protected readonly ajusteCantidad = signal('');
   protected readonly ajusteMotivo = signal('');
   protected readonly ajusteIntentado = signal(false);
   protected readonly errorAccion = signal<ErrorPase | null>(null);
-  protected readonly avisoAccion = signal<string | null>(null);
-  protected readonly anulacion = signal<ResultadoDeAnulacionDePase | null>(null);
 
   protected readonly zona = computed(() => this.diaDeLaSede.zona());
   protected readonly nombre = computed(() => {
@@ -273,17 +308,14 @@ export class PasesDePersonaPage {
         this.persona.set(null);
         this.pases.set(null);
         this.detalle.set(null);
-        this.venta.set(null);
         this.errorVenta.set(null);
+        this.campoDeVenta.set(null);
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
         this.renovarAlVender.set(false);
         this.renovando.set(null);
-        this.errorRenovacion.set(null);
         this.cerrarAccion();
-        this.avisoAccion.set(null);
-        this.anulacion.set(null);
         this.clave = nuevaClaveDeIntento();
         this.cargar();
         this.cargarProductos();
@@ -331,7 +363,7 @@ export class PasesDePersonaPage {
     });
   }
 
-  private cargarProductos(): void {
+  protected cargarProductos(): void {
     const ids = this.ids();
     if (ids === null || !this.puedeVender()) {
       return;
@@ -393,22 +425,25 @@ export class PasesDePersonaPage {
     }
   }
 
-  /** "Movimientos 21 a 40 de 45": la posicion dicha con texto, no solo con los botones. */
-  protected rangoDeMovimientos(pagina: PaginaDeMovimientosDePase): string {
-    const total = pagina.totalElements ?? 0;
-    const cantidad = (pagina.content ?? []).length;
+  /** Filas por pagina del ledger (UX-14): va como `size`; cambiarla vuelve a la primera. */
+  protected readonly movimientosPorPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  protected cambiarMovimientosPorPagina(cantidad: number): void {
+    this.movimientosPorPagina.set(cantidad);
+    this.irAPaginaDeMovimientos(0);
+  }
+
+  /**
+   * En que orden se lee el ledger, dicho con texto: sin orden elegido va del mas viejo al mas
+   * nuevo, que es como se lee el saldo. La posicion ("Mostrando 1–10 de 45") la dice el pie.
+   */
+  protected ordenDeLosMovimientos(): string {
     const sort = this.ordenDeMovimientos.sort();
-    const orden =
-      sort === undefined || sort === 'ocurridoEn,asc'
-        ? ', del mas viejo al mas nuevo.'
-        : sort === 'ocurridoEn,desc'
-          ? ', del mas nuevo al mas viejo.'
-          : '.';
-    if (total <= cantidad) {
-      return `${total === 1 ? '1 movimiento' : `${total} movimientos`}${orden}`;
-    }
-    const desde = (pagina.page ?? 0) * (pagina.size ?? MOVIMIENTOS_POR_PAGINA) + 1;
-    return `Movimientos ${desde} a ${desde + cantidad - 1} de ${total}${orden}`;
+    return sort === undefined || sort === 'ocurridoEn,asc'
+      ? 'Del mas viejo al mas nuevo.'
+      : sort === 'ocurridoEn,desc'
+        ? 'Del mas nuevo al mas viejo.'
+        : '';
   }
 
   /**
@@ -433,32 +468,34 @@ export class PasesDePersonaPage {
       error: null,
     });
     const sort = this.ordenDeMovimientos.sort();
-    this.api.movimientos(ids.consultorioId, paseId, numero, sort).subscribe({
-      next: (pagina) => {
-        if (pedido !== this.pedidoMovimientos) {
-          return;
-        }
-        const ultima = Math.max((pagina.totalPages ?? 0) - 1, 0);
-        const fueraDeRango = numero > 0 && (pagina.content ?? []).length === 0;
-        if ((alFinal || fueraDeRango) && numero !== ultima) {
-          this.cargarMovimientos(pase, ultima);
-          return;
-        }
-        this.detalle.set({ paseId, pase, numero, pagina, cargando: false, error: null });
-      },
-      error: (error: unknown) => {
-        if (pedido === this.pedidoMovimientos) {
-          this.detalle.set({
-            paseId,
-            pase,
-            numero,
-            pagina: null,
-            cargando: false,
-            error: traducirErrorPase(error),
-          });
-        }
-      },
-    });
+    this.api
+      .movimientos(ids.consultorioId, paseId, numero, sort, this.movimientosPorPagina())
+      .subscribe({
+        next: (pagina) => {
+          if (pedido !== this.pedidoMovimientos) {
+            return;
+          }
+          const ultima = Math.max((pagina.totalPages ?? 0) - 1, 0);
+          const fueraDeRango = numero > 0 && (pagina.content ?? []).length === 0;
+          if ((alFinal || fueraDeRango) && numero !== ultima) {
+            this.cargarMovimientos(pase, ultima);
+            return;
+          }
+          this.detalle.set({ paseId, pase, numero, pagina, cargando: false, error: null });
+        },
+        error: (error: unknown) => {
+          if (pedido === this.pedidoMovimientos) {
+            this.detalle.set({
+              paseId,
+              pase,
+              numero,
+              pagina: null,
+              cargando: false,
+              error: traducirErrorPase(error),
+            });
+          }
+        },
+      });
   }
 
   /** Despues de una escritura, el ledger abierto se relee en la pagina del movimiento nuevo. */
@@ -468,7 +505,7 @@ export class PasesDePersonaPage {
       return;
     }
     const total = (actual.pagina?.totalElements ?? 0) + 1;
-    const tamano = actual.pagina?.size ?? MOVIMIENTOS_POR_PAGINA;
+    const tamano = actual.pagina?.size ?? this.movimientosPorPagina();
     // El movimiento nuevo queda al final del orden cronologico: se vuelve a ese orden para verlo.
     this.ordenDeMovimientos.reiniciar();
     this.cargarMovimientos(pase, Math.floor((total - 1) / tamano), true);
@@ -508,18 +545,37 @@ export class PasesDePersonaPage {
     return esAbono(pase) && pase.estado !== 'ANULADO' && pase.renovadoPorPaseId === undefined;
   }
 
-  /** Lleva el foco a la fila de otro periodo de la cadena, sin navegar. */
+  /**
+   * Lleva el foco a la fila de otro periodo de la cadena, sin navegar. Si la fila no se ve —esta en
+   * otra pagina o la busqueda la deja afuera— primero se la muestra, y se enfoca despues de pintar.
+   */
   protected irAPase(evento: Event, paseId: number | undefined): void {
     evento.preventDefault();
-    const fila = this.documento.getElementById(`pase-${paseId}`);
-    fila?.focus();
-    fila?.scrollIntoView?.({ block: 'nearest' });
+    const destino = this.pases()?.find((p) => p.id === paseId);
+    if (destino === undefined) return;
+    const enfocar = (): void => {
+      const fila = this.documento.getElementById(`pase-${paseId}`);
+      fila?.focus();
+      fila?.scrollIntoView?.({ block: 'nearest' });
+    };
+    if (this.tabla.visibles().includes(destino)) {
+      enfocar();
+      return;
+    }
+    if (!this.tabla.mostrar(destino)) {
+      this.busqueda.set('');
+      this.tabla.mostrar(destino);
+    }
+    afterNextRender(enfocar, { injector: this.injector });
   }
 
   protected cambiarRenovacion(pase: Pase, activa: boolean): void {
     const ids = this.ids();
+    const titulo = activa
+      ? 'No pudimos activar la renovación'
+      : 'No pudimos desactivar la renovación';
     if (ids === null) {
-      this.errorRenovacion.set(errorSinContextoDePase());
+      this.avisos.error(titulo, { descripcion: errorSinContextoDePase().mensaje });
       return;
     }
     if (pase.id === undefined || this.renovando() !== null) {
@@ -527,25 +583,34 @@ export class PasesDePersonaPage {
     }
     const paseId = pase.id;
     this.renovando.set(paseId);
-    this.errorRenovacion.set(null);
-    this.avisoAccion.set(null);
-    this.anulacion.set(null);
     this.api.configurarRenovacion(ids.consultorioId, paseId, activa, pase.version ?? 0).subscribe({
       next: (actualizado) => {
         this.renovando.set(null);
-        this.avisoAccion.set(
-          actualizado.renovacionAutomatica
-            ? `"${actualizado.nombre}" se va a renovar solo: unos días antes del ` +
-                `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
-                'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.'
-            : `"${actualizado.nombre}" ya no se renueva solo. El periodo actual sigue como estaba.`,
-        );
+        if (actualizado.renovacionAutomatica) {
+          this.avisos.exito('Renovación automática activada', {
+            descripcion:
+              `"${actualizado.nombre}": unos días antes del ` +
+              `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
+              'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.',
+          });
+        } else {
+          this.avisos.exito('Renovación automática desactivada', {
+            descripcion: `"${actualizado.nombre}": el periodo actual sigue como estaba.`,
+          });
+        }
         this.cargar();
       },
+      // Accion de fila, sin formulario: aviso global con el mensaje del backend (UX-12).
       error: (error: unknown) => {
         this.renovando.set(null);
         const traducido = traducirErrorPase(error);
-        this.errorRenovacion.set(traducido);
+        const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+        this.avisos.error(titulo, {
+          descripcion: traducido.mensaje,
+          accion: reintentable
+            ? { etiqueta: 'Reintentar', ejecutar: () => this.cambiarRenovacion(pase, activa) }
+            : undefined,
+        });
         // Version vieja o ya renovado: el pase en pantalla no es el del servidor.
         if (traducido.causa === 'version-vieja' || traducido.causa === 'pase-no-ajustable') {
           this.cargar();
@@ -559,6 +624,7 @@ export class PasesDePersonaPage {
   protected elegirProducto(id: string): void {
     this.productoElegido.set(id);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     // Un abono necesita su periodo: arranca hoy, que es lo mas comun.
     const producto = this.productoDeLaVenta();
     this.periodoDesde.set(producto && esAbono(producto) ? this.diaDeLaSede.hoy() : '');
@@ -572,6 +638,7 @@ export class PasesDePersonaPage {
   protected cambiarPeriodo(campo: 'desde' | 'hasta', valor: string): void {
     (campo === 'desde' ? this.periodoDesde : this.periodoHasta).set(valor);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     this.clave = nuevaClaveDeIntento();
   }
 
@@ -579,6 +646,7 @@ export class PasesDePersonaPage {
   protected cambiarRenovacionAlVender(valor: boolean): void {
     this.renovarAlVender.set(valor);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     this.clave = nuevaClaveDeIntento();
   }
 
@@ -597,7 +665,7 @@ export class PasesDePersonaPage {
       return;
     }
     if (!Number.isInteger(productoId) || productoId <= 0) {
-      this.errorVenta.set(validacion('Elegí el producto a vender.'));
+      this.errorDeCampoDeVenta('producto', 'Elegí el producto a vender.');
       return;
     }
     const producto = this.productoDeLaVenta();
@@ -605,12 +673,13 @@ export class PasesDePersonaPage {
     const desde = this.periodoDesde();
     const hasta = this.periodoHasta();
     if (deAbono && desde === '') {
-      this.errorVenta.set(validacion('Indica desde que día cubre el abono.'));
+      this.errorDeCampoDeVenta('desde', 'Indica desde que día cubre el abono.');
       return;
     }
     if (deAbono && hasta !== '' && hasta < desde) {
-      this.errorVenta.set(
-        validacion('El último día del periodo no puede ser anterior al primero.'),
+      this.errorDeCampoDeVenta(
+        'hasta',
+        'El último día del periodo no puede ser anterior al primero.',
       );
       return;
     }
@@ -619,11 +688,11 @@ export class PasesDePersonaPage {
       : undefined;
     this.enviando.set(true);
     this.errorVenta.set(null);
-    this.venta.set(null);
+    this.campoDeVenta.set(null);
     this.api.vender(ids.consultorioId, productoId, ids.personaId, this.clave, periodo).subscribe({
       next: (resultado) => {
         this.enviando.set(false);
-        this.venta.set(resultado);
+        this.avisarVenta(resultado);
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
@@ -689,11 +758,12 @@ export class PasesDePersonaPage {
           this.enviando.set(false);
           this.cerrarAccion();
           const ajustado = datos.pase ?? pase;
-          this.avisoAccion.set(
-            `Se ajusto el saldo de "${ajustado.nombre}": ahora tiene ` +
+          this.avisos.exito('Saldo ajustado', {
+            descripcion:
+              `"${ajustado.nombre}" ahora tiene ` +
               `${creditosEnPalabras(ajustado.creditosDisponibles)} de ` +
               `${ajustado.creditosIniciales}. El ajuste queda en los movimientos con su motivo.`,
-          );
+          });
           // El ledger abierto se relee en la pagina donde quedo el ajuste.
           this.releerMovimientos(ajustado);
           this.cargar();
@@ -719,7 +789,7 @@ export class PasesDePersonaPage {
       next: (resultado) => {
         this.enviando.set(false);
         this.cerrarAccion();
-        this.anulacion.set(resultado);
+        this.avisarAnulacion(resultado);
         this.releerMovimientos(resultado.pase ?? pase);
         this.cargar();
       },
@@ -740,8 +810,67 @@ export class PasesDePersonaPage {
   private prepararAccion(accion: Accion): void {
     this.cerrarAccion();
     this.accion.set(accion);
-    this.avisoAccion.set(null);
-    this.anulacion.set(null);
+  }
+
+  private errorDeCampoDeVenta(campo: 'producto' | 'desde' | 'hasta', mensaje: string): void {
+    this.errorVenta.set(validacion(mensaje));
+    this.campoDeVenta.set(campo);
+  }
+
+  /**
+   * El resultado de la venta va al aviso global (UX-12). Vender no es cobrar: con permiso de cobro,
+   * el aviso ofrece ir a la cuenta corriente.
+   */
+  private avisarVenta(resultado: ResultadoDeVenta): void {
+    const pase = resultado.pase;
+    const partes = [
+      `"${pase?.nombre ?? ''}": ${creditosEnPalabras(pase?.creditosDisponibles)}` +
+        (pase && esAbono(pase)
+          ? ` del ${formatearFecha(pase.vigenciaDesde)} al ${formatearFecha(pase.vigenciaHasta)}.`
+          : ` hasta el ${formatearFecha(pase?.vigenciaHasta)}.`),
+    ];
+    if (resultado.deuda) {
+      partes.push(
+        `Quedo una deuda de ${importeDePase(resultado.deuda.importe, resultado.deuda.moneda)} ` +
+          'a nombre de la persona.',
+      );
+    }
+    if (pase?.renovacionAutomatica) {
+      partes.push('Se va a renovar solo al terminar el periodo.');
+    }
+    const cobrar = this.permisos.tiene(PERMISO_COBRO_REGISTER)
+      ? {
+          etiqueta: 'Cobrar desde la cuenta corriente',
+          ejecutar: () => {
+            this.router
+              .navigateByUrl(this.rutaCuentaCorriente())
+              .catch((error: unknown) => console.error('No se pudo abrir la cuenta', error));
+          },
+        }
+      : undefined;
+    const opciones = { descripcion: partes.join(' '), accion: cobrar };
+    if (resultado.creada === false) {
+      this.avisos.info('Esa venta ya estaba registrada', opciones);
+    } else {
+      this.avisos.exito('Pase vendido', opciones);
+    }
+  }
+
+  private avisarAnulacion(resultado: ResultadoDeAnulacionDePase): void {
+    const nombre = resultado.pase?.nombre ?? '';
+    const deuda = resultado.deuda
+      ? `La deuda de la venta, ${importeDePase(resultado.deuda.importe, resultado.deuda.moneda)}, ` +
+        'quedo anulada: no se borra, sigue en la cuenta corriente como anulada y con el motivo.'
+      : 'La venta no tenia deuda.';
+    if (resultado.anulado === false) {
+      this.avisos.info(`"${nombre}" ya estaba anulado`, {
+        descripcion: `No se cambio nada. ${deuda}`,
+      });
+    } else {
+      this.avisos.exito('Pase anulado', {
+        descripcion: `"${nombre}": su saldo se descarto. ${deuda}`,
+      });
+    }
   }
 }
 

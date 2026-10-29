@@ -8,6 +8,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { VigenciasPage } from './vigencias-page';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -171,7 +172,9 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('conserva el código y el valor que tenia');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Vigencia dada de baja');
+    expect(aviso?.descripcion).toContain('conserva el código y el valor que tenía');
   });
 
   it('un nomenclador de la plataforma se consulta pero no se administra', async () => {
@@ -233,7 +236,48 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Las anteriores del mismo código no se tocaron');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Vigencia 260101 cargada');
+    expect(aviso?.descripcion).toContain('Las anteriores del mismo código no se tocaron');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('dos vigencias que se pisan se explican pegado al código y las fechas (UX-12)', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    pulsar(anfitrion, fixture, 'Cargar una vigencia');
+    escribir(anfitrion, '#alta-vigencia-codigo', '250101');
+    escribir(anfitrion, '#alta-vigencia-name', 'Sesión de kinesiologia');
+    elegir(anfitrion, '#alta-vigencia-practica', '9');
+    fixture.detectChanges();
+    anfitrion.querySelector('form')?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === VIGENCIAS,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/nomenclador-vigencia-overlap', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = anfitrion.querySelector('#alta-vigencia-codigo-conflicto');
+    expect(alerta?.textContent).toContain('Se superpone con otra vigencia del mismo código');
+    for (const selector of [
+      '#alta-vigencia-codigo',
+      '#alta-vigencia-desde',
+      '#alta-vigencia-hasta',
+    ]) {
+      const control = anfitrion.querySelector(selector);
+      expect(control?.getAttribute('aria-invalid')).toBe('true');
+      expect(control?.getAttribute('aria-describedby')).toBe('alta-vigencia-codigo-conflicto');
+    }
+    expect(anfitrion.querySelectorAll('app-alerta').length).toBe(1);
   });
 
   it('el filtro por código es lo que muestra la historia completa de un código', async () => {
@@ -258,6 +302,54 @@ describe('VigenciasPage', () => {
     fixture.detectChanges();
 
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    // Patron de listado (UX-14): total en la toolbar, pie estandar y sin h2 que repita el titulo.
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 vigencia',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–1 de 1');
+    expect(anfitrion.querySelector('section[aria-label="Vigencias cargadas"] h2')).toBeNull();
+  });
+
+  it('sin vigencias con el código elegido ofrece limpiar los filtros, y limpiar relee todo', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const campo = anfitrion.querySelector<HTMLInputElement>('#filtro-codigo-vigencia');
+    if (campo === null) {
+      throw new Error('No existe el filtro por código');
+    }
+    campo.value = '999';
+    campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    httpMock.expectOne(NOMENCLADOR).flush(NOMENCLADOR_PROPIO);
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === VIGENCIAS && peticion.params.get('codigo') === '999',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos vigencias');
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    fixture.detectChanges();
+    httpMock.expectOne(NOMENCLADOR).flush(NOMENCLADOR_PROPIO);
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === VIGENCIAS && !peticion.params.has('codigo'),
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Este nomenclador todavía no tiene vigencias',
+    );
   });
 
   it('un id que no es un número no le pide nada al backend', async () => {

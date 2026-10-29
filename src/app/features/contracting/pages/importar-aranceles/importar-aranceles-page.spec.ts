@@ -189,6 +189,17 @@ describe('ImportarArancelesPage', () => {
     expect(texto).toContain('Se pisa con el vigente.');
     expect(boton(fixture, 'Continuar').disabled).toBe(true);
     expect(botonOpcional(fixture, 'Confirmar 2 aranceles')).toBeUndefined();
+
+    // La vista previa es una tabla con el patron (UX-14): pie estandar y orden por resultado, que
+    // junta las filas que no entran arriba.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–2 de 2');
+    const orden = [...raiz.querySelectorAll<HTMLButtonElement>('th .tabla__orden')].find((b) =>
+      (b.textContent ?? '').includes('Resultado'),
+    )!;
+    orden.click();
+    await estable(fixture);
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('No entra');
   });
 
   it('confirmar manda el mismo lote en modo CONFIRMAR y vuelve a la grilla', async () => {

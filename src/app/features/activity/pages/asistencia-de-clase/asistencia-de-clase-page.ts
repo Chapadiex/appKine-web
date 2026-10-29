@@ -54,7 +54,8 @@ import {
 } from '../../models/etiquetas-de-asistencia';
 import { avisoDeDevengo } from '../../models/etiquetas-de-devengo';
 import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
-import { AsistenciaApi } from '../../services/asistencia-api';
+import { AsistenciaApi, PARTICIPANTES_POR_PAGINA } from '../../services/asistencia-api';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -62,8 +63,10 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { DetalleOperativoRequestParams } from '../../../../api/generated/api/asistencia-de-clases.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -121,12 +124,22 @@ interface Historial {
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
-  imports: [Ayuda, Migas, CabeceraDePagina, RouterLink, Paginacion, FocoAlMontar, ColumnaOrdenable],
+  imports: [
+    Ayuda,
+    CabeceraDePagina,
+    RouterLink,
+    Paginacion,
+    FocoAlMontar,
+    ColumnaOrdenable,
+    EstadoVacio,
+    Alerta,
+  ],
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })
 export class AsistenciaDeClasePage {
   private readonly api = inject(AsistenciaApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -151,6 +164,11 @@ export class AsistenciaDeClasePage {
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly pagina = signal(0);
+  /**
+   * Filas por pagina (UX-14). Es una pantalla operativa: arranca con todos los participantes a la
+   * vista (el tope del backend) para tomar lista sin paginar; el pie deja elegir menos.
+   */
+  protected readonly porPagina = signal<number>(PARTICIPANTES_POR_PAGINA);
 
   /**
    * Orden de los participantes, pedido al servidor (DP-45): vuelve a la primera pagina. Las marcas
@@ -173,7 +191,6 @@ export class AsistenciaDeClasePage {
     consumos: readonly ConsumoDeItem[];
     devengos: readonly DevengoDeItem[];
   } | null>(null);
-  protected readonly avisoCierre = signal<string | null>(null);
   protected readonly historial = signal<Historial | null>(null);
 
   protected readonly zona = computed(() => this.diaDeLaSede.zona());
@@ -225,7 +242,6 @@ export class AsistenciaDeClasePage {
         // Cambiar de sede o de clase no puede dejar marcas ni resultados de la anterior.
         this.marcas.set(new Map());
         this.lote.set(null);
-        this.avisoCierre.set(null);
         this.errorAccion.set(null);
         this.historial.set(null);
         this.pagina.set(0);
@@ -251,23 +267,32 @@ export class AsistenciaDeClasePage {
     if (this.estado().tipo !== 'listo') {
       this.estado.set({ tipo: 'cargando' });
     }
-    this.api.detalle(ids.consultorioId, ids.claseId, this.pagina(), this.orden.sort()).subscribe({
-      next: (detalle) => {
-        if (pedido === this.pedido) {
-          this.estado.set({ tipo: 'listo', detalle });
-        }
-      },
-      error: (error: unknown) => {
-        if (pedido === this.pedido) {
-          this.estado.set({ tipo: 'error', error: traducirErrorAsistencia(error) });
-        }
-      },
-    });
+    const { consultorioId, claseId } = ids;
+    this.api
+      .detalle(consultorioId, claseId, this.pagina(), this.orden.sort(), this.porPagina())
+      .subscribe({
+        next: (detalle) => {
+          if (pedido === this.pedido) {
+            this.estado.set({ tipo: 'listo', detalle });
+          }
+        },
+        error: (error: unknown) => {
+          if (pedido === this.pedido) {
+            this.estado.set({ tipo: 'error', error: traducirErrorAsistencia(error) });
+          }
+        },
+      });
   }
 
   protected irAPagina(pagina: number): void {
     this.pagina.set(pagina);
     this.cargar();
+  }
+
+  /** Filas por pagina elegidas en el pie: vuelve a la primera pagina y relee. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.irAPagina(0);
   }
 
   // ------------------------------------------------------------------ ciclo de la clase
@@ -284,7 +309,8 @@ export class AsistenciaDeClasePage {
         // "Iniciar clase" desaparece con la clase en curso: el foco iria al `body`.
         this.enfocarDespues('#titulo-clase');
       },
-      error: (error: unknown) => this.fallarAccion(error),
+      error: (error: unknown) =>
+        this.fallarAccionDeClase('No pudimos iniciar la clase', error, () => this.iniciar()),
     });
   }
 
@@ -298,16 +324,22 @@ export class AsistenciaDeClasePage {
       next: (resultado) => {
         const ausentados = resultado.ausentados?.length ?? 0;
         const espera = resultado.esperaCancelada ?? 0;
-        this.avisoCierre.set(
-          resultado.cerroAhora === false
-            ? 'La clase ya estaba cerrada: no se cambio nada.'
-            : `Clase cerrada. Se marcaron ausentes ${ausentados} sin resolver` +
-                (espera > 0 ? ` y se cancelaron ${espera} de la lista de espera.` : '.'),
-        );
+        // El resultado va al aviso global (UX-12). "Cerrar clase" desaparece: el foco al titulo.
+        if (resultado.cerroAhora === false) {
+          this.avisos.info('La clase ya estaba cerrada', { descripcion: 'No se cambio nada.' });
+        } else {
+          this.avisos.exito('Clase cerrada', {
+            descripcion:
+              `Se marcaron ausentes ${ausentados} sin resolver` +
+              (espera > 0 ? ` y se cancelaron ${espera} de la lista de espera.` : '.'),
+          });
+        }
         this.marcas.set(new Map());
         this.terminarAccion();
+        this.enfocarDespues('#titulo-clase');
       },
-      error: (error: unknown) => this.fallarAccion(error),
+      error: (error: unknown) =>
+        this.fallarAccionDeClase('No pudimos cerrar la clase', error, () => this.cerrar()),
     });
   }
 
@@ -483,7 +515,6 @@ export class AsistenciaDeClasePage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.lote.set(null);
-    this.avisoCierre.set(null);
   }
 
   private terminarAccion(): void {
@@ -498,6 +529,21 @@ export class AsistenciaDeClasePage {
     this.enviando.set(false);
     this.errorAccion.set(traducir(error));
     // El estado de la clase pudo cambiar por otro operador: se relee para no mentir.
+    this.cargar();
+  }
+
+  /**
+   * Iniciar o cerrar la clase son botones sueltos, sin formulario: su rechazo va al aviso global
+   * (UX-12), con Reintentar cuando un fallo de red lo justifica. Se relee igual.
+   */
+  private fallarAccionDeClase(titulo: string, error: unknown, reintentar: () => void): void {
+    this.enviando.set(false);
+    const traducido = traducirErrorAsistencia(error);
+    const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+    this.avisos.error(titulo, {
+      descripcion: traducido.mensaje,
+      accion: reintentable ? { etiqueta: 'Reintentar', ejecutar: reintentar } : undefined,
+    });
     this.cargar();
   }
 }

@@ -141,7 +141,10 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     for (const persona of [ana, bruno]) {
       await inscribir(page, persona);
       await expect(
-        page.getByText(`${persona.apellido}, ${persona.nombre} quedo inscripta con lugar.`),
+        // UX-12: el resultado de la inscripcion es un aviso global.
+        page
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText(`${persona.apellido}, ${persona.nombre} quedo inscripta con lugar`),
       ).toBeVisible();
     }
     const rechazo = respuestaDe(page, 'POST', /\/inscripciones$/);
@@ -151,7 +154,9 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     expect((await problemaDe(completa)).type).toBe(uriDeProblema('clase-completa'));
     await page.getByRole('button', { name: 'Anotar en la lista de espera' }).click();
     await expect(
-      page.getByText(`${carla.apellido}, ${carla.nombre} quedo en la lista de espera, posicion 1.`),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`${carla.apellido}, ${carla.nombre} quedo en la lista de espera, posicion 1`),
     ).toBeVisible();
 
     // La baja va en el menu "⋯" de la fila (refactor UX/UI del 28/10/2026).
@@ -168,9 +173,11 @@ test.describe('Circuito de F9 de punta a punta contra el backend real', () => {
     await page.getByRole('button', { name: 'Dar de baja', exact: true }).click();
     expect((await baja).status()).toBe(200);
     await expect(
-      page.getByText(
-        `${carla.apellido}, ${carla.nombre} entro desde la lista de espera y recibe un aviso.`,
-      ),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(
+          `${carla.apellido}, ${carla.nombre} entro desde la lista de espera y recibe un aviso.`,
+        ),
     ).toBeVisible();
 
     // --- 2. Venta del pase: a Ana por pantalla, a Carla por la API ---------------------------

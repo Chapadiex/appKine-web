@@ -31,6 +31,12 @@ import {
 } from '../../../../api/generated/model/medicion-definicion-response';
 import { RegistrarMedicion } from '../../../../api/generated/model/registrar-medicion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -60,13 +66,14 @@ const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesio
  * <p><b>Completitud informa y no gatea</b>: "4 de 18" no impide cerrar.
  */
 @Component({
-  imports: [Ayuda],
+  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, PieDeTabla],
   selector: 'app-mediciones-de-sesion',
   templateUrl: './mediciones-de-sesion.html',
   styleUrl: '../../atencion.css',
 })
 export class MedicionesDeSesion {
   private readonly api = inject(ClinicalApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly injector = inject(Injector);
 
   readonly consultorioId = input.required<number>();
@@ -90,12 +97,15 @@ export class MedicionesDeSesion {
   protected readonly cargando = signal(false);
   protected readonly guardando = signal(false);
   protected readonly error = signal<ErrorAtencion | null>(null);
+  /** Que fallo: leer, registrar o quitar. Decide el titulo y donde se ve el error (UX-12). */
+  protected readonly origenDelError = signal<'leer' | 'registrar' | 'quitar'>('leer');
 
   /**
    * Los tipos de medicion respondieron 403: el rol no tiene `catalogo:read` (DP-36). Las
    * mediciones ya tomadas se siguen viendo; lo que no se puede es elegir una nueva.
    */
   protected readonly catalogoSinPermiso = signal(false);
+  /** Lo que falta para registrar: se dice debajo de la medicion, no en un aviso (UX-12). */
   protected readonly aviso = signal('');
 
   // --- Formulario de una medicion ---------------------------------------------------------
@@ -139,6 +149,17 @@ export class MedicionesDeSesion {
 
   protected readonly medidas = computed(() => this.comparacion()?.medidas ?? []);
 
+  /**
+   * La tabla de lo medido (UX-14): orden por medida o lado y el pie estandar. Sin orden elegido
+   * queda el del servidor, que es el del catalogo.
+   */
+  protected readonly tabla = tablaLocal(this.medidas, {
+    columnas: {
+      medida: (medida) => medida.nombre,
+      lado: (medida) => ladoLegible(medida.lateralidad),
+    },
+  });
+
   /** Contra que se compara. Que se acoto al caso se dice: comparar contra otra cosa engaña. */
   protected readonly baseline = computed(() => {
     const comparacion = this.comparacion();
@@ -166,6 +187,7 @@ export class MedicionesDeSesion {
     const sesionId = this.sesionId();
     this.cargando.set(true);
     this.error.set(null);
+    this.origenDelError.set('leer');
 
     forkJoin({
       comparacion: this.api.compararMediciones(consultorioId, sesionId),
@@ -262,6 +284,7 @@ export class MedicionesDeSesion {
 
     this.guardando.set(true);
     this.error.set(null);
+    this.origenDelError.set('registrar');
     this.aviso.set('');
     const nota = this.nota().trim();
     this.api
@@ -272,7 +295,7 @@ export class MedicionesDeSesion {
       .subscribe({
         next: () => {
           this.guardando.set(false);
-          this.aviso.set(`Medición registrada: ${definicion.name ?? 'medida'}.`);
+          this.avisos.exito('Medición registrada', { descripcion: definicion.name ?? 'medida' });
           this.limpiarValor();
           this.cargar();
         },
@@ -287,6 +310,7 @@ export class MedicionesDeSesion {
     }
     this.guardando.set(true);
     this.error.set(null);
+    this.origenDelError.set('quitar');
     this.aviso.set('');
     this.api
       .borrarMedicion(
@@ -298,7 +322,7 @@ export class MedicionesDeSesion {
       .subscribe({
         next: () => {
           this.guardando.set(false);
-          this.aviso.set(`Medición quitada: ${medida.nombre ?? 'medida'}.`);
+          this.avisos.exito('Medición quitada', { descripcion: medida.nombre ?? 'medida' });
           this.cargar();
         },
         error: (error: unknown) => this.fallo(error),

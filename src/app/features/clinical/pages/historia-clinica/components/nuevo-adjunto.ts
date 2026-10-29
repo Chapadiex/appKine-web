@@ -7,6 +7,8 @@ import {
 import { ErrorHistoria, traducirErrorHistoria } from '../../../models/historia-errors';
 import { CATEGORIAS_DE_ADJUNTO } from '../../../models/etiquetas-de-historia';
 import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-clinica-api';
+import { Alerta } from '../../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../../core/services/avisos.store';
 
 /**
  * Subir un adjunto clinico (D-a, RF-M25).
@@ -17,11 +19,13 @@ import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-cl
  */
 @Component({
   selector: 'app-nuevo-adjunto',
+  imports: [Alerta],
   templateUrl: './nuevo-adjunto.html',
   styleUrl: '../historia-clinica.css',
 })
 export class NuevoAdjunto {
   private readonly api = inject(HistoriaClinicaApi);
+  private readonly avisos = inject(AvisosStore);
 
   readonly historiaClinicaId = input.required<number>();
   readonly justificacion = input.required<Justificacion>();
@@ -41,7 +45,6 @@ export class NuevoAdjunto {
   protected readonly enviando = signal(false);
   protected readonly intentoEnviar = signal(false);
   protected readonly error = signal<ErrorHistoria | null>(null);
-  protected readonly aviso = signal('');
 
   protected readonly faltaArchivo = computed(() => this.archivo() === null);
 
@@ -76,7 +79,8 @@ export class NuevoAdjunto {
           this.archivo.set(null);
           this.titulo.set('');
           formulario.reset();
-          this.aviso.set('Adjunto subido. Ya aparece en el timeline.');
+          // UX-12: el resultado es un aviso global.
+          this.avisos.exito('Adjunto subido', { descripcion: 'Ya aparece en el timeline.' });
           this.subido.emit(adjunto);
         },
         error: (error: unknown) => {

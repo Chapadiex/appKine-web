@@ -61,9 +61,18 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
 type PanelDeOrden = 'editar' | 'baja' | 'documento';
@@ -72,7 +81,6 @@ type PanelDeOrden = 'editar' | 'baja' | 'documento';
 type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver' | 'historial' | 'consumo';
 
 /** Eventos por pagina del historial de una autorizacion. Tiene decenas de hechos, no miles. */
-const TAMANO_DE_HISTORIAL = 20;
 
 /** Lectura del historial del panel abierto. */
 type EstadoDeHistorial =
@@ -151,10 +159,15 @@ interface PanelAbierto {
 @Component({
   selector: 'app-ordenes-y-autorizaciones-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
     Paginacion,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -170,6 +183,7 @@ interface PanelAbierto {
 export class OrdenesYAutorizacionesPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(DocumentosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly coberturasApi = inject(CoberturasApi);
   private readonly adjuntosApi = inject(AdjuntosApi);
   private readonly personas = inject(PersonApi);
@@ -222,8 +236,28 @@ export class OrdenesYAutorizacionesPage {
   protected readonly ordenes = signal<readonly OrdenResponse[]>([]);
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
 
+  /**
+   * Busqueda de cada listado (patron de listados de UX-14). Las listas llegan completas, asi que
+   * se filtran en la pantalla: por quien la firmo o el numero, y por numero o estado.
+   */
+  protected readonly busquedaDeOrdenes = signal('');
+  protected readonly busquedaDeAutorizaciones = signal('');
+
+  protected readonly ordenesBuscadas = computed(() =>
+    filtrarPorTexto(this.ordenes(), this.busquedaDeOrdenes(), (orden) => [
+      emisorEnPalabras(orden),
+      orden.numero,
+    ]),
+  );
+  protected readonly autorizacionesBuscadas = computed(() =>
+    filtrarPorTexto(this.autorizaciones(), this.busquedaDeAutorizaciones(), (autorizacion) => [
+      autorizacion.numero,
+      estadoDeAutorizacion(autorizacion),
+    ]),
+  );
+
   /** Orden y paginado de las listas completas (plan §3.4): el backend devuelve arrays. */
-  protected readonly tablaOrdenes = tablaLocal(this.ordenes, {
+  protected readonly tablaOrdenes = tablaLocal(this.ordenesBuscadas, {
     columnas: {
       emisor: (orden) => emisorEnPalabras(orden),
       numero: (orden) => orden.numero ?? null,
@@ -233,7 +267,7 @@ export class OrdenesYAutorizacionesPage {
     },
   });
 
-  protected readonly tablaAutorizaciones = tablaLocal(this.autorizaciones, {
+  protected readonly tablaAutorizaciones = tablaLocal(this.autorizacionesBuscadas, {
     columnas: {
       numero: (autorizacion) => autorizacion.numero ?? null,
       estado: (autorizacion) => estadoDeAutorizacion(autorizacion),
@@ -290,7 +324,23 @@ export class OrdenesYAutorizacionesPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaPersona | null>(null);
-  protected readonly exito = signal<string | null>(null);
+
+  /** Rechazo de la consulta de elegibilidad: va arriba de su formulario, no en un panel. */
+  protected readonly errorDeElegibilidad = signal<string | null>(null);
+
+  /**
+   * El rechazo choca con algo que ya existe (numero en uso, otra aprobada de la misma practica) y
+   * se muestra pegado a los campos que lo produjeron (UX-12), no como error general del panel.
+   */
+  protected readonly esConflictoDeCampo = computed(() => {
+    const causa = this.causaAccion();
+    return causa === 'numero-en-uso' || causa === 'autorizacion-superpuesta';
+  });
+
+  /** El error general del panel abierto: todo lo que no es un conflicto de campo. */
+  protected readonly mensajeGeneral = computed(() =>
+    this.esConflictoDeCampo() ? null : this.errorAccion(),
+  );
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
   protected readonly faltaPerfil = computed(() => this.causaAccion() === 'sin-perfil-paciente');
@@ -501,7 +551,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.crearOrden(id, cuerpo).subscribe({
-      next: () => this.terminar('Se registro la orden medica.'),
+      next: () => this.terminar('Orden registrada'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -552,7 +602,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.editarOrden(personaId, original.id, cuerpo).subscribe({
-      next: () => this.terminar('Se corrigio la orden medica.'),
+      next: () => this.terminar('Orden corregida'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -574,8 +624,9 @@ export class OrdenesYAutorizacionesPage {
     this.api.darDeBajaOrden(personaId, abierto.id, motivo).subscribe({
       next: () =>
         this.terminar(
-          'La orden quedo dada de baja. No se borro: sigue siendo consultable, y las ' +
-            'autorizaciones que la referencian quedan intactas.',
+          'Orden dada de baja',
+          'No se borro: sigue siendo consultable, y las autorizaciones que la referencian quedan ' +
+            'intactas.',
         ),
       error: (error: unknown) => this.fallo(error),
     });
@@ -615,7 +666,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.crearAutorizacion(id, cuerpo).subscribe({
-      next: () => this.terminar('Se registro la autorización.'),
+      next: () => this.terminar('Autorización registrada'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -660,7 +711,7 @@ export class OrdenesYAutorizacionesPage {
     this.limpiarAvisos();
 
     this.api.editarAutorizacion(personaId, original.id, cuerpo).subscribe({
-      next: () => this.terminar('Se corrigio la autorización.'),
+      next: () => this.terminar('Autorización corregida'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -725,12 +776,13 @@ export class OrdenesYAutorizacionesPage {
 
     this.api.resolver(personaId, original.id, cuerpo).subscribe({
       next: () =>
-        this.terminar(
-          accion === 'APROBAR'
-            ? 'La autorización quedo aprobada. Aprobada es terminal: si el financiador cambia de ' +
-                'opinion, se da de baja esta y se carga otra.'
-            : 'Se registro la respuesta del financiador.',
-        ),
+        accion === 'APROBAR'
+          ? this.terminar(
+              'Autorización aprobada',
+              'Aprobada es terminal: si el financiador cambia de opinion, se da de baja esta y se ' +
+                'carga otra.',
+            )
+          : this.terminar('Respuesta del financiador registrada'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -752,7 +804,8 @@ export class OrdenesYAutorizacionesPage {
     this.api.darDeBajaAutorizacion(personaId, abierto.id, motivo).subscribe({
       next: () =>
         this.terminar(
-          'La autorización quedo dada de baja. No se borro, y su número se puede volver a usar.',
+          'Autorización dada de baja',
+          'No se borro, y su número se puede volver a usar.',
         ),
       error: (error: unknown) => this.fallo(error),
     });
@@ -782,6 +835,14 @@ export class OrdenesYAutorizacionesPage {
     this.leerHistorial(id, 0);
   }
 
+  /** Hechos del historial por pagina: viaja como `size` y se cambia desde el pie (UX-14). */
+  protected readonly porPaginaDeHistorial = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  protected cambiarPorPaginaDeHistorial(cantidad: number): void {
+    this.porPaginaDeHistorial.set(cantidad);
+    this.paginaDeHistorial(0);
+  }
+
   protected paginaDeHistorial(pagina: number): void {
     const abierto = this.panel();
     if (abierto?.tipo !== 'historial') {
@@ -797,7 +858,7 @@ export class OrdenesYAutorizacionesPage {
     }
     this.historial.set({ tipo: 'cargando' });
     this.api
-      .historialDeAutorizacion(personaId, autorizacionId, pagina, TAMANO_DE_HISTORIAL)
+      .historialDeAutorizacion(personaId, autorizacionId, pagina, this.porPaginaDeHistorial())
       .subscribe({
         next: (respuesta) => {
           // Una respuesta que llega con el panel ya cerrado o movido a otra fila se descarta.
@@ -842,7 +903,12 @@ export class OrdenesYAutorizacionesPage {
     }
     this.api.listarAutorizaciones(id, 'TODAS', undefined).subscribe({
       next: (autorizaciones) => this.autorizaciones.set(autorizaciones),
-      error: (error: unknown) => this.fallo(error),
+      // Relectura en segundo plano, sin formulario: si falla, aviso global con Reintentar.
+      error: (error: unknown) =>
+        this.avisos.error('No pudimos releer las autorizaciones', {
+          descripcion: traducirErrorPersona(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.releerAutorizaciones() },
+        }),
     });
   }
 
@@ -890,11 +956,9 @@ export class OrdenesYAutorizacionesPage {
 
     peticion.subscribe({
       next: () =>
-        this.terminar(
-          adjuntoId === undefined
-            ? 'Se quito el vinculo con el documento. El archivo sigue estando en la ficha.'
-            : 'Se vinculo el documento.',
-        ),
+        adjuntoId === undefined
+          ? this.terminar('Documento desvinculado', 'El archivo sigue estando en la ficha.')
+          : this.terminar('Documento vinculado'),
       error: (error: unknown) => this.fallo(error),
     });
   }
@@ -913,6 +977,7 @@ export class OrdenesYAutorizacionesPage {
     const valores = this.formularioElegibilidad.getRawValue();
     this.consultandoElegibilidad.set(true);
     this.limpiarAvisos();
+    this.errorDeElegibilidad.set(null);
     this.elegibilidad.set(null);
 
     this.api
@@ -929,7 +994,7 @@ export class OrdenesYAutorizacionesPage {
         },
         error: (error: unknown) => {
           this.consultandoElegibilidad.set(false);
-          this.fallo(error);
+          this.errorDeElegibilidad.set(traducirErrorPersona(error).mensaje);
         },
       });
   }
@@ -1008,13 +1073,10 @@ export class OrdenesYAutorizacionesPage {
     return Number.isInteger(crudo) && crudo > 0 ? crudo : null;
   }
 
-  private terminar(mensaje: string): void {
+  private terminar(titulo: string, descripcion?: string): void {
     this.enviando.set(false);
-    this.panel.set(null);
-    this.historial.set(null);
-    this.altaDeOrden.set(false);
-    this.altaDeAutorizacion.set(false);
-    this.exito.set(mensaje);
+    this.cerrarPaneles();
+    this.avisos.exito(titulo, descripcion === undefined ? undefined : { descripcion });
     // Se relee todo: una autorizacion aprobada cambia su saldo y su veredicto, y una orden dada de
     // baja cambia lo que los selectores de vinculo pueden ofrecer.
     this.cargar();
@@ -1028,10 +1090,19 @@ export class OrdenesYAutorizacionesPage {
     this.senalada.set(traducido.referenciaId);
   }
 
+  /**
+   * Cierra el panel y deja a la vista la fila que el 409 senalo (la autorizacion que se superpone).
+   * No limpia la senal: es justamente lo que el operador quiere ver.
+   */
+  protected verSenalada(): void {
+    const senalada = this.senalada();
+    this.cerrarPaneles();
+    this.senalada.set(senalada);
+  }
+
   private limpiarAvisos(): void {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
     this.senalada.set(null);
   }
 
@@ -1040,12 +1111,38 @@ export class OrdenesYAutorizacionesPage {
     this.persona.set(null);
     this.ordenes.set([]);
     this.autorizaciones.set([]);
+    this.busquedaDeOrdenes.set('');
+    this.busquedaDeAutorizaciones.set('');
     this.coberturas.set([]);
     this.practicas.set([]);
     this.practicasSinPermiso.set(false);
     this.adjuntos.set([]);
     this.elegibilidad.set(null);
   }
+}
+
+/** Sin tildes ni mayusculas: "garcia" encuentra a "García". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/** Las filas cuyo texto contiene lo buscado. Sin busqueda, todas. */
+function filtrarPorTexto<T>(
+  filas: readonly T[],
+  busqueda: string,
+  textos: (fila: T) => readonly (string | null | undefined)[],
+): readonly T[] {
+  const buscado = normalizar(busqueda);
+  if (buscado === '') {
+    return filas;
+  }
+  return filas.filter((fila) =>
+    textos(fila).some((texto) => texto && normalizar(texto).includes(buscado)),
+  );
 }
 
 /** `''` significa "no lo mandes", no "mandalo vacio". */

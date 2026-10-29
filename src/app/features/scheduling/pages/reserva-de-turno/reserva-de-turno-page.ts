@@ -24,7 +24,9 @@ import {
 import { coberturaParaReservar } from '../../models/etiquetas-de-turno';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -68,7 +70,7 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
  */
 @Component({
   selector: 'app-reserva-de-turno-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, PermisoDirective],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './reserva-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -76,6 +78,7 @@ export class ReservaDeTurnoPage {
   protected readonly PERMISO_PACIENTE_READ = PERMISO_PACIENTE_READ;
 
   private readonly api = inject(SchedulingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` los liga solos. */
@@ -111,8 +114,17 @@ export class ReservaDeTurnoPage {
 
   protected readonly turno = signal<Turno | null>(null);
   protected readonly enviando = signal(false);
+  /**
+   * Rechazo de la reserva: arriba del formulario, a la vista mientras se corrige (UX-12). Lo que
+   * sale bien, y el rechazo de "Confirmar" —que no tiene formulario—, son avisos globales.
+   */
   protected readonly error = signal<ErrorAgenda | null>(null);
-  protected readonly exito = signal<string | null>(null);
+
+  /** Error al leer la agenda del dia: va en el resumen del horario, con Reintentar. */
+  protected readonly errorDeAgenda = signal<ErrorAgenda | null>(null);
+
+  /** Error al buscar en el padron: va pegado al buscador. */
+  protected readonly errorDeBusqueda = signal<ErrorAgenda | null>(null);
 
   /**
    * Clave de idempotencia del intento en curso.
@@ -160,6 +172,33 @@ export class ReservaDeTurnoPage {
 
   protected readonly accion = computed<AccionSugerida>(() => this.error()?.accion ?? 'ninguna');
 
+  /**
+   * Titulo de la alerta del rechazo. Los conflictos con algo que ya existe (horario ocupado,
+   * lleno o que dejo de existir, persona sin perfil) son advertencias con nombre propio: no son
+   * una falla, son una situacion con salida.
+   */
+  protected readonly rechazo = computed<{
+    readonly tipo: 'error' | 'advertencia';
+    readonly titulo: string;
+  } | null>(() => {
+    const fallo = this.error();
+    if (fallo === null) {
+      return null;
+    }
+    switch (fallo.causa) {
+      case 'slot-no-disponible':
+        return { tipo: 'advertencia', titulo: 'Ese horario dejó de estar disponible' };
+      case 'slot-completo':
+        return { tipo: 'advertencia', titulo: 'Ese horario se llenó' };
+      case 'recurso-ocupado':
+        return { tipo: 'advertencia', titulo: 'Ese horario ya está ocupado' };
+      case 'persona-sin-perfil-paciente':
+        return { tipo: 'advertencia', titulo: 'Esta persona todavía no es paciente' };
+      default:
+        return { tipo: 'error', titulo: 'No pudimos reservar el turno' };
+    }
+  });
+
   /** `true` cuando el turno ya existe y solo falta confirmarlo. */
   protected readonly reservado = computed(() => this.turno() !== null);
   protected readonly confirmado = computed(() => this.turno()?.estado === 'CONFIRMADO');
@@ -181,7 +220,7 @@ export class ReservaDeTurnoPage {
         this.turno.set(null);
         this.claveDeIntento.set('');
         this.error.set(null);
-        this.exito.set(null);
+        this.errorDeBusqueda.set(null);
         this.cargarDia();
       });
     });
@@ -201,6 +240,7 @@ export class ReservaDeTurnoPage {
     }
 
     this.cargando.set(true);
+    this.errorDeAgenda.set(null);
     this.api
       .buscarAgenda(consultorioId, ofertaId, { desde: fecha, hasta: sumarDias(fecha, 1) })
       .subscribe({
@@ -210,7 +250,7 @@ export class ReservaDeTurnoPage {
         },
         error: (error: unknown) => {
           this.cargando.set(false);
-          this.error.set(traducirErrorAgenda(error));
+          this.errorDeAgenda.set(traducirErrorAgenda(error));
         },
       });
 
@@ -248,12 +288,13 @@ export class ReservaDeTurnoPage {
     }
 
     this.busquedaPendiente = setTimeout(() => {
+      this.errorDeBusqueda.set(null);
       this.api.buscarPersonas(texto).subscribe({
         next: (pagina) => {
           this.candidatas.set(pagina.content ?? []);
           this.buscoPersonas.set(true);
         },
-        error: (error: unknown) => this.error.set(traducirErrorAgenda(error)),
+        error: (error: unknown) => this.errorDeBusqueda.set(traducirErrorAgenda(error)),
       });
     }, ESPERA_DE_BUSQUEDA_MS);
   }
@@ -343,10 +384,13 @@ export class ReservaDeTurnoPage {
         next: (turno) => {
           this.enviando.set(false);
           this.turno.set(turno);
-          this.exito.set(
-            'Turno reservado. Todavía falta confirmarlo: confirmar es un estado de la reserva, no ' +
-              'del cobro ni de la llegada del paciente.',
-          );
+          // La tarjeta del turno queda: es el siguiente paso (confirmar, registrar la atencion).
+          // El resultado, ademas, va al aviso global (UX-12).
+          this.avisos.exito('Turno reservado', {
+            descripcion:
+              `${this.quienYCuando()}. Todavía falta confirmarlo: ` +
+              'confirmar es un estado de la reserva, no del cobro ni de la llegada del paciente.',
+          });
         },
         error: (error: unknown) => {
           this.enviando.set(false);
@@ -374,11 +418,20 @@ export class ReservaDeTurnoPage {
       next: (turno) => {
         this.enviando.set(false);
         this.turno.set(turno);
-        this.exito.set('Turno confirmado.');
+        this.avisos.exito('Turno confirmado', {
+          descripcion: this.quienYCuando(),
+        });
       },
       error: (error: unknown) => {
         this.enviando.set(false);
-        this.error.set(traducirErrorAgenda(error));
+        // "Confirmar" es un boton de la tarjeta del turno, sin formulario: aviso global.
+        const fallo = traducirErrorAgenda(error);
+        this.avisos.error('No pudimos confirmar el turno', {
+          descripcion: fallo.mensaje,
+          ...(fallo.causa === 'red' || fallo.causa === 'otro'
+            ? { accion: { etiqueta: 'Reintentar', ejecutar: () => this.confirmar() } }
+            : {}),
+        });
       },
     });
   }
@@ -399,6 +452,13 @@ export class ReservaDeTurnoPage {
   protected recargar(): void {
     this.error.set(null);
     this.cargarDia();
+  }
+
+  /** "Apellido, Nombre · 09:00 a 09:45" para la descripcion del aviso. */
+  private quienYCuando(): string {
+    const elegida = this.persona();
+    const quien = elegida === null ? '' : `${elegida.apellido ?? ''}, ${elegida.nombre ?? ''}`;
+    return [quien, this.horario()].filter((parte) => parte !== '').join(' · ');
   }
 
   /** Accion de `reintentar-con-clave-nueva`. La clave ya se limpio al recibir el 409. */

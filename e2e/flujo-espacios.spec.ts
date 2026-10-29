@@ -42,9 +42,19 @@ test.describe('Espacios y boxes contra el backend real', () => {
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { id: espacioId } = (await creado.json()) as { id: number };
-    await expect(page.getByText(`${nombre} quedo dado de alta`)).toBeVisible();
-
-    await page.getByRole('link', { name: 'Ver los espacios de la sede' }).click();
+    // UX-12: el alta vuelve sola al listado y el resultado va al aviso global.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(notificaciones.getByText('Espacio dado de alta')).toBeVisible();
+    await expect(notificaciones.getByText(nombre, { exact: false })).toBeVisible();
+    await expect(page).toHaveURL(/\/espacios$/);
+    // UX-14: el listado pagina de a 10 y el centro sembrado puede tener mas boxes; se busca por
+    // nombre, y la cuenta queda en la barra de la tabla.
+    const listado = respuestaDe(page, 'GET', /\/espacios$/);
+    await page.getByLabel('Nombre del espacio').fill(nombre);
+    await page.getByLabel('Nombre del espacio').press('Enter');
+    expect((await listado).status()).toBe(200);
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 espacio');
+    await expect(page.getByText('Mostrando 1–1 de 1')).toBeVisible();
     const fila = page.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
     await expect(fila.getByText('En servicio', { exact: false })).toBeVisible();
@@ -89,6 +99,10 @@ test.describe('Espacios y boxes contra el backend real', () => {
     await page.getByRole('button', { name: 'Confirmar la baja' }).click();
     expect((await baja).status()).toBe(200);
     await expect(fila).toHaveCount(0);
+    // Con la busqueda puesta y sin resultados activos: el vacio filtrado ofrece limpiar.
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Ningún espacio coincide' }),
+    ).toBeVisible();
 
     await abrirFiltros(page);
     await page.getByLabel('Mostrar').selectOption({ label: 'Solo los dados de baja' });
@@ -97,5 +111,6 @@ test.describe('Espacios y boxes contra el backend real', () => {
     await expect(historico.getByText('Motivo: Se reforma el box')).toBeVisible();
     // UX-11: la fila de un espacio dado de baja no ofrece acciones (antes lo decia con un texto).
     await expect(historico.getByRole('button', { name: 'Editar' })).toHaveCount(0);
+    await expect(historico.getByRole('button', { name: /^Más acciones de / })).toHaveCount(0);
   });
 });

@@ -8,6 +8,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const POLITICA = '/api/v1/politica-de-enmienda';
 
@@ -50,7 +51,10 @@ describe('PoliticaDeEnmiendaPage', () => {
       expect(pedido.request.body).toEqual({ ventanaDias: 60 });
       pedido.flush({ ventanaDias: 60, porDefecto: false, version: 0 });
       await estabilizar(fixture);
-      expect(texto(fixture)).toContain('durante 60 días');
+      // UX-12: el resultado es un aviso global.
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.titulo).toBe('Ventana de enmienda guardada');
+      expect(aviso?.descripcion).toContain('durante 60 días');
     },
     TIMEOUT_AXE,
   );
@@ -80,6 +84,10 @@ describe('PoliticaDeEnmiendaPage', () => {
     httpMock.expectOne((p) => p.method === 'GET').flush({ ventanaDias: 45, version: 3 });
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('45 días');
+    // La version vieja se explica arriba del formulario, y sigue a la vista despues de releer.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('form app-alerta')?.textContent,
+    ).toContain('La política cambió mientras la editabas');
   });
 
   it('fuera de rango no deja guardar', async () => {

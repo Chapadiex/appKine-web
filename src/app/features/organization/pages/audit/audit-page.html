@@ -11,9 +11,11 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-filtros">
-  <h2 id="titulo-filtros">Qué querés consultar</h2>
-
+<!--
+  Consulta y resultados en una sola tarjeta (UX-14): el criterio arriba, la toolbar con "Refinar",
+  Buscar y el total pegada a la tabla.
+-->
+<section class="tarjeta" aria-label="Consulta de la auditoría">
   <form [formGroup]="formulario" (ngSubmit)="buscar()" novalidate>
     <fieldset class="grupo">
       <legend>Filtro</legend>
@@ -21,38 +23,41 @@
         Se consulta por uno solo de los tres criterios. No se pueden combinar.
       </p>
 
-      <div class="opcion-radio">
-        <input
-          id="auditoria-filtro-entidad"
-          type="radio"
-          formControlName="filtro"
-          value="entidad"
-          aria-describedby="auditoria-filtro-ayuda"
-          (change)="cambiarFiltro()"
-        />
-        <label for="auditoria-filtro-entidad">Historial de una entidad</label>
-      </div>
+      <!-- Los tres criterios en una fila mientras entren (UX-14): son una sola eleccion. -->
+      <div class="opciones-en-linea">
+        <div class="opcion-radio">
+          <input
+            id="auditoria-filtro-entidad"
+            type="radio"
+            formControlName="filtro"
+            value="entidad"
+            aria-describedby="auditoria-filtro-ayuda"
+            (change)="cambiarFiltro()"
+          />
+          <label for="auditoria-filtro-entidad">Historial de una entidad</label>
+        </div>
 
-      <div class="opcion-radio">
-        <input
-          id="auditoria-filtro-actor"
-          type="radio"
-          formControlName="filtro"
-          value="actor"
-          (change)="cambiarFiltro()"
-        />
-        <label for="auditoria-filtro-actor">Actividad de una persona</label>
-      </div>
+        <div class="opcion-radio">
+          <input
+            id="auditoria-filtro-actor"
+            type="radio"
+            formControlName="filtro"
+            value="actor"
+            (change)="cambiarFiltro()"
+          />
+          <label for="auditoria-filtro-actor">Actividad de una persona</label>
+        </div>
 
-      <div class="opcion-radio">
-        <input
-          id="auditoria-filtro-ventana"
-          type="radio"
-          formControlName="filtro"
-          value="ventana"
-          (change)="cambiarFiltro()"
-        />
-        <label for="auditoria-filtro-ventana">Ventana temporal</label>
+        <div class="opcion-radio">
+          <input
+            id="auditoria-filtro-ventana"
+            type="radio"
+            formControlName="filtro"
+            value="ventana"
+            (change)="cambiarFiltro()"
+          />
+          <label for="auditoria-filtro-ventana">Ventana temporal</label>
+        </div>
       </div>
     </fieldset>
 
@@ -60,10 +65,10 @@
       Solo se renderizan los campos del filtro elegido. No es un adorno: es lo que hace que
       la combinacion invalida (dos filtros a la vez) no se pueda construir desde la pantalla.
     -->
-    <div class="grilla-campos grilla-campos--dos">
+    <div class="grilla-campos">
       @switch (formulario.controls.filtro.value) {
         @case ('entidad') {
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="auditoria-entityType">Tipo de entidad</label>
             <input
               id="auditoria-entityType"
@@ -97,7 +102,7 @@
         }
 
         @case ('actor') {
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="auditoria-actorAccountId">Número de cuenta</label>
             <input
               id="auditoria-actorAccountId"
@@ -125,7 +130,11 @@
               id="auditoria-desde"
               type="date"
               formControlName="desde"
-              aria-describedby="auditoria-ventana-ayuda"
+              [attr.aria-describedby]="
+                errorVentana() !== null
+                  ? 'auditoria-ventana-ayuda auditoria-ventana-error'
+                  : 'auditoria-ventana-ayuda'
+              "
               [attr.aria-invalid]="errorVentana() !== null"
             />
           </div>
@@ -136,7 +145,11 @@
               id="auditoria-hasta"
               type="date"
               formControlName="hasta"
-              aria-describedby="auditoria-ventana-ayuda"
+              [attr.aria-describedby]="
+                errorVentana() !== null
+                  ? 'auditoria-ventana-ayuda auditoria-ventana-error'
+                  : 'auditoria-ventana-ayuda'
+              "
               [attr.aria-invalid]="errorVentana() !== null"
             />
           </div>
@@ -147,43 +160,46 @@
 
           <div aria-live="polite" class="grilla-campos__fila">
             @if (errorVentana(); as mensaje) {
-              <p class="campo__error" role="alert">{{ mensaje }}</p>
+              <p class="campo__error" id="auditoria-ventana-error">{{ mensaje }}</p>
             }
           </div>
         }
       }
     </div>
 
-    <div class="campo">
-      <label for="auditoria-q">Refinar (opcional)</label>
-      <input
-        id="auditoria-q"
-        type="search"
-        autocomplete="off"
-        formControlName="q"
-        aria-describedby="auditoria-q-ayuda"
-      />
-      <p class="ayuda" id="auditoria-q-ayuda">
-        Parte del tipo de hecho o del tipo de entidad, o un número de entidad o de cuenta.
-      </p>
-    </div>
-
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-      <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
-        Volver a colaboradores
-      </a>
-    </div>
+    <app-filtros
+      sinAvanzados
+      [resultados]="estado().tipo === 'listo' ? totalEventos() : null"
+      [unidad]="['hecho', 'hechos']"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="auditoria-q">Refinar (opcional)</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="auditoria-q"
+            type="search"
+            autocomplete="off"
+            formControlName="q"
+            placeholder="Refinar por tipo de hecho o de entidad, o un número"
+            aria-describedby="auditoria-q-ayuda"
+          />
+        </div>
+        <p class="visualmente-oculto" id="auditoria-q-ayuda">
+          Parte del tipo de hecho o del tipo de entidad, o un número de entidad o de cuenta.
+        </p>
+      </div>
+      <button filtro-frecuente type="submit" class="boton">Buscar</button>
+    </app-filtros>
   </form>
-</section>
-
-<section class="tarjeta" aria-labelledby="titulo-resultados">
-  <h2 id="titulo-resultados">Resultados</h2>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegí un filtro y presiona Buscar.</p>
+        <app-estado-vacio
+          titulo="Elegí un filtro y presiona Buscar."
+          texto="Sin un criterio la consulta no es válida."
+        />
       }
 
       @case ('cargando') {
@@ -191,21 +207,34 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        <app-estado-vacio titulo="Todavía no elegiste un contexto de trabajo.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        }
+        <app-alerta tipo="error" titulo="No pudimos buscar en la auditoría">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            } @else {
+              <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
         @if (eventos().length === 0) {
-          <p class="estado estado--vacio">No hay hechos registrados para ese filtro.</p>
+          <app-estado-vacio
+            titulo="No hay hechos registrados para ese filtro."
+            texto="Probá con otro criterio o con otra ventana."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div
             class="auditoria-con-panel"
@@ -229,9 +258,9 @@
                       <th scope="col" appOrdenable [tabla]="orden" columna="tipoEntidad">
                         Entidad
                       </th>
-                      <th scope="col">Actor</th>
-                      <th scope="col">Cambio</th>
-                      <th scope="col">Motivo</th>
+                      <th scope="col" class="tabla__col--secundaria">Actor</th>
+                      <th scope="col" class="tabla__col--secundaria">Cambio</th>
+                      <th scope="col" class="tabla__col--secundaria">Motivo</th>
                       <th scope="col"><span class="visualmente-oculto">Detalle</span></th>
                     </tr>
                   </thead>
@@ -241,15 +270,15 @@
                         <th scope="row">{{ evento.occurredAt }}</th>
                         <td>{{ evento.eventType }}</td>
                         <td>{{ evento.entityType }} {{ evento.entityId }}</td>
-                        <td>Cuenta {{ evento.actorAccountId }}</td>
-                        <td>
+                        <td class="tabla__col--secundaria">Cuenta {{ evento.actorAccountId }}</td>
+                        <td class="tabla__col--secundaria">
                           @if (evento.previousState || evento.newState) {
                             {{ evento.previousState ?? '-' }} &rarr; {{ evento.newState ?? '-' }}
                           } @else {
                             -
                           }
                         </td>
-                        <td>{{ evento.reason ?? '-' }}</td>
+                        <td class="tabla__col--secundaria">{{ evento.reason ?? '-' }}</td>
                         <td class="tabla__acciones">
                           <button
                             type="button"
@@ -271,15 +300,15 @@
                 </table>
               </div>
 
-              <div class="tabla-pie">
-                <span>{{ totalEventos() }} hechos encontrados</span>
-                <akine-paginacion
-                  etiqueta="Paginas de resultados de auditoria"
-                  [paginaActual]="paginaActual()"
-                  [totalPaginas]="totalPaginas()"
-                  (cambioDePagina)="irAPagina($event)"
-                />
-              </div>
+              <app-paginacion
+                etiqueta="Páginas de resultados de auditoría"
+                [paginaActual]="paginaActual()"
+                [totalPaginas]="totalPaginas()"
+                [total]="totalEventos()"
+                [porPagina]="porPagina()"
+                (cambioDePagina)="irAPagina($event)"
+                (cambioDePorPagina)="cambiarPorPagina($event)"
+              />
             </div>
 
             <!--

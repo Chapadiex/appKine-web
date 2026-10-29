@@ -10,7 +10,8 @@ import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-erro
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /**
  * Atender a un paciente sin turno (DP-43, U-24, RF-M14-002).
@@ -31,7 +32,7 @@ import { Migas } from '../../../../shared/components/migas/migas';
  */
 @Component({
   selector: 'app-atencion-sin-turno-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './atencion-sin-turno-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -49,8 +50,12 @@ export class AtencionSinTurnoPage {
   protected readonly casoId = signal<number | null>(null);
   protected readonly motivo = signal('');
   protected readonly enviando = signal(false);
+  /** Rechazo del servidor: arriba de "La atención", con un titulo que dice que fallo (UX-12). */
   protected readonly error = signal<ErrorAtencion | null>(null);
+  protected readonly tituloDelError = signal('');
+  /** Lo que falta para iniciar, y en que campo: se dice debajo de ese campo (UX-12). */
   protected readonly aviso = signal('');
+  protected readonly campoDelAviso = signal<'persona' | 'oferta' | 'motivo' | 'caso' | null>(null);
 
   private claveDeIntento = '';
 
@@ -81,7 +86,7 @@ export class AtencionSinTurnoPage {
         this.candidatas.set(personas);
         this.buscoPersonas.set(true);
       },
-      error: (error: unknown) => this.error.set(traducirErrorAtencion(error)),
+      error: (error: unknown) => this.fallar('No pudimos buscar en el padrón', error),
     });
   }
 
@@ -119,21 +124,27 @@ export class AtencionSinTurnoPage {
     const personaId = this.persona()?.id;
     const ofertaId = this.ofertaId();
     const motivo = this.motivo().trim();
-    const faltante =
+    const [campo, faltante]: readonly ['persona' | 'oferta' | 'motivo' | 'caso' | null, string] =
       personaId === undefined
-        ? 'Elegí a quien se atiende.'
+        ? ['persona', 'Elegí a quien se atiende.']
         : ofertaId === null
-          ? 'Elegí la oferta con la que se atiende.'
+          ? ['oferta', 'Elegí la oferta con la que se atiende.']
           : motivo === ''
-            ? 'Escribi por que se atiende sin turno: es obligatorio.'
+            ? ['motivo', 'Escribi por que se atiende sin turno: es obligatorio.']
             : this.requiereCaso() && this.casoId() === null
-              ? 'Esta prestación exige un caso clínico: elegí uno.'
-              : '';
+              ? ['caso', 'Esta prestación exige un caso clínico: elegí uno.']
+              : [null, ''];
     if (faltante !== '' || consultorioId === null || personaId === undefined || ofertaId === null) {
       this.aviso.set(faltante);
+      this.campoDelAviso.set(campo);
+      if (campo !== null) {
+        // El boton esta al pie y el campo, arriba: el foco va a lo que hay que completar.
+        setTimeout(() => document.getElementById(`sin-turno-${campo}`)?.focus());
+      }
       return;
     }
     this.aviso.set('');
+    this.campoDelAviso.set(null);
     this.error.set(null);
     this.enviando.set(true);
     this.api
@@ -152,6 +163,7 @@ export class AtencionSinTurnoPage {
         error: (error: unknown) => {
           this.enviando.set(false);
           const traducido = traducirErrorAtencion(error);
+          this.tituloDelError.set('No pudimos iniciar la atención');
           this.error.set(traducido);
           if (traducido.causa === 'clave-reusada') {
             this.claveDeIntento = '';
@@ -169,7 +181,7 @@ export class AtencionSinTurnoPage {
     }
     this.api.ofertasDeLaSede(consultorioId).subscribe({
       next: (ofertas) => this.ofertas.set(ofertas),
-      error: (error: unknown) => this.error.set(traducirErrorAtencion(error)),
+      error: (error: unknown) => this.fallar('No pudimos leer las ofertas de la sede', error),
     });
   }
 
@@ -184,7 +196,13 @@ export class AtencionSinTurnoPage {
     this.motivo.set('');
     this.error.set(null);
     this.aviso.set('');
+    this.campoDelAviso.set(null);
     this.claveDeIntento = '';
+  }
+
+  private fallar(titulo: string, error: unknown): void {
+    this.tituloDelError.set(titulo);
+    this.error.set(traducirErrorAtencion(error));
   }
 
   /** Otro dato es otro pedido: la clave anterior chocaria con 409 `idempotency-key-conflict`. */

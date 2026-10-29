@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -113,7 +114,11 @@ describe('CatalogoDeFinanciadoresPage', () => {
     await asentar(fixture);
 
     expect(textoDe(fixture)).not.toContain('Agregar al centro');
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+    // Boton de fila, sin formulario: el error va al aviso global, con el mensaje del backend.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toContain('No pudimos agregar');
+    expect(aviso?.descripcion).toBeTruthy();
   });
 
   it('buscar manda q y tipo', async () => {
@@ -133,6 +138,39 @@ describe('CatalogoDeFinanciadoresPage', () => {
     pedido.flush([]);
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Ninguna entrada del catálogo coincide');
+
+    // Vacio con filtros aplicados (UX-14): ofrece limpiarlos y vuelve a pedir el catalogo entero.
+    const raizVacia = fixture.nativeElement as HTMLElement;
+    expect(raizVacia.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos financiadores en el catálogo',
+    );
+    boton(fixture, 'Limpiar filtros')?.click();
+    const entero = httpMock.expectOne((p) => p.url === CATALOGO);
+    expect(entero.request.params.has('q')).toBe(false);
+    expect(entero.request.params.has('tipo')).toBe(false);
+    entero.flush(ENTRADAS);
+    await asentar(fixture);
+    expect(raizVacia.querySelector('app-estado-vacio')).toBeNull();
+  });
+
+  it('sin entradas y sin filtros dice que el catalogo todavia esta vacio', async () => {
+    const fixture = await montar(undefined, []);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('El catálogo todavía no tiene financiadores');
+    expect(boton(fixture, 'Limpiar filtros')).toBeNull();
+  });
+
+  it('sigue el patron de listado: resultados en la toolbar, pie y sin titulo repetido', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('section.tarjeta h2')).toBeNull();
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      `${ENTRADAS.length} ${ENTRADAS.length === 1 ? 'financiador' : 'financiadores'}`,
+    );
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      `Mostrando 1–${ENTRADAS.length} de ${ENTRADAS.length}`,
+    );
   });
 
   it('sin `convenio:manage` no ofrece agregar', async () => {
@@ -143,6 +181,7 @@ describe('CatalogoDeFinanciadoresPage', () => {
 
   async function montar(
     permisos: string[] = [PERMISO_CONVENIO_READ, PERMISO_CONVENIO_MANAGE],
+    entradas: readonly unknown[] = ENTRADAS,
   ): Promise<ComponentFixture<CatalogoDeFinanciadoresPage>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
@@ -155,7 +194,7 @@ describe('CatalogoDeFinanciadoresPage', () => {
 
     const fixture = TestBed.createComponent(CatalogoDeFinanciadoresPage);
     fixture.detectChanges();
-    httpMock.expectOne((p) => p.url === CATALOGO).flush(ENTRADAS);
+    httpMock.expectOne((p) => p.url === CATALOGO).flush(entradas);
     await asentar(fixture);
     return fixture;
   }

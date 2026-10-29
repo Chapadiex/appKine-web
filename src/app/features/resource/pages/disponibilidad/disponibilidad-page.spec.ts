@@ -123,6 +123,57 @@ describe('DisponibilidadPage', () => {
     expect(contenido).not.toMatch(/\bdisponibles?\b/i);
   });
 
+  it('patrón de listado (UX-14): busca en el resultado, cuenta en la barra y distingue los vacíos', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: 'Sede Centro',
+    });
+    const fixture = TestBed.createComponent(DisponibilidadPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host: HTMLElement = fixture.nativeElement;
+
+    // Un periodo sin ningun espacio en servicio: el vacio manda a revisar los espacios.
+    enviar(fixture);
+    httpMock.expectOne((peticion) => peticion.url === DISPONIBILIDAD).flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Ningún espacio de esta sede esta en servicio',
+    );
+    expect(host.querySelector('app-estado-vacio a[href="/espacios"]')).not.toBeNull();
+
+    enviar(fixture);
+    const gimnasio = { ...BOX_1, espacioId: 11, name: 'Gimnásio', tipo: 'GIMNASIO', capacidad: 8 };
+    httpMock.expectOne((peticion) => peticion.url === DISPONIBILIDAD).flush([BOX_1, gimnasio]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const resultados = () =>
+      host.querySelector('.filtros-barra__resultados')?.textContent?.trim() ?? '';
+    expect(resultados()).toBe('2 espacios en servicio');
+    expect(host.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–2 de 2');
+
+    // La busqueda es local y no distingue acentos.
+    escribir(fixture, '#disponibilidad-busqueda', 'gimnasio');
+    httpMock.expectNone(() => true);
+    expect(resultados()).toBe('1 espacio en servicio');
+    expect(host.querySelectorAll('tbody tr').length).toBe(1);
+
+    escribir(fixture, '#disponibilidad-busqueda', 'pileta');
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Ningún espacio en servicio coincide con la búsqueda.',
+    );
+    [...host.querySelectorAll<HTMLButtonElement>('app-estado-vacio button')]
+      .find((boton) => boton.textContent?.trim() === 'Limpiar filtros')!
+      .click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+    expect(host.querySelector<HTMLInputElement>('#disponibilidad-busqueda')?.value).toBe('');
+  });
+
   it('lee y escribe la ventana en la hora de la sede, no en la del navegador', async () => {
     // 22:30 del 14/10 en Cordoba son las 01:30 UTC del 15, este donde este el navegador.
     fijarReloj('2026-10-15T01:30:00Z', { zonaDelNavegador: 'Pacific/Kiritimati' });

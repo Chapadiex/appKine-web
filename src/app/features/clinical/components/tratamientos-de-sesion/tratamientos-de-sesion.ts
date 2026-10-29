@@ -30,6 +30,9 @@ import {
 } from '../../../../api/generated/model/registrar-tratamiento';
 import { Tratamiento } from '../../../../api/generated/model/tratamiento';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -141,13 +144,14 @@ export function parametrosParaEnviar(
  * sesion, igual que el alta.
  */
 @Component({
-  imports: [Ayuda],
+  imports: [Alerta, Ayuda, EstadoVacio],
   selector: 'app-tratamientos-de-sesion',
   templateUrl: './tratamientos-de-sesion.html',
   styleUrl: '../../atencion.css',
 })
 export class TratamientosDeSesion {
   private readonly api = inject(ClinicalApi);
+  private readonly avisos = inject(AvisosStore);
 
   readonly consultorioId = input.required<number>();
   readonly organizationId = input<number | null>(null);
@@ -177,7 +181,14 @@ export class TratamientosDeSesion {
   protected readonly cargando = signal(false);
   protected readonly guardando = signal(false);
   protected readonly error = signal<ErrorAtencion | null>(null);
+  /** Que fallo: leer, registrar o dar de baja. Decide el titulo y donde se ve (UX-12). */
+  protected readonly origenDelError = signal<'leer' | 'registrar' | 'baja'>('leer');
+  /**
+   * Lo que falta para mandar, y de que formulario: se dice junto a lo que hay que corregir, no en
+   * un aviso al pie (UX-12). Lo que sale bien es un aviso global.
+   */
   protected readonly aviso = signal('');
+  protected readonly avisoDe = signal<'registrar' | 'baja'>('registrar');
 
   // --- Formulario de una intervencion -----------------------------------------------------
   protected readonly practicaId = signal<number | null>(null);
@@ -213,6 +224,7 @@ export class TratamientosDeSesion {
     const sesionId = this.sesionId();
     this.cargando.set(true);
     this.error.set(null);
+    this.origenDelError.set('leer');
     this.api.tratamientosDe(consultorioId, sesionId).subscribe({
       next: (lista) => {
         this.cargando.set(false);
@@ -297,6 +309,7 @@ export class TratamientosDeSesion {
    */
   protected registrar(): void {
     const practicaId = this.practicaId();
+    this.avisoDe.set('registrar');
     if (practicaId === null) {
       this.aviso.set('Elegí que práctica se realizo.');
       return;
@@ -328,7 +341,7 @@ export class TratamientosDeSesion {
       parametros: parametros.length === 0 ? undefined : parametros,
     };
 
-    this.empezar();
+    this.empezar('registrar');
     this.api.registrarTratamiento(this.consultorioId(), this.sesionId(), cuerpo).subscribe({
       next: (tratamiento) => {
         this.terminar();
@@ -336,7 +349,9 @@ export class TratamientosDeSesion {
           this.versionCambio.emit(tratamiento.sesionVersion);
         }
         this.tratamientos.update((lista) => [...lista, tratamiento]);
-        this.aviso.set(`Tratamiento registrado: ${tratamiento.practicaNombre ?? 'practica'}.`);
+        this.avisos.exito('Tratamiento registrado', {
+          descripcion: tratamiento.practicaNombre ?? 'practica',
+        });
         this.limpiarFormulario();
       },
       error: (error: unknown) => this.fallo(error),
@@ -366,11 +381,12 @@ export class TratamientosDeSesion {
       return;
     }
     if (motivo === '') {
+      this.avisoDe.set('baja');
       this.aviso.set('Falta el motivo de la baja: sin el, la auditoria no responde por que.');
       return;
     }
 
-    this.empezar();
+    this.empezar('baja');
     this.api
       .darDeBajaTratamiento(
         this.consultorioId(),
@@ -387,15 +403,16 @@ export class TratamientosDeSesion {
           }
           this.tratamientos.update((lista) => lista.filter((t) => t.id !== tratamientoId));
           this.cancelarBaja();
-          this.aviso.set('Tratamiento dado de baja.');
+          this.avisos.exito('Tratamiento dado de baja');
         },
         error: (error: unknown) => this.fallo(error),
       });
   }
 
-  private empezar(): void {
+  private empezar(origen: 'registrar' | 'baja'): void {
     this.guardando.set(true);
     this.error.set(null);
+    this.origenDelError.set(origen);
     this.aviso.set('');
     this.enVuelo.emit(true);
   }

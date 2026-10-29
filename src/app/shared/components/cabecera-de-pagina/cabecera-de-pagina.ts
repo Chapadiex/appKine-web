@@ -11,13 +11,13 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@a
  * <p><b>Regiones</b>, siempre en el mismo orden y a la misma altura:
  *
  * <pre>
- *   [migas /] Titulo (?) [estado]   [contexto: ‹ semana › Hoy]          [accion principal]
+ *   Titulo (?) [estado]   [contexto: ‹ semana › Hoy]          [accion principal]
  *   Pestaña | Pestaña | Pestaña
  * </pre>
  *
  * - `titulo` (input): el `h1`. Una sola linea; si no entra se corta con "…" y nunca invade la zona
  *   de la accion principal.
- * - `app-migas` (con `enLinea`): de donde viene la pantalla, antes del titulo.
+ * - De donde viene la pantalla no va aca: la ruta de navegacion vive en la barra superior (UX-13).
  * - `app-ayuda`: el "?", pegado al titulo.
  * - Lo que no tenga region (marcas de estado, un dato corto): despues del "?".
  * - `[cabeceraContexto]`: controles que cambian lo que se mira (fecha, semana, "Hoy"). En la fila

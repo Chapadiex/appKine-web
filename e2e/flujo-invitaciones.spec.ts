@@ -26,15 +26,20 @@ test.describe('Invitaciones contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'Invitaciones', level: 1 })).toBeVisible();
 
     // --- Invitar --------------------------------------------------------------------------------
-    await page.getByRole('button', { name: 'Invitar a alguien' }).click();
-    await page.getByLabel('Email de la persona').fill(email);
+    await page.getByRole('button', { name: 'Invitar a alguien' }).first().click();
+    // El buscador del listado lleva el mismo rotulo: el campo es el del formulario.
+    await page.getByRole('textbox', { name: 'Email de la persona' }).fill(email);
     await page.getByLabel('Rol con el que entraria').selectOption({ label: 'Profesional' });
     await page.getByLabel('Donde trabajaria').selectOption({ value: 'SEDE' });
     const alta = respuestaDe(page, 'POST', /\/colaborador-invitaciones$/);
     await page.getByRole('button', { name: 'Enviar la invitacion' }).click();
     const creada = await alta;
     expect(creada.status(), await creada.text()).toBe(201);
-    await expect(page.getByText('La invitación salio por correo.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Invitación enviada'),
+    ).toBeVisible();
     const fila = page
       .getByRole('region', { name: 'Invitaciones enviadas por la organización' })
       .getByRole('row', { name: new RegExp(email.replace(/[.]/g, '\\.')) });

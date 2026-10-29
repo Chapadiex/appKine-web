@@ -22,7 +22,9 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
@@ -33,6 +35,9 @@ import {
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
@@ -73,8 +78,12 @@ type Especialidades =
   selector: 'app-solicitudes-catalogo-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
+    Icono,
     Ayuda,
     Filtros,
     PanelLateral,
@@ -86,6 +95,7 @@ type Especialidades =
 export class SolicitudesCatalogoPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -110,15 +120,37 @@ export class SolicitudesCatalogoPage {
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaSolicitud | null>(null);
   /** Mensaje de la bandeja: el resultado de la ultima resolucion, o por que se recargo. */
-  protected readonly aviso = signal<{ readonly ok: boolean; readonly texto: string } | null>(null);
 
   protected readonly solicitudes = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.solicitudes : [];
   });
 
-  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina solicitudes. */
-  protected readonly tabla = tablaLocal(this.solicitudes, {
+  /**
+   * Busqueda por lo pedido o por el centro (UX-14). El backend no busca por texto en la bandeja,
+   * pero la lista llega entera: se filtra aca.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Hay busqueda o un estado distinto del de entrada: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtroEstado() !== 'PENDIENTE',
+  );
+
+  protected readonly solicitudesBuscadas = computed(() => {
+    const buscado = normalizar(this.busqueda());
+    const solicitudes = this.solicitudes();
+    return buscado === ''
+      ? solicitudes
+      : solicitudes.filter((solicitud) =>
+          [solicitud.nombrePropuesto, solicitud.codigoPropuesto, this.nombreDeCentro(solicitud)]
+            .map((texto) => normalizar(texto ?? ''))
+            .some((texto) => texto.includes(buscado)),
+        );
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina solicitudes. */
+  protected readonly tabla = tablaLocal(this.solicitudesBuscadas, {
     columnas: {
       nombre: (solicitud) => solicitud.nombrePropuesto,
       tipo: (solicitud) => this.etiquetaDeTipo(solicitud.tipo),
@@ -171,13 +203,19 @@ export class SolicitudesCatalogoPage {
     const elegido: FiltroEstado =
       valor === 'TODAS' || valor === 'APROBADA' || valor === 'RECHAZADA' ? valor : 'PENDIENTE';
     this.cerrar();
-    this.aviso.set(null);
     this.filtroEstado.set(elegido);
     this.cargar();
   }
 
+  /** "Limpiar filtros": sin busqueda y con las pendientes, que es como se entra. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtroEstado() !== 'PENDIENTE') {
+      this.cambiarFiltro('PENDIENTE');
+    }
+  }
+
   protected revisar(solicitud: CatalogoSolicitudResponse): void {
-    this.aviso.set(null);
     this.seleccionada.set(solicitud);
     // El foco lo lleva el panel lateral al abrirse.
     this.elegirDesenlace(null);
@@ -287,23 +325,27 @@ export class SolicitudesCatalogoPage {
       .subscribe({
         next: (resuelta) => {
           this.cerrar();
-          this.aviso.set({
-            ok: true,
-            texto:
-              resuelta.estado === 'APROBADA'
-                ? `Aprobada: "${cuerpo.nombre}" ya esta publicado en el catalogo comun` +
-                  (resuelta.conceptoId === undefined ? '.' : ` (concepto ${resuelta.conceptoId}).`)
-                : `Rechazada. El centro va a ver tu nota en sus pedidos.`,
-          });
+          if (resuelta.estado === 'APROBADA') {
+            this.avisos.exito('Solicitud aprobada', {
+              descripcion:
+                `"${cuerpo.nombre}" ya está publicado en el catálogo común` +
+                (resuelta.conceptoId === undefined ? '.' : ` (concepto ${resuelta.conceptoId}).`),
+            });
+          } else {
+            this.avisos.exito('Solicitud rechazada', {
+              descripcion: 'El centro va a ver tu nota en sus pedidos.',
+            });
+          }
           this.cargar();
         },
         error: (error: unknown) => {
           const traducido = traducirErrorSolicitud(error);
           this.enviando.set(false);
           if (traducido.causa === 'ya-resuelta' || traducido.causa === 'no-encontrado') {
-            // Lo que hay en pantalla quedo viejo: se descarta y se relee la bandeja.
+            // Lo que hay en pantalla quedo viejo: se descarta y se relee la bandeja. Sin panel
+            // donde mostrarlo, el motivo va al aviso global (UX-12).
             this.cerrar();
-            this.aviso.set({ ok: false, texto: traducido.mensaje });
+            this.avisos.error('No se aplicó la resolución', { descripcion: traducido.mensaje });
             this.cargar();
             return;
           }
@@ -378,4 +420,13 @@ export class SolicitudesCatalogoPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable: sin mayusculas, sin tildes y sin espacios de los costados. */
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
 }

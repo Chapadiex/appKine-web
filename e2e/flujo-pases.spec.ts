@@ -53,7 +53,8 @@ test.describe('Pases contra el backend real', () => {
     // ---- Catalogo: el alta solo ofrece ofertas POR_PACK.
     await navegar(page, '/productos');
     await expect(page.getByRole('heading', { name: 'Productos de pack', level: 1 })).toBeVisible();
-    await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    // El estado vacio repite el alta: la de la cabecera es la primera.
+    await page.getByRole('button', { name: 'Nuevo producto' }).first().click();
     await page.getByLabel('Oferta').selectOption({ label: clase.ofertaNombre });
     await page.getByLabel('Nombre', { exact: true }).fill(producto);
     await page.getByLabel('Creditos').fill('2');
@@ -62,7 +63,12 @@ test.describe('Pases contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', PRODUCTOS);
     await page.getByRole('button', { name: 'Crear producto' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(page.getByText(`Se creo "${producto}"`)).toBeVisible();
+    // UX-12: los resultados de esta pantalla son avisos globales.
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}". Todavía nadie tiene saldo`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 creditos');
 
     // ---- Venta: crea el pase y una deuda, sin cobrar.
@@ -84,7 +90,14 @@ test.describe('Pases contra el backend real', () => {
       deuda: { estado: string };
     };
     expect(vendida.deuda.estado).toBe('PENDIENTE');
-    await expect(page.getByText(`Se vendio "${producto}"`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pase vendido', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones', exact: true }).getByText(`"${producto}":`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 2');
 
     // ---- Asistencia: presente en una clase de la oferta del pase consume un credito.
@@ -183,7 +196,11 @@ test.describe('Pases contra el backend real', () => {
     expect(respuestaAjuste.status()).toBe(200);
     // La pantalla relee la pagina del ledger: pide el ajuste sin el ledger entero (0.117.0).
     expect(new URL(respuestaAjuste.url()).searchParams.get('sinMovimientos')).toBe('true');
-    await expect(page.getByText(`Se ajusto el saldo de "${producto}"`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}" ahora tiene`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 3');
     // El ajuste manual no cuenta como credito usado: el pase sigue anulable.
     await expect(filaDe(page, producto)).toContainText('0 usados');
@@ -221,7 +238,16 @@ test.describe('Pases contra el backend real', () => {
         deuda: expect.objectContaining({ estado: 'ANULADA' }),
       }),
     );
-    await expect(page.getByText(`Se anulo "${producto}" y su saldo se descarto.`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pase anulado', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}": su saldo se descarto.`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('Anulado');
     await expect(filaDe(page, producto)).toContainText('Motivo: Vendido por error');
     await expect(
@@ -245,7 +271,8 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Catalogo: el tipo ABONO solo ofrece ofertas POR_ABONO.
     await navegar(page, '/productos');
-    await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    // El estado vacio repite el alta: la de la cabecera es la primera.
+    await page.getByRole('button', { name: 'Nuevo producto' }).first().click();
     await page.getByLabel('Tipo').selectOption('ABONO');
     await page.getByLabel('Oferta').selectOption({ label: ofertaNombre });
     await page.getByLabel('Nombre', { exact: true }).fill(abono);
@@ -333,7 +360,9 @@ test.describe('Pases contra el backend real', () => {
     };
     expect(vendida.pase.renovacionAutomatica).toBe(true);
     await expect(
-      page.getByText('Se va a renovar solo al terminar el periodo.').first(),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Se va a renovar solo al terminar el periodo.'),
     ).toBeVisible();
     await expect(filaDe(page, abono)).toContainText('Se renueva solo al terminar el periodo.');
 
@@ -348,7 +377,11 @@ test.describe('Pases contra el backend real', () => {
     expect(respuestaRenovacion.request().postDataJSON()).toEqual(
       expect.objectContaining({ activa: false }),
     );
-    await expect(page.getByText(`"${abono}" ya no se renueva solo.`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Renovación automática desactivada', { exact: true }),
+    ).toBeVisible();
     await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
     await abrirAcciones(filaDe(page, abono));
     await expect(
@@ -380,7 +413,7 @@ test.describe('Pases contra el backend real', () => {
       `${base}/pases`,
       { productoId: creado.id, personaId: persona.id, idempotencyKey: randomUUID() },
     );
-    // Compra + 21 ajustes = 22 movimientos: una pagina de 20 y otra de 2.
+    // Compra + 21 ajustes = 22 movimientos: con 10 por pagina (UX-14), tres paginas: 10, 10 y 2.
     let version = vendido.pase.version;
     for (let i = 0; i < 21; i++) {
       const ajustado = await api.exigir<{ pase: { version: number } }>(
@@ -396,23 +429,21 @@ test.describe('Pases contra el backend real', () => {
     await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
     expect((await primera).status()).toBe(200);
     const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
-    await expect(
-      page.getByText('Movimientos 1 a 20 de 22, del mas viejo al mas nuevo.'),
-    ).toBeVisible();
-    // Encabezado + 20 filas; la primera es la compra, la mas vieja.
-    await expect(movimientos.getByRole('row')).toHaveCount(21);
+    const panel = page.locator('.panel-lateral');
+    await expect(panel.getByText('Mostrando 1–10 de 22')).toBeVisible();
+    await expect(panel.getByText('Del mas viejo al mas nuevo.')).toBeVisible();
+    // Encabezado + 10 filas; la primera es la compra, la mas vieja.
+    await expect(movimientos.getByRole('row')).toHaveCount(11);
     await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
     const paginas = page.getByRole('navigation', { name: 'Páginas de movimientos del pase' });
-    await expect(paginas).toContainText('Página 1 de 2');
+    await expect(paginas.locator('[aria-current="page"]')).toContainText('1');
 
-    const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);
-    await paginas.getByRole('button', { name: 'Siguiente' }).click();
-    expect((await segunda).status()).toBe(200);
-    await expect(
-      page.getByText('Movimientos 21 a 22 de 22, del mas viejo al mas nuevo.'),
-    ).toBeVisible();
+    const ultima = respuestaDe(page, 'GET', MOVIMIENTOS);
+    await paginas.getByRole('button', { name: 'Página 3', exact: true }).click();
+    expect((await ultima).status()).toBe(200);
+    await expect(panel.getByText('Mostrando 21–22 de 22')).toBeVisible();
     await expect(movimientos.getByRole('row')).toHaveCount(3);
     await expect(movimientos).toContainText('Motivo: Ajuste E2E 21');
-    await expect(paginas.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(paginas.getByRole('button', { name: 'Página siguiente' })).toBeDisabled();
   });
 });

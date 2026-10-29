@@ -67,7 +67,9 @@ test.describe('Caja diaria contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'La caja está cerrada' })).toBeVisible();
     await page.getByLabel('Saldo inicial contado').fill('1000');
     await page.getByRole('button', { name: 'Abrir la caja' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Caja abierta.' })).toBeVisible();
+    // El resultado va al aviso global (UX-12), no al cuerpo de la pantalla.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Caja abierta', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.000,00');
 
@@ -77,9 +79,7 @@ test.describe('Caja diaria contra el backend real', () => {
     await page.getByLabel('Importe').fill('250');
     await page.getByLabel('Concepto').fill(concepto);
     await page.getByRole('button', { name: 'Registrar el movimiento' }).click();
-    await expect(
-      page.getByRole('status').filter({ hasText: 'Movimiento registrado.' }),
-    ).toBeVisible();
+    await expect(avisos.getByText('Movimiento registrado', { exact: true })).toBeVisible();
     await expect(movimiento(page, concepto)).toContainText('+ $');
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.250,00');
 
@@ -99,9 +99,7 @@ test.describe('Caja diaria contra el backend real', () => {
     await movimiento(page, concepto).getByRole('button', { name: 'Revertir' }).click();
     await page.getByLabel('Motivo de la reversión').fill('Se cargo dos veces');
     await page.getByRole('button', { name: 'Confirmar la reversión' }).click();
-    await expect(
-      page.getByRole('status').filter({ hasText: 'Movimiento revertido.' }),
-    ).toBeVisible();
+    await expect(avisos.getByText('Movimiento revertido', { exact: true })).toBeVisible();
     await expect(movimiento(page, concepto).first()).toContainText('Revertido');
     await expect(movimiento(page, 'Reversión de ingreso')).toHaveCount(1);
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.000,00');
@@ -201,7 +199,9 @@ test.describe('Cobro en efectivo de una sesion cerrada contra el backend real', 
     const sinCaja = await rechazo;
     expect(sinCaja.status()).toBe(409);
     expect((await problemaDe(sinCaja)).type).toBe(uriDeProblema('caja-no-abierta'));
-    await expect(page.getByRole('heading', { name: 'No se registro el cobro' })).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'No pudimos registrar el cobro' }),
+    ).toBeVisible();
     await expect(page.getByText(/La caja de esta sede no esta abierta/)).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Recargar los saldos y volver a armar el cobro' }),
@@ -283,7 +283,11 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
 
     // Confirmar no mueve plata: habilita los pagos.
     await page.getByRole('button', { name: 'Confirmar el egreso' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Egreso confirmado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Egreso confirmado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Estado')).toContainText('Confirmado, a pagar');
 
     // Pago parcial en efectivo: la pantalla avisa lo que hay en el cajon.
@@ -293,7 +297,11 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
     const pago = respuestaDe(page, 'POST', /\/egresos\/\d+\/pagos$/);
     await page.getByRole('button', { name: 'Registrar el pago' }).click();
     expect((await pago).status()).toBe(201);
-    await expect(page.getByRole('status').filter({ hasText: 'Pago registrado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago registrado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Saldo pendiente')).toContainText('1.800,00');
     await expect(dato(page, 'Ya pagado')).toContainText('1.200,00');
 
@@ -314,7 +322,11 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
     const anulacion = respuestaDe(page, 'POST', /\/pagos\/\d+\/anulacion$/);
     await page.getByRole('button', { name: 'Anular el pago', exact: true }).click();
     expect((await anulacion).status()).toBe(200);
-    await expect(page.getByRole('status').filter({ hasText: 'Pago anulado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago anulado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Saldo pendiente')).toContainText('3.000,00');
     await expect(
       page.getByRole('region', { name: 'Pagos' }).getByRole('row').filter({ hasText: 'Anulado' }),

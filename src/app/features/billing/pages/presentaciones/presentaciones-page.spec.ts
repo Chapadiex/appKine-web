@@ -60,11 +60,37 @@ describe('PresentacionesPage', () => {
     expect(texto).toContain('Presentada');
     expect(texto).toContain('01/09/2026 al 30/09/2026');
     expect(texto).toContain('24.000,00');
+    // Patron de listado (UX-14): el contador en la barra de la misma tarjeta que la tabla.
+    const barra = (fixture.nativeElement as HTMLElement).querySelector(
+      '.filtros-barra__resultados',
+    );
+    expect(barra?.textContent?.trim()).toBe('1 lote');
+    expect(barra?.closest('section.tarjeta')?.querySelector('table')).not.toBeNull();
+  });
+
+  it('pagina de a 10 con el pie estándar y ordena por columna en el cliente', async () => {
+    const lotes = Array.from({ length: 12 }, (_, i) => ({
+      ...LOTE,
+      id: i + 1,
+      numero: i + 1,
+      saldo: 100 * (12 - i),
+    }));
+    const fixture = await montar(lotes);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(10);
+    expect(contenido(fixture)).toContain('Mostrando 1–10 de 12');
+
+    Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button'))
+      .find((b) => b.textContent?.trim() === 'Saldo')!
+      .click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('tbody tr td')?.textContent?.trim()).toBe('N.º 12');
   });
 
   it('filtrar por financiador manda el filtro al servidor y muestra su cuenta corriente', async () => {
     const fixture = await montar([]);
-    expect(contenido(fixture)).toContain('No hay lotes con esos filtros');
+    expect(contenido(fixture)).toContain('Todavía no hay lotes de presentación');
 
     elegir(fixture, '#filtro-financiador', '10');
     elegir(fixture, '#filtro-estado', 'BORRADOR');
@@ -86,6 +112,26 @@ describe('PresentacionesPage', () => {
 
     expect(contenido(fixture)).toContain('Cuenta corriente de OSDE Sintetica');
     expect(contenido(fixture)).toContain('5.000,50');
+  });
+
+  it('sin lotes con los filtros lo dice y ofrece limpiarlos', async () => {
+    const fixture = await montar([]);
+    elegir(fixture, '#filtro-estado', 'BORRADOR');
+    enviar(fixture, 0);
+    httpMock.expectOne((p) => p.url === `${BASE}/presentaciones`).flush([]);
+    await estabilizar(fixture);
+    expect(contenido(fixture)).toContain('No hay lotes con esos filtros');
+
+    Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        'app-estado-vacio button',
+      ),
+    )
+      .find((b) => b.textContent?.trim() === 'Limpiar filtros')!
+      .click();
+    const limpia = httpMock.expectOne((p) => p.url === `${BASE}/presentaciones`);
+    expect(limpia.request.params.get('estado')).toBeNull();
+    limpia.flush([]);
   });
 
   it('abrir un borrador lo crea y lleva al detalle del lote', async () => {

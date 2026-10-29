@@ -21,32 +21,33 @@
   />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta" aria-labelledby="titulo-colaboradores">
-  <h2 id="titulo-colaboradores">Vínculos de la organización</h2>
-
-  <!-- Regla de filtros (plan §3.4): la busqueda, en el servidor (DP-45); no hay filtros avanzados. -->
+<section class="tarjeta" aria-label="Vínculos de la organización">
+  <!--
+    Toolbar de la tabla (UX-14): la busqueda, en el servidor (DP-45), y el total en la misma fila;
+    no hay filtros avanzados.
+  -->
   @if (estado().tipo !== 'sin-contexto') {
-    <div class="campo">
-      <label class="visualmente-oculto" for="colaboradores-busqueda">Nombre o correo</label>
-      <div class="campo-busqueda">
-        <app-icono class="campo-busqueda__icono" nombre="buscar" />
-        <input
-          id="colaboradores-busqueda"
-          name="colaboradores-busqueda"
-          type="search"
-          autocomplete="off"
-          placeholder="Buscar por nombre o correo"
-          [value]="busqueda()"
-          (change)="buscar($any($event.target).value)"
-        />
+    <app-filtros
+      sinAvanzados
+      [resultados]="estado().tipo === 'listo' ? totalColaboradores() : null"
+      [unidad]="['vínculo', 'vínculos']"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="colaboradores-busqueda">Nombre o correo</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="colaboradores-busqueda"
+            name="colaboradores-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por nombre o correo"
+            [value]="busqueda()"
+            (change)="buscar($any($event.target).value)"
+          />
+        </div>
       </div>
-    </div>
+    </app-filtros>
   }
 
   <div aria-live="polite">
@@ -56,31 +57,49 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
-        <p class="ayuda">
-          Los colaboradores son de una organización concreta, así que hay que indicar cual.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        <app-estado-vacio
+          titulo="Todavía no elegiste un contexto de trabajo."
+          texto="Los colaboradores son de una organización concreta, así que hay que indicar cual."
+        >
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los colaboradores">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
         @if (colaboradoresDeLaPagina().length === 0 && busqueda().trim() !== '') {
-          <p class="estado estado--vacio">Ningún colaborador coincide con la búsqueda.</p>
+          <app-estado-vacio
+            titulo="Ningún colaborador coincide con la búsqueda."
+            texto="Probá con otro nombre o correo."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarBusqueda()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else if (colaboradoresDeLaPagina().length === 0) {
-          <p class="estado estado--vacio">Esta organización todavía no tiene colaboradores.</p>
-          <p class="ayuda">
-            Podés vincular a alguien que ya tenga cuenta en AKINE desde el botón de arriba.
-          </p>
+          <app-estado-vacio
+            titulo="Esta organización todavía no tiene colaboradores."
+            texto="Podés vincular a alguien que ya tenga cuenta en AKINE."
+          >
+            <a
+              *akinePermiso="permisoManage"
+              class="boton"
+              routerLink="/organizacion/colaboradores/nuevo"
+              >Vincular colaborador</a
+            >
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -96,9 +115,17 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Cuenta</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="rol">Rol</th>
-                  <th scope="col">Alcance</th>
+                  <th scope="col" class="tabla__col--secundaria">Alcance</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
-                  <th scope="col" appOrdenable [tabla]="orden" columna="vigenteDesde">Vigencia</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="orden"
+                    columna="vigenteDesde"
+                  >
+                    Vigencia
+                  </th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
@@ -125,7 +152,9 @@
                       </span>
                     </th>
                     <td>{{ etiquetaDeRol(colaborador.roleCode) }}</td>
-                    <td>{{ alcanceLegible(colaborador.consultorioId) }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ alcanceLegible(colaborador.consultorioId) }}
+                    </td>
                     <td>
                       <span
                         class="marca-estado"
@@ -145,7 +174,7 @@
                         </p>
                       }
                     </td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       {{ colaborador.validFrom | date: 'dd/MM/yyyy' }}
                       @if (colaborador.validUntil) {
                         <span class="ayuda"
@@ -206,17 +235,15 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>
-              {{ totalColaboradores() }} vínculos en total, incluidos los suspendidos y revocados
-            </span>
-            <akine-paginacion
-              etiqueta="Paginas de colaboradores"
-              [paginaActual]="paginaActual()"
-              [totalPaginas]="totalPaginas()"
-              (cambioDePagina)="irAPagina($event)"
-            />
-          </div>
+          <app-paginacion
+            etiqueta="Páginas de colaboradores"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="totalColaboradores()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
         }
       }
     }
@@ -237,7 +264,13 @@
         (cerrar)="cerrarPanel()"
       >
         <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
-          <div class="campo campo--ancho">
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos cambiar el rol o el alcance">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
+          <div class="campo campo--4">
             <label for="edicion-roleCode">Rol</label>
             <select id="edicion-roleCode" formControlName="roleCode">
               <option value="">No cambiar el rol</option>
@@ -286,7 +319,7 @@
             </div>
 
             @if (formularioEdicion.controls.alcance.value === 'sede') {
-              <div class="campo">
+              <div class="campo campo--4">
                 <label for="edicion-consultorioId">Sede</label>
                 <select id="edicion-consultorioId" formControlName="consultorioId">
                   <option value="">Elegí una sede</option>
@@ -314,12 +347,6 @@
             }
           </div>
 
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
-          </div>
-
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">Aplicar el cambio</button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
@@ -336,6 +363,16 @@
         [subtitulo]="nombreDe(colaborador)"
         (cerrar)="cerrarPanel()"
       >
+        <!--
+          Error de otorgar o de dar de baja: al principio del panel, a la vista, sirve a las dos
+          operaciones (la baja es un boton de la lista, no del formulario).
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos actualizar los permisos">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
           <h3>Permisos vigentes</h3>
           <app-ayuda titulo="Sobre los permisos adicionales">
@@ -392,7 +429,7 @@
 
         <h3 class="panel-seccion">Otorgar un permiso</h3>
         <form [formGroup]="formularioGrant" (ngSubmit)="asignarGrant()" novalidate>
-          <div class="campo campo--ancho">
+          <div class="campo campo--6">
             <label for="grant-permissionCode">Permiso a otorgar</label>
             <select
               id="grant-permissionCode"
@@ -442,20 +479,30 @@
             }
           </div>
 
-          <div class="campo">
+          <div class="campo campo--ancho">
             <label for="grant-reason">Motivo</label>
             <input
               id="grant-reason"
               type="text"
               formControlName="reason"
-              aria-describedby="grant-reason-ayuda"
               [attr.aria-invalid]="mostrarErrorGrant('reason')"
+              [attr.aria-describedby]="
+                mostrarErrorGrant('reason')
+                  ? 'grant-reason-ayuda grant-reason-error'
+                  : 'grant-reason-ayuda'
+              "
             />
             <p class="ayuda" id="grant-reason-ayuda">
               Sirve para otorgar y para dar de baja: las dos quedan auditadas.
             </p>
             @if (mostrarErrorGrant('reason')) {
-              <p class="campo__error" id="grant-reason-error">Escribi el motivo.</p>
+              <p class="campo__error" id="grant-reason-error">
+                {{
+                  bajaSinMotivo()
+                    ? 'Escribi el motivo antes de dar de baja el permiso.'
+                    : 'Escribi el motivo.'
+                }}
+              </p>
             }
           </div>
 
@@ -472,12 +519,6 @@
             <p class="ayuda" id="grant-validUntil-ayuda">
               Sin fecha, rige hasta que se de de baja.
             </p>
-          </div>
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
           </div>
 
           <div class="acciones">
@@ -497,6 +538,12 @@
         [subtitulo]="nombreDe(colaborador)"
         (cerrar)="cerrarPanel()"
       >
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" [titulo]="'No pudimos ' + verboDelPanel()">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <akine-confirmacion-con-motivo
           idCampo="panel-motivo"
           textoError="El motivo es obligatorio: es lo que explica esta decision mas adelante."
@@ -544,12 +591,6 @@
             </div>
           }
         </akine-confirmacion-con-motivo>
-
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
       </app-panel-lateral>
     }
   }

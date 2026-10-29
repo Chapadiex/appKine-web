@@ -107,9 +107,7 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
     await navegar(page, `/catalogo/nomencladores/${nomenclador.id}/vigencias`);
     await expect(page.getByRole('heading', { name: nomenclador.name, level: 2 })).toBeVisible();
     await expect(page.getByText(`Código NOM-${sufijo}`)).toBeVisible();
-    await expect(
-      page.getByText('Este nomenclador todavía no tiene vigencias con el filtro elegido.'),
-    ).toBeVisible();
+    await expect(page.getByText('Este nomenclador todavía no tiene vigencias')).toBeVisible();
 
     // --- La vieja: una ventana que ya termino ------------------------------------------------
     const vieja = await cargarVigencia(page, {
@@ -159,8 +157,11 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
       'aria-invalid',
       'true',
     );
+    // UX-12: el choque va en una alerta pegada al codigo, no debajo del campo.
     await expect(
-      page.locator('.campo__error[role="alert"]').filter({ hasText: /./ }),
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Se superpone con otra vigencia del mismo código' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
     await expect(filaDe(page, `Sesion pisada ${sufijo}`)).toHaveCount(0);

@@ -31,7 +31,9 @@ import {
   OrigenDelTimeline,
 } from '../../../services/historia-clinica-api';
 import { Ayuda } from '../../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../../shared/components/alerta/alerta';
 import { Filtros } from '../../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../../shared/components/estado-vacio/estado-vacio';
 
 /**
  * Los origenes que se pueden filtrar, con su rotulo. `Record` sobre el tipo del contrato: un origen
@@ -126,7 +128,7 @@ type Estado =
  */
 @Component({
   selector: 'app-timeline-clinico',
-  imports: [Ayuda, Filtros, NgTemplateOutlet],
+  imports: [Alerta, Ayuda, EstadoVacio, Filtros, NgTemplateOutlet],
   templateUrl: './timeline-clinico.html',
   styleUrl: '../historia-clinica.css',
 })

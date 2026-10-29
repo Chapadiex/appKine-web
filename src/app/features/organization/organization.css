@@ -516,25 +516,19 @@
   color: var(--color-texto-suave);
 }
 
-/* Grillas del contenido: tres columnas para los datos, dos para los bloques. */
+/*
+  Bloques del contenido (primer box y horario, resumen): dos columnas de bloques. Los campos no
+  usan esta grilla sino la de 12 columnas (`.grilla-12`, UX-14).
+*/
 .asistente__grilla {
   display: grid;
   gap: 0 var(--esp-7);
   align-items: start;
 }
 
-.asistente__grilla--tres {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-  max-width: 62rem;
-}
-
 .asistente__grilla--dos {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: var(--esp-7);
-}
-
-.asistente__grilla .campo--ancho {
-  grid-column: 1 / -1;
 }
 
 /* Bloque de configuracion opcional: superficie sutil, sin borde de tarjeta. */
@@ -561,18 +555,6 @@
   margin: 0 0 var(--esp-6);
   color: var(--color-texto-suave);
   font-size: var(--tipo-xs);
-}
-
-.bloque__campos {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 0 var(--esp-6);
-}
-
-@media (max-width: 30rem) {
-  .bloque__campos {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .asistente .seccion-plegable {
@@ -756,6 +738,13 @@
 
 .panel-seccion {
   margin: var(--esp-8) 0 var(--esp-5);
+}
+
+/* Opciones de una sola eleccion en una fila mientras entren (criterio de la auditoria, UX-14). */
+.opciones-en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-8);
 }
 
 /* Avisos de una grilla de campos (la ventana de la auditoria): a lo ancho, no en una celda. */

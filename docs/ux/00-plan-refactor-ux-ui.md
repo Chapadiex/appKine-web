@@ -109,7 +109,7 @@ pantalla arma la suya con `div.titulo-con-ayuda` + `h1`; la ficha de persona usa
 `app-cabecera-de-ficha`, que es la misma cabecera con los datos de la persona.
 
 ```
-[Migas /] Título (?) [estado]   [‹ contexto › Hoy]                 [ACCIÓN PRINCIPAL]
+Título (?) [estado]   [‹ contexto › Hoy]                         [ACCIÓN PRINCIPAL]
 Pestaña | Pestaña | Pestaña
 ```
 
@@ -127,8 +127,9 @@ Pestaña | Pestaña | Pestaña
 - **Título en una línea.** Si no entra se corta con "…"; nunca invade la zona de la acción.
 - **"?" pegado al título**, siempre con el mismo tamaño y la misma separación. Lo que no tiene
   región (marcas de estado) va después del "?".
-- **Migas en línea**, antes del título (`app-migas enLinea`), sin repetir la pantalla actual: un
-  enlace "Volver a…" arriba del título bajaba el título en los detalles.
+- **Sin migas en la cabecera.** De dónde viene la pantalla lo dice la ruta de navegación de la barra
+  superior (UX-13, `docs/ux/UX-13-ruta-de-navegacion.md`); la pantalla publica sus pasos con
+  `publicarMigas`. Un enlace "Volver a…" arriba del título bajaba el título en los detalles.
 - **Contexto** (fecha, semana, "Hoy") en la fila del título mientras entre; si no, baja a una
   segunda línea antes que desplazar la página.
 - **Pestañas** en una segunda fila compacta, dentro de la cabecera.

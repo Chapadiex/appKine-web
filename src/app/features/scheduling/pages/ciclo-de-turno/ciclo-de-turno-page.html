@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Turno #{{ turnoId() }}">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   @if (estado() !== '') {
     <!-- El estado de la RESERVA, con texto y no solo con color (WCAG 1.4.1). -->
     <span
@@ -62,17 +61,10 @@
   }
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-
-  <!-- Con un panel abierto, el rechazo se muestra dentro del panel, que es lo que esta a la vista. -->
-  @if (panel() === 'ninguno') {
-    <ng-container *ngTemplateOutlet="rechazo" />
-  }
-</div>
-
+<!--
+  UX-12: el resultado de cada transicion —y el rechazo de "Confirmar", que no tiene formulario— es
+  un aviso global. El rechazo de cancelar, ausencia o mover queda arriba de su panel.
+-->
 @if (cicloCerrado()) {
   <p class="estado estado--vacio">
     Este turno ya cerró su ciclo, así que no admite más cambios. Su historial queda igual: nada se
@@ -221,7 +213,18 @@
         </app-ayuda>
       </div>
 
-      @if (eventos().length === 0) {
+      @if (errorDeHistorial(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos leer el historial del turno">
+          <p>{{ fallo.mensaje }}</p>
+          <p class="alerta__acciones">
+            @if (fallo.accion === 'elegir-contexto') {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+            } @else {
+              <button type="button" class="boton" (click)="recargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
+      } @else if (eventos().length === 0) {
         <p class="estado estado--vacio">Todavía no hay eventos para mostrar.</p>
       } @else {
         <ol class="historial">
@@ -280,7 +283,7 @@
   @switch (panel()) {
     @case ('cancelar') {
       <app-panel-lateral titulo="Cancelar el turno" (cerrar)="cerrar()">
-        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <ng-container *ngTemplateOutlet="rechazo" />
         <!--
           Motivo OBLIGATORIO: es el default del componente y lo pide DP-04. Cancelar libera el
           lugar y deja la fila con su motivo, su actor y su historial.
@@ -305,7 +308,7 @@
     }
     @case ('ausencia') {
       <app-panel-lateral titulo="Registrar que el paciente no vino" (cerrar)="cerrar()">
-        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <ng-container *ngTemplateOutlet="rechazo" />
         <!--
           `motivoObligatorio` en false, y NO es cosmetico: el default del componente compartido es
           `true` y con el campo vacio el boton no emitiria nada -sin peticion, sin error y sin
@@ -331,7 +334,7 @@
     }
     @case ('reprogramar') {
       <app-panel-lateral ancho="amplio" titulo="Mover el turno a otro horario" (cerrar)="cerrar()">
-        <div aria-live="polite"><ng-container *ngTemplateOutlet="rechazo" /></div>
+        <ng-container *ngTemplateOutlet="rechazo" />
         <akine-confirmacion-con-motivo
           idCampo="turno-reprogramar-motivo"
           titulo="Mover el turno a otro horario"
@@ -365,48 +368,60 @@
 }
 
 <ng-template #rechazo>
+  <!--
+    Primer hijo del panel abierto (UX-12). Un horario ocupado no es una falla sino un conflicto con
+    otro turno: advertencia, con la salida (elegir otro horario del listado de abajo).
+  -->
   @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
-      <h2 id="titulo-conflicto">No se pudo operar sobre el turno</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+    <app-alerta
+      [tipo]="accion() === 'elegir-otro' ? 'advertencia' : 'error'"
+      [titulo]="accion() === 'elegir-otro' ? 'Ese horario ya está ocupado' : tituloDelRechazo()"
+    >
+      <p>{{ fallo.mensaje }}</p>
 
       @switch (accion()) {
         @case ('recargar-turno') {
           @if (fallo.motivo) {
-            <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+            <p>Lo que dijo el servidor: {{ fallo.motivo }}</p>
           }
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
-          </div>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="recargar()">
+              Releer el turno
+            </button>
+          </p>
         }
         @case ('recargar-agenda') {
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">Releer el turno</button>
-          </div>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="recargar()">
+              Releer el turno
+            </button>
+          </p>
         }
         @case ('resolver-atencion') {
           <!--
             La unica salida real. Reintentar la cancelacion devuelve el mismo 409 para siempre:
             lo que hay que resolver es la Sesion, y vive en otra pantalla (DP-05).
           -->
-          <div class="acciones">
-            <a class="boton" [routerLink]="['/atencion', 'turnos', turnoId()]">
+          <p class="alerta__acciones">
+            <a class="boton boton--secundario" [routerLink]="['/atencion', 'turnos', turnoId()]">
               Ver la atención clínica de este turno
             </a>
-          </div>
+          </p>
         }
         @case ('elegir-otro') {
-          <p class="ayuda ayuda--fija">
+          <p>
             El recurso ocupado es el <b>{{ fallo.recurso }}</b
             >. Elegí otro horario del listado.
           </p>
         }
         @case ('elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
+          <p class="alerta__acciones">
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir contexto de trabajo</a
+            >
+          </p>
         }
       }
-    </section>
+    </app-alerta>
   }
 </ng-template>

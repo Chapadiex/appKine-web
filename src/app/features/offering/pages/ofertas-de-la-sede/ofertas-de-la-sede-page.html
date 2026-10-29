@@ -31,23 +31,41 @@
   <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-  @if (errorPrepago(); as mensaje) {
-    <p class="estado estado--error">No se cambio la politica de prepago. {{ mensaje }}</p>
-  }
-</div>
-
-<section class="tarjeta" aria-labelledby="titulo-listado-ofertas">
-  <h2 id="titulo-listado-ofertas">Ofertas cargadas en esta sede</h2>
-
+<section class="tarjeta" aria-label="Ofertas cargadas en esta sede">
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que
-    estado y servicio van los dos detras del embudo, sin campo basico.
+    Toolbar del listado (UX-14): la busqueda por nombre (local, la lista llega entera), la
+    modalidad como filtro frecuente, estado y servicio detras de "Filtros", y el contador en la
+    misma fila.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['oferta', 'ofertas']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="busqueda-ofertas">Buscar ofertas</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="busqueda-ofertas"
+          type="search"
+          placeholder="Buscar por nombre o servicio"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <app-filtros-rapidos
+      filtro-frecuente
+      etiqueta="Filtrar por modalidad"
+      [opciones]="opcionesModalidad()"
+      [(valor)]="filtroModalidad"
+    />
+
     <div class="campo">
       <label for="filtro-estado-oferta">Mostrar</label>
       <select
@@ -98,31 +116,37 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer las ofertas de la sede">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
-        @if (ofertasCargadas().length > 0) {
-          <app-filtros-rapidos
-            etiqueta="Filtrar por modalidad"
-            [opciones]="opcionesModalidad()"
-            [(valor)]="filtroModalidad"
-          />
-        }
-        @if (ofertas().length === 0) {
-          <p class="estado estado--vacio">
-            Esta sede todavía no tiene ofertas que coincidan con el filtro.
-          </p>
-          <p class="ayuda">
-            Una oferta es lo que conecta un servicio del catalogo con esta sede. Sin ninguna, esta
-            sede no ofrece nada para reservar.
-          </p>
+        @if (ofertasCargadas().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Esta sede todavía no tiene ofertas activas"
+            texto="Una oferta conecta un servicio del catalogo con esta sede. Sin ninguna, esta sede no ofrece nada para reservar."
+          >
+            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+              Publicar el primer servicio
+            </button>
+          </app-estado-vacio>
+        } @else if (ofertas().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos ofertas"
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Ofertas de la sede">
             <table class="tabla">
@@ -135,9 +159,25 @@
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Oferta</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="servicio">Servicio</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="duracion">Duración</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="duracion"
+                  >
+                    Duración
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="vigencia"
+                  >
+                    Vigencia
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -164,7 +204,7 @@
                     </th>
                     <td>{{ nombreDelServicio(oferta) }}</td>
                     <td>{{ modalidadConCapacidad(oferta) }}</td>
-                    <td>{{ oferta.duracionMinutos }} min</td>
+                    <td class="tabla__col--secundaria">{{ oferta.duracionMinutos }} min</td>
                     <td>
                       {{ precioEnPalabras(oferta) }}
                       @if (oferta.exigePrepago) {
@@ -172,7 +212,7 @@
                         <p class="ayuda">Exige prepago en recepción.</p>
                       }
                     </td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       Desde {{ enPalabras(oferta.vigenciaDesde ?? '') }}
                       @if (oferta.vigenciaHasta) {
                         <p class="ayuda ayuda--fija">
@@ -251,15 +291,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} ofertas</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de ofertas"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de ofertas" />
         }
       }
     }
@@ -275,7 +307,14 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva oferta de esta sede" ancho="amplio" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo campo--ancho">
+      <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos publicar la oferta">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <div class="campo campo--4">
         <label for="alta-oferta-servicio">Servicio del catalogo</label>
         <select
           id="alta-oferta-servicio"
@@ -305,7 +344,7 @@
         </p>
       </div>
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--4">
         <label for="alta-oferta-nombre">Nombre comercial</label>
         <input
           id="alta-oferta-nombre"
@@ -323,7 +362,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-oferta-modalidad">Modalidad</label>
         <select
           id="alta-oferta-modalidad"
@@ -395,7 +434,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-oferta-moneda">Moneda</label>
         <input
           id="alta-oferta-moneda"
@@ -475,7 +514,7 @@
           </span>
         </summary>
 
-        <div class="grilla-campos grilla-campos--dos">
+        <div class="grilla-campos">
           <div class="campo campo--ancho">
             <label for="alta-oferta-descripcion">Descripción (opcional)</label>
             <input
@@ -548,10 +587,6 @@
         </div>
       </details>
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
@@ -583,12 +618,25 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda ayuda--fija">
           Para <b>sacarle</b> un valor usá la casilla debajo de ese campo: un campo vacío significa
           "no lo toques".
         </p>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-oferta-nombre">Nombre comercial</label>
           <input
             id="editar-oferta-nombre"
@@ -657,7 +705,7 @@
           <input id="editar-oferta-precio" type="number" min="0" formControlName="precioBase" />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-oferta-moneda">Moneda</label>
           <input
             id="editar-oferta-moneda"
@@ -791,10 +839,6 @@
           </p>
         </div>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -807,11 +851,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el listado
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -819,6 +858,18 @@
 
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + oferta.nombreComercial" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la oferta">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el listado
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-oferta-motivo"
         [titulo]="'Dar de baja ' + oferta.nombreComercial"
@@ -835,15 +886,6 @@
           reservo con ella sigue siendo valido. Su nombre comercial queda libre para otra oferta.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar el listado
-        </button>
-      }
     </app-panel-lateral>
   }
 }

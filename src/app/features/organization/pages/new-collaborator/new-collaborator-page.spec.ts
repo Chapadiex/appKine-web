@@ -1,9 +1,10 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { NewCollaboratorPage } from './new-collaborator-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -41,6 +42,7 @@ describe('NewCollaboratorPage', () => {
 
   it('el alta sale sin orgId: la organización es la del contexto', async () => {
     const fixture = montar();
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
 
     escribir(fixture, '#alta-email', 'kine@ejemplo.test');
     elegir(fixture, '#alta-roleCode', 'PROFESIONAL');
@@ -61,7 +63,11 @@ describe('NewCollaboratorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('42');
+    // UX-12: vuelve al listado y el resultado va al aviso global, con el numero del vinculo.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Colaborador vinculado');
+    expect(aviso?.descripcion).toContain('42');
+    expect(navegar).toHaveBeenCalledWith('/organizacion/colaboradores');
   });
 
   it('un 404 dice que no existe la cuenta y no ofrece con que seguir probando', async () => {
@@ -91,6 +97,32 @@ describe('NewCollaboratorPage', () => {
     expect(fixture.nativeElement.querySelector('#alta-email')?.getAttribute('autocomplete')).toBe(
       'off',
     );
+  });
+
+  it('un 409 de vinculo existente se muestra pegado al email, con la salida al listado', async () => {
+    const fixture = montar();
+
+    escribir(fixture, '#alta-email', 'kine@ejemplo.test');
+    elegir(fixture, '#alta-roleCode', 'PROFESIONAL');
+    escribir(fixture, '#alta-reason', 'Se suma');
+    enviar(fixture);
+
+    httpMock
+      .expectOne((candidata: HttpRequest<unknown>) => candidata.url === '/api/v1/memberships')
+      .flush(
+        { type: 'https://akine.app/problems/conflict', detail: 'La cuenta ya esta vinculada' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = fixture.nativeElement.querySelector('#alta-email-vinculado') as HTMLElement;
+    expect(alerta.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta.textContent).toContain('La cuenta ya esta vinculada');
+    expect(alerta.textContent).toContain('Ver el listado');
+    const email = fixture.nativeElement.querySelector('#alta-email') as HTMLInputElement;
+    expect(email.getAttribute('aria-invalid')).toBe('true');
+    expect(email.getAttribute('aria-describedby')).toContain('alta-email-vinculado');
   });
 
   it(

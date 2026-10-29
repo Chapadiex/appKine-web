@@ -33,10 +33,17 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ob
 import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { EgresosApi } from '../../services/egresos-api';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -56,12 +63,6 @@ type CampoDeAlta =
   | 'importe'
   | 'moneda'
   | 'periodoHasta';
-
-/**
- * Filas por pagina: el `limite` por defecto del contrato. Se pide una de mas para saber si hay
- * pagina siguiente, porque la respuesta es un arreglo sin total.
- */
-const PAGINA = 50;
 
 /**
  * Egresos de la sede: listado filtrable y alta de un borrador (M22, RF-M22-001/003/004,
@@ -86,12 +87,24 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [CabeceraDePagina, PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    PanelLateral,
+    Ayuda,
+    Filtros,
+    EstadoVacio,
+    Paginacion,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './egresos-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresosPage {
   private readonly api = inject(EgresosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly router = inject(Router);
@@ -155,6 +168,13 @@ export class EgresosPage {
   protected readonly estado = signal<EstadoListado>({ tipo: 'cargando' });
   /** Pagina mostrada, en base 0. */
   protected readonly pagina = signal(0);
+  /**
+   * Filas por pagina (UX-14). Viaja como `limite`; se pide una de mas para saber si hay pagina
+   * siguiente, porque la respuesta es un arreglo sin total.
+   */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+  /** Si la ultima busqueda llevaba texto o algun filtro avanzado: decide el estado vacio. */
+  protected readonly conFiltros = signal(false);
   protected readonly estadoResumen = signal<EstadoResumen>({ tipo: 'cargando' });
   protected readonly colaboradores = signal<readonly MembershipResponse[]>([]);
   /** Ofertas activas de la sede, para imputar el costo (DP-39). Sin ellas, el egreso va sin imputar. */
@@ -189,11 +209,17 @@ export class EgresosPage {
     const actual = this.estado();
     return actual.tipo === 'listo' && actual.hayMas;
   });
-  /** Primera y ultima fila de la pagina, en base 1, para el pie del listado. */
-  protected readonly filasMostradas = computed(() => {
-    const primera = this.pagina() * PAGINA + 1;
-    return { primera, ultima: primera + this.egresos().length - 1 };
-  });
+  /**
+   * Total de egresos con los filtros, solo cuando se sabe: en la ultima pagina (no hay mas). El
+   * contrato no lo devuelve; mientras haya paginas por delante, el contador no se inventa.
+   */
+  protected readonly totalConocido = computed(() =>
+    this.estado().tipo === 'listo' && !this.hayMas()
+      ? this.pagina() * this.porPagina() + this.egresos().length
+      : null,
+  );
+  /** Las paginas conocidas: hasta la actual, y una mas si el servidor dijo que hay. */
+  protected readonly totalPaginas = computed(() => this.pagina() + 1 + Number(this.hayMas()));
   protected readonly resumen = computed(() => {
     const actual = this.estadoResumen();
     return actual.tipo === 'listo' ? actual.resumen : null;
@@ -239,6 +265,26 @@ export class EgresosPage {
     this.irAPagina(0);
   }
 
+  /**
+   * Vuelve los filtros avanzados a su valor por defecto (y la busqueda, desde el estado vacio) y
+   * busca de nuevo.
+   */
+  protected limpiarFiltros(tambienLaBusqueda = false): void {
+    this.filtro.patchValue({
+      ...(tambienLaBusqueda ? { q: '' } : {}),
+      estado: '',
+      categoria: '',
+      desde: this.desdePorDefecto,
+      hasta: '',
+    });
+    this.buscar();
+  }
+
+  protected cambiarPorPagina(porPagina: number): void {
+    this.porPagina.set(porPagina);
+    this.buscar();
+  }
+
   protected irAPagina(pagina: number): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null) {
@@ -246,7 +292,9 @@ export class EgresosPage {
       return;
     }
     const valor = this.filtro.getRawValue();
+    const limite = this.porPagina();
     this.pagina.set(pagina);
+    this.conFiltros.set(valor.q.trim() !== '' || this.filtrosAvanzadosActivos() > 0);
     this.estado.set({ tipo: 'cargando' });
     this.api
       .buscar(consultorioId, {
@@ -255,15 +303,15 @@ export class EgresosPage {
         categoria: valor.categoria || undefined,
         desde: valor.desde || undefined,
         hasta: valor.hasta || undefined,
-        limite: PAGINA + 1,
-        desplazamiento: pagina * PAGINA,
+        limite: limite + 1,
+        desplazamiento: pagina * limite,
       })
       .subscribe({
         next: (egresos) =>
           this.estado.set({
             tipo: 'listo',
-            egresos: egresos.slice(0, PAGINA),
-            hayMas: egresos.length > PAGINA,
+            egresos: egresos.slice(0, limite),
+            hayMas: egresos.length > limite,
           }),
         error: (error: unknown) =>
           this.estado.set({ tipo: 'error', error: traducirErrorEgreso(error) }),
@@ -327,6 +375,10 @@ export class EgresosPage {
       .subscribe({
         next: (creado) => {
           this.creando.set(false);
+          // El aviso vive en el shell: sobrevive a la navegacion al detalle del egreso.
+          this.avisos.exito('Egreso cargado en borrador', {
+            descripcion: 'Se corrige hasta confirmarlo con su comprobante.',
+          });
           this.router.navigate(['/egresos', creado.id]).catch(() => undefined);
         },
         error: (error: unknown) => {
@@ -385,7 +437,7 @@ export class EgresosPage {
     return periodoDesde === '' || periodoHasta === '' || periodoHasta < periodoDesde;
   }
 
-  private cargarResumen(): void {
+  protected cargarResumen(): void {
     // Sin sede no hay tira: el listado ya dice que falta el contexto.
     this.estadoResumen.set({ tipo: 'cargando' });
     const consultorioId = this.tenantContext.consultorioId();

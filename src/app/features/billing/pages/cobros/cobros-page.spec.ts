@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -94,6 +95,29 @@ describe('CobrosPage', () => {
     expect(contenido).toContain('No se muestra un total de lo cobrado');
   });
 
+  it('busca por número de comprobante, cuenta en la barra y pagina con el pie estándar', async () => {
+    const lista = Array.from({ length: 12 }, (_, i) => ({
+      ...COBRO,
+      id: i + 1,
+      comprobanteNumero: 140 + i,
+    }));
+    const fixture = await montar(lista);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('12 cobros');
+    expect(texto(fixture)).toContain('Mostrando 1–10 de 12');
+
+    escribirEn(fixture, '#buscar-cobro', '151');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('1 cobro');
+
+    escribirEn(fixture, '#buscar-cobro', '999');
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No hay cobros con ese número',
+    );
+    apretar(fixture, 'Limpiar filtros');
+    expect(raiz.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+  });
+
   it('abrir el comprobante lo RELEE del servidor: no reimprime lo que hay en memoria', async () => {
     const fixture = await montar([COBRO]);
 
@@ -126,7 +150,11 @@ describe('CobrosPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se pudo abrir el comprobante');
+    // Boton de fila, sin formulario: el error va al aviso global, con Reintentar.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos abrir el comprobante');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
     // El listado no se voltea: perder los cobros porque uno no abrio seria peor.
     expect(texto(fixture)).toContain('142');
   });
@@ -172,8 +200,10 @@ describe('CobrosPage', () => {
     // queda marcada como tal en vez de desaparecer.
     responder(httpMock.expectOne(esListado()), [anulado]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se anulo el comprobante N.º 142');
-    expect(texto(fixture)).toContain('no se borra nada');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Se anulo el comprobante N.º 142');
+    expect(aviso?.descripcion).toContain('no se borra nada');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     expect(texto(fixture)).toContain('Anulado');
     expect(texto(fixture)).not.toContain('no tiene ningún cobro');
     expect(boton(fixture, 'Anular')?.disabled).toBe(true);

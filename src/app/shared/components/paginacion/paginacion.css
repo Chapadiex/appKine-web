@@ -1,0 +1,99 @@
+/*
+ * Pie de tabla estandar (UX-14), una sola fila debajo de la tabla:
+ * "Mostrando 1–10 de 87 · Filas por pagina [10] · ‹ 1 2 3 … 9 ›".
+ */
+.paginacion-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-8);
+  margin-top: var(--esp-5);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.paginacion-pie:empty {
+  display: none;
+}
+
+.paginacion-pie__resumen {
+  margin: 0;
+}
+
+.paginacion-pie__por-pagina {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-left: auto;
+}
+
+.paginacion-pie__por-pagina select {
+  min-height: 2rem;
+  padding: 0 var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+}
+
+.paginacion-pie__resumen + .paginacion {
+  margin-left: auto;
+}
+
+.paginacion-pie__por-pagina + .paginacion {
+  margin-left: 0;
+}
+
+.paginacion__paso {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0 var(--esp-4);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-md);
+  background: transparent;
+  color: var(--color-texto);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.paginacion__paso:hover:not(:disabled) {
+  background: var(--color-superficie-sutil);
+}
+
+.paginacion__paso[aria-current='page'] {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+.paginacion__paso--flecha {
+  border-color: var(--color-borde-control);
+  font-size: var(--tipo-lg);
+  line-height: 1;
+}
+
+.paginacion__paso:disabled {
+  border-color: var(--color-borde-sutil);
+  color: var(--color-deshabilitado);
+  cursor: not-allowed;
+}
+
+.paginacion__paso:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.paginacion__salto {
+  padding: 0 var(--esp-2);
+}

@@ -24,6 +24,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { DetalleDeClasePage } from './detalle-de-clase-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const ID = 70;
 const URL_CLASE = `${URL_CLASES}/${ID}`;
@@ -80,6 +81,14 @@ const PARTICIPANTES = [
     inscripcion: { id: 499, personaId: 131, estado: 'CANCELADA', motivoCancelacion: 'viaje' },
   },
 ];
+
+/** Titulos y descripciones de los avisos globales publicados (UX-12). */
+function avisos(): string {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => `${aviso.titulo}. ${aviso.descripcion ?? ''}`)
+    .join(' | ');
+}
 
 describe('DetalleDeClasePage', () => {
   let httpMock: HttpTestingController;
@@ -166,6 +175,14 @@ describe('DetalleDeClasePage', () => {
       expect(
         (fixture.nativeElement as HTMLElement).querySelector('a[href="/asistencia/70"]'),
       ).not.toBeNull();
+      // UX-14: la clase y sus cupos en una banda sin tarjeta; los inscriptos con orden y pie.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('.banda-clase')?.textContent).toContain('Lugares ocupados');
+      expect(raiz.querySelector('.banda-clase')?.closest('.tarjeta')).toBeNull();
+      expect(raiz.querySelectorAll('[aria-label="Inscriptos con lugar"] th button')).toHaveLength(
+        2,
+      );
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain('Mostrando 1–');
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -209,7 +226,12 @@ describe('DetalleDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Ocupados 2 de 2');
+    // Conflicto con la clase: advertencia pegada a la persona elegida, con la salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      'app-alerta[tipo="advertencia"]',
+    );
+    expect(alerta?.textContent).toContain('Ocupados 2 de 2');
+    expect(alerta?.textContent).toContain('Anotar en la lista de espera');
 
     clickear(fixture, 'Anotar en la lista de espera');
     const segundo = httpMock.expectOne(INSCRIPCIONES);
@@ -223,7 +245,7 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Rios, Mara quedo en la lista de espera, posicion 2');
+    expect(avisos()).toContain('Rios, Mara quedo en la lista de espera, posicion 2');
   });
 
   it('inscribir con lugar y con espera marcada de antemano', async () => {
@@ -249,9 +271,9 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Rios, Mara quedo inscripta con lugar');
-    // "Inscribir" desaparecio con la persona elegida: el foco queda en el resultado.
-    expect(document.activeElement?.id).toBe('aviso-clase');
+    expect(avisos()).toContain('Rios, Mara quedo inscripta con lugar');
+    // "Inscribir" desaparecio con la persona elegida: el foco vuelve a la busqueda.
+    expect(document.activeElement?.id).toBe('inscribir-persona');
   });
 
   it('la baja nombra a quien entro desde la espera', async () => {
@@ -274,7 +296,7 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain(
+    expect(avisos()).toContain(
       'Se dio de baja a Perez, Ana. Sosa, Eva entro desde la lista de espera',
     );
   });
@@ -291,8 +313,12 @@ describe('DetalleDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('La inscripción no admite esa operación');
-    expect(textoDe(fixture)).toContain('Detalle: cancelada');
+    // Accion de fila: aviso global de error con el mensaje del backend y su detalle.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos confirmar la inscripción');
+    expect(aviso?.descripcion).toContain('La inscripción no admite esa operación');
+    expect(aviso?.descripcion).toContain('Detalle: cancelada');
     responderClase();
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
@@ -342,8 +368,9 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Clase reprogramada');
-    expect(document.activeElement?.id).toBe('aviso-clase');
+    expect(avisos()).toContain('Clase reprogramada');
+    // El panel se cerro y el foco volvio al control que lo abrio.
+    expect(document.activeElement?.id).toBe('boton-reprogramar');
 
     clickear(fixture, 'Cancelar la clase');
     escribir(fixture, '#clase-cancelar-motivo', 'Profesional enfermo');
@@ -361,7 +388,7 @@ describe('DetalleDeClasePage', () => {
     httpMock.expectOne(INSCRIPCIONES).flush([]);
     await asentar(fixture);
     const texto = textoDe(fixture);
-    expect(texto).toContain('Clase cancelada');
+    expect(avisos()).toContain('Clase cancelada');
     expect(texto).toContain('Motivo de la cancelación: Profesional enfermo');
     expect(texto).not.toContain('Inscribir a una persona');
   });
@@ -409,7 +436,11 @@ describe('DetalleDeClasePage', () => {
     ).toHaveLength(2);
     escribir(fixture, '#reprogramar-fin', '17:00');
     clickear(fixture, 'Guardar el cambio');
-    expect(textoDe(fixture)).toContain('La hora de fin tiene que ser posterior');
+    // Dato a corregir: en el campo de fin, que apunta al mensaje.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#reprogramar-fin-error.campo__error')
+        ?.textContent,
+    ).toContain('La hora de fin tiene que ser posterior');
     httpMock.expectNone(`${URL_CLASE}/reprogramacion`);
 
     escribir(fixture, '#reprogramar-fin', '19:30');
@@ -421,7 +452,9 @@ describe('DetalleDeClasePage', () => {
         { status: 409, statusText: 'Conflict' },
       );
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Alguien modifico la clase');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('form > app-alerta')?.textContent,
+    ).toContain('Alguien modifico la clase');
     responderClase();
     await asentar(fixture);
     httpMock.expectOne(INSCRIPCIONES).flush(PARTICIPANTES);

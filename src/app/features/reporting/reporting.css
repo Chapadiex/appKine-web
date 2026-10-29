@@ -3,22 +3,6 @@
  * tokens salen de `design-system.css`; cero colores literales.
  */
 
-/* Filtros en una fila: reporte, desde y hasta. Las fechas no necesitan el ancho entero. */
-.campos-en-linea {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--esp-5);
-}
-
-.campos-en-linea > .campo {
-  flex: 0 1 11rem;
-}
-
-.campos-en-linea > .campo--reporte {
-  flex: 1 1 16rem;
-  max-width: 28rem;
-}
-
 .previstas {
   margin: var(--esp-5) 0 0;
   padding: var(--esp-5) var(--esp-6);
@@ -75,17 +59,17 @@
  */
 .indicadores {
   list-style: none;
-  margin: 0 0 var(--esp-6);
+  margin: 0 0 var(--esp-5);
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
   overflow: hidden;
 }
 
 .indicador {
-  padding: var(--esp-5) var(--esp-6);
+  padding: var(--esp-4) var(--esp-5);
   display: flex;
   flex-direction: column;
   gap: var(--esp-1);
@@ -123,17 +107,14 @@
   margin: 0;
 }
 
-/* Importes por fila (rentabilidad y caja por servicio, DP-39): alineados para compararlos. */
-.tabla td.importe {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* El boton de generar queda en la fila de filtros, alineado con la base de los campos. */
-.acciones--filtro {
+/*
+ * El boton de generar queda en la fila de filtros (reporte, desde, hasta), en las columnas que
+ * dejan libres, alineado con la base de los campos. La grilla es la global de 12 columnas (UX-14).
+ */
+.tarjeta form > .acciones--filtro {
+  grid-column: span 4;
+  align-self: end;
   margin-top: 0;
-  align-self: flex-end;
   padding-bottom: var(--esp-6);
 }
 
@@ -173,7 +154,4 @@
   margin: 0;
 }
 
-/* Tabla de detalle: encabezado atenuado y filas compactas, como el canvas. */
-.tarjeta--seccion .tabla thead th {
-  background: var(--color-superficie-atenuada);
-}
+/* La tabla de detalle de cada seccion vive en `app-tabla-de-detalle`, con sus propios estilos. */

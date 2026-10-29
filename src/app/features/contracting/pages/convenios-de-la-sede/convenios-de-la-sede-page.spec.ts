@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -194,9 +195,10 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Todavía no resuelve ningún precio',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Convenio firmado');
+    expect(aviso?.descripcion).toContain('Todavía no resuelve ningún precio');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el 409 de solapamiento manda a cerrar la vigencia y NO ofrece recargar', async () => {
@@ -228,8 +230,11 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('cerra la vigencia del que ya esta');
+    // Advertencia arriba del formulario: es un choque con un convenio que ya existe.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form app-alerta');
+    expect(alerta?.className).toContain('alerta--advertencia');
+    expect(alerta?.textContent).toContain('Se superpone con otro convenio de esta sede');
+    expect(alerta?.textContent).toContain('cerra la vigencia del que ya esta');
     // Recargar no arregla un solapamiento: el periodo que choca sigue estando ahi. Ofrecer el
     // boton mandaria al usuario a apretar algo que no cambia nada.
     expect(
@@ -258,9 +263,9 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'cerrar la vigencia no es darlo de baja',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toContain('cerrar la vigencia no es darlo de baja');
   });
 
   it('el alta manda los opcionales que estan cargados', async () => {
@@ -386,9 +391,10 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El código y el período quedan libres',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('quedó dado de baja');
+    expect(aviso?.descripcion).toContain('Sus aranceles dejan de resolver');
+    expect(aviso?.descripcion).toContain('El código y el período quedan libres');
   });
 
   it('el 409 conflict relee y deja el panel abierto', async () => {
@@ -423,7 +429,7 @@ describe('ConveniosDeLaSedePage', () => {
     );
   });
 
-  it('el filtro y la fecha recargan, y el vacío manda al catalogo de financiadores', async () => {
+  it('el filtro y la fecha recargan, y el vacío filtrado no se confunde con "no hay"', async () => {
     const fixture = await montar();
 
     // El filtro de estado es un filtro rapido en pantalla: no pide otra vez al servidor. Ninguno
@@ -431,8 +437,10 @@ describe('ConveniosDeLaSedePage', () => {
     filtrarPorEstado(fixture, 'Dados de baja');
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
-    expect(anfitrion.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos convenios');
+    expect(vacio?.textContent).not.toContain('se cobra como particular');
+    expect(vacio?.textContent).toContain('Ver todos');
 
     filtrarPorEstado(fixture, 'Activos');
     cambiarSelect(fixture, '#filtro-fecha-convenio', '2025-06-15');
@@ -448,6 +456,40 @@ describe('ConveniosDeLaSedePage', () => {
     // El convenio que hoy esta vencido, en junio de 2025 si resolvia. Eso es lo que explica por
     // que una prestacion de entonces se cobro lo que se cobro.
     expect(anfitrion.textContent).toContain('Activo y vigente');
+  });
+
+  it('sin ningún convenio explica que todo se cobra particular y manda a los financiadores', async () => {
+    const fixture = await montar(undefined, []);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+
+    expect(vacio?.textContent).toContain('Esta sede todavía no tiene convenios');
+    expect(vacio?.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
+    expect(vacio?.textContent).toContain('Firmar el primero');
+    expect(vacio?.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
+  });
+
+  it('busca en pantalla y sigue el patrón de listado: resultados, pie y sin título repetido', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 convenios',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–2 de 2',
+    );
+
+    const buscador = anfitrion.querySelector<HTMLInputElement>('#buscar-convenio')!;
+    buscador.value = String(VIGENTE.codigo);
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+
+    buscador.value = 'no existe';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain('Limpiar filtros');
   });
 
   it('sin convenio:manage el listado se ve pero no aparece ninguna acción', async () => {
@@ -526,6 +568,7 @@ describe('ConveniosDeLaSedePage', () => {
 
   async function montar(
     concedidos: readonly string[] = [PERMISO_CONVENIO_MANAGE],
+    convenios: readonly unknown[] = [VIGENTE, VENCIDO],
   ): Promise<ComponentFixture<ConveniosDeLaSedePage>> {
     tenantContext.select({
       organizationId: 1,
@@ -540,7 +583,7 @@ describe('ConveniosDeLaSedePage', () => {
     const fixture = TestBed.createComponent(ConveniosDeLaSedePage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([VIGENTE, VENCIDO]);
+    httpMock.expectOne(esListado()).flush(convenios);
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === RUTA_FINANCIADORES)
       .flush([OSDE, SWISS]);

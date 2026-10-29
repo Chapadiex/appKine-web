@@ -2,22 +2,8 @@
  * Estilos propios de las pantallas de identidad (M02, AKINE-01.02).
  *
  * El sistema de diseno -tarjeta, boton, campo, estados- vive en `src/design-system.css`,
- * que es global. Aca queda lo que estas siete pantallas ajustan o agregan sobre esa base.
+ * que es global, y la tarjeta de acceso centrada en `shared/styles/acceso.css`.
+ *
+ * UX-14: se quitaron el tope de `.tarjeta` y la lista `.enlaces`, que ya no usaba ninguna de
+ * estas pantallas (todas se arman con `.acceso-tarjeta`, angosta por diseño).
  */
-
-/* Un formulario de identidad es una columna de campos cortos: a todo el ancho del contenido
-   la linea de lectura se vuelve incomoda y el boton queda lejos del ultimo campo. */
-.tarjeta {
-  max-width: 34rem;
-}
-
-/* Enlaces al pie del formulario: olvide mi contrasena, reenviar activacion, crear cuenta.
-   Van en lista porque son alternativas equivalentes, no una secuencia. */
-.enlaces {
-  list-style: none;
-  margin: var(--esp-8) 0 0;
-  padding: 0;
-  display: grid;
-  gap: var(--esp-4);
-  font-size: var(--tipo-md);
-}

@@ -11,6 +11,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { SerieDeTurnosPage } from './serie-de-turnos-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const SERIE = 7;
@@ -129,7 +130,9 @@ describe('SerieDeTurnosPage', () => {
       httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('Se cancelaron 2 turnos');
+      // UX-12: el panel se cerro, la serie se releyo y el resultado es un aviso global.
+      expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Se cancelaron 2 turnos');
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     },
     TIMEOUT_AXE,
   );
@@ -152,7 +155,13 @@ describe('SerieDeTurnosPage', () => {
       );
     await asentar(fixture);
 
-    expect(texto(fixture)).toContain('No se cancelo nada');
+    // El rechazo queda ARRIBA del panel abierto, como advertencia con su salida (UX-12).
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      'app-panel-lateral app-alerta',
+    );
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('La serie cambió desde la vista previa');
+    expect(alerta?.textContent).toContain('No se cancelo nada');
     clickear(fixture, 'Volver a previsualizar');
     httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`).flush(ALCANCE);
   });
@@ -224,7 +233,7 @@ describe('SerieDeTurnosPage', () => {
         .flush(ALCANCE);
       httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
       await asentar(fixture);
-      expect(texto(fixture)).toContain('Se movieron 2 turnos');
+      expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Se movieron 2 turnos');
     },
     TIMEOUT_AXE,
   );
@@ -238,6 +247,26 @@ describe('SerieDeTurnosPage', () => {
     });
     expect(texto(fixture)).toContain('Fechas omitidas al reservar');
     expect(texto(fixture)).toContain('Feriado: la sede no atiende');
+  });
+
+  it('la tabla de turnos tiene orden, pie estándar y conserva el número en la serie', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const region = raiz.querySelector('[aria-label="Turnos de la serie"]') as HTMLElement;
+    expect(region.querySelectorAll('th.tabla__columna-ordenable').length).toBe(3);
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–3 de 3');
+
+    // Ordenar por fecha descendente da vuelta las filas, y cada una sigue con su N°.
+    const fecha = Array.from(region.querySelectorAll<HTMLButtonElement>('.tabla__orden')).find(
+      (b) => (b.textContent ?? '').includes('Fecha y hora'),
+    ) as HTMLButtonElement;
+    fecha.click();
+    fecha.click();
+    fixture.detectChanges();
+    const numeros = Array.from(region.querySelectorAll('tbody tr')).map((tr) =>
+      tr.querySelector('td')?.textContent?.trim(),
+    );
+    expect(numeros).toEqual(['3', '2', '1']);
   });
 
   it('con solo turno:read no ofrece cancelar', async () => {
