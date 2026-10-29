@@ -342,11 +342,12 @@ describe('BarraSuperior', () => {
     const fixture = TestBed.createComponent(BarraSuperior);
     fixture.detectChanges();
     const html = fixture.nativeElement as HTMLElement;
-    for (
-      let intento = 0;
-      esperarDesplegables && intento < 50 && !html.querySelector('app-menu-de-perfil');
-      intento++
-    ) {
+    // Perfil, sede y ruta de navegacion llegan en chunks aparte, despues de la primera pintura.
+    const faltaAlgo = () =>
+      !html.querySelector('app-menu-de-perfil') ||
+      (html.querySelector('.barra__izquierda') !== null &&
+        !html.querySelector('app-ruta-de-navegacion'));
+    for (let intento = 0; esperarDesplegables && intento < 50 && faltaAlgo(); intento++) {
       await new Promise((listo) => setTimeout(listo));
       fixture.detectChanges();
     }

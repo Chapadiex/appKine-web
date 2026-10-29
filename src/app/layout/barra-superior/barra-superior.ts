@@ -17,18 +17,9 @@ import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink } from '@angu
 import { filter, map, startWith } from 'rxjs';
 
 import { Icono } from '../../shared/components/icono/icono';
-import { Miga, MigasStore } from '../../core/services/migas.store';
-import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
-import {
-  RUTA_INICIO,
-  SECCIONES,
-  SECCIONES_DE_CUENTA,
-  SECCION_PLATAFORMA,
-  Seccion,
-  seccionDe,
-} from '../navegacion-principal/secciones';
+import { RUTA_INICIO } from '../navegacion-principal/secciones';
 import { RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
@@ -44,21 +35,19 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
  * muestra el perfil. Lleva ademas el boton que abre la barra lateral en tablet.
  *
  * <p><b>Donde estoy es una ruta de navegacion</b> (29/10/2026): "Padrón / Pérez, Ana /
- * Coberturas del paciente". El ultimo paso es la pantalla y sale del `title` de la ruta ("AKINE -
- * Caja diaria" → "Caja diaria"), que toda pantalla declara para la pestana del navegador. Los
- * pasos anteriores siguen la jerarquia, no el historial: si la pantalla publico los suyos
- * ({@link publicarMigas}, con nombres propios), son esos; si no, la seccion del menu que la
- * contiene. En una seccion del menu hay un solo paso y se muestra como titulo, sin `nav`. En
- * telefono queda solo el paso anterior, como "volver".
+ * Coberturas del paciente", que dibuja {@link RutaDeNavegacion}. Llega despues de la primera
+ * pintura, como la sede y el perfil; hasta entonces la barra muestra el titulo de la pantalla, que
+ * sale del `title` de la ruta ("AKINE - Caja diaria" → "Caja diaria") y es el ultimo paso de esa
+ * ruta, asi que la barra no salta.
  *
  * <p><b>Sin contexto, es la unica salida.</b> Con un token `pre_context` ninguna seccion
  * responde, asi que el unico enlace util es el que resuelve eso; un administrador de plataforma
  * no es miembro de ningun centro y este es su camino a la consola (AKINE-A-7). El perfil, con
  * "Cerrar sesion", esta tambien ahi.
  *
- * <p><b>Sede y perfil llegan despues de la primera pintura.</b> La carga inicial esta al borde de
- * su presupuesto (425 kB) y los dos desplegables suman casi 20 kB: se bajan en un chunk aparte
- * con un `import()` y se montan en sus anclas. No van en `@defer`, que suma su runtime (~7 kB) a
+ * <p><b>Ruta, sede y perfil llegan despues de la primera pintura.</b> La carga inicial esta al
+ * borde de su presupuesto (430 kB) y los tres suman mas de 20 kB: se bajan en chunks aparte con un
+ * `import()` y se montan en sus anclas. No van en `@defer`, que suma su runtime (~7 kB) a
  * la carga inicial. Mientras tanto la barra muestra el nombre de la sede y el lugar del avatar.
  */
 @Component({
@@ -72,8 +61,6 @@ export class BarraSuperior {
   private readonly tenant = inject(TenantContextStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
   private readonly router = inject(Router);
-  private readonly migasPublicadas = inject(MigasStore);
-  private readonly permisos = inject(PermissionsStore);
 
   /** Si la barra lateral esta desplegada (tablet). Gobierna `aria-expanded` del boton. */
   readonly menuAbierto = input(false);
@@ -109,39 +96,21 @@ export class BarraSuperior {
   /** Ya estan los componentes de verdad: las reservas de lugar se van. */
   protected readonly derechaMontada = computed(() => this.desplegables() !== null);
 
-  private readonly ubicacion = toSignal(
+  /** El titulo de la pantalla: lo que la barra muestra hasta que llega la ruta de navegacion. */
+  protected readonly titulo = toSignal(
     this.router.events.pipe(
       filter((evento) => evento instanceof NavigationEnd),
       startWith(null),
-      map(() => ({
-        camino: this.router.url.split(/[?#]/)[0] ?? '',
-        titulo: tituloDe(this.router.routerState.snapshot.root),
-      })),
+      map(() => tituloDe(this.router.routerState.snapshot.root)),
     ),
-    { initialValue: { camino: '', titulo: '' } },
+    { initialValue: '' },
   );
 
-  /** Los pasos con enlace (de lo general a lo particular) y el nombre de la pantalla actual. */
-  protected readonly migas = computed(() => {
-    const { camino, titulo } = this.ubicacion();
-    const publicadas = this.migasPublicadas.migas();
-    const conRuta = publicadas.filter((miga) => miga.ruta);
-    const seccion = seccionDe(camino, SECCIONES_DE_LA_BARRA);
-    const anteriores: Miga[] =
-      conRuta.length > 0 ? conRuta : seccion && this.visible(seccion) ? [seccion] : [];
+  private readonly anclaRuta = viewChild('anclaRuta', { read: ViewContainerRef });
+  private readonly ruta = signal<Type<unknown> | null>(null);
 
-    const enlaces: { readonly etiqueta: string; readonly ruta: string }[] = [];
-    for (const miga of anteriores) {
-      const ruta = this.aTexto(miga.ruta!);
-      const repetida = enlaces.some((e) => e.ruta === ruta || e.etiqueta === miga.etiqueta);
-      if (ruta !== camino && !repetida) {
-        enlaces.push({ etiqueta: miga.etiqueta, ruta });
-      }
-    }
-    const final = publicadas.at(-1);
-    const actual = final && !final.ruta ? final.etiqueta : titulo;
-    return { enlaces, actual };
-  });
+  /** Ya esta la ruta de navegacion: el titulo de reserva se va. */
+  protected readonly rutaMontada = computed(() => this.ruta() !== null);
 
   constructor() {
     afterNextRender(() => {
@@ -152,6 +121,11 @@ export class BarraSuperior {
         ([sede, perfil]) =>
           this.desplegables.set({ sede: sede.SelectorDeSede, perfil: perfil.MenuDePerfil }),
         // Sin el chunk (red caida, despliegue nuevo) queda la reserva con el nombre de la sede.
+        () => undefined,
+      );
+      import('../ruta-de-navegacion/ruta-de-navegacion').then(
+        (m) => this.ruta.set(m.RutaDeNavegacion),
+        // Sin el chunk queda el titulo de la pantalla, sin los pasos anteriores.
         () => undefined,
       );
     });
@@ -174,30 +148,20 @@ export class BarraSuperior {
         }
       });
     });
+
+    effect(() => {
+      const ruta = this.ruta();
+      const ancla = this.anclaRuta();
+      if (ruta !== null && ancla !== undefined && ancla.length === 0) {
+        untracked(() => ancla.createComponent(ruta));
+      }
+    });
   }
 
   protected alternar(): void {
     this.alternarMenu.emit();
   }
-
-  /** Un paso hacia una seccion que la sesion no puede abrir llevaria a "sin permiso": no va. */
-  private visible(seccion: Seccion): boolean {
-    return seccion.permisos === undefined || this.permisos.tieneAlguno(...seccion.permisos);
-  }
-
-  private aTexto(ruta: string | readonly unknown[]): string {
-    return typeof ruta === 'string'
-      ? ruta
-      : this.router.serializeUrl(this.router.createUrlTree([...ruta]));
-  }
 }
-
-/** Donde puede caer una URL: las secciones del centro, la consola y las de la cuenta propia. */
-const SECCIONES_DE_LA_BARRA: readonly Seccion[] = [
-  ...SECCIONES,
-  SECCION_PLATAFORMA,
-  ...SECCIONES_DE_CUENTA,
-];
 
 /** El `title` de la ruta mas profunda que lo declara, sin el prefijo de la marca. */
 export function tituloDe(raiz: ActivatedRouteSnapshot): string {
