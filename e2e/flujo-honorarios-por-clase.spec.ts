@@ -250,6 +250,8 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await expect(dato(page, 'Servicio u oferta')).toContainText(oferta.nombre);
 
     // La correccion reemplaza: tiene que volver a mandar la oferta, o el egreso queda sin imputar.
+    // UX-11: la correccion vive en una seccion plegada, abierta sola solo si falta el comprobante.
+    await page.locator('summary', { hasText: 'Concepto, importe, período y comprobante' }).click();
     await page.getByLabel('Concepto', { exact: true }).fill(`${concepto} corregido`);
     const edicion = respuestaDe(page, 'PUT', /\/egresos\/\d+$/);
     await page.getByRole('button', { name: 'Guardar los cambios' }).click();

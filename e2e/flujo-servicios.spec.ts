@@ -114,7 +114,11 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await expect(page.getByText('Rige hoy')).toBeVisible();
 
       // --- La plataforma da de baja el servicio ---
+      // La busqueda relee el listado despues del debounce, y mientras carga el panel lateral de la
+      // baja se desmonta: abierto antes de esa respuesta, vuelve vacio y el motivo se pierde.
+      const busqueda = respuestaDe(plataforma, 'GET', /\/servicios$/);
       await plataforma.getByLabel('Buscar').fill(nombreDelServicio);
+      await busqueda;
       const filaDelServicio = plataforma.getByRole('row').filter({ hasText: nombreDelServicio });
       await abrirAcciones(filaDelServicio);
       await filaDelServicio.getByRole('button', { name: 'Dar de baja' }).click();

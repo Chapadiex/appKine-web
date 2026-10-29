@@ -148,7 +148,7 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
     await expect(page.getByRole('button', { name: 'Continuar' })).toBeDisabled();
 
     // Se vuelve al primer paso y se corrige la planilla: confirmar exige otra vista previa.
-    await page.getByRole('button', { name: 'Volver' }).click();
+    await page.getByRole('button', { name: 'Volver', exact: true }).click();
     await expect(page.locator('ol.pasos li[aria-current="step"]')).toContainText('Cargar');
     await planilla.fill([encabezado, ...validas].join('\n'));
     await page.getByRole('button', { name: 'Vista previa' }).click();
