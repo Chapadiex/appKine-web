@@ -22,13 +22,21 @@ import { ApiAkine } from './support/sembrado';
  * y una vigente a la que se le corrige el fin a ayer. En los dos casos la pantalla tiene que dejar
  * de decir "Habilita a atender" sin que nadie cambie su estado.
  *
- * <p>"Hoy" es la fecha UTC: es la que usa el backend (`LocalDate.now()` en un contenedor UTC), y
- * es contra ella que calcula `diasParaVencer`.
+ * <p>"Hoy" es el de la organizacion: desde DP-43 el backend calcula `diasParaVencer` en su zona
+ * horaria, que al darla de alta es Cordoba. Con la fecha UTC, entre las 21 y las 24 de Cordoba el
+ * test esperaba "Vence en 5 días" y la pantalla decia, bien, "Vence en 6 días".
  */
 
-/** `YYYY-MM-DD` UTC, `dias` despues de hoy. */
+/** Zona de una organizacion recien dada de alta (`OrganizationService.TIMEZONE_POR_DEFECTO`). */
+const ZONA_DE_LA_ORGANIZACION = 'America/Argentina/Cordoba';
+
+/** `YYYY-MM-DD` en la zona de la organizacion, `dias` despues de hoy. */
 function dia(dias: number): string {
-  const d = new Date();
+  const hoy = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_DE_LA_ORGANIZACION,
+    dateStyle: 'short',
+  }).format(new Date());
+  const d = new Date(`${hoy}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + dias);
   return d.toISOString().slice(0, 10);
 }
