@@ -106,6 +106,21 @@ describe('tablaLocal', () => {
     });
   });
 
+  it('mostrar va a la pagina de la fila, tambien recien cambiadas las filas', () => {
+    TestBed.runInInjectionContext(() => {
+      const muchas = Array.from({ length: 45 }, (_, i) => ({ id: i, nombre: `F${i}`, alta: null }));
+      const filas = signal<readonly Fila[]>(muchas.slice(0, 5));
+      const tabla = tablaLocal(filas, { columnas: {} });
+
+      expect(tabla.mostrar(muchas[33])).toBe(false);
+      // Sin leer la tabla entre medio: la pagina pedida le gana a la vuelta a la primera.
+      filas.set(muchas);
+      expect(tabla.mostrar(muchas[33])).toBe(true);
+      expect(tabla.pagina()).toBe(3);
+      expect(tabla.visibles()).toContain(muchas[33]);
+    });
+  });
+
   describe('columna ordenable', () => {
     let fixture: ComponentFixture<Anfitrion>;
     let html: HTMLElement;

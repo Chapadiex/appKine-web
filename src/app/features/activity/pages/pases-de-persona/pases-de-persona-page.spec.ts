@@ -848,6 +848,23 @@ describe('PasesDePersonaPage', () => {
     TIMEOUT_AXE,
   );
 
+  it('el enlace a un periodo que la busqueda deja afuera lo vuelve a mostrar y lo enfoca', async () => {
+    const fixture = await montar([
+      { ...ABONO_NOV, nombre: 'Abono de noviembre' },
+      { ...ABONO_OCT, nombre: 'Abono de octubre', renovadoPorPaseId: 21 },
+    ]);
+    escribir(fixture, '#pases-busqueda', 'noviembre');
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#pase-20')).toBeNull();
+
+    [...raiz.querySelectorAll<HTMLAnchorElement>('a.enlace')]
+      .find((a) => (a.textContent ?? '').includes('periodo del 01/10/2026'))!
+      .click();
+    await asentar(fixture);
+    expect(raiz.querySelector<HTMLInputElement>('#pases-busqueda')?.value).toBe('');
+    expect(document.activeElement?.id).toBe('pase-20');
+  });
+
   it('DP-40: la renovacion apagada por desvinculacion del autorizante se explica', async () => {
     const fixture = await montar([
       {

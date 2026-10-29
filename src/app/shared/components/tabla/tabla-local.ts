@@ -34,6 +34,8 @@ export interface TablaLocal<T> {
   /** Ordena por la columna; si ya estaba, invierte; la tercera vez vuelve al orden original. */
   ordenarPor(columna: string): void;
   irA(pagina: number): void;
+  /** Va a la pagina donde queda la fila. `false` si la fila no esta entre las filas (un filtro). */
+  mostrar(fila: T): boolean;
   /** Cambia las filas por pagina y vuelve a la primera. */
   cambiarPorPagina(porPagina: number): void;
 }
@@ -118,6 +120,12 @@ export function tablaLocal<T>(
     },
     irA(destino: number): void {
       pagina.set(Math.max(0, Math.min(destino, totalPaginas() - 1)));
+    },
+    mostrar(fila: T): boolean {
+      const indice = ordenadas().indexOf(fila);
+      if (indice < 0) return false;
+      pagina.set(Math.floor(indice / porPagina()));
+      return true;
     },
     cambiarPorPagina(cantidad: number): void {
       if (cantidad > 0) porPagina.set(cantidad);

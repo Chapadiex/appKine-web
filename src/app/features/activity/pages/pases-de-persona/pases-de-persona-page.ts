@@ -1,5 +1,15 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { Router, RouterLink } from '@angular/router';
@@ -139,6 +149,7 @@ export class PasesDePersonaPage {
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly documento = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -168,8 +179,9 @@ export class PasesDePersonaPage {
   /** Busqueda por nombre del pase, sobre la lista completa de la persona. */
   protected readonly busqueda = signal('');
   /**
-   * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 20: el enlace "renovado
-   * desde el periodo…" salta a otra fila de la tabla, y tiene que estar en la misma pagina.
+   * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 10: el enlace "renovado
+   * desde el periodo…" salta a otra fila de la tabla, y conviene que este a la vista. Si quedo en
+   * otra pagina o fuera de la busqueda, `irAPase` la muestra antes de enfocarla.
    */
   protected readonly tabla = tablaLocal(
     computed(() => {
@@ -533,12 +545,28 @@ export class PasesDePersonaPage {
     return esAbono(pase) && pase.estado !== 'ANULADO' && pase.renovadoPorPaseId === undefined;
   }
 
-  /** Lleva el foco a la fila de otro periodo de la cadena, sin navegar. */
+  /**
+   * Lleva el foco a la fila de otro periodo de la cadena, sin navegar. Si la fila no se ve —esta en
+   * otra pagina o la busqueda la deja afuera— primero se la muestra, y se enfoca despues de pintar.
+   */
   protected irAPase(evento: Event, paseId: number | undefined): void {
     evento.preventDefault();
-    const fila = this.documento.getElementById(`pase-${paseId}`);
-    fila?.focus();
-    fila?.scrollIntoView?.({ block: 'nearest' });
+    const destino = this.pases()?.find((p) => p.id === paseId);
+    if (destino === undefined) return;
+    const enfocar = (): void => {
+      const fila = this.documento.getElementById(`pase-${paseId}`);
+      fila?.focus();
+      fila?.scrollIntoView?.({ block: 'nearest' });
+    };
+    if (this.tabla.visibles().includes(destino)) {
+      enfocar();
+      return;
+    }
+    if (!this.tabla.mostrar(destino)) {
+      this.busqueda.set('');
+      this.tabla.mostrar(destino);
+    }
+    afterNextRender(enfocar, { injector: this.injector });
   }
 
   protected cambiarRenovacion(pase: Pase, activa: boolean): void {
