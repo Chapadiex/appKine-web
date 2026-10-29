@@ -32,7 +32,6 @@ import {
 } from '../../models/series';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -71,7 +70,7 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })

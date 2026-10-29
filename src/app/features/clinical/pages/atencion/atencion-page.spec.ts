@@ -20,6 +20,7 @@ import { PERMISO_SESION_REASSIGN, PERMISO_SESION_REGISTER } from '../../../../co
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { MigasStore } from '../../../../core/services/migas.store';
 
 const CONSULTORIO = 3;
 const TURNO = 77;
@@ -907,7 +908,10 @@ describe('AtencionPage', () => {
       expect(texto(fixture)).not.toContain('clase 40');
       expect(texto(fixture)).toContain('lo fijó la derivación');
       expect(fixture.nativeElement.querySelector('#atencion-caso')).toBeNull();
-      expect(fixture.nativeElement.querySelector('a[href="/atencion/clases/40"]')).not.toBeNull();
+      // La vuelta al panel de la clase es el paso anterior de la ruta de navegacion de la barra.
+      expect(TestBed.inject(MigasStore).migas()).toEqual([
+        { etiqueta: 'Atención clínica de la clase', ruta: '/atencion/clases/40' },
+      ]);
     });
 
     it('si no se puede leer, lo dice', async () => {

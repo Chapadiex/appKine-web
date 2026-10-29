@@ -46,7 +46,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -128,7 +128,6 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-atencion-grupal-page',
   imports: [
-    Migas,
     CabeceraDePagina,
 
     Alerta,
@@ -145,6 +144,12 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   styleUrl: '../../atencion.css',
 })
 export class AtencionGrupalPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Asistencia', ruta: '/asistencia' },
+    { etiqueta: 'Asistencia de la clase', ruta: `/asistencia/${this.claseId()}` },
+  ]);
+
   private readonly api = inject(AtencionGrupalApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);

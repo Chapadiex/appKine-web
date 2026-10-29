@@ -1,10 +1,4 @@
 <app-cabecera-de-pagina titulo="Versiones de la atención">
-  @if (sesion()?.turnoId; as turnoId) {
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Atención', ruta: ['/atencion', 'turnos', turnoId] }]"
-    />
-  }
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cada enmienda deja una versión nueva y la anterior queda intacta. La versión 1 es lo que se

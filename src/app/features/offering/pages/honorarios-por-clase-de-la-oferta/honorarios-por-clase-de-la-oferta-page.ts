@@ -33,10 +33,10 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -69,7 +69,6 @@ interface SituacionDeLaTarifa {
     CabeceraDePagina,
 
     Alerta,
-    Migas,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,
@@ -85,6 +84,12 @@ interface SituacionDeLaTarifa {
   styleUrl: '../../offering.css',
 })
 export class HonorariosPorClaseDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Honorarios por clase' },
+  ]);
+
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);

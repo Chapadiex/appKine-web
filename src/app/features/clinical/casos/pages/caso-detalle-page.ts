@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
 import { CasoClinico } from '../../../../api/generated/model/caso-clinico';
@@ -35,6 +34,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 interface Integrante {
   readonly membershipId: number;
@@ -64,11 +64,17 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink, PedidoDeMotivo, Alerta, NgTemplateOutlet],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PedidoDeMotivo, Alerta, NgTemplateOutlet],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
 export class CasoDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Historia clínica', ruta: this.visita.rutaHistoria() },
+    { etiqueta: 'Caso clínico' },
+  ]);
+
   private readonly api = inject(CasosApi);
   private readonly avisos = inject(AvisosStore);
   private readonly sede = inject(SedeClinicaApi);

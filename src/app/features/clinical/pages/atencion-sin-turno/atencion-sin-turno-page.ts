@@ -10,7 +10,6 @@ import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-erro
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 
@@ -33,7 +32,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
  */
 @Component({
   selector: 'app-atencion-sin-turno-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './atencion-sin-turno-page.html',
   styleUrl: '../../atencion.css',
 })

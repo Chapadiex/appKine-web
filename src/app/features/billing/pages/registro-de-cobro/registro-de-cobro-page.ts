@@ -141,6 +141,7 @@ export class RegistroDeCobroPage {
     personaId: this.personaId(),
     persona: this.persona(),
     actual: 'cuenta-corriente',
+    masMigas: [{ etiqueta: 'Cuenta corriente', ruta: this.rutaCuenta() }],
   }));
 
   /** Importe tipeado por obligacion elegida. Estar en el mapa ES estar elegida. */

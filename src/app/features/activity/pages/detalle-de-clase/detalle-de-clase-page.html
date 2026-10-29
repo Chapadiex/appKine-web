@@ -1,7 +1,5 @@
 @if (clase() === null) {
-  <app-cabecera-de-pagina titulo="Clase">
-    <app-migas enLinea [migas]="[{ etiqueta: 'Clases', ruta: RUTA_CLASES }]" />
-  </app-cabecera-de-pagina>
+  <app-cabecera-de-pagina titulo="Clase"> </app-cabecera-de-pagina>
 }
 
 @if (cargando() && clase() === null) {
@@ -23,7 +21,6 @@
 
 @if (clase(); as actual) {
   <app-cabecera-de-pagina titulo="{{ titulo() }}">
-    <app-migas enLinea [migas]="[{ etiqueta: 'Clases', ruta: RUTA_CLASES }]" />
     <span
       class="marca-estado"
       [class.marca-estado--activa]="actual.estado === 'PROGRAMADA'"

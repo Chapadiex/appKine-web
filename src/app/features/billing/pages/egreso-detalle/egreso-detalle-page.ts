@@ -14,7 +14,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable } from 'rxjs';
 
 import { Egreso } from '../../../../api/generated/model/egreso';
@@ -56,6 +55,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -109,7 +109,6 @@ type FalloDeEgreso = ErrorEgreso & { readonly en: Operacion };
   imports: [
     CabeceraDePagina,
     PanelLateral,
-    Migas,
     Ayuda,
 
     Alerta,
@@ -122,6 +121,11 @@ type FalloDeEgreso = ErrorEgreso & { readonly en: Operacion };
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresoDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Egresos', ruta: '/egresos' },
+  ]);
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(EgresosApi);
   private readonly avisos = inject(AvisosStore);

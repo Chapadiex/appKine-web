@@ -1,4 +1,4 @@
-import { Component, WritableSignal, signal } from '@angular/core';
+import { ApplicationRef, Component, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
@@ -6,7 +6,9 @@ import { of } from 'rxjs';
 import { AuthorizedContextResponse } from '../../api/generated/model/authorized-context-response';
 import { BarraSuperior } from './barra-superior';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
+import { MigasStore } from '../../core/services/migas.store';
 import { MyProfileResponse } from '../../api/generated/model/my-profile-response';
+import { PermissionsStore } from '../../core/services/permissions.store';
 import { PerfilPropioStore } from '../../core/services/perfil-propio.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../core/testing/axe';
@@ -43,6 +45,8 @@ describe('BarraSuperior', () => {
       providers: [
         provideRouter([
           { path: 'organizacion', component: Pagina, title: 'AKINE - Organización' },
+          { path: 'egresos/:id', component: Pagina, title: 'AKINE - Detalle del egreso' },
+          { path: 'pacientes/:id/coberturas', component: Pagina, title: 'AKINE - Coberturas' },
           { path: 'auth/ingresar', component: Pagina },
         ]),
         {
@@ -94,12 +98,90 @@ describe('BarraSuperior', () => {
     const html = fixture.nativeElement as HTMLElement;
 
     expect(html.querySelector('.titulo')?.textContent?.trim()).toBe('Organización');
+    // Una seccion del menu es la raiz: un solo paso, sin ruta de navegacion.
+    expect(html.querySelector('nav[aria-label="Ubicación"]')).toBeNull();
     expect(html.querySelector('.sede__nombre')?.textContent?.trim()).toBe('Sede Centro');
     expect(html.querySelector('.perfil__avatar')?.textContent?.trim()).toBe('AA');
     expect(html.querySelector('.perfil__nombre')?.textContent?.trim()).toBe('Ana Admin');
     // La marca vive en la barra lateral cuando hay contexto, y el cambio de sede ya no es un enlace.
     expect(html.querySelector('.marca')).toBeNull();
     expect(enlace(html, 'Cambiar')).toBeUndefined();
+  });
+
+  describe('ruta de navegacion', () => {
+    it(
+      'en una pantalla hija ofrece volver a la seccion del menu que la contiene',
+      async () => {
+        conContexto();
+        permisos(true);
+        const html = await abrir('/egresos/7');
+
+        const ubicacion = html.querySelector('nav[aria-label="Ubicación"]')!;
+        expect(pasos(ubicacion)).toEqual(['Egresos', 'Detalle del egreso']);
+        expect(enlace(html, 'Egresos')?.getAttribute('href')).toBe('/egresos');
+        const actual = ubicacion.querySelector('[aria-current="page"]');
+        expect(actual?.textContent?.trim()).toBe('Detalle del egreso');
+        expect(actual?.tagName).not.toBe('A');
+        await esperarSinViolaciones(html);
+      },
+      TIMEOUT_AXE,
+    );
+
+    it('no ofrece una seccion que la sesion no puede abrir', async () => {
+      conContexto();
+      permisos(false);
+      const html = await abrir('/egresos/7');
+
+      expect(html.querySelector('nav[aria-label="Ubicación"]')).toBeNull();
+      expect(html.querySelector('.titulo')?.textContent?.trim()).toBe('Detalle del egreso');
+    });
+
+    it('las migas de la pantalla mandan: nombres propios y el nombre de la actual', async () => {
+      conContexto();
+      permisos(true);
+      const dueno = {};
+      TestBed.inject(MigasStore).publicar(dueno, [
+        { etiqueta: 'Padrón', ruta: '/pacientes' },
+        { etiqueta: 'Pérez, Ana', ruta: ['/pacientes', 7] },
+        { etiqueta: 'Coberturas del paciente' },
+      ]);
+      const html = await abrir('/pacientes/7/coberturas');
+
+      const ubicacion = html.querySelector('nav[aria-label="Ubicación"]')!;
+      expect(pasos(ubicacion)).toEqual(['Padrón', 'Pérez, Ana', 'Coberturas del paciente']);
+      expect(enlace(html, 'Pérez, Ana')?.getAttribute('href')).toBe('/pacientes/7');
+      // En telefono queda solo el paso anterior, como "volver".
+      expect(ubicacion.querySelector('.ubicacion__paso--padre')?.textContent?.trim()).toBe(
+        'Pérez, Ana',
+      );
+
+      // Al irse la pantalla, la barra vuelve a deducir sola.
+      TestBed.inject(MigasStore).retirar(dueno);
+      await TestBed.inject(Router).navigateByUrl('/egresos/7');
+      await TestBed.inject(ApplicationRef).whenStable();
+      expect(pasos(html.querySelector('nav[aria-label="Ubicación"]')!)).toEqual([
+        'Egresos',
+        'Detalle del egreso',
+      ]);
+    });
+
+    async function abrir(url: string): Promise<HTMLElement> {
+      const fixture = await montar();
+      await TestBed.inject(Router).navigateByUrl(url);
+      fixture.autoDetectChanges();
+      await fixture.whenStable();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    function permisos(concedidos: boolean): void {
+      vi.spyOn(TestBed.inject(PermissionsStore), 'tieneAlguno').mockReturnValue(concedidos);
+    }
+
+    function pasos(ubicacion: Element): string[] {
+      return Array.from(ubicacion.querySelectorAll('.ubicacion__paso')).map(
+        (paso) => paso.textContent?.trim() ?? '',
+      );
+    }
   });
 
   it('con una sola sede la muestra sin ofrecer cambiarla', async () => {

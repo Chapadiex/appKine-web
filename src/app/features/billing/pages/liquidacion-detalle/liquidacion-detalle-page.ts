@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import {
   LiquidacionDeHonorarios,
@@ -23,6 +22,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /**
  * Una liquidacion de honorarios por clase confirmada, con su snapshot (DP-38, CA-M22-007-06).
@@ -33,11 +33,16 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
  */
 @Component({
   selector: 'app-liquidacion-detalle-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './liquidacion-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Honorarios', ruta: '/egresos/honorarios' },
+  ]);
+
   private readonly api = inject(EgresosApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);

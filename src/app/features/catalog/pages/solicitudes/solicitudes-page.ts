@@ -36,7 +36,6 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -77,7 +76,6 @@ type Estado =
 
     Alerta,
     PanelLateral,
-    Migas,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,

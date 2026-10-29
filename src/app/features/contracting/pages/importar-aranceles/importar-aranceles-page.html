@@ -1,6 +1,5 @@
 @if (convenio(); as ficha) {
   <app-cabecera-de-pagina titulo="Importar aranceles a {{ ficha.nombre }}">
-    <app-migas enLinea [migas]="migas()" />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
@@ -11,7 +10,6 @@
   </p>
 } @else {
   <app-cabecera-de-pagina titulo="Importar aranceles al convenio #{{ convenioId }}">
-    <app-migas enLinea [migas]="migas()" />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>

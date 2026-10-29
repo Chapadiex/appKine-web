@@ -49,8 +49,8 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -108,7 +108,6 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-planes-del-financiador-page',
   imports: [
     CabeceraDePagina,
-    Migas,
     Alerta,
     ColumnaOrdenable,
     Paginacion,
@@ -127,6 +126,12 @@ type TipoAccion = 'editar' | 'baja';
   styleUrl: '../../contracting.css',
 })
 export class PlanesDelFinanciadorPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Planes' },
+  ]);
+
   private readonly api = inject(ContractingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);

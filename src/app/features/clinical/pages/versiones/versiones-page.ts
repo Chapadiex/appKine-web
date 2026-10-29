@@ -11,9 +11,9 @@ import { SesionVersion } from '../../../../api/generated/model/sesion-version';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /**
  * Historial de versiones de una sesion cerrada (AKINE-06.06, RF-M24-005, RN-M14-006).
@@ -31,11 +31,19 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
  */
 @Component({
   selector: 'app-versiones-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',
 })
 export class VersionesPage {
+  /** Ruta de navegacion de la barra superior. */
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const turnoId = this.sesion()?.turnoId;
+    return turnoId === undefined
+      ? []
+      : [{ etiqueta: 'Atención clínica', ruta: ['/atencion', 'turnos', turnoId] }];
+  });
+
   private readonly api = inject(ClinicalApi);
   private readonly tenantContext = inject(TenantContextStore);
 

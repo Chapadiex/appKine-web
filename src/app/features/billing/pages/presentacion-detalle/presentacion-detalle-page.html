@@ -17,9 +17,7 @@
 </ng-template>
 
 @if (lote() === null) {
-  <app-cabecera-de-pagina titulo="Lote de presentación">
-    <app-migas enLinea [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
-  </app-cabecera-de-pagina>
+  <app-cabecera-de-pagina titulo="Lote de presentación"> </app-cabecera-de-pagina>
 }
 
 @if (carga().tipo === 'cargando' && lote() === null) {
@@ -47,7 +45,6 @@
   <app-cabecera-de-pagina
     titulo="Lote {{ p.numero ? 'N.º ' + p.numero : 'en borrador' }} a {{ p.financiadorNombre }}"
   >
-    <app-migas enLinea [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
     <span [class]="claseDeEstado(p.estado)" aria-hidden="true">{{
       estadoEnPalabras(p.estado)
     }}</span>

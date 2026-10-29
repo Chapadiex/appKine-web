@@ -34,11 +34,11 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -87,7 +87,6 @@ const TOPE_DE_PRACTICAS = 100;
     AccionesDeFila,
     Ayuda,
     PanelLateral,
-    Migas,
     ColumnaOrdenable,
     Paginacion,
     Filtros,
@@ -101,6 +100,12 @@ const TOPE_DE_PRACTICAS = 100;
   styleUrl: '../../catalog.css',
 })
 export class VigenciasPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Catálogo clínico', ruta: '/catalogo/nomencladores' },
+    { etiqueta: 'Vigencias' },
+  ]);
+
   /** Id del nomenclador, del segmento `:nomencladorId` de la ruta. */
   readonly nomencladorId = input.required<string>();
 

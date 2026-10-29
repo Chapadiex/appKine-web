@@ -47,13 +47,11 @@ import {
   nombreDeClase,
   OpcionDeEspacio,
 } from '../../models/clases';
-import { RUTA_CLASES } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -94,7 +92,6 @@ type Panel =
 @Component({
   selector: 'app-detalle-de-clase-page',
   imports: [
-    Migas,
     CabeceraDePagina,
 
     Alerta,
@@ -121,7 +118,6 @@ export class DetalleDeClasePage {
 
   readonly claseId = input('');
 
-  protected readonly RUTA_CLASES = RUTA_CLASES;
   protected readonly textoDeEstado = textoDeEstadoDeClase;
   protected readonly textoDeInscripcion = textoDeEstadoDeInscripcion;
   protected readonly textoDeEvento = textoDeEventoDeClase;

@@ -35,7 +35,6 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -96,7 +95,6 @@ type Pedido =
 @Component({
   selector: 'app-serie-de-turnos-page',
   imports: [
-    Migas,
     CabeceraDePagina,
 
     Alerta,

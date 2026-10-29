@@ -1,10 +1,19 @@
 /*
  * Lo propio de una ficha dentro de la cabecera de pantalla: el documento y las marcas de perfil.
- * El resto (fila, migas, pestañas) es el de toda cabecera.
+ * El resto (fila, pestañas) es el de toda cabecera.
  */
 .cabecera-ficha__dato {
   color: var(--color-texto);
   font-variant-numeric: tabular-nums;
+}
+
+/* En una hermana, la persona al lado del titulo: un nombre largo se corta antes que desbordar. */
+.cabecera-ficha__persona {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cabecera-ficha__perfil {

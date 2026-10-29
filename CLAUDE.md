@@ -245,7 +245,8 @@ pantalla nueva sigue (`docs/ux/00-plan-refactor-ux-ui.md` §3.2 y §3.4):
   irreversibles e instrucciones de un paso obligatorio. Un panel de ayuda nunca tiene acciones.
 - Un buscador único + un embudo de filtros avanzados (`app-filtros`); tablas ordenables y
   paginadas con `tablaLocal` donde la lista llega entera; el alta en la fila del título.
-- Pestañas (`app-pestanas`) entre pantallas hermanas y migas (`app-migas`) en los detalles.
+- Pestañas (`app-pestanas`) entre pantallas hermanas; la ruta de navegación vive en la barra superior
+  (UX-13, `publicarMigas` para los niveles con nombre propio; `app-migas` ya no existe).
 
 |                | Valor                                                                                                                                                                                            |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

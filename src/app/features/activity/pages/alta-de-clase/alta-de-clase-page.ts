@@ -64,6 +64,8 @@ const DURACION_POR_DEFECTO = 60;
   styleUrl: '../../activity.css',
 })
 export class AltaDeClasePage {
+  protected readonly RUTA_CLASES = RUTA_CLASES;
+
   private readonly api = inject(ActivityApi);
   private readonly tenant = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -75,8 +77,6 @@ export class AltaDeClasePage {
 
   /** `?fecha=YYYY-MM-DD`: el dia desde el que se llego. */
   readonly fecha = input('', { transform: (valor: string | undefined) => valor ?? '' });
-
-  protected readonly RUTA_CLASES = RUTA_CLASES;
 
   protected readonly formulario = this.fb.group({
     ofertaId: ['', Validators.required],

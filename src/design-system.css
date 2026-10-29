@@ -448,69 +448,13 @@ h3 {
 }
 
 /*
- * Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces sueltos y las rutas de navegacion:
+ * Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces sueltos:
  * un enlace dentro de una oracion esta exento, pero uno solo en su renglon no.
  */
-a.enlace,
-.migas__enlace {
+a.enlace {
   display: inline-flex;
   align-items: center;
   min-height: 1.5rem;
-}
-
-/*
- * Ruta de navegacion (`app-migas`, shared/components/migas). Los "/" los pone el CSS para que el
- * lector de pantalla lea solo los pasos. `--en-linea` va dentro de la fila del titulo, antes del
- * h1, y termina con un separador que la une a el.
- */
-.migas {
-  margin-bottom: var(--esp-4);
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
-}
-
-.migas--en-linea {
-  margin-bottom: 0;
-}
-
-.migas__lista {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-2) var(--esp-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.migas__item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-3);
-}
-
-.migas__item + .migas__item::before,
-.migas--en-linea .migas__item:last-child::after {
-  content: '/';
-  color: var(--color-texto-suave);
-}
-
-.migas--en-linea .migas__item:last-child::after {
-  margin-left: var(--esp-3);
-}
-
-.migas__enlace {
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
-.migas__enlace:hover {
-  color: var(--color-enlace);
-  text-decoration: underline;
-}
-
-.migas__actual {
-  color: var(--color-texto);
 }
 
 /* Foco visible: nunca se quita el outline sin reemplazo (ADR-0005). */

@@ -39,7 +39,6 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AccionDeAviso, AvisosStore } from '../../../../core/services/avisos.store';
@@ -103,7 +102,6 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
 @Component({
   selector: 'app-ciclo-de-turno-page',
   imports: [
-    Migas,
     CabeceraDePagina,
 
     Alerta,

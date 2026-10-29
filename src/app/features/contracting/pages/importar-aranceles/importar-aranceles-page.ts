@@ -37,10 +37,10 @@ import {
 import { ventanaEnPalabras } from '../../models/vigencia-de-contracting';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Tamano maximo del archivo que se lee en el navegador. 500 filas de CSV entran holgadas. */
 const TAMANO_MAXIMO_DE_ARCHIVO = 512 * 1024;
@@ -84,11 +84,14 @@ interface Desenlace {
  */
 @Component({
   selector: 'app-importar-aranceles-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PermisoDirective, Alerta],
+  imports: [CabeceraDePagina, Ayuda, NgTemplateOutlet, PermisoDirective, Alerta],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
 })
 export class ImportarArancelesPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => this.migas());
+
   private readonly api = inject(ConveniosApi);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);

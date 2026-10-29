@@ -24,7 +24,6 @@ import {
 import { coberturaParaReservar } from '../../models/etiquetas-de-turno';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -71,7 +70,7 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
  */
 @Component({
   selector: 'app-reserva-de-turno-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './reserva-de-turno-page.html',
   styleUrl: '../../agenda.css',
 })

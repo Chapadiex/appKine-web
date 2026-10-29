@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Turno #{{ turnoId() }}">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   @if (estado() !== '') {
     <!-- El estado de la RESERVA, con texto y no solo con color (WCAG 1.4.1). -->
     <span

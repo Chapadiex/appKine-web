@@ -12,11 +12,7 @@
     </a>
   </app-cabecera-de-ficha>
 } @else {
-  <app-cabecera-de-ficha
-    [modelo]="cabecera()"
-    titulo="Registrar un cobro"
-    [migasDeSeccion]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]"
-  >
+  <app-cabecera-de-ficha [modelo]="cabecera()" titulo="Registrar un cobro">
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y

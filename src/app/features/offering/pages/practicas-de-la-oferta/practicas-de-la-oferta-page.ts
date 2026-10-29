@@ -13,11 +13,11 @@ import { OfferingApi } from '../../services/offering-api';
 import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Una practica de la lista que se va a guardar. */
 interface FilaPractica {
@@ -56,11 +56,17 @@ interface FilaPractica {
  */
 @Component({
   selector: 'app-practicas-de-la-oferta-page',
-  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './practicas-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
 export class PracticasDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Prácticas' },
+  ]);
+
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly contexto = inject(TenantContextStore);

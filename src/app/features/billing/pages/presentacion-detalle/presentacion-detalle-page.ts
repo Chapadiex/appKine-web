@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
@@ -50,6 +49,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -92,7 +92,6 @@ type FalloDePresentacion = ErrorPresentacion & { readonly clave: string };
     CabeceraDePagina,
     PanelLateral,
     Alerta,
-    Migas,
     Ayuda,
     NgTemplateOutlet,
     ColumnaOrdenable,
@@ -106,6 +105,11 @@ type FalloDePresentacion = ErrorPresentacion & { readonly clave: string };
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionDetallePage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Presentaciones', ruta: '/presentaciones' },
+  ]);
+
   private readonly api = inject(PresentacionesApi);
   /** Aviso global (UX-12). No confundir con `avisos`, que son los reparos que no frenan. */
   private readonly notificaciones = inject(AvisosStore);

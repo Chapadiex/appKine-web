@@ -9,8 +9,6 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
-
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
   <!-- Error general de la operacion: arriba del formulario, a la vista mientras se corrige. -->
   @if (error(); as fallo) {

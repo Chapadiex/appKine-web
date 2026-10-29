@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="Caso clínico">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Historia clínica', ruta: visita.rutaHistoria() }]" />
   @if (estado().tipo === 'listo' && caso(); as c) {
     <div cabeceraAcciones>
       <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">

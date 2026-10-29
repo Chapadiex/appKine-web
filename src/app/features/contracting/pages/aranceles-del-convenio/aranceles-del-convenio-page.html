@@ -1,9 +1,5 @@
 @if (convenio(); as ficha) {
   <app-cabecera-de-pagina titulo="Aranceles de {{ ficha.nombre }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' }]"
-    />
     @if (convenioInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
@@ -18,10 +14,6 @@
   </p>
 } @else {
   <app-cabecera-de-pagina titulo="Aranceles del convenio #{{ convenioId }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' }]"
-    />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>

@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { BorradorDeHonorarios } from '../../../../api/generated/model/borrador-de-honorarios';
 import { LiquidacionDeHonorarios } from '../../../../api/generated/model/liquidacion-de-honorarios';
@@ -72,7 +71,7 @@ type EstadoBorrador =
  */
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './liquidacion-de-honorarios-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

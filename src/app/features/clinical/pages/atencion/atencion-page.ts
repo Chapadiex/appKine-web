@@ -58,10 +58,10 @@ import {
 } from '../../models/etiquetas-de-atencion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
 const ESPERA_AUTOSAVE = 1_500;
@@ -167,7 +167,6 @@ const ESPERA_AUTOSAVE = 1_500;
 @Component({
   selector: 'app-atencion-page',
   imports: [
-    Migas,
     CabeceraDePagina,
 
     Alerta,
@@ -182,6 +181,14 @@ const ESPERA_AUTOSAVE = 1_500;
   styleUrl: '../../atencion.css',
 })
 export class AtencionPage {
+  /** Ruta de navegacion de la barra superior. */
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const rutaClase = this.rutaDeLaClase();
+    return rutaClase
+      ? [{ etiqueta: 'Atención clínica de la clase', ruta: rutaClase }]
+      : [{ etiqueta: 'Agenda', ruta: '/agenda' }];
+  });
+
   private readonly api = inject(ClinicalApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

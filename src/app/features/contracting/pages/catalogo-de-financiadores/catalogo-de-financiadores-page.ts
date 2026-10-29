@@ -15,10 +15,10 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -43,7 +43,6 @@ type Estado =
   selector: 'app-catalogo-de-financiadores-page',
   imports: [
     CabeceraDePagina,
-    Migas,
     ColumnaOrdenable,
     Paginacion,
     Ayuda,
@@ -56,6 +55,12 @@ type Estado =
   styleUrl: '../../contracting.css',
 })
 export class CatalogoDeFinanciadoresPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Catálogo de financiadores' },
+  ]);
+
   private readonly api = inject(ContractingApi);
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);

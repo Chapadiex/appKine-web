@@ -1,5 +1,4 @@
 <app-cabecera-de-pagina titulo="{{ egreso()?.concepto ?? 'Egreso' }}">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
   @if (egreso(); as e) {
     <span [class]="claseDeEstado(e.estado)">{{ estadoEnPalabras(e.estado) }}</span>
   }

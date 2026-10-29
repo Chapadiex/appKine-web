@@ -1,11 +1,4 @@
 <app-cabecera-de-pagina titulo="Liquidación de honorarios">
-  <app-migas
-    enLinea
-    [migas]="[
-      { etiqueta: 'Egresos', ruta: '/egresos' },
-      { etiqueta: 'Liquidar honorarios', ruta: '/egresos/honorarios' },
-    ]"
-  />
   @if (liquidacion()) {
     <span
       class="marca-estado"

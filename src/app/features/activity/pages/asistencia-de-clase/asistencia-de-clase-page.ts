@@ -62,7 +62,6 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { DetalleOperativoRequestParams } from '../../../../api/generated/api/asistencia-de-clases.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -126,7 +125,6 @@ interface Historial {
   selector: 'app-asistencia-de-clase-page',
   imports: [
     Ayuda,
-    Migas,
     CabeceraDePagina,
     RouterLink,
     Paginacion,

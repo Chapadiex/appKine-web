@@ -28,8 +28,8 @@
 }
 
 /*
- * Migas, titulo con su "?" y marcas de estado. Si no entran en una linea, lo que baja son las
- * marcas (o el titulo debajo de las migas): sin `wrap`, el documento y las marcas de una ficha
+ * Titulo con su "?" y marcas de estado. Si no entran en una linea, lo que baja son las
+ * marcas: sin `wrap`, el documento y las marcas de una ficha
  * no se achicaban y en un telefono dejaban el nombre de la persona en 0 px.
  */
 .cabecera-pagina__titulo {

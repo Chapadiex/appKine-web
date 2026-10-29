@@ -36,10 +36,10 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -73,7 +73,6 @@ interface SituacionDelPrecio {
     CabeceraDePagina,
 
     Alerta,
-    Migas,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,
@@ -90,6 +89,12 @@ interface SituacionDelPrecio {
   styleUrl: '../../offering.css',
 })
 export class PreciosParticularesDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Precios particulares' },
+  ]);
+
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);

@@ -14,11 +14,11 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -60,11 +60,17 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-espacio-page',
-  imports: [CabeceraDePagina, Ayuda, Migas, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './new-espacio-page.html',
   styleUrl: '../../resource.css',
 })
 export class NewEspacioPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
+    { etiqueta: 'Dar de alta' },
+  ]);
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
   private readonly avisos = inject(AvisosStore);

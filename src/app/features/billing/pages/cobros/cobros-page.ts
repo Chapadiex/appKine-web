@@ -92,6 +92,7 @@ interface OperacionAbierta {
   selector: 'app-cobros-page',
   imports: [
     PanelLateral,
+
     Alerta,
     CabeceraDeFicha,
     Ayuda,
@@ -121,6 +122,7 @@ export class CobrosPage {
     personaId: this.personaId(),
     persona: null,
     actual: 'cuenta-corriente',
+    masMigas: [{ etiqueta: 'Cuenta corriente', ruta: this.rutaCuenta() }],
   }));
 
   protected readonly medioEnPalabras = medioEnPalabras;

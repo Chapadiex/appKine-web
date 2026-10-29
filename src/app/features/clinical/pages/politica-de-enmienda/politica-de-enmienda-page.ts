@@ -7,7 +7,6 @@ import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-erro
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -29,7 +28,7 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, Alerta],
+  imports: [CabeceraDePagina, Ayuda, Alerta],
   templateUrl: './politica-de-enmienda-page.html',
   styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })

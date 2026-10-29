@@ -1,9 +1,4 @@
 <app-cabecera-de-pagina titulo="Atención clínica">
-  @if (rutaDeLaClase(); as rutaClase) {
-    <app-migas enLinea [migas]="[{ etiqueta: 'Atención clínica de la clase', ruta: rutaClase }]" />
-  } @else {
-    <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
-  }
   @if (sesion()) {
     <span
       class="marca-estado"

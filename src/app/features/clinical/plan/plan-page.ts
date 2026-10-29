@@ -9,7 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { Migas } from '../../../shared/components/migas/migas';
 import { Observable, Subscription, forkJoin } from 'rxjs';
 
 import { AvanceDelPlan } from '../../../api/generated/model/avance-del-plan';
@@ -37,6 +36,7 @@ import { CabeceraDePagina } from '../../../shared/components/cabecera-de-pagina/
 
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../core/services/avisos.store';
+import { publicarMigas } from '../../../core/services/migas.store';
 
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
@@ -77,11 +77,17 @@ const TITULO_DEL_RECHAZO: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral, Alerta],
+  imports: [CabeceraDePagina, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral, Alerta],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
 export class PlanPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    ...this.migas(),
+    { etiqueta: 'Plan de tratamiento' },
+  ]);
+
   private readonly api = inject(PlanApi);
   private readonly avisos = inject(AvisosStore);
   private readonly casos = inject(CasosApi);

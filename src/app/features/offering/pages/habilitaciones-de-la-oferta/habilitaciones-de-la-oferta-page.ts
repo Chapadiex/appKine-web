@@ -12,11 +12,11 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Una fila de casilla, igual para profesionales y para espacios. */
 interface Candidato {
@@ -66,11 +66,17 @@ interface Candidato {
  */
 @Component({
   selector: 'app-habilitaciones-de-la-oferta-page',
-  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
 export class HabilitacionesDeLaOfertaPage {
+  /** Ruta de navegacion de la barra superior (UX-13). */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Habilitaciones' },
+  ]);
+
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly contexto = inject(TenantContextStore);

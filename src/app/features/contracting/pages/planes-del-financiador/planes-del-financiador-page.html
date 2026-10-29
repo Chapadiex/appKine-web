@@ -1,9 +1,5 @@
 @if (financiador(); as ficha) {
   <app-cabecera-de-pagina titulo="Planes de {{ ficha.nombre }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
-    />
     @if (financiadorInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
@@ -20,10 +16,6 @@
     no se pudo leer el encabezado en vez de inventar un nombre o dejar el titulo vacio.
   -->
   <app-cabecera-de-pagina titulo="Planes del financiador #{{ financiadorId }}">
-    <app-migas
-      enLinea
-      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
-    />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
