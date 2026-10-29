@@ -1260,6 +1260,10 @@ form:not(.formulario--libre) > .campo--ancho {
  * DOM y enlazada por `aria-describedby`: un lector de pantalla la lee igual al entrar al campo.
  * Lo que el usuario tiene que ver siempre (un dato, una consecuencia que no se puede deshacer) va
  * con `.ayuda--fija`.
+ *
+ * <p>Flota sobre lo que sigue sin atrapar el puntero: si no, el clic en el campo o el boton que
+ * tapa (el "Guardar ahora" debajo de las notas de la atencion) le llega a la ayuda, el campo pierde
+ * el foco y hay que volver a hacer clic. Por eso una ayuda a demanda no lleva enlaces ni botones.
  */
 .campo {
   position: relative;
@@ -1282,6 +1286,7 @@ form:not(.formulario--libre) > .campo--ancho {
   border-radius: var(--radio-md);
   background: var(--color-superficie);
   box-shadow: 0 4px 12px rgb(16 38 63 / 0.12);
+  pointer-events: none;
 }
 
 .campo > .ayuda--fija {

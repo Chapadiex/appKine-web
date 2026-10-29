@@ -39,7 +39,7 @@ test.describe('Financiadores y planes contra el backend real', () => {
 
     // --- Alta del financiador ---------------------------------------------------------------
     await page.getByRole('button', { name: 'Dar de alta un financiador' }).click();
-    const formulario = page.getByRole('region', { name: 'Nuevo financiador' });
+    const formulario = page.getByRole('dialog', { name: 'Nuevo financiador' });
     await formulario.getByLabel('Código', { exact: true }).fill(codigo);
     await formulario.getByLabel('Nombre', { exact: true }).fill(nombre);
     await formulario.getByLabel('Tipo', { exact: true }).selectOption({ value: 'OBRA_SOCIAL' });
@@ -65,7 +65,7 @@ test.describe('Financiadores y planes contra el backend real', () => {
       page.getByRole('heading', { name: `Planes de ${nombre}`, level: 1 }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Dar de alta un plan' }).click();
-    const formularioDelPlan = page.getByRole('region', { name: 'Nuevo plan' });
+    const formularioDelPlan = page.getByRole('dialog', { name: 'Nuevo plan' });
     const plan = `Plan 310 ${sufijo}`;
     const desde = sumarDias(fechaLocal(centro.timezone), -1);
     await formularioDelPlan
@@ -75,7 +75,8 @@ test.describe('Financiadores y planes contra el backend real', () => {
     await formularioDelPlan.getByLabel('Vigente desde').fill(desde);
     await formularioDelPlan.getByLabel('Copago (opcional)').fill('1500');
     await formularioDelPlan.getByLabel('Moneda').fill('ARS');
-    await formularioDelPlan.getByText('Requisitos del plan', { exact: true }).click();
+    // UX-11: descripcion y requisitos viven en la seccion plegada "Más datos del plan".
+    await formularioDelPlan.locator('summary', { hasText: 'Más datos del plan' }).click();
     await formularioDelPlan.getByLabel('Requiere autorización previa').check();
     const altaDelPlan = respuestaDe(page, 'POST', /\/financiadores\/\d+\/planes$/);
     await formularioDelPlan.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -106,7 +107,7 @@ test.describe('Financiadores y planes contra el backend real', () => {
     // --- La sede firma un convenio con ese plan -----------------------------------------------
     await navegar(page, '/contratacion/convenios');
     await page.getByRole('button', { name: 'Firmar un convenio' }).click();
-    const formularioDelConvenio = page.getByRole('region', {
+    const formularioDelConvenio = page.getByRole('dialog', {
       name: 'Nuevo convenio de esta sede',
     });
     const convenio = `Convenio 310 ${sufijo}`;

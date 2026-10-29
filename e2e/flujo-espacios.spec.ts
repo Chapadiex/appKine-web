@@ -95,6 +95,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     const historico = page.getByRole('row').filter({ hasText: nombre });
     await expect(historico).toBeVisible();
     await expect(historico.getByText('Motivo: Se reforma el box')).toBeVisible();
-    await expect(historico.getByText('Un espacio dado de baja no se edita.')).toBeVisible();
+    // UX-11: la fila de un espacio dado de baja no ofrece acciones (antes lo decia con un texto).
+    await expect(historico.getByRole('button', { name: 'Editar' })).toHaveCount(0);
   });
 });
