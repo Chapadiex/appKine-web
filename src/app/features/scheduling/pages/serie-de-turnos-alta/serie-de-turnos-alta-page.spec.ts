@@ -74,6 +74,10 @@ describe('SerieDeTurnosAltaPage', () => {
 
     expect(texto(fixture)).toContain('1 de 3 fechas no tienen lugar');
     expect(boton(fixture, 'Reservar los 3 turnos')?.disabled).toBe(true);
+    // UX-14: la vista previa es una tabla con orden y el pie estandar.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('th.tabla__columna-ordenable').length).toBe(3);
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–3 de 3');
   });
 
   it('reserva la serie con la regla del contrato y enlaza a la serie creada', async () => {
@@ -190,6 +194,13 @@ describe('SerieDeTurnosAltaPage', () => {
 
     expect(texto(fixture)).toContain('no queda ninguna para reservar');
     expect(boton(fixture, 'Reservar los 0 turnos')?.disabled).toBe(true);
+  });
+
+  it('sin vista previa todavía muestra el vacío estándar', async () => {
+    const fixture = await montar();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('Todavía no hay vista previa');
   });
 
   it('cambiar la regla descarta la previsualizacion', async () => {

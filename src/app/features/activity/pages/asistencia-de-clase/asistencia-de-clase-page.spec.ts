@@ -487,11 +487,30 @@ describe('AsistenciaDeClasePage', () => {
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     boton(fixture, 'Reintentar').click();
-    await responderDetalle(fixture, detalle('EN_CURSO', { totalPages: 2 }));
-    expect(texto(fixture)).toContain('Página 1 de 2');
-    boton(fixture, 'Siguiente').click();
+    await responderDetalle(fixture, detalle('EN_CURSO', { totalPages: 2, totalElements: 150 }));
+    // Pie estandar (UX-14): operativa, arranca con 100 por pagina (todos a la vista).
+    expect(texto(fixture)).toContain('Mostrando 1–100 de 150');
+    expect(
+      el(fixture).querySelector('nav[aria-label="Páginas de participantes"] [aria-current="page"]')
+        ?.textContent,
+    ).toContain('1');
+    boton(fixture, 'Página siguiente').click();
     const pagina = httpMock.expectOne((p) => p.url === `${BASE}/detalle-operativo`);
     expect(pagina.request.params.get('page')).toBe('1');
-    pagina.flush(detalle('EN_CURSO', { totalPages: 2, page: 1 }));
+    expect(pagina.request.params.get('size')).toBe('100');
+    pagina.flush(detalle('EN_CURSO', { totalPages: 2, page: 1, totalElements: 150 }));
+    await estabilizar(fixture);
+
+    // Filas por pagina: va como `size` y vuelve a la primera pagina.
+    const filas = el(fixture).querySelector(
+      '.paginacion-pie__por-pagina select',
+    ) as HTMLSelectElement;
+    filas.value = '25';
+    filas.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const chica = httpMock.expectOne((p) => p.url === `${BASE}/detalle-operativo`);
+    expect(chica.request.params.get('page')).toBe('0');
+    expect(chica.request.params.get('size')).toBe('25');
+    chica.flush(detalle('EN_CURSO', { totalPages: 6, page: 0, totalElements: 150, size: 25 }));
   });
 });

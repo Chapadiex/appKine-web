@@ -28,21 +28,23 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-financiadores">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-financiadores">Financiadores de la organización</h2>
-  </div>
-
+<section class="tarjeta tarjeta--tabla" aria-label="Financiadores de la organización">
   <!--
     La busqueda se dispara con el submit y no con cada tecla. El detalle esta en el javadoc de
     `buscar()`: una busqueda en vivo necesita debounce, y el debounce es de donde salio el defecto
     del buscador de pacientes de la agenda. Con un solo campo en el formulario, Enter lo envia
     (envio implicito de HTML): no hace falta un botón a la vista.
 
-    Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado y tipo,
-    detras del embudo.
+    Toolbar de la tabla (UX-14): la busqueda, el estado (frecuente, con conteo) y el embudo con el
+    tipo, y el conteo de resultados en la misma fila.
   -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['financiador', 'financiadores']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <form
       class="campo"
       filtro-principal
@@ -68,6 +70,22 @@
       </p>
     </form>
 
+    <!--
+      Estado administrativo con conteo: el listado se pide entero (estado TODOS) y se filtra en
+      pantalla, asi los numeros son los de la lista. Los dados de baja se siguen pudiendo
+      consultar: los convenios firmados con ellos siguen resolviendo, y explicar una liquidacion
+      vieja exige poder verlos.
+    -->
+    @if (estado().tipo === 'listo') {
+      <app-filtros-rapidos
+        filtro-frecuente
+        etiqueta="Filtrar por estado"
+        [opciones]="opcionesDeEstado()"
+        [valor]="filtroRapido()"
+        (valorChange)="elegirEstado($event)"
+      />
+    }
+
     <div class="campo">
       <label for="filtro-tipo-financiador">Tipo</label>
       <select
@@ -90,8 +108,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio titulo="Todavía no elegiste un consultorio.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -108,26 +127,34 @@
       }
 
       @case ('listo') {
-        <!--
-          Estado administrativo con conteo: el listado se pide entero (estado TODOS) y se filtra
-          en pantalla, asi los numeros son los de la lista. Los dados de baja se siguen pudiendo
-          consultar: los convenios firmados con ellos siguen resolviendo, y explicar una
-          liquidacion vieja exige poder verlos.
-        -->
-        <app-filtros-rapidos
-          etiqueta="Filtrar por estado"
-          [opciones]="opcionesDeEstado()"
-          [valor]="filtroRapido()"
-          (valorChange)="elegirEstado($event)"
-        />
-        @if (financiadores().length === 0) {
-          <p class="estado estado--vacio">
-            No hay financiadores que coincidan con lo que estás buscando.
-          </p>
-          <p class="ayuda">
-            Sin ningún financiador cargado, esta sede solo puede cobrar de forma particular: no hay
-            plan contra el cual firmar un convenio, y sin convenio no hay arancel que resolver.
-          </p>
+        @if (cargados().length === 0 && !hayBusqueda()) {
+          <!--
+            Todavia no hay ninguno: sin financiador cargado la sede solo cobra particular. Es lo
+            que hay que entender antes de dar el primero de alta.
+          -->
+          <app-estado-vacio
+            titulo="Todavía no hay financiadores"
+            texto="Sin ningún financiador cargado, esta sede solo puede cobrar de forma particular: no hay plan contra el cual firmar un convenio, y sin convenio no hay arancel que resolver."
+          >
+            <button type="button" class="boton" *akinePermiso="permisoManage" (click)="abrirAlta()">
+              Dar de alta el primero
+            </button>
+          </app-estado-vacio>
+        } @else if (financiadores().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos financiadores"
+            texto="No hay financiadores que coincidan con lo que estás buscando. Probá con otra búsqueda o filtros."
+          >
+            @if (hayBusqueda()) {
+              <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
+            } @else {
+              <button type="button" class="boton boton--secundario" (click)="elegirEstado('TODOS')">
+                Ver todos
+              </button>
+            }
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Financiadores">
             <table class="tabla">
@@ -139,8 +166,8 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th scope="col">CUIT</th>
-                  <th scope="col">Contacto</th>
+                  <th scope="col" class="tabla__col--secundaria">CUIT</th>
+                  <th scope="col" class="tabla__col--secundaria">Contacto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -165,8 +192,8 @@
                       }
                     </th>
                     <td>{{ etiquetaDeTipo(financiador.tipo) }}</td>
-                    <td>{{ financiador.cuit || 'Sin CUIT' }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">{{ financiador.cuit || 'Sin CUIT' }}</td>
+                    <td class="tabla__col--secundaria">
                       {{ financiador.emailContacto || 'Sin email' }}
                       <span class="celda-secundaria">{{
                         financiador.telefonoContacto || 'Sin teléfono'
@@ -228,15 +255,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} financiadores</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de financiadores"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de financiadores" />
         }
       }
     }
@@ -257,7 +276,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-financiador-codigo">Código</label>
         <input
           id="alta-financiador-codigo"
@@ -281,7 +300,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-financiador-nombre">Nombre</label>
         <input
           id="alta-financiador-nombre"
@@ -300,7 +319,7 @@
         }
       </div>
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--6">
         <label for="alta-financiador-tipo">Tipo</label>
         <select
           id="alta-financiador-tipo"
@@ -332,8 +351,8 @@
           Más datos del financiador
           <span class="seccion-plegable__resumen">CUIT, contacto y observaciones (opcionales)</span>
         </summary>
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
+        <div class="grilla-campos">
+          <div class="campo campo--3">
             <label for="alta-financiador-cuit">CUIT (opcional)</label>
             <input
               id="alta-financiador-cuit"
@@ -357,7 +376,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="alta-financiador-telefono">Teléfono de contacto (opcional)</label>
             <input
               id="alta-financiador-telefono"
@@ -367,7 +386,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--12">
             <label for="alta-financiador-observaciones">Observaciones (opcional)</label>
             <input
               id="alta-financiador-observaciones"
@@ -421,7 +440,7 @@
           Se guarda <b>solo lo que cambies</b>; vaciar un campo opcional lo deja vacío.
         </p>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-financiador-codigo">Código</label>
           <input
             id="editar-financiador-codigo"
@@ -436,7 +455,7 @@
           </p>
         </div>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-financiador-nombre">Nombre</label>
           <input
             id="editar-financiador-nombre"
@@ -455,7 +474,7 @@
           }
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="editar-financiador-tipo">Tipo</label>
           <select id="editar-financiador-tipo" formControlName="tipo">
             @for (opcion of tipos; track opcion.valor) {
@@ -464,7 +483,7 @@
           </select>
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="editar-financiador-cuit">CUIT</label>
           <input
             id="editar-financiador-cuit"
@@ -479,7 +498,7 @@
             Contacto
             <span class="seccion-plegable__resumen">Email, teléfono y observaciones</span>
           </summary>
-          <div class="grilla-campos grilla-campos--dos">
+          <div class="grilla-campos">
             <div class="campo">
               <label for="editar-financiador-email">Email de contacto</label>
               <input
@@ -490,7 +509,7 @@
               />
             </div>
 
-            <div class="campo">
+            <div class="campo campo--3">
               <label for="editar-financiador-telefono">Teléfono de contacto</label>
               <input
                 id="editar-financiador-telefono"
@@ -500,7 +519,7 @@
               />
             </div>
 
-            <div class="campo campo--ancho">
+            <div class="campo campo--12">
               <label for="editar-financiador-observaciones">Observaciones</label>
               <input
                 id="editar-financiador-observaciones"

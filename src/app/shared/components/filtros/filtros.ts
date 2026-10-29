@@ -2,8 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   booleanAttribute,
+  computed,
   input,
   linkedSignal,
+  output,
+  ViewEncapsulation,
 } from '@angular/core';
 
 import { Icono } from '../icono/icono';
@@ -23,45 +26,65 @@ let siguienteId = 0;
  * llega desplegado si hay alguno (al volver a la pantalla, o con la URL compartida). Despues lo
  * decide el usuario: el panel no se cierra solo cuando el contador vuelve a cero.
  *
- * <p><b>Proyeccion.</b> El campo basico va con el atributo `filtro-principal`; todo lo demas es el
- * contenido del panel. Sin campo basico (un listado sin busqueda), `soloAvanzados` muestra el
- * boton con su texto: un embudo solo, sin nada al lado, no se entiende.
+ * <p><b>Proyeccion.</b> El campo basico va con el atributo `filtro-principal`; los filtros que se
+ * usan todo el tiempo (fecha, profesional, estado) van a la vista con `filtro-frecuente`; todo lo
+ * demas es el contenido del panel.
+ *
+ * <p><b>Toolbar de la tabla (UX-14).</b> Una sola fila pegada a la tabla: "[Buscar…] [Filtros 2]
+ * 37 resultados". El boton dice siempre "Filtros" (con texto en todas las pantallas), y el contador
+ * de resultados vive en la misma fila que la busqueda que lo produce.
  *
  * <p><b>No sabe de dominio.</b> No conoce los filtros: los recibe ya armados por la pantalla.
  */
 @Component({
   selector: 'akine-filtros, app-filtros',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  styleUrl: './filtros.css',
   imports: [Icono],
   template: `
     <div class="filtros-barra__fila">
       <div class="filtros-barra__principal">
         <ng-content select="[filtro-principal]" />
       </div>
-      <button
-        type="button"
-        class="filtros-barra__boton"
-        [class.filtros-barra__boton--con-texto]="soloAvanzados()"
-        [attr.aria-expanded]="abiertos()"
-        [attr.aria-controls]="idPanel"
-        (click)="abiertos.set(!abiertos())"
-      >
-        <app-icono nombre="filtro" />
-        @if (soloAvanzados()) {
+      <ng-content select="[filtro-frecuente]" />
+      @if (!sinAvanzados()) {
+        <button
+          type="button"
+          class="filtros-barra__boton"
+          [attr.aria-expanded]="abiertos()"
+          [attr.aria-controls]="idPanel"
+          (click)="abiertos.set(!abiertos())"
+        >
+          <app-icono nombre="filtro" />
           <span>Filtros</span>
-        } @else {
-          <span class="visualmente-oculto">Filtros avanzados</span>
-        }
-        @if (activos() > 0) {
-          <span class="filtros-barra__contador">
-            {{ activos() }}<span class="visualmente-oculto"> activos</span>
-          </span>
-        }
-      </button>
+          @if (activos() > 0) {
+            <span class="filtros-barra__contador">
+              {{ activos() }}<span class="visualmente-oculto"> activos</span>
+            </span>
+          }
+        </button>
+      }
+      @if (textoResultados(); as texto) {
+        <p class="filtros-barra__resultados" aria-live="polite">{{ texto }}</p>
+      }
     </div>
-    <div class="filtros-barra__avanzados" [id]="idPanel" [hidden]="!abiertos()">
-      <ng-content />
-    </div>
+    @if (!sinAvanzados()) {
+      <div class="filtros-barra__avanzados" [id]="idPanel" [hidden]="!abiertos()">
+        <ng-content />
+        @if (limpiable() && activos() > 0) {
+          <div class="filtros-barra__limpiar">
+            <button
+              type="button"
+              class="boton boton--secundario boton--chico"
+              (click)="limpiar.emit()"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        }
+      </div>
+    }
   `,
   host: { class: 'filtros-barra' },
 })
@@ -69,8 +92,33 @@ export class Filtros {
   /** Cuantos filtros avanzados estan fuera de su valor por defecto. */
   readonly activos = input(0);
 
-  /** El listado no tiene campo basico: el boton lleva texto y va solo. */
+  /**
+   * Compatibilidad: antes el boton era solo un embudo cuando habia busqueda. Desde UX-14 dice
+   * "Filtros" siempre, asi que ya no cambia nada.
+   */
   readonly soloAvanzados = input(false, { transform: booleanAttribute });
+
+  /** El listado no tiene filtros avanzados: solo la busqueda (y los frecuentes) y el contador. */
+  readonly sinAvanzados = input(false, { transform: booleanAttribute });
+
+  /** Cuantas filas devuelve el listado con lo elegido. `null` mientras carga o si no se sabe. */
+  readonly resultados = input<number | null>(null);
+
+  /** Como se nombran las filas: [singular, plural]. Default "resultado" / "resultados". */
+  readonly unidad = input<readonly [string, string]>(['resultado', 'resultados']);
+
+  /** Ofrece "Limpiar filtros" en el panel cuando hay alguno activo; avisa con `limpiar`. */
+  readonly limpiable = input(false, { transform: booleanAttribute });
+
+  /** El usuario pidio volver todos los filtros avanzados a su valor por defecto. */
+  readonly limpiar = output<void>();
+
+  protected readonly textoResultados = computed(() => {
+    const n = this.resultados();
+    if (n === null) return null;
+    const [singular, plural] = this.unidad();
+    return `${n} ${n === 1 ? singular : plural}`;
+  });
 
   /** Desplegado si llega con filtros activos; despues, lo que decida el usuario. */
   protected readonly abiertos = linkedSignal<number, boolean>({

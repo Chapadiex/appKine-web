@@ -130,8 +130,35 @@ describe('DocumentosDePersonaPage', () => {
   it('una lista vacía no es un error y dice que es normal', async () => {
     const fixture = await montar([]);
 
-    expect(texto(fixture)).toContain('No hay documentos cargados');
-    expect(texto(fixture)).toContain('cuando el paciente los trae');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Todavía no hay documentos cargados');
+    expect(vacio?.textContent).toContain('cuando el paciente los trae');
+  });
+
+  it('el listado sigue el patrón de UX-14: resultados en la barra, pie y vacío filtrado', async () => {
+    const fixture = await montar([CREDENCIAL]);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 documento',
+    );
+    expect(raiz.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–1 de 1');
+    expect(raiz.querySelector('caption')).toBeNull();
+
+    elegirEn(fixture, '#documentos-filtro-estado', 'TODOS');
+    const filtrado = httpMock.expectOne(esListado());
+    expect(filtrado.request.params.get('size')).toBe('10');
+    filtrado.flush(pagina([]));
+    await estabilizar(fixture);
+
+    const vacio = raiz.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay documentos con estos filtros');
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const limpio = httpMock.expectOne(esListado());
+    expect(limpio.request.urlWithParams).not.toContain('incluirDadosDeBaja');
+    limpio.flush(pagina([CREDENCIAL]));
+    await estabilizar(fixture);
   });
 
   // -------------------------------------------------------------------------------------
@@ -700,7 +727,7 @@ describe('DocumentosDePersonaPage', () => {
     return {
       content: contenido,
       page: 0,
-      size: 20,
+      size: 10,
       totalElements: contenido.length,
       totalPages: 1,
     };

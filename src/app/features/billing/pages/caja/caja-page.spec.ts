@@ -127,6 +127,22 @@ describe('CajaPage', () => {
     expect(tira).toContain('efectivo$700,50·otrosmedios$2.000,00');
     expect(tira).toContain('Movimientos4');
     expect(tira).toContain('entró$700,50·salió$200,00');
+    // UX-14: la jornada es una banda de indicadores, no una tarjeta; los movimientos se ordenan
+    // y tienen el pie estandar.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.banda-de-caja')?.classList.contains('tarjeta')).toBe(false);
+    expect(raiz.querySelectorAll('.banda-de-caja dl.cifras')).toHaveLength(1);
+    expect(contenido).toContain('Mostrando 1–2 de 2');
+    Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button'))
+      .find((b) => b.textContent?.trim() === 'Concepto')!
+      .click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Cambio para el día');
+    Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button'))
+      .find((b) => b.textContent?.trim() === 'Concepto')!
+      .click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Cobro N.º 14');
   });
 
   it('registra un movimiento manual con clave de idempotencia y relee la caja', async () => {

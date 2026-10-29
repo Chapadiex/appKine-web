@@ -144,7 +144,10 @@ describe('CalendarioDeTurnosPage', () => {
     httpMock.expectOne(esCalendario(CONSULTORIO)).flush({ timezone: ZONA, turnos: [] });
     await asentar(fixture);
 
-    expect(raiz(fixture).textContent).toContain('Esta semana no tiene turnos reservados');
+    // UX-14: el vacio es `app-estado-vacio`, no un parrafo suelto.
+    expect(raiz(fixture).querySelector('app-estado-vacio')?.textContent).toContain(
+      'Esta semana no tiene turnos reservados',
+    );
     expect(raiz(fixture).querySelector('.calendario__semana')).toBeNull();
   });
 

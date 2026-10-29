@@ -40,14 +40,9 @@ export class AsistenciaApi {
     claseId: number,
     page = 0,
     sort?: DetalleOperativoRequestParams['sort'],
+    size = PARTICIPANTES_POR_PAGINA,
   ): Observable<DetalleOperativoDeClase> {
-    return this.asistencia.detalleOperativo({
-      consultorioId,
-      claseId,
-      page,
-      size: PARTICIPANTES_POR_PAGINA,
-      sort,
-    });
+    return this.asistencia.detalleOperativo({ consultorioId, claseId, page, size, sort });
   }
 
   iniciar(consultorioId: number, claseId: number): Observable<Clase> {

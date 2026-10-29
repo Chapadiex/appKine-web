@@ -45,7 +45,8 @@ import {
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -87,7 +88,8 @@ const DIAS_PROPUESTOS = 365;
     CabeceraDePagina,
 
     Alerta,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ColumnaOrdenable,
     Ayuda,
     ReactiveFormsModule,

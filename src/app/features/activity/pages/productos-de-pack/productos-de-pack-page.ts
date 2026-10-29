@@ -38,7 +38,8 @@ import { ESQUEMA_POR_ABONO, ESQUEMA_POR_PACK, PasesApi } from '../../services/pa
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -83,13 +84,13 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
   selector: 'app-productos-de-pack-page',
   imports: [
     CabeceraDePagina,
-
     Alerta,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    EstadoVacio,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -116,19 +117,27 @@ export class ProductosDePackPage {
   protected readonly fecha = formatearFecha;
 
   protected readonly productos = signal<readonly Producto[] | null>(null);
+  /** Busqueda por nombre u oferta, sobre la lista completa (el servidor no busca productos). */
+  protected readonly busqueda = signal('');
+  private readonly filtrados = computed(() => {
+    const texto = this.busqueda().trim().toLowerCase();
+    const todos = this.productos() ?? [];
+    return texto === ''
+      ? todos
+      : todos.filter((producto) =>
+          `${producto.nombre ?? ''} ${this.nombreDeOferta(producto)}`.toLowerCase().includes(texto),
+        );
+  });
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina productos. */
-  protected readonly tabla = tablaLocal(
-    computed(() => this.productos() ?? []),
-    {
-      columnas: {
-        producto: (producto) => producto.nombre,
-        tipo: (producto) => this.tipoDeProducto(producto),
-        oferta: (producto) => this.nombreDeOferta(producto),
-        precio: (producto) => producto.precio,
-        estado: (producto) => (producto.active === false ? 'Dado de baja' : 'Vigente'),
-      },
+  protected readonly tabla = tablaLocal(this.filtrados, {
+    columnas: {
+      producto: (producto) => producto.nombre,
+      tipo: (producto) => this.tipoDeProducto(producto),
+      oferta: (producto) => this.nombreDeOferta(producto),
+      precio: (producto) => producto.precio,
+      estado: (producto) => (producto.active === false ? 'Dado de baja' : 'Vigente'),
     },
-  );
+  });
   /** Ofertas activas que admiten producto: `POR_PACK` o `POR_ABONO`. */
   private readonly ofertasVendibles = signal<readonly OfertaResponse[]>([]);
   /** El tipo elegido en el formulario, como signal: filtra las ofertas que se ofrecen. */

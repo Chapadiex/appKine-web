@@ -1,4 +1,17 @@
 /*
+  Entradas del catalogo dentro de la tarjeta del listado (UX-14): separadas por una linea y
+  espacio, no por tarjetas dentro de la tarjeta.
+*/
+.catalogo-entrada {
+  padding-block: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.catalogo-entrada:first-child {
+  border-top: 0;
+}
+
+/*
   Entrada del catalogo (refactor UX/UI del 28/10/2026): el nombre con su accion en una fila y los
   datos en una linea, para que el catalogo no sea una columna de fichas de cuatro renglones.
 */

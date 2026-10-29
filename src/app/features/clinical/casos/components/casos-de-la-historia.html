@@ -33,49 +33,114 @@
       </p>
     </app-alerta>
   } @else {
-    <h3>Activos</h3>
-    @if (activos().length === 0) {
-      <p class="estado estado--vacio">No hay casos activos.</p>
-    } @else {
-      <ul class="casos" aria-label="Casos activos">
-        @for (caso of activos(); track caso.id) {
-          <li class="casos__item casos__fila">
-            <div>
-              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-              </a>
-              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-              <p class="ayuda ayuda--fija">
-                Abierto el {{ fechaYHora(caso.abiertoEn) }} · {{ equipoDe(caso) }}
-              </p>
-            </div>
-            <span class="marca-estado marca-estado--activa">{{ estadoDe(caso) }}</span>
-          </li>
-        }
-      </ul>
-    }
+    <!--
+      Toolbar del listado (UX-14): la busqueda (local, la lista llega entera), el estado detras de
+      "Filtros" y el contador en la misma fila. Activos primero y despues los cerrados: un caso
+      cerrado no se borra, se sigue leyendo.
+    -->
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="tabla.total()"
+      [unidad]="['caso', 'casos']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="busqueda-casos">Buscar casos</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="busqueda-casos"
+            type="search"
+            placeholder="Buscar por número, oferta o diagnóstico"
+            autocomplete="off"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
 
-    <h3>Históricos</h3>
-    @if (cerrados().length === 0) {
-      <p class="estado estado--vacio">No hay casos cerrados.</p>
+      <div class="campo">
+        <label for="filtro-estado-caso">Mostrar</label>
+        <select
+          id="filtro-estado-caso"
+          [value]="filtroEstado()"
+          (change)="filtroEstado.set($any($event.target).value)"
+        >
+          <option value="TODOS">Activos y cerrados</option>
+          <option value="ACTIVOS">Solo los activos</option>
+          <option value="CERRADOS">Solo los cerrados</option>
+        </select>
+      </div>
+    </app-filtros>
+
+    @if (casos().length === 0) {
+      <app-estado-vacio
+        titulo="Todavía no hay casos clínicos"
+        texto="Ningún problema terapéutico de esta historia se abrió como caso."
+      />
+    } @else if (tabla.total() === 0) {
+      <app-estado-vacio titulo="No encontramos casos" texto="Probá con otra búsqueda o filtros.">
+        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
     } @else {
-      <ul class="casos" aria-label="Casos cerrados">
-        @for (caso of cerrados(); track caso.id) {
-          <li class="casos__item casos__fila">
-            <div>
-              <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
-                Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
-              </a>
-              <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-              <p class="ayuda ayuda--fija">
-                Abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
-                {{ fechaYHora(caso.cerradoEn) }}
-              </p>
-            </div>
-            <span class="marca-estado">{{ estadoDe(caso) }}</span>
-          </li>
-        }
-      </ul>
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Casos de la historia">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Casos clínicos de la historia, los activos primero, con su diagnóstico presuntivo,
+            equipo, fechas y estado.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="caso">Caso</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="diagnostico">
+                Diagnóstico presuntivo
+              </th>
+              <th scope="col" class="tabla__col--secundaria">Equipo</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="abierto">Abierto</th>
+              <th
+                scope="col"
+                class="tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tabla"
+                columna="cerrado"
+              >
+                Cerrado
+              </th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (caso of tabla.visibles(); track caso.id) {
+              <tr>
+                <th scope="row">
+                  <a class="enlace casos__titulo" [routerLink]="visita.rutaCaso(caso.id!)">
+                    Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
+                  </a>
+                </th>
+                <td class="casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</td>
+                <td class="tabla__col--secundaria">
+                  {{ caso.estado === 'CERRADO' ? '—' : equipoDe(caso) }}
+                </td>
+                <td>{{ fechaYHora(caso.abiertoEn) }}</td>
+                <td class="tabla__col--secundaria">
+                  {{ caso.cerradoEn ? fechaYHora(caso.cerradoEn) : '—' }}
+                </td>
+                <td>
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--activa]="caso.estado !== 'CERRADO'"
+                    >{{ estadoDe(caso) }}</span
+                  >
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de casos" />
     }
   }
 
@@ -127,7 +192,7 @@
           </app-alerta>
         }
 
-        <div class="campo">
+        <div class="campo campo--6">
           <label for="caso-oferta">Oferta que motiva el caso</label>
           <select
             id="caso-oferta"
@@ -175,7 +240,7 @@
           ></textarea>
         </div>
 
-        <div class="campo">
+        <div class="campo campo--6">
           <label for="caso-responsable">Profesional responsable (opcional)</label>
           <select
             id="caso-responsable"

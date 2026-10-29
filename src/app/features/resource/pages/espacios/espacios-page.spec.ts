@@ -49,7 +49,7 @@ const BOX_FUTURO = {
 const PAGINA = {
   content: [BOX_1, BOX_FUTURO],
   page: 0,
-  size: 20,
+  size: 10,
   totalElements: 2,
   totalPages: 1,
 };
@@ -88,7 +88,7 @@ const BOX_DADO_DE_BAJA = {
 const PAGINA_MIXTA = {
   content: [GIMNASIO, BOX_DADO_DE_BAJA],
   page: 0,
-  size: 20,
+  size: 10,
   totalElements: 2,
   totalPages: 1,
 };
@@ -161,6 +161,87 @@ describe('EspaciosPage', () => {
     expect(region?.getAttribute('aria-label')).toBeTruthy();
   });
 
+  it('patrón de listado (UX-14): resultados en la barra, pie estándar y filas por página', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    // El conteo vive en la barra de la tabla, no en un parrafo suelto al pie.
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 espacios',
+    );
+    expect(host.querySelector('.tabla-pie')).toBeNull();
+    expect(host.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–2 de 2');
+
+    // La barra y la tabla comparten la misma tarjeta.
+    const tarjeta = host.querySelector('section.tarjeta');
+    expect(tarjeta?.querySelector('app-filtros')).not.toBeNull();
+    expect(tarjeta?.querySelector('table')).not.toBeNull();
+
+    // Vigencia es secundaria: se esconde en tablet (el dato sigue en el panel de edicion).
+    expect(host.querySelector('th.tabla__col--secundaria')?.textContent?.trim()).toBe('Vigencia');
+  });
+
+  it('cambiar las filas por página las pide como size y vuelve a la primera', async () => {
+    const fixture = await montarCon({ ...PAGINA, totalElements: 30, totalPages: 3 });
+    const host: HTMLElement = fixture.nativeElement;
+
+    botonPorTexto(fixture, 'Página siguiente')!.click();
+    fixture.detectChanges();
+    const segunda = httpMock.expectOne(esListado());
+    expect(segunda.request.params.get('page')).toBe('1');
+    segunda.flush({ ...PAGINA, page: 1, totalElements: 30, totalPages: 3 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const selector = host.querySelector<HTMLSelectElement>('app-paginacion select')!;
+    selector.value = '25';
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const recarga = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.url === LISTADO && peticion.params.get('size') === '25',
+    );
+    expect(recarga.request.params.get('page')).toBe('0');
+    recarga.flush({ ...PAGINA, size: 25, totalElements: 30, totalPages: 2 });
+  });
+
+  it('sin espacios todavía ofrece el alta; sin resultados con filtros, limpiarlos', async () => {
+    const vacia = { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 };
+    const fixture = await montarCon(vacia);
+    const host: HTMLElement = fixture.nativeElement;
+
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Todavía no hay espacios en esta sede',
+    );
+    expect(
+      host.querySelector('app-estado-vacio a[href="/espacios/nuevo"]')?.textContent?.trim(),
+    ).toBe('Dar de alta el primer espacio');
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '0 espacios',
+    );
+
+    escribir(fixture, '#espacios-busqueda', 'pileta');
+    host.querySelector('#espacios-busqueda')!.dispatchEvent(new Event('change'));
+    httpMock.expectOne(esListado()).flush(vacia);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const vacio = host.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Ningún espacio coincide con la búsqueda.');
+    expect(vacio?.querySelector('a')).toBeNull();
+    botonPorTexto(fixture, 'Limpiar filtros')!.click();
+    fixture.detectChanges();
+
+    const limpio = httpMock.expectOne(esListado());
+    expect(limpio.request.params.get('q')).toBeNull();
+    expect(limpio.request.params.get('estado')).toBe('ACTIVO');
+    limpio.flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(campo(fixture, '#espacios-busqueda')).toBe('');
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
   it('sin sede elegida no consulta nada y ofrece elegir consultorio, no cerrar sesión', async () => {
     // Contexto con organizacion pero SIN sede: los espacios cuelgan de una sede concreta, asi
     // que la peticion seria invalida.
@@ -204,7 +285,7 @@ describe('EspaciosPage', () => {
       (peticion: HttpRequest<unknown>) =>
         peticion.url === LISTADO && peticion.params.get('estado') === 'INACTIVO',
     );
-    recarga.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    recarga.flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -221,7 +302,7 @@ describe('EspaciosPage', () => {
     host.querySelector('#espacios-busqueda')!.dispatchEvent(new Event('change'));
     const buscado = httpMock.expectOne(esListado());
     expect(buscado.request.params.get('q')).toBe('box');
-    buscado.flush({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    buscado.flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
     await fixture.whenStable();
     fixture.detectChanges();
     expect(texto(fixture)).toContain('Ningún espacio coincide con la búsqueda.');
@@ -232,7 +313,7 @@ describe('EspaciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    host.querySelector<HTMLButtonElement>('th[appOrdenable]:nth-child(2) button')!.click();
+    host.querySelector<HTMLButtonElement>('th[appOrdenable]:nth-child(3) button')!.click();
     const ordenado = httpMock.expectOne(esListado());
     expect(decodeURIComponent(ordenado.request.params.get('sort')!)).toBe('capacidad,asc');
     expect(ordenado.request.params.get('page')).toBe('0');
@@ -661,7 +742,7 @@ describe('EspaciosPage', () => {
 
   function esListado() {
     return (peticion: HttpRequest<unknown>) =>
-      peticion.method === 'GET' && peticion.url === LISTADO && peticion.params.get('size') === '20';
+      peticion.method === 'GET' && peticion.url === LISTADO && peticion.params.get('size') === '10';
   }
 });
 

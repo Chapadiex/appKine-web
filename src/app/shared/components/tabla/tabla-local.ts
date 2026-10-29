@@ -13,7 +13,7 @@ export interface OrdenDeTabla {
 export interface OpcionesDeTabla<T> {
   /** Como se lee cada columna ordenable de una fila. La clave es la que usa `appOrdenable`. */
   readonly columnas: Readonly<Record<string, (fila: T) => ValorOrdenable>>;
-  /** Filas por pagina. Default 20. */
+  /** Filas por pagina al llegar. Default 10, el de toda tabla de AKINE (UX-14). */
   readonly porPagina?: number;
   /** Orden al llegar. Sin el, las filas quedan en el orden en que las devolvio el servidor. */
   readonly ordenInicial?: OrdenDeTabla;
@@ -26,12 +26,16 @@ export interface TablaLocal<T> {
   readonly totalPaginas: Signal<number>;
   /** Total de filas, sin paginar: para "N resultados". */
   readonly total: Signal<number>;
+  /** Filas por pagina; el usuario la cambia desde el pie (10, 25, 50 o 100). */
+  readonly porPagina: Signal<number>;
   readonly orden: Signal<OrdenDeTabla | null>;
   /** Las filas de la pagina actual, ya ordenadas. Es lo que recorre el `@for`. */
   readonly visibles: Signal<readonly T[]>;
   /** Ordena por la columna; si ya estaba, invierte; la tercera vez vuelve al orden original. */
   ordenarPor(columna: string): void;
   irA(pagina: number): void;
+  /** Cambia las filas por pagina y vuelve a la primera. */
+  cambiarPorPagina(porPagina: number): void;
 }
 
 const comparador = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
@@ -64,7 +68,7 @@ export function tablaLocal<T>(
   filas: Signal<readonly T[]>,
   opciones: OpcionesDeTabla<T>,
 ): TablaLocal<T> {
-  const porPagina = opciones.porPagina ?? 20;
+  const porPagina = signal(opciones.porPagina ?? 10);
   const orden = signal<OrdenDeTabla | null>(opciones.ordenInicial ?? null);
 
   const ordenadas = computed(() => {
@@ -80,22 +84,26 @@ export function tablaLocal<T>(
   });
 
   const total = computed(() => filas().length);
-  const totalPaginas = computed(() => Math.max(1, Math.ceil(total() / porPagina)));
+  const totalPaginas = computed(() => Math.max(1, Math.ceil(total() / porPagina())));
 
-  const pagina = linkedSignal<{ filas: readonly T[]; orden: OrdenDeTabla | null }, number>({
-    source: () => ({ filas: filas(), orden: orden() }),
+  const pagina = linkedSignal<
+    { filas: readonly T[]; orden: OrdenDeTabla | null; porPagina: number },
+    number
+  >({
+    source: () => ({ filas: filas(), orden: orden(), porPagina: porPagina() }),
     computation: () => 0,
   });
 
   const visibles = computed(() => {
-    const desde = Math.min(pagina(), totalPaginas() - 1) * porPagina;
-    return ordenadas().slice(desde, desde + porPagina);
+    const desde = Math.min(pagina(), totalPaginas() - 1) * porPagina();
+    return ordenadas().slice(desde, desde + porPagina());
   });
 
   return {
     pagina: pagina.asReadonly(),
     totalPaginas,
     total,
+    porPagina: porPagina.asReadonly(),
     orden: orden.asReadonly(),
     visibles,
     ordenarPor(columna: string): void {
@@ -110,6 +118,9 @@ export function tablaLocal<T>(
     },
     irA(destino: number): void {
       pagina.set(Math.max(0, Math.min(destino, totalPaginas() - 1)));
+    },
+    cambiarPorPagina(cantidad: number): void {
+      if (cantidad > 0) porPagina.set(cantidad);
     },
   };
 }

@@ -31,14 +31,18 @@
   </section>
 }
 
-<section class="tarjeta" aria-labelledby="titulo-sedes">
-  <h2 id="titulo-sedes">Sedes de la organización</h2>
-
+<section class="tarjeta" aria-label="Sedes de la organización">
   <!--
-    Regla de filtros (plan §3.4): la busqueda por nombre, en el servidor (DP-45), a la vista;
-    "Mostrar" es un filtro avanzado.
+    Toolbar de la tabla (UX-14): la busqueda por nombre, en el servidor (DP-45), a la vista;
+    "Mostrar" es un filtro avanzado; el contador va en la misma fila.
   -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? totalSedes() : null"
+    [unidad]="['sede', 'sedes']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="sedes-busqueda">Nombre de la sede</label>
       <div class="campo-busqueda">
@@ -81,11 +85,12 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
-        <p class="ayuda">
-          Las sedes son de una organización concreta, así que hay que indicar cual.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        <app-estado-vacio
+          titulo="Todavía no elegiste un contexto de trabajo."
+          texto="Las sedes son de una organización concreta, así que hay que indicar cual."
+        >
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -102,14 +107,27 @@
       }
 
       @case ('listo') {
-        @if (sedesDeLaPagina().length === 0) {
-          @if (busqueda().trim() !== '') {
-            <p class="estado estado--vacio">Ninguna sede coincide con la búsqueda.</p>
-          } @else if (filtro() === 'INACTIVO') {
-            <p class="estado estado--vacio">No hay sedes dadas de baja.</p>
-          } @else {
-            <p class="estado estado--vacio">No hay sedes que mostrar con este filtro.</p>
-          }
+        @if (sedesDeLaPagina().length === 0 && !hayFiltros()) {
+          <app-estado-vacio titulo="No hay sedes todavía" texto="Abrí la primera para empezar.">
+            <a *akinePermiso="permisoManage" class="boton" routerLink="/organizacion/sedes/nueva"
+              >Abrir una sede</a
+            >
+          </app-estado-vacio>
+        } @else if (sedesDeLaPagina().length === 0) {
+          <app-estado-vacio
+            [titulo]="
+              busqueda().trim() !== ''
+                ? 'Ninguna sede coincide con la búsqueda.'
+                : filtro() === 'INACTIVO'
+                  ? 'No hay sedes dadas de baja.'
+                  : 'No encontramos sedes con estos filtros.'
+            "
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de sedes">
             <table class="tabla">
@@ -119,8 +137,8 @@
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Sede</th>
-                  <th scope="col">Zona horaria</th>
-                  <th scope="col">Agenda</th>
+                  <th scope="col" class="tabla__col--secundaria">Zona horaria</th>
+                  <th scope="col" class="tabla__col--secundaria">Agenda</th>
                   <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -143,8 +161,10 @@
                         <span class="sede__detalle">{{ sede.addressLine || sede.legalName }}</span>
                       }
                     </th>
-                    <td>{{ sede.timezone ? etiquetaDeZona(sede.timezone) : '-' }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
+                      {{ sede.timezone ? etiquetaDeZona(sede.timezone) : '-' }}
+                    </td>
+                    <td class="tabla__col--secundaria">
                       @if (sede.slotMinutes) {
                         Turnos de {{ sede.slotMinutes }} min
                       } @else {
@@ -199,15 +219,15 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ totalSedes() }} sedes con el filtro elegido</span>
-            <akine-paginacion
-              etiqueta="Paginas de sedes"
-              [paginaActual]="paginaActual()"
-              [totalPaginas]="totalPaginas()"
-              (cambioDePagina)="irAPagina($event)"
-            />
-          </div>
+          <app-paginacion
+            etiqueta="Páginas de sedes"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="totalSedes()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
         }
       }
     }
@@ -275,7 +295,7 @@
           aria-labelledby="editar-pestana-general"
           [hidden]="pestanaEdicion() !== 'general'"
         >
-          <div class="campo campo--ancho">
+          <div class="campo campo--6">
             <label for="editar-name">Nombre de la sede</label>
             <input
               id="editar-name"
@@ -293,7 +313,7 @@
             }
           </div>
 
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="editar-timezone">Zona horaria</label>
             <select
               id="editar-timezone"
@@ -347,7 +367,7 @@
             están.
           </p>
 
-          <div class="campo campo--ancho">
+          <div class="campo campo--6">
             <label for="editar-legalName">Razón social</label>
             <input
               id="editar-legalName"
@@ -357,7 +377,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="editar-taxId">CUIT o identificación fiscal</label>
             <input
               id="editar-taxId"
@@ -367,7 +387,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="editar-phone">Teléfono</label>
             <input
               id="editar-phone"
@@ -377,7 +397,7 @@
             />
           </div>
 
-          <div class="campo campo--ancho">
+          <div class="campo campo--6">
             <label for="editar-addressLine">Dirección</label>
             <input
               id="editar-addressLine"
@@ -387,7 +407,7 @@
             />
           </div>
 
-          <div class="campo campo--ancho">
+          <div class="campo">
             <label for="editar-email">Email de contacto</label>
             <input
               id="editar-email"

@@ -40,11 +40,12 @@
 }
 
 @if (sinDeudaCobrable()) {
-  <p class="estado estado--vacio">
-    Esta persona no tiene ninguna deuda con saldo pendiente, así que no hay nada que cobrar. Las
-    deudas se generan al cerrar una atención: no se cargan a mano. Los anticipos —cobrar sin deuda—
-    necesitan la Caja y todavía no existen.
-  </p>
+  <app-estado-vacio
+    titulo="Esta persona no tiene ninguna deuda con saldo pendiente, así que no hay nada que cobrar"
+    texto="Las deudas se generan al cerrar una atención: no se cargan a mano. Los anticipos —cobrar sin deuda— necesitan la Caja y todavía no existen."
+  >
+    <a class="boton boton--secundario" [routerLink]="rutaCuenta()">Ver la cuenta corriente</a>
+  </app-estado-vacio>
 }
 
 <!-- ============================ Comprobante, una vez registrado ======================= -->
@@ -182,22 +183,24 @@
   <div class="cobro-columnas">
     <section class="tarjeta cobro-formulario" aria-label="Datos del cobro">
       @if (modoPrepago()) {
-        <div class="campo">
-          <label for="moneda-prepago">Moneda del prepago</label>
-          <input
-            id="moneda-prepago"
-            type="text"
-            autocomplete="off"
-            maxlength="3"
-            [value]="monedaDelPrepago()"
-            [attr.aria-invalid]="moneda() === null"
-            aria-describedby="ayuda-moneda-prepago"
-            (input)="cambiarMonedaDelPrepago($any($event.target).value)"
-          />
-          <p class="ayuda" id="ayuda-moneda-prepago">
-            Código de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una
-            deuda en la misma moneda.
-          </p>
+        <div class="grilla-12">
+          <div class="campo campo--2">
+            <label for="moneda-prepago">Moneda del prepago</label>
+            <input
+              id="moneda-prepago"
+              type="text"
+              autocomplete="off"
+              maxlength="3"
+              [value]="monedaDelPrepago()"
+              [attr.aria-invalid]="moneda() === null"
+              aria-describedby="ayuda-moneda-prepago"
+              (input)="cambiarMonedaDelPrepago($any($event.target).value)"
+            />
+            <p class="ayuda" id="ayuda-moneda-prepago">
+              Código de tres letras (ARS, USD). Viene de la oferta; el anticipo se imputa solo a una
+              deuda en la misma moneda.
+            </p>
+          </div>
         </div>
       } @else {
         <fieldset class="grupo">
@@ -262,8 +265,8 @@
         </p>
 
         @for (linea of medios(); track linea.id) {
-          <div class="linea-medio">
-            <div class="campo">
+          <div class="linea-medio grilla-12">
+            <div class="campo campo--3">
               <label [for]="'medio-' + $index">Medio de pago</label>
               <select
                 [id]="'medio-' + $index"
@@ -276,7 +279,7 @@
               </select>
             </div>
 
-            <div class="campo">
+            <div class="campo campo--2">
               <label [for]="'importe-medio-' + $index">Importe recibido</label>
               <input
                 [id]="'importe-medio-' + $index"
@@ -289,7 +292,7 @@
               />
             </div>
 
-            <div class="campo">
+            <div class="campo campo--3">
               <label [for]="'referencia-' + $index">
                 Referencia <span class="campo__opcional">(opcional)</span>
               </label>
@@ -336,6 +339,7 @@
     operador vea la diferencia antes de que el servidor la rechace, y la comparacion se hace en
     centavos enteros: con flotantes, dos importes que se ven iguales pueden no serlo.
   -->
+      <!-- Totales, faltantes y confirmar en un solo bloque compacto (UX-14 §3): sin tarjetas apiladas. -->
       <section class="tarjeta" aria-labelledby="titulo-totales">
         <h2 id="titulo-totales">Totales</h2>
         <dl class="detalle">
@@ -350,26 +354,24 @@
           <dt>Recibido por medios</dt>
           <dd class="importe">{{ totalDeMediosEnPalabras() || '—' }}</dd>
         </dl>
-      </section>
 
-      <div aria-live="polite">
-        @if (problemas().length > 0) {
-          <section class="tarjeta" aria-labelledby="titulo-faltantes">
-            <h2 id="titulo-faltantes">Falta esto para poder cobrar</h2>
-            <ul class="lista-faltantes">
+        <div aria-live="polite">
+          @if (problemas().length > 0) {
+            <h3 id="titulo-faltantes" class="formulario__seccion">Falta esto para poder cobrar</h3>
+            <ul class="lista-faltantes" aria-labelledby="titulo-faltantes">
               @for (problema of problemas(); track problema) {
                 <li>{{ problema }}</li>
               }
             </ul>
-          </section>
-        }
-      </div>
+          }
+        </div>
 
-      <div class="acciones cobro-confirmar">
-        <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
-          {{ modoPrepago() ? 'Registrar el prepago' : 'Registrar el cobro' }}
-        </button>
-      </div>
+        <div class="acciones cobro-confirmar">
+          <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
+            {{ modoPrepago() ? 'Registrar el prepago' : 'Registrar el cobro' }}
+          </button>
+        </div>
+      </section>
     </aside>
   </div>
 }

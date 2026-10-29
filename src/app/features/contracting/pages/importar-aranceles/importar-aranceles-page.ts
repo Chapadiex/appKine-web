@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
@@ -40,6 +40,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Tamano maximo del archivo que se lee en el navegador. 500 filas de CSV entran holgadas. */
@@ -84,7 +88,17 @@ interface Desenlace {
  */
 @Component({
   selector: 'app-importar-aranceles-page',
-  imports: [CabeceraDePagina, Ayuda, NgTemplateOutlet, PermisoDirective, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    NgTemplateOutlet,
+    PermisoDirective,
+    Alerta,
+    ColumnaOrdenable,
+    PieDeTabla,
+    EstadoVacio,
+    RouterLink,
+  ],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
 })
@@ -140,6 +154,23 @@ export class ImportarArancelesPage {
   );
 
   protected readonly desenlace = signal<Desenlace | null>(null);
+
+  /**
+   * Orden y paginado de la tabla de la vista previa (UX-14): una planilla puede traer cientos de
+   * filas. Ordenar por "Resultado" junta las que no entran, que son las que hay que corregir.
+   */
+  protected readonly tablaDeFilas = tablaLocal(
+    computed<readonly FilaImportacionArancelResponse[]>(() => this.desenlace()?.filas ?? []),
+    {
+      columnas: {
+        fila: (fila) => fila.fila,
+        practica: (fila) => this.practicaEnPalabras(fila),
+        total: (fila) => this.filaEnviada(fila.fila)?.importeTotal,
+        vigencia: (fila) => this.filaEnviada(fila.fila)?.vigenciaDesde,
+        resultado: (fila) => esAlta(fila),
+      },
+    },
+  );
 
   /** `true` si el desenlace que se ve describe el texto actual y no uno anterior. */
   protected readonly desenlaceVigente = computed(() => {

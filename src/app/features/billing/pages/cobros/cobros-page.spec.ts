@@ -95,6 +95,29 @@ describe('CobrosPage', () => {
     expect(contenido).toContain('No se muestra un total de lo cobrado');
   });
 
+  it('busca por número de comprobante, cuenta en la barra y pagina con el pie estándar', async () => {
+    const lista = Array.from({ length: 12 }, (_, i) => ({
+      ...COBRO,
+      id: i + 1,
+      comprobanteNumero: 140 + i,
+    }));
+    const fixture = await montar(lista);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('12 cobros');
+    expect(texto(fixture)).toContain('Mostrando 1–10 de 12');
+
+    escribirEn(fixture, '#buscar-cobro', '151');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('1 cobro');
+
+    escribirEn(fixture, '#buscar-cobro', '999');
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No hay cobros con ese número',
+    );
+    apretar(fixture, 'Limpiar filtros');
+    expect(raiz.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+  });
+
   it('abrir el comprobante lo RELEE del servidor: no reimprime lo que hay en memoria', async () => {
     const fixture = await montar([COBRO]);
 

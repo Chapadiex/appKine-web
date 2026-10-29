@@ -153,6 +153,48 @@ describe('AtencionGrupalPage', () => {
     expect(boton(fixture, /Iniciar para todos/).textContent).toContain('(1)');
   });
 
+  it('sigue el patron de listado: accion arriba, busqueda con resultados, orden y pie (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    // La accion principal vive en la cabecera de la pantalla, no dentro de la tarjeta.
+    expect(boton(fixture, /Iniciar para todos/).closest('app-cabecera-de-pagina')).not.toBeNull();
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '3 participantes',
+    );
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–3 de 3',
+    );
+
+    const participante = raiz.querySelector(
+      'th.tabla__columna-ordenable button',
+    ) as HTMLButtonElement;
+    participante.click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('ascending');
+
+    escribir(fixture, '#busqueda-participantes', 'maría');
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(raiz.querySelector('tbody tr')?.textContent).toContain('Sintetica, Maria');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 participante',
+    );
+
+    escribir(fixture, '#busqueda-participantes', 'nadie');
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos participantes',
+    );
+    boton(fixture, /^Limpiar la búsqueda$/).click();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('tbody tr')).toHaveLength(3);
+  });
+
+  it('sin asistencia tomada lo dice con el estado vacio y no ofrece iniciar', async () => {
+    const fixture = await montar({ ...PANEL_CLINICO, participantes: [] });
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Todavía no hay asistencia registrada');
+    expect(botones(fixture, /Iniciar para todos/)).toHaveLength(0);
+  });
+
   it('los nombres salen del panel: no pide el detalle operativo de la asistencia', async () => {
     const fixture = await montar();
     http.expectNone((r) => r.url.endsWith('/detalle-operativo'));

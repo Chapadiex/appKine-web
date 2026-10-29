@@ -175,8 +175,8 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
 
     // --- 5. Orden medica ----------------------------------------------------------------
     await page.goto(`/pacientes/${personaId}/autorizaciones`);
-    const ordenes = page.getByRole('region', { name: 'Órdenes médicas' });
-    await ordenes.getByRole('button', { name: 'Registrar una orden' }).click();
+    // Las altas van en la cabecera de la pantalla, arriba a la derecha (UX-14).
+    await page.getByRole('button', { name: 'Registrar una orden', exact: true }).click();
     // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
     const altaDeOrden = page.getByRole('dialog', { name: 'Registrar una orden' });
     await altaDeOrden.getByLabel('Profesional que la firmo').fill('Dra. Sintetica Prueba');
@@ -311,10 +311,8 @@ async function registrarAutorizacion(
     hasta: string;
   },
 ): Promise<void> {
-  await page
-    .getByRole('region', { name: 'Autorizaciones' })
-    .getByRole('button', { name: 'Registrar una autorización' })
-    .click();
+  // Las altas van en la cabecera de la pantalla, arriba a la derecha (UX-14).
+  await page.getByRole('button', { name: 'Registrar una autorización', exact: true }).click();
   // El alta se abre en un panel lateral (refactor UX/UI del 28/10/2026).
   const formulario = page.getByRole('dialog', { name: 'Registrar una autorización' });
   await formulario.getByLabel('Número').fill(datos.numero);

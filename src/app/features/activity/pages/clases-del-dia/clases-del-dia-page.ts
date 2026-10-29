@@ -13,7 +13,10 @@ import { etiquetaDeEstadoDeClase, horaEnZona } from '../../models/etiquetas-de-a
 import { AsistenciaApi } from '../../services/asistencia-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -32,7 +35,17 @@ type Estado =
  */
 @Component({
   selector: 'app-clases-del-dia-page',
-  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, Paginacion, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PieDeTabla,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './clases-del-dia-page.html',
   styleUrl: '../../asistencia.css',
 })
@@ -51,8 +64,18 @@ export class ClasesDelDiaPage {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.clases : [];
   });
+  /** Busqueda por nombre de la clase, sobre la lista del dia (llega entera). */
+  protected readonly busqueda = signal('');
+  private readonly filtradas = computed(() => {
+    const texto = this.busqueda().trim().toLowerCase();
+    return texto === ''
+      ? this.clases()
+      : this.clases().filter((clase) =>
+          `${clase.titulo ?? ''} ${clase.ofertaNombre ?? ''}`.toLowerCase().includes(texto),
+        );
+  });
   /** Orden y paginado de la lista completa (plan §3.4): la agenda del dia no se pagina. */
-  protected readonly tabla = tablaLocal(this.clases, {
+  protected readonly tabla = tablaLocal(this.filtradas, {
     columnas: {
       horario: (clase) => clase.inicio,
       clase: (clase) => clase.titulo || clase.ofertaNombre,

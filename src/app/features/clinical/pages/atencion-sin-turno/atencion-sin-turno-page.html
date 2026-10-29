@@ -8,7 +8,7 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-sin-turno-persona">
+<section class="tarjeta" aria-labelledby="titulo-sin-turno-persona">
   <h2 id="titulo-sin-turno-persona">A quién se atiende</h2>
   @if (persona(); as elegida) {
     <div class="persona-elegida">
@@ -22,7 +22,7 @@
     </div>
   } @else {
     <form (submit)="$event.preventDefault(); buscarPersona(busqueda.value)">
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="sin-turno-persona">Documento, apellido, nombre o teléfono</label>
         <div class="busqueda-fila">
           <input
@@ -62,7 +62,7 @@
   }
 </section>
 
-<section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-sin-turno-atencion">
+<section class="tarjeta" aria-labelledby="titulo-sin-turno-atencion">
   <h2 id="titulo-sin-turno-atencion">La atención</h2>
 
   <!-- UX-12: el rechazo del servidor, arriba del formulario de la atencion. -->
@@ -72,8 +72,9 @@
     </app-alerta>
   }
 
-  <div class="grilla-campos grilla-campos--dos">
-    <div class="campo">
+  <!-- Grilla de 12 columnas (UX-14): oferta y caso en una fila, el motivo a todo el ancho. -->
+  <div class="grilla-12">
+    <div class="campo campo--4">
       <label for="sin-turno-oferta">Oferta</label>
       <select
         id="sin-turno-oferta"
@@ -96,7 +97,7 @@
     </div>
 
     @if (persona() !== null) {
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="sin-turno-caso">
           Caso clínico
           @if (requiereCaso()) {
@@ -137,24 +138,24 @@
         }
       </div>
     }
-  </div>
 
-  <div class="campo">
-    <label for="sin-turno-motivo">Motivo (obligatorio)</label>
-    <textarea
-      id="sin-turno-motivo"
-      rows="3"
-      maxlength="1000"
-      [value]="motivo()"
-      (input)="escribirMotivo($any($event.target).value)"
-      [attr.aria-invalid]="campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'true' : null"
-      [attr.aria-describedby]="
-        campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'sin-turno-motivo-error' : null
-      "
-    ></textarea>
-    @if (campoDelAviso() === 'motivo' && motivo().trim() === '') {
-      <p class="campo__error" id="sin-turno-motivo-error">{{ aviso() }}</p>
-    }
+    <div class="campo">
+      <label for="sin-turno-motivo">Motivo (obligatorio)</label>
+      <textarea
+        id="sin-turno-motivo"
+        rows="3"
+        maxlength="1000"
+        [value]="motivo()"
+        (input)="escribirMotivo($any($event.target).value)"
+        [attr.aria-invalid]="campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'true' : null"
+        [attr.aria-describedby]="
+          campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'sin-turno-motivo-error' : null
+        "
+      ></textarea>
+      @if (campoDelAviso() === 'motivo' && motivo().trim() === '') {
+        <p class="campo__error" id="sin-turno-motivo-error">{{ aviso() }}</p>
+      }
+    </div>
   </div>
 
   <div class="pie-tarjeta">

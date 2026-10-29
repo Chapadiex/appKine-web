@@ -36,9 +36,17 @@
 </ng-template>
 
 @if (convenioInactivo()) {
-  <p class="estado estado--vacio">
-    Este convenio está dado de baja, así que <b>no admite aranceles nuevos</b>.
-  </p>
+  <app-estado-vacio
+    titulo="Este convenio está dado de baja"
+    texto="Este convenio está dado de baja, así que no admite aranceles nuevos."
+  >
+    <a
+      class="boton boton--secundario"
+      [routerLink]="['/contratacion/convenios', convenioId, 'aranceles']"
+    >
+      Volver a los aranceles
+    </a>
+  </app-estado-vacio>
 } @else {
   <!--
     Asistente de tres pasos: los pasos en una franja horizontal arriba y a todo el ancho, y el paso
@@ -253,18 +261,32 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Fila</th>
-                  <th scope="col">Práctica</th>
-                  <th scope="col">Oferta</th>
-                  <th scope="col" class="importe">Total</th>
-                  <th scope="col" class="importe">Financiador</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeFilas" columna="fila">Fila</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeFilas" columna="practica">
+                    Práctica
+                  </th>
+                  <th scope="col" class="tabla__col--secundaria">Oferta</th>
+                  <th
+                    scope="col"
+                    class="importe"
+                    appOrdenable
+                    [tabla]="tablaDeFilas"
+                    columna="total"
+                  >
+                    Total
+                  </th>
+                  <th scope="col" class="importe tabla__col--secundaria">Financiador</th>
                   <th scope="col" class="importe">Coseguro</th>
-                  <th scope="col">Vigencia</th>
-                  <th scope="col">Resultado</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeFilas" columna="vigencia">
+                    Vigencia
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeFilas" columna="resultado">
+                    Resultado
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                @for (fila of resultado.filas; track fila.fila) {
+                @for (fila of tablaDeFilas.visibles(); track fila.fila) {
                   @let enviada = filaEnviada(fila.fila);
                   <tr [class.fila--revocada]="!esAlta(fila)">
                     <th scope="row">
@@ -274,9 +296,13 @@
                       }
                     </th>
                     <td>{{ practicaEnPalabras(fila) }}</td>
-                    <td>{{ fila.ofertaId ? '#' + fila.ofertaId : 'General' }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ fila.ofertaId ? '#' + fila.ofertaId : 'General' }}
+                    </td>
                     <td class="importe">{{ importe(enviada?.importeTotal) }}</td>
-                    <td class="importe">{{ importe(enviada?.importeFinanciador) }}</td>
+                    <td class="importe tabla__col--secundaria">
+                      {{ importe(enviada?.importeFinanciador) }}
+                    </td>
                     <td class="importe">{{ importe(enviada?.coseguro) }}</td>
                     <td>{{ vigenciaEnPalabras(enviada) }}</td>
                     <td>
@@ -292,6 +318,7 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tablaDeFilas" etiqueta="Páginas de la vista previa" />
 
           <p class="acciones asistente__acciones">
             @if (resultado.tipo === 'preview') {

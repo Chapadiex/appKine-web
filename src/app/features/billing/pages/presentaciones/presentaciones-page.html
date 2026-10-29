@@ -25,71 +25,8 @@
   </p>
 }
 
-<!-- ================================ Filtros =================================== -->
-
-<section class="tarjeta" aria-labelledby="titulo-filtros">
-  <h2 id="titulo-filtros">Buscar lotes</h2>
-  <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
-    <!--
-      Regla de filtros (plan §3.4): la busqueda por numero, en el servidor (DP-45), a la vista; el
-      resto detras del embudo. El nombre del financiador no se busca: para eso esta su filtro.
-    -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
-      <div class="campo" filtro-principal>
-        <label class="visualmente-oculto" for="filtro-q">Número de lote o de factura</label>
-        <div class="campo-busqueda">
-          <app-icono class="campo-busqueda__icono" nombre="buscar" />
-          <input
-            id="filtro-q"
-            type="search"
-            autocomplete="off"
-            placeholder="Buscar por número de lote o de factura"
-            formControlName="q"
-          />
-        </div>
-      </div>
-
-      <div class="campos-en-linea">
-        <div class="campo">
-          <label for="filtro-estado">Estado</label>
-          <select id="filtro-estado" formControlName="estado">
-            <option value="">Todos</option>
-            @for (opcion of estados; track opcion) {
-              <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="filtro-financiador">Financiador</label>
-          <select id="filtro-financiador" formControlName="financiadorId">
-            <option value="">Todos</option>
-            @for (ficha of financiadores(); track ficha.id) {
-              <option [value]="ficha.id">{{ ficha.nombre }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="filtro-desde">Período desde</label>
-          <input id="filtro-desde" type="date" formControlName="desde" />
-        </div>
-
-        <div class="campo">
-          <label for="filtro-hasta">Período hasta</label>
-          <input id="filtro-hasta" type="date" formControlName="hasta" />
-        </div>
-      </div>
-    </app-filtros>
-
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
-  </form>
-</section>
-
 @if (cuenta(); as resumen) {
-  <section class="tarjeta" aria-labelledby="titulo-cuenta-financiador">
+  <section aria-labelledby="titulo-cuenta-financiador">
     <h2 id="titulo-cuenta-financiador">Cuenta corriente de {{ resumen.financiadorNombre }}</h2>
     <dl class="cifras">
       <div>
@@ -116,55 +53,145 @@
   </section>
 }
 
-<!-- ================================ Listado =================================== -->
+<!-- ============================ Listado (UX-14 §1) ============================ -->
 
-@if (estado().tipo === 'cargando') {
-  <p class="estado estado--cargando">Cargando los lotes…</p>
-}
+<section class="tarjeta" aria-label="Lotes de presentación">
+  <form class="formulario--libre" [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
+    <!--
+      Regla de filtros (plan §3.4): la busqueda por numero, en el servidor (DP-45), a la vista; el
+      resto detras del embudo. El nombre del financiador no se busca: para eso esta su filtro.
+    -->
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+      [unidad]="['lote', 'lotes']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="filtro-q">Número de lote o de factura</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="filtro-q"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por número de lote o de factura"
+            formControlName="q"
+          />
+        </div>
+      </div>
+      <button type="submit" class="boton boton--secundario" filtro-frecuente>Buscar</button>
 
-@if (error(); as fallo) {
-  <app-alerta tipo="error" titulo="No se pudieron cargar los lotes">
-    <p>{{ fallo.mensaje }}</p>
-    <p class="alerta__acciones">
-      @if (fallo.causa === 'sin-contexto') {
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      } @else {
-        <button type="button" class="boton boton--secundario" (click)="buscar()">Reintentar</button>
-      }
-    </p>
-  </app-alerta>
-}
+      <div class="campo">
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado" formControlName="estado">
+          <option value="">Todos</option>
+          @for (opcion of estados; track opcion) {
+            <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
+          }
+        </select>
+      </div>
 
-@if (vacia()) {
-  <p class="estado estado--vacio">No hay lotes con esos filtros.</p>
-}
+      <div class="campo">
+        <label for="filtro-financiador">Financiador</label>
+        <select id="filtro-financiador" formControlName="financiadorId">
+          <option value="">Todos</option>
+          @for (ficha of financiadores(); track ficha.id) {
+            <option [value]="ficha.id">{{ ficha.nombre }}</option>
+          }
+        </select>
+      </div>
 
-@if (lotes().length > 0) {
-  <div class="tarjeta tarjeta--tabla">
-    <div class="tarjeta__cabecera">
-      <h2 id="titulo-tabla-lotes">Lotes de presentación</h2>
-    </div>
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-lotes">
+      <div class="campo">
+        <label for="filtro-desde">Período desde</label>
+        <input id="filtro-desde" type="date" formControlName="desde" />
+      </div>
+
+      <div class="campo">
+        <label for="filtro-hasta">Período hasta</label>
+        <input id="filtro-hasta" type="date" formControlName="hasta" />
+      </div>
+    </app-filtros>
+  </form>
+
+  @if (estado().tipo === 'cargando') {
+    <p class="estado estado--cargando">Cargando los lotes…</p>
+  }
+
+  @if (error(); as fallo) {
+    <app-alerta tipo="error" titulo="No se pudieron cargar los lotes">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="buscar()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  }
+
+  @if (vacia()) {
+    @if (conFiltros()) {
+      <app-estado-vacio
+        titulo="No hay lotes con esos filtros"
+        texto="Probá con otro número, financiador o período."
+      >
+        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros(true)">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
+    } @else {
+      <app-estado-vacio
+        titulo="Todavía no hay lotes de presentación"
+        texto="Abrí el primero para reclamarle a un financiador las prestaciones de un período."
+      >
+        <button type="button" class="boton" (click)="abrirAlta()">Abrir el primer lote</button>
+      </app-estado-vacio>
+    }
+  }
+
+  @if (lotes().length > 0) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de lotes">
       <table class="tabla">
         <thead>
           <tr>
-            <th scope="col">Número</th>
-            <th scope="col">Financiador</th>
-            <th scope="col">Período</th>
-            <th scope="col">Estado</th>
-            <th scope="col" class="importe">Presentado</th>
-            <th scope="col" class="importe">Saldo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="numero">Número</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="financiador">Financiador</th>
+            <th
+              scope="col"
+              class="tabla__col--secundaria"
+              appOrdenable
+              [tabla]="tabla"
+              columna="periodo"
+            >
+              Período
+            </th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            <th
+              scope="col"
+              class="importe tabla__col--secundaria"
+              appOrdenable
+              [tabla]="tabla"
+              columna="presentado"
+            >
+              Presentado
+            </th>
+            <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="saldo">Saldo</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (lote of lotes(); track lote.id) {
+          @for (lote of tabla.visibles(); track lote.id) {
             <tr>
               <td class="celda-principal">
                 {{ lote.numero ? 'N.º ' + lote.numero : 'Sin número (borrador)' }}
               </td>
               <td>{{ lote.financiadorNombre }}</td>
-              <td class="celda-fecha">
+              <td class="celda-fecha tabla__col--secundaria">
                 {{ fecha(lote.periodoDesde) }} al {{ fecha(lote.periodoHasta) }}
               </td>
               <td>
@@ -172,7 +199,9 @@
                   estadoEnPalabras(lote.estado)
                 }}</span>
               </td>
-              <td class="importe">{{ importe(lote, lote.totalPresentado) }}</td>
+              <td class="importe tabla__col--secundaria">
+                {{ importe(lote, lote.totalPresentado) }}
+              </td>
               <td class="importe">{{ importe(lote, lote.saldo) }}</td>
               <td class="tabla__acciones">
                 <a
@@ -187,8 +216,9 @@
         </tbody>
       </table>
     </div>
-  </div>
-}
+    <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de lotes" />
+  }
+</section>
 
 <!--
   Alta en un panel lateral abierto desde "Nuevo lote" (refactor UX/UI del 28/10/2026). Antes el
@@ -209,7 +239,7 @@
         </app-alerta>
       }
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--6">
         <label for="alta-financiador">Financiador</label>
         <select
           id="alta-financiador"
@@ -273,7 +303,7 @@
         }
       </div>
 
-      <div class="campo campo--corto">
+      <div class="campo campo--2">
         <label for="alta-moneda">Moneda</label>
         <input
           id="alta-moneda"

@@ -77,7 +77,31 @@ describe('CatalogoFinanciadoresPage', () => {
     expect(pedido.request.params.get('tipo')).toBe('PREPAGA');
     pedido.flush([]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('Ninguna entrada del catálogo coincide');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Ninguna entrada del catálogo coincide',
+    );
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '0 financiadores',
+    );
+
+    // UX-14: "Limpiar filtros" del vacio vuelve a la consulta de entrada.
+    [...host.querySelectorAll<HTMLButtonElement>('app-estado-vacio button')]
+      .find((b) => b.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = httpMock.expectOne((p) => p.url === CATALOGO);
+    expect(limpio.request.params.has('q')).toBe(false);
+    expect(limpio.request.params.has('tipo')).toBe(false);
+    expect(limpio.request.params.get('estado')).toBe('ACTIVO');
+    limpio.flush([OSDE]);
+    await asentar(fixture);
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 financiador',
+    );
+    // Los planes de la entrada: tabla interna con orden y pie.
+    const planes = host.querySelector('app-planes-del-catalogo')!;
+    expect(planes.querySelectorAll('th[appOrdenable]').length).toBe(3);
+    expect(planes.textContent).toContain('Mostrando 1–');
   });
 
   it('da de alta un financiador y relee', async () => {

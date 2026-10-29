@@ -10,11 +10,34 @@
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-bandeja">
-  <h2 id="titulo-bandeja">Bandeja</h2>
+<section class="tarjeta" aria-label="Bandeja de solicitudes">
+  <!--
+    Toolbar de la tabla (UX-14): la bandeja llega entera y se busca aca, por lo pedido o por el
+    centro; "Mostrar" es un filtro avanzado y va al servidor.
+  -->
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['solicitud', 'solicitudes']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="solicitudes-busqueda">Pedido, código o centro</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="solicitudes-busqueda"
+          name="solicitudes-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por pedido, código o centro"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
 
-  <!-- Regla de filtros (plan §3.4): la bandeja no tiene búsqueda por texto; solo el embudo. -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
     <div class="campo">
       <label for="filtro-estado-bandeja">Mostrar</label>
       <select
@@ -44,8 +67,20 @@
         </app-alerta>
       }
       @case ('listo') {
-        @if (solicitudes().length === 0) {
-          <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
+        @if (tabla.total() === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="No hay solicitudes pendientes."
+            texto="Cuando un centro pida sumar un concepto al catálogo común, aparece acá."
+          />
+        } @else if (tabla.total() === 0) {
+          <app-estado-vacio
+            titulo="No hay solicitudes con el filtro elegido."
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catálogo">
             <table class="tabla">
@@ -55,7 +90,15 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Recibida</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="fecha"
+                  >
+                    Recibida
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Pedido</th>
@@ -69,7 +112,9 @@
                     [class.fila--revocada]="solicitud.estado === 'RECHAZADA'"
                     [class.fila--seleccionada]="seleccionada()?.id === solicitud.id"
                   >
-                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
+                    </td>
                     <td>{{ nombreDeCentro(solicitud) }}</td>
                     <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
                     <th scope="row">
@@ -101,15 +146,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} solicitudes</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de solicitudes"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de solicitudes" />
         }
       }
     }
@@ -197,7 +234,7 @@
           </h3>
 
           @if (desenlace() === 'APROBAR') {
-            <div class="campo">
+            <div class="campo campo--3">
               <label for="resolucion-codigo">Código con el que se publica</label>
               <input
                 id="resolucion-codigo"
@@ -228,7 +265,7 @@
               </app-alerta>
             }
 
-            <div class="campo">
+            <div class="campo campo--6">
               <label for="resolucion-nombre">Nombre con el que se publica</label>
               <input
                 id="resolucion-nombre"
@@ -272,7 +309,7 @@
             </div>
 
             @if (esPractica()) {
-              <div class="campo campo--ancho">
+              <div class="campo campo--6">
                 <label for="resolucion-especialidad">Especialidad del catálogo común</label>
                 @switch (especialidades().tipo) {
                   @case ('error') {

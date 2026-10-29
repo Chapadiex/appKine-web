@@ -175,6 +175,14 @@ describe('DetalleDeClasePage', () => {
       expect(
         (fixture.nativeElement as HTMLElement).querySelector('a[href="/asistencia/70"]'),
       ).not.toBeNull();
+      // UX-14: la clase y sus cupos en una banda sin tarjeta; los inscriptos con orden y pie.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('.banda-clase')?.textContent).toContain('Lugares ocupados');
+      expect(raiz.querySelector('.banda-clase')?.closest('.tarjeta')).toBeNull();
+      expect(raiz.querySelectorAll('[aria-label="Inscriptos con lugar"] th button')).toHaveLength(
+        2,
+      );
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain('Mostrando 1–');
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,

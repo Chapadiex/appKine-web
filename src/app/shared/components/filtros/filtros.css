@@ -1,0 +1,122 @@
+/* Barra de filtros (toolbar de tabla). Sin encapsulacion: estiliza lo proyectado. Vive aca y no
+   en design-system.css para no pesar en la carga inicial. */
+
+/*
+ * El campo basico ocupa la fila y el boton del embudo va pegado a su derecha, a la altura del
+ * control (alineados abajo: el campo tiene label arriba). El panel avanzado se despliega debajo,
+ * con los campos en fila mientras entren.
+ */
+.filtros-barra {
+  display: block;
+  margin-bottom: var(--esp-5);
+}
+
+.filtros-barra__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-4);
+}
+
+.filtros-barra__principal {
+  /* Nunca mas angosta que 18 rem: si los filtros frecuentes no entran, bajan a otra linea. */
+  flex: 1 1 18rem;
+  min-width: min(100%, 18rem);
+  /* A todo el ancho de una tabla de 96rem la busqueda pierde su forma de campo. */
+  max-width: 36rem;
+}
+
+.filtros-barra__principal .campo {
+  margin-bottom: 0;
+}
+
+/* Del alto de un control (2.6rem), con contorno de control (3:1, WCAG 1.4.11). */
+.filtros-barra__boton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-3);
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  height: 2.5rem;
+  padding: 0 var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+/* Cuantas filas hay con lo elegido: en la misma fila que la busqueda, contra el borde derecho. */
+.filtros-barra__resultados {
+  align-self: center;
+  margin: 0 0 0 auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  white-space: nowrap;
+}
+
+/* Los filtros de uso diario, a la vista al lado de la busqueda (fecha, profesional, estado). */
+.filtros-barra__fila > [filtro-frecuente] {
+  /* Si no entran, los frecuentes se acomodan en dos lineas antes que empujar al boton Filtros. */
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/*
+  Filtros rapidos con conteo (varias pastillas): en su propia linea, debajo de la busqueda, para no
+  apretar el campo ni empujar el boton Filtros. `class="filtros-barra__frecuente--fila"`.
+*/
+.filtros-barra__fila > .filtros-barra__frecuente--fila {
+  order: 10;
+  flex-basis: 100%;
+}
+
+.filtros-barra__limpiar {
+  display: flex;
+  flex: 1 0 100%;
+  justify-content: flex-end;
+}
+
+.filtros-barra__boton:hover,
+.filtros-barra__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+}
+
+/* Cuantos filtros avanzados estan aplicados: el estado no se esconde con el panel. */
+.filtros-barra__contador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-semi);
+}
+
+.filtros-barra__avanzados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-5) var(--esp-6);
+  margin-top: var(--esp-4);
+  padding: var(--esp-6);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-sutil);
+}
+
+.filtros-barra__avanzados[hidden] {
+  display: none;
+}
+
+.filtros-barra__avanzados > .campo {
+  flex: 0 1 14rem;
+  margin-bottom: 0;
+}

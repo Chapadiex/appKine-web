@@ -11,7 +11,8 @@ import { traducirErrorContracting } from '../../models/contracting-errors';
 import { TIPOS_DE_FINANCIADOR, etiquetaDeTipo } from '../../models/etiquetas-de-contracting';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -44,7 +45,8 @@ type Estado =
   imports: [
     CabeceraDePagina,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Ayuda,
     Filtros,
     Icono,
@@ -75,6 +77,11 @@ export class CatalogoDeFinanciadoresPage {
   protected readonly filtroTipo = signal<FiltroTipo | ''>('');
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== ''));
+  /**
+   * Si el listado mostrado salio de una busqueda o un tipo. La busqueda se aplica con el submit,
+   * asi que no alcanza con mirar lo tipeado: un vacio con filtros aplicados ofrece limpiarlos.
+   */
+  protected readonly hayFiltrosAplicados = signal(false);
   /** Id de la entrada con una adopcion en vuelo, o `null`. */
   protected readonly adoptando = signal<number | null>(null);
   /** Listado en vuelo: una busqueda nueva lo cancela, para que la respuesta vieja no pise a la nueva. */
@@ -115,6 +122,7 @@ export class CatalogoDeFinanciadoresPage {
     this.estado.set({ tipo: 'cargando' });
     const q = this.busqueda().trim();
     const tipo = this.filtroTipo();
+    this.hayFiltrosAplicados.set(q !== '' || tipo !== '');
     this.pedidoDeListado?.unsubscribe();
     this.pedidoDeListado = this.api
       .listarCatalogo({ q: q === '' ? undefined : q, tipo: tipo === '' ? undefined : tipo })
@@ -126,6 +134,13 @@ export class CatalogoDeFinanciadoresPage {
             mensaje: traducirErrorContracting(error, 'financiador').mensaje,
           }),
       });
+  }
+
+  /** Vuelve la busqueda y el tipo a su valor por defecto y relee el catalogo entero. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroTipo.set('');
+    this.cargar();
   }
 
   protected adoptar(entrada: CatalogoFinanciadorResponse): void {

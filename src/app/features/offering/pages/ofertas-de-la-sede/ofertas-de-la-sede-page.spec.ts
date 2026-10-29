@@ -496,9 +496,52 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('table')).toBeNull();
-    expect(anfitrion.textContent).toContain('todavía no tiene ofertas que coincidan con el filtro');
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Esta sede todavía no tiene ofertas activas');
     // Una tabla con encabezados y sin filas no dice si el filtro tapa todo o si no hay nada.
-    expect(anfitrion.textContent).toContain('esta sede no ofrece nada para reservar');
+    expect(vacio?.textContent).toContain('esta sede no ofrece nada para reservar');
+    // "Todavía no hay": la accion es el alta, no limpiar filtros.
+    expect(vacio?.textContent).toContain('Publicar el primer servicio');
+    expect(vacio?.textContent).not.toContain('Limpiar filtros');
+  });
+
+  it('el listado sigue el patron: resultados en la toolbar, pie estandar y sin titulo repetido', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE, AUN_NO] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 ofertas',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('section.tarjeta')?.getAttribute('aria-label')).toBe(
+      'Ofertas cargadas en esta sede',
+    );
+  });
+
+  it('la busqueda acota en el navegador y el vacio filtrado ofrece limpiar los filtros', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE, AUN_NO] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    escribir(fixture, '#busqueda-ofertas', 'pilates');
+    expect(anfitrion.querySelectorAll('tbody > tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 oferta',
+    );
+
+    escribir(fixture, '#busqueda-ofertas', 'yoga');
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos ofertas');
+    const limpiar = [...(vacio?.querySelectorAll('button') ?? [])].find((boton) =>
+      boton.textContent?.includes('Limpiar filtros'),
+    );
+    limpiar?.click();
+    fixture.detectChanges();
+
+    // Solo cambio la busqueda local: limpiar no vuelve a pedir el listado.
+    httpMock.expectNone(esListado());
+    expect(anfitrion.querySelectorAll('tbody > tr').length).toBe(2);
+    expect(anfitrion.querySelector<HTMLInputElement>('#busqueda-ofertas')?.value).toBe('');
   });
 
   it('una oferta dada de baja no ofrece acciones y muestra por que se dio de baja', async () => {

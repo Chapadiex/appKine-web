@@ -41,19 +41,45 @@
   }
   @case ('listo') {
     @if (detalle(); as clase) {
-      <section class="tarjeta" aria-labelledby="titulo-clase">
-        <h2 id="titulo-clase" tabindex="-1">La clase</h2>
-        <p class="clase-meta">
-          <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
-          <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
-        </p>
-        <ul class="contadores" aria-label="Resumen de la asistencia">
-          <li>Presentes: {{ clase.presentes ?? 0 }}</li>
-          <li>Ausentes: {{ clase.ausentes ?? 0 }}</li>
-          <li>Sin resolver: {{ clase.sinResolver ?? 0 }}</li>
-          <li>Lugares: {{ clase.ocupados ?? 0 }} de {{ clase.capacidadEfectiva ?? '—' }}</li>
-          <li>En espera: {{ clase.enEspera ?? 0 }}</li>
-        </ul>
+      <!--
+        Operativa (UX-14 §3): la clase en una banda compacta, sin tarjeta, y la lista de
+        participantes ocupando el resto de la pantalla.
+      -->
+      <section class="banda-asistencia" aria-labelledby="titulo-clase">
+        <div class="banda-asistencia__fila">
+          <h2 id="titulo-clase" class="banda-asistencia__titulo" tabindex="-1">La clase</h2>
+          <p class="clase-meta">
+            <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
+            <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+          </p>
+          <ul class="contadores" aria-label="Resumen de la asistencia">
+            <li>Presentes: {{ clase.presentes ?? 0 }}</li>
+            <li>Ausentes: {{ clase.ausentes ?? 0 }}</li>
+            <li>Sin resolver: {{ clase.sinResolver ?? 0 }}</li>
+            <li>Lugares: {{ clase.ocupados ?? 0 }} de {{ clase.capacidadEfectiva ?? '—' }}</li>
+            <li>En espera: {{ clase.enEspera ?? 0 }}</li>
+          </ul>
+          @if (puedeGestionarClase()) {
+            <div class="acciones">
+              @if (clase.estado === 'PROGRAMADA') {
+                <button type="button" class="boton" [disabled]="enviando()" (click)="iniciar()">
+                  Iniciar clase
+                </button>
+              }
+              @if (clase.estado === 'EN_CURSO' && puedeCerrarClase()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando() || pendientes().length > 0"
+                  aria-describedby="ayuda-cierre"
+                  (click)="cerrar()"
+                >
+                  Cerrar clase
+                </button>
+              }
+            </div>
+          }
+        </div>
 
         @if (clase.estado === 'PROGRAMADA') {
           <p class="ayuda">La lista se toma con la clase en curso: iniciala para empezar.</p>
@@ -67,32 +93,13 @@
             resultado anterior queda en el historial.
           </p>
         }
-
-        @if (puedeGestionarClase()) {
-          <div class="acciones">
-            @if (clase.estado === 'PROGRAMADA') {
-              <button type="button" class="boton" [disabled]="enviando()" (click)="iniciar()">
-                Iniciar clase
-              </button>
+        @if (puedeGestionarClase() && clase.estado === 'EN_CURSO' && puedeCerrarClase()) {
+          <p id="ayuda-cierre" class="ayuda">
+            Al cerrar, quienes tenian lugar y nadie marco quedan ausentes.
+            @if (pendientes().length > 0) {
+              Guarda o descarta los cambios antes de cerrar.
             }
-            @if (clase.estado === 'EN_CURSO' && puedeCerrarClase()) {
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="enviando() || pendientes().length > 0"
-                aria-describedby="ayuda-cierre"
-                (click)="cerrar()"
-              >
-                Cerrar clase
-              </button>
-              <p id="ayuda-cierre" class="ayuda">
-                Al cerrar, quienes tenian lugar y nadie marco quedan ausentes.
-                @if (pendientes().length > 0) {
-                  Guarda o descarta los cambios antes de cerrar.
-                }
-              </p>
-            }
-          </div>
+          </p>
         }
       </section>
 
@@ -148,7 +155,19 @@
         }
       </div>
       <section class="tarjeta" aria-labelledby="titulo-participantes">
-        <h2 id="titulo-participantes" tabindex="-1">Participantes</h2>
+        <div class="titulo-con-acciones">
+          <h2 id="titulo-participantes" tabindex="-1">Participantes</h2>
+          @if (participantes().length > 0 && admite() && puedeMarcar()) {
+            <button
+              type="button"
+              class="boton boton--secundario boton--chico"
+              [disabled]="enviando()"
+              (click)="presentesLosSinMarcar()"
+            >
+              Marcar presentes a los sin marcar
+            </button>
+          }
+        </div>
 
         <!-- El lote no se pudo guardar: arriba de la lista que se esta marcando (UX-12). -->
         @if (errorAccion(); as fallo) {
@@ -165,21 +184,11 @@
         }
 
         @if (participantes().length === 0) {
-          <p class="estado estado--vacio">La clase no tiene inscriptos.</p>
+          <app-estado-vacio
+            titulo="La clase no tiene inscriptos"
+            texto="Se inscribe desde el detalle de la clase."
+          />
         } @else {
-          @if (admite() && puedeMarcar()) {
-            <div class="acciones acciones--barra">
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="enviando()"
-                (click)="presentesLosSinMarcar()"
-              >
-                Marcar presentes a los sin marcar
-              </button>
-            </div>
-          }
-
           <div
             class="tabla-scroll"
             tabindex="0"
@@ -187,7 +196,7 @@
             aria-labelledby="titulo-tabla-participantes"
           >
             <table class="tabla">
-              <caption id="titulo-tabla-participantes">
+              <caption id="titulo-tabla-participantes" class="visualmente-oculto">
                 Participantes de la clase
               </caption>
               <thead>
@@ -198,7 +207,9 @@
                   @if (admite() && puedeMarcar()) {
                     <th scope="col">Marcar</th>
                   }
-                  <th scope="col"><span class="visualmente-oculto">Historial</span></th>
+                  <th scope="col" class="tabla__acciones">
+                    <span class="visualmente-oculto">Historial</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -294,11 +305,11 @@
                         }
                       </td>
                     }
-                    <td>
+                    <td class="tabla__acciones">
                       @if (p.asistencia?.id) {
                         <button
                           type="button"
-                          class="boton boton--secundario"
+                          class="boton boton--secundario boton--chico"
                           (click)="verHistorial(p)"
                         >
                           Historial
@@ -312,17 +323,18 @@
             </table>
           </div>
 
-          @if ((clase.totalPages ?? 1) > 1) {
-            @if (pendientes().length === 0) {
-              <app-paginacion
-                [paginaActual]="pagina()"
-                [totalPaginas]="clase.totalPages ?? 1"
-                etiqueta="Paginas de participantes"
-                (cambioDePagina)="irAPagina($event)"
-              />
-            } @else {
-              <p class="ayuda">Guarda o descarta los cambios para ver otra página.</p>
-            }
+          @if (pendientes().length === 0) {
+            <app-paginacion
+              [paginaActual]="pagina()"
+              [totalPaginas]="clase.totalPages ?? 1"
+              [total]="clase.totalElements ?? participantes().length"
+              [porPagina]="porPagina()"
+              etiqueta="Páginas de participantes"
+              (cambioDePagina)="irAPagina($event)"
+              (cambioDePorPagina)="cambiarPorPagina($event)"
+            />
+          } @else if ((clase.totalPages ?? 1) > 1) {
+            <p class="ayuda">Guarda o descarta los cambios para ver otra página.</p>
           }
 
           @if (admite() && puedeMarcar()) {

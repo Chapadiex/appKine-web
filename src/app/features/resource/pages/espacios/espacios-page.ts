@@ -20,7 +20,11 @@ import { EspaciosService } from '../../../../api/generated/api/espacios.service'
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateEspacioRequest } from '../../../../api/generated/model/update-espacio-request';
@@ -56,14 +60,6 @@ type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
-
-/**
- * Cuantos espacios se piden por pagina.
- *
- * <p>Por debajo del tope de 100 que el backend recorta. Una sede con mas de veinte boxes
- * existe, pero cada fila trae vigencia, estado y acciones: una tabla mas larga no se lee mejor.
- */
-const POR_PAGINA = 20;
 
 /**
  * Espacios y boxes de la sede activa (M04, AKINE-02.02).
@@ -116,6 +112,7 @@ const POR_PAGINA = 20;
     ConfirmacionConMotivo,
     PanelLateral,
     AccionesDeFila,
+    EstadoVacio,
   ],
   templateUrl: './espacios-page.html',
   styleUrl: '../../resource.css',
@@ -147,8 +144,26 @@ export class EspaciosPage {
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
+  /**
+   * Filas por pagina (UX-14): viaja como `size`. Las opciones del pie (10 a 100) quedan dentro del
+   * tope de 100 que el backend recorta.
+   */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
   /** Lo que se busca en el nombre del espacio (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
+
+  /** Hay busqueda o filtro fuera de su valor por defecto: el vacio es "no hay con esto". */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'ACTIVO',
+  );
+
+  /** Titulo del vacio filtrado: dice que fue lo que no encontro. */
+  protected readonly tituloSinResultados = computed(() => {
+    if (this.busqueda().trim() !== '') return 'Ningún espacio coincide con la búsqueda.';
+    if (this.filtro() === 'INACTIVO') return 'No hay espacios dados de baja en esta sede.';
+    return 'No hay espacios que mostrar con este filtro.';
+  });
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<CamposDeSort<ListEspaciosRequestParams['sort']>>(() =>
@@ -276,7 +291,7 @@ export class EspaciosPage {
         consultorioId,
         estado: this.filtro(),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -304,6 +319,19 @@ export class EspaciosPage {
     const elegido: FiltroEstado =
       valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
     this.filtro.set(elegido);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Vuelve la busqueda y el filtro a su valor por defecto ("Limpiar filtros"). */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtro.set('ACTIVO');
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera y recarga. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.recargarDesdeElPrincipio();
   }
 

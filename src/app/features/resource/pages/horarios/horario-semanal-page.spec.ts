@@ -172,6 +172,13 @@ describe('HorarioSemanalPage', () => {
     expect(fixture.nativeElement.querySelectorAll('.bloque--conflicto').length).toBe(0);
     expect(contenido).not.toContain('Este es el bloque con el que se pisa');
 
+    // UX-14: el profesional y su semana en una sola tarjeta, con la cuenta en la barra.
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelectorAll('section.tarjeta').length).toBe(1);
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toMatch(
+      /^\d+ bloques? cargados?$/,
+    );
+
     // El selector ofrece solo a quien puede tener horario en ESTA sede: ni la administrativa ni
     // el profesional acotado a la sede 99, cuyo alta terminaria siempre en 409.
     const opciones = [...fixture.nativeElement.querySelectorAll('#selector-profesional option')];

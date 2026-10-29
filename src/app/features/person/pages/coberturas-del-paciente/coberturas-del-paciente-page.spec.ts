@@ -130,7 +130,36 @@ describe('CoberturasDelPacientePage', () => {
   it('una lista vacía dice que se atiende como particular, que siempre esta disponible', async () => {
     const fixture = await montar([]);
 
-    expect(texto(fixture)).toContain('se atiende como particular');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('ninguna cobertura cargada');
+    expect(vacio?.textContent).toContain('se atiende como particular');
+  });
+
+  it('el historial sigue el patrón de UX-14: resultados en la barra, pie y vacío filtrado', async () => {
+    const fixture = await montar([OSDE]);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const historial = raiz.querySelector('section[aria-label="Historial de coberturas"]');
+
+    expect(historial?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 cobertura',
+    );
+    expect(historial?.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–1 de 1');
+    expect(historial?.querySelector('caption')).toBeNull();
+
+    const filtro = raiz.querySelector('#coberturas-filtro') as HTMLSelectElement;
+    filtro.value = 'INACTIVA';
+    filtro.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    responderListado(httpMock.expectOne(esListado()), []);
+    await estabilizar(fixture);
+
+    const vacio = historial?.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay coberturas con este filtro');
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    responderListado(httpMock.expectOne(esListado()), [OSDE]);
+    await estabilizar(fixture);
+    expect(historial?.querySelector('tbody tr')?.textContent).toContain('OSDE');
   });
 
   it('la credencial vencida se informa y no da de baja nada', async () => {

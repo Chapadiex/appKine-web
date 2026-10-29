@@ -26,14 +26,33 @@
   <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-listado-solicitudes">
-  <h2 id="titulo-listado-solicitudes">Pedidos de este centro</h2>
-
+<section class="tarjeta" aria-label="Pedidos de este centro">
   <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que el
-    estado va detras del embudo, sin campo basico.
+    Toolbar del listado (UX-14): la lista llega entera, asi que la busqueda por nombre o código es
+    local; el estado, que se pide al servidor, detras de "Filtros". El total, en la misma fila.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['pedido', 'pedidos']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="busqueda-solicitudes">Buscar pedidos</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="busqueda-solicitudes"
+          type="search"
+          placeholder="Buscar por nombre o código"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-solicitud">Mostrar</label>
       <select
@@ -78,10 +97,24 @@
       }
 
       @case ('listo') {
-        @if (solicitudes().length === 0) {
-          <p class="estado estado--vacio">
-            Este centro todavía no hizo ningún pedido con el filtro elegido.
-          </p>
+        @if (solicitudes().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Este centro todavía no hizo ningún pedido"
+            texto="Lo que falte en el catalogo comun se le pide a la plataforma desde acá."
+          >
+            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+              Hacer el primer pedido
+            </button>
+          </app-estado-vacio>
+        } @else if (tabla.total() === 0) {
+          <app-estado-vacio
+            titulo="No encontramos pedidos"
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -98,7 +131,15 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Concepto pedido</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Pedido el</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="fecha"
+                  >
+                    Pedido el
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                 </tr>
               </thead>
@@ -115,7 +156,7 @@
                       <p class="ayuda ayuda--fija">{{ solicitud.justificacion }}</p>
                     </th>
                     <td>{{ etiquetaDeTipo(solicitud) }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
                     </td>
                     <td>
@@ -136,15 +177,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} pedidos</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de pedidos"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de pedidos" />
         }
       }
     }
@@ -188,7 +221,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="solicitud-nombre">Nombre propuesto</label>
         <input
           id="solicitud-nombre"
@@ -220,7 +253,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="solicitud-codigo">Código propuesto (opcional)</label>
         <input
           id="solicitud-codigo"

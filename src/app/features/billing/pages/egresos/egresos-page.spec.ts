@@ -110,22 +110,26 @@ describe('EgresosPage', () => {
   });
 
   it('buscar por texto manda q al servidor y vuelve a la primera página', async () => {
-    const lleno = Array.from({ length: 51 }, (_, i) => ({ ...EGRESO, id: 100 + i }));
+    const lleno = Array.from({ length: 11 }, (_, i) => ({ ...EGRESO, id: 100 + i }));
     const fixture = await montar(lleno);
 
-    // 51 filas: se muestran 50 y hay pagina siguiente.
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(50);
-    boton(fixture, 'Siguiente').click();
+    // 11 filas con 10 por pagina (UX-14): se muestran 10, hay pagina siguiente y el total todavia
+    // no se sabe (el contrato no lo devuelve): no se inventa un contador.
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(10);
+    expect(resultados(fixture)).toBeNull();
+    paso(fixture, 'Página siguiente').click();
     const segunda = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
-    expect(segunda.request.params.get('desplazamiento')).toBe('50');
-    expect(segunda.request.params.get('limite')).toBe('51');
+    expect(segunda.request.params.get('desplazamiento')).toBe('10');
+    expect(segunda.request.params.get('limite')).toBe('11');
     segunda.flush([EGRESO]);
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Egresos 51 a 51');
-    expect(boton(fixture, 'Siguiente').disabled).toBe(true);
+    // En la ultima pagina el total ya se sabe: contador en la barra y pie estandar.
+    expect(resultados(fixture)).toBe('11 egresos');
+    expect(contenido(fixture)).toContain('Mostrando 11–11 de 11');
+    expect(paso(fixture, 'Página siguiente').disabled).toBe(true);
 
     // El envio queda a la vista: no hay que abrir los filtros avanzados para buscar por texto.
-    expect(boton(fixture, 'Buscar').closest('app-filtros')).toBeNull();
+    expect(boton(fixture, 'Buscar').closest('.filtros-barra__avanzados')).toBeNull();
     escribir(fixture, '#filtro-q', '  sintetica ');
     enviar(fixture, 0);
     const busqueda = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
@@ -133,7 +137,34 @@ describe('EgresosPage', () => {
     expect(busqueda.request.params.get('desplazamiento')).toBe('0');
     busqueda.flush([EGRESO]);
     await estabilizar(fixture);
-    expect(boton(fixture, 'Siguiente')).toBeUndefined();
+    expect(paso(fixture, 'Página siguiente')).toBeUndefined();
+    expect(resultados(fixture)).toBe('1 egreso');
+  });
+
+  it('cambiar las filas por página vuelve a pedir desde la primera con ese límite', async () => {
+    const fixture = await montar(Array.from({ length: 11 }, (_, i) => ({ ...EGRESO, id: i + 1 })));
+    paso(fixture, 'Página siguiente').click();
+    httpMock.expectOne((p) => p.url === `${BASE}/egresos`).flush([EGRESO]);
+    await estabilizar(fixture);
+
+    const select = campo<HTMLSelectElement>(fixture, '.paginacion-pie__por-pagina select');
+    select.value = '25';
+    select.dispatchEvent(new Event('change'));
+    const pedido = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
+    expect(pedido.request.params.get('limite')).toBe('26');
+    expect(pedido.request.params.get('desplazamiento')).toBe('0');
+    pedido.flush([EGRESO]);
+  });
+
+  it('sin egresos en el mes invita a cargar el primero, en la misma tarjeta que la búsqueda', async () => {
+    const fixture = await montar([]);
+
+    const vacio = campo<HTMLElement>(fixture, 'app-estado-vacio');
+    expect(vacio.textContent).toContain('Este mes todavía no hay egresos');
+    // La accion del vacio no repite el nombre del boton de la cabecera (un solo "Registrar egreso").
+    expect(vacio.textContent).toContain('Cargar el primer egreso');
+    expect(vacio.closest('section.tarjeta')?.querySelector('app-filtros')).not.toBeNull();
+    expect(resultados(fixture)).toBe('0 egresos');
   });
 
   it('la fecha de registro es la del día de la sede, no la del navegador', async () => {
@@ -148,7 +179,6 @@ describe('EgresosPage', () => {
 
   it('filtrar manda estado, categoría y periodo al servidor', async () => {
     const fixture = await montar([]);
-    expect(contenido(fixture)).toContain('No hay egresos con esos filtros');
 
     elegir(fixture, '#filtro-estado', 'BORRADOR');
     elegir(fixture, '#filtro-categoria', 'ALQUILER');
@@ -161,6 +191,19 @@ describe('EgresosPage', () => {
     expect(busqueda.request.params.get('desde')).toBe('2026-10-01');
     expect(busqueda.request.params.get('hasta')).toBe('2026-10-31');
     busqueda.flush([]);
+    await estabilizar(fixture);
+    expect(campo<HTMLElement>(fixture, 'app-estado-vacio').textContent).toContain(
+      'No hay egresos con esos filtros',
+    );
+
+    // "Limpiar filtros" vuelve todo a su valor por defecto y busca de nuevo.
+    boton(fixture, 'Limpiar filtros').click();
+    const limpia = httpMock.expectOne((p) => p.url === `${BASE}/egresos`);
+    expect(limpia.request.params.get('estado')).toBeNull();
+    expect(limpia.request.params.get('categoria')).toBeNull();
+    expect(limpia.request.params.get('hasta')).toBeNull();
+    expect(limpia.request.params.get('desde')).toBe('2026-10-01');
+    limpia.flush([]);
   });
 
   it('cargar un egreso de un colaborador manda el contrato con clave y lleva al detalle', async () => {
@@ -347,6 +390,23 @@ describe('EgresosPage', () => {
     return Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
     ).find((b) => b.textContent?.trim() === texto)!;
+  }
+
+  /** Un paso del paginador por su nombre accesible ("Página siguiente", "Página 2"). */
+  function paso(fixture: ComponentFixture<EgresosPage>, nombre: string) {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        '.paginacion button',
+      ),
+    ).find((b) => b.textContent?.replace(/[‹›\s]+/g, ' ').trim() === nombre)!;
+  }
+
+  function resultados(fixture: ComponentFixture<EgresosPage>): string | null {
+    return (
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.filtros-barra__resultados')
+        ?.textContent?.trim() ?? null
+    );
   }
 
   /** El alta vive en un panel lateral que se abre desde el encabezado (refactor UX/UI). */

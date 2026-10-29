@@ -124,6 +124,12 @@ describe('HorarioEfectivoPage', () => {
     // La zona con la que se resolvio se rotula: un error de huso se ve, no se deduce.
     expect(contenido).toContain(ZONA);
     expect(contenido).toContain('2 de 2 días con atención');
+
+    // UX-14: la consulta y el resultado en la misma tarjeta, con el pie estándar.
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelectorAll('section.tarjeta').length).toBe(1);
+    expect(host.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(host.querySelectorAll('th[appOrdenable]').length).toBe(2);
   });
 
   it('una franja recortada dice que la recorto un cierre', async () => {
@@ -318,6 +324,10 @@ describe('HorarioEfectivoPage', () => {
     expect(contenido).toContain('Feriado');
     expect(contenido).toContain('Navidad');
     expect(contenido).toContain('y aun así se atiende');
+    // La fila dice una linea corta; el por que va detras del "?" (UX-14).
+    const feriado = fixture.nativeElement.querySelector('.dia-efectivo__feriado');
+    expect(feriado?.textContent).toContain('con atención');
+    expect(feriado?.querySelector('app-ayuda')).not.toBeNull();
     expect(contenido).toContain('09:00 a 13:00');
   });
 

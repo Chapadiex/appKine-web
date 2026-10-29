@@ -23,68 +23,74 @@
 </div>
 
 @if (perfil(); as perfil) {
-  <section class="tarjeta" aria-labelledby="titulo-datos-personales">
-    <h2 id="titulo-datos-personales">Datos personales</h2>
+  <!--
+    Cuatro bloques cortos en una grilla (UX-14): lado a lado cuando hay ancho, en vez de cuatro
+    tarjetas a todo el ancho para dos o tres datos cada una.
+  -->
+  <div class="perfil-bloques">
+    <section class="tarjeta" aria-labelledby="titulo-datos-personales">
+      <h2 id="titulo-datos-personales">Datos personales</h2>
 
-    <div class="perfil">
-      <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
-      <dl class="detalle">
-        <dt>Nombre</dt>
-        <dd>{{ perfil.firstName }}</dd>
+      <div class="perfil">
+        <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
+        <dl class="detalle">
+          <dt>Nombre</dt>
+          <dd>{{ perfil.firstName }}</dd>
 
-        <dt>Apellido</dt>
-        <dd>{{ perfil.lastName }}</dd>
+          <dt>Apellido</dt>
+          <dd>{{ perfil.lastName }}</dd>
 
-        <dt>Correo electrónico</dt>
-        <dd>{{ perfil.email }}</dd>
-      </dl>
-    </div>
-  </section>
-
-  @if (perfil.context; as contexto) {
-    <section class="tarjeta" aria-labelledby="titulo-donde-trabajas">
-      <h2 id="titulo-donde-trabajas">Dónde estás trabajando</h2>
-      <dl class="detalle">
-        <dt>Organización</dt>
-        <dd>{{ contexto.organizationName }}</dd>
-
-        <dt>Sede</dt>
-        <dd>{{ contexto.consultorioName }}</dd>
-
-        <dt>Rol</dt>
-        <dd>{{ contexto.roleLabel }}</dd>
-      </dl>
+          <dt>Correo electrónico</dt>
+          <dd>{{ perfil.email }}</dd>
+        </dl>
+      </div>
     </section>
-  }
 
-  <section class="tarjeta" aria-labelledby="titulo-contrasena">
-    <h2 id="titulo-contrasena">Contraseña</h2>
-    <p class="ayuda">
-      Te mandamos a {{ perfil.email }} un enlace para elegir una contraseña nueva.
-    </p>
+    @if (perfil.context; as contexto) {
+      <section class="tarjeta" aria-labelledby="titulo-donde-trabajas">
+        <h2 id="titulo-donde-trabajas">Dónde estás trabajando</h2>
+        <dl class="detalle">
+          <dt>Organización</dt>
+          <dd>{{ contexto.organizationName }}</dd>
 
-    <div class="acciones">
-      <button
-        type="button"
-        class="boton boton--secundario"
-        [disabled]="enviandoEnlace()"
-        (click)="pedirCambioDeContrasena()"
-      >
-        {{ enviandoEnlace() ? 'Enviando…' : 'Cambiar contraseña' }}
-      </button>
-    </div>
-  </section>
+          <dt>Sede</dt>
+          <dd>{{ contexto.consultorioName }}</dd>
 
-  <section class="tarjeta" aria-labelledby="titulo-sesiones">
-    <h2 id="titulo-sesiones">Sesiones abiertas</h2>
+          <dt>Rol</dt>
+          <dd>{{ contexto.roleLabel }}</dd>
+        </dl>
+      </section>
+    }
 
-    <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
-    <div class="acciones">
-      <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
-        Cerrar sesión en todos los dispositivos
-      </button>
-    </div>
-  </section>
+    <section class="tarjeta" aria-labelledby="titulo-contrasena">
+      <h2 id="titulo-contrasena">Contraseña</h2>
+      <p class="ayuda">
+        Te mandamos a {{ perfil.email }} un enlace para elegir una contraseña nueva.
+      </p>
+
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="enviandoEnlace()"
+          (click)="pedirCambioDeContrasena()"
+        >
+          {{ enviandoEnlace() ? 'Enviando…' : 'Cambiar contraseña' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-sesiones">
+      <h2 id="titulo-sesiones">Sesiones abiertas</h2>
+
+      <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
+          Cerrar sesión en todos los dispositivos
+        </button>
+      </div>
+    </section>
+  </div>
 }
 
 <!--

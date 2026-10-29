@@ -32,6 +32,7 @@ import { Tratamiento } from '../../../../api/generated/model/tratamiento';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -143,7 +144,7 @@ export function parametrosParaEnviar(
  * sesion, igual que el alta.
  */
 @Component({
-  imports: [Alerta, Ayuda],
+  imports: [Alerta, Ayuda, EstadoVacio],
   selector: 'app-tratamientos-de-sesion',
   templateUrl: './tratamientos-de-sesion.html',
   styleUrl: '../../atencion.css',

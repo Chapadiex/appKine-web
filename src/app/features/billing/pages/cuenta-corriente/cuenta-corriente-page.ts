@@ -46,7 +46,9 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
@@ -109,7 +111,9 @@ type EstadoCuenta =
     Ayuda,
     ColumnaOrdenable,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
@@ -204,7 +208,21 @@ export class CuentaCorrientePage {
    * saldo corrido—, asi que reordenar no cambia lo que dice ninguna fila; sin orden elegido queda
    * el del servidor.
    */
-  protected readonly tabla = tablaLocal(this.obligaciones, {
+  /** Busqueda por prestacion o concepto, sobre la lista completa (no viaja al servidor). */
+  protected readonly busqueda = signal('');
+  protected readonly obligacionesBuscadas = computed<readonly Obligacion[]>(() => {
+    const texto = normalizar(this.busqueda());
+    if (texto === '') {
+      return this.obligaciones();
+    }
+    return this.obligaciones().filter((obligacion) =>
+      normalizar(
+        `${obligacion.snapshotNombre ?? ''} ${conceptoEnPalabras(obligacion.concepto)}`,
+      ).includes(texto),
+    );
+  });
+
+  protected readonly tabla = tablaLocal(this.obligacionesBuscadas, {
     columnas: {
       devengada: (obligacion) => obligacion.devengadaEn ?? null,
       prestacion: (obligacion) => obligacion.snapshotNombre ?? null,
@@ -271,6 +289,16 @@ export class CuentaCorrientePage {
   protected readonly conSaldoAFavor = computed<readonly Cobro[]>(() =>
     (this.cobros() ?? []).filter((c) => !estaAnulado(c) && saldoAFavorEnCentavos(c) > 0),
   );
+
+  /** Cobros con saldo a favor: tabla interna chica, con orden y pie (UX-14). */
+  protected readonly tablaAFavor = tablaLocal(this.conSaldoAFavor, {
+    columnas: {
+      comprobante: (cobro) => cobro.comprobanteNumero ?? null,
+      cobrado: (cobro) => cobro.cobradoEn ?? null,
+      total: (cobro) => cobro.total ?? null,
+      saldo: (cobro) => cobro.saldoAFavor ?? null,
+    },
+  });
 
   /** El cobro cuyo saldo se esta imputando, o `null`. */
   protected readonly imputando = signal<Cobro | null>(null);
@@ -610,4 +638,13 @@ export class CuentaCorrientePage {
     const id = Number(this.personaId());
     return Number.isFinite(id) && id > 0 ? id : null;
   }
+}
+
+/** Para buscar sin distinguir mayusculas ni tildes. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }

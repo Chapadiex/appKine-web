@@ -429,7 +429,7 @@ describe('ConveniosDeLaSedePage', () => {
     );
   });
 
-  it('el filtro y la fecha recargan, y el vacío manda al catalogo de financiadores', async () => {
+  it('el filtro y la fecha recargan, y el vacío filtrado no se confunde con "no hay"', async () => {
     const fixture = await montar();
 
     // El filtro de estado es un filtro rapido en pantalla: no pide otra vez al servidor. Ninguno
@@ -437,8 +437,10 @@ describe('ConveniosDeLaSedePage', () => {
     filtrarPorEstado(fixture, 'Dados de baja');
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
-    expect(anfitrion.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos convenios');
+    expect(vacio?.textContent).not.toContain('se cobra como particular');
+    expect(vacio?.textContent).toContain('Ver todos');
 
     filtrarPorEstado(fixture, 'Activos');
     cambiarSelect(fixture, '#filtro-fecha-convenio', '2025-06-15');
@@ -454,6 +456,40 @@ describe('ConveniosDeLaSedePage', () => {
     // El convenio que hoy esta vencido, en junio de 2025 si resolvia. Eso es lo que explica por
     // que una prestacion de entonces se cobro lo que se cobro.
     expect(anfitrion.textContent).toContain('Activo y vigente');
+  });
+
+  it('sin ningún convenio explica que todo se cobra particular y manda a los financiadores', async () => {
+    const fixture = await montar(undefined, []);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+
+    expect(vacio?.textContent).toContain('Esta sede todavía no tiene convenios');
+    expect(vacio?.textContent).toContain('todo lo que se atienda en esta sede se cobra como');
+    expect(vacio?.textContent).toContain('Firmar el primero');
+    expect(vacio?.querySelector('a[href="/contratacion/financiadores"]')).not.toBeNull();
+  });
+
+  it('busca en pantalla y sigue el patrón de listado: resultados, pie y sin título repetido', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 convenios',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–2 de 2',
+    );
+
+    const buscador = anfitrion.querySelector<HTMLInputElement>('#buscar-convenio')!;
+    buscador.value = String(VIGENTE.codigo);
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+
+    buscador.value = 'no existe';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain('Limpiar filtros');
   });
 
   it('sin convenio:manage el listado se ve pero no aparece ninguna acción', async () => {
@@ -532,6 +568,7 @@ describe('ConveniosDeLaSedePage', () => {
 
   async function montar(
     concedidos: readonly string[] = [PERMISO_CONVENIO_MANAGE],
+    convenios: readonly unknown[] = [VIGENTE, VENCIDO],
   ): Promise<ComponentFixture<ConveniosDeLaSedePage>> {
     tenantContext.select({
       organizationId: 1,
@@ -546,7 +583,7 @@ describe('ConveniosDeLaSedePage', () => {
     const fixture = TestBed.createComponent(ConveniosDeLaSedePage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([VIGENTE, VENCIDO]);
+    httpMock.expectOne(esListado()).flush(convenios);
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === RUTA_FINANCIADORES)
       .flush([OSDE, SWISS]);

@@ -38,7 +38,13 @@
     Regla de filtros (plan §3.4): la busqueda por nombre, en el servidor (DP-45), a la vista;
     "Mostrar" es un filtro avanzado.
   -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? totalEspacios() : null"
+    [unidad]="['espacio', 'espacios']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="espacios-busqueda">Nombre del espacio</label>
       <div class="campo-busqueda">
@@ -104,14 +110,28 @@
       }
 
       @case ('listo') {
-        @if (espaciosDeLaPagina().length === 0) {
-          @if (busqueda().trim() !== '') {
-            <p class="estado estado--vacio">Ningún espacio coincide con la búsqueda.</p>
-          } @else if (filtro() === 'INACTIVO') {
-            <p class="estado estado--vacio">No hay espacios dados de baja en esta sede.</p>
-          } @else {
-            <p class="estado estado--vacio">No hay espacios que mostrar con este filtro.</p>
-          }
+        <!--
+          Estado vacio (UX-14): "todavia no hay" invita a dar de alta; "no hay con lo elegido"
+          invita a limpiar. Mezclarlos hace creer que se perdieron espacios.
+        -->
+        @if (espaciosDeLaPagina().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Todavía no hay espacios en esta sede"
+            texto="Dá de alta el primer box, gimnasio o sala para poder ofrecerlo en la agenda."
+          >
+            <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+              Dar de alta el primer espacio
+            </a>
+          </app-estado-vacio>
+        } @else if (espaciosDeLaPagina().length === 0) {
+          <app-estado-vacio
+            [titulo]="tituloSinResultados()"
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios de la sede">
             <table class="tabla">
@@ -121,8 +141,9 @@
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Espacio</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="tipo">Tipo</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="capacidad">Capacidad</th>
-                  <th scope="col">Vigencia</th>
+                  <th scope="col" class="tabla__col--secundaria">Vigencia</th>
                   <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -135,11 +156,12 @@
                   >
                     <th scope="row">
                       {{ espacio.name }}
-                      <span class="etiqueta">{{ etiquetaDeTipo(espacio.tipo) }}</span>
                       @if (espacio.notes) {
                         <p class="ayuda ayuda--fija">{{ espacio.notes }}</p>
                       }
                     </th>
+
+                    <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
 
                     <!--
                       Capacidad, NO ocupacion. No dice "libre" ni "disponible" a proposito: hoy
@@ -154,7 +176,7 @@
                       }
                     </td>
 
-                    <td>
+                    <td class="tabla__col--secundaria">
                       <ul class="lista-datos">
                         <li>Desde el {{ formatearInstante(espacio.validFrom) ?? '-' }}</li>
                         <li>
@@ -185,10 +207,14 @@
                         <!--
                           El motivo de por que un espacio ACTIVO no esta en servicio. Sin esto,
                           la fila es indistinguible de un box operativo y el usuario reporta un
-                          bug de la agenda que no existe.
+                          bug de la agenda que no existe. Va detras de un "?" al lado de la marca
+                          (UX-14): la marca ya dice que no esta en servicio y el parrafo de tres
+                          renglones inflaba la fila.
                         -->
                         @if (servicio.explicacion; as explicacion) {
-                          <p class="ayuda ayuda--fija">{{ explicacion }}</p>
+                          <app-ayuda [titulo]="servicio.resumen">
+                            <p>{{ explicacion }}</p>
+                          </app-ayuda>
                         }
                       }
 
@@ -234,15 +260,15 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ totalEspacios() }} espacios</span>
-            <akine-paginacion
-              etiqueta="Paginas de espacios"
-              [paginaActual]="paginaActual()"
-              [totalPaginas]="totalPaginas()"
-              (cambioDePagina)="irAPagina($event)"
-            />
-          </div>
+          <app-paginacion
+            etiqueta="Páginas de espacios"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="totalEspacios()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
         }
       }
     }
@@ -276,7 +302,7 @@
           </app-alerta>
         }
 
-        <div class="campo campo--ancho">
+        <div class="campo campo--6">
           <label for="editar-espacio-name">Nombre del espacio</label>
           <input
             id="editar-espacio-name"
@@ -334,7 +360,7 @@
           </p>
         </div>
 
-        <div class="campo campo--ancho">
+        <div class="campo campo--12">
           <label for="editar-espacio-notes">
             Observación <span class="campo__opcional">(opcional)</span>
           </label>
@@ -352,7 +378,7 @@
 
         <h3 class="formulario__seccion">Vigencia</h3>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="editar-espacio-validFrom">En servicio desde</label>
           <input
             id="editar-espacio-validFrom"
@@ -362,7 +388,7 @@
           />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="editar-espacio-validUntil">En servicio hasta</label>
           <input
             id="editar-espacio-validUntil"
@@ -377,7 +403,7 @@
           </p>
         </div>
 
-        <div class="campo campo--ancho">
+        <div class="campo campo--12">
           <label class="opcion-casilla" for="editar-espacio-clear">
             <input
               id="editar-espacio-clear"

@@ -132,8 +132,9 @@
             }
 
             @if (activo()) {
-              <div class="fila-editable">
-                <div class="campo">
+              <!-- Grilla de 12 columnas (UX-14): el profesional, su rol y el boton en una fila. -->
+              <div class="grilla-12">
+                <div class="campo campo--6">
                   <label for="equipo-nuevo">Sumar un profesional</label>
                   <select
                     id="equipo-nuevo"
@@ -146,7 +147,7 @@
                     }
                   </select>
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label for="equipo-rol">Rol</label>
                   <select
                     id="equipo-rol"
@@ -158,14 +159,16 @@
                     }
                   </select>
                 </div>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="nuevoIntegrante() === null"
-                  (click)="sumar()"
-                >
-                  Sumar
-                </button>
+                <div class="campo campo--3 campo--accion">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="nuevoIntegrante() === null"
+                    (click)="sumar()"
+                  >
+                    Sumar
+                  </button>
+                </div>
               </div>
               <div class="acciones">
                 <button

@@ -1,0 +1,39 @@
+/* Encabezado ordenable. Sin encapsulacion; fuera de la carga inicial. */
+
+/*
+ * El boton ocupa el encabezado entero y hereda su tipografia (chica, mayusculas): se ve como el
+ * rotulo de siempre, con el icono del orden al lado. El icono sin orden va tenue; con orden, pleno.
+ */
+.tabla__orden {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: calc(-1 * var(--esp-2)) calc(-1 * var(--esp-3));
+  padding: var(--esp-2) var(--esp-3);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.tabla__orden:hover {
+  color: var(--color-texto-fuerte);
+  background: var(--color-superficie-sutil);
+}
+
+.tabla__icono-orden {
+  font-size: var(--tipo-sm);
+  opacity: 0.55;
+}
+
+.tabla__columna-ordenable[aria-sort] {
+  color: var(--color-texto-fuerte);
+}
+
+.tabla__columna-ordenable[aria-sort] .tabla__icono-orden {
+  opacity: 1;
+}

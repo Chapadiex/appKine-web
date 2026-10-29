@@ -91,6 +91,11 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
     expect(anfitrion.textContent).toContain('Kinesiologia respiratoria');
     expect(anfitrion.textContent).toContain('Bienestar');
+    // Patron de listado (UX-14): conteo en la toolbar y pie estandar.
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 servicios',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
 
     expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
@@ -146,8 +151,26 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No hay servicios que coincidan',
+    // Vacio filtrado (UX-14): no es "no hay ninguno", y ofrece limpiar.
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos servicios');
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '0 servicios',
+    );
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === RUTA_SERVICIOS && peticion.params.get('estado') === 'ACTIVO',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Todavía no hay servicios activos en el catálogo',
     );
   });
 
@@ -168,7 +191,7 @@ describe('CatalogoDeServiciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No hay servicios que coincidan',
+      'No encontramos servicios',
     );
   });
 

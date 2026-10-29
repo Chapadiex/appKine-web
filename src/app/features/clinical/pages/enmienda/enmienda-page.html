@@ -123,8 +123,9 @@
   <section class="tarjeta" aria-labelledby="titulo-enmienda-evaluacion">
     <h2 id="titulo-enmienda-evaluacion">Evaluación</h2>
 
-    <div class="grilla-campos grilla-campos--dos">
-      <div class="campo">
+    <!-- Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. -->
+    <div class="grilla-12">
+      <div class="campo campo--2">
         <label for="enmienda-dolor">Dolor (0 a 10)</label>
         <select
           id="enmienda-dolor"
@@ -138,7 +139,7 @@
         </select>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="enmienda-zona">Zona del dolor</label>
         <input
           id="enmienda-zona"
@@ -149,7 +150,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-lateralidad">Lateralidad</label>
         <select
           id="enmienda-lateralidad"
@@ -164,7 +165,7 @@
         </select>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-evolucion">Evolución</label>
         <select id="enmienda-evolucion" (change)="evolucion.set($any($event.target).value)">
           <option value="" [selected]="evolucion() === ''">Sin cargar</option>
@@ -175,21 +176,19 @@
           }
         </select>
       </div>
-    </div>
 
-    <div class="campo">
-      <label for="enmienda-objetivo">Objetivo de la sesión</label>
-      <input
-        id="enmienda-objetivo"
-        type="text"
-        maxlength="500"
-        [value]="objetivoSesion()"
-        (input)="objetivoSesion.set($any($event.target).value)"
-      />
-    </div>
+      <div class="campo campo--12">
+        <label for="enmienda-objetivo">Objetivo de la sesión</label>
+        <input
+          id="enmienda-objetivo"
+          type="text"
+          maxlength="500"
+          [value]="objetivoSesion()"
+          (input)="objetivoSesion.set($any($event.target).value)"
+        />
+      </div>
 
-    <div class="grilla-campos grilla-campos--dos">
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="enmienda-motivo-clinico">Motivo clínico</label>
         <input
           id="enmienda-motivo-clinico"
@@ -200,7 +199,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="enmienda-limitacion">Limitación funcional</label>
         <input
           id="enmienda-limitacion"
@@ -216,37 +215,37 @@
   <section class="tarjeta" aria-labelledby="titulo-enmienda-cierre">
     <h2 id="titulo-enmienda-cierre">Resultado de la sesión</h2>
 
-    <div class="campo">
-      <label for="enmienda-nota">Nota de cierre</label>
-      <textarea
-        id="enmienda-nota"
-        rows="4"
-        maxlength="2000"
-        [attr.aria-describedby]="
-          campoDelAviso() === 'nota' && notaDeCierre().trim() === ''
-            ? 'enmienda-nota-error ayuda-enmienda-nota'
-            : 'ayuda-enmienda-nota'
-        "
-        [attr.aria-invalid]="
-          campoDelAviso() === 'nota' && notaDeCierre().trim() === '' ? 'true' : null
-        "
-        [value]="notaDeCierre()"
-        (input)="notaDeCierre.set($any($event.target).value)"
-      ></textarea>
-      @if (campoDelAviso() === 'nota' && notaDeCierre().trim() === '') {
-        <p class="campo__error" id="enmienda-nota-error">{{ aviso() }}</p>
-      }
-      <p id="ayuda-enmienda-nota" class="ayuda">
-        @if (presente()) {
-          El paciente vino: la nota no puede quedar vacía.
-        } @else {
-          El paciente no vino.
-        }
-      </p>
-    </div>
-
-    <div class="grilla-campos grilla-campos--dos">
+    <div class="grilla-12">
       <div class="campo">
+        <label for="enmienda-nota">Nota de cierre</label>
+        <textarea
+          id="enmienda-nota"
+          rows="4"
+          maxlength="2000"
+          [attr.aria-describedby]="
+            campoDelAviso() === 'nota' && notaDeCierre().trim() === ''
+              ? 'enmienda-nota-error ayuda-enmienda-nota'
+              : 'ayuda-enmienda-nota'
+          "
+          [attr.aria-invalid]="
+            campoDelAviso() === 'nota' && notaDeCierre().trim() === '' ? 'true' : null
+          "
+          [value]="notaDeCierre()"
+          (input)="notaDeCierre.set($any($event.target).value)"
+        ></textarea>
+        @if (campoDelAviso() === 'nota' && notaDeCierre().trim() === '') {
+          <p class="campo__error" id="enmienda-nota-error">{{ aviso() }}</p>
+        }
+        <p id="ayuda-enmienda-nota" class="ayuda">
+          @if (presente()) {
+            El paciente vino: la nota no puede quedar vacía.
+          } @else {
+            El paciente no vino.
+          }
+        </p>
+      </div>
+
+      <div class="campo campo--6">
         <label for="enmienda-respuesta">Respuesta al tratamiento</label>
         <input
           id="enmienda-respuesta"
@@ -257,7 +256,7 @@
         />
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="enmienda-tolerancia">Tolerancia</label>
         <select id="enmienda-tolerancia" (change)="tolerancia.set($any($event.target).value)">
           <option value="" [selected]="tolerancia() === ''">Sin cargar</option>
@@ -280,7 +279,7 @@
         ></textarea>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="enmienda-conducta">Próxima conducta</label>
         <select id="enmienda-conducta" (change)="proximaConducta.set($any($event.target).value)">
           <option value="" [selected]="proximaConducta() === ''">Sin cargar</option>
@@ -328,8 +327,8 @@
             </label>
 
             @if (!t.quitado) {
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
+              <div class="grilla-12">
+                <div class="campo campo--4">
                   <label [for]="'enmienda-tecnica-' + i">Técnica de {{ t.practicaNombre }}</label>
                   <input
                     [id]="'enmienda-tecnica-' + i"
@@ -339,7 +338,7 @@
                     (input)="cambiarTratamiento(i, { tecnica: $any($event.target).value })"
                   />
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label [for]="'enmienda-zona-trat-' + i">Zona de {{ t.practicaNombre }}</label>
                   <input
                     [id]="'enmienda-zona-trat-' + i"
@@ -349,7 +348,7 @@
                     (input)="cambiarTratamiento(i, { zona: $any($event.target).value })"
                   />
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label [for]="'enmienda-lado-trat-' + i">Lado de {{ t.practicaNombre }}</label>
                   <select
                     [id]="'enmienda-lado-trat-' + i"
@@ -363,7 +362,7 @@
                     }
                   </select>
                 </div>
-                <div class="campo">
+                <div class="campo campo--2">
                   <label [for]="'enmienda-duracion-' + i">
                     Duración de {{ t.practicaNombre }}, en minutos
                   </label>
@@ -377,9 +376,9 @@
                 </div>
               </div>
               @for (p of t.parametros; track $index; let j = $index) {
-                <div class="parametro">
+                <div class="parametro grilla-12">
                   @if (p.tipoDato === TipoParametro.BOOLEANO) {
-                    <div class="campo">
+                    <div class="campo campo--4">
                       <label [for]="'enmienda-param-' + i + '-' + j">{{ p.clave }}</label>
                       <select
                         [id]="'enmienda-param-' + i + '-' + j"
@@ -398,7 +397,7 @@
                       </select>
                     </div>
                   } @else {
-                    <div class="campo">
+                    <div class="campo campo--4">
                       <label [for]="'enmienda-param-' + i + '-' + j">
                         {{ p.clave }}{{ p.unidad ? ' (' + p.unidad + ')' : '' }}
                       </label>
@@ -455,7 +454,7 @@
       }
 
       @for (m of mediciones(); track m.definicionId + '-' + m.lateralidad; let i = $index) {
-        <fieldset class="grupo">
+        <fieldset class="grupo-plano grilla-12">
           <legend>{{ m.nombre }} ({{ ladoLegible(m.lateralidad) }})</legend>
           <label class="opcion-radio">
             <input
@@ -467,7 +466,7 @@
           </label>
           @if (!m.quitada) {
             @if (m.tipo === 'BOOLEANO') {
-              <div class="campo">
+              <div class="campo campo--3">
                 <label [for]="'enmienda-medicion-' + i">Presente</label>
                 <select
                   [id]="'enmienda-medicion-' + i"
@@ -486,7 +485,7 @@
                 </select>
               </div>
             } @else {
-              <div class="campo">
+              <div class="campo campo--3">
                 <label [for]="'enmienda-medicion-' + i">
                   Valor{{ m.unidad ? ' en ' + m.unidad : '' }}
                 </label>

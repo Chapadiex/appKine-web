@@ -246,7 +246,26 @@ describe('MedicionesDeSesion', () => {
   it('sin sesión anterior lo dice, en vez de dejar la columna vacía sin explicacion', async () => {
     const fixture = await montar(true, { medidas: [] });
     expect(texto(fixture)).toContain('estas son las primeras mediciones');
-    expect(texto(fixture)).toContain('Todavía no hay mediciones');
+    const vacio = fixture.nativeElement.querySelector('app-estado-vacio') as HTMLElement | null;
+    expect(vacio?.textContent).toContain('Todavía no hay mediciones');
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+  });
+
+  it('la tabla ordena por medida, lleva el pie estandar y el formulario va en la grilla de 12 (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–3 de 3',
+    );
+
+    const medida = raiz.querySelector('th.tabla__columna-ordenable button') as HTMLButtonElement;
+    medida.click();
+    medida.click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('descending');
+    expect(raiz.querySelector('tbody tr th')?.textContent).toContain('Fuerza');
+
+    expect(raiz.querySelector('#medicion-definicion')?.closest('.grilla-12')).not.toBeNull();
   });
 
   it(

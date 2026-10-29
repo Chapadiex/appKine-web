@@ -6,7 +6,11 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { NotificacionesService } from '../../../../api/generated/api/notificaciones.service';
 import { NotificationPageResponse } from '../../../../api/generated/model/notification-page-response';
 import { NotificationResponse } from '../../../../api/generated/model/notification-response';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
@@ -37,8 +41,6 @@ import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListNotificationsRequestParams } from '../../../../api/generated/api/notificaciones.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
-const POR_PAGINA = 20;
-
 /**
  * Notificaciones de la organizacion que no salieron, con reintento por fila (RF-M26-005).
  *
@@ -67,6 +69,7 @@ const POR_PAGINA = 20;
     ColumnaOrdenable,
     RouterLink,
     Paginacion,
+    EstadoVacio,
     Alerta,
   ],
   templateUrl: './notificaciones-page.html',
@@ -98,6 +101,9 @@ export class NotificacionesPage {
   protected readonly faltaContexto = this.vista.faltaContexto;
 
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** El tipo de notificacion, o el destinatario exacto (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
@@ -153,6 +159,19 @@ export class NotificacionesPage {
 
   protected buscar(texto: string): void {
     this.busqueda.set(texto);
+    this.consultarDesdeElPrincipio();
+  }
+
+  /** "Limpiar filtros": sin busqueda y con los estados de entrada (Fallida + Agotada). */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.elegidos.set(new Set(ESTADOS_POR_DEFECTO));
+    this.consultarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.consultarDesdeElPrincipio();
   }
 
@@ -217,7 +236,7 @@ export class NotificacionesPage {
         orgId,
         estado: ESTADOS_FILTRABLES.filter((estado) => this.elegidos().has(estado)),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })

@@ -70,6 +70,8 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
@@ -131,6 +133,8 @@ interface DiaConBloques {
     PermisoDirective,
     ConfirmacionConMotivo,
     ImpactoPrevioPanel,
+    EstadoVacio,
+    Filtros,
   ],
   templateUrl: './horario-semanal-page.html',
   styleUrl: '../../resource.css',

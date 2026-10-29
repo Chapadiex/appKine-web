@@ -608,6 +608,22 @@ a.enlace {
   overflow-x: auto;
 }
 
+/*
+ * Alto de la tabla (UX-14): usa el alto disponible y, si las filas no entran, se desplaza ELLA
+ * con el encabezado fijo -no la pagina entera-, asi el paginado sigue a la vista. Con 10 filas por
+ * pagina casi nunca llega al tope.
+ */
+.tabla-scroll {
+  max-height: max(18rem, calc(100dvh - var(--alto-barra-superior) - 15rem));
+  overflow-y: auto;
+}
+
+.tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 /* Foco visible en la region desplazable: si se puede tabular hasta ella, tiene que verse
    que esta enfocada (WCAG 2.4.7). */
 .tabla-scroll:focus-visible {
@@ -786,20 +802,6 @@ a.enlace {
 
 /* --- Paginacion ----------------------------------------------------------------------- */
 
-.paginacion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-5);
-  margin-top: var(--esp-6);
-}
-
-/* El indicador "Pagina N de M" es un elemento flex, asi que el `margin-bottom` de `.ayuda`
-   si le aplica: sin esto queda medio renglon mas arriba que los dos botones. */
-.paginacion .ayuda {
-  margin: 0;
-}
-
 /* --- Responsive ----------------------------------------------------------------------- */
 
 /* Layout fluido: recepcion usa desktop, profesionales usan tablet. */
@@ -891,97 +893,6 @@ a.enlace {
 
 /* --- Barra de filtros (UX-01) ---------------------------------------------------------- */
 
-/*
- * El campo basico ocupa la fila y el boton del embudo va pegado a su derecha, a la altura del
- * control (alineados abajo: el campo tiene label arriba). El panel avanzado se despliega debajo,
- * con los campos en fila mientras entren.
- */
-.filtros-barra {
-  display: block;
-  margin-bottom: var(--esp-6);
-}
-
-.filtros-barra__fila {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--esp-4);
-}
-
-.filtros-barra__principal {
-  flex: 1;
-  min-width: 0;
-  /* A todo el ancho de una tabla de 96rem la busqueda pierde su forma de campo. */
-  max-width: 36rem;
-}
-
-.filtros-barra__principal .campo {
-  margin-bottom: 0;
-}
-
-/* Del alto de un control (2.6rem), con contorno de control (3:1, WCAG 1.4.11). */
-.filtros-barra__boton {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--esp-3);
-  flex-shrink: 0;
-  min-width: 2.75rem;
-  height: 2.75rem;
-  padding: 0 var(--esp-4);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  color: var(--color-texto);
-  font-size: var(--tipo-lg);
-  cursor: pointer;
-}
-
-.filtros-barra__boton--con-texto {
-  padding: 0 var(--esp-6);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
-}
-
-.filtros-barra__boton:hover,
-.filtros-barra__boton[aria-expanded='true'] {
-  background: var(--color-superficie-sutil);
-}
-
-/* Cuantos filtros avanzados estan aplicados: el estado no se esconde con el panel. */
-.filtros-barra__contador {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 var(--esp-2);
-  border-radius: var(--radio-pastilla);
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-semi);
-}
-
-.filtros-barra__avanzados {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-6);
-  margin-top: var(--esp-6);
-  padding: var(--esp-6);
-  border-radius: var(--radio-lg);
-  background: var(--color-superficie-sutil);
-}
-
-.filtros-barra__avanzados[hidden] {
-  display: none;
-}
-
-.filtros-barra__avanzados > .campo {
-  flex: 1 1 14rem;
-  margin-bottom: 0;
-}
-
 /* Campo de busqueda: lupa adentro, a la izquierda. La lupa es decorativa; el nombre lo da el label. */
 .campo-busqueda {
   position: relative;
@@ -1000,46 +911,6 @@ a.enlace {
   padding-left: 2.5rem;
 }
 
-/* --- Tabla: columnas ordenables y pie (UX-01) ------------------------------------------- */
-
-/*
- * El boton ocupa el encabezado entero y hereda su tipografia (chica, mayusculas): se ve como el
- * rotulo de siempre, con el icono del orden al lado. El icono sin orden va tenue; con orden, pleno.
- */
-.tabla__orden {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-2);
-  margin: calc(-1 * var(--esp-2)) calc(-1 * var(--esp-3));
-  padding: var(--esp-2) var(--esp-3);
-  border: 0;
-  border-radius: var(--radio-sm);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-}
-
-.tabla__orden:hover {
-  color: var(--color-texto-fuerte);
-  background: var(--color-superficie-sutil);
-}
-
-.tabla__icono-orden {
-  font-size: var(--tipo-sm);
-  opacity: 0.55;
-}
-
-.tabla__columna-ordenable[aria-sort] {
-  color: var(--color-texto-fuerte);
-}
-
-.tabla__columna-ordenable[aria-sort] .tabla__icono-orden {
-  opacity: 1;
-}
-
 /* Debajo de la tabla: cuantos hay a la izquierda, el paginador a la derecha. */
 .tabla-pie {
   display: flex;
@@ -1056,20 +927,9 @@ a.enlace {
   margin: 0;
 }
 
-/* Grilla de campos: dos columnas que bajan a una en pantallas angostas (plan §3.3). */
+/* Grilla de campos dentro de un formulario: la misma grilla de 12 columnas (UX-14). */
 .grilla-campos {
-  display: grid;
-  gap: var(--esp-5);
-}
-
-.grilla-campos--dos {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-@media (max-width: 30rem) {
-  .grilla-campos--dos {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  gap: var(--esp-5) var(--esp-6);
 }
 
 .grilla-campos > .campo {
@@ -1185,17 +1045,94 @@ a.enlace {
  * contra el tope tambien al medir el ancho minimo, y un formulario dentro de una columna `1fr`
  * empujaba la pagina a 1.000 px en un telefono (`e2e/movil.spec.ts`, politica de enmienda).
  */
-form:not(.formulario--libre) {
+form:not(.formulario--libre),
+.grilla-12,
+.grilla-campos,
+form:not(.formulario--libre) fieldset {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: var(--esp-6);
   align-items: start;
 }
 
-form:not(.formulario--libre) > :not(.campo),
-form:not(.formulario--libre) > .campo:has(textarea),
-form:not(.formulario--libre) > .campo--ancho {
+/*
+ * Grilla de 12 columnas (UX-14). Cada campo ocupa lo que pide su dato: 3 columnas por defecto
+ * (cuatro por fila), 2 para fecha, hora o numero, 4 para un email, la fila entera para texto
+ * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--corto` = 2,
+ * `--medio` = 3, `--largo` = 6, `--ancho` = 12). Lo que no es un campo ocupa la fila entera.
+ *
+ * Responsive por el ancho del FORMULARIO (su propio contenedor), no de la ventana: en un panel
+ * lateral o una columna angosta cada campo duplica su ancho (dos por fila); en un telefono, uno.
+ */
+form:not(.formulario--libre),
+.grilla-12,
+.grilla-campos {
+  container-type: inline-size;
+}
+
+:is(form:not(.formulario--libre), .grilla-12, .grilla-campos, form:not(.formulario--libre) fieldset)
+  > * {
   grid-column: 1 / -1;
+}
+
+:is(form:not(.formulario--libre), .grilla-12, .grilla-campos, form:not(.formulario--libre) fieldset)
+  > .campo {
+  grid-column: span var(--ancho-campo, 3);
+}
+
+.campo:has(> input:is([type='date'], [type='time'], [type='number'], [type='month'])),
+.campo--2,
+.campo--corto {
+  --ancho-campo: 2;
+}
+
+.campo--3,
+.campo--medio {
+  --ancho-campo: 3;
+}
+
+.campo:has(> input[type='email']),
+.campo--4 {
+  --ancho-campo: 4;
+}
+
+.campo--6,
+.campo--largo {
+  --ancho-campo: 6;
+}
+
+.campo--8 {
+  --ancho-campo: 8;
+}
+
+.campo:has(textarea),
+.campo--12,
+.campo--ancho {
+  --ancho-campo: 12;
+}
+
+@container (max-width: 52rem) {
+  :is(
+      form:not(.formulario--libre),
+      .grilla-12,
+      .grilla-campos,
+      form:not(.formulario--libre) fieldset
+    )
+    > .campo {
+    grid-column: span min(12, calc(var(--ancho-campo, 3) * 2));
+  }
+}
+
+@container (max-width: 30rem) {
+  :is(
+      form:not(.formulario--libre),
+      .grilla-12,
+      .grilla-campos,
+      form:not(.formulario--libre) fieldset
+    )
+    > .campo {
+    grid-column: 1 / -1;
+  }
 }
 
 /*
@@ -1283,10 +1220,6 @@ form > .acciones {
   font-weight: var(--peso-semi);
 }
 
-.grilla-campos > .campo--ancho {
-  grid-column: 1 / -1;
-}
-
 /* La fila de la tabla cuyo panel lateral esta abierto: se sigue viendo que se edita. */
 .fila--seleccionada > * {
   background: var(--color-acento-claro);
@@ -1326,4 +1259,11 @@ form > .acciones {
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-normal);
+}
+
+/* Tabla responsive (UX-14): en tablet se esconden las columnas secundarias; el dato sigue en el detalle. */
+@media (max-width: 64rem) {
+  .tabla__col--secundaria {
+    display: none;
+  }
 }

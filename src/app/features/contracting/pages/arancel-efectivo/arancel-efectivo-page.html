@@ -31,7 +31,7 @@
     <h2 id="titulo-consulta">Datos de la consulta</h2>
 
     <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="consulta-financiador">Financiador</label>
         <select
           id="consulta-financiador"
@@ -57,7 +57,7 @@
         <p class="ayuda ayuda--fija" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="consulta-plan">Plan</label>
         <select
           id="consulta-plan"
@@ -85,7 +85,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="consulta-practica">Práctica</label>
         <select
           id="consulta-practica"
@@ -105,7 +105,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="consulta-oferta">Oferta (opcional)</label>
         <select
           id="consulta-oferta"
@@ -158,6 +158,14 @@
           </p>
         }
       </app-alerta>
+    }
+
+    @if (!resultado() && !error()) {
+      <!-- Antes de la primera consulta la columna de la respuesta dice que va a aparecer ahi. -->
+      <app-estado-vacio
+        titulo="Todavía no consultaste"
+        texto="Elegí financiador, plan y práctica: el precio y de dónde sale aparecen acá."
+      />
     }
 
     @if (resultado(); as respuesta) {

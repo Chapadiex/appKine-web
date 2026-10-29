@@ -118,6 +118,17 @@ describe('EnmiendaPage', () => {
     expect(texto(fixture)).toContain('Partís de la versión 2');
   });
 
+  it('la evaluación va en una sola grilla de 12, con el dolor angosto y los textos anchos (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const dolor = raiz.querySelector('#enmienda-dolor')?.closest('.campo');
+    const motivo = raiz.querySelector('#enmienda-motivo-clinico')?.closest('.campo');
+    expect(dolor?.classList).toContain('campo--2');
+    expect(motivo?.classList).toContain('campo--6');
+    expect(dolor?.parentElement).toBe(motivo?.parentElement);
+    expect(dolor?.parentElement?.classList).toContain('grilla-12');
+  });
+
   it('sin motivo no manda nada y dice por que', async () => {
     const fixture = await montar();
     apretar(fixture, 'Registrar la enmienda');

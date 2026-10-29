@@ -20,7 +20,14 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
@@ -46,7 +53,7 @@ import {
   renovacionApagadaPorAutorizante,
 } from '../../models/etiquetas-de-pases';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
-import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
+import { PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -110,6 +117,10 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PieDeTabla,
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
@@ -154,12 +165,20 @@ export class PasesDePersonaPage {
     actual: 'pases',
   }));
   protected readonly pases = signal<readonly Pase[] | null>(null);
+  /** Busqueda por nombre del pase, sobre la lista completa de la persona. */
+  protected readonly busqueda = signal('');
   /**
    * Orden y paginado de la lista completa (plan §3.4). 100 por pagina y no 20: el enlace "renovado
    * desde el periodo…" salta a otra fila de la tabla, y tiene que estar en la misma pagina.
    */
   protected readonly tabla = tablaLocal(
-    computed(() => this.pases() ?? []),
+    computed(() => {
+      const texto = this.busqueda().trim().toLowerCase();
+      const todos = this.pases() ?? [];
+      return texto === ''
+        ? todos
+        : todos.filter((pase) => (pase.nombre ?? '').toLowerCase().includes(texto));
+    }),
     {
       porPagina: 100,
       columnas: {
@@ -394,22 +413,25 @@ export class PasesDePersonaPage {
     }
   }
 
-  /** "Movimientos 21 a 40 de 45": la posicion dicha con texto, no solo con los botones. */
-  protected rangoDeMovimientos(pagina: PaginaDeMovimientosDePase): string {
-    const total = pagina.totalElements ?? 0;
-    const cantidad = (pagina.content ?? []).length;
+  /** Filas por pagina del ledger (UX-14): va como `size`; cambiarla vuelve a la primera. */
+  protected readonly movimientosPorPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  protected cambiarMovimientosPorPagina(cantidad: number): void {
+    this.movimientosPorPagina.set(cantidad);
+    this.irAPaginaDeMovimientos(0);
+  }
+
+  /**
+   * En que orden se lee el ledger, dicho con texto: sin orden elegido va del mas viejo al mas
+   * nuevo, que es como se lee el saldo. La posicion ("Mostrando 1–10 de 45") la dice el pie.
+   */
+  protected ordenDeLosMovimientos(): string {
     const sort = this.ordenDeMovimientos.sort();
-    const orden =
-      sort === undefined || sort === 'ocurridoEn,asc'
-        ? ', del mas viejo al mas nuevo.'
-        : sort === 'ocurridoEn,desc'
-          ? ', del mas nuevo al mas viejo.'
-          : '.';
-    if (total <= cantidad) {
-      return `${total === 1 ? '1 movimiento' : `${total} movimientos`}${orden}`;
-    }
-    const desde = (pagina.page ?? 0) * (pagina.size ?? MOVIMIENTOS_POR_PAGINA) + 1;
-    return `Movimientos ${desde} a ${desde + cantidad - 1} de ${total}${orden}`;
+    return sort === undefined || sort === 'ocurridoEn,asc'
+      ? 'Del mas viejo al mas nuevo.'
+      : sort === 'ocurridoEn,desc'
+        ? 'Del mas nuevo al mas viejo.'
+        : '';
   }
 
   /**
@@ -434,32 +456,34 @@ export class PasesDePersonaPage {
       error: null,
     });
     const sort = this.ordenDeMovimientos.sort();
-    this.api.movimientos(ids.consultorioId, paseId, numero, sort).subscribe({
-      next: (pagina) => {
-        if (pedido !== this.pedidoMovimientos) {
-          return;
-        }
-        const ultima = Math.max((pagina.totalPages ?? 0) - 1, 0);
-        const fueraDeRango = numero > 0 && (pagina.content ?? []).length === 0;
-        if ((alFinal || fueraDeRango) && numero !== ultima) {
-          this.cargarMovimientos(pase, ultima);
-          return;
-        }
-        this.detalle.set({ paseId, pase, numero, pagina, cargando: false, error: null });
-      },
-      error: (error: unknown) => {
-        if (pedido === this.pedidoMovimientos) {
-          this.detalle.set({
-            paseId,
-            pase,
-            numero,
-            pagina: null,
-            cargando: false,
-            error: traducirErrorPase(error),
-          });
-        }
-      },
-    });
+    this.api
+      .movimientos(ids.consultorioId, paseId, numero, sort, this.movimientosPorPagina())
+      .subscribe({
+        next: (pagina) => {
+          if (pedido !== this.pedidoMovimientos) {
+            return;
+          }
+          const ultima = Math.max((pagina.totalPages ?? 0) - 1, 0);
+          const fueraDeRango = numero > 0 && (pagina.content ?? []).length === 0;
+          if ((alFinal || fueraDeRango) && numero !== ultima) {
+            this.cargarMovimientos(pase, ultima);
+            return;
+          }
+          this.detalle.set({ paseId, pase, numero, pagina, cargando: false, error: null });
+        },
+        error: (error: unknown) => {
+          if (pedido === this.pedidoMovimientos) {
+            this.detalle.set({
+              paseId,
+              pase,
+              numero,
+              pagina: null,
+              cargando: false,
+              error: traducirErrorPase(error),
+            });
+          }
+        },
+      });
   }
 
   /** Despues de una escritura, el ledger abierto se relee en la pagina del movimiento nuevo. */
@@ -469,7 +493,7 @@ export class PasesDePersonaPage {
       return;
     }
     const total = (actual.pagina?.totalElements ?? 0) + 1;
-    const tamano = actual.pagina?.size ?? MOVIMIENTOS_POR_PAGINA;
+    const tamano = actual.pagina?.size ?? this.movimientosPorPagina();
     // El movimiento nuevo queda al final del orden cronologico: se vuelve a ese orden para verlo.
     this.ordenDeMovimientos.reiniciar();
     this.cargarMovimientos(pase, Math.floor((total - 1) / tamano), true);

@@ -21,7 +21,11 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RUTA_SELECTOR_CONTEXTO } from '../../../../core/models/rutas';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
@@ -61,14 +65,6 @@ const CAMPOS_INSTITUCIONALES = [
   'phone',
   'contactEmail',
 ] as const;
-
-/**
- * Cuantas sedes se piden por pagina.
- *
- * <p>Muy por debajo del tope de 100 que el backend recorta. Ningun centro real tiene
- * decenas de sedes, y cada fila trae acciones: una tabla mas larga no se lee mejor.
- */
-const POR_PAGINA = 20;
 
 /**
  * Sedes (consultorios) de la organizacion activa (M01, AKINE-02.01).
@@ -115,6 +111,7 @@ const POR_PAGINA = 20;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
     ConfirmacionConMotivo,
     AccionesDeFila,
     PanelLateral,
@@ -149,8 +146,16 @@ export class ConsultoriosPage {
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtro() !== 'ACTIVO'));
   protected readonly paginaActual = signal(0);
 
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
   /** Lo que se busca en el nombre de la sede (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
+
+  /** Hay busqueda o filtro fuera de su valor por defecto: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'ACTIVO',
+  );
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<
@@ -239,7 +244,7 @@ export class ConsultoriosPage {
         orgId,
         estado: this.filtro(),
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -267,6 +272,19 @@ export class ConsultoriosPage {
 
   protected buscar(texto: string): void {
     this.busqueda.set(texto);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** "Limpiar filtros": vuelve la busqueda y el estado a su valor por defecto. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtro.set('ACTIVO');
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.recargarDesdeElPrincipio();
   }
 

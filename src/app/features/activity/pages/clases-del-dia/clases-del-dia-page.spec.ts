@@ -89,6 +89,13 @@ describe('ClasesDelDiaPage', () => {
         'a[href="/asistencia/7"]',
       );
       expect(enlace).not.toBeNull();
+      // Patron de listado (UX-14): contador en la barra, pie estandar, en la misma tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 clase');
+      expect(raiz.querySelector('section.tarjeta .paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -110,7 +117,28 @@ describe('ClasesDelDiaPage', () => {
     pedido.flush({ ...DIA, eventos: [DIA.eventos[0]] });
     await fixture.whenStable();
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No hay clases');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('No hay clases programadas para ese día');
+  });
+
+  it('la búsqueda filtra por nombre y, sin coincidencias, ofrece limpiarla', async () => {
+    const fixture = await montar();
+    await responder(fixture, DIA);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const busqueda = raiz.querySelector('#clases-dia-busqueda') as HTMLInputElement;
+    busqueda.value = 'zumba';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('No encontramos clases');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('0 clases');
+    (
+      Array.from(raiz.querySelectorAll('app-estado-vacio button')).find((b) =>
+        (b.textContent ?? '').includes('Limpiar filtros'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.textContent).toContain('Pilates grupal');
   });
 
   it('un error se muestra con reintento', async () => {

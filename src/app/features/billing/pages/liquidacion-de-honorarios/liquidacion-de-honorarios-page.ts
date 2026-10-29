@@ -31,6 +31,11 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { TablaLocal, tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { LineaDeHonorario } from '../../../../api/generated/model/linea-de-honorario';
 
 /** Lo que se pidio: el borrador se confirma contra exactamente esto. */
 interface Pedido {
@@ -71,7 +76,16 @@ type EstadoBorrador =
  */
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
+  ],
   templateUrl: './liquidacion-de-honorarios-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -122,6 +136,41 @@ export class LiquidacionDeHonorariosPage {
   );
   protected readonly excluidas = computed(() => this.borrador()?.excluidas ?? []);
   protected readonly mezclaOfertas = computed(() => this.grupos().length > 1);
+
+  /** Las clases que no entran: tabla interna con orden y pie (UX-14). */
+  protected readonly tablaExcluidas = tablaLocal(this.excluidas, {
+    columnas: {
+      fecha: (excluida) => excluida.fecha,
+      clase: (excluida) => excluida.titulo || excluida.ofertaNombre,
+      servicio: (excluida) => excluida.ofertaNombre,
+      motivo: (excluida) => motivoDeExclusionEnPalabras(excluida.motivo),
+    },
+  });
+
+  /**
+   * Una tabla (orden y paginas) por servicio del borrador. Se arman de nuevo con cada borrador:
+   * otro pedido es otra lista y vuelve a la primera pagina sin orden.
+   */
+  private readonly tablasDeGrupos = computed(
+    () =>
+      new Map(
+        this.grupos().map((grupo) => [
+          grupo.ofertaId,
+          tablaLocal(signal(grupo.lineas), {
+            columnas: {
+              fecha: (linea: LineaDeHonorario) => linea.fecha,
+              clase: (linea: LineaDeHonorario) => linea.titulo || grupo.ofertaNombre,
+              presentes: (linea: LineaDeHonorario) => linea.presentes,
+              corresponde: (linea: LineaDeHonorario) => linea.importeColaborador,
+            },
+          }),
+        ]),
+      ),
+  );
+
+  protected tablaDe(grupo: GrupoDeHonorarios): TablaLocal<LineaDeHonorario> {
+    return this.tablasDeGrupos().get(grupo.ofertaId)!;
+  }
 
   constructor() {
     const desde = this.filtro.controls.desde;

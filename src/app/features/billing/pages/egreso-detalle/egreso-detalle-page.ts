@@ -56,6 +56,10 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -110,8 +114,10 @@ type FalloDeEgreso = ErrorEgreso & { readonly en: Operacion };
     CabeceraDePagina,
     PanelLateral,
     Ayuda,
-
     Alerta,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
     NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
@@ -213,6 +219,15 @@ export class EgresoDetallePage {
     () => admiteAnulacion(this.egreso()) && !this.conPagosVigentes(),
   );
   protected readonly pagos = computed<readonly PagoDeEgreso[]>(() => this.egreso()?.pagos ?? []);
+  /** Pagos del egreso: tabla interna chica, con orden y pie (UX-14). */
+  protected readonly tablaPagos = tablaLocal(this.pagos, {
+    columnas: {
+      pagado: (p) => p.pagadoEn,
+      medio: (p) => medioEnPalabras(p.medio),
+      importe: (p) => p.importe,
+      estado: (p) => pagoVigente(p),
+    },
+  });
 
   /** Sin tipo y numero de comprobante el backend no confirma (`egreso-sin-comprobante`). */
   protected readonly faltaComprobante = computed(() => {

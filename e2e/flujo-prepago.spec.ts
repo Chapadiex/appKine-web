@@ -31,11 +31,21 @@ import {
  * sede es una sola y la opera `flujo-caja.spec.ts`. Un anticipo por transferencia no toca el cajon.
  */
 
+/**
+ * Busca al paciente en la recepcion, como el mostrador: la tabla pagina de a 10 (UX-14) y el centro
+ * de hoy junta los turnos de todos los tests del dia.
+ */
+async function buscarEnLaRecepcion(page: import('@playwright/test').Page, persona: Persona) {
+  await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
+  await page.getByLabel('Paciente o documento').fill(persona.apellido);
+  await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 turno');
+}
+
 /** Entra a la recepcion como entra el mostrador: desde la agenda. */
 async function abrirLaRecepcion(page: import('@playwright/test').Page, persona: Persona) {
   await navegar(page, '/agenda');
   await page.getByRole('link', { name: 'Recepción', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
+  await buscarEnLaRecepcion(page, persona);
   const fila = page.getByRole('row').filter({ hasText: persona.apellido });
   await expect(fila).toBeVisible();
   return fila;
@@ -93,7 +103,7 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     await expect(page.getByText(/Ninguna todavía: es un anticipo del turno/)).toBeVisible();
 
     await page.getByRole('link', { name: 'Volver a la recepción del día' }).first().click();
-    await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
+    await buscarEnLaRecepcion(page, persona);
     const despues = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(despues.getByText('Prepago registrado', { exact: true })).toBeVisible();
     // Sigue sin llegada: el prepago no es el check-in.

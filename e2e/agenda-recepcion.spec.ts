@@ -35,11 +35,17 @@ function filaDe(page: Page, persona: Persona): Locator {
   return page.getByRole('row').filter({ hasText: persona.apellido });
 }
 
-/** Entra como entra el mostrador: desde la agenda, por su unico enlace, que no lleva fecha. */
+/**
+ * Entra como entra el mostrador: desde la agenda, por su unico enlace, que no lleva fecha. Y busca
+ * al paciente, como el mostrador: la tabla pagina de a 10 (UX-14) y el centro de hoy junta los
+ * turnos de todos los tests del dia, asi que la fila puede no estar en la primera pagina.
+ */
 async function abrirLaRecepcion(page: Page, persona: Persona): Promise<Locator> {
   await navegar(page, '/agenda');
   await page.getByRole('link', { name: 'Recepción', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Recepción del día', level: 1 })).toBeVisible();
+  await page.getByLabel('Paciente o documento').fill(persona.apellido);
+  await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 turno');
   const fila = filaDe(page, persona);
   await expect(fila).toBeVisible();
   return fila;

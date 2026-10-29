@@ -47,6 +47,12 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -129,7 +135,11 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
   selector: 'app-atencion-grupal-page',
   imports: [
     CabeceraDePagina,
-
+    ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PieDeTabla,
     Alerta,
     Ayuda,
     RouterLink,
@@ -218,6 +228,25 @@ export class AtencionGrupalPage {
       return [];
     }
     return (listo.panel.participantes ?? []).map(aFila);
+  });
+
+  /** Lo que se escribe en la busqueda de participantes (UX-14). Acota la tabla, no el lote. */
+  protected readonly busqueda = signal('');
+
+  /** Los participantes que coinciden con la busqueda, por nombre, sin tildes ni mayusculas. */
+  private readonly coincidentes = computed(() => {
+    const texto = normalizar(this.busqueda().trim());
+    return texto === ''
+      ? this.filas()
+      : this.filas().filter((fila) => normalizar(fila.nombre).includes(texto));
+  });
+
+  /** La tabla de participantes: orden por columna y el pie estandar (UX-14). */
+  protected readonly tabla = tablaLocal(this.coincidentes, {
+    columnas: {
+      participante: (fila) => fila.nombre,
+      asistencia: (fila) => fila.asistencia,
+    },
   });
 
   /** Los que estuvieron y todavia no tienen ninguna atencion: lo que "Iniciar para todos" manda. */
@@ -759,4 +788,12 @@ function pideMotivo(resultado: ResultadoDeAtencionGrupal): boolean {
       item.atencion === undefined &&
       traducirFalloDeAtencion(item.problemType, item.detalle).causa === 'requiere-justificacion',
   );
+}
+
+/** Sin mayusculas ni tildes: "garcia" encuentra "García". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }

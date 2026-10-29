@@ -84,8 +84,8 @@
         @switch (paso()) {
           @case (1) {
             <!-- Lo minimo para que la sede exista y funcione. -->
-            <div class="asistente__grilla asistente__grilla--tres">
-              <div class="campo">
+            <div class="grilla-12">
+              <div class="campo campo--6">
                 <label for="sede-name">Nombre de la sede</label>
                 <input
                   id="sede-name"
@@ -105,7 +105,7 @@
                 }
               </div>
 
-              <div class="campo">
+              <div class="campo campo--4">
                 <label for="sede-timezone">Zona horaria</label>
                 <!--
                   Es un selector y no un campo de texto a proposito: el backend solo acepta
@@ -180,8 +180,8 @@
                   Si lo cargás, la sede y el box se crean juntos. Si no, los agregás desde Espacios.
                 </p>
 
-                <div class="bloque__campos">
-                  <div class="campo">
+                <div class="grilla-12">
+                  <div class="campo campo--4">
                     <label for="sede-boxNombre">Nombre del box</label>
                     <input
                       id="sede-boxNombre"
@@ -249,28 +249,28 @@
                 <span class="seccion-plegable__resumen">{{ resumenInstitucional() }}</span>
               </summary>
 
-              <div class="asistente__grilla asistente__grilla--dos">
-                <div class="campo">
+              <div class="grilla-12">
+                <div class="campo campo--6">
                   <label for="sede-legalName">Razón social</label>
                   <input id="sede-legalName" type="text" formControlName="legalName" />
                 </div>
 
-                <div class="campo">
+                <div class="campo campo--3">
                   <label for="sede-taxId">CUIT o identificación fiscal</label>
                   <input id="sede-taxId" type="text" formControlName="taxId" />
                 </div>
 
-                <div class="campo">
+                <div class="campo campo--3">
+                  <label for="sede-phone">Teléfono</label>
+                  <input id="sede-phone" type="tel" formControlName="phone" />
+                </div>
+
+                <div class="campo campo--6">
                   <label for="sede-addressLine">Dirección</label>
                   <input id="sede-addressLine" type="text" formControlName="addressLine" />
                 </div>
 
                 <div class="campo">
-                  <label for="sede-phone">Teléfono</label>
-                  <input id="sede-phone" type="tel" formControlName="phone" />
-                </div>
-
-                <div class="campo campo--ancho">
                   <label for="sede-contactEmail">Email de contacto</label>
                   <input
                     id="sede-contactEmail"

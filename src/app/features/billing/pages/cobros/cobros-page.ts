@@ -42,7 +42,10 @@ import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
@@ -97,7 +100,10 @@ interface OperacionAbierta {
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
+    Icono,
     RouterLink,
     ConfirmacionConMotivo,
     PermisoDirective,
@@ -216,7 +222,16 @@ export class CobrosPage {
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
-  protected readonly tabla = tablaLocal(this.cobros, {
+  /** Busqueda por numero de comprobante, sobre la lista completa (no viaja al servidor). */
+  protected readonly busqueda = signal('');
+  protected readonly cobrosBuscados = computed<readonly Cobro[]>(() => {
+    const texto = this.busqueda().replace(/\D/g, '');
+    return texto === ''
+      ? this.cobros()
+      : this.cobros().filter((cobro) => String(cobro.comprobanteNumero ?? '').includes(texto));
+  });
+
+  protected readonly tabla = tablaLocal(this.cobrosBuscados, {
     columnas: {
       comprobante: (cobro) => cobro.comprobanteNumero ?? null,
       fecha: (cobro) => cobro.cobradoEn ?? null,

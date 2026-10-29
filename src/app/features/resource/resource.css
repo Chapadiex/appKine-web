@@ -11,27 +11,6 @@
  */
 
 /*
- * La nota que separa "activo" de "en servicio".
- *
- * Va con borde de acento y no como un parrafo mas: es la aclaracion que evita el reporte de
- * bug mas probable del modulo, y en el medio de la prosa de la pantalla nadie la lee. El color
- * no es lo unico que la distingue -tiene su propio encabezado-, asi que sigue comunicando en
- * escala de grises (WCAG 1.4.1).
- */
-.nota-servicio {
-  border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
-}
-
-.nota-servicio p {
-  margin: 0 0 var(--esp-4);
-}
-
-.nota-servicio p:last-child {
-  margin-bottom: 0;
-}
-
-/*
  * La observacion del espacio vive dentro del `<th scope="row">` de la fila.
  *
  * El `th` es negrita —es el encabezado de la fila— y el parrafo lo hereda, asi que la nota
@@ -264,11 +243,6 @@ textarea:disabled {
   gap: var(--esp-4);
 }
 
-.seccion-cabecera__resumen {
-  font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
-}
-
 /*
  * Horario semanal (diseno del canvas): un renglon por dia, con el nombre del dia a la izquierda
  * y sus bloques a la derecha. Cada bloque es una fila con su horario, su vigencia y sus acciones.
@@ -400,11 +374,6 @@ textarea:disabled {
   padding: 0;
 }
 
-.panel-formulario--lateral form {
-  display: flex;
-  flex-direction: column;
-}
-
 .excepciones-columnas {
   display: flex;
   flex-wrap: wrap;
@@ -486,22 +455,6 @@ textarea:disabled {
   font-weight: var(--peso-normal);
 }
 
-/*
- * Refactor UX/UI (28/10/2026): titulo de seccion dentro de un formulario en grilla ("Vigencia").
- * Separa por espacio y titulo, no por borde, y ocupa la fila entera de la grilla.
- */
-.formulario__seccion {
-  grid-column: 1 / -1;
-  margin: var(--esp-6) 0 var(--esp-4);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
-}
-
-/* Un campo ancho dentro de una grilla de campos (plegables): la fila entera, como en `form`. */
-.grilla-campos > .campo--ancho {
-  grid-column: 1 / -1;
-}
-
 /* El bloque cuyo panel lateral esta abierto: se sigue viendo cual se edita. */
 .bloque--seleccionado {
   background: var(--color-acento-claro);
@@ -515,4 +468,18 @@ textarea:disabled {
 /* La barra de consulta arriba del resultado, en la misma tarjeta. */
 .barra-consulta + [aria-live] {
   margin-bottom: var(--esp-6);
+}
+
+/* Horario efectivo (UX-14): el resultado debajo de la barra de consulta, en la misma tarjeta. */
+.resultado-efectivo {
+  margin-top: var(--esp-6);
+}
+
+/* "Feriado (Navidad) con atención (?)": una linea, con el por que detras del "?". */
+.dia-efectivo__feriado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-2);
 }

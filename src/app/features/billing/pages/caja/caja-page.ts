@@ -39,6 +39,10 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Seccion de la pantalla donde se hizo una operacion: su rechazo se muestra ahi. */
@@ -88,7 +92,17 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  */
 @Component({
   selector: 'app-caja-page',
-  imports: [CabeceraDePagina, Ayuda, RouterLink, PanelLateral, Alerta, NgTemplateOutlet],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    RouterLink,
+    PanelLateral,
+    Alerta,
+    NgTemplateOutlet,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
+  ],
   templateUrl: './caja-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -165,6 +179,18 @@ export class CajaPage {
   protected readonly movimientos = computed<readonly MovimientoDeCaja[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'abierta' ? actual.movimientos : [];
+  });
+
+  /** Movimientos de la jornada: tabla interna con orden y pie (UX-14). Llega completa (hasta 50). */
+  protected readonly tabla = tablaLocal(this.movimientos, {
+    columnas: {
+      hora: (movimiento) => movimiento.registradoEn,
+      tipo: (movimiento) => tipoDeMovimientoEnPalabras(movimiento.tipo),
+      medio: (movimiento) => medioEnPalabras(movimiento.medio),
+      concepto: (movimiento) => movimiento.concepto,
+      importe: (movimiento) =>
+        restaDelSaldo(movimiento.tipo) ? -(movimiento.importe ?? 0) : movimiento.importe,
+    },
   });
 
   protected readonly listadoRecortado = computed(

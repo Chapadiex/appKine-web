@@ -281,6 +281,55 @@ describe('CatalogosPage', () => {
     expect(anfitrion.textContent).toContain('Pilates terapeutico');
   });
 
+  it('el listado sigue el patron: total en la toolbar, pie con filas por página y vacío filtrado', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 especialidades',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+
+    // Con mas filas que la opcion mas chica aparece el selector, y cambiarlo vuelve a la pagina 0
+    // con el `size` nuevo.
+    elegir(fixture, '#filtro-estado-catalogo', 'TODOS');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'TODOS')
+      .flush({ ...PAGINA, totalElements: 40, totalPages: 4 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain(
+      'Mostrando 1–10 de 40',
+    );
+    const selector = anfitrion.querySelector<HTMLSelectElement>('.paginacion-pie select');
+    if (selector === null) {
+      throw new Error('No existe el selector de filas por página');
+    }
+    selector.value = '25';
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const conSize = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('size') === '25',
+    );
+    expect(conSize.request.params.get('page')).toBe('0');
+    conSize.flush({ ...PAGINA, content: [], totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Vacio con filtros: ofrece limpiarlos, y limpiar vuelve a los valores de entrada.
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay especialidades que coincidan');
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    const limpio = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.params.get('estado') === 'ACTIVO',
+    );
+    expect(limpio.request.params.get('page')).toBe('0');
+    limpio.flush(PAGINA);
+  });
+
   it('la baja manda el motivo y explica que el código queda libre', async () => {
     const fixture = await montar();
     const anfitrion = fixture.nativeElement as HTMLElement;

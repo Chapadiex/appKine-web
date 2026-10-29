@@ -104,97 +104,105 @@
     </section>
   }
 
-  <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-turnos-serie">
-    <div class="tarjeta__barra">
-      <h2 id="titulo-turnos-serie">Turnos</h2>
-    </div>
-    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
-      <table class="tabla">
-        <caption class="visualmente-oculto">
-          Turnos de la serie, del más temprano al más tarde, con su estado
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">N°</th>
-            <th scope="col">Fecha y hora</th>
-            <th scope="col">Estado</th>
-            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (turno of actual.turnos ?? []; track turno.id; let i = $index) {
-            <tr
-              [class.fila--revocada]="turno.estado === 'CANCELADO'"
-              [class.fila--seleccionada]="pedido()?.turnoId === turno.id"
-            >
-              <td>{{ i + 1 }}</td>
-              <td>{{ fechaHora(turno.inicio) }}</td>
-              <td>
-                <span
-                  class="marca-estado"
-                  [class.marca-estado--activa]="turno.estado === 'CONFIRMADO'"
-                  [class.marca-estado--suspendida]="turno.estado === 'AUSENTE'"
-                  [class.marca-estado--revocada]="turno.estado === 'CANCELADO'"
-                  >{{ nombreDeEstado(turno.estado) }}</span
-                >
-                @if (detalleDeEstado(turno.estado); as detalle) {
-                  <span class="celda-secundaria">{{ detalle }}</span>
-                }
-              </td>
-              <td class="tabla__acciones">
-                <!--
+  <!-- UX-14 §1: tabla interna de pocas filas, sin busqueda, con orden, pie y vacio. -->
+  <section class="tarjeta" aria-labelledby="titulo-turnos-serie">
+    <h2 id="titulo-turnos-serie">Turnos</h2>
+    @if (tabla.total() === 0) {
+      <app-estado-vacio
+        titulo="La serie no tiene turnos"
+        texto="El servidor no devolvió ningún turno de esta serie."
+      />
+    } @else {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos de la serie">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Turnos de la serie, del más temprano al más tarde, con su estado
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="numero">N°</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Fecha y hora</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of tabla.visibles(); track fila.turno.id) {
+              @let turno = fila.turno;
+              <tr
+                [class.fila--revocada]="turno.estado === 'CANCELADO'"
+                [class.fila--seleccionada]="pedido()?.turnoId === turno.id"
+              >
+                <td>{{ fila.numero }}</td>
+                <td>{{ fechaHora(turno.inicio) }}</td>
+                <td>
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--activa]="turno.estado === 'CONFIRMADO'"
+                    [class.marca-estado--suspendida]="turno.estado === 'AUSENTE'"
+                    [class.marca-estado--revocada]="turno.estado === 'CANCELADO'"
+                    >{{ nombreDeEstado(turno.estado) }}</span
+                  >
+                  @if (detalleDeEstado(turno.estado); as detalle) {
+                    <span class="celda-secundaria">{{ detalle }}</span>
+                  }
+                </td>
+                <td class="tabla__acciones">
+                  <!--
                   Una accion a la vista y el resto en el menu "⋯". La frecuente, "Ver o mover",
                   queda a la vista; reprogramar y cancelar (destructiva) van detras del menu.
                 -->
-                <app-acciones-de-fila [de]="'turno del ' + fechaHora(turno.inicio)">
-                  @if (turno.id) {
-                    <a
-                      principal
-                      class="boton boton--secundario boton--chico"
-                      [routerLink]="['/agenda', 'turnos', turno.id]"
-                      [queryParams]="{
-                        version: turno.version,
-                        ofertaId: actual.ofertaId,
-                        fecha: fechaLocal(turno),
-                      }"
-                    >
-                      Ver o mover<span class="visualmente-oculto">
-                        el turno del {{ fechaHora(turno.inicio) }}</span
+                  <app-acciones-de-fila [de]="'turno del ' + fechaHora(turno.inicio)">
+                    @if (turno.id) {
+                      <a
+                        principal
+                        class="boton boton--secundario boton--chico"
+                        [routerLink]="['/agenda', 'turnos', turno.id]"
+                        [queryParams]="{
+                          version: turno.version,
+                          ofertaId: actual.ofertaId,
+                          fecha: fechaLocal(turno),
+                        }"
                       >
-                    </a>
-                  }
-                  @if (puedeOperar() && esPendiente(turno)) {
-                    <button type="button" (click)="reprogramarDesde(turno)">
-                      Reprogramar<span class="visualmente-oculto">
-                        desde el turno del {{ fechaHora(turno.inicio) }}</span
+                        Ver o mover<span class="visualmente-oculto">
+                          el turno del {{ fechaHora(turno.inicio) }}</span
+                        >
+                      </a>
+                    }
+                    @if (puedeOperar() && esPendiente(turno)) {
+                      <button type="button" (click)="reprogramarDesde(turno)">
+                        Reprogramar<span class="visualmente-oculto">
+                          desde el turno del {{ fechaHora(turno.inicio) }}</span
+                        >
+                      </button>
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        (click)="elegir(Alcance.ESTE, turno.id)"
                       >
-                    </button>
-                    <button
-                      type="button"
-                      class="accion--peligro"
-                      (click)="elegir(Alcance.ESTE, turno.id)"
-                    >
-                      Cancelar este<span class="visualmente-oculto">
-                        turno, del {{ fechaHora(turno.inicio) }}</span
+                        Cancelar este<span class="visualmente-oculto">
+                          turno, del {{ fechaHora(turno.inicio) }}</span
+                        >
+                      </button>
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        (click)="elegir(Alcance.ESTE_Y_SIGUIENTES, turno.id)"
                       >
-                    </button>
-                    <button
-                      type="button"
-                      class="accion--peligro"
-                      (click)="elegir(Alcance.ESTE_Y_SIGUIENTES, turno.id)"
-                    >
-                      Cancelar este y los siguientes<span class="visualmente-oculto">
-                        desde el {{ fechaHora(turno.inicio) }}</span
-                      >
-                    </button>
-                  }
-                </app-acciones-de-fila>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+                        Cancelar este y los siguientes<span class="visualmente-oculto">
+                          desde el {{ fechaHora(turno.inicio) }}</span
+                        >
+                      </button>
+                    }
+                  </app-acciones-de-fila>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de turnos de la serie" />
+    }
   </section>
 }
 

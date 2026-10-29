@@ -10,11 +10,19 @@
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-buscar-centro">
-  <h2 id="titulo-buscar-centro">Centro</h2>
+<section class="tarjeta" aria-label="Centros de la plataforma">
   <form (submit)="$event.preventDefault(); buscar()">
-    <!-- Regla de filtros (plan §3.4): la búsqueda a la vista; el estado, detrás del embudo. -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <!--
+      Toolbar de la tabla (UX-14): la búsqueda a la vista con su botón y el total en la misma fila;
+      el estado, detrás del embudo.
+    -->
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="paginaDeCentros()?.total ?? null"
+      [unidad]="['centro', 'centros']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
       <div class="campo" filtro-principal>
         <label class="visualmente-oculto" for="suscripcion-busqueda"
           >Nombre o identificador del centro</label
@@ -35,6 +43,7 @@
           Busca en el nombre y en el slug del centro. Vacío, lista todos.
         </p>
       </div>
+      <button filtro-frecuente type="submit" class="boton">Buscar centros</button>
       <div class="campo">
         <label for="suscripcion-filtro-estado">Estado de la suscripción</label>
         <select
@@ -49,9 +58,6 @@
         </select>
       </div>
     </app-filtros>
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar centros</button>
-    </div>
   </form>
 
   <div aria-live="polite">
@@ -69,12 +75,18 @@
       }
     }
     @if (paginaDeCentros(); as p) {
-      @if (p.centros.length === 0) {
-        <p class="estado estado--vacio">Ningún centro coincide con la búsqueda.</p>
+      @if (p.centros.length === 0 && !hayFiltros()) {
+        <app-estado-vacio titulo="Todavía no hay centros en la plataforma." />
+      } @else if (p.centros.length === 0) {
+        <app-estado-vacio
+          titulo="Ningún centro coincide con la búsqueda."
+          texto="Probá con otra búsqueda o filtros."
+        >
+          <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </app-estado-vacio>
       } @else {
-        <p class="ayuda ayuda--fija" data-testid="suscripcion-total-centros">
-          {{ p.total === 1 ? '1 centro' : p.total + ' centros' }}
-        </p>
         <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
           <table class="tabla">
             <caption class="visualmente-oculto">
@@ -84,10 +96,26 @@
             <thead>
               <tr>
                 <th scope="col" appOrdenable [tabla]="orden" columna="nombre">Centro</th>
-                <th scope="col" appOrdenable [tabla]="orden" columna="slug">Slug</th>
+                <th
+                  scope="col"
+                  class="tabla__col--secundaria"
+                  appOrdenable
+                  [tabla]="orden"
+                  columna="slug"
+                >
+                  Slug
+                </th>
                 <th scope="col">Plan</th>
                 <th scope="col">Suscripción</th>
-                <th scope="col" appOrdenable [tabla]="orden" columna="creadaEn">Alta</th>
+                <th
+                  scope="col"
+                  class="tabla__col--secundaria"
+                  appOrdenable
+                  [tabla]="orden"
+                  columna="creadaEn"
+                >
+                  Alta
+                </th>
                 <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
               </tr>
             </thead>
@@ -98,7 +126,7 @@
                   [class.fila--seleccionada]="esElegido(c)"
                 >
                   <th scope="row">{{ c.name }}</th>
-                  <td>{{ c.slug }}</td>
+                  <td class="tabla__col--secundaria">{{ c.slug }}</td>
                   <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
                   <td>
                     <span
@@ -107,7 +135,7 @@
                       >{{ c.status }}</span
                     >
                   </td>
-                  <td>{{ fechaDeAlta(c) }}</td>
+                  <td class="tabla__col--secundaria">{{ fechaDeAlta(c) }}</td>
                   <td class="tabla__acciones">
                     <button
                       type="button"
@@ -126,8 +154,11 @@
         <app-paginacion
           [paginaActual]="p.pagina"
           [totalPaginas]="p.totalPaginas"
+          [total]="p.total"
+          [porPagina]="porPagina()"
           etiqueta="Páginas de centros"
           (cambioDePagina)="irAPagina($event)"
+          (cambioDePorPagina)="cambiarPorPagina($event)"
         />
       }
     }

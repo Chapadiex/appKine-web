@@ -93,14 +93,15 @@ describe('PasesDePersonaPage', () => {
   }
 
   /** Una pagina del ledger con la forma del contrato 0.116.0. */
-  function pagina(content: unknown[], page = 0, totalElements = content.length, size = 20) {
+  function pagina(content: unknown[], page = 0, totalElements = content.length, size = 10) {
     return { content, page, size, totalElements, totalPages: Math.ceil(totalElements / size) };
   }
 
-  function pedirMovimientos(page = 0, paseId = 77) {
+  function pedirMovimientos(page = 0, paseId = 77, size = 10) {
     const pedido = httpMock.expectOne((r) => r.url === `${BASE}/pases/${paseId}/movimientos`);
     expect(pedido.request.params.get('page')).toBe(String(page));
-    expect(pedido.request.params.get('size')).toBe('20');
+    // UX-14: el ledger arranca en 10 filas por pagina, como toda tabla de AKINE.
+    expect(pedido.request.params.get('size')).toBe(String(size));
     return pedido;
   }
 
@@ -130,6 +131,17 @@ describe('PasesDePersonaPage', () => {
       expect(texto).toContain('5 de 8');
       expect(texto).toContain('Del 01/10/2026 al 29/11/2026');
       expect(texto).toContain('Activo');
+      // Patron de listado (UX-14): contador en la barra, pie estandar, en la misma tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 pase');
+      expect(raiz.querySelector('section.tarjeta .paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
+      escribir(fixture, '#pases-busqueda', 'zzz');
+      expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('No encontramos pases');
+      clickear(fixture, 'Limpiar filtros');
+      expect(textoDe(fixture)).toContain('5 de 8');
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -137,7 +149,9 @@ describe('PasesDePersonaPage', () => {
 
   it('sin pases lo dice; solo ofrece productos vigentes para vender', async () => {
     const fixture = await montar([]);
-    expect(textoDe(fixture)).toContain('no compró ningún pase en esta sede');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')?.textContent,
+    ).toContain('no compró ningún pase en esta sede');
     const opciones = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll('#vender-producto option'),
     ].map((o) => o.textContent?.replace(/\s+/g, ' ').trim());
@@ -581,43 +595,69 @@ describe('PasesDePersonaPage', () => {
     }));
   }
 
+  /** Resumen del pie del ledger: "Mostrando 1–10 de 45". */
+  function resumenDelLedger(fixture: ComponentFixture<unknown>): string {
+    return (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.panel-lateral .paginacion-pie__resumen',
+      )?.textContent ?? ''
+    );
+  }
+
+  function paginaActualDelLedger(fixture: ComponentFixture<unknown>): string {
+    return (
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('nav[aria-label="Páginas de movimientos del pase"] [aria-current="page"]')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim() ?? ''
+    );
+  }
+
   it(
     'el ledger se lee de a páginas, del mas viejo al mas nuevo, con la posicion dicha en texto',
     async () => {
       const fixture = await montar();
       clickear(fixture, 'Ver movimientos');
       expect(textoDe(fixture)).toContain('Leyendo los movimientos');
-      pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
+      pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas viejo al mas nuevo.');
-      expect(textoDe(fixture)).toContain('Página 1 de 3');
-      const nav = (fixture.nativeElement as HTMLElement).querySelector(
-        'nav[aria-label="Páginas de movimientos del pase"]',
-      );
-      expect(nav).not.toBeNull();
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 45');
+      expect(textoDe(fixture)).toContain('Del mas viejo al mas nuevo.');
+      expect(paginaActualDelLedger(fixture)).toBe('Página 1');
       await esperarSinViolaciones(fixture.nativeElement);
 
-      clickear(fixture, 'Siguiente');
+      clickear(fixture, 'Página siguiente');
       // Mientras llega la otra pagina se sigue viendo la anterior, marcada como ocupada.
       const region = (fixture.nativeElement as HTMLElement).querySelector(
         '[aria-label="Movimientos del pase"]',
       );
       expect(region?.getAttribute('aria-busy')).toBe('true');
-      expect(textoDe(fixture)).toContain('Página 2 de 3');
-      pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
+      expect(paginaActualDelLedger(fixture)).toBe('Página 2');
+      pedirMovimientos(1).flush(pagina(movimientosDe(11, 10), 1, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 21 a 40 de 45');
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 11–20 de 45');
       expect(region?.getAttribute('aria-busy')).toBe('false');
 
       // Una respuesta vieja no pisa la pagina pedida despues.
-      clickear(fixture, 'Siguiente');
+      clickear(fixture, 'Página siguiente');
       const tercera = pedirMovimientos(2);
-      clickear(fixture, 'Anterior');
+      clickear(fixture, 'Página anterior');
       const segunda = pedirMovimientos(1);
-      segunda.flush(pagina(movimientosDe(21, 20), 1, 45));
-      tercera.flush(pagina(movimientosDe(41, 5), 2, 45));
+      segunda.flush(pagina(movimientosDe(11, 10), 1, 45));
+      tercera.flush(pagina(movimientosDe(21, 10), 2, 45));
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Movimientos 21 a 40 de 45');
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 11–20 de 45');
+
+      // Filas por pagina: va como `size` y vuelve a la primera pagina.
+      const filas = (fixture.nativeElement as HTMLElement).querySelector(
+        '.panel-lateral .paginacion-pie__por-pagina select',
+      ) as HTMLSelectElement;
+      filas.value = '25';
+      filas.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      pedirMovimientos(0, 77, 25).flush(pagina(movimientosDe(1, 25), 0, 45, 25));
+      await asentar(fixture);
+      expect(resumenDelLedger(fixture)).toContain('Mostrando 1–25 de 45');
 
       clickear(fixture, 'Cerrar movimientos');
       expect(textoDe(fixture)).not.toContain('Saldo actual');
@@ -628,10 +668,10 @@ describe('PasesDePersonaPage', () => {
   it('el ledger se puede pedir del mas nuevo al mas viejo, desde la primera página', async () => {
     const fixture = await montar();
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 45));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 45));
     await asentar(fixture);
-    clickear(fixture, 'Siguiente');
-    pedirMovimientos(1).flush(pagina(movimientosDe(21, 20), 1, 45));
+    clickear(fixture, 'Página siguiente');
+    pedirMovimientos(1).flush(pagina(movimientosDe(11, 10), 1, 45));
     await asentar(fixture);
 
     for (const sort of ['ocurridoEn,asc', 'ocurridoEn,desc']) {
@@ -640,18 +680,19 @@ describe('PasesDePersonaPage', () => {
         .click();
       const pedido = pedirMovimientos(0);
       expect(decodeURIComponent(pedido.request.params.get('sort')!)).toBe(sort);
-      pedido.flush(pagina(movimientosDe(1, 20), 0, 45));
+      pedido.flush(pagina(movimientosDe(1, 10), 0, 45));
       await asentar(fixture);
     }
-    expect(textoDe(fixture)).toContain('Movimientos 1 a 20 de 45, del mas nuevo al mas viejo.');
+    expect(textoDe(fixture)).toContain('Del mas nuevo al mas viejo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 45');
   });
 
   it('después de un ajuste el ledger termina en la página del movimiento nuevo', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('20 movimientos, del mas viejo al mas nuevo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 10');
 
     clickear(fixture, 'Ajustar saldo');
     escribir(fixture, '#ajuste-cantidad', '1');
@@ -660,18 +701,18 @@ describe('PasesDePersonaPage', () => {
     httpMock
       .expectOne(AJUSTES)
       .flush({ pase: { ...PASE, creditosDisponibles: 6, version: 5 }, movimientos: [] });
-    // 20 + 1 movimientos: el nuevo es el primero de la segunda pagina.
-    pedirMovimientos(1).flush(pagina(movimientosDe(21, 1), 1, 21));
+    // 10 + 1 movimientos: el nuevo es el primero de la segunda pagina.
+    pedirMovimientos(1).flush(pagina(movimientosDe(11, 1), 1, 11));
     responderPases([{ ...PASE, creditosDisponibles: 6, version: 5 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Movimientos 21 a 21 de 21');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 11–11 de 11');
     expect(textoDe(fixture)).toContain('Saldo actual: 6 creditos de 8');
   });
 
   it('una página que ya no existe lleva a la última', async () => {
     const fixture = await montar([PASE], PRODUCTOS, ADMIN);
     clickear(fixture, 'Ver movimientos');
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
     clickear(fixture, 'Anular');
     escribir(fixture, '#anulacion-motivo', 'Vendido por error');
@@ -681,11 +722,11 @@ describe('PasesDePersonaPage', () => {
       pase: { ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false },
     });
     // Se esperaba un movimiento mas y no hubo: la pagina 1 llega vacia y se lee la ultima.
-    pedirMovimientos(1).flush(pagina([], 1, 20));
+    pedirMovimientos(1).flush(pagina([], 1, 10));
     responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false }]);
-    pedirMovimientos(0).flush(pagina(movimientosDe(1, 20), 0, 20));
+    pedirMovimientos(0).flush(pagina(movimientosDe(1, 10), 0, 10));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('20 movimientos, del mas viejo al mas nuevo.');
+    expect(resumenDelLedger(fixture)).toContain('Mostrando 1–10 de 10');
   });
 
   it('vende un abono con renovacion automática; pedirla o no cambia la clave', async () => {

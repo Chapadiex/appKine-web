@@ -12,10 +12,8 @@ import {
   ADVERTENCIA_ACTIVIDAD_PROPIA,
   CodigoDeReporte,
   agrupacionDeSerie,
-  celdaEnPalabras,
   diaCorto,
   valorDeSerie,
-  esImporteEnCelda,
   MAXIMO_DIAS_DE_REPORTE,
   REPORTES,
   esCodigoDeReporte,
@@ -27,6 +25,7 @@ import {
   valorDeIndicador,
 } from '../../models/reportes';
 import { ReportesApi } from '../../services/reportes-api';
+import { TablaDeDetalle } from '../../components/tabla-de-detalle/tabla-de-detalle';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -78,7 +77,15 @@ type EstadoSerie =
  */
 @Component({
   selector: 'app-reportes-page',
-  imports: [CabeceraDePagina, Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    GraficoDeBarras,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+    TablaDeDetalle,
+  ],
   templateUrl: './reportes-page.html',
   styleUrl: '../../reporting.css',
 })
@@ -166,8 +173,6 @@ export class ReportesPage {
       ) ?? []
     );
   });
-  protected readonly celda = celdaEnPalabras;
-  protected readonly esImporte = esImporteEnCelda;
   protected readonly valorDeSerie = valorDeSerie;
 
   // --- Grafico de evolucion (DP-45) ---------------------------------------------------------

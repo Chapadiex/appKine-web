@@ -6,7 +6,7 @@
     </app-alerta>
   }
 
-  <div class="campo">
+  <div class="campo campo--4">
     <label for="entrada-tipo">Tipo de entrada</label>
     <select id="entrada-tipo" [value]="tipo()" (change)="elegirTipo($any($event.target).value)">
       @for (opcion of tipos; track opcion[0]) {

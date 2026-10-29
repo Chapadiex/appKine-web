@@ -169,19 +169,18 @@
   }
 }
 
-/* En el ancho del panel, dos columnas de campos en vez de una. */
-.panel-lateral__cuerpo form:not(.formulario--libre) {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
-}
-
 /*
-  Seccion de un formulario partido en pestañas: la misma grilla que un formulario, porque sus
-  campos ya no son hijos directos del `form`.
+  Los formularios del panel usan la grilla global de 12 columnas (UX-14): medida contra el ancho
+  del formulario, en un panel cada campo ocupa el doble de lo que ocuparia en la pagina (dos por
+  fila) y lo largo, la fila entera.
+
+  Seccion de un formulario partido en pestañas: la misma grilla, porque sus campos ya no son
+  hijos directos del `form`.
 */
 .panel-lateral__seccion {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   column-gap: var(--esp-6);
   align-items: start;
 }
@@ -190,9 +189,18 @@
   display: none;
 }
 
-.panel-lateral__seccion > :not(.campo),
-.panel-lateral__seccion > .campo--ancho {
+.panel-lateral__seccion > * {
   grid-column: 1 / -1;
+}
+
+.panel-lateral__seccion > .campo {
+  grid-column: span min(12, calc(var(--ancho-campo, 3) * 2));
+}
+
+@media (max-width: 40rem) {
+  .panel-lateral__seccion > .campo {
+    grid-column: 1 / -1;
+  }
 }
 
 .panel-lateral__nota {

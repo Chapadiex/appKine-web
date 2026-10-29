@@ -411,7 +411,7 @@ test.describe('Pases contra el backend real', () => {
       `${base}/pases`,
       { productoId: creado.id, personaId: persona.id, idempotencyKey: randomUUID() },
     );
-    // Compra + 21 ajustes = 22 movimientos: una pagina de 20 y otra de 2.
+    // Compra + 21 ajustes = 22 movimientos: con 10 por pagina (UX-14), tres paginas: 10, 10 y 2.
     let version = vendido.pase.version;
     for (let i = 0; i < 21; i++) {
       const ajustado = await api.exigir<{ pase: { version: number } }>(
@@ -427,23 +427,21 @@ test.describe('Pases contra el backend real', () => {
     await page.getByRole('button', { name: `Ver movimientos de ${producto}` }).click();
     expect((await primera).status()).toBe(200);
     const movimientos = page.getByRole('region', { name: 'Movimientos del pase' });
-    await expect(
-      page.getByText('Movimientos 1 a 20 de 22, del mas viejo al mas nuevo.'),
-    ).toBeVisible();
-    // Encabezado + 20 filas; la primera es la compra, la mas vieja.
-    await expect(movimientos.getByRole('row')).toHaveCount(21);
+    const panel = page.locator('.panel-lateral');
+    await expect(panel.getByText('Mostrando 1–10 de 22')).toBeVisible();
+    await expect(panel.getByText('Del mas viejo al mas nuevo.')).toBeVisible();
+    // Encabezado + 10 filas; la primera es la compra, la mas vieja.
+    await expect(movimientos.getByRole('row')).toHaveCount(11);
     await expect(movimientos.getByRole('row').nth(1)).toContainText('Compra');
     const paginas = page.getByRole('navigation', { name: 'Páginas de movimientos del pase' });
-    await expect(paginas).toContainText('Página 1 de 2');
+    await expect(paginas.locator('[aria-current="page"]')).toContainText('1');
 
-    const segunda = respuestaDe(page, 'GET', MOVIMIENTOS);
-    await paginas.getByRole('button', { name: 'Siguiente' }).click();
-    expect((await segunda).status()).toBe(200);
-    await expect(
-      page.getByText('Movimientos 21 a 22 de 22, del mas viejo al mas nuevo.'),
-    ).toBeVisible();
+    const ultima = respuestaDe(page, 'GET', MOVIMIENTOS);
+    await paginas.getByRole('button', { name: 'Página 3', exact: true }).click();
+    expect((await ultima).status()).toBe(200);
+    await expect(panel.getByText('Mostrando 21–22 de 22')).toBeVisible();
     await expect(movimientos.getByRole('row')).toHaveCount(3);
     await expect(movimientos).toContainText('Motivo: Ajuste E2E 21');
-    await expect(paginas.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(paginas.getByRole('button', { name: 'Página siguiente' })).toBeDisabled();
   });
 });

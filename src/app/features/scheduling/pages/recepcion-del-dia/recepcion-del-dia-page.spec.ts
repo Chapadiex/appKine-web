@@ -242,6 +242,72 @@ describe('RecepcionDelDiaPage', () => {
     expect(textoDe(fixture)).toContain('Ningún turno del día coincide');
   });
 
+  it('toolbar del listado (UX-14): búsqueda, estado y "Filtros" en una fila, con el contador', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    const fila = raiz.querySelector('.tarjeta .filtros-barra__fila') as HTMLElement;
+    expect(fila.querySelector('#recepcion-busqueda')).not.toBeNull();
+    expect(fila.querySelector('app-filtros-rapidos')).not.toBeNull();
+    expect(fila.querySelector('.filtros-barra__boton')?.textContent).toContain('Filtros');
+    expect(fila.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–4 de 4');
+    // El dia y "Actualizar" son de la cabecera, no de la toolbar de la tabla.
+    expect(raiz.querySelector('.cabecera-pagina__contexto #recepcion-fecha')).not.toBeNull();
+
+    // La prestacion es un filtro avanzado: cuenta en el boton y achica la lista.
+    const prestacion = raiz.querySelector('#recepcion-prestacion') as HTMLSelectElement;
+    expect(Array.from(prestacion.options).map((o) => o.text.trim())).toEqual([
+      'Todas',
+      'Kinesiologia deportiva',
+    ]);
+    prestacion.value = 'Kinesiologia deportiva';
+    prestacion.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(raiz.querySelector('.filtros-barra__contador')?.textContent).toContain('1');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
+  });
+
+  it('pagina de a 10 y el vacío filtrado ofrece limpiar los filtros', async () => {
+    const muchos = Array.from({ length: 12 }, (_, i) => ({
+      ...DEL_DIA[0],
+      id: 400 + i,
+      personaNombre: `Paciente ${String(i + 1).padStart(2, '0')}`,
+    }));
+    const fixture = await montar({ turnos: muchos });
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(10);
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–10 de 12',
+    );
+    (
+      Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso')).find((b) =>
+        (b.textContent ?? '').includes('Página siguiente'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(2);
+
+    const buscador = raiz.querySelector('#recepcion-busqueda') as HTMLInputElement;
+    buscador.value = 'Nadie';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const vacio = raiz.querySelector('app-estado-vacio') as HTMLElement;
+    expect(vacio.textContent).toContain('No encontramos turnos');
+    expect(raiz.querySelector('table')).toBeNull();
+
+    (
+      Array.from(vacio.querySelectorAll('button')).find((b) =>
+        (b.textContent ?? '').includes('Limpiar filtros'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(buscador.value).toBe('');
+  });
+
   it('muestra los cancelados con su motivo y SIN acciones', async () => {
     const fixture = await montar();
 
@@ -647,6 +713,10 @@ describe('RecepcionDelDiaPage', () => {
     const fixture = await montar({ turnos: [] });
 
     expect(textoDe(fixture)).toContain('no tiene ningún turno agendado');
+    // "Todavia no hay" y no "no hay con estos filtros": el vacio del dia no ofrece limpiar.
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No hay turnos este día');
+    expect(vacio?.textContent).not.toContain('Limpiar filtros');
     // Sin turnos no hay oferta de donde sacar la zona, y no se inventa una peticion.
     httpMock.expectNone(esAgenda());
   });

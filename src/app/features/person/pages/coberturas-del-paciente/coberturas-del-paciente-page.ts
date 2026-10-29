@@ -36,7 +36,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -112,7 +113,8 @@ type EstadoDeCoberturas =
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    EstadoVacio,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,

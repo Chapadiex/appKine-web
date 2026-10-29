@@ -46,8 +46,8 @@
         Esta sede no tiene productos vigentes para vender. Se crean en Productos de pack.
       </p>
     } @else {
-      <div class="filtros">
-        <div class="campo">
+      <div class="grilla-12">
+        <div class="campo campo--6">
           <label for="vender-producto">Producto</label>
           <select
             id="vender-producto"
@@ -171,198 +171,186 @@
   </section>
 }
 
-@if (error(); as fallo) {
-  <app-alerta tipo="error" titulo="No se pudieron leer los pases">
-    <p>{{ fallo.mensaje }}</p>
-    <p class="alerta__acciones">
-      @if (fallo.causa === 'sin-contexto') {
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-      } @else {
-        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-      }
-    </p>
-  </app-alerta>
-}
+<!-- Listado (UX-14 §1): busqueda y contador, la tabla y su pie, en una sola tarjeta. -->
+<section class="tarjeta" aria-label="Listado de pases">
+  <app-filtros
+    sinAvanzados
+    [resultados]="pases() === null ? null : tabla.total()"
+    [unidad]="['pase', 'pases']"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="pases-busqueda">Buscar pases</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="pases-busqueda"
+          type="search"
+          placeholder="Buscar..."
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+  </app-filtros>
 
-@if (pases() === null && !error()) {
-  <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
-} @else if (pases()?.length === 0 && !error()) {
-  <p class="estado estado--vacio">Esta persona no compró ningún pase en esta sede.</p>
-} @else if (pases(); as lista) {
-  @if (lista.length > 0) {
-    <section class="tarjeta tarjeta--listado" aria-label="Listado de pases">
-      <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-pases">
-        <h2 id="titulo-tabla-pases" class="visualmente-oculto">Pases de la persona</h2>
-        <table class="tabla">
-          <thead>
-            <tr>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="pase">Pase</th>
-              <th scope="col">Saldo</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
-              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (pase of tabla.visibles(); track pase.id) {
-              <tr
-                [id]="'pase-' + pase.id"
-                tabindex="-1"
-                [class.fila--revocada]="pase.estado === 'ANULADO'"
-                [class.fila--seleccionada]="paseEnPanel()?.id === pase.id"
-              >
-                <td>
-                  {{ pase.nombre }}
+  @if (error(); as fallo) {
+    <app-alerta tipo="error" titulo="No se pudieron leer los pases">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  }
+
+  @if (pases() === null && !error()) {
+    <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
+  } @else if (pases()?.length === 0 && !error()) {
+    <app-estado-vacio
+      titulo="Esta persona no compró ningún pase en esta sede"
+      [texto]="puedeVender() ? 'Se vende desde Vender un pase, arriba.' : null"
+    />
+  } @else if (pases() !== null && tabla.total() === 0) {
+    <app-estado-vacio titulo="No encontramos pases" texto="Probá con otra búsqueda.">
+      <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+        Limpiar filtros
+      </button>
+    </app-estado-vacio>
+  } @else if (pases() !== null) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Pases de la persona">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="pase">Pase</th>
+            <th scope="col">Saldo</th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
+            <th
+              scope="col"
+              class="tabla__col--secundaria"
+              appOrdenable
+              [tabla]="tabla"
+              columna="precio"
+            >
+              Precio
+            </th>
+            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pase of tabla.visibles(); track pase.id) {
+            <tr
+              [id]="'pase-' + pase.id"
+              tabindex="-1"
+              [class.fila--revocada]="pase.estado === 'ANULADO'"
+              [class.fila--seleccionada]="paseEnPanel()?.id === pase.id"
+            >
+              <td>
+                {{ pase.nombre }}
+                <div class="ayuda">
+                  {{ tipoDePase(pase) }} · vendido el {{ instante(pase.vendidoEn) }}
+                </div>
+                @if (pase.renuevaPaseId !== undefined) {
                   <div class="ayuda">
-                    {{ tipoDePase(pase) }} · vendido el {{ instante(pase.vendidoEn) }}
+                    @if (periodoAnterior(pase); as previo) {
+                      Renovado automaticamente desde el
+                      <a
+                        class="enlace"
+                        [href]="'#pase-' + previo.id"
+                        (click)="irAPase($event, previo.id)"
+                        >periodo del {{ fecha(previo.vigenciaDesde) }} al
+                        {{ fecha(previo.vigenciaHasta) }}</a
+                      >
+                    } @else {
+                      Renovado automaticamente desde otro periodo.
+                    }
                   </div>
-                  @if (pase.renuevaPaseId !== undefined) {
+                }
+                @if (abono(pase)) {
+                  @if (pase.renovadoPorPaseId !== undefined) {
                     <div class="ayuda">
-                      @if (periodoAnterior(pase); as previo) {
-                        Renovado automaticamente desde el
+                      @if (renovadoPor(pase); as siguiente) {
+                        Ya se renovo: sigue en el
                         <a
                           class="enlace"
-                          [href]="'#pase-' + previo.id"
-                          (click)="irAPase($event, previo.id)"
-                          >periodo del {{ fecha(previo.vigenciaDesde) }} al
-                          {{ fecha(previo.vigenciaHasta) }}</a
+                          [href]="'#pase-' + siguiente.id"
+                          (click)="irAPase($event, siguiente.id)"
+                          >periodo del {{ fecha(siguiente.vigenciaDesde) }} al
+                          {{ fecha(siguiente.vigenciaHasta) }}</a
                         >
                       } @else {
-                        Renovado automaticamente desde otro periodo.
+                        Ya se renovo: sigue en otro periodo.
+                      }
+                      @if (pase.renovacionAutorizadaPor) {
+                        La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
                       }
                     </div>
-                  }
-                  @if (abono(pase)) {
-                    @if (pase.renovadoPorPaseId !== undefined) {
-                      <div class="ayuda">
-                        @if (renovadoPor(pase); as siguiente) {
-                          Ya se renovo: sigue en el
-                          <a
-                            class="enlace"
-                            [href]="'#pase-' + siguiente.id"
-                            (click)="irAPase($event, siguiente.id)"
-                            >periodo del {{ fecha(siguiente.vigenciaDesde) }} al
-                            {{ fecha(siguiente.vigenciaHasta) }}</a
-                          >
-                        } @else {
-                          Ya se renovo: sigue en otro periodo.
-                        }
-                        @if (pase.renovacionAutorizadaPor) {
-                          La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
-                        }
-                      </div>
-                    } @else if (pase.renovacionAutomatica) {
-                      <div class="ayuda">
-                        Se renueva solo al terminar el periodo.
-                        @if (pase.renovacionAutorizadaPor) {
-                          La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
-                        }
-                      </div>
-                    } @else if (renovacionApagadaPorAutorizante(pase.renovacionOmitidaMotivo)) {
-                      <div class="ayuda" role="note">
-                        La renovación automática se apagó porque
-                        @if (pase.renovacionAutorizadaPor) {
-                          {{ pase.renovacionAutorizadaPor }}, quien la autorizo,
-                        } @else {
-                          quien la autorizo
-                        }
-                        ya no puede vender en esta sede (se lo desvinculo o perdio el permiso). Para
-                        que el abono se siga renovando, activala de nuevo.
-                      </div>
-                    } @else if (pase.renovacionOmitidaMotivo) {
-                      <div class="ayuda">
-                        No se pudo renovar: {{ pase.renovacionOmitidaMotivo }}. La renovacion
-                        automática quedo apagada.
-                      </div>
-                    } @else if (pase.estado !== 'ANULADO') {
-                      <div class="ayuda">No se renueva solo.</div>
-                    }
-                  }
-                </td>
-                <td>
-                  {{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}
-                  @if (pase.creditosUsados !== undefined) {
-                    <div class="ayuda">{{ usados(pase.creditosUsados) }}</div>
-                  }
-                </td>
-                <td>{{ vigencia(pase) }}</td>
-                <td class="importe">{{ importe(pase.precio, pase.moneda) }}</td>
-                <td>
-                  <span [class]="claseDeEstado(pase)">{{ estadoDePase(pase) }}</span>
-                  @if (avisoDeVigencia(pase); as aviso) {
-                    <div class="ayuda">{{ aviso }}</div>
-                  }
-                  @if (pase.estado === 'ANULADO') {
+                  } @else if (pase.renovacionAutomatica) {
                     <div class="ayuda">
-                      El {{ instante(pase.anuladoEn) }}
-                      @if (pase.motivoAnulacion) {
-                        — Motivo: {{ pase.motivoAnulacion }}
+                      Se renueva solo al terminar el periodo.
+                      @if (pase.renovacionAutorizadaPor) {
+                        La renovacion la autorizo {{ pase.renovacionAutorizadaPor }}.
                       }
                     </div>
+                  } @else if (renovacionApagadaPorAutorizante(pase.renovacionOmitidaMotivo)) {
+                    <div class="ayuda" role="note">
+                      La renovación automática se apagó porque
+                      @if (pase.renovacionAutorizadaPor) {
+                        {{ pase.renovacionAutorizadaPor }}, quien la autorizo,
+                      } @else {
+                        quien la autorizo
+                      }
+                      ya no puede vender en esta sede (se lo desvinculo o perdio el permiso). Para
+                      que el abono se siga renovando, activala de nuevo.
+                    </div>
+                  } @else if (pase.renovacionOmitidaMotivo) {
+                    <div class="ayuda">
+                      No se pudo renovar: {{ pase.renovacionOmitidaMotivo }}. La renovacion
+                      automática quedo apagada.
+                    </div>
+                  } @else if (pase.estado !== 'ANULADO') {
+                    <div class="ayuda">No se renueva solo.</div>
                   }
-                </td>
-                <td class="tabla__acciones">
-                  <!--
-                    Hasta cuatro acciones: menu "⋯" (decidido el 22/10/2026). "Ver movimientos" es la
-                    frecuente y queda a la vista. Sin permiso para vender ni ajustar solo hay esa.
-                  -->
-                  @if (puedeVender() || puedeAjustar()) {
-                    <app-acciones-de-fila [de]="pase.nombre ?? 'el pase'">
-                      <button
-                        principal
-                        type="button"
-                        class="boton boton--secundario boton--chico"
-                        [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
-                        [attr.aria-expanded]="detalle()?.paseId === pase.id"
-                        (click)="verMovimientos(pase)"
-                      >
-                        Ver movimientos
-                      </button>
-                      @if (puedeVender() && renovacionConfigurable(pase)) {
-                        <button
-                          type="button"
-                          [disabled]="renovando() === pase.id"
-                          [attr.aria-label]="
-                            (pase.renovacionAutomatica
-                              ? 'Desactivar la renovación automática de '
-                              : 'Activar la renovación automática de ') + pase.nombre
-                          "
-                          (click)="cambiarRenovacion(pase, !pase.renovacionAutomatica)"
-                        >
-                          {{
-                            renovando() === pase.id
-                              ? 'Guardando…'
-                              : pase.renovacionAutomatica
-                                ? 'Desactivar renovacion'
-                                : 'Activar renovacion'
-                          }}
-                        </button>
-                      }
-                      @if (puedeAjustar()) {
-                        @if (ajustable(pase)) {
-                          <button
-                            type="button"
-                            [attr.aria-label]="'Ajustar saldo de ' + pase.nombre"
-                            (click)="abrirAjuste(pase)"
-                          >
-                            Ajustar saldo
-                          </button>
-                        }
-                        @if (anulable(pase)) {
-                          <button
-                            type="button"
-                            class="accion--peligro"
-                            [attr.aria-label]="'Anular ' + pase.nombre"
-                            (click)="abrirAnulacion(pase)"
-                          >
-                            Anular
-                          </button>
-                        }
-                      }
-                    </app-acciones-de-fila>
-                  } @else {
+                }
+              </td>
+              <td>
+                {{ pase.creditosDisponibles }} de {{ pase.creditosIniciales }}
+                @if (pase.creditosUsados !== undefined) {
+                  <div class="ayuda">{{ usados(pase.creditosUsados) }}</div>
+                }
+              </td>
+              <td>{{ vigencia(pase) }}</td>
+              <td class="importe tabla__col--secundaria">
+                {{ importe(pase.precio, pase.moneda) }}
+              </td>
+              <td>
+                <span [class]="claseDeEstado(pase)">{{ estadoDePase(pase) }}</span>
+                @if (avisoDeVigencia(pase); as aviso) {
+                  <div class="ayuda">{{ aviso }}</div>
+                }
+                @if (pase.estado === 'ANULADO') {
+                  <div class="ayuda">
+                    El {{ instante(pase.anuladoEn) }}
+                    @if (pase.motivoAnulacion) {
+                      — Motivo: {{ pase.motivoAnulacion }}
+                    }
+                  </div>
+                }
+              </td>
+              <td class="tabla__acciones">
+                <!--
+                  Hasta cuatro acciones: menu "⋯" (decidido el 22/10/2026). "Ver movimientos" es la
+                  frecuente y queda a la vista. Sin permiso para vender ni ajustar solo hay esa.
+                -->
+                @if (puedeVender() || puedeAjustar()) {
+                  <app-acciones-de-fila [de]="pase.nombre ?? 'el pase'">
                     <button
+                      principal
                       type="button"
                       class="boton boton--secundario boton--chico"
                       [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
@@ -371,26 +359,69 @@
                     >
                       Ver movimientos
                     </button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                    @if (puedeVender() && renovacionConfigurable(pase)) {
+                      <button
+                        type="button"
+                        [disabled]="renovando() === pase.id"
+                        [attr.aria-label]="
+                          (pase.renovacionAutomatica
+                            ? 'Desactivar la renovación automática de '
+                            : 'Activar la renovación automática de ') + pase.nombre
+                        "
+                        (click)="cambiarRenovacion(pase, !pase.renovacionAutomatica)"
+                      >
+                        {{
+                          renovando() === pase.id
+                            ? 'Guardando…'
+                            : pase.renovacionAutomatica
+                              ? 'Desactivar renovacion'
+                              : 'Activar renovacion'
+                        }}
+                      </button>
+                    }
+                    @if (puedeAjustar()) {
+                      @if (ajustable(pase)) {
+                        <button
+                          type="button"
+                          [attr.aria-label]="'Ajustar saldo de ' + pase.nombre"
+                          (click)="abrirAjuste(pase)"
+                        >
+                          Ajustar saldo
+                        </button>
+                      }
+                      @if (anulable(pase)) {
+                        <button
+                          type="button"
+                          class="accion--peligro"
+                          [attr.aria-label]="'Anular ' + pase.nombre"
+                          (click)="abrirAnulacion(pase)"
+                        >
+                          Anular
+                        </button>
+                      }
+                    }
+                  </app-acciones-de-fila>
+                } @else {
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    [attr.aria-label]="'Ver movimientos de ' + pase.nombre"
+                    [attr.aria-expanded]="detalle()?.paseId === pase.id"
+                    (click)="verMovimientos(pase)"
+                  >
+                    Ver movimientos
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-      <div class="tabla-pie">
-        <span>{{ tabla.total() }} pases</span>
-        <app-paginacion
-          [paginaActual]="tabla.pagina()"
-          [totalPaginas]="tabla.totalPaginas()"
-          etiqueta="Páginas de pases"
-          (cambioDePagina)="tabla.irA($event)"
-        />
-      </div>
-    </section>
+    <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de pases" />
   }
-}
+</section>
 
 <!--
   Ajuste, anulacion y movimientos en un panel lateral (refactor UX/UI del 28/10/2026). Antes el
@@ -409,7 +440,7 @@
       quien lo hizo. El saldo tiene que quedar entre 0 y los {{ pase.creditosIniciales }}
       comprados.
     </p>
-    <div class="grilla-campos grilla-campos--dos">
+    <div class="grilla-12">
       <div class="campo">
         <label for="ajuste-cantidad">Creditos a sumar o restar</label>
         <input
@@ -443,7 +474,7 @@
           <p class="campo__error" id="ajuste-cantidad-error">Un número entero distinto de cero.</p>
         }
       </div>
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="ajuste-motivo">Motivo</label>
         <input
           id="ajuste-motivo"
@@ -537,10 +568,10 @@
       } @else if (actual.pagina === null) {
         <p class="estado estado--cargando" aria-live="polite">Leyendo los movimientos…</p>
       } @else if ((actual.pagina.content ?? []).length === 0) {
-        <p class="estado estado--vacio">El pase no tiene movimientos.</p>
+        <app-estado-vacio titulo="El pase no tiene movimientos" />
       } @else {
         <p class="ayuda ayuda--fija" aria-live="polite">
-          {{ actual.cargando ? 'Leyendo los movimientos…' : rangoDeMovimientos(actual.pagina) }}
+          {{ actual.cargando ? 'Leyendo los movimientos…' : ordenDeLosMovimientos() }}
         </p>
         <div
           class="tabla-scroll"
@@ -586,8 +617,11 @@
         <akine-paginacion
           [paginaActual]="actual.numero"
           [totalPaginas]="actual.pagina.totalPages ?? 0"
+          [total]="actual.pagina.totalElements ?? 0"
+          [porPagina]="movimientosPorPagina()"
           etiqueta="Páginas de movimientos del pase"
           (cambioDePagina)="irAPaginaDeMovimientos($event)"
+          (cambioDePorPagina)="cambiarMovimientosPorPagina($event)"
         />
       }
       <div class="acciones acciones--pie">

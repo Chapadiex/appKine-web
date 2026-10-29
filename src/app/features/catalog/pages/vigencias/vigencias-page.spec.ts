@@ -302,6 +302,54 @@ describe('VigenciasPage', () => {
     fixture.detectChanges();
 
     expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    // Patron de listado (UX-14): total en la toolbar, pie estandar y sin h2 que repita el titulo.
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 vigencia',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–1 de 1');
+    expect(anfitrion.querySelector('section[aria-label="Vigencias cargadas"] h2')).toBeNull();
+  });
+
+  it('sin vigencias con el código elegido ofrece limpiar los filtros, y limpiar relee todo', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const campo = anfitrion.querySelector<HTMLInputElement>('#filtro-codigo-vigencia');
+    if (campo === null) {
+      throw new Error('No existe el filtro por código');
+    }
+    campo.value = '999';
+    campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    httpMock.expectOne(NOMENCLADOR).flush(NOMENCLADOR_PROPIO);
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === VIGENCIAS && peticion.params.get('codigo') === '999',
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos vigencias');
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    fixture.detectChanges();
+    httpMock.expectOne(NOMENCLADOR).flush(NOMENCLADOR_PROPIO);
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === VIGENCIAS && !peticion.params.has('codigo'),
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Este nomenclador todavía no tiene vigencias',
+    );
   });
 
   it('un id que no es un número no le pide nada al backend', async () => {

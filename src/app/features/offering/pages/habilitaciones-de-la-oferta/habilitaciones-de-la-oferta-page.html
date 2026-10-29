@@ -8,6 +8,8 @@
       habilitación sigue configurando esta oferta aunque no la preste.
     </p>
   </app-ayuda>
+
+  <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 @if (oferta(); as detalle) {
@@ -15,8 +17,6 @@
     <b>{{ detalle.nombreComercial }}</b> · quién la presta y en qué espacios de esta sede
   </p>
 }
-
-<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -131,11 +131,14 @@
           }
 
           @if (candidatosProfesional().length === 0) {
-            <p class="estado estado--vacio">
-              Todavía no hay ningún profesional configurado para esta oferta, así que hoy la puede
-              prestar cualquiera. Los profesionales de la sede se administran en
-              <a routerLink="/organizacion/colaboradores">Colaboradores</a>.
-            </p>
+            <app-estado-vacio
+              titulo="Todavía no hay ningún profesional configurado para esta oferta"
+              texto="Sin profesionales configurados la oferta no está restringida, así que hoy la puede prestar cualquiera. Los profesionales de la sede se administran en Colaboradores."
+            >
+              <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+                Ir a Colaboradores
+              </a>
+            </app-estado-vacio>
           } @else {
             <div
               class="tabla-scroll"
@@ -149,12 +152,14 @@
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Profesional</th>
-                    <th scope="col">Estado</th>
+                    <th scope="col" appOrdenable [tabla]="tablaProfesionales" columna="nombre">
+                      Profesional
+                    </th>
+                    <th scope="col" class="tabla__col--secundaria">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (candidato of candidatosProfesional(); track candidato.id) {
+                  @for (candidato of tablaProfesionales.visibles(); track candidato.id) {
                     <tr [class.fila--atenuada]="!estaMarcadoProfesional(candidato.id)">
                       <td>
                         <label class="opcion-casilla">
@@ -173,7 +178,7 @@
                           <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
                         }
                       </td>
-                      <td>
+                      <td class="tabla__col--secundaria">
                         <span
                           class="marca-estado"
                           [class.marca-estado--activa]="estaMarcadoProfesional(candidato.id)"
@@ -188,6 +193,7 @@
                 </tbody>
               </table>
             </div>
+            <app-pie-de-tabla [tabla]="tablaProfesionales" etiqueta="Páginas de profesionales" />
           }
 
           <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
@@ -232,11 +238,12 @@
           }
 
           @if (candidatosEspacio().length === 0) {
-            <p class="estado estado--vacio">
-              Todavía no hay ningún espacio configurado, así que la oferta se puede prestar en
-              cualquiera. Los espacios de la sede se administran en
-              <a routerLink="/espacios">Espacios y boxes</a>.
-            </p>
+            <app-estado-vacio
+              titulo="Todavía no hay ningún espacio configurado"
+              texto="Sin espacios configurados, así que la oferta se puede prestar en cualquiera de la sede. Los espacios se administran en Espacios y boxes."
+            >
+              <a class="boton boton--secundario" routerLink="/espacios">Ir a Espacios y boxes</a>
+            </app-estado-vacio>
           } @else {
             <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios habilitables">
               <table class="tabla">
@@ -245,12 +252,14 @@
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Espacio</th>
-                    <th scope="col">Estado</th>
+                    <th scope="col" appOrdenable [tabla]="tablaEspacios" columna="nombre">
+                      Espacio
+                    </th>
+                    <th scope="col" class="tabla__col--secundaria">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (candidato of candidatosEspacio(); track candidato.id) {
+                  @for (candidato of tablaEspacios.visibles(); track candidato.id) {
                     <tr [class.fila--atenuada]="!estaMarcadoEspacio(candidato.id)">
                       <td>
                         <label class="opcion-casilla">
@@ -267,7 +276,7 @@
                           <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
                         }
                       </td>
-                      <td>
+                      <td class="tabla__col--secundaria">
                         <span
                           class="marca-estado"
                           [class.marca-estado--activa]="estaMarcadoEspacio(candidato.id)"
@@ -280,6 +289,7 @@
                 </tbody>
               </table>
             </div>
+            <app-pie-de-tabla [tabla]="tablaEspacios" etiqueta="Páginas de espacios" />
           }
 
           <div class="pie-de-tarjeta" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">

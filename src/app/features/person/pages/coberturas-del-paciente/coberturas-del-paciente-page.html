@@ -83,8 +83,8 @@
         Consultar por oferta
       </button>
     } @else {
-      <div class="filtros">
-        <div class="campo">
+      <div class="grilla-12">
+        <div class="campo campo--4">
           <label for="consulta-oferta">Oferta</label>
           <select id="consulta-oferta" (change)="elegirOferta($any($event.target).value)">
             <option value="">Elegí una oferta</option>
@@ -117,11 +117,18 @@
   </section>
 </div>
 
-<section class="tarjeta tarjeta--listado" aria-labelledby="titulo-historial">
-  <h2 id="titulo-historial" class="visualmente-oculto">Historial de coberturas</h2>
-
-  <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+<section class="tarjeta tarjeta--listado" aria-label="Historial de coberturas">
+  <!--
+    Patron de listados (UX-14). Sin busqueda por texto en el backend: "Filtros" va solo, con el
+    contador de resultados al lado.
+  -->
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="cargando() || mensajeError() ? null : tabla.total()"
+    [unidad]="['cobertura', 'coberturas']"
+    limpiable
+    (limpiar)="cambiarFiltro('TODAS')"
+  >
     <div class="campo">
       <label for="coberturas-filtro">Mostrar</label>
       <select
@@ -143,7 +150,7 @@
   </app-filtros>
 
   @if (cargando()) {
-    <p class="estado">Cargando las coberturas...</p>
+    <p class="estado estado--cargando">Cargando las coberturas...</p>
   } @else if (mensajeError(); as mensaje) {
     <app-alerta tipo="error" titulo="No pudimos leer las coberturas">
       <p>{{ mensaje }}</p>
@@ -155,26 +162,33 @@
         }
       </p>
     </app-alerta>
+  } @else if (coberturas().length === 0 && filtrosAvanzadosActivos() === 0) {
+    <app-estado-vacio
+      titulo="Este paciente no tiene ninguna cobertura cargada"
+      texto="No es un error: sin cobertura financiada se atiende como particular, que siempre está disponible."
+    >
+      <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+        Agregar la primera cobertura
+      </button>
+    </app-estado-vacio>
   } @else if (coberturas().length === 0) {
-    <p class="estado">
-      Este paciente no tiene ninguna cobertura cargada. No es un error: sin cobertura financiada se
-      atiende como particular, que siempre está disponible.
-    </p>
+    <app-estado-vacio
+      titulo="No hay coberturas con este filtro"
+      texto="Probá mostrando todas las coberturas del paciente."
+    >
+      <button type="button" class="boton boton--secundario" (click)="cambiarFiltro('TODAS')">
+        Limpiar filtros
+      </button>
+    </app-estado-vacio>
   } @else {
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="caption-coberturas">
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de coberturas">
       <table class="tabla">
-        <caption id="caption-coberturas">
-          {{
-            coberturas().length
-          }}
-          cobertura(s) según el filtro aplicado
-        </caption>
         <thead>
           <tr>
             <th scope="col" appOrdenable [tabla]="tabla" columna="cobertura">Cobertura</th>
             <th scope="col" appOrdenable [tabla]="tabla" columna="afiliado">Afiliado</th>
             <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-            <th scope="col">Credencial</th>
+            <th scope="col" class="tabla__col--secundaria">Credencial</th>
             <th scope="col" appOrdenable [tabla]="tabla" columna="situacion">Situación</th>
             <th scope="col" appOrdenable [tabla]="tabla" columna="principal">Principal</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -194,7 +208,7 @@
               </td>
               <td>{{ cobertura.numeroAfiliado || '—' }}</td>
               <td>{{ vigenciaEnPalabras(cobertura) }}</td>
-              <td>{{ credencialEnPalabras(cobertura) }}</td>
+              <td class="tabla__col--secundaria">{{ credencialEnPalabras(cobertura) }}</td>
               <td>
                 {{ situacionEnPalabras(cobertura) }}
                 @if (cobertura.deactivationReason) {
@@ -253,15 +267,7 @@
         </tbody>
       </table>
     </div>
-    <div class="tabla-pie">
-      <span>{{ tabla.total() }} coberturas</span>
-      <app-paginacion
-        [paginaActual]="tabla.pagina()"
-        [totalPaginas]="tabla.totalPaginas()"
-        etiqueta="Páginas de coberturas"
-        (cambioDePagina)="tabla.irA($event)"
-      />
-    </div>
+    <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de coberturas" />
     <!--
       El error de las acciones de fila -marcar principal, sobre todo- va al aviso global (UX-12): no
       hay formulario. La fila involucrada es OTRA, y esa queda resaltada en la tabla.
@@ -274,7 +280,7 @@
   el historial hacia abajo y la edicion abria una fila dentro de la tabla.
 -->
 @if (altaAbierta()) {
-  <app-panel-lateral titulo="Nueva cobertura" (cerrar)="cerrarPaneles()">
+  <app-panel-lateral titulo="Nueva cobertura" ancho="amplio" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
       @if (errorAccion() && !esConflictoDeCampo()) {
@@ -290,7 +296,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="alta-cobertura-tipo">Tipo</label>
         <select id="alta-cobertura-tipo" formControlName="tipo">
           <option value="PARTICULAR">Particular</option>
@@ -340,7 +346,7 @@
       }
 
       @if (esFinanciada()) {
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="alta-cobertura-financiador">Financiador</label>
           <select
             id="alta-cobertura-financiador"
@@ -360,7 +366,7 @@
           }
         </div>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="alta-cobertura-plan">Plan</label>
           <select
             id="alta-cobertura-plan"
@@ -393,7 +399,7 @@
           }
         </div>
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="alta-cobertura-afiliado">Número de afiliado</label>
           <input id="alta-cobertura-afiliado" type="text" formControlName="numeroAfiliado" />
         </div>
@@ -497,8 +503,8 @@
         </app-alerta>
       }
 
-      <details class="seccion-plegable">
-        <summary>Observaciones <span class="seccion-plegable__resumen">Opcional</span></summary>
+      <details class="mas-opciones">
+        <summary>Observaciones (opcional)</summary>
         <div class="campo">
           <label for="alta-cobertura-observaciones">Observaciones</label>
           <textarea
@@ -546,7 +552,7 @@
           </app-alerta>
         }
 
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="editar-afiliado-{{ cobertura.id }}">Número de afiliado</label>
           <input
             id="editar-afiliado-{{ cobertura.id }}"

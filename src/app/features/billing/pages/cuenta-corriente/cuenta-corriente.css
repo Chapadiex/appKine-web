@@ -2,20 +2,6 @@
  * Ajustes de UX-01 para las pantallas de la cuenta de una persona (cuenta corriente, cobros y
  * registro de un cobro). El resto lo aporta `billing.css` y el design system global.
  */
-/* Listado: titulo, tabla y pie en una sola tarjeta. */
-.tarjeta--listado .tabla-scroll {
-  margin-inline: calc(-1 * var(--esp-8));
-  border-top: var(--borde-fino) solid var(--color-borde);
-}
-
-.tarjeta--listado .tabla {
-  margin: 0;
-}
-
-.tarjeta--formulario {
-  border-color: var(--color-acento);
-}
-
 /*
  * Registro de un cobro: el formulario a la izquierda y el resumen (totales, faltantes y el boton
  * de confirmar) a la derecha, como en el diseño. En pantallas angostas el resumen baja.

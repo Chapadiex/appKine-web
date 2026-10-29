@@ -260,29 +260,20 @@ button.timeline__boton:focus-visible {
   border-bottom: 0;
 }
 
-/* Fila de un caso: titulo y diagnostico a la izquierda, estado a la derecha. */
-.casos__fila {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--esp-3) var(--esp-5);
-}
-
-.casos__fila > div {
-  flex: 1 1 18rem;
-  min-width: 0;
-}
-
 .casos__titulo {
   font-weight: var(--peso-semi);
 }
 
+/* El diagnostico en la tabla de casos: texto clinico, con sus saltos de linea. */
 .casos__diagnostico {
-  margin: var(--esp-2) 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-/* Filas del editor del equipo o de los items del plan: se apilan en pantalla angosta. */
+/*
+ * Fila de un integrante del equipo (nombre, rol, quitar): una fila de lista, no un formulario. Los
+ * formularios toman la grilla global de 12 columnas (UX-14).
+ */
 .fila-editable {
   display: grid;
   gap: var(--esp-3);
@@ -294,6 +285,12 @@ button.timeline__boton:focus-visible {
   .fila-editable {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
   }
+}
+
+/* Un boton en la fila de la grilla de 12 (Sumar, Quitar): abajo, a la altura de los controles. */
+.campo--accion {
+  align-self: end;
+  align-items: flex-start;
 }
 
 .avance__barra {
@@ -330,10 +327,14 @@ button.timeline__boton:focus-visible {
 
 /* --- UX-01: cuerpo de la historia, el caso, el plan y la politica ----------------------- */
 
-/* Datos de cabecera de una tarjeta: pares rotulo/valor en una grilla que envuelve. */
+/*
+ * Datos de cabecera de una tarjeta: pares rotulo/valor en una grilla compacta que aprovecha el
+ * ancho (UX-14). `auto-fill` y no `auto-fit`: con pocos datos quedan juntos a la izquierda en vez
+ * de estirarse de punta a punta.
+ */
 .historia__datos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
   gap: var(--esp-4) var(--esp-6);
   margin: 0 0 var(--esp-6);
 }

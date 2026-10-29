@@ -17,11 +17,20 @@
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-filtros-catalogo">
-  <h2 id="titulo-filtros-catalogo" class="visualmente-oculto">Buscar</h2>
+<!--
+  Busqueda y catalogo en una sola tarjeta (UX-14): la toolbar con el total arriba de las entradas,
+  y el pie estandar debajo.
+-->
+<section class="tarjeta" aria-label="Entradas del catálogo">
   <form (submit)="$event.preventDefault(); cargar()">
     <!-- Regla de filtros (plan §3.4): la búsqueda a la vista; estado y tipo, detrás del embudo. -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="listado().tipo === 'listo' ? entradas().length : null"
+      [unidad]="['financiador', 'financiadores']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
       <div class="campo" filtro-principal>
         <label class="visualmente-oculto" for="catalogo-plataforma-busqueda"
           >Nombre, código o CUIT</label
@@ -38,6 +47,7 @@
           />
         </div>
       </div>
+      <button filtro-frecuente type="submit" class="boton">Buscar</button>
       <div class="campo">
         <label for="catalogo-plataforma-estado">Estado</label>
         <select
@@ -64,157 +74,122 @@
         </select>
       </div>
     </app-filtros>
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
   </form>
-</section>
 
-@switch (listado().tipo) {
-  @case ('cargando') {
-    <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
-  }
-  @case ('error') {
-    <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
-      <p>{{ errorDeListado() }}</p>
-      <p class="alerta__acciones">
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-      </p>
-    </app-alerta>
-  }
-  @case ('listo') {
-    @if (entradas().length === 0) {
-      <p class="estado estado--vacio">Ninguna entrada del catálogo coincide con la búsqueda.</p>
-    }
-    @for (entrada of entradas(); track entrada.id) {
-      <section
-        class="tarjeta"
-        [attr.aria-labelledby]="'catalogo-entrada-' + entrada.id"
-        data-testid="catalogo-entrada"
-      >
-        <!--
-          Cabecera de la entrada: nombre, datos en una linea y una sola accion a la vista (refactor
-          UX/UI del 28/10/2026). Editar y la baja, en el menu "⋯".
-        -->
-        <div class="catalogo-entrada__cabecera">
-          <h2 [id]="'catalogo-entrada-' + entrada.id">{{ entrada.nombre }}</h2>
-          @if (entrada.estado !== 'INACTIVO') {
-            <app-acciones-de-fila [de]="entrada.nombre ?? ''">
-              <button
-                principal
-                type="button"
-                class="boton boton--secundario boton--chico"
-                (click)="abrirAltaPlan(entrada)"
-              >
-                Agregar un plan <span class="visualmente-oculto">a {{ entrada.nombre }}</span>
-              </button>
-              <button type="button" (click)="abrirEdicionFinanciador(entrada)">
-                Editar <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-              </button>
-              <button type="button" class="accion--peligro" (click)="abrirBajaFinanciador(entrada)">
-                Dar de baja <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-              </button>
-            </app-acciones-de-fila>
-          }
-        </div>
-        <dl class="detalle detalle--en-linea">
-          <div>
-            <dt>Código</dt>
-            <dd>{{ entrada.codigo }}</dd>
-          </div>
-          <div>
-            <dt>Tipo</dt>
-            <dd>{{ etiquetaDeTipo(entrada.tipo) }}</dd>
-          </div>
-          <div>
-            <dt>CUIT</dt>
-            <dd>{{ entrada.cuit || 'Sin CUIT' }}</dd>
-          </div>
-          <div>
-            <dt>Estado</dt>
-            <dd>
-              <span
-                class="marca-estado"
-                [class.marca-estado--activa]="entrada.estado !== 'INACTIVO'"
-                [class.marca-estado--revocada]="entrada.estado === 'INACTIVO'"
-                >{{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
-              >
-              @if (entrada.deactivationReason) {
-                — {{ entrada.deactivationReason }}
-              }
-            </dd>
-          </div>
-        </dl>
-
-        @if ((entrada.planes?.length ?? 0) === 0) {
-          <p class="ayuda">Sin planes cargados.</p>
-        } @else {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            [attr.aria-label]="'Planes de ' + entrada.nombre"
+  <div aria-live="polite">
+    @switch (listado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
+      }
+      @case ('error') {
+        <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
+          <p>{{ errorDeListado() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          </p>
+        </app-alerta>
+      }
+      @case ('listo') {
+        @if (entradas().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="El catálogo todavía no tiene financiadores."
+            texto="Cargá el primero para que los centros lo puedan agregar."
           >
-            <table class="tabla">
-              <thead>
-                <tr>
-                  <th scope="col">Plan</th>
-                  <th scope="col">Vigencia</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (plan of entrada.planes ?? []; track plan.id) {
-                  <tr
-                    [class.fila--revocada]="plan.estado === 'INACTIVO'"
-                    [class.fila--seleccionada]="planEnPanel() === plan.id"
-                  >
-                    <th scope="row">
-                      {{ plan.nombre }}
-                      <p class="ayuda ayuda--fija">Código {{ plan.codigo }}</p>
-                    </th>
-                    <td>{{ plan.vigenciaDesde }} a {{ plan.vigenciaHasta || 'sin fin' }}</td>
-                    <td>
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--activa]="plan.estado !== 'INACTIVO'"
-                        [class.marca-estado--revocada]="plan.estado === 'INACTIVO'"
-                        >{{ plan.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
-                      >
-                    </td>
-                    <td class="tabla__acciones">
-                      @if (plan.estado !== 'INACTIVO' && entrada.estado !== 'INACTIVO') {
-                        <app-acciones-de-fila [de]="'el plan ' + (plan.nombre ?? '')">
-                          <button
-                            principal
-                            type="button"
-                            class="boton boton--secundario boton--chico"
-                            (click)="abrirEdicionPlan(entrada, plan)"
-                          >
-                            Editar <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
-                          </button>
-                          <button
-                            type="button"
-                            class="accion--peligro"
-                            (click)="abrirBajaPlan(entrada, plan)"
-                          >
-                            Dar de baja
-                            <span class="visualmente-oculto">el plan {{ plan.nombre }}</span>
-                          </button>
-                        </app-acciones-de-fila>
-                      }
-                    </td>
-                  </tr>
+            <button type="button" class="boton" (click)="abrirAltaFinanciador()">
+              Nuevo financiador
+            </button>
+          </app-estado-vacio>
+        } @else if (entradas().length === 0) {
+          <app-estado-vacio
+            titulo="Ninguna entrada del catálogo coincide con la búsqueda."
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
+        } @else {
+          @for (entrada of paginaDeEntradas.visibles(); track entrada.id) {
+            <article
+              class="catalogo-entrada"
+              [attr.aria-labelledby]="'catalogo-entrada-' + entrada.id"
+              data-testid="catalogo-entrada"
+            >
+              <!--
+                Cabecera de la entrada: nombre, datos en una linea y una sola accion a la vista
+                (refactor UX/UI del 28/10/2026). Editar y la baja, en el menu "⋯".
+              -->
+              <div class="catalogo-entrada__cabecera">
+                <h2 [id]="'catalogo-entrada-' + entrada.id">{{ entrada.nombre }}</h2>
+                @if (entrada.estado !== 'INACTIVO') {
+                  <app-acciones-de-fila [de]="entrada.nombre ?? ''">
+                    <button
+                      principal
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      (click)="abrirAltaPlan(entrada)"
+                    >
+                      Agregar un plan <span class="visualmente-oculto">a {{ entrada.nombre }}</span>
+                    </button>
+                    <button type="button" (click)="abrirEdicionFinanciador(entrada)">
+                      Editar <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="accion--peligro"
+                      (click)="abrirBajaFinanciador(entrada)"
+                    >
+                      Dar de baja <span class="visualmente-oculto">{{ entrada.nombre }}</span>
+                    </button>
+                  </app-acciones-de-fila>
                 }
-              </tbody>
-            </table>
-          </div>
+              </div>
+              <dl class="detalle detalle--en-linea">
+                <div>
+                  <dt>Código</dt>
+                  <dd>{{ entrada.codigo }}</dd>
+                </div>
+                <div>
+                  <dt>Tipo</dt>
+                  <dd>{{ etiquetaDeTipo(entrada.tipo) }}</dd>
+                </div>
+                <div>
+                  <dt>CUIT</dt>
+                  <dd>{{ entrada.cuit || 'Sin CUIT' }}</dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>
+                    <span
+                      class="marca-estado"
+                      [class.marca-estado--activa]="entrada.estado !== 'INACTIVO'"
+                      [class.marca-estado--revocada]="entrada.estado === 'INACTIVO'"
+                      >{{ entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo' }}</span
+                    >
+                    @if (entrada.deactivationReason) {
+                      — {{ entrada.deactivationReason }}
+                    }
+                  </dd>
+                </div>
+              </dl>
+
+              <app-planes-del-catalogo
+                [planes]="entrada.planes ?? []"
+                [financiador]="entrada.nombre ?? ''"
+                [editable]="entrada.estado !== 'INACTIVO'"
+                [seleccionado]="planEnPanel()"
+                (editar)="abrirEdicionPlan(entrada, $event)"
+                (baja)="abrirBajaPlan(entrada, $event)"
+              />
+            </article>
+          }
+
+          <app-pie-de-tabla [tabla]="paginaDeEntradas" etiqueta="Páginas del catálogo" />
         }
-      </section>
+      }
     }
-  }
-}
+  </div>
+</section>
 
 <!--
   Altas, ediciones y bajas en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abrian en
@@ -240,7 +215,7 @@
         novalidate
         data-testid="formulario-catalogo"
       >
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="catalogo-financiador-codigo">Código</label>
           <input
             id="catalogo-financiador-codigo"
@@ -271,7 +246,7 @@
         @if (campoEnConflicto() === 'codigo') {
           <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-financiador-en-uso' }" />
         }
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="catalogo-financiador-tipo">Tipo de financiador</label>
           <select
             id="catalogo-financiador-tipo"
@@ -292,7 +267,7 @@
             </p>
           }
         </div>
-        <div class="campo campo--ancho">
+        <div class="campo campo--6">
           <label for="catalogo-financiador-nombre">Nombre</label>
           <input
             id="catalogo-financiador-nombre"
@@ -319,7 +294,7 @@
         @if (campoEnConflicto() === 'nombre') {
           <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-financiador-en-uso' }" />
         }
-        <div class="campo">
+        <div class="campo campo--3">
           <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
           <input
             id="catalogo-financiador-cuit"
@@ -341,12 +316,12 @@
               >Correo, teléfono y observaciones; opcionales</span
             >
           </summary>
-          <div class="grilla-campos grilla-campos--dos">
+          <div class="grilla-campos">
             <div class="campo">
               <label for="catalogo-financiador-email">Correo de contacto (opcional)</label>
               <input id="catalogo-financiador-email" type="email" formControlName="emailContacto" />
             </div>
-            <div class="campo">
+            <div class="campo campo--3">
               <label for="catalogo-financiador-telefono">Teléfono de contacto (opcional)</label>
               <input
                 id="catalogo-financiador-telefono"
@@ -354,13 +329,13 @@
                 formControlName="telefonoContacto"
               />
             </div>
-          </div>
-          <div class="campo">
-            <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
-            <textarea
-              id="catalogo-financiador-observaciones"
-              formControlName="observaciones"
-            ></textarea>
+            <div class="campo">
+              <label for="catalogo-financiador-observaciones">Observaciones (opcional)</label>
+              <textarea
+                id="catalogo-financiador-observaciones"
+                formControlName="observaciones"
+              ></textarea>
+            </div>
           </div>
         </details>
         <div class="acciones">
@@ -375,7 +350,7 @@
         novalidate
         data-testid="formulario-catalogo"
       >
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="catalogo-plan-codigo">Código del plan</label>
           <input
             id="catalogo-plan-codigo"
@@ -400,7 +375,7 @@
         @if (campoEnConflicto() === 'codigo') {
           <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-plan-en-uso' }" />
         }
-        <div class="campo">
+        <div class="campo campo--6">
           <label for="catalogo-plan-nombre">Nombre del plan</label>
           <input
             id="catalogo-plan-nombre"

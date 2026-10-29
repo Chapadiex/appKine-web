@@ -832,6 +832,45 @@ describe('ExcepcionesPage', () => {
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
+  it('patrón de listado (UX-14): periodo y resultados en la tarjeta de la tabla, con pie', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    const tarjeta = host.querySelector('section.tarjeta');
+    expect(tarjeta?.querySelector('#form-ventana app-filtros')).not.toBeNull();
+    expect(tarjeta?.querySelector('table')).not.toBeNull();
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 excepciones vigentes',
+    );
+    expect(host.querySelector('.tabla-pie')).toBeNull();
+    expect(host.querySelector('app-paginacion')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(host.querySelectorAll('th[appOrdenable]').length).toBe(5);
+  });
+
+  it('sin resultados con un profesional elegido ofrece limpiar el filtro', async () => {
+    const fixture = await montar([]);
+    const host: HTMLElement = fixture.nativeElement;
+
+    // Sin filtro: la respuesta "no hay" con la carga a mano.
+    expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Cargar la primera excepción',
+    );
+
+    seleccionar(fixture, '#filtro-alcance', String(ANA_ID));
+    listado().flush([]);
+    await estabilizar(fixture);
+
+    const vacio = host.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('con ese alcance');
+    abrir(fixture, 'Limpiar filtros');
+    const limpio = listado();
+    expect(limpio.request.params.get('membershipId')).toBeNull();
+    limpio.flush(VIGENTES);
+    await estabilizar(fixture);
+    expect(host.querySelector<HTMLSelectElement>('#filtro-alcance')?.value).toBe('');
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
   it('la pantalla vacía dice que el horario cargado se aplica tal cual', async () => {
     const fixture = await montar([]);
 

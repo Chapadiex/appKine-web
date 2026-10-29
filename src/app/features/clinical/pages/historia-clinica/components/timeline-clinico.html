@@ -104,15 +104,16 @@
       }
       @case ('lista') {
         @if (eventos().length === 0) {
-          <p class="estado estado--vacio">
-            @if (hayFiltros()) {
-              Ningún hecho clínico coincide con los filtros.
-            } @else if (casoId() === null) {
-              Todavía no hay hechos clínicos registrados en esta historia.
-            } @else {
-              Este caso todavía no tiene hechos clínicos.
-            }
-          </p>
+          <!-- Estado vacio (UX-14): "todavia no hay" y "no hay con estos filtros" son distintos. -->
+          <app-estado-vacio
+            [titulo]="
+              hayFiltros()
+                ? 'Ningún hecho clínico coincide con los filtros.'
+                : casoId() === null
+                  ? 'Todavía no hay hechos clínicos registrados en esta historia.'
+                  : 'Este caso todavía no tiene hechos clínicos.'
+            "
+          />
         } @else {
           <ol class="timeline" aria-label="Hechos clínicos, del mas reciente al mas antiguo">
             @for (fila of filas(); track fila.clave) {

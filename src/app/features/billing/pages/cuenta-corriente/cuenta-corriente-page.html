@@ -28,10 +28,6 @@
   </div>
 </app-cabecera-de-ficha>
 
-@if (cargando()) {
-  <p class="estado estado--cargando">Cargando la cuenta corriente…</p>
-}
-
 @if (mensajeError(); as mensaje) {
   <app-alerta tipo="error" titulo="No se pudo cargar la cuenta corriente">
     <p>{{ mensaje }}</p>
@@ -45,111 +41,141 @@
   </app-alerta>
 }
 
-@if (vacia()) {
-  <p class="estado estado--vacio">
-    Esta persona no tiene ninguna deuda registrada. Las obligaciones se generan al cerrar una
-    atención o al vender un pase: no se cargan a mano.
-  </p>
-}
+@if (!mensajeError()) {
+  <section class="tarjeta" aria-label="Deudas">
+    <!-- Patron de listado (UX-14 §1): busqueda y contador pegados a la tabla. -->
+    <app-filtros
+      sinAvanzados
+      [resultados]="cargando() ? null : tabla.total()"
+      [unidad]="['deuda', 'deudas']"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="buscar-deuda">Prestación o concepto</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="buscar-deuda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por prestación o concepto"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+    </app-filtros>
 
-@if (obligaciones().length > 0) {
-  <section class="tarjeta tarjeta--listado" aria-labelledby="titulo-tabla-cuenta">
-    <h2 id="titulo-tabla-cuenta">Deudas</h2>
-    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Deudas de la persona">
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="devengada">Devengada</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="prestacion">Prestación</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
-            <th scope="col">Precio al devengar</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="importe">Importe</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="saldo">Saldo</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (obligacion of tabla.visibles(); track obligacion.id) {
-            <tr
-              [class.fila--revocada]="!sePuedeAnular(obligacion)"
-              [class.fila--seleccionada]="obligacionEnPanel()?.id === obligacion.id"
-            >
-              <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
-              <td>
-                {{ obligacion.snapshotNombre }}
-                @if (esDeClase(obligacion)) {
-                  <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
-                } @else if (origenEnPalabras(obligacion.origen); as origen) {
-                  <div class="ayuda">{{ origen }}</div>
-                }
-              </td>
-              <td>
-                {{ conceptoEnPalabras(obligacion.concepto) }}
-                @if (obligacion.convenio?.convenioNombre; as convenio) {
-                  <div class="ayuda">Convenio {{ convenio }}</div>
-                }
-                <!--
+    @if (cargando()) {
+      <p class="estado estado--cargando">Cargando la cuenta corriente…</p>
+    }
+
+    @if (vacia()) {
+      <app-estado-vacio
+        titulo="Esta persona no tiene ninguna deuda registrada"
+        texto="Las obligaciones se generan al cerrar una atención o al vender un pase: no se cargan a mano."
+      />
+    } @else if (obligaciones().length > 0 && tabla.total() === 0) {
+      <app-estado-vacio
+        titulo="No hay deudas con esa búsqueda"
+        texto="Probá con otra prestación o concepto."
+      >
+        <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
+    }
+
+    @if (tabla.total() > 0) {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Deudas de la persona">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="devengada">Devengada</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="prestacion">Prestación</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
+              <th scope="col" class="importe tabla__col--secundaria">Precio al devengar</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="importe">Importe</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="saldo">Saldo</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (obligacion of tabla.visibles(); track obligacion.id) {
+              <tr
+                [class.fila--revocada]="!sePuedeAnular(obligacion)"
+                [class.fila--seleccionada]="obligacionEnPanel()?.id === obligacion.id"
+              >
+                <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
+                <td>
+                  {{ obligacion.snapshotNombre }}
+                  @if (esDeClase(obligacion)) {
+                    <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
+                  } @else if (origenEnPalabras(obligacion.origen); as origen) {
+                    <div class="ayuda">{{ origen }}</div>
+                  }
+                </td>
+                <td>
+                  {{ conceptoEnPalabras(obligacion.concepto) }}
+                  @if (obligacion.convenio?.convenioNombre; as convenio) {
+                    <div class="ayuda">Convenio {{ convenio }}</div>
+                  }
+                  <!--
                 DP-11: es una alerta para revisar, no un rechazo. La deuda existe y se cobra igual;
                 lo que hay que mirar es por que se facturo una practica que la oferta no declara.
               -->
-                @if (obligacion.alertaPracticaNoHabilitada) {
-                  <div class="ayuda">
-                    <b>Revisar:</b> la práctica facturada no está habilitada en la oferta.
-                  </div>
-                }
-              </td>
+                  @if (obligacion.alertaPracticaNoHabilitada) {
+                    <div class="ayuda">
+                      <b>Revisar:</b> la práctica facturada no está habilitada en la oferta.
+                    </div>
+                  }
+                </td>
 
-              <!--
+                <!--
               El precio congelado al momento de devengar, y el encabezado lo dice: editar la oferta
               manana no cambia una cuenta corriente ya emitida. Rotularlo "precio" a secas haria
               que alguien "corrija" una deuda vieja que esta bien.
             -->
-              <td class="importe">{{ importe(obligacion, obligacion.snapshotPrecio) }}</td>
-              <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
-              <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
-              <td>
-                <span [class]="claseDeEstado(obligacion.estado)">
-                  {{ estadoEnPalabras(obligacion.estado) }}
-                </span>
-              </td>
-              <td class="tabla__acciones">
-                @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
-                  <!--
+                <td class="importe tabla__col--secundaria">
+                  {{ importe(obligacion, obligacion.snapshotPrecio) }}
+                </td>
+                <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
+                <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
+                <td>
+                  <span [class]="claseDeEstado(obligacion.estado)">
+                    {{ estadoEnPalabras(obligacion.estado) }}
+                  </span>
+                </td>
+                <td class="tabla__acciones">
+                  @if (sePuedeAnular(obligacion) && esDeVenta(obligacion)) {
+                    <!--
                   La deuda de una venta no se anula sola: el backend responde 409
                   obligacion-de-venta porque dejaria el pase activo con sus creditos. Se anula el
                   pase, que anula pase y deuda juntos (contrato 0.114.0).
                 -->
-                  <a class="boton boton--secundario boton--chico" [routerLink]="rutaPases()">
-                    Anular desde los pases
-                  </a>
-                  <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
-                } @else if (sePuedeAnular(obligacion)) {
-                  <button
-                    type="button"
-                    class="boton boton--secundario boton--chico"
-                    (click)="abrirAnulacion(obligacion)"
-                  >
-                    Anular
-                  </button>
-                } @else if (obligacion.motivoAnulacion) {
-                  <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    <div class="tabla-pie">
-      <span>{{ tabla.total() }} deudas</span>
-      <app-paginacion
-        [paginaActual]="tabla.pagina()"
-        [totalPaginas]="tabla.totalPaginas()"
-        etiqueta="Páginas de deudas"
-        (cambioDePagina)="tabla.irA($event)"
-      />
-    </div>
+                    <a class="boton boton--secundario boton--chico" [routerLink]="rutaPases()">
+                      Anular desde los pases
+                    </a>
+                    <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
+                  } @else if (sePuedeAnular(obligacion)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      (click)="abrirAnulacion(obligacion)"
+                    >
+                      Anular
+                    </button>
+                  } @else if (obligacion.motivoAnulacion) {
+                    <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de deudas" />
+    }
   </section>
 
   <!--
@@ -197,27 +223,42 @@
         </p>
       </app-alerta>
     } @else if (conSaldoAFavor().length === 0) {
-      <p class="estado estado--vacio">
-        Esta persona no tiene saldo a favor: no hay anticipos ni sobrantes sin imputar.
-      </p>
+      <app-estado-vacio
+        titulo="Esta persona no tiene saldo a favor"
+        texto="No hay anticipos ni sobrantes sin imputar."
+      />
     } @else {
       <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cobros con saldo a favor">
         <table class="tabla">
           <thead>
             <tr>
-              <th scope="col">Comprobante</th>
-              <th scope="col">Cobrado</th>
-              <th scope="col">Total del cobro</th>
-              <th scope="col">Saldo a favor</th>
+              <th scope="col" appOrdenable [tabla]="tablaAFavor" columna="comprobante">
+                Comprobante
+              </th>
+              <th scope="col" appOrdenable [tabla]="tablaAFavor" columna="cobrado">Cobrado</th>
+              <th
+                scope="col"
+                class="importe tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tablaAFavor"
+                columna="total"
+              >
+                Total del cobro
+              </th>
+              <th scope="col" class="importe" appOrdenable [tabla]="tablaAFavor" columna="saldo">
+                Saldo a favor
+              </th>
               <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            @for (cobro of conSaldoAFavor(); track cobro.id) {
+            @for (cobro of tablaAFavor.visibles(); track cobro.id) {
               <tr [class.fila--seleccionada]="cobroImputando()?.id === cobro.id">
                 <td>N.º {{ cobro.comprobanteNumero }}</td>
                 <td>{{ instanteEnPalabras(cobro.cobradoEn) }}</td>
-                <td class="importe">{{ importeEnPalabras(cobro.total, cobro.moneda) }}</td>
+                <td class="importe tabla__col--secundaria">
+                  {{ importeEnPalabras(cobro.total, cobro.moneda) }}
+                </td>
                 <td class="importe">{{ importeEnPalabras(cobro.saldoAFavor, cobro.moneda) }}</td>
                 <td class="tabla__acciones">
                   <button
@@ -234,6 +275,7 @@
           </tbody>
         </table>
       </div>
+      <app-pie-de-tabla [tabla]="tablaAFavor" etiqueta="Páginas de cobros con saldo a favor" />
     }
   </section>
 }
@@ -370,7 +412,7 @@
         >
           <legend>Deudas pendientes de la misma sede</legend>
           @for (deuda of deudasDelImputando(); track deuda.id) {
-            <div class="campo">
+            <div class="campo campo--6">
               <label [for]="'imputar-' + cobro.id + '-' + deuda.id">
                 {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
                 {{ importe(deuda, deuda.saldo) }}

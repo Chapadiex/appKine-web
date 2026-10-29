@@ -20,6 +20,10 @@ import { traducirErrorPersona } from '../../models/person-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Lo que se lee junto: los datos y los nombres con los que se muestran. */
 interface Lectura {
@@ -48,7 +52,7 @@ type Estado =
  * accesorios: si fallan, o el caso es de otra sede, se muestra el identificador.
  */
 @Component({
-  imports: [Alerta, Ayuda],
+  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, PieDeTabla],
   selector: 'app-datos-administrativos-de-historia',
   templateUrl: './datos-administrativos-de-historia.html',
   styleUrl: '../../person.css',
@@ -67,6 +71,21 @@ export class DatosAdministrativosDeHistoria {
   protected readonly lectura = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.lectura : null;
+  });
+
+  /** Los casos de la historia: tabla interna de pocas filas, con orden y pie (UX-14). */
+  protected readonly casos = computed<readonly CasoAdministrativoResponse[]>(
+    () => this.lectura()?.datos.casos ?? [],
+  );
+
+  protected readonly tablaDeCasos = tablaLocal(this.casos, {
+    columnas: {
+      caso: (caso) => caso.numeroCaso ?? null,
+      estado: (caso) => caso.estado ?? null,
+      oferta: (caso) => this.nombreDeOferta(caso),
+      abierto: (caso) => caso.abiertoEn ?? null,
+      cerrado: (caso) => caso.cerradoEn ?? null,
+    },
   });
 
   protected readonly mensajeError = computed(() => {

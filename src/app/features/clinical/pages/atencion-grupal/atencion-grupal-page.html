@@ -6,6 +6,24 @@
       atención de cada uno.
     </p>
   </app-ayuda>
+  <!-- La accion principal, arriba a la derecha (UX-14): abre las atenciones que faltan. -->
+  @if (clinica() && filas().length > 0) {
+    <div cabeceraAcciones>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="enVuelo() !== null || pendientes().length === 0"
+        aria-describedby="ayuda-iniciar-todos"
+        (click)="iniciarParaTodos()"
+      >
+        @if (enVuelo() === 'lote') {
+          Abriendo atenciones…
+        } @else {
+          Iniciar para todos ({{ pendientes().length }})
+        }
+      </button>
+    </div>
+  }
 </app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
@@ -134,38 +152,50 @@
         </app-alerta>
       }
 
-      <section class="tarjeta" aria-labelledby="titulo-participantes-grupal">
-        <div class="encabezado-tarjeta">
-          <h2 id="titulo-participantes-grupal">Participantes</h2>
-          @if (filas().length > 0) {
-            <div class="acciones">
-              <button
-                type="button"
-                class="boton"
-                [disabled]="enVuelo() !== null || pendientes().length === 0"
-                aria-describedby="ayuda-iniciar-todos"
-                (click)="iniciarParaTodos()"
-              >
-                @if (enVuelo() === 'lote') {
-                  Abriendo atenciones…
-                } @else {
-                  Iniciar para todos ({{ pendientes().length }})
-                }
-              </button>
-            </div>
-          }
-        </div>
-
+      <section class="tarjeta" aria-label="Participantes">
         @if (filas().length === 0) {
-          <p class="estado estado--vacio">
-            Todavía no hay asistencia registrada. Se atiende a quien estuvo: primero se toma lista.
-          </p>
+          <app-estado-vacio
+            titulo="Todavía no hay asistencia registrada"
+            texto="Se atiende a quien estuvo: primero se toma lista."
+          />
         } @else {
           <p id="ayuda-iniciar-todos" class="ayuda">
             «Iniciar para todos» abre la atención de quien estuvo y todavía no tiene ninguna. Las
             que fallen se listan con su causa, sin deshacer a las demás.
           </p>
 
+          <!-- Toolbar del listado (UX-14): busqueda por nombre y el contador en la misma fila. -->
+          <app-filtros
+            sinAvanzados
+            [resultados]="tabla.total()"
+            [unidad]="['participante', 'participantes']"
+          >
+            <div class="campo" filtro-principal>
+              <label class="visualmente-oculto" for="busqueda-participantes"
+                >Buscar participantes</label
+              >
+              <div class="campo-busqueda">
+                <app-icono class="campo-busqueda__icono" nombre="buscar" />
+                <input
+                  id="busqueda-participantes"
+                  type="search"
+                  placeholder="Buscar por apellido o nombre"
+                  autocomplete="off"
+                  [value]="busqueda()"
+                  (input)="busqueda.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+          </app-filtros>
+        }
+
+        @if (filas().length > 0 && tabla.total() === 0) {
+          <app-estado-vacio titulo="No encontramos participantes" texto="Probá con otra búsqueda.">
+            <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+              Limpiar la búsqueda
+            </button>
+          </app-estado-vacio>
+        } @else if (filas().length > 0) {
           <div
             class="tabla-scroll"
             tabindex="0"
@@ -178,14 +208,16 @@
               </caption>
               <thead>
                 <tr>
-                  <th scope="col">Participante</th>
-                  <th scope="col">Asistencia</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="participante">
+                    Participante
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="asistencia">Asistencia</th>
                   <th scope="col">Atención</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (fila of filas(); track fila.inscripcionId) {
+                @for (fila of tabla.visibles(); track fila.inscripcionId) {
                   <tr [class.fila--seleccionada]="filaEnPanel() === fila.inscripcionId">
                     <td>{{ fila.nombre }}</td>
                     <td>{{ fila.asistencia }}</td>
@@ -290,6 +322,7 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de participantes" />
         }
       </section>
 
@@ -481,11 +514,7 @@
 
 <!-- El pedido de motivo de acceso: en la pagina o dentro del panel abierto. -->
 <ng-template #pedidoDeMotivo>
-  <section
-    class="tarjeta tarjeta--angosta"
-    aria-labelledby="titulo-motivo-grupal"
-    akineFocoAlMontar="campo"
-  >
+  <section class="tarjeta" aria-labelledby="titulo-motivo-grupal" akineFocoAlMontar="campo">
     <h2 id="titulo-motivo-grupal">Declara el motivo del acceso</h2>
     <p class="aviso-irreversible">
       No figura que atiendas a algún participante en esta sede. Para abrir su atención o ver sus
@@ -493,7 +522,7 @@
       en esta pantalla.
     </p>
     <form (submit)="$event.preventDefault(); declararMotivo()">
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="motivo-acceso-grupal">Motivo del acceso</label>
         <input
           id="motivo-acceso-grupal"

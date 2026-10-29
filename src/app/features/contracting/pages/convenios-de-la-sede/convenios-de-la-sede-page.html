@@ -33,16 +33,50 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-convenios">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
-  </div>
-
+<section class="tarjeta tarjeta--tabla" aria-label="Convenios firmados en esta sede">
   <!--
-    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
-    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+    Toolbar de la tabla (UX-14). El backend no busca convenios por texto, pero la lista llega
+    entera: la busqueda filtra en pantalla por financiador, nombre o codigo. El estado
+    administrativo, con conteo, queda a la vista; la fecha de vigencia va detras del embudo y
+    cuenta como activa si no es hoy: cambia la columna Situacion.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['convenio', 'convenios']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="buscar-convenio">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-convenio"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por financiador, nombre o código"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <!--
+      Estado ADMINISTRATIVO con conteo, no vigencia: "Activos" incluye los que todavia no
+      arrancaron y los que ya vencieron; la columna Situacion dice cual es cual. El listado se
+      pide entero (estado TODOS) y se filtra en pantalla, asi los numeros son los de la lista.
+    -->
+    @if (estado().tipo === 'listo') {
+      <app-filtros-rapidos
+        filtro-frecuente
+        etiqueta="Filtrar por estado"
+        [opciones]="opcionesDeEstado()"
+        [valor]="filtroRapido()"
+        (valorChange)="elegirEstado($event)"
+      />
+    }
+
     <div class="campo">
       <label for="filtro-fecha-convenio">Vigencia al día</label>
       <input
@@ -67,12 +101,12 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Los convenios son de una sede concreta, así que hay que saber en cual estás trabajando. Tu
-          sesión sigue abierta: solo falta elegir dónde estás.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio
+          titulo="Todavía no elegiste un consultorio."
+          texto="Los convenios son de una sede concreta, así que hay que saber en cual estás trabajando. Tu sesión sigue abierta: solo falta elegir dónde estás."
+        >
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -89,27 +123,33 @@
       }
 
       @case ('listo') {
-        <!--
-          Estado ADMINISTRATIVO con conteo, no vigencia: "Activos" incluye los que todavia no
-          arrancaron y los que ya vencieron; la columna Situacion dice cual es cual. El listado se
-          pide entero (estado TODOS) y se filtra en pantalla, asi los numeros son los de la lista.
-        -->
-        <app-filtros-rapidos
-          etiqueta="Filtrar por estado"
-          [opciones]="opcionesDeEstado()"
-          [valor]="filtroRapido()"
-          (valorChange)="elegirEstado($event)"
-        />
-        @if (convenios().length === 0) {
-          <p class="estado estado--vacio">
-            Esta sede no tiene convenios que coincidan con el filtro.
-          </p>
-          <p class="ayuda">
-            Sin convenios, todo lo que se atienda en esta sede se cobra como particular: no hay con
-            que resolver un arancel. Para firmar el primero hace falta un financiador con al menos
-            un plan cargado en el
-            <a routerLink="/contratacion/financiadores">catálogo</a>.
-          </p>
+        @if (cargados().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Esta sede todavía no tiene convenios"
+            texto="Sin convenios, todo lo que se atienda en esta sede se cobra como particular: no hay con que resolver un arancel. Para firmar el primero hace falta un financiador con al menos un plan cargado."
+          >
+            <button type="button" class="boton" *akinePermiso="permisoManage" (click)="abrirAlta()">
+              Firmar el primero
+            </button>
+            <a class="boton boton--secundario" routerLink="/contratacion/financiadores">
+              Ver los financiadores
+            </a>
+          </app-estado-vacio>
+        } @else if (convenios().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos convenios"
+            texto="Esta sede no tiene convenios que coincidan con el filtro. Probá con otra búsqueda o filtros."
+          >
+            @if (hayFiltros()) {
+              <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
+            } @else {
+              <button type="button" class="boton boton--secundario" (click)="elegirEstado('TODOS')">
+                Ver todos
+              </button>
+            }
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Convenios de la sede">
             <table class="tabla">
@@ -123,8 +163,16 @@
                     Financiador
                   </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
-                  <th scope="col">Requisitos</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="modalidad"
+                  >
+                    Modalidad
+                  </th>
+                  <th scope="col" class="tabla__col--secundaria">Requisitos</th>
                   <th scope="col">Situación</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -154,8 +202,10 @@
                       }
                     </th>
                     <td>{{ ventanaEnPalabras(convenio) }}</td>
-                    <td>{{ etiquetaDeModalidad(convenio.modalidad) }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
+                      {{ etiquetaDeModalidad(convenio.modalidad) }}
+                    </td>
+                    <td class="tabla__col--secundaria">
                       <ul class="requisitos-lista">
                         @if (convenio.requiereOrden) {
                           <li>Orden médica</li>
@@ -244,15 +294,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} convenios</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de convenios"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de convenios" />
         }
       }
     }
@@ -264,7 +306,7 @@
   una tarjeta arriba del listado y la edicion en una fila de la tabla, que partia el listado.
 -->
 @if (altaAbierta()) {
-  <app-panel-lateral titulo="Nuevo convenio de esta sede" (cerrar)="cerrarPanel()">
+  <app-panel-lateral titulo="Nuevo convenio de esta sede" ancho="amplio" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <!--
         Error general de la firma, arriba del formulario. Un periodo que se superpone con otro
@@ -283,7 +325,9 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <h3 class="formulario__seccion">Con quién</h3>
+
+      <div class="campo campo--4">
         <label for="alta-convenio-financiador">Financiador</label>
         <select
           id="alta-convenio-financiador"
@@ -319,7 +363,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-convenio-plan">Plan</label>
         <select
           id="alta-convenio-plan"
@@ -355,7 +399,9 @@
         }
       </div>
 
-      <div class="campo">
+      <h3 class="formulario__seccion">Datos del convenio</h3>
+
+      <div class="campo campo--2">
         <label for="alta-convenio-codigo">Código</label>
         <input
           id="alta-convenio-codigo"
@@ -379,7 +425,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-convenio-nombre">Nombre</label>
         <input
           id="alta-convenio-nombre"
@@ -396,7 +442,7 @@
         }
       </div>
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--4">
         <label for="alta-convenio-modalidad">Modalidad de liquidación</label>
         <select
           id="alta-convenio-modalidad"
@@ -424,7 +470,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-convenio-moneda">Moneda</label>
         <input
           id="alta-convenio-moneda"
@@ -448,6 +494,8 @@
           Tres letras (ARS). <b>No se puede cambiar después</b>: la heredan los aranceles.
         </p>
       </div>
+
+      <h3 class="formulario__seccion">Vigencia</h3>
 
       <div class="campo">
         <label for="alta-convenio-desde">Vigente desde</label>
@@ -488,8 +536,8 @@
             >Orden, autorización, credencial, tope mensual</span
           >
         </summary>
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
+        <div class="grilla-campos">
+          <div class="campo campo--3">
             <label for="alta-convenio-tope">Tope de sesiones por mes (opcional)</label>
             <input
               id="alta-convenio-tope"
@@ -499,7 +547,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--6">
             <label for="alta-convenio-documentacion">Documentación requerida (opcional)</label>
             <input
               id="alta-convenio-documentacion"
@@ -509,14 +557,14 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label class="opcion-casilla" for="alta-convenio-orden">
               <input id="alta-convenio-orden" type="checkbox" formControlName="requiereOrden" />
               Requiere orden médica
             </label>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label class="opcion-casilla" for="alta-convenio-autorizacion">
               <input
                 id="alta-convenio-autorizacion"
@@ -527,7 +575,7 @@
             </label>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label class="opcion-casilla" for="alta-convenio-credencial">
               <input
                 id="alta-convenio-credencial"
@@ -538,7 +586,7 @@
             </label>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--12">
             <label for="alta-convenio-observaciones">Observaciones (opcional)</label>
             <input
               id="alta-convenio-observaciones"
@@ -595,7 +643,7 @@
           <b>El código, el financiador, el plan y la moneda no se pueden cambiar.</b>
         </p>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-convenio-nombre">Nombre</label>
           <input
             id="editar-convenio-nombre"
@@ -614,7 +662,7 @@
           }
         </div>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-convenio-modalidad">Modalidad de liquidación</label>
           <select id="editar-convenio-modalidad" formControlName="modalidad">
             @for (opcion of modalidades; track opcion.valor) {
@@ -649,8 +697,8 @@
               >Orden, autorización, credencial, tope mensual</span
             >
           </summary>
-          <div class="grilla-campos grilla-campos--dos">
-            <div class="campo">
+          <div class="grilla-campos">
+            <div class="campo campo--3">
               <label for="editar-convenio-tope">Tope de sesiones por mes</label>
               <input
                 id="editar-convenio-tope"
@@ -660,7 +708,7 @@
               />
             </div>
 
-            <div class="campo">
+            <div class="campo campo--6">
               <label for="editar-convenio-documentacion">Documentación requerida</label>
               <input
                 id="editar-convenio-documentacion"
@@ -670,14 +718,14 @@
               />
             </div>
 
-            <div class="campo">
+            <div class="campo campo--3">
               <label class="opcion-casilla" for="editar-convenio-orden">
                 <input id="editar-convenio-orden" type="checkbox" formControlName="requiereOrden" />
                 Requiere orden médica
               </label>
             </div>
 
-            <div class="campo">
+            <div class="campo campo--3">
               <label class="opcion-casilla" for="editar-convenio-autorizacion">
                 <input
                   id="editar-convenio-autorizacion"
@@ -688,7 +736,7 @@
               </label>
             </div>
 
-            <div class="campo">
+            <div class="campo campo--3">
               <label class="opcion-casilla" for="editar-convenio-credencial">
                 <input
                   id="editar-convenio-credencial"
@@ -699,7 +747,7 @@
               </label>
             </div>
 
-            <div class="campo">
+            <div class="campo campo--12">
               <label for="editar-convenio-observaciones">Observaciones</label>
               <input
                 id="editar-convenio-observaciones"

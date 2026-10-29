@@ -95,6 +95,13 @@ describe('ProductosDePackPage', () => {
       expect(texto).toContain('40.000');
       expect(texto).toContain('Desde el 01/10/2026, sin fin');
       expect(texto).toContain('Vigente');
+      // Patron de listado (UX-14): contador en la barra, pie estandar, en la misma tarjeta.
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 producto');
+      expect(raiz.querySelector('section.tarjeta .paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -288,6 +295,24 @@ describe('ProductosDePackPage', () => {
     await asentar(fixture);
     expect(textoDe(fixture)).toContain('Dado de baja');
     expect(textoDe(fixture)).toContain('Motivo: Viejo');
+
+    // "Limpiar filtros" vuelve a los vigentes y relee.
+    clickear(fixture, 'Limpiar filtros');
+    responder([PACK]);
+    await asentar(fixture);
+    expect(textoDe(fixture)).not.toContain('Dado de baja');
+  });
+
+  it('la búsqueda filtra por nombre u oferta y, sin coincidencias, ofrece limpiarla', async () => {
+    const fixture = await montar([PACK, { ...PACK, id: 10, nombre: 'Abono libre' }]);
+    escribir(fixture, '#productos-busqueda', 'abono');
+    expect(textoDe(fixture)).toContain('Abono libre');
+    expect(textoDe(fixture)).not.toContain('Pack Pilates 8');
+    escribir(fixture, '#productos-busqueda', 'zzz');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos productos');
+    clickear(fixture, 'Limpiar filtros');
+    expect(textoDe(fixture)).toContain('Pack Pilates 8');
   });
 
   it('sin producto:manage no ofrece alta ni acciones', async () => {

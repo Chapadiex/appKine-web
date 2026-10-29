@@ -54,6 +54,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const ESPERA_DE_BUSQUEDA_MS = 300;
@@ -93,9 +97,11 @@ type Panel =
   selector: 'app-detalle-de-clase-page',
   imports: [
     CabeceraDePagina,
-
     Alerta,
     Ayuda,
+    ColumnaOrdenable,
+    EstadoVacio,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -210,6 +216,13 @@ export class DetalleDeClasePage {
       return estado !== 'LISTA_ESPERA' && estado !== 'CANCELADA';
     }),
   );
+  /** Orden y paginado de los inscriptos con lugar (UX-14): la lista llega entera. */
+  protected readonly tablaDeInscriptos = tablaLocal(this.conLugar, {
+    columnas: {
+      persona: (p) => this.nombreDe(p),
+      estado: (p) => this.textoDeInscripcion(p.inscripcion?.estado),
+    },
+  });
   protected readonly enEspera = computed(() =>
     (this.participantes() ?? [])
       .filter((p) => p.inscripcion?.estado === 'LISTA_ESPERA')

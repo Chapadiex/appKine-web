@@ -275,22 +275,30 @@
           <h2 id="titulo-feriados">Feriados del periodo</h2>
 
           @if (feriados().length === 0) {
-            <p class="estado estado--vacio">
-              No hay feriados del calendario nacional entre
-              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-            </p>
+            <app-estado-vacio
+              titulo="No hay feriados del calendario nacional en este período."
+              [texto]="
+                'Entre el ' +
+                etiquetaDeFecha(ventanaConsultada()?.desde) +
+                ' y el ' +
+                etiquetaDeFecha(ventanaConsultada()?.hasta) +
+                ' (exclusivo) no cae ninguno.'
+              "
+            />
           } @else {
-            <p class="ayuda ayuda--fija">
-              {{ feriados().length }} feriados entre
-              {{ etiquetaDeFecha(ventanaConsultada()?.desde) }} y
-              {{ etiquetaDeFecha(ventanaConsultada()?.hasta) }} (exclusivo).
-              @if (quedaAbiertoEnFeriados()) {
+            <!-- UX-14: cuantos son lo dice el pie de la tabla; aca queda solo la consecuencia. -->
+            @if (quedaAbiertoEnFeriados()) {
+              <p class="ayuda ayuda--fija">
                 Con la politica actual <b>no</b> recortan la agenda: son informativos.
-              }
-            </p>
+              </p>
+            }
 
-            <div class="tabla-scroll">
+            <div
+              class="tabla-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Listado de feriados del periodo"
+            >
               <table class="tabla">
                 <caption class="visualmente-oculto">
                   Feriados del calendario nacional que caen en el periodo consultado
@@ -314,15 +322,7 @@
               </table>
             </div>
 
-            <div class="tabla-pie">
-              <span>{{ tabla.total() }} feriados</span>
-              <app-paginacion
-                [paginaActual]="tabla.pagina()"
-                [totalPaginas]="tabla.totalPaginas()"
-                etiqueta="Paginas de feriados"
-                (cambioDePagina)="tabla.irA($event)"
-              />
-            </div>
+            <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de feriados" />
           }
         </section>
       </div>

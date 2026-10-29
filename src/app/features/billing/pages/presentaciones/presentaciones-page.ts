@@ -29,6 +29,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoListado =
@@ -53,6 +57,9 @@ type EstadoListado =
     PanelLateral,
     Ayuda,
     Filtros,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
     Icono,
     ReactiveFormsModule,
     RouterLink,
@@ -121,6 +128,20 @@ export class PresentacionesPage {
   protected readonly vacia = computed(
     () => this.estado().tipo === 'listo' && this.lotes().length === 0,
   );
+  /** Si la ultima busqueda llevaba texto o algun filtro avanzado: decide el estado vacio. */
+  protected readonly conFiltros = signal(false);
+
+  /** La bandeja llega completa del servidor: orden y paginas en el cliente (UX-14). */
+  protected readonly tabla = tablaLocal(this.lotes, {
+    columnas: {
+      numero: (lote) => lote.numero,
+      financiador: (lote) => lote.financiadorNombre,
+      periodo: (lote) => lote.periodoDesde,
+      estado: (lote) => estadoDePresentacionEnPalabras(lote.estado),
+      presentado: (lote) => lote.totalPresentado,
+      saldo: (lote) => lote.saldo,
+    },
+  });
 
   constructor() {
     effect(() => {
@@ -145,6 +166,7 @@ export class PresentacionesPage {
 
     const valor = this.filtro.getRawValue();
     const financiadorId = aNumero(valor.financiadorId);
+    this.conFiltros.set(valor.q.trim() !== '' || this.filtrosAvanzadosActivos() > 0);
     this.estado.set({ tipo: 'cargando' });
     this.api
       .buscar(consultorioId, {
@@ -168,6 +190,21 @@ export class PresentacionesPage {
         error: () => this.cuenta.set(null),
       });
     }
+  }
+
+  /**
+   * Vuelve los filtros avanzados a su valor por defecto (y la busqueda, desde el estado vacio) y
+   * busca de nuevo.
+   */
+  protected limpiarFiltros(tambienLaBusqueda = false): void {
+    this.filtro.patchValue({
+      ...(tambienLaBusqueda ? { q: '' } : {}),
+      estado: '',
+      financiadorId: '',
+      desde: '',
+      hasta: '',
+    });
+    this.buscar();
   }
 
   /** El panel de alta (refactor UX/UI del 28/10/2026): se abre desde "Nuevo lote". */

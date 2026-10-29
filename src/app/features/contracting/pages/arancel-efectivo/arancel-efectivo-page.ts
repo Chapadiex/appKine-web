@@ -30,6 +30,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /**
@@ -77,7 +78,15 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
  */
 @Component({
   selector: 'app-arancel-efectivo-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+    EstadoVacio,
+  ],
   templateUrl: './arancel-efectivo-page.html',
   styleUrl: '../../contracting.css',
 })

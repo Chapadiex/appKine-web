@@ -12,7 +12,7 @@
     </p>
   </app-ayuda>
 
-  <!-- El selector compacto del canvas: ‹ dia ›, en la fila del titulo. -->
+  <!-- El selector compacto del canvas: [‹] [fecha] [›] [Hoy], en la fila del titulo. -->
   <div cabeceraContexto class="navegador-fecha" role="group" aria-label="Día de la recepción">
     <button
       type="button"
@@ -39,6 +39,10 @@
       <span aria-hidden="true">›</span><span class="visualmente-oculto">Día siguiente</span>
     </button>
     <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+    <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
+    <button type="button" class="navegador-fecha__boton" (click)="cargar()">
+      Actualizar la lista
+    </button>
   </div>
 
   <!--
@@ -46,21 +50,17 @@
     un horario libre. DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica.
   -->
   <div cabeceraAcciones>
+    @if (puedeAtender()) {
+      <a class="boton boton--secundario" routerLink="/atencion/sin-turno">Atender sin turno</a>
+    }
     <a class="boton" routerLink="/agenda">
       <app-icono nombre="agregar" />
       Nuevo turno
     </a>
-    @if (puedeAtender()) {
-      <a class="boton boton--secundario" routerLink="/atencion/sin-turno">Atender sin turno</a>
-    }
   </div>
 
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
-
-@if (cargando()) {
-  <p class="estado estado--cargando">Leyendo los turnos del día…</p>
-}
 
 @if (!puedeOperar()) {
   <p class="estado estado--vacio">
@@ -88,15 +88,23 @@
     </p>
   </app-alerta>
 } @else {
-  <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-dia">
-    <h2 id="titulo-dia" class="visualmente-oculto">Turnos del día</h2>
-
-    <!-- La barra del canvas: buscar, actualizar, y lo que el mostrador mira sin leer la tabla. -->
-    <div class="tarjeta__barra">
-      <div class="campo campo--barra">
+  <!--
+    UX-14 §1 y §3: la busqueda, el filtro frecuente (el estado de la recepcion, con sus cuentas) y
+    el contador en una sola fila, pegada a la tabla y en la misma tarjeta; la prestacion, detras de
+    "Filtros". El dia y "Actualizar" viven en la cabecera.
+  -->
+  <section class="tarjeta" aria-label="Turnos del día">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="cargando() ? null : tabla.total()"
+      [unidad]="['turno', 'turnos']"
+      limpiable
+      (limpiar)="prestacion.set('')"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
         <div class="campo-busqueda">
           <app-icono class="campo-busqueda__icono" nombre="buscar" />
-          <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
           <input
             id="recepcion-busqueda"
             name="recepcion-busqueda"
@@ -108,46 +116,71 @@
           />
         </div>
       </div>
-      <button type="button" class="boton boton--secundario" (click)="cargar()">
-        Actualizar la lista
-      </button>
-      <span class="tarjeta__barra-fin">
-        <span class="recepcion__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
-        @if (hayTurnos()) {
-          {{ turnos().length }} turno(s), <b>{{ enEspera() }} en espera</b> ·
-        }
-        @if (zonaConocida()) {
-          horarios en la zona de la sede ({{ timezone() }})
-        } @else {
-          <!--
-          No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
-          diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador
-          correria las horas del mostrador sin que nada falle.
-        -->
-          horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede
-        }
-      </span>
-    </div>
 
-    @if (!hayTurnos() && !cargando()) {
-      <div class="tarjeta__cuerpo">
-        <p class="estado estado--vacio">
-          Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha.
-        </p>
-      </div>
-    } @else if (hayTurnos()) {
       <app-filtros-rapidos
+        filtro-frecuente
+        class="filtros-barra__frecuente--fila"
         etiqueta="Filtrar por estado de la recepción"
         [opciones]="opcionesDeRecepcion()"
         [(valor)]="filtroDeRecepcion"
       />
 
-      @if (tabla.total() === 0) {
-        <div class="tarjeta__cuerpo">
-          <p class="estado estado--vacio">Ningún turno del día coincide con esa búsqueda.</p>
-        </div>
-      }
+      <div class="campo">
+        <label for="recepcion-prestacion">Prestación</label>
+        <select
+          id="recepcion-prestacion"
+          name="recepcion-prestacion"
+          [value]="prestacion()"
+          (change)="prestacion.set($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          @for (nombre of prestaciones(); track nombre) {
+            <option [value]="nombre">{{ nombre }}</option>
+          }
+        </select>
+      </div>
+    </app-filtros>
 
+    <!--
+      Lo que el mostrador mira sin leer la tabla: el dia en palabras, cuantos esperan en la sala y
+      en que zona estan las horas.
+    -->
+    <p class="recepcion__resumen">
+      <span class="recepcion__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
+      @if (hayTurnos()) {
+        <b>{{ enEspera() }} en espera</b> ·
+      }
+      @if (zonaConocida()) {
+        horarios en la zona de la sede ({{ timezone() }})
+      } @else {
+        <!--
+          No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
+          diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador
+          correria las horas del mostrador sin que nada falle.
+        -->
+        horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede
+      }
+    </p>
+
+    @if (cargando()) {
+      <p class="estado estado--cargando">Leyendo los turnos del día…</p>
+    } @else if (!hayTurnos()) {
+      <app-estado-vacio
+        titulo="No hay turnos este día"
+        texto="Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha."
+      >
+        <a class="boton boton--secundario" routerLink="/agenda">Buscar un horario en la agenda</a>
+      </app-estado-vacio>
+    } @else if (tabla.total() === 0) {
+      <app-estado-vacio
+        titulo="No encontramos turnos"
+        texto="Ningún turno del día coincide con esa búsqueda o filtro."
+      >
+        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
+    } @else {
       <!--
     `tabindex`, `role` y nombre en el contenedor que scrollea: sin ellos, las columnas escondidas
     tras el desborde quedan fuera del alcance del teclado (WCAG 2.1.1). Ver `design-system.css`.
@@ -162,7 +195,7 @@
             <tr>
               <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
               <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
-              <th scope="col">Prestación</th>
+              <th scope="col" class="tabla__col--secundaria">Prestación</th>
               <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
               <th scope="col">Recepción</th>
               <th scope="col">Llegada</th>
@@ -184,7 +217,7 @@
                   }
                 </td>
 
-                <td>{{ turno.ofertaNombre }}</td>
+                <td class="tabla__col--secundaria">{{ turno.ofertaNombre }}</td>
 
                 <td>
                   <!--
@@ -336,15 +369,7 @@
         </table>
       </div>
 
-      <div class="tabla-pie">
-        <span>{{ tabla.total() }} turnos</span>
-        <app-paginacion
-          [paginaActual]="tabla.pagina()"
-          [totalPaginas]="tabla.totalPaginas()"
-          etiqueta="Páginas de turnos"
-          (cambioDePagina)="tabla.irA($event)"
-        />
-      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de turnos" />
     }
   </section>
 }

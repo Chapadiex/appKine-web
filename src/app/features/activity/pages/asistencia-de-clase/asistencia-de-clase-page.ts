@@ -54,7 +54,8 @@ import {
 } from '../../models/etiquetas-de-asistencia';
 import { avisoDeDevengo } from '../../models/etiquetas-de-devengo';
 import { avisoDeConsumo } from '../../models/etiquetas-de-pases';
-import { AsistenciaApi } from '../../services/asistencia-api';
+import { AsistenciaApi, PARTICIPANTES_POR_PAGINA } from '../../services/asistencia-api';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -130,6 +131,7 @@ interface Historial {
     Paginacion,
     FocoAlMontar,
     ColumnaOrdenable,
+    EstadoVacio,
     Alerta,
   ],
   templateUrl: './asistencia-de-clase-page.html',
@@ -162,6 +164,11 @@ export class AsistenciaDeClasePage {
 
   protected readonly estado = signal<EstadoCarga>({ tipo: 'cargando' });
   protected readonly pagina = signal(0);
+  /**
+   * Filas por pagina (UX-14). Es una pantalla operativa: arranca con todos los participantes a la
+   * vista (el tope del backend) para tomar lista sin paginar; el pie deja elegir menos.
+   */
+  protected readonly porPagina = signal<number>(PARTICIPANTES_POR_PAGINA);
 
   /**
    * Orden de los participantes, pedido al servidor (DP-45): vuelve a la primera pagina. Las marcas
@@ -260,23 +267,32 @@ export class AsistenciaDeClasePage {
     if (this.estado().tipo !== 'listo') {
       this.estado.set({ tipo: 'cargando' });
     }
-    this.api.detalle(ids.consultorioId, ids.claseId, this.pagina(), this.orden.sort()).subscribe({
-      next: (detalle) => {
-        if (pedido === this.pedido) {
-          this.estado.set({ tipo: 'listo', detalle });
-        }
-      },
-      error: (error: unknown) => {
-        if (pedido === this.pedido) {
-          this.estado.set({ tipo: 'error', error: traducirErrorAsistencia(error) });
-        }
-      },
-    });
+    const { consultorioId, claseId } = ids;
+    this.api
+      .detalle(consultorioId, claseId, this.pagina(), this.orden.sort(), this.porPagina())
+      .subscribe({
+        next: (detalle) => {
+          if (pedido === this.pedido) {
+            this.estado.set({ tipo: 'listo', detalle });
+          }
+        },
+        error: (error: unknown) => {
+          if (pedido === this.pedido) {
+            this.estado.set({ tipo: 'error', error: traducirErrorAsistencia(error) });
+          }
+        },
+      });
   }
 
   protected irAPagina(pagina: number): void {
     this.pagina.set(pagina);
     this.cargar();
+  }
+
+  /** Filas por pagina elegidas en el pie: vuelve a la primera pagina y relee. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.irAPagina(0);
   }
 
   // ------------------------------------------------------------------ ciclo de la clase

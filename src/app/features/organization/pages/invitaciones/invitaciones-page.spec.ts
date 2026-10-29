@@ -307,9 +307,42 @@ describe('InvitacionesPage', () => {
     const fixture = await montarConListado((pedido) => pedido.flush([]));
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    // Sin este texto, la tabla desaparecida se lee como una pantalla rota.
-    expect(anfitrion.textContent).toContain('No hay invitaciones con el filtro elegido');
+    // Sin este texto, la tabla desaparecida se lee como una pantalla rota. Sin filtros, el
+    // vacio es "todavia no hay" y ofrece el alta (UX-14).
+    const vacio = anfitrion.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('No hay invitaciones pendientes');
+    expect(rotulos(vacio as HTMLElement)).toContain('Invitar a alguien');
     expect(anfitrion.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('UX-14: busca por email en la toolbar, con el total al lado y "Limpiar filtros" si no hay nada', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 invitaciones',
+    );
+    expect(anfitrion.textContent).toContain('Mostrando 1–2 de 2');
+
+    const busqueda = anfitrion.querySelector<HTMLInputElement>('#invitaciones-busqueda')!;
+    busqueda.value = 'VENCIDA';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 invitación',
+    );
+
+    busqueda.value = 'nadie';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const vacio = anfitrion.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('No hay invitaciones con el filtro elegido');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
   });
 
   // -------------------------------------------------------------------------------------

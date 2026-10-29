@@ -32,7 +32,8 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -78,7 +79,8 @@ type Estado =
     PanelLateral,
     Pestanas,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     Filtros,
@@ -123,8 +125,28 @@ export class SolicitudesPage {
     return actual.tipo === 'listo' ? actual.solicitudes : [];
   });
 
-  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina pedidos. */
-  protected readonly tabla = tablaLocal(this.solicitudes, {
+  /** Busqueda local por nombre o código propuesto (UX-14): la lista llega entera. */
+  protected readonly busqueda = signal('');
+
+  /** Lo que muestra la tabla: lo cargado, acotado por la busqueda. */
+  protected readonly filtradas = computed(() => {
+    const texto = normalizar(this.busqueda().trim());
+    return texto === ''
+      ? this.solicitudes()
+      : this.solicitudes().filter((solicitud) =>
+          normalizar(
+            `${solicitud.nombrePropuesto ?? ''} ${solicitud.codigoPropuesto ?? ''}`,
+          ).includes(texto),
+        );
+  });
+
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina pedidos. */
+  protected readonly tabla = tablaLocal(this.filtradas, {
     columnas: {
       nombre: (solicitud) => solicitud.nombrePropuesto,
       tipo: (solicitud) => this.etiquetaDeTipo(solicitud),
@@ -162,6 +184,7 @@ export class SolicitudesPage {
       untracked(() => {
         this.cerrarAlta();
         this.filtroEstado.set('TODAS');
+        this.busqueda.set('');
         this.cargar();
       });
     });
@@ -202,6 +225,14 @@ export class SolicitudesPage {
     this.cerrarAlta();
     this.filtroEstado.set(elegido);
     this.cargar();
+  }
+
+  /** Vuelve la busqueda y el estado a su valor inicial; relee si el estado habia cambiado. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtroEstado() !== 'TODAS') {
+      this.cambiarFiltro('TODAS');
+    }
   }
 
   protected abrirAlta(): void {
@@ -310,4 +341,12 @@ export class SolicitudesPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable para la busqueda: minusculas y sin acentos. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }

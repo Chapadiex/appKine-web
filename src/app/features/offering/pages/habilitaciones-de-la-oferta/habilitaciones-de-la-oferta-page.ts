@@ -15,6 +15,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { publicarMigas } from '../../../../core/services/migas.store';
 
@@ -66,7 +70,17 @@ interface Candidato {
  */
 @Component({
   selector: 'app-habilitaciones-de-la-oferta-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    RouterLink,
+    PermisoDirective,
+    Alerta,
+    EstadoVacio,
+    ColumnaOrdenable,
+    PieDeTabla,
+  ],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
@@ -109,6 +123,17 @@ export class HabilitacionesDeLaOfertaPage {
   >([]);
   private ultimaConfiguracion: HabilitacionesResponse | null = null;
   protected readonly candidatosEspacio = signal<readonly Candidato[]>([]);
+
+  /**
+   * Orden por nombre y pie estandar (UX-14). Solo por nombre: ordenar por "habilitado" haria
+   * saltar la fila al marcar su casilla.
+   */
+  protected readonly tablaProfesionales = tablaLocal(this.candidatosProfesional, {
+    columnas: { nombre: (candidato) => candidato.etiqueta },
+  });
+  protected readonly tablaEspacios = tablaLocal(this.candidatosEspacio, {
+    columnas: { nombre: (candidato) => candidato.etiqueta },
+  });
 
   /**
    * Lo que la pantalla va a producir si se guarda AHORA.

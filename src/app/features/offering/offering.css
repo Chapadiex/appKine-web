@@ -186,22 +186,6 @@
   border-top: var(--borde-fino) solid var(--color-borde);
 }
 
-/*
- * Refactor UX/UI (28/10/2026): titulo de seccion dentro de un formulario en grilla ("Cobro",
- * "Vigencia"). Separa por espacio y titulo, no por borde, y ocupa la fila entera de la grilla.
- */
-.formulario__seccion {
-  grid-column: 1 / -1;
-  margin: var(--esp-6) 0 var(--esp-4);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
-}
-
-/* Un campo ancho dentro de una grilla de campos (plegables): la fila entera, como en `form`. */
-.grilla-campos > .campo--ancho {
-  grid-column: 1 / -1;
-}
-
 /* Una aclaracion corta al lado del titulo de seccion ("Cada centro los puede cambiar"). */
 .formulario__seccion-nota {
   margin-left: var(--esp-3);

@@ -79,6 +79,10 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
@@ -171,6 +175,9 @@ const MOTIVOS: readonly {
     PermisoDirective,
     ConfirmacionConMotivo,
     ImpactoPrevioPanel,
+    EstadoVacio,
+    PieDeTabla,
+    ColumnaOrdenable,
   ],
   templateUrl: './excepciones-page.html',
   styleUrl: '../../resource.css',
@@ -290,6 +297,17 @@ export class ExcepcionesPage {
   protected readonly mensajeError = this.vista.mensajeError;
   protected readonly faltaContexto = this.vista.faltaContexto;
   protected readonly vigentes = this.vista.filas;
+
+  /** Orden y pagina de la tabla (UX-14). El periodo llega entero: se pagina aca. */
+  protected readonly tabla = tablaLocal(this.vigentes, {
+    columnas: {
+      tipo: (excepcion) => excepcion.tipo ?? null,
+      alcance: (excepcion) => this.alcanceDe(excepcion),
+      fechas: (excepcion) => excepcion.fechaDesde ?? null,
+      franja: (excepcion) => excepcion.horaDesde ?? null,
+      motivo: (excepcion) => this.etiquetaDeMotivo(excepcion.motivo),
+    },
+  });
 
   /** La ventana efectivamente consultada, para encabezar el resultado. */
   protected readonly ventanaConsultada = signal<{
@@ -500,6 +518,11 @@ export class ExcepcionesPage {
   /** Ultimo dia realmente cubierto. `fechaHasta` es exclusiva y confunde a todo el mundo. */
   protected ultimoDiaCubierto(excepcion: ExcepcionResponse): string {
     return etiquetaDeFecha(sumarDias(excepcion.fechaHasta ?? '', -1));
+  }
+
+  /** "Limpiar filtros": vuelve a ver solo las de toda la sede, en el mismo periodo. */
+  protected limpiarFiltros(): void {
+    this.cambiarFiltro('');
   }
 
   protected cambiarFiltro(valor: string): void {

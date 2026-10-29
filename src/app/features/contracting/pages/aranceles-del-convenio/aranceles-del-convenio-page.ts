@@ -50,7 +50,8 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -113,7 +114,8 @@ type TipoAccion = 'editar' | 'baja';
     CabeceraDePagina,
     Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     Filtros,
@@ -159,9 +161,25 @@ export class ArancelesDelConvenioPage {
     tipo: 'cargando',
   });
 
+  /**
+   * Texto de la busqueda. Filtra en pantalla por practica u oferta: el backend no busca aranceles
+   * y la grilla llega entera.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Lo que se ve: la grilla que trajo el servidor, filtrada por la busqueda. */
   protected readonly aranceles = computed<readonly ArancelResponse[]>(() => {
     const actual = this.estado();
-    return actual.tipo === 'listo' ? actual.pagina : [];
+    const todos = actual.tipo === 'listo' ? actual.pagina : [];
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    if (texto === '') {
+      return todos;
+    }
+    return todos.filter((arancel) =>
+      [this.nombreDeLaPractica(arancel), this.alcanceDelArancel(arancel)].some((valor) =>
+        valor.toLocaleLowerCase('es').includes(texto),
+      ),
+    );
   });
 
   /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina aranceles. */
@@ -228,6 +246,11 @@ export class ArancelesDelConvenioPage {
 
   /** Practicas activas que declara cada oferta que admite obra social. */
   private readonly practicasPorOferta = signal<ReadonlyMap<number, ReadonlySet<number>>>(new Map());
+
+  /** Si la grilla vacia es por la busqueda o los filtros, y no porque no haya aranceles (UX-14). */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
@@ -379,6 +402,15 @@ export class ArancelesDelConvenioPage {
     }
     this.cerrarPanel();
     this.fecha.set(valor);
+    this.cargar();
+  }
+
+  /** Vuelve la busqueda, el estado y la fecha a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.cargar();
   }
 

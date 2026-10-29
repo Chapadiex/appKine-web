@@ -69,16 +69,34 @@
   </p>
 }
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-planes">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-planes">Planes cargados</h2>
-  </div>
-
+<section class="tarjeta tarjeta--tabla" aria-label="Planes del financiador">
   <!--
-    Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
-    de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
+    Toolbar de la tabla (UX-14). El backend no busca planes por texto, pero la lista llega entera:
+    la busqueda filtra en pantalla por nombre o codigo. Estado y fecha de vigencia, detras del
+    embudo; la fecha cuenta como activa si no es hoy: cambia la columna Situacion.
   -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['plan', 'planes']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="buscar-plan">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-plan"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o código"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-plan">Mostrar</label>
       <select
@@ -122,8 +140,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio titulo="Todavía no elegiste un consultorio.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -140,15 +159,31 @@
       }
 
       @case ('listo') {
-        @if (planes().length === 0) {
-          <p class="estado estado--vacio">
-            Este financiador no tiene planes que coincidan con el filtro.
-          </p>
-          <p class="ayuda">
-            Sin al menos un plan no se puede firmar ningún convenio con este financiador: el
-            convenio se firma <b>contra un plan</b>, y eso es lo que hace que la resolución del
-            arancel tenga como mucho una candidata para cada fecha.
-          </p>
+        @if (planes().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Este financiador todavía no tiene planes"
+            texto="Sin al menos un plan no se puede firmar ningún convenio con este financiador: el convenio se firma contra un plan, y eso es lo que hace que la resolución del arancel tenga como mucho una candidata para cada fecha."
+          >
+            @if (!financiadorInactivo()) {
+              <button
+                type="button"
+                class="boton"
+                *akinePermiso="permisoManage"
+                (click)="abrirAlta()"
+              >
+                Dar de alta el primero
+              </button>
+            }
+          </app-estado-vacio>
+        } @else if (planes().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos planes"
+            texto="Este financiador no tiene planes que coincidan con el filtro. Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Planes de cobertura">
             <table class="tabla">
@@ -163,7 +198,7 @@
                   <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="copago">
                     Copago
                   </th>
-                  <th scope="col">Requisitos</th>
+                  <th scope="col" class="tabla__col--secundaria">Requisitos</th>
                   <th scope="col">Situación</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -191,7 +226,7 @@
                     </th>
                     <td>{{ ventanaEnPalabras(plan) }}</td>
                     <td class="importe">{{ importeEnPalabras(plan.copago, plan.moneda) }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       <ul class="requisitos-lista">
                         @if (plan.requiereAutorizacion) {
                           <li>Requiere autorización previa</li>
@@ -252,15 +287,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} planes</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de planes"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de planes" />
         }
       }
     }
@@ -281,7 +308,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-plan-codigo">Código</label>
         <input
           id="alta-plan-codigo"
@@ -305,7 +332,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-plan-nombre">Nombre</label>
         <input
           id="alta-plan-nombre"
@@ -370,7 +397,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-plan-moneda">Moneda</label>
         <input
           id="alta-plan-moneda"
@@ -388,34 +415,40 @@
           Más datos del plan
           <span class="seccion-plegable__resumen">Descripción y requisitos (opcionales)</span>
         </summary>
-        <div class="campo">
-          <label for="alta-plan-descripcion">Descripción (opcional)</label>
-          <input
-            id="alta-plan-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-autorizacion">
+        <div class="grilla-campos">
+          <div class="campo campo--12">
+            <label for="alta-plan-descripcion">Descripción (opcional)</label>
             <input
-              id="alta-plan-autorizacion"
-              type="checkbox"
-              formControlName="requiereAutorizacion"
+              id="alta-plan-descripcion"
+              type="text"
+              formControlName="descripcion"
+              autocomplete="off"
             />
-            Requiere autorización previa
-          </label>
-        </div>
+          </div>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-credencial">
-            <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
-            Requiere credencial
-          </label>
+          <div class="campo campo--3">
+            <label class="opcion-casilla" for="alta-plan-autorizacion">
+              <input
+                id="alta-plan-autorizacion"
+                type="checkbox"
+                formControlName="requiereAutorizacion"
+              />
+              Requiere autorización previa
+            </label>
+          </div>
+
+          <div class="campo campo--3">
+            <label class="opcion-casilla" for="alta-plan-credencial">
+              <input
+                id="alta-plan-credencial"
+                type="checkbox"
+                formControlName="requiereCredencial"
+              />
+              Requiere credencial
+            </label>
+          </div>
+          <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
         </div>
-        <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
       </details>
 
       <p class="acciones">
@@ -461,12 +494,12 @@
           <b>cierra la vigencia</b> y el plan sigue activo; borrar esa fecha <b>no la saca</b>.
         </p>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-plan-codigo">Código</label>
           <input id="editar-plan-codigo" type="text" [value]="plan.codigo ?? ''" disabled />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="editar-plan-nombre">Nombre</label>
           <input
             id="editar-plan-nombre"
@@ -514,7 +547,7 @@
           />
         </div>
 
-        <div class="campo">
+        <div class="campo campo--2">
           <label for="editar-plan-moneda">Moneda</label>
           <input
             id="editar-plan-moneda"
@@ -530,36 +563,38 @@
             Más datos del plan
             <span class="seccion-plegable__resumen">Descripción y requisitos</span>
           </summary>
-          <div class="campo">
-            <label for="editar-plan-descripcion">Descripción</label>
-            <input
-              id="editar-plan-descripcion"
-              type="text"
-              formControlName="descripcion"
-              autocomplete="off"
-            />
-          </div>
-
-          <div class="campo">
-            <label class="opcion-casilla" for="editar-plan-autorizacion">
+          <div class="grilla-campos">
+            <div class="campo campo--12">
+              <label for="editar-plan-descripcion">Descripción</label>
               <input
-                id="editar-plan-autorizacion"
-                type="checkbox"
-                formControlName="requiereAutorizacion"
+                id="editar-plan-descripcion"
+                type="text"
+                formControlName="descripcion"
+                autocomplete="off"
               />
-              Requiere autorización previa
-            </label>
-          </div>
+            </div>
 
-          <div class="campo">
-            <label class="opcion-casilla" for="editar-plan-credencial">
-              <input
-                id="editar-plan-credencial"
-                type="checkbox"
-                formControlName="requiereCredencial"
-              />
-              Requiere credencial
-            </label>
+            <div class="campo campo--3">
+              <label class="opcion-casilla" for="editar-plan-autorizacion">
+                <input
+                  id="editar-plan-autorizacion"
+                  type="checkbox"
+                  formControlName="requiereAutorizacion"
+                />
+                Requiere autorización previa
+              </label>
+            </div>
+
+            <div class="campo campo--3">
+              <label class="opcion-casilla" for="editar-plan-credencial">
+                <input
+                  id="editar-plan-credencial"
+                  type="checkbox"
+                  formControlName="requiereCredencial"
+                />
+                Requiere credencial
+              </label>
+            </div>
           </div>
         </details>
 

@@ -187,11 +187,53 @@ describe('OrdenesYAutorizacionesPage', () => {
     });
 
     const filas = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('#caption-autorizaciones ~ tbody tr'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '[aria-label="Listado de autorizaciones"] tbody tr',
+      ),
     ).map((fila) => fila.textContent ?? '');
     expect(filas).toHaveLength(2);
     expect(filas[0]).not.toContain('a revisar');
     expect(filas[1]).toContain('2 consumos a revisar');
+  });
+
+  it('cada listado sigue el patrón de UX-14: búsqueda, resultados, pie y vacío', async () => {
+    const fixture = await montar({
+      ordenes: [ORDEN],
+      autorizaciones: [PENDIENTE, { ...PENDIENTE, id: 99, numero: 'AUT-99' }],
+    });
+    const raiz = fixture.nativeElement as HTMLElement;
+    const autorizaciones = raiz.querySelector('section[aria-labelledby="titulo-autorizaciones"]');
+
+    expect(autorizaciones?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 autorizaciones',
+    );
+    expect(autorizaciones?.querySelector('app-paginacion')?.textContent).toContain(
+      'Mostrando 1–2 de 2',
+    );
+    expect(raiz.querySelector('caption')).toBeNull();
+    // Las altas van arriba a la derecha, en la cabecera, no dentro de cada tarjeta.
+    expect(autorizaciones?.textContent).not.toContain('Registrar una autorización');
+    expect(raiz.querySelector('app-cabecera-de-ficha')?.textContent).toContain(
+      'Registrar una autorización',
+    );
+
+    const busqueda = raiz.querySelector('#autorizaciones-busqueda') as HTMLInputElement;
+    busqueda.value = 'aut-99';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(autorizaciones?.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(autorizaciones?.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 autorización',
+    );
+
+    busqueda.value = 'no existe';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const vacio = autorizaciones?.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos autorizaciones');
+    (vacio?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(autorizaciones?.querySelectorAll('tbody tr')).toHaveLength(2);
   });
 
   // -------------------------------------------------------------------------------------
@@ -682,7 +724,7 @@ describe('OrdenesYAutorizacionesPage', () => {
       apretar(fixture, 'Historial');
       const primera = httpMock.expectOne(esHistorial(PENDIENTE.id));
       expect(primera.request.params.get('page')).toBe('0');
-      expect(primera.request.params.get('size')).toBe('20');
+      expect(primera.request.params.get('size')).toBe('10');
       primera.flush({
         autorizacionId: PENDIENTE.id,
         estadoActual: 'APROBADA',
@@ -690,9 +732,9 @@ describe('OrdenesYAutorizacionesPage', () => {
         vencida: true,
         vencidaDesde: '2027-01-01',
         page: 0,
-        size: 20,
+        size: 10,
         totalElements: 21,
-        totalPages: 2,
+        totalPages: 3,
         content: [
           {
             id: 1,
@@ -722,13 +764,22 @@ describe('OrdenesYAutorizacionesPage', () => {
       expect(contenido).toContain('Cantidad: 1');
       expect(contenido).toContain('Cuenta 42');
       expect(contenido).toContain('Vencida');
-      expect(contenido).toContain('Página 1 de 2');
+      // El pie estandar de UX-14: "Mostrando 1–10 de 21" y los botones de pagina.
+      expect(contenido).toContain('Mostrando 1–10 de 21');
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
 
-      apretar(fixture, 'Hechos siguientes');
+      (
+        Array.from(
+          (fixture.nativeElement as HTMLElement).querySelectorAll('.paginacion button'),
+        ) as HTMLButtonElement[]
+      )
+        .find((b) => b.textContent?.includes('Página siguiente'))
+        ?.click();
+      fixture.detectChanges();
       const segunda = httpMock.expectOne(esHistorial(PENDIENTE.id));
       expect(segunda.request.params.get('page')).toBe('1');
-      segunda.flush({ page: 1, size: 20, totalElements: 21, totalPages: 2, content: [] });
+      expect(segunda.request.params.get('size')).toBe('10');
+      segunda.flush({ page: 1, size: 10, totalElements: 21, totalPages: 3, content: [] });
       await estabilizar(fixture);
 
       apretar(fixture, 'Cerrar el historial');

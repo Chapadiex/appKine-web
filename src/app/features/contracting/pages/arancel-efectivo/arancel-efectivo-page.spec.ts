@@ -105,7 +105,12 @@ describe('ArancelEfectivoPage', () => {
 
   it('cuando resuelve muestra el importe con sus dos partes y la derivacion', async () => {
     const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    // Antes de consultar, la columna de la respuesta dice que va a aparecer ahi (UX-14).
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('Todavía no consultaste');
+
     await consultar(fixture, RESUELTO);
+    expect(raiz.querySelector('app-estado-vacio')).toBeNull();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('ARS 12000.00');

@@ -86,6 +86,20 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     expect(contenido).toContain('Carga duplicada');
     // La fila dada de baja no ofrece acciones: solo la activa tiene "Cambiar fin".
     expect(botones(fixture, 'Cambiar fin')).toHaveLength(1);
+    // Pie estandar (UX-14) y sin un h2 que repita el titulo.
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+  });
+
+  it('sin precios dice que rige el de lista y ofrece cargar el primero', async () => {
+    const fixture = await montar(PILATES, []);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('table')).toBeNull();
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('todos los días rige el precio de lista');
+    expect(vacio?.textContent).toContain('Cargar el primer precio');
   });
 
   it('el alta manda importe, moneda y vigencia, y el solapamiento explica como subir un precio', async () => {
@@ -234,6 +248,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
 
   async function montar(
     oferta: Record<string, unknown> = PILATES,
+    precios: readonly unknown[] = [DADO_DE_BAJA, VIGENTE],
   ): Promise<ComponentFixture<PreciosParticularesDeLaOfertaPage>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
@@ -248,17 +263,20 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
 
     const fixture = TestBed.createComponent(PreciosParticularesDeLaOfertaPage);
     fixture.detectChanges();
-    responderCarga(oferta);
+    responderCarga(oferta, precios);
     await estabilizar(fixture);
     return fixture;
   }
 
-  function responderCarga(oferta: Record<string, unknown>): void {
+  function responderCarga(
+    oferta: Record<string, unknown>,
+    precios: readonly unknown[] = [DADO_DE_BAJA, VIGENTE],
+  ): void {
     httpMock
       .expectOne(
         (peticion: HttpRequest<unknown>) => peticion.method === 'GET' && peticion.url === PRECIOS,
       )
-      .flush([DADO_DE_BAJA, VIGENTE]);
+      .flush(precios);
     httpMock
       .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaOfertas(SEDE))
       .flush([oferta]);

@@ -7,9 +7,7 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-alta">
-  <h2 id="titulo-alta">Datos del vínculo</h2>
-
+<section class="tarjeta" aria-label="Datos del vínculo">
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
     <!-- Error general del alta (no de un campo): arriba del formulario, a la vista. -->
     @if (mensajeError() && causaError() !== 'conflicto') {
@@ -71,7 +69,7 @@
       </app-alerta>
     }
 
-    <div class="campo">
+    <div class="campo campo--4">
       <label for="alta-roleCode">Rol</label>
       <select
         id="alta-roleCode"
@@ -112,7 +110,7 @@
       </div>
 
       @if (formulario.controls.alcance.value === 'sede') {
-        <div class="campo">
+        <div class="campo campo--4">
           <label for="alta-consultorioId">Sede</label>
           <select id="alta-consultorioId" formControlName="consultorioId">
             <option value="">Elegí una sede</option>

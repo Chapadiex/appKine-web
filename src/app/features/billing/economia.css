@@ -28,8 +28,8 @@
  */
 .cifras {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
-  margin: 0 0 var(--esp-7);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 0 0 var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--esp-1);
-  padding: var(--esp-5) var(--esp-6);
+  padding: var(--esp-4) var(--esp-5);
   border-right: var(--borde-fino) solid var(--color-borde-sutil);
   min-width: 0;
 }
@@ -55,7 +55,7 @@
 
 .cifras dd {
   margin: 0;
-  font-size: var(--tipo-xl);
+  font-size: var(--tipo-lg);
   font-weight: var(--peso-fuerte);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -65,6 +65,9 @@
   display: block;
   font-size: var(--tipo-2xs);
   color: var(--color-texto-suave);
+  /* Va dentro de un importe (que no corta): la nota si corta, o se pisa con la cifra de al lado. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .cifras dd.cifras__texto {
@@ -104,38 +107,26 @@
   margin-bottom: var(--esp-6);
 }
 
-/* Tarjeta que contiene una tabla de borde a borde: la tabla no lleva el padding de la tarjeta. */
-.tarjeta--tabla {
-  padding: 0;
-  overflow: hidden;
+/*
+ * Caja diaria (UX-14 §3): la jornada abierta es una banda de indicadores, sin tarjeta, para que los
+ * movimientos ocupen la pantalla. El titulo y "Actualizar" van en una sola linea con la banda.
+ */
+.banda-de-caja {
+  margin-bottom: var(--esp-6);
 }
 
-.tarjeta--tabla > .tarjeta__cabecera {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  padding: var(--esp-5) var(--esp-6);
+.banda-de-caja > .titulo-con-ayuda {
+  margin-bottom: var(--esp-4);
 }
 
-.tarjeta--tabla > .tarjeta__cabecera h2,
-.tarjeta--tabla > .tarjeta__cabecera .titulo-con-ayuda {
+.banda-de-caja .cifras {
   margin: 0;
 }
 
-.tarjeta--tabla > .tarjeta__cuerpo {
-  padding: var(--esp-5) var(--esp-6);
-}
-
-.tarjeta--tabla > .tabla-scroll {
-  border-top: var(--borde-fino) solid var(--color-borde);
-  margin: 0;
-}
-
-.tarjeta--tabla > .ayuda,
-.tarjeta--tabla > .estado {
-  margin: 0;
-  padding: var(--esp-5) var(--esp-6);
+/* Totales por medio: lista liviana arriba de las operaciones laterales, no otra tarjeta. */
+.caja-por-medio {
+  margin-bottom: var(--esp-6);
+  padding: 0 var(--esp-2);
 }
 
 /* La tarjeta de la accion que se esta por confirmar (el arqueo): borde de accion. */
@@ -185,30 +176,6 @@
 
 .lista-montos__total .importe {
   font-weight: var(--peso-fuerte);
-}
-
-/*
- * Campos compactos: importes, fechas y codigos no necesitan el ancho entero de la pantalla. Un
- * importe a 1.000 px se lee como un campo de texto libre y obliga a recorrer la linea entera.
- */
-.grilla-compacta {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-  gap: 0 var(--esp-5);
-  align-items: start;
-}
-
-.grilla-compacta > .campo--ancho {
-  grid-column: 1 / -1;
-}
-
-.campo--corto {
-  max-width: 14rem;
-}
-
-.campo--corto input,
-.campo--corto select {
-  width: 100%;
 }
 
 .campo input[inputmode='decimal'],
@@ -277,10 +244,9 @@
 }
 
 /* Pie de una tarjeta de tabla: el resumen a la izquierda y la accion a la derecha. */
-.tarjeta--tabla > .pie-de-tarjeta {
-  margin: 0;
-  padding: var(--esp-5) var(--esp-6);
-  border-top: var(--borde-fino) solid var(--color-borde);
+.pie-de-tarjeta {
+  align-items: center;
+  margin: var(--esp-4) 0 0;
 }
 
 .pie-de-tarjeta__resumen {

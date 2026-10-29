@@ -54,7 +54,8 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -121,7 +122,8 @@ type TipoAccion = 'editar' | 'baja';
     Ayuda,
     ColumnaOrdenable,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Filtros,
     FiltrosRapidos,
     AccionesDeFila,
@@ -175,12 +177,25 @@ export class ConveniosDeLaSedePage {
     return actual.tipo === 'listo' ? actual.pagina : [];
   });
 
-  /** Lo que se ve: la lista entera filtrada por el estado elegido arriba de la tabla. */
+  /**
+   * Texto de la busqueda. Filtra en pantalla por financiador, nombre o codigo: el backend no busca
+   * convenios y la lista llega entera.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Lo que se ve: la lista entera filtrada por el estado elegido y por la busqueda. */
   protected readonly convenios = computed<readonly ConvenioResponse[]>(() => {
     const elegido = this.filtroRapido();
-    return elegido === 'TODOS'
-      ? this.cargados()
-      : this.cargados().filter((convenio) => convenio.estado === elegido);
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    return this.cargados()
+      .filter((convenio) => elegido === 'TODOS' || convenio.estado === elegido)
+      .filter(
+        (convenio) =>
+          texto === '' ||
+          [this.nombreDelFinanciador(convenio), convenio.nombre, convenio.codigo].some((valor) =>
+            (valor ?? '').toLocaleLowerCase('es').includes(texto),
+          ),
+      );
   });
 
   /** Filtros rapidos con conteo: "Activos 8 · Dados de baja 2 · Todos 10". */
@@ -247,6 +262,15 @@ export class ConveniosDeLaSedePage {
    */
   protected readonly filtrosAvanzadosActivos = computed(() =>
     Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  );
+
+  /**
+   * Si el listado viene recortado por la busqueda o la fecha. Sin eso, una sede sin convenios es
+   * "todavia no hay"; con eso, "no hay con estos filtros" (UX-14). El estado elegido no cuenta: la
+   * lista se pide entera y `cargados` ya dice si la sede tiene alguno.
+   */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
   );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -374,6 +398,15 @@ export class ConveniosDeLaSedePage {
     }
     this.cerrarPanel();
     this.fecha.set(valor);
+    this.cargar();
+  }
+
+  /** Vuelve la busqueda, el estado y la fecha a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroRapido.set('ACTIVO');
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.cargar();
   }
 

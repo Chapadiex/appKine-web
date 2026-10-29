@@ -138,38 +138,27 @@
 }
 
 /*
- * Listados del lienzo (UX-01): la tarjeta lleva la tabla de borde a borde. Cabecera con el titulo,
- * los filtros debajo y el pie con el conteo y el paginador, todo con el mismo margen lateral.
- * Los estados (cargando, vacio, error) van en el cuerpo, con ese mismo margen.
+ * Listados del lienzo (UX-01, UX-14): la tarjeta lleva la tabla de borde a borde. Arriba la
+ * toolbar (busqueda, filtros y resultados), la tabla y el pie estandar con "Mostrando 1–10 de N",
+ * todo con el mismo margen lateral. Los estados (cargando, vacio, error) van en el cuerpo, con ese
+ * mismo margen.
  */
 .tarjeta--tabla {
   padding: 0;
   overflow: hidden;
 }
 
-.tarjeta--tabla > .tarjeta__cabecera,
-.tarjeta--tabla > app-filtros {
-  padding: var(--esp-5) var(--esp-6) 0;
-}
-
-.tarjeta--tabla > .tarjeta__cabecera h2 {
-  margin: 0;
-}
-
 .tarjeta--tabla > app-filtros {
   display: block;
-  padding-bottom: var(--esp-4);
+  margin: 0;
+  padding: var(--esp-5) var(--esp-6) var(--esp-4);
 }
 
-.tarjeta--tabla > .tarjeta__cabecera:not(:has(+ app-filtros)) {
-  padding-bottom: var(--esp-4);
-}
-
-.tarjeta--tabla > [aria-live] > :not(.tabla-scroll):not(.tabla-pie) {
+.tarjeta--tabla > [aria-live] > :not(.tabla-scroll):not(.paginacion-pie):not(app-pie-de-tabla) {
   margin-inline: var(--esp-6);
 }
 
-.tarjeta--tabla > [aria-live] > .boton {
+.tarjeta--tabla > [aria-live] > :last-child:not(.tabla-scroll):not(app-pie-de-tabla) {
   margin-bottom: var(--esp-6);
 }
 
@@ -177,15 +166,9 @@
   border-top: var(--borde-fino) solid var(--color-borde);
 }
 
-.tarjeta--tabla .tabla-pie {
+.tarjeta--tabla .paginacion-pie {
   margin: 0;
   padding: var(--esp-4) var(--esp-6);
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-}
-
-.tarjeta--tabla > .tarjeta__pie {
-  margin: 0;
-  padding: var(--esp-5) var(--esp-6);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
@@ -278,17 +261,6 @@
 
 .accion-texto--peligro {
   color: var(--color-peligro-texto);
-}
-
-/*
- * Los tres importes del arancel en una fila (total, financiador, coseguro): se leen y se cargan
- * juntos porque tienen que cuadrar. En un panel angosto o un telefono bajan a una columna.
- */
-.grilla-importes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-  gap: 0 var(--esp-6);
-  grid-column: 1 / -1;
 }
 
 /*
@@ -479,23 +451,6 @@
   }
 }
 
-.consulta__pregunta form {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
-}
-
 .consulta__respuesta > .resultado {
   margin-top: 0;
-}
-
-/* Catalogo de financiadores: la busqueda y su boton en una linea, dentro de la tarjeta del listado. */
-.catalogo__busqueda {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--esp-4);
-  padding: var(--esp-5) var(--esp-6) var(--esp-4);
-}
-
-.catalogo__busqueda > app-filtros {
-  flex: 1 1 24rem;
 }

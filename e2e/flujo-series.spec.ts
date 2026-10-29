@@ -112,7 +112,8 @@ test.describe('Series de turnos contra el backend real', () => {
     const busqueda = page.getByLabel('Paciente, documento, oferta o profesional');
     await busqueda.fill(persona.apellido);
     await busqueda.press('Enter');
-    await expect(page.getByRole('heading', { name: '1 serie' })).toBeVisible();
+    // El contador vive en la toolbar del listado, en la fila de la busqueda (UX-14 §1).
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 serie');
     const fila = page.getByRole('region', { name: 'Series de turnos de la sede' }).getByRole('row');
     await expect(fila.filter({ hasText: oferta.nombre })).toContainText(
       `${OCURRENCIAS} pendientes de ${OCURRENCIAS}`,

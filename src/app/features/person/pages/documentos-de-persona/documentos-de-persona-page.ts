@@ -11,7 +11,11 @@ import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacio
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PersonApi } from '../../services/person-api';
@@ -46,8 +50,6 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { ListarAdjuntosDePersonaRequestParams } from '../../../../api/generated/api/adjuntos.serviceInterface';
-
-const TAMANO_DE_PAGINA = 20;
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'reclasificar' | 'baja';
@@ -114,6 +116,7 @@ type TipoAccion = 'reclasificar' | 'baja';
     Icono,
     ReactiveFormsModule,
     ConfirmacionConMotivo,
+    EstadoVacio,
     Paginacion,
     PanelLateral,
     PermisoDirective,
@@ -165,6 +168,9 @@ export class DocumentosDePersonaPage {
     () => Number(this.filtroCategoria() !== '') + Number(this.filtro() !== 'VIGENTES'),
   );
   protected readonly pagina = signal(0);
+
+  /** Filas por pagina: viaja como `size` y el usuario la cambia desde el pie (UX-14). */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<
@@ -306,7 +312,7 @@ export class DocumentosDePersonaPage {
         categoria: categoria === '' ? undefined : categoria,
         filtro: this.filtro(),
         pagina: this.pagina(),
-        tamano: TAMANO_DE_PAGINA,
+        tamano: this.porPagina(),
         sort: this.orden.sort(),
       })
       .subscribe({
@@ -330,6 +336,20 @@ export class DocumentosDePersonaPage {
 
   protected cambiarFiltro(valor: string): void {
     this.filtro.set(valor === 'TODOS' ? 'TODOS' : 'VIGENTES');
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  /** Vuelve categoria y estado a su valor por defecto. */
+  protected limpiarFiltros(): void {
+    this.filtroCategoria.set('');
+    this.filtro.set('VIGENTES');
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.pagina.set(0);
     this.cargar();
   }
@@ -557,6 +577,7 @@ export class DocumentosDePersonaPage {
     this.filtroCategoria.set('');
     this.filtro.set('VIGENTES');
     this.pagina.set(0);
+    this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();
   }
 }

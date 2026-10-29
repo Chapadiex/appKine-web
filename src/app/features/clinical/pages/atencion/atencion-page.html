@@ -26,7 +26,7 @@
   atencion abierta el caso se puede cambiar desde la tarjeta de la atencion.
 -->
 @if (eligiendoCaso()) {
-  <section class="tarjeta tarjeta--angosta" aria-labelledby="titulo-caso">
+  <section class="tarjeta" aria-labelledby="titulo-caso">
     <h2 id="titulo-caso">Antes de empezar: caso clínico</h2>
     <p class="ayuda">
       El paciente tiene casos clínicos activos. Elegí a cuál pertenece esta atención, o seguí sin
@@ -547,8 +547,12 @@
               </div>
             </fieldset>
 
-            <div class="grilla-campos grilla-campos--dos">
-              <div class="campo">
+            <!--
+              Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. La zona y el lado
+              van juntos; los textos clinicos, mas anchos.
+            -->
+            <div class="grilla-12">
+              <div class="campo campo--4">
                 <label for="atencion-zona"
                   >Zona <span class="campo__opcional">(opcional)</span></label
                 >
@@ -576,7 +580,7 @@
                 </p>
               </div>
 
-              <div class="campo">
+              <div class="campo campo--4">
                 <label for="atencion-lateralidad">
                   Lateralidad <span class="campo__opcional">(opcional)</span>
                 </label>
@@ -616,23 +620,23 @@
               </div>
             </fieldset>
 
-            <div class="campo">
-              <label for="atencion-objetivo">
-                Objetivo de esta sesión <span class="campo__opcional">(opcional)</span>
-              </label>
-              <input
-                id="atencion-objetivo"
-                name="atencion-objetivo"
-                type="text"
-                maxlength="500"
-                [value]="objetivoSesion()"
-                (input)="objetivoSesion.set($any($event.target).value)"
-              />
-            </div>
+            <div class="grilla-12">
+              <div class="campo campo--12">
+                <label for="atencion-objetivo">
+                  Objetivo de esta sesión <span class="campo__opcional">(opcional)</span>
+                </label>
+                <input
+                  id="atencion-objetivo"
+                  name="atencion-objetivo"
+                  type="text"
+                  maxlength="500"
+                  [value]="objetivoSesion()"
+                  (input)="objetivoSesion.set($any($event.target).value)"
+                />
+              </div>
 
-            @if (completa()) {
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
+              @if (completa()) {
+                <div class="campo campo--6">
                   <label for="atencion-motivo">
                     Motivo clínico <span class="campo__opcional">(opcional)</span>
                   </label>
@@ -651,7 +655,7 @@
                   </p>
                 </div>
 
-                <div class="campo">
+                <div class="campo campo--6">
                   <label for="atencion-limitacion">
                     Limitación funcional <span class="campo__opcional">(opcional)</span>
                   </label>
@@ -664,8 +668,8 @@
                     (input)="limitacionFuncional.set($any($event.target).value)"
                   />
                 </div>
-              </div>
-            }
+              }
+            </div>
 
             <div class="pie-tarjeta">
               <button
@@ -827,8 +831,8 @@
                     >Respuesta, tolerancia, indicaciones y próxima conducta (opcionales)</span
                   >
                 </summary>
-                <div class="grilla-campos grilla-campos--dos">
-                  <div class="campo">
+                <div class="grilla-12">
+                  <div class="campo campo--6">
                     <label for="cierre-respuesta">
                       Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
                     </label>
@@ -842,7 +846,7 @@
                     />
                   </div>
 
-                  <div class="campo">
+                  <div class="campo campo--3">
                     <label for="cierre-tolerancia">
                       Tolerancia <span class="campo__opcional">(opcional)</span>
                     </label>
@@ -881,7 +885,7 @@
                     <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
                   </div>
 
-                  <div class="campo">
+                  <div class="campo campo--4">
                     <label for="cierre-conducta">
                       Próxima conducta <span class="campo__opcional">(opcional)</span>
                     </label>

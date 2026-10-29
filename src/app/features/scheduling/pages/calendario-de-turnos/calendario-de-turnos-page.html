@@ -57,9 +57,10 @@
   } @else if (cargando()) {
     <p class="estado estado--cargando">Leyendo los turnos de la semana…</p>
   } @else if (leida() && turnos().length === 0) {
-    <p class="estado estado--vacio">
-      Esta semana no tiene turnos reservados en esta sede. Probá con otra semana.
-    </p>
+    <app-estado-vacio
+      titulo="No hay turnos esta semana"
+      texto="Esta semana no tiene turnos reservados en esta sede. Probá con otra semana."
+    />
   }
 </div>
 

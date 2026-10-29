@@ -14,7 +14,12 @@ import { MembershipGrantResponse } from '../../../../api/generated/model/members
 import { MembershipPageResponse } from '../../../../api/generated/model/membership-page-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ETIQUETA_DE_ESTADO, ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
 import { ImpactoDeDesvinculacion, resumenDeImpacto } from '../../models/impacto-de-desvinculacion';
@@ -52,14 +57,6 @@ type Otorgables =
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'listo'; readonly codigos: readonly string[] }
   | { readonly tipo: 'error' };
-
-/**
- * Cuantos colaboradores se piden por pagina.
- *
- * <p>Muy por debajo del tope de 100 que el backend recorta: la tabla se lee de un vistazo y
- * cada fila trae acciones. Pedir 100 no ahorraria un request en ningun centro real.
- */
-const POR_PAGINA = 20;
 
 /**
  * Gestion de colaboradores de la organizacion activa (M05, AKINE-01.03).
@@ -105,6 +102,8 @@ const POR_PAGINA = 20;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
+    Filtros,
     ConfirmacionConMotivo,
     PanelLateral,
   ],
@@ -140,6 +139,9 @@ export class CollaboratorsPage {
    */
   private readonly vista = vistaDeListado<MembershipResponse>(this.estado);
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** Lo que se busca en el nombre y el correo de la cuenta (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
@@ -317,7 +319,7 @@ export class CollaboratorsPage {
       .listMemberships({
         orgId,
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
       })
@@ -348,6 +350,17 @@ export class CollaboratorsPage {
   /** Busca en el servidor y vuelve a la primera pagina: la 3 de otra busqueda no existe. */
   protected buscar(texto: string): void {
     this.busqueda.set(texto);
+    this.recargarDesdeElPrincipio();
+  }
+
+  /** "Limpiar filtros" del vacio: la unica condicion del listado es la busqueda. */
+  protected limpiarBusqueda(): void {
+    this.buscar('');
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera, que la actual puede no existir con el nuevo. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.recargarDesdeElPrincipio();
   }
 

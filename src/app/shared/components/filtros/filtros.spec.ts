@@ -7,7 +7,13 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
 @Component({
   imports: [Filtros],
   template: `
-    <app-filtros [activos]="activos()" [soloAvanzados]="solo()">
+    <app-filtros
+      [activos]="activos()"
+      [resultados]="resultados()"
+      [unidad]="['sede', 'sedes']"
+      limpiable
+      (limpiar)="limpiadas = limpiadas + 1"
+    >
       <div class="campo" filtro-principal>
         <label for="buscar">Buscar</label>
         <input id="buscar" type="search" />
@@ -23,7 +29,8 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
 })
 class Anfitrion {
   readonly activos = signal(0);
-  readonly solo = signal(false);
+  readonly resultados = signal<number | null>(null);
+  limpiadas = 0;
 }
 
 /**
@@ -49,7 +56,9 @@ describe('Filtros', () => {
     expect(panel().querySelector('#estado')).not.toBeNull();
     expect(boton().getAttribute('aria-expanded')).toBe('false');
     expect(boton().getAttribute('aria-controls')).toBe(panel().id);
-    expect(boton().textContent).toContain('Filtros avanzados');
+    // El boton dice "Filtros" en todas las pantallas (UX-14), no un embudo solo.
+    expect(boton().querySelector('.visualmente-oculto')).toBeNull();
+    expect(boton().textContent?.trim()).toBe('Filtros');
   });
 
   it('el embudo despliega y pliega los avanzados', () => {
@@ -76,13 +85,27 @@ describe('Filtros', () => {
     expect(panel().hidden).toBe(false);
   });
 
-  it('sin campo basico, el botón lleva su texto a la vista', () => {
-    fixture.componentInstance.solo.set(true);
-    fixture.detectChanges();
+  it('dice cuantas filas hay en la misma fila de la busqueda, en singular o plural', () => {
+    expect(html.querySelector('.filtros-barra__resultados')).toBeNull();
 
-    expect(boton().classList).toContain('filtros-barra__boton--con-texto');
-    expect(boton().querySelector('.visualmente-oculto')).toBeNull();
-    expect(boton().textContent).toContain('Filtros');
+    fixture.componentInstance.resultados.set(1);
+    fixture.detectChanges();
+    expect(html.querySelector('.filtros-barra__fila .filtros-barra__resultados')?.textContent).toBe(
+      '1 sede',
+    );
+
+    fixture.componentInstance.resultados.set(42);
+    fixture.detectChanges();
+    expect(html.querySelector('.filtros-barra__resultados')?.textContent).toBe('42 sedes');
+  });
+
+  it('con filtros activos ofrece limpiarlos', () => {
+    expect(html.querySelector('.filtros-barra__limpiar')).toBeNull();
+
+    fixture.componentInstance.activos.set(1);
+    fixture.detectChanges();
+    html.querySelector<HTMLButtonElement>('.filtros-barra__limpiar button')!.click();
+    expect(fixture.componentInstance.limpiadas).toBe(1);
   });
 
   it(

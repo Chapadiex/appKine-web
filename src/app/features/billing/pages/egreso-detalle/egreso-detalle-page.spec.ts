@@ -94,6 +94,10 @@ describe('EgresoDetallePage', () => {
   it('un borrador sin comprobante no se confirma hasta guardarlo, sin tocar el beneficiario', async () => {
     const fixture = await montar(BORRADOR);
     expect(contenido(fixture)).toContain('Todavía falta el comprobante');
+    // Sin pagos, la tabla interna muestra su estado vacio (UX-14).
+    expect(campo<HTMLElement>(fixture, 'app-estado-vacio').textContent).toContain(
+      'Todavía no hay pagos de este egreso',
+    );
     expect(boton(fixture, 'Confirmar el egreso').disabled).toBe(true);
     expect(campo<HTMLInputElement>(fixture, '#edicion-importe').value).toBe('300000.00');
 
@@ -201,6 +205,7 @@ describe('EgresoDetallePage', () => {
     expect(contenido(fixture)).toContain('Anulá primero cada pago');
     expect(botonOpcional(fixture, 'Anular el egreso')).toBeUndefined();
     expect(contenido(fixture)).toContain('300.000,00');
+    expect(contenido(fixture)).toContain('Mostrando 1–1 de 1');
 
     boton(fixture, 'Anular el pago').click();
     fixture.detectChanges();

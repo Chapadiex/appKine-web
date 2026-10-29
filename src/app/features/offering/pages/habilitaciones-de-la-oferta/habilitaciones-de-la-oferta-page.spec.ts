@@ -526,6 +526,28 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     expect(texto).toContain('Todavía no hay ningún profesional configurado');
     expect(texto).toContain('así que hoy la puede prestar cualquiera');
     expect(texto).toContain('Todavía no hay ningún espacio configurado');
+    // Estado vacio estandar (UX-14), con la salida a donde se administran.
+    const vacios = (fixture.nativeElement as HTMLElement).querySelectorAll('app-estado-vacio');
+    expect(vacios.length).toBe(2);
+    expect(vacios[0].textContent).toContain('Ir a Colaboradores');
+  });
+
+  it('las listas de candidatos se ordenan por nombre y llevan el pie estandar', async () => {
+    const fixture = await montar(SIN_RESTRINGIR, {
+      colaboradores: [
+        { id: 77, accountName: 'Zoe Diaz', roleCode: 'PROFESIONAL', estado: 'ACTIVA' },
+        { id: 78, accountName: 'Ana Gomez', roleCode: 'PROFESIONAL', estado: 'ACTIVA' },
+      ],
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const tabla = anfitrion.querySelector('[aria-label="Profesionales habilitables"] table');
+    const nombres = () =>
+      [...(tabla?.querySelectorAll('.habilitable__nombre') ?? [])].map((n) => n.textContent);
+
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+    tabla?.querySelector<HTMLButtonElement>('th button')?.click();
+    fixture.detectChanges();
+    expect(nombres()).toEqual(['Ana Gomez', 'Zoe Diaz']);
   });
 
   it(

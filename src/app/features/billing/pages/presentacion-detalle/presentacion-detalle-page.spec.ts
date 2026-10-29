@@ -434,10 +434,15 @@ describe('PresentacionDetallePage', () => {
 
     filtrar(fixture, 'DEBITADO_PARCIAL');
     expect(anfitrion.querySelectorAll('tbody tr')).toHaveLength(1);
+    // El contador va en la barra de filtros, pegado a la tabla (UX-14).
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 prestación',
+    );
     expect(contenido(fixture)).toContain('Debitada en parte');
 
     filtrar(fixture, 'ACEPTADO_PARCIAL');
     expect(contenido(fixture)).toContain('Ninguna prestación del lote está en ese estado.');
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain('Limpiar filtros');
 
     filtrar(fixture, '');
     expect(anfitrion.querySelectorAll('.tabla tbody tr')).toHaveLength(2);

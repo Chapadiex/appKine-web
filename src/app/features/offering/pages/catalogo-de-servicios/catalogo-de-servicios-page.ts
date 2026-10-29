@@ -38,7 +38,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -101,7 +102,8 @@ const ESPERA_DE_BUSQUEDA = 250;
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -175,6 +177,11 @@ export class CatalogoDeServiciosPage {
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(() =>
     Number(this.filtroEstado() !== 'ACTIVO'),
+  );
+
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
   );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
@@ -303,6 +310,14 @@ export class CatalogoDeServiciosPage {
       valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
     this.cerrarPanel();
     this.filtroEstado.set(elegido);
+    this.cargar();
+  }
+
+  /** Vuelve la busqueda y el filtro de estado a su valor inicial y relee. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
     this.cargar();
   }
 

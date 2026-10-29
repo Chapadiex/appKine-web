@@ -184,7 +184,48 @@ describe('SolicitudesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('todavía no hizo ningún pedido');
+    // Vacio con un filtro elegido (UX-14): no es "no hay ninguno", y ofrece limpiar.
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos pedidos');
+    [...(vacio?.querySelectorAll('button') ?? [])]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))
+      ?.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === LISTADO && !peticion.params.has('estado'),
+      )
+      .flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'todavía no hizo ningún pedido',
+    );
+  });
+
+  it('el listado sigue el patron: busqueda local, total en la toolbar y pie estandar', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '2 pedidos',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
+
+    const busqueda = anfitrion.querySelector<HTMLInputElement>('#busqueda-solicitudes');
+    if (busqueda === null) {
+      throw new Error('No existe la busqueda');
+    }
+    busqueda.value = 'fono';
+    busqueda.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
+      '1 pedido',
+    );
   });
 
   it('sin organización elegida no consulta nada y manda a elegir contexto', async () => {

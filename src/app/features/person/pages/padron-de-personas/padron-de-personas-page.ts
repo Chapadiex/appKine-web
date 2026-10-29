@@ -7,7 +7,11 @@ import { CreatePersonaRequest } from '../../../../api/generated/model/create-per
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import {
   PERMISO_COBRO_REGISTER,
@@ -49,8 +53,6 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
 
-const TAMANO_DE_PAGINA = 20;
-
 /**
  * El padron de personas de la organizacion (M07, AKINE-03.01).
  *
@@ -75,9 +77,10 @@ const TAMANO_DE_PAGINA = 20;
  *
  * <h2>2. La busqueda es la pantalla, no un filtro del listado</h2>
  *
- * <p>RN-M07-001 exige busqueda previa a la creacion. Por eso el buscador esta arriba de todo y el
- * boton de alta esta <b>al lado del buscador</b> y no en la barra de acciones: el orden visual es
- * el orden del procedimiento. Buscar primero, dar de alta despues.
+ * <p>RN-M07-001 exige busqueda previa a la creacion. Por eso el buscador encabeza el listado, en
+ * la misma tarjeta que la tabla y con el contador de resultados al lado (patron de listados de
+ * UX-14), y el alta queda arriba a la derecha, en la cabecera: buscar primero, dar de alta
+ * despues.
  *
  * <p><b>Y eso es UX, no la regla.</b> La regla la hace cumplir el backend: un alta que coincide en
  * nombre completo o telefono se rechaza con 409 y la lista de candidatos. La pantalla no puede ser
@@ -119,6 +122,7 @@ const TAMANO_DE_PAGINA = 20;
     ReactiveFormsModule,
     PermisoDirective,
     ConfirmacionConMotivo,
+    EstadoVacio,
     Paginacion,
     PanelLateral,
     RouterLink,
@@ -201,7 +205,15 @@ export class PadronDePersonasPage {
   protected readonly filtrosAvanzadosActivos = computed(
     () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
   );
+  /** Hay algo elegido: busqueda o filtros del embudo. Separa "no hay nadie" de "no coincide". */
+  protected readonly hayFiltros = computed(
+    () => this.texto().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
+
   protected readonly pagina = signal(0);
+
+  /** Filas por pagina: viaja como `size` y el usuario la cambia desde el pie (UX-14). */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<CamposDeSort<BuscarPersonasRequestParams['sort']>>(
@@ -307,6 +319,21 @@ export class PadronDePersonasPage {
     this.cargar();
   }
 
+  /** Vuelve la busqueda y los filtros del embudo a su valor por defecto. */
+  protected limpiarFiltros(): void {
+    this.texto.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.filtroPerfil.set('TODOS');
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.pagina.set(0);
+    this.cargar();
+  }
+
   protected irAPagina(numero: number): void {
     this.pagina.set(numero);
     this.cargar();
@@ -320,7 +347,7 @@ export class PadronDePersonasPage {
         estado: this.filtroEstado(),
         perfil: this.filtroPerfil(),
         pagina: this.pagina(),
-        tamano: TAMANO_DE_PAGINA,
+        tamano: this.porPagina(),
         sort: this.orden.sort(),
       })
       .subscribe({
@@ -577,6 +604,7 @@ export class PadronDePersonasPage {
     this.filtroEstado.set('ACTIVO');
     this.filtroPerfil.set('TODOS');
     this.pagina.set(0);
+    this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();
   }
 

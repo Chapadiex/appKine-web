@@ -46,7 +46,8 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
@@ -96,7 +97,8 @@ type FalloDePresentacion = ErrorPresentacion & { readonly clave: string };
     NgTemplateOutlet,
     ColumnaOrdenable,
     Filtros,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,

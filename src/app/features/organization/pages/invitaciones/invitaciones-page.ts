@@ -30,8 +30,9 @@ import { formatearInstante } from '../../../../shared/utils/instantes';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_COLABORADORES,
@@ -101,7 +102,8 @@ const ROLES = [
 
     Alerta,
     Pestanas,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ColumnaOrdenable,
     Ayuda,
     Icono,
@@ -156,6 +158,26 @@ export class InvitacionesPage {
   });
 
   /**
+   * Busqueda por email (UX-14). El backend no tiene `q` para este listado, pero la lista llega
+   * entera: se filtra aca, sobre lo que ya esta en pantalla.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Hay busqueda o un estado distinto del de entrada: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtro() !== 'PENDIENTE',
+  );
+
+  /** Las filas que coinciden con la busqueda: es lo que ordena y pagina la tabla. */
+  protected readonly filasBuscadas = computed(() => {
+    const buscado = normalizar(this.busqueda());
+    const filas = this.filas();
+    return buscado === ''
+      ? filas
+      : filas.filter((invitacion) => normalizar(invitacion.email ?? '').includes(buscado));
+  });
+
+  /**
    * La invitacion con el panel de cancelacion abierto. El panel lateral vive fuera de la tabla
    * (refactor UX/UI del 28/10/2026), asi que la busca en la lista.
    */
@@ -165,7 +187,7 @@ export class InvitacionesPage {
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
-  protected readonly tabla = tablaLocal(this.filas, {
+  protected readonly tabla = tablaLocal(this.filasBuscadas, {
     columnas: {
       persona: (invitacion) => invitacion.email,
       rol: (invitacion) => this.etiquetaDeRol(invitacion.roleCode),
@@ -209,9 +231,18 @@ export class InvitacionesPage {
       untracked(() => {
         this.cerrarPaneles();
         this.filtro.set('PENDIENTE');
+        this.busqueda.set('');
         this.cargar();
       });
     });
+  }
+
+  /** "Limpiar filtros": vuelve la busqueda y el estado a su valor de entrada. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtro() !== 'PENDIENTE') {
+      this.cambiarFiltro('PENDIENTE');
+    }
   }
 
   /**
@@ -464,4 +495,13 @@ export class InvitacionesPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable: sin mayusculas, sin tildes y sin espacios de los costados. */
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
 }

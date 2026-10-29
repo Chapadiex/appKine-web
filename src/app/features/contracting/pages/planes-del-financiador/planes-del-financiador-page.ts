@@ -45,7 +45,8 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
@@ -110,7 +111,8 @@ type TipoAccion = 'editar' | 'baja';
     CabeceraDePagina,
     Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Icono,
     Ayuda,
     Filtros,
@@ -161,9 +163,22 @@ export class PlanesDelFinanciadorPage {
     tipo: 'cargando',
   });
 
+  /** Texto de la busqueda. Filtra en pantalla: el backend no busca planes y la lista llega entera. */
+  protected readonly busqueda = signal('');
+
+  /** Lo que se ve: lo que trajo el servidor, filtrado por nombre o codigo. */
   protected readonly planes = computed<readonly PlanCoberturaResponse[]>(() => {
     const actual = this.estado();
-    return actual.tipo === 'listo' ? actual.pagina : [];
+    const todos = actual.tipo === 'listo' ? actual.pagina : [];
+    const texto = this.busqueda().trim().toLocaleLowerCase('es');
+    if (texto === '') {
+      return todos;
+    }
+    return todos.filter((plan) =>
+      [plan.nombre, plan.codigo].some((valor) =>
+        (valor ?? '').toLocaleLowerCase('es').includes(texto),
+      ),
+    );
   });
 
   /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina planes. */
@@ -209,6 +224,11 @@ export class PlanesDelFinanciadorPage {
   protected readonly filtrosAvanzadosActivos = computed(
     () =>
       Number(this.filtroEstado() !== 'ACTIVO') + Number(this.fecha() !== this.diaDeLaSede.hoy()),
+  );
+
+  /** Si la lista vacia es por la busqueda o los filtros, y no porque no haya planes (UX-14). */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
   );
 
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -317,6 +337,15 @@ export class PlanesDelFinanciadorPage {
       valor === 'INACTIVO' || valor === 'TODOS' ? valor : ('ACTIVO' as const);
     this.cerrarPanel();
     this.filtroEstado.set(elegido);
+    this.cargar();
+  }
+
+  /** Vuelve la busqueda, el estado y la fecha a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.fecha.set(this.diaDeLaSede.hoy());
     this.cargar();
   }
 

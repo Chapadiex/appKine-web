@@ -78,16 +78,34 @@
   </p>
 }
 
-<section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-aranceles">
-  <div class="tarjeta__cabecera">
-    <h2 id="titulo-listado-aranceles">Grilla de vigencias</h2>
-  </div>
-
+<section class="tarjeta tarjeta--tabla" aria-label="Grilla de vigencias">
   <!--
-  Regla de filtros (plan §3.4): sin busqueda por texto en el backend, solo el embudo. La fecha
-  de vigencia va adentro y cuenta como activa si no es hoy: cambia la columna Situacion.
--->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    Toolbar de la tabla (UX-14). El backend no busca aranceles por texto, pero la grilla llega
+    entera: la busqueda filtra en pantalla por practica u oferta. Estado y fecha de vigencia,
+    detras del embudo; la fecha cuenta como activa si no es hoy: cambia la columna Situacion.
+  -->
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['arancel', 'aranceles']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="buscar-arancel">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="buscar-arancel"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por práctica u oferta"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
     <div class="campo">
       <label for="filtro-estado-arancel">Mostrar</label>
       <select
@@ -130,12 +148,12 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo
-          falta elegir dónde estás.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        <app-estado-vacio
+          titulo="Todavía no elegiste un consultorio."
+          texto="Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo falta elegir dónde estás."
+        >
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -152,15 +170,32 @@
       }
 
       @case ('listo') {
-        @if (aranceles().length === 0) {
-          <p class="estado estado--vacio">
-            Este convenio no tiene aranceles que coincidan con el filtro.
-          </p>
-          <p class="ayuda">
-            Un convenio sin aranceles <b>no resuelve ningún precio</b>: la consulta de arancel
-            efectivo va a responder que hay convenio pero falta el precio de esa práctica. Carga al
-            menos una práctica para que empiece a servir.
-          </p>
+        @if (aranceles().length === 0 && !hayFiltros()) {
+          <app-estado-vacio
+            titulo="Este convenio todavía no tiene aranceles"
+            texto="Un convenio sin aranceles no resuelve ningún precio: la consulta de arancel efectivo va a responder que hay convenio pero falta el precio de esa práctica. Cargá al menos una práctica para que empiece a servir."
+          >
+            @if (!convenioInactivo()) {
+              <ng-container *akinePermiso="permisoManage">
+                <button type="button" class="boton" (click)="abrirAlta()">Cargar el primero</button>
+                <a
+                  class="boton boton--secundario"
+                  [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"
+                >
+                  Importar una planilla
+                </a>
+              </ng-container>
+            }
+          </app-estado-vacio>
+        } @else if (aranceles().length === 0) {
+          <app-estado-vacio
+            titulo="No encontramos aranceles"
+            texto="Este convenio no tiene aranceles que coincidan con el filtro. Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Aranceles del convenio">
             <table class="tabla">
@@ -177,7 +212,7 @@
                   </th>
                   <th
                     scope="col"
-                    class="importe"
+                    class="importe tabla__col--secundaria"
                     appOrdenable
                     [tabla]="tabla"
                     columna="financiador"
@@ -208,7 +243,7 @@
                     <td class="importe">
                       {{ importeEnPalabras(arancel.importeTotal, moneda(), '-') }}
                     </td>
-                    <td class="importe">
+                    <td class="importe tabla__col--secundaria">
                       {{ importeEnPalabras(arancel.importeFinanciador, moneda(), '-') }}
                     </td>
                     <td class="importe">
@@ -263,15 +298,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} aranceles</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de aranceles"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de aranceles" />
         }
       }
     }
@@ -303,7 +330,7 @@
         </app-alerta>
       }
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--6">
         <label for="alta-arancel-practica">Práctica</label>
         <select
           id="alta-arancel-practica"
@@ -338,7 +365,7 @@
         }
       </div>
 
-      <div class="campo campo--ancho">
+      <div class="campo campo--6">
         <label for="alta-arancel-oferta">Oferta (opcional)</label>
         <select
           id="alta-arancel-oferta"
@@ -361,82 +388,78 @@
         }
       </div>
 
-      <div class="grilla-importes campo--ancho">
-        <div class="campo">
-          <label for="alta-arancel-total">Importe total</label>
-          <input
-            id="alta-arancel-total"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="importeTotal"
-            [attr.aria-invalid]="
-              mostrarErrorAlta('importeTotal') || errorImportes() ? 'true' : null
-            "
-            [attr.aria-describedby]="
-              mostrarErrorAlta('importeTotal')
-                ? 'alta-arancel-total-error'
-                : errorImportes()
-                  ? 'alta-arancel-importes-error'
-                  : null
-            "
-          />
-          @if (mostrarErrorAlta('importeTotal')) {
-            <p class="campo__error" id="alta-arancel-total-error" role="alert">
-              El importe total es obligatorio.
-            </p>
-          }
-        </div>
+      <div class="campo">
+        <label for="alta-arancel-total">Importe total</label>
+        <input
+          id="alta-arancel-total"
+          type="number"
+          min="0"
+          step="0.01"
+          formControlName="importeTotal"
+          [attr.aria-invalid]="mostrarErrorAlta('importeTotal') || errorImportes() ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('importeTotal')
+              ? 'alta-arancel-total-error'
+              : errorImportes()
+                ? 'alta-arancel-importes-error'
+                : null
+          "
+        />
+        @if (mostrarErrorAlta('importeTotal')) {
+          <p class="campo__error" id="alta-arancel-total-error" role="alert">
+            El importe total es obligatorio.
+          </p>
+        }
+      </div>
 
-        <div class="campo">
-          <label for="alta-arancel-financiador">Pone el financiador</label>
-          <input
-            id="alta-arancel-financiador"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="importeFinanciador"
-            [attr.aria-invalid]="
-              mostrarErrorAlta('importeFinanciador') || errorImportes() ? 'true' : null
-            "
-            [attr.aria-describedby]="
-              mostrarErrorAlta('importeFinanciador')
-                ? 'alta-arancel-financiador-error'
-                : errorImportes()
-                  ? 'alta-arancel-importes-error'
-                  : null
-            "
-          />
-          @if (mostrarErrorAlta('importeFinanciador')) {
-            <p class="campo__error" id="alta-arancel-financiador-error" role="alert">
-              Es obligatorio, y puede ser cero.
-            </p>
-          }
-        </div>
+      <div class="campo">
+        <label for="alta-arancel-financiador">Pone el financiador</label>
+        <input
+          id="alta-arancel-financiador"
+          type="number"
+          min="0"
+          step="0.01"
+          formControlName="importeFinanciador"
+          [attr.aria-invalid]="
+            mostrarErrorAlta('importeFinanciador') || errorImportes() ? 'true' : null
+          "
+          [attr.aria-describedby]="
+            mostrarErrorAlta('importeFinanciador')
+              ? 'alta-arancel-financiador-error'
+              : errorImportes()
+                ? 'alta-arancel-importes-error'
+                : null
+          "
+        />
+        @if (mostrarErrorAlta('importeFinanciador')) {
+          <p class="campo__error" id="alta-arancel-financiador-error" role="alert">
+            Es obligatorio, y puede ser cero.
+          </p>
+        }
+      </div>
 
-        <div class="campo">
-          <label for="alta-arancel-coseguro">Coseguro del paciente</label>
-          <input
-            id="alta-arancel-coseguro"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="coseguro"
-            [attr.aria-invalid]="mostrarErrorAlta('coseguro') || errorImportes() ? 'true' : null"
-            [attr.aria-describedby]="
-              mostrarErrorAlta('coseguro')
-                ? 'alta-arancel-coseguro-error alta-arancel-importes-ayuda'
-                : errorImportes()
-                  ? 'alta-arancel-importes-error alta-arancel-importes-ayuda'
-                  : 'alta-arancel-importes-ayuda'
-            "
-          />
-          @if (mostrarErrorAlta('coseguro')) {
-            <p class="campo__error" id="alta-arancel-coseguro-error" role="alert">
-              Es obligatorio, y puede ser cero.
-            </p>
-          }
-        </div>
+      <div class="campo">
+        <label for="alta-arancel-coseguro">Coseguro del paciente</label>
+        <input
+          id="alta-arancel-coseguro"
+          type="number"
+          min="0"
+          step="0.01"
+          formControlName="coseguro"
+          [attr.aria-invalid]="mostrarErrorAlta('coseguro') || errorImportes() ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('coseguro')
+              ? 'alta-arancel-coseguro-error alta-arancel-importes-ayuda'
+              : errorImportes()
+                ? 'alta-arancel-importes-error alta-arancel-importes-ayuda'
+                : 'alta-arancel-importes-ayuda'
+          "
+        />
+        @if (mostrarErrorAlta('coseguro')) {
+          <p class="campo__error" id="alta-arancel-coseguro-error" role="alert">
+            Es obligatorio, y puede ser cero.
+          </p>
+        }
       </div>
       <!-- La terna que no cuadra es un dato a corregir de los tres importes: va debajo de ellos. -->
       @if (errorImportes(); as mensaje) {
@@ -453,34 +476,32 @@
         }
       </p>
 
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="alta-arancel-desde">Vigente desde</label>
-          <input
-            id="alta-arancel-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
-            [attr.aria-describedby]="
-              mostrarErrorAlta('vigenciaDesde') ? 'alta-arancel-desde-error' : null
-            "
-          />
-          @if (mostrarErrorAlta('vigenciaDesde')) {
-            <p class="campo__error" id="alta-arancel-desde-error" role="alert">
-              La fecha de inicio es obligatoria.
-            </p>
-          }
-        </div>
+      <div class="campo">
+        <label for="alta-arancel-desde">Vigente desde</label>
+        <input
+          id="alta-arancel-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('vigenciaDesde') ? 'alta-arancel-desde-error' : null
+          "
+        />
+        @if (mostrarErrorAlta('vigenciaDesde')) {
+          <p class="campo__error" id="alta-arancel-desde-error" role="alert">
+            La fecha de inicio es obligatoria.
+          </p>
+        }
+      </div>
 
-        <div class="campo">
-          <label for="alta-arancel-hasta">Vigente hasta (opcional)</label>
-          <input
-            id="alta-arancel-hasta"
-            type="date"
-            formControlName="vigenciaHasta"
-            aria-describedby="alta-arancel-vigencia-ayuda"
-          />
-        </div>
+      <div class="campo">
+        <label for="alta-arancel-hasta">Vigente hasta (opcional)</label>
+        <input
+          id="alta-arancel-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          aria-describedby="alta-arancel-vigencia-ayuda"
+        />
       </div>
       <p class="ayuda ayuda--fija" id="alta-arancel-vigencia-ayuda">
         El fin es <b>inclusivo</b> y la ventana tiene que caer <b>dentro</b> de la del convenio.
@@ -543,45 +564,43 @@
           solo.
         </p>
 
-        <div class="grilla-importes">
-          <div class="campo">
-            <label for="editar-arancel-total">Importe total</label>
-            <input
-              id="editar-arancel-total"
-              type="number"
-              min="0"
-              step="0.01"
-              formControlName="importeTotal"
-              [attr.aria-invalid]="errorImportes() ? 'true' : null"
-              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-            />
-          </div>
+        <div class="campo">
+          <label for="editar-arancel-total">Importe total</label>
+          <input
+            id="editar-arancel-total"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="importeTotal"
+            [attr.aria-invalid]="errorImportes() ? 'true' : null"
+            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
+          />
+        </div>
 
-          <div class="campo">
-            <label for="editar-arancel-financiador">Pone el financiador</label>
-            <input
-              id="editar-arancel-financiador"
-              type="number"
-              min="0"
-              step="0.01"
-              formControlName="importeFinanciador"
-              [attr.aria-invalid]="errorImportes() ? 'true' : null"
-              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-            />
-          </div>
+        <div class="campo">
+          <label for="editar-arancel-financiador">Pone el financiador</label>
+          <input
+            id="editar-arancel-financiador"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="importeFinanciador"
+            [attr.aria-invalid]="errorImportes() ? 'true' : null"
+            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
+          />
+        </div>
 
-          <div class="campo">
-            <label for="editar-arancel-coseguro">Coseguro del paciente</label>
-            <input
-              id="editar-arancel-coseguro"
-              type="number"
-              min="0"
-              step="0.01"
-              formControlName="coseguro"
-              [attr.aria-invalid]="errorImportes() ? 'true' : null"
-              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-            />
-          </div>
+        <div class="campo">
+          <label for="editar-arancel-coseguro">Coseguro del paciente</label>
+          <input
+            id="editar-arancel-coseguro"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="coseguro"
+            [attr.aria-invalid]="errorImportes() ? 'true' : null"
+            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
+          />
         </div>
         @if (errorImportes(); as mensaje) {
           <p class="campo__error" id="editar-arancel-importes-error" role="alert">{{ mensaje }}</p>

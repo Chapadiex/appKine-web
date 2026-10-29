@@ -39,8 +39,10 @@ import {
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -176,7 +178,9 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
   selector: 'app-recepcion-del-dia-page',
   imports: [
     Alerta,
-    Paginacion,
+    PieDeTabla,
+    Filtros,
+    EstadoVacio,
     ColumnaOrdenable,
     Ayuda,
     CabeceraDePagina,
@@ -230,7 +234,6 @@ export class RecepcionDelDiaPage {
 
   protected readonly turnos = signal<readonly TurnoDelDia[]>([]);
 
-  /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */
   /**
    * Busqueda del canvas sobre la lista ya leida: paciente o documento. Filtra en pantalla, no
    * vuelve a pedir nada; los contadores del dia siguen contando la lista entera.
@@ -256,19 +259,46 @@ export class RecepcionDelDiaPage {
     ];
   });
 
+  /**
+   * Filtro avanzado por prestacion (UX-14): las del dia que ya se leyo, sin pedir nada. La elegida
+   * se conserva al cambiar de dia, y sigue en la lista aunque ese dia no la tenga.
+   */
+  protected readonly prestacion = signal('');
+
+  protected readonly prestaciones = computed(() => {
+    const nombres = new Set(
+      this.turnos()
+        .map((t) => t.ofertaNombre ?? '')
+        .filter((n) => n !== ''),
+    );
+    if (this.prestacion() !== '') {
+      nombres.add(this.prestacion());
+    }
+    return [...nombres].sort((a, b) => a.localeCompare(b, 'es'));
+  });
+
+  /** Filtros avanzados fuera de su valor por defecto: el contador del boton "Filtros". */
+  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.prestacion() !== ''));
+
   protected readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLocaleLowerCase('es');
     const grupo = this.filtroDeRecepcion();
+    const prestacion = this.prestacion();
     return this.turnos().filter(
       (t) =>
         (grupo === 'todos' || grupoDeRecepcion(t) === grupo) &&
+        (prestacion === '' || t.ofertaNombre === prestacion) &&
         (texto === '' ||
           `${t.personaNombre ?? ''} ${t.documento ?? ''}`.toLocaleLowerCase('es').includes(texto)),
     );
   });
 
+  /**
+   * Orden y paginado de la lista completa (UX-14 §1): el servidor no la pagina. Arranca en 10 filas
+   * como toda tabla de AKINE; el mostrador encuentra a quien llega por la busqueda o el estado, y si
+   * quiere ver el dia entero de un vistazo sube a 50 o 100 desde el pie.
+   */
   protected readonly tabla = tablaLocal(this.filtrados, {
-    porPagina: 50,
     columnas: {
       hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
       paciente: (turno) => turno.personaNombre ?? null,
@@ -354,6 +384,13 @@ export class RecepcionDelDiaPage {
   protected irAHoy(): void {
     const zona = this.timezone();
     this.cambiarDia(zona === '' ? this.diaDeLaSede.hoy() : hoyEnZona(zona));
+  }
+
+  /** "Limpiar filtros" del estado vacio filtrado: la busqueda, el estado y la prestacion. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroDeRecepcion.set('todos');
+    this.prestacion.set('');
   }
 
   /** Relee el dia. Es tambien la accion de `recargar-dia`. */

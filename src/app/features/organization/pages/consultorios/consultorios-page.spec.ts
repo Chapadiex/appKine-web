@@ -388,6 +388,65 @@ describe('ConsultoriosPage', () => {
     expect(host.querySelector('th[appOrdenable]')!.getAttribute('aria-sort')).toBe('descending');
   });
 
+  it('UX-14: el total va en la toolbar, el pie dice "Mostrando" y cambia las filas por página', async () => {
+    const fixture = await montarCon({ ...PAGINA, totalElements: 23, totalPages: 3 });
+    const host: HTMLElement = fixture.nativeElement;
+
+    // Sin parrafo suelto de conteo: el total vive en la fila de la busqueda.
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('23 sedes');
+    expect(texto(fixture)).not.toContain('con el filtro elegido');
+    expect(host.querySelector('section h2')).toBeNull();
+    expect(texto(fixture)).toContain('Mostrando 1–10 de 23');
+
+    const select = host.querySelector<HTMLSelectElement>('.paginacion-pie select')!;
+    select.value = '25';
+    select.dispatchEvent(new Event('change'));
+    const pedido = httpMock.expectOne(esListado(1));
+    expect(pedido.request.params.get('size')).toBe('25');
+    expect(pedido.request.params.get('page')).toBe('0');
+    pedido.flush(PAGINA);
+    await fixture.whenStable();
+  });
+
+  it('UX-14: el vacío con filtros ofrece "Limpiar filtros", que vuelve a la búsqueda por defecto', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    escribir(fixture, '#sedes-busqueda', 'nada');
+    host.querySelector('#sedes-busqueda')!.dispatchEvent(new Event('change'));
+    httpMock
+      .expectOne(esListado(1))
+      .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const vacio = host.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('Ninguna sede coincide con la búsqueda.');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    const limpio = httpMock.expectOne(esListado(1));
+    expect(limpio.request.params.get('q')).toBeNull();
+    expect(limpio.request.params.get('estado')).toBe('ACTIVO');
+    limpio.flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  it('UX-14: sin sedes y sin filtros, el vacío invita a abrir la primera', async () => {
+    const fixture = await montarCon({
+      content: [],
+      page: 0,
+      size: 10,
+      totalElements: 0,
+      totalPages: 0,
+    });
+    const vacio: HTMLElement = fixture.nativeElement.querySelector('app-estado-vacio');
+    expect(vacio.textContent).toContain('No hay sedes todavía');
+    expect(vacio.querySelector('a[href="/organizacion/sedes/nueva"]')).not.toBeNull();
+  });
+
   it('un email mal formado bloquea el PATCH en vez de gastar un rechazo del backend', async () => {
     // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
     // veria un error generico en vez del campo marcado. Por eso se afirma que no hay peticion,
@@ -624,7 +683,7 @@ describe('ConsultoriosPage', () => {
     return (peticion: HttpRequest<unknown>) =>
       peticion.method === 'GET' &&
       peticion.url === `/api/v1/organizations/${orgId}/consultorios` &&
-      peticion.params.get('size') === '20';
+      peticion.params.get('size') !== '100';
   }
 });
 

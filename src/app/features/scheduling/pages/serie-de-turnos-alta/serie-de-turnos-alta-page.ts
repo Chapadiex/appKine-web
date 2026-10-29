@@ -34,6 +34,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Cuanto se espera despues de la ultima tecla antes de consultar el padron. */
@@ -70,7 +74,16 @@ type ModoDeFin = 'cantidad' | 'fecha';
  */
 @Component({
   selector: 'app-serie-de-turnos-alta-page',
-  imports: [CabeceraDePagina, Ayuda, RouterLink, PermisoDirective, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    RouterLink,
+    PermisoDirective,
+    Alerta,
+    ColumnaOrdenable,
+    EstadoVacio,
+    PieDeTabla,
+  ],
   templateUrl: './serie-de-turnos-alta-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -111,6 +124,25 @@ export class SerieDeTurnosAltaPage {
   protected readonly fechaHasta = signal('');
 
   protected readonly previsualizacion = signal<readonly OcurrenciaPrevista[] | null>(null);
+
+  /**
+   * La vista previa como tabla con orden y pie (UX-14 §1). Cada fecha conserva su numero dentro de
+   * la serie aunque se ordene por lugar para juntar las que no entran.
+   */
+  private readonly ocurrenciasNumeradas = computed(() =>
+    (this.previsualizacion() ?? []).map((ocurrencia, indice) => ({
+      ocurrencia,
+      numero: indice + 1,
+    })),
+  );
+
+  protected readonly tablaPrevista = tablaLocal(this.ocurrenciasNumeradas, {
+    columnas: {
+      numero: (fila) => fila.numero,
+      fecha: (fila) => fila.ocurrencia.fecha,
+      lugar: (fila) => fila.ocurrencia.estado,
+    },
+  });
   protected readonly previsualizando = signal(false);
   protected readonly aviso = signal('');
 

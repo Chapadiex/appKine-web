@@ -61,7 +61,8 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -139,7 +140,8 @@ type Heredable = '' | 'true' | 'false';
     ColumnaOrdenable,
     Filtros,
     Icono,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
@@ -210,11 +212,24 @@ export class OfertasDeLaSedePage {
     ];
   });
 
-  /** Lo que muestra la tabla: lo cargado, acotado por el filtro rapido. */
+  /**
+   * Busqueda por texto (UX-14): la lista llega entera, asi que se busca en el navegador por
+   * nombre comercial, servicio y descripcion, sin distinguir mayusculas ni acentos.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Lo que muestra la tabla: lo cargado, acotado por el filtro rapido y la busqueda. */
   protected readonly ofertas = computed<readonly OfertaResponse[]>(() => {
     const modalidad = this.filtroModalidad();
-    const todas = this.ofertasCargadas();
-    return modalidad === 'TODAS' ? todas : todas.filter((oferta) => oferta.modalidad === modalidad);
+    const texto = normalizar(this.busqueda().trim());
+    return this.ofertasCargadas().filter(
+      (oferta) =>
+        (modalidad === 'TODAS' || oferta.modalidad === modalidad) &&
+        (texto === '' ||
+          normalizar(
+            `${oferta.nombreComercial ?? ''} ${this.nombreDelServicio(oferta)} ${oferta.descripcion ?? ''}`,
+          ).includes(texto)),
+    );
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina ofertas. */
@@ -246,6 +261,14 @@ export class OfertasDeLaSedePage {
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(
     () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroServicio() !== null),
+  );
+
+  /** Hay algo elegido que acota el listado: el vacio dice "no hay con estos filtros". */
+  protected readonly hayFiltros = computed(
+    () =>
+      this.filtrosAvanzadosActivos() > 0 ||
+      this.filtroModalidad() !== 'TODAS' ||
+      this.busqueda().trim() !== '',
   );
 
   /**
@@ -422,6 +445,19 @@ export class OfertasDeLaSedePage {
     this.cerrarPanel();
     this.filtroServicio.set(valor === '' || !Number.isFinite(id) ? null : id);
     this.cargar();
+  }
+
+  /** Vuelve busqueda y filtros a su valor por defecto; recarga si cambio un filtro del servidor. */
+  protected limpiarFiltros(): void {
+    const recargar = this.filtrosAvanzadosActivos() > 0;
+    this.busqueda.set('');
+    this.filtroModalidad.set('TODAS');
+    if (recargar) {
+      this.cerrarPanel();
+      this.filtroEstado.set('ACTIVO');
+      this.filtroServicio.set(null);
+      this.cargar();
+    }
   }
 
   protected abrirAlta(): void {
@@ -968,6 +1004,7 @@ export class OfertasDeLaSedePage {
     this.filtroEstado.set('ACTIVO');
     this.filtroServicio.set(null);
     this.filtroModalidad.set('TODAS');
+    this.busqueda.set('');
     this.altaEsGrupal.set(false);
   }
 
@@ -976,7 +1013,14 @@ export class OfertasDeLaSedePage {
   }
 }
 
-/** `'true'` / `'false'` / `''` -&gt; booleano o `null` cuando se eligio heredar. */
+/** Texto comparable para la busqueda: minusculas y sin acentos. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 /** El valor del selector, o null si no se eligio ninguno de los que publica el contrato. */
 function esquemaDeCobro(valor: string): `${EsquemaCobro}` | null {
   const limpio = valor.trim();
@@ -985,6 +1029,7 @@ function esquemaDeCobro(valor: string): `${EsquemaCobro}` | null {
     : null;
 }
 
+/** `'true'` / `'false'` / `''` -&gt; booleano o `null` cuando se eligio heredar. */
 function comoBooleano(valor: Heredable): boolean | null {
   if (valor === 'true') {
     return true;

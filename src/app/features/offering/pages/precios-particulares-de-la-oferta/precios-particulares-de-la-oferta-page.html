@@ -21,6 +21,8 @@
       Cargar un precio
     </button>
   </div>
+
+  <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 @if (oferta(); as detalle) {
@@ -31,11 +33,7 @@
   </p>
 }
 
-<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
-
-<section class="tarjeta" aria-labelledby="titulo-grilla-precios">
-  <h2 id="titulo-grilla-precios">Grilla de vigencias</h2>
-
+<section class="tarjeta" aria-label="Grilla de vigencias">
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
@@ -62,9 +60,19 @@
 
       @case ('listo') {
         @if (precios().length === 0) {
-          <p class="estado estado--vacio">
-            Esta oferta no tiene precios por vigencia: todos los días rige el precio de lista.
-          </p>
+          <app-estado-vacio
+            titulo="Esta oferta no tiene precios particulares todavía"
+            texto="Sin precios por vigencia, todos los días rige el precio de lista."
+          >
+            <button
+              *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+              type="button"
+              class="boton"
+              (click)="abrirAlta()"
+            >
+              Cargar el primer precio
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Precios particulares">
             <table class="tabla">
@@ -126,15 +134,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} precios</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de precios"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de precios" />
         }
       }
     }
@@ -170,7 +170,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-precio-moneda">Moneda</label>
         <input
           id="alta-precio-moneda"

@@ -13,34 +13,32 @@
   </div>
 
   <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
-    <div class="filtros">
-      <div class="campo">
-        <label for="selector-practica">Práctica</label>
-        <select
-          id="selector-practica"
-          formControlName="practicaId"
-          aria-describedby="selector-practica-ayuda"
-        >
-          <option value="">Todas las prácticas</option>
-          @for (practica of practicas(); track practica.id) {
-            <option [value]="practica.id">{{ practica.name }}</option>
-          }
-        </select>
-        <p class="ayuda" id="selector-practica-ayuda">
-          Elegila para ver cual se usaria. La autorización es por práctica.
-        </p>
-      </div>
+    <div class="campo campo--4">
+      <label for="selector-practica">Práctica</label>
+      <select
+        id="selector-practica"
+        formControlName="practicaId"
+        aria-describedby="selector-practica-ayuda"
+      >
+        <option value="">Todas las prácticas</option>
+        @for (practica of practicas(); track practica.id) {
+          <option [value]="practica.id">{{ practica.name }}</option>
+        }
+      </select>
+      <p class="ayuda" id="selector-practica-ayuda">
+        Elegila para ver cual se usaria. La autorización es por práctica.
+      </p>
+    </div>
 
-      <div class="campo">
-        <label for="selector-fecha">Para el día</label>
-        <input
-          id="selector-fecha"
-          type="date"
-          formControlName="fecha"
-          aria-describedby="selector-fecha-ayuda"
-        />
-        <p class="ayuda" id="selector-fecha-ayuda">Sin fecha, se consulta contra hoy.</p>
-      </div>
+    <div class="campo">
+      <label for="selector-fecha">Para el día</label>
+      <input
+        id="selector-fecha"
+        type="date"
+        formControlName="fecha"
+        aria-describedby="selector-fecha-ayuda"
+      />
+      <p class="ayuda" id="selector-fecha-ayuda">Sin fecha, se consulta contra hoy.</p>
     </div>
 
     <p class="acciones">

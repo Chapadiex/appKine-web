@@ -9,7 +9,11 @@ import { LimitUsageResponse } from '../../../../api/generated/model/limit-usage-
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 import { PlatformOrganizationResponse } from '../../../../api/generated/model/platform-organization-response';
 import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -50,8 +54,6 @@ type Listado =
   | ({ readonly tipo: 'listo' } & PaginaDeCentros)
   | { readonly tipo: 'error'; readonly error: ErrorSuscripcion };
 
-const TAMANO_DE_PAGINA = 20;
-
 /**
  * La suscripcion de un centro y el cambio de plan, para la administracion de plataforma (PLA-06).
  *
@@ -82,6 +84,7 @@ const TAMANO_DE_PAGINA = 20;
     PanelLateral,
     Pestanas,
     Paginacion,
+    EstadoVacio,
     Alerta,
   ],
   templateUrl: './suscripcion-de-centro-page.html',
@@ -100,6 +103,12 @@ export class SuscripcionDeCentroPage {
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
+
+  /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  /** La ultima busqueda enviada tenia texto o estado: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = signal(false);
 
   /**
    * Orden del listado de centros, pedido al servidor (DP-45): vuelve a la primera pagina con el
@@ -165,6 +174,20 @@ export class SuscripcionDeCentroPage {
       ...(q === '' ? {} : { q }),
       ...(status === '' ? {} : { status }),
     };
+    this.hayFiltros.set(q !== '' || status !== '');
+    this.listar(0);
+  }
+
+  /** "Limpiar filtros": sin texto ni estado, todos los centros desde la primera pagina. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroDeEstado.set('');
+    this.buscar();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera con el filtro ya aplicado. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
     this.listar(0);
   }
 
@@ -272,7 +295,7 @@ export class SuscripcionDeCentroPage {
         ...this.filtroAplicado,
         sort: this.orden.sort(),
         page: pagina,
-        size: TAMANO_DE_PAGINA,
+        size: this.porPagina(),
       })
       .subscribe({
         next: (respuesta) => {

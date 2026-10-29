@@ -429,7 +429,7 @@ describe('ArancelesDelConvenioPage', () => {
     ).toBe(false);
   });
 
-  it('el filtro y la fecha recargan, y el vacío explica que el convenio no resuelve nada', async () => {
+  it('el filtro y la fecha recargan, y el vacío filtrado ofrece limpiar los filtros', async () => {
     const fixture = await montar();
 
     cambiarSelect(fixture, '#filtro-estado-arancel', 'INACTIVO');
@@ -442,9 +442,9 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'no resuelve ningún precio',
-    );
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos aranceles');
+    expect(vacio?.textContent).toContain('Limpiar filtros');
 
     cambiarSelect(fixture, '#filtro-fecha-arancel', '2025-09-10');
     httpMock
@@ -567,6 +567,37 @@ describe('ArancelesDelConvenioPage', () => {
     );
   });
 
+  it('sin ningún arancel explica que el convenio no resuelve nada y ofrece cargar o importar', async () => {
+    const fixture = await montar(EL_CONVENIO, []);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+
+    expect(vacio?.textContent).toContain('Este convenio todavía no tiene aranceles');
+    expect(vacio?.textContent).toContain('no resuelve ningún precio');
+    expect(vacio?.textContent).toContain('Cargar el primero');
+    expect(vacio?.textContent).toContain('Importar una planilla');
+  });
+
+  it('busca en pantalla por práctica y sigue el patrón de listado', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 aranceles',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–2 de 2',
+    );
+
+    const buscador = anfitrion.querySelector<HTMLInputElement>('#buscar-arancel')!;
+    buscador.value = 'no existe';
+    buscador.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain(
+      'No encontramos aranceles',
+    );
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
@@ -578,6 +609,7 @@ describe('ArancelesDelConvenioPage', () => {
 
   async function montar(
     convenio: Record<string, unknown> = EL_CONVENIO,
+    aranceles: readonly unknown[] = [VIGENTE, ANTERIOR],
   ): Promise<ComponentFixture<ArancelesDelConvenioPage>> {
     tenantContext.select({
       organizationId: 1,
@@ -592,7 +624,7 @@ describe('ArancelesDelConvenioPage', () => {
     const fixture = TestBed.createComponent(ArancelesDelConvenioPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
+    httpMock.expectOne(esListado()).flush(aranceles);
     httpMock
       .expectOne(
         (peticion: HttpRequest<unknown>) => peticion.url === `${rutaConvenios(SEDE)}/${CONVENIO}`,

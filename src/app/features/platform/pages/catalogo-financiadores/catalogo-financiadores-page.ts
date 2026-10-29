@@ -20,6 +20,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { PlanesDelCatalogo } from '../../components/planes-del-catalogo/planes-del-catalogo';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
   PESTANAS_DE_PLATAFORMA,
@@ -93,6 +97,9 @@ type Panel =
     Pestanas,
     ReactiveFormsModule,
     ConfirmacionConMotivo,
+    EstadoVacio,
+    PieDeTabla,
+    PlanesDelCatalogo,
   ],
   templateUrl: './catalogo-financiadores-page.html',
   styleUrl: './catalogo-financiadores-page.css',
@@ -135,6 +142,15 @@ export class CatalogoFinanciadoresPage {
     const actual = this.listado();
     return actual.tipo === 'listo' ? actual.entradas : [];
   });
+
+  /** Paginado de la lista completa de entradas (UX-14): 10 por pagina, con el pie estandar. */
+  protected readonly paginaDeEntradas = tablaLocal(this.entradas, { columnas: {} });
+
+  /**
+   * La ultima consulta salio con busqueda o filtros: decide cual de los dos vacios es. Se toma
+   * al consultar, no de lo que se esta escribiendo, porque el listado responde a lo enviado.
+   */
+  protected readonly hayFiltros = signal(false);
   protected readonly errorDeListado = computed(() => {
     const actual = this.listado();
     return actual.tipo === 'error' ? actual.mensaje : null;
@@ -166,10 +182,19 @@ export class CatalogoFinanciadoresPage {
     this.cargar();
   }
 
+  /** "Limpiar filtros": sin busqueda, solo los activos y de todo tipo; relee. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.filtroTipo.set('');
+    this.cargar();
+  }
+
   protected cargar(): void {
     this.listado.set({ tipo: 'cargando' });
     const q = this.busqueda().trim();
     const tipo = this.filtroTipo();
+    this.hayFiltros.set(q !== '' || tipo !== '' || this.filtroEstado() !== 'ACTIVO');
     this.pedidoDeListado?.unsubscribe();
     this.pedidoDeListado = this.api
       .listCatalogoFinanciadoresDePlataforma({

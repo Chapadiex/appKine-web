@@ -83,35 +83,31 @@
                 correo de activación, porque abrir este enlace ya confirmó tu dirección.
               </p>
 
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
-                  <label for="invitacion-nombre">Nombre</label>
-                  <input
-                    id="invitacion-nombre"
-                    type="text"
-                    formControlName="nombre"
-                    autocomplete="given-name"
-                    [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
-                    [attr.aria-describedby]="
-                      mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
-                    "
-                  />
-                  @if (mostrarErrorDe('nombre')) {
-                    <p class="campo__error" id="invitacion-nombre-error">
-                      El nombre es obligatorio.
-                    </p>
-                  }
-                </div>
+              <div class="campo">
+                <label for="invitacion-nombre">Nombre</label>
+                <input
+                  id="invitacion-nombre"
+                  type="text"
+                  formControlName="nombre"
+                  autocomplete="given-name"
+                  [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                  [attr.aria-describedby]="
+                    mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
+                  "
+                />
+                @if (mostrarErrorDe('nombre')) {
+                  <p class="campo__error" id="invitacion-nombre-error">El nombre es obligatorio.</p>
+                }
+              </div>
 
-                <div class="campo">
-                  <label for="invitacion-apellido">Apellido (opcional)</label>
-                  <input
-                    id="invitacion-apellido"
-                    type="text"
-                    formControlName="apellido"
-                    autocomplete="family-name"
-                  />
-                </div>
+              <div class="campo">
+                <label for="invitacion-apellido">Apellido (opcional)</label>
+                <input
+                  id="invitacion-apellido"
+                  type="text"
+                  formControlName="apellido"
+                  autocomplete="family-name"
+                />
               </div>
 
               <div class="campo">

@@ -249,6 +249,26 @@ describe('SerieDeTurnosPage', () => {
     expect(texto(fixture)).toContain('Feriado: la sede no atiende');
   });
 
+  it('la tabla de turnos tiene orden, pie estándar y conserva el número en la serie', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const region = raiz.querySelector('[aria-label="Turnos de la serie"]') as HTMLElement;
+    expect(region.querySelectorAll('th.tabla__columna-ordenable').length).toBe(3);
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–3 de 3');
+
+    // Ordenar por fecha descendente da vuelta las filas, y cada una sigue con su N°.
+    const fecha = Array.from(region.querySelectorAll<HTMLButtonElement>('.tabla__orden')).find(
+      (b) => (b.textContent ?? '').includes('Fecha y hora'),
+    ) as HTMLButtonElement;
+    fecha.click();
+    fecha.click();
+    fixture.detectChanges();
+    const numeros = Array.from(region.querySelectorAll('tbody tr')).map((tr) =>
+      tr.querySelector('td')?.textContent?.trim(),
+    );
+    expect(numeros).toEqual(['3', '2', '1']);
+  });
+
   it('con solo turno:read no ofrece cancelar', async () => {
     const fixture = await montar([PERMISO_TURNO_READ]);
     expect(texto(fixture)).toContain('Lunes');

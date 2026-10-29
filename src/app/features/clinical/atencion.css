@@ -142,12 +142,18 @@
   list-style: none;
 }
 
-.tratamiento,
-.parametro {
+.tratamiento {
   margin: 0 0 var(--esp-5);
   padding: var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
+}
+
+/* Un parametro es una fila de la grilla de 12, separada por una linea: no una tarjeta mas. */
+.parametro {
+  margin: 0 0 var(--esp-4);
+  padding-top: var(--esp-4);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
 .tratamiento__titulo {
@@ -238,7 +244,7 @@
 /* Pares dato/valor apilados: en la columna angosta un `auto 1fr` parte las etiquetas. */
 .datos-atencion {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
   gap: var(--esp-5);
   margin: 0 0 var(--esp-6);
   font-size: var(--tipo-sm);
@@ -416,11 +422,6 @@
   margin: 0;
 }
 
-/* Formularios angostos (iniciar sin turno, politica, caso antes de iniciar): ~860 px. */
-.tarjeta--angosta {
-  max-width: 54rem;
-}
-
 /* Elegir entre pocas opciones grandes (el caso antes de iniciar, el caso destino). */
 .opciones-tarjeta {
   display: grid;
@@ -594,36 +595,6 @@
 .version-item__meta {
   font-size: var(--tipo-2xs);
   color: var(--color-texto-suave);
-}
-
-/* "Version anterior" y "Version posterior", uno al lado del otro. */
-.comparar-versiones {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--esp-5);
-}
-
-@media (max-width: 30rem) {
-  .comparar-versiones {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Encabezado de tarjeta con acciones a la derecha (participantes de la clase). */
-.encabezado-tarjeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  margin: 0 0 var(--esp-6);
-}
-
-.tarjeta .encabezado-tarjeta h2 {
-  margin: 0;
-}
-
-.encabezado-tarjeta > .acciones {
-  margin: 0 0 0 auto;
 }
 
 .lista-plana {

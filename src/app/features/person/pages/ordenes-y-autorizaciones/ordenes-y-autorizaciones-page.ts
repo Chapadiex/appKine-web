@@ -61,7 +61,14 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -74,7 +81,6 @@ type PanelDeOrden = 'editar' | 'baja' | 'documento';
 type PanelDeAutorizacion = 'editar' | 'baja' | 'documento' | 'resolver' | 'historial' | 'consumo';
 
 /** Eventos por pagina del historial de una autorizacion. Tiene decenas de hechos, no miles. */
-const TAMANO_DE_HISTORIAL = 20;
 
 /** Lectura del historial del panel abierto. */
 type EstadoDeHistorial =
@@ -157,7 +163,11 @@ interface PanelAbierto {
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
     Paginacion,
+    PieDeTabla,
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
@@ -226,8 +236,28 @@ export class OrdenesYAutorizacionesPage {
   protected readonly ordenes = signal<readonly OrdenResponse[]>([]);
   protected readonly autorizaciones = signal<readonly AutorizacionResponse[]>([]);
 
+  /**
+   * Busqueda de cada listado (patron de listados de UX-14). Las listas llegan completas, asi que
+   * se filtran en la pantalla: por quien la firmo o el numero, y por numero o estado.
+   */
+  protected readonly busquedaDeOrdenes = signal('');
+  protected readonly busquedaDeAutorizaciones = signal('');
+
+  protected readonly ordenesBuscadas = computed(() =>
+    filtrarPorTexto(this.ordenes(), this.busquedaDeOrdenes(), (orden) => [
+      emisorEnPalabras(orden),
+      orden.numero,
+    ]),
+  );
+  protected readonly autorizacionesBuscadas = computed(() =>
+    filtrarPorTexto(this.autorizaciones(), this.busquedaDeAutorizaciones(), (autorizacion) => [
+      autorizacion.numero,
+      estadoDeAutorizacion(autorizacion),
+    ]),
+  );
+
   /** Orden y paginado de las listas completas (plan §3.4): el backend devuelve arrays. */
-  protected readonly tablaOrdenes = tablaLocal(this.ordenes, {
+  protected readonly tablaOrdenes = tablaLocal(this.ordenesBuscadas, {
     columnas: {
       emisor: (orden) => emisorEnPalabras(orden),
       numero: (orden) => orden.numero ?? null,
@@ -237,7 +267,7 @@ export class OrdenesYAutorizacionesPage {
     },
   });
 
-  protected readonly tablaAutorizaciones = tablaLocal(this.autorizaciones, {
+  protected readonly tablaAutorizaciones = tablaLocal(this.autorizacionesBuscadas, {
     columnas: {
       numero: (autorizacion) => autorizacion.numero ?? null,
       estado: (autorizacion) => estadoDeAutorizacion(autorizacion),
@@ -805,6 +835,14 @@ export class OrdenesYAutorizacionesPage {
     this.leerHistorial(id, 0);
   }
 
+  /** Hechos del historial por pagina: viaja como `size` y se cambia desde el pie (UX-14). */
+  protected readonly porPaginaDeHistorial = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  protected cambiarPorPaginaDeHistorial(cantidad: number): void {
+    this.porPaginaDeHistorial.set(cantidad);
+    this.paginaDeHistorial(0);
+  }
+
   protected paginaDeHistorial(pagina: number): void {
     const abierto = this.panel();
     if (abierto?.tipo !== 'historial') {
@@ -820,7 +858,7 @@ export class OrdenesYAutorizacionesPage {
     }
     this.historial.set({ tipo: 'cargando' });
     this.api
-      .historialDeAutorizacion(personaId, autorizacionId, pagina, TAMANO_DE_HISTORIAL)
+      .historialDeAutorizacion(personaId, autorizacionId, pagina, this.porPaginaDeHistorial())
       .subscribe({
         next: (respuesta) => {
           // Una respuesta que llega con el panel ya cerrado o movido a otra fila se descarta.
@@ -1073,12 +1111,38 @@ export class OrdenesYAutorizacionesPage {
     this.persona.set(null);
     this.ordenes.set([]);
     this.autorizaciones.set([]);
+    this.busquedaDeOrdenes.set('');
+    this.busquedaDeAutorizaciones.set('');
     this.coberturas.set([]);
     this.practicas.set([]);
     this.practicasSinPermiso.set(false);
     this.adjuntos.set([]);
     this.elegibilidad.set(null);
   }
+}
+
+/** Sin tildes ni mayusculas: "garcia" encuentra a "García". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/** Las filas cuyo texto contiene lo buscado. Sin busqueda, todas. */
+function filtrarPorTexto<T>(
+  filas: readonly T[],
+  busqueda: string,
+  textos: (fila: T) => readonly (string | null | undefined)[],
+): readonly T[] {
+  const buscado = normalizar(busqueda);
+  if (buscado === '') {
+    return filas;
+  }
+  return filas.filter((fila) =>
+    textos(fila).some((texto) => texto && normalizar(texto).includes(buscado)),
+  );
 }
 
 /** `''` significa "no lo mandes", no "mandalo vacio". */

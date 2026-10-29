@@ -30,6 +30,14 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+
+/** Que casos muestra el listado: el filtro "Mostrar" de la toolbar. */
+type FiltroDeEstado = 'TODOS' | 'ACTIVOS' | 'CERRADOS';
 
 /**
  * Los casos de una Historia Clinica y el alta compacta (D-b, RF-M10-001/002).
@@ -44,7 +52,17 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
  */
 @Component({
   selector: 'app-casos-de-la-historia',
-  imports: [Alerta, Ayuda, Icono, PanelLateral, RouterLink],
+  imports: [
+    Alerta,
+    Ayuda,
+    ColumnaOrdenable,
+    EstadoVacio,
+    Filtros,
+    Icono,
+    PanelLateral,
+    PieDeTabla,
+    RouterLink,
+  ],
   templateUrl: './casos-de-la-historia.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
@@ -68,8 +86,41 @@ export class CasosDeLaHistoria {
   private readonly ofertas = signal<readonly OfertaResponse[]>([]);
   protected readonly profesionales = signal<readonly ProfesionalHabilitado[]>([]);
 
-  protected readonly activos = computed(() => this.casos().filter((c) => c.estado !== 'CERRADO'));
-  protected readonly cerrados = computed(() => this.casos().filter((c) => c.estado === 'CERRADO'));
+  // --- Listado (UX-14) ----------------------------------------------------------------
+  protected readonly busqueda = signal('');
+  protected readonly filtroEstado = signal<FiltroDeEstado>('TODOS');
+  /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
+  protected readonly filtrosAvanzadosActivos = computed(() =>
+    Number(this.filtroEstado() !== 'TODOS'),
+  );
+
+  /** Activos primero y despues los cerrados, acotados por la busqueda y el estado. */
+  protected readonly visibles = computed(() => {
+    const texto = normalizar(this.busqueda().trim());
+    const estado = this.filtroEstado();
+    const coincide = (caso: CasoClinico): boolean =>
+      (estado === 'TODOS' || (estado === 'CERRADOS') === (caso.estado === 'CERRADO')) &&
+      (texto === '' ||
+        normalizar(
+          `caso ${caso.numeroCaso ?? ''} ${this.nombreDeOferta(caso)} ${caso.diagnosticoPresuntivo ?? ''}`,
+        ).includes(texto));
+    const lista = this.casos().filter(coincide);
+    return [
+      ...lista.filter((c) => c.estado !== 'CERRADO'),
+      ...lista.filter((c) => c.estado === 'CERRADO'),
+    ];
+  });
+
+  protected readonly tabla = tablaLocal(this.visibles, {
+    columnas: {
+      caso: (caso) => caso.numeroCaso,
+      diagnostico: (caso) => caso.diagnosticoPresuntivo,
+      abierto: (caso) => caso.abiertoEn,
+      cerrado: (caso) => caso.cerradoEn,
+      estado: (caso) => this.estadoDe(caso),
+    },
+  });
+
   protected readonly elegibles = computed(() => this.ofertas().filter(ofertaElegible));
 
   // --- Alta ---------------------------------------------------------------------------
@@ -214,6 +265,11 @@ export class CasosDeLaHistoria {
     this.cargar(this.historiaClinicaId());
   }
 
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroEstado.set('TODOS');
+  }
+
   private cargar(historiaClinicaId: number): void {
     this.cargando.set(true);
     this.error.set(null);
@@ -247,4 +303,12 @@ export class CasosDeLaHistoria {
     if (!Array.isArray(ids)) return [];
     return this.casos().filter((c) => c.id !== undefined && ids.includes(c.id));
   }
+}
+
+/** Sin mayusculas ni tildes: "lumbalgía" encuentra "Lumbalgia". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }

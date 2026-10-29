@@ -79,14 +79,18 @@
         </p>
       }
 
-      <section class="tarjeta" aria-labelledby="titulo-listado-vigencias">
-        <h2 id="titulo-listado-vigencias">Vigencias cargadas</h2>
-
+      <section class="tarjeta" aria-label="Vigencias cargadas">
         <!--
           Regla de filtros (plan §3.4): el codigo, que es lo que identifica a una vigencia, a la
-          vista; el estado, que casi nunca se toca, detras del embudo.
+          vista; el estado, que casi nunca se toca, detras de "Filtros". El total, en la misma fila.
         -->
-        <app-filtros [activos]="filtrosAvanzadosActivos()">
+        <app-filtros
+          [activos]="filtrosAvanzadosActivos()"
+          [resultados]="tabla.total()"
+          [unidad]="['vigencia', 'vigencias']"
+          limpiable
+          (limpiar)="limpiarFiltros()"
+        >
           <div class="campo" filtro-principal>
             <label class="visualmente-oculto" for="filtro-codigo-vigencia"
               >Filtrar por código</label
@@ -123,10 +127,31 @@
           </div>
         </app-filtros>
 
-        @if (vigencias().length === 0) {
-          <p class="estado estado--vacio">
-            Este nomenclador todavía no tiene vigencias con el filtro elegido.
-          </p>
+        @if (vigencias().length === 0 && hayFiltros()) {
+          <app-estado-vacio
+            titulo="No encontramos vigencias"
+            texto="Probá con otro código o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
+        } @else if (vigencias().length === 0) {
+          <app-estado-vacio
+            titulo="Este nomenclador todavía no tiene vigencias"
+            texto="Cada vigencia dice que código codifica a que práctica, y entre que fechas."
+          >
+            @if (!esDeLaPlataforma()) {
+              <button
+                *akinePermiso="permisoManage"
+                type="button"
+                class="boton"
+                (click)="abrirAlta()"
+              >
+                Cargar la primera vigencia
+              </button>
+            }
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -143,8 +168,22 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Práctica</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="valor">
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="practica"
+                  >
+                    Práctica
+                  </th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="valor"
+                  >
                     Valor de referencia
                   </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="ventana">Ventana</th>
@@ -165,14 +204,14 @@
                       }
                     </th>
                     <td>{{ vigencia.name }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       @if (nombreDePractica(vigencia); as nombre) {
                         {{ nombre }}
                       } @else {
                         <span class="ayuda">Práctica #{{ vigencia.practicaId }}</span>
                       }
                     </td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       @if (vigencia.valorReferencia === undefined) {
                         <span class="ayuda">Sin valor</span>
                       } @else {
@@ -224,15 +263,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} vigencias</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de vigencias"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de vigencias" />
         }
       </section>
     }
@@ -257,7 +288,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-vigencia-codigo">Código</label>
         <input
           id="alta-vigencia-codigo"
@@ -294,7 +325,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-vigencia-practica">Práctica que codifica</label>
         <select
           id="alta-vigencia-practica"
@@ -326,7 +357,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-vigencia-name">Nombre</label>
         <input
           id="alta-vigencia-name"
@@ -345,7 +376,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--12">
         <label for="alta-vigencia-descripcion">Descripción (opcional)</label>
         <input
           id="alta-vigencia-descripcion"
@@ -372,7 +403,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="alta-vigencia-desde">Vigente desde (opcional)</label>
         <input
           id="alta-vigencia-desde"
@@ -386,7 +417,7 @@
         <p class="ayuda">Sin fecha, rige desde ya.</p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--3">
         <label for="alta-vigencia-hasta">Vigente hasta (opcional)</label>
         <input
           id="alta-vigencia-hasta"

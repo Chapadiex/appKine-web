@@ -262,6 +262,16 @@ describe('TratamientosDeSesion', () => {
     expect(fixture.nativeElement.querySelector('#tratamiento-practica')).toBeNull();
   });
 
+  it('sin tratamientos lo dice con el estado vacio y el formulario va en la grilla de 12 (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
+      'Todavía no hay tratamientos registrados',
+    );
+    const grilla = raiz.querySelector('#tratamiento-practica')?.closest('.grilla-12');
+    expect(grilla?.querySelector('#tratamiento-duracion')).not.toBeNull();
+  });
+
   it('avisa la lateralidad sin zona antes de que el servidor la rechace', async () => {
     const fixture = await montar();
     elegir(fixture, '#tratamiento-lateralidad', 'IZQUIERDA');

@@ -31,7 +31,8 @@ import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -88,7 +89,8 @@ const TOPE_DE_PRACTICAS = 100;
     Ayuda,
     PanelLateral,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Filtros,
     Icono,
     ReactiveFormsModule,
@@ -130,6 +132,11 @@ export class VigenciasPage {
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(() =>
     Number(this.filtroEstado() !== 'ACTIVO'),
+  );
+
+  /** Hay código o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.filtroCodigo().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
   );
 
   /** Practicas activas, para el selector del alta. Ver {@link cargarPracticas}. */
@@ -300,6 +307,14 @@ export class VigenciasPage {
   protected filtrarPorCodigo(valor: string): void {
     this.cerrarPaneles();
     this.filtroCodigo.set(valor);
+    this.cargar();
+  }
+
+  /** Vuelve el código y el estado a su valor inicial y relee. */
+  protected limpiarFiltros(): void {
+    this.cerrarPaneles();
+    this.filtroCodigo.set('');
+    this.filtroEstado.set('ACTIVO');
     this.cargar();
   }
 

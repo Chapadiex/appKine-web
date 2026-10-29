@@ -341,7 +341,7 @@ describe('FinanciadoresPage', () => {
     ).toBe(false);
   });
 
-  it('un error del listado se puede reintentar, y el listado vacío explica que falta', async () => {
+  it('un error del listado se puede reintentar, y el vacío filtrado ofrece limpiar', async () => {
     const fixture = await montar();
 
     elegir(fixture, '#filtro-tipo-financiador', 'ART');
@@ -377,8 +377,55 @@ describe('FinanciadoresPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    // Vacio con un filtro puesto: no es "todavia no hay", es "no hay con estos filtros" (UX-14).
+    const vacio = anfitrion.querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos financiadores');
+    const limpiar = [...(vacio?.querySelectorAll('button') ?? [])].find(
+      (boton) => (boton.textContent ?? '').trim() === 'Limpiar filtros',
+    );
+    expect(limpiar).toBeDefined();
+
+    (limpiar as HTMLButtonElement).click();
+    fixture.detectChanges();
+    httpMock.expectOne(esListado()).flush([OSDE, DE_BAJA]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector<HTMLSelectElement>('#filtro-tipo-financiador')?.value).toBe('');
+    expect(anfitrion.querySelector('app-estado-vacio')).toBeNull();
+  });
+
+  it('sin ningun financiador explica que solo se cobra particular y ofrece el alta', async () => {
+    const fixture = await montar([]);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+
     // El vacio no es un error: explica que sin financiadores solo se puede cobrar particular.
-    expect(anfitrion.textContent).toContain('solo puede cobrar de forma particular');
+    expect(vacio?.textContent).toContain('Todavía no hay financiadores');
+    expect(vacio?.textContent).toContain('solo puede cobrar de forma particular');
+    expect(vacio?.textContent).toContain('Dar de alta el primero');
+    expect((fixture.nativeElement as HTMLElement).querySelector('table')).toBeNull();
+  });
+
+  it('sigue el patron de listado: resultados en la toolbar, pie estandar y sin titulo repetido', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
+    expect(anfitrion.querySelector('section.tarjeta')?.getAttribute('aria-label')).toBe(
+      'Financiadores de la organización',
+    );
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 financiador',
+    );
+    expect(anfitrion.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+      'Mostrando 1–1 de 1',
+    );
+
+    filtrarPorEstado(fixture, 'Todos');
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 financiadores',
+    );
+    // CUIT y contacto son columnas secundarias: se esconden en tablet.
+    expect(anfitrion.querySelectorAll('th.tabla__col--secundaria').length).toBe(2);
   });
 
   it('el filtro por tipo y la búsqueda recargan con sus parametros', async () => {
@@ -457,7 +504,9 @@ describe('FinanciadoresPage', () => {
     TIMEOUT_AXE,
   );
 
-  async function montar(): Promise<ComponentFixture<FinanciadoresPage>> {
+  async function montar(
+    lista: readonly unknown[] = [OSDE, DE_BAJA],
+  ): Promise<ComponentFixture<FinanciadoresPage>> {
     tenantContext.select({
       organizationId: 1,
       organizationName: 'Centro Belgrano',
@@ -471,7 +520,7 @@ describe('FinanciadoresPage', () => {
     const fixture = TestBed.createComponent(FinanciadoresPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([OSDE, DE_BAJA]);
+    httpMock.expectOne(esListado()).flush(lista);
     await fixture.whenStable();
     fixture.detectChanges();
 

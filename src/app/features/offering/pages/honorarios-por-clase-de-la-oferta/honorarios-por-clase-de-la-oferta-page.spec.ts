@@ -92,6 +92,10 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(contenido).toContain('Dada de baja');
     expect(contenido).toContain('Tarifa mal cargada');
     expect(botones(fixture, 'Cambiar fin')).toHaveLength(2);
+    // Pie estandar (UX-14).
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.paginacion-pie')?.textContent,
+    ).toContain('Mostrando 1–3 de 3');
   });
 
   it('el alta manda importe, moneda propuesta y vigencia; el solapamiento explica la salida', async () => {
@@ -301,6 +305,8 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     httpMock.expectOne((p: HttpRequest<unknown>) => p.url === rutaOfertas(SEDE)).flush([]);
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('sus clases no entran en ninguna liquidación');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Cargar la primera tarifa');
     expect(texto(fixture)).toContain('de esta oferta por cada participante');
   });
 

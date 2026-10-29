@@ -83,13 +83,18 @@
   </app-alerta>
 }
 
-<!-- ================================ Filtros =================================== -->
+<!-- ============================ Listado (UX-14 §1) ============================ -->
 
-<section class="tarjeta" aria-labelledby="titulo-filtros">
-  <h2 id="titulo-filtros">Buscar egresos</h2>
-  <form [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
+<section class="tarjeta" aria-label="Egresos de la sede">
+  <form class="formulario--libre" [formGroup]="filtro" (ngSubmit)="buscar()" novalidate>
     <!-- Regla de filtros (plan §3.4): la busqueda del servidor a la vista, el resto en el embudo. -->
-    <app-filtros [activos]="filtrosAvanzadosActivos()">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="totalConocido()"
+      [unidad]="['egreso', 'egresos']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
       <div class="campo" filtro-principal>
         <label class="visualmente-oculto" for="filtro-q"
           >Beneficiario, documento, concepto o número de comprobante</label
@@ -106,83 +111,96 @@
           />
         </div>
       </div>
-      <div class="campos-en-linea">
-        <div class="campo">
-          <label for="filtro-estado">Estado</label>
-          <select id="filtro-estado" formControlName="estado">
-            <option value="">Todos</option>
-            @for (opcion of estados; track opcion) {
-              <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
-            }
-          </select>
-        </div>
+      <!-- Fuera del embudo: la busqueda por texto se envia sin abrir los filtros avanzados. -->
+      <button type="submit" class="boton boton--secundario" filtro-frecuente>Buscar</button>
 
-        <div class="campo">
-          <label for="filtro-categoria">Categoría</label>
-          <select id="filtro-categoria" formControlName="categoria">
-            <option value="">Todas</option>
-            @for (opcion of categorias; track opcion) {
-              <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
-            }
-          </select>
-        </div>
+      <div class="campo">
+        <label for="filtro-estado">Estado</label>
+        <select id="filtro-estado" formControlName="estado">
+          <option value="">Todos</option>
+          @for (opcion of estados; track opcion) {
+            <option [value]="opcion">{{ estadoEnPalabras(opcion) }}</option>
+          }
+        </select>
+      </div>
 
-        <div class="campo">
-          <label for="filtro-desde">Registrados desde</label>
-          <input id="filtro-desde" type="date" formControlName="desde" />
-        </div>
+      <div class="campo">
+        <label for="filtro-categoria">Categoría</label>
+        <select id="filtro-categoria" formControlName="categoria">
+          <option value="">Todas</option>
+          @for (opcion of categorias; track opcion) {
+            <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
+          }
+        </select>
+      </div>
 
-        <div class="campo">
-          <label for="filtro-hasta">Registrados hasta</label>
-          <input id="filtro-hasta" type="date" formControlName="hasta" />
-        </div>
+      <div class="campo">
+        <label for="filtro-desde">Registrados desde</label>
+        <input id="filtro-desde" type="date" formControlName="desde" />
+      </div>
+
+      <div class="campo">
+        <label for="filtro-hasta">Registrados hasta</label>
+        <input id="filtro-hasta" type="date" formControlName="hasta" />
       </div>
     </app-filtros>
-
-    <!-- Fuera del embudo: la busqueda por texto se envia sin abrir los filtros avanzados. -->
-    <div class="acciones">
-      <button type="submit" class="boton">Buscar</button>
-    </div>
   </form>
-</section>
 
-<!-- ================================ Listado =================================== -->
+  @if (estado().tipo === 'cargando') {
+    <p class="estado estado--cargando">Cargando los egresos…</p>
+  }
 
-@if (estado().tipo === 'cargando') {
-  <p class="estado estado--cargando">Cargando los egresos…</p>
-}
+  @if (error(); as fallo) {
+    <app-alerta tipo="error" titulo="No se pudieron cargar los egresos">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.causa === 'sin-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="buscar()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  }
 
-@if (error(); as fallo) {
-  <app-alerta tipo="error" titulo="No se pudieron cargar los egresos">
-    <p>{{ fallo.mensaje }}</p>
-    <p class="alerta__acciones">
-      @if (fallo.causa === 'sin-contexto') {
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      } @else {
-        <button type="button" class="boton boton--secundario" (click)="buscar()">Reintentar</button>
-      }
-    </p>
-  </app-alerta>
-}
+  @if (vacio()) {
+    @if (pagina() > 0) {
+      <app-estado-vacio titulo="No hay más egresos" texto="Esta página quedó vacía.">
+        <button type="button" class="boton boton--secundario" (click)="irAPagina(pagina() - 1)">
+          Volver a la página anterior
+        </button>
+      </app-estado-vacio>
+    } @else if (conFiltros()) {
+      <app-estado-vacio
+        titulo="No hay egresos con esos filtros"
+        texto="Probá con otra búsqueda o con otro período."
+      >
+        <button type="button" class="boton boton--secundario" (click)="limpiarFiltros(true)">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
+    } @else {
+      <app-estado-vacio
+        titulo="Este mes todavía no hay egresos"
+        texto="Cargá el primero: queda en borrador hasta confirmarlo."
+      >
+        <button type="button" class="boton" (click)="abrirAlta()">Cargar el primer egreso</button>
+      </app-estado-vacio>
+    }
+  }
 
-@if (vacio()) {
-  <p class="estado estado--vacio">No hay egresos con esos filtros.</p>
-}
-
-@if (egresos().length > 0) {
-  <div class="tarjeta tarjeta--tabla">
-    <div class="tarjeta__cabecera">
-      <h2 id="titulo-tabla-egresos">Egresos de la sede</h2>
-    </div>
-    <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-egresos">
+  @if (egresos().length > 0) {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de egresos">
       <table class="tabla">
         <thead>
           <tr>
             <th scope="col">Registrado</th>
             <th scope="col">Concepto</th>
-            <th scope="col">Categoría</th>
+            <th scope="col" class="tabla__col--secundaria">Categoría</th>
             <th scope="col">Estado</th>
-            <th scope="col" class="importe">Total</th>
+            <th scope="col" class="importe tabla__col--secundaria">Total</th>
             <th scope="col" class="importe">Saldo pendiente</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
@@ -195,13 +213,15 @@
                 <span class="celda-principal">{{ egreso.concepto }}</span>
                 <span class="celda-secundaria">{{ egreso.beneficiarioNombre }}</span>
               </td>
-              <td>{{ categoriaEnPalabras(egreso.categoria) }}</td>
+              <td class="tabla__col--secundaria">{{ categoriaEnPalabras(egreso.categoria) }}</td>
               <td>
                 <span [class]="claseDeEstado(egreso.estado)">{{
                   estadoEnPalabras(egreso.estado)
                 }}</span>
               </td>
-              <td class="importe">{{ importe(egreso, egreso.importeTotal) }}</td>
+              <td class="importe tabla__col--secundaria">
+                {{ importe(egreso, egreso.importeTotal) }}
+              </td>
               <td class="importe">{{ importe(egreso, egreso.saldoPendiente) }}</td>
               <td class="tabla__acciones">
                 <a
@@ -216,38 +236,21 @@
         </tbody>
       </table>
     </div>
-    @if (pagina() > 0 || hayMas()) {
-      <nav class="pie-de-tarjeta paginacion" aria-label="Páginas de egresos">
-        <span class="pie-de-tarjeta__resumen"
-          >Egresos {{ filasMostradas().primera }} a {{ filasMostradas().ultima }}</span
-        >
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="pagina() === 0"
-          (click)="irAPagina(pagina() - 1)"
-        >
-          Anterior
-        </button>
-        <span class="ayuda">Página {{ pagina() + 1 }}</span>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="!hayMas()"
-          (click)="irAPagina(pagina() + 1)"
-        >
-          Siguiente
-        </button>
-      </nav>
-    }
-  </div>
-} @else if (vacio() && pagina() > 0) {
-  <div class="acciones">
-    <button type="button" class="boton boton--secundario" (click)="irAPagina(pagina() - 1)">
-      Volver a la página anterior
-    </button>
-  </div>
-}
+    <!--
+      El contrato pagina con limite y desplazamiento y no devuelve el total: hasta llegar a la
+      ultima pagina el pie ofrece solo las paginas conocidas y la siguiente.
+    -->
+    <app-paginacion
+      etiqueta="Páginas de egresos"
+      [paginaActual]="pagina()"
+      [totalPaginas]="totalPaginas()"
+      [total]="totalConocido()"
+      [porPagina]="porPagina()"
+      (cambioDePagina)="irAPagina($event)"
+      (cambioDePorPagina)="cambiarPorPagina($event)"
+    />
+  }
+</section>
 
 <!--
   Alta en un panel lateral abierto desde "Registrar egreso" (refactor UX/UI del 28/10/2026). Antes
@@ -284,159 +287,152 @@
         </label>
       </fieldset>
 
-      <div class="campos-en-linea">
-        @if (tipoBeneficiario() === COLABORADOR) {
-          <div class="campo">
-            <label for="alta-colaborador">Colaborador</label>
-            <select
-              id="alta-colaborador"
-              formControlName="beneficiarioMembershipId"
-              [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
-              [attr.aria-describedby]="
-                campoInvalido('beneficiarioMembershipId') ? 'alta-colaborador-error' : null
-              "
-            >
-              <option value="">Elegí un colaborador</option>
-              @for (vinculo of colaboradores(); track vinculo.id) {
-                <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
-              }
-            </select>
-            @if (sinColaboradores()) {
-              <p class="ayuda">
-                No se pudo leer el padrón de colaboradores. Podés cargarlo como externo.
-              </p>
-            }
-            @if (campoInvalido('beneficiarioMembershipId')) {
-              <p class="campo__error" id="alta-colaborador-error" role="alert">
-                Elegí a quién se le paga.
-              </p>
-            }
-          </div>
-        } @else {
-          <div class="campo">
-            <label for="alta-nombre">Nombre o razón social</label>
-            <input
-              id="alta-nombre"
-              type="text"
-              autocomplete="off"
-              maxlength="200"
-              formControlName="beneficiarioNombre"
-              [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
-              [attr.aria-describedby]="
-                campoInvalido('beneficiarioNombre') ? 'alta-nombre-error' : null
-              "
-            />
-            @if (campoInvalido('beneficiarioNombre')) {
-              <p class="campo__error" id="alta-nombre-error" role="alert">
-                Escribí a quién se le paga.
-              </p>
-            }
-          </div>
-          <div class="campo">
-            <label for="alta-documento">CUIT o documento (opcional)</label>
-            <input
-              id="alta-documento"
-              type="text"
-              autocomplete="off"
-              maxlength="30"
-              formControlName="beneficiarioDocumento"
-            />
-          </div>
-        }
-
+      @if (tipoBeneficiario() === COLABORADOR) {
         <div class="campo">
-          <label for="alta-categoria">Categoría</label>
-          <select id="alta-categoria" formControlName="categoria">
-            @for (opcion of categorias; track opcion) {
-              <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
+          <label for="alta-colaborador">Colaborador</label>
+          <select
+            id="alta-colaborador"
+            formControlName="beneficiarioMembershipId"
+            [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
+            [attr.aria-describedby]="
+              campoInvalido('beneficiarioMembershipId') ? 'alta-colaborador-error' : null
+            "
+          >
+            <option value="">Elegí un colaborador</option>
+            @for (vinculo of colaboradores(); track vinculo.id) {
+              <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
             }
           </select>
+          @if (sinColaboradores()) {
+            <p class="ayuda">
+              No se pudo leer el padrón de colaboradores. Podés cargarlo como externo.
+            </p>
+          }
+          @if (campoInvalido('beneficiarioMembershipId')) {
+            <p class="campo__error" id="alta-colaborador-error" role="alert">
+              Elegí a quién se le paga.
+            </p>
+          }
         </div>
-      </div>
-
-      <div class="grilla-compacta">
-        <div class="campo campo--ancho">
-          <label for="alta-concepto">Concepto</label>
+      } @else {
+        <div class="campo campo--6">
+          <label for="alta-nombre">Nombre o razón social</label>
           <input
-            id="alta-concepto"
+            id="alta-nombre"
             type="text"
             autocomplete="off"
             maxlength="200"
-            formControlName="concepto"
-            [attr.aria-invalid]="campoInvalido('concepto') ? 'true' : null"
-            [attr.aria-describedby]="campoInvalido('concepto') ? 'alta-concepto-error' : null"
+            formControlName="beneficiarioNombre"
+            [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
+            [attr.aria-describedby]="
+              campoInvalido('beneficiarioNombre') ? 'alta-nombre-error' : null
+            "
           />
-          @if (campoInvalido('concepto')) {
-            <p class="campo__error" id="alta-concepto-error" role="alert">
-              El concepto es obligatorio.
+          @if (campoInvalido('beneficiarioNombre')) {
+            <p class="campo__error" id="alta-nombre-error" role="alert">
+              Escribí a quién se le paga.
             </p>
           }
         </div>
-
-        <div class="campo">
-          <label for="alta-importe">Importe total</label>
+        <div class="campo campo--3">
+          <label for="alta-documento">CUIT o documento (opcional)</label>
           <input
-            id="alta-importe"
+            id="alta-documento"
             type="text"
-            inputmode="decimal"
             autocomplete="off"
-            formControlName="importe"
-            [attr.aria-invalid]="campoInvalido('importe') ? 'true' : null"
-            [attr.aria-describedby]="campoInvalido('importe') ? 'alta-importe-error' : null"
+            maxlength="30"
+            formControlName="beneficiarioDocumento"
           />
-          @if (campoInvalido('importe')) {
-            <p class="campo__error" id="alta-importe-error" role="alert">
-              Un importe mayor que cero, por ejemplo 15000,50.
-            </p>
-          }
         </div>
+      }
 
-        <div class="campo campo--corto">
-          <label for="alta-moneda">Moneda</label>
-          <input
-            id="alta-moneda"
-            type="text"
-            maxlength="3"
-            formControlName="moneda"
-            [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
-            [attr.aria-describedby]="campoInvalido('moneda') ? 'alta-moneda-error' : null"
-          />
-          @if (campoInvalido('moneda')) {
-            <p class="campo__error" id="alta-moneda-error" role="alert">
-              Tres letras, por ejemplo ARS.
-            </p>
+      <div class="campo">
+        <label for="alta-categoria">Categoría</label>
+        <select id="alta-categoria" formControlName="categoria">
+          @for (opcion of categorias; track opcion) {
+            <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
           }
-        </div>
+        </select>
+      </div>
+      <div class="campo campo--6">
+        <label for="alta-concepto">Concepto</label>
+        <input
+          id="alta-concepto"
+          type="text"
+          autocomplete="off"
+          maxlength="200"
+          formControlName="concepto"
+          [attr.aria-invalid]="campoInvalido('concepto') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('concepto') ? 'alta-concepto-error' : null"
+        />
+        @if (campoInvalido('concepto')) {
+          <p class="campo__error" id="alta-concepto-error" role="alert">
+            El concepto es obligatorio.
+          </p>
+        }
+      </div>
+
+      <div class="campo campo--2">
+        <label for="alta-importe">Importe total</label>
+        <input
+          id="alta-importe"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          formControlName="importe"
+          [attr.aria-invalid]="campoInvalido('importe') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('importe') ? 'alta-importe-error' : null"
+        />
+        @if (campoInvalido('importe')) {
+          <p class="campo__error" id="alta-importe-error" role="alert">
+            Un importe mayor que cero, por ejemplo 15000,50.
+          </p>
+        }
+      </div>
+
+      <div class="campo campo--2">
+        <label for="alta-moneda">Moneda</label>
+        <input
+          id="alta-moneda"
+          type="text"
+          maxlength="3"
+          formControlName="moneda"
+          [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('moneda') ? 'alta-moneda-error' : null"
+        />
+        @if (campoInvalido('moneda')) {
+          <p class="campo__error" id="alta-moneda-error" role="alert">
+            Tres letras, por ejemplo ARS.
+          </p>
+        }
       </div>
 
       <fieldset class="grupo">
         <legend>Comprobante (obligatorio para confirmar)</legend>
-        <div class="grilla-compacta">
-          <div class="campo">
-            <label for="alta-comprobante-tipo">Tipo</label>
-            <input
-              id="alta-comprobante-tipo"
-              type="text"
-              autocomplete="off"
-              maxlength="40"
-              placeholder="Factura C, Recibo"
-              formControlName="comprobanteTipo"
-            />
-          </div>
-          <div class="campo">
-            <label for="alta-comprobante-numero">Número</label>
-            <input
-              id="alta-comprobante-numero"
-              type="text"
-              autocomplete="off"
-              maxlength="40"
-              formControlName="comprobanteNumero"
-            />
-          </div>
-          <div class="campo">
-            <label for="alta-comprobante-fecha">Fecha</label>
-            <input id="alta-comprobante-fecha" type="date" formControlName="comprobanteFecha" />
-          </div>
+        <div class="campo campo--2">
+          <label for="alta-comprobante-tipo">Tipo</label>
+          <input
+            id="alta-comprobante-tipo"
+            type="text"
+            autocomplete="off"
+            maxlength="40"
+            placeholder="Factura C, Recibo"
+            formControlName="comprobanteTipo"
+          />
+        </div>
+        <div class="campo campo--2">
+          <label for="alta-comprobante-numero">Número</label>
+          <input
+            id="alta-comprobante-numero"
+            type="text"
+            autocomplete="off"
+            maxlength="40"
+            formControlName="comprobanteNumero"
+          />
+        </div>
+        <div class="campo">
+          <label for="alta-comprobante-fecha">Fecha</label>
+          <input id="alta-comprobante-fecha" type="date" formControlName="comprobanteFecha" />
         </div>
       </fieldset>
 
@@ -445,8 +441,8 @@
           Servicio y período liquidado
           <span class="seccion-plegable__resumen">Opcionales</span>
         </summary>
-        <div class="grilla-compacta">
-          <div class="campo">
+        <div class="grilla-12">
+          <div class="campo campo--6">
             <label for="alta-oferta">Servicio u oferta (opcional)</label>
             <select
               id="alta-oferta"

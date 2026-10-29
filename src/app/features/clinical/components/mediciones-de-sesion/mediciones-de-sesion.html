@@ -44,7 +44,10 @@
     <p class="ayuda ayuda--fija">{{ baseline() }}</p>
 
     @if (medidas().length === 0) {
-      <p class="ayuda">Todavía no hay mediciones en esta sesión.</p>
+      <app-estado-vacio
+        titulo="Todavía no hay mediciones en esta sesión"
+        [texto]="editable() ? 'Registrá la primera con el formulario de abajo.' : null"
+      />
     } @else {
       <div class="tabla-scroll" role="region" aria-label="Mediciones de la sesión" tabindex="0">
         <table class="tabla">
@@ -53,8 +56,8 @@
           </caption>
           <thead>
             <tr>
-              <th scope="col">Medida</th>
-              <th scope="col">Lado</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="medida">Medida</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="lado">Lado</th>
               <th scope="col">La vez pasada</th>
               <th scope="col">Hoy</th>
               <th scope="col">Cambio</th>
@@ -65,7 +68,7 @@
           </thead>
           <tbody>
             @for (
-              medida of medidas();
+              medida of tabla.visibles();
               track (medida.definicionId ?? 0) + '-' + (medida.lateralidad ?? '')
             ) {
               <tr>
@@ -81,11 +84,11 @@
                   }
                 </td>
                 @if (editable()) {
-                  <td>
+                  <td class="tabla__acciones">
                     @if (medida.actual) {
                       <button
                         type="button"
-                        class="boton boton--secundario"
+                        class="boton boton--secundario boton--chico"
                         [disabled]="guardando()"
                         (click)="quitar(medida)"
                       >
@@ -96,7 +99,7 @@
                     } @else {
                       <button
                         type="button"
-                        class="boton boton--secundario"
+                        class="boton boton--secundario boton--chico"
                         [disabled]="guardando()"
                         (click)="volverATomar(medida)"
                       >
@@ -112,11 +115,12 @@
           </tbody>
         </table>
       </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de mediciones" />
     }
   }
 
   @if (editable()) {
-    <fieldset class="grupo">
+    <fieldset class="grupo-plano">
       <legend>Registrar una medición</legend>
 
       @if (error(); as problema) {
@@ -137,8 +141,9 @@
           El catálogo de medidas está vacío: las definiciones las carga quien administra el centro.
         </p>
       } @else {
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
+        <!-- Grilla de 12 columnas (UX-14): medida y lado; despues, el valor y como se tomo. -->
+        <div class="grilla-12">
+          <div class="campo campo--4">
             <label for="medicion-definicion">Medida</label>
             <select
               id="medicion-definicion"
@@ -154,7 +159,7 @@
             </select>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="medicion-lado">Lado</label>
             <select
               id="medicion-lado"
@@ -170,13 +175,11 @@
             </select>
             <p id="ayuda-medicion-lado" class="ayuda">Los dos lados se registran por separado.</p>
           </div>
-        </div>
 
-        @if (definicion(); as elegida) {
-          <!-- El valor y como se tomo, lado a lado: son la misma medicion. -->
-          <div class="grilla-campos grilla-campos--dos">
+          @if (definicion(); as elegida) {
+            <!-- El valor y como se tomo, en la misma fila: son la misma medicion. -->
             @if (esNumerica()) {
-              <div class="campo">
+              <div class="campo campo--3">
                 <label for="medicion-valor">
                   Valor{{ elegida.unidad ? ' en ' + elegida.unidad : '' }}
                 </label>
@@ -195,7 +198,7 @@
                 <p id="ayuda-medicion-valor" class="ayuda ayuda--fija">{{ rango() }}</p>
               </div>
             } @else if (elegida.tipo === Tipo.BOOLEANO) {
-              <fieldset class="grupo">
+              <fieldset class="grupo-plano">
                 <legend>Presente</legend>
                 <label class="opcion-radio">
                   <input
@@ -218,7 +221,7 @@
                 </label>
               </fieldset>
             } @else {
-              <div class="campo">
+              <div class="campo campo--6">
                 <label for="medicion-valor">Hallazgo</label>
                 <input
                   id="medicion-valor"
@@ -233,7 +236,7 @@
               </div>
             }
 
-            <div class="campo">
+            <div class="campo campo--6">
               <label for="medicion-nota">
                 Cómo se tomó <span class="campo__opcional">(opcional)</span>
               </label>
@@ -250,8 +253,8 @@
                 No reemplaza al valor y no entra en ninguna comparación.
               </p>
             </div>
-          </div>
-        }
+          }
+        </div>
 
         @if (aviso()) {
           <p class="campo__error" id="medicion-falta">{{ aviso() }}</p>

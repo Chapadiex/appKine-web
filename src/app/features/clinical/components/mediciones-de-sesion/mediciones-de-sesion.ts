@@ -33,6 +33,10 @@ import { RegistrarMedicion } from '../../../../api/generated/model/registrar-med
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -62,7 +66,7 @@ const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesio
  * <p><b>Completitud informa y no gatea</b>: "4 de 18" no impide cerrar.
  */
 @Component({
-  imports: [Alerta, Ayuda],
+  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, PieDeTabla],
   selector: 'app-mediciones-de-sesion',
   templateUrl: './mediciones-de-sesion.html',
   styleUrl: '../../atencion.css',
@@ -144,6 +148,17 @@ export class MedicionesDeSesion {
   });
 
   protected readonly medidas = computed(() => this.comparacion()?.medidas ?? []);
+
+  /**
+   * La tabla de lo medido (UX-14): orden por medida o lado y el pie estandar. Sin orden elegido
+   * queda el del servidor, que es el del catalogo.
+   */
+  protected readonly tabla = tablaLocal(this.medidas, {
+    columnas: {
+      medida: (medida) => medida.nombre,
+      lado: (medida) => ladoLegible(medida.lateralidad),
+    },
+  });
 
   /** Contra que se compara. Que se acoto al caso se dice: comparar contra otra cosa engaña. */
   protected readonly baseline = computed(() => {

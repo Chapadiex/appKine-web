@@ -24,7 +24,7 @@
 
 .motivo-correccion,
 .observaciones-asistencia {
-  margin-top: var(--esp-4, 0.5rem);
+  margin: var(--esp-3) 0 0;
 }
 
 .historial {
@@ -105,8 +105,8 @@
 }
 
 .contadores li {
-  flex: 1 1 8rem;
-  padding: var(--esp-4) var(--esp-6);
+  flex: 1 1 auto;
+  padding: var(--esp-2) var(--esp-5);
   border-radius: 0;
   background: transparent;
   border-right: var(--borde-fino) solid var(--color-borde-sutil);
@@ -114,14 +114,55 @@
   font-variant-numeric: tabular-nums;
 }
 
-.contadores + .ayuda,
-.contadores ~ .acciones {
-  margin-top: var(--esp-5);
+/*
+ * Banda de la clase (UX-14 §3, operativa): fecha, estado, cifras y el ciclo de la clase en una
+ * franja sin tarjeta, para que la lista de participantes ocupe el resto de la pantalla.
+ */
+.banda-asistencia {
+  margin: 0 0 var(--esp-6);
 }
 
-/* Barra de la lista: la accion masiva queda a la vista, pegada a la tabla. */
-.acciones--barra {
+.banda-asistencia__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-6);
+}
+
+.banda-asistencia__titulo {
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.banda-asistencia .clase-meta {
+  margin: 0;
+}
+
+.banda-asistencia .contadores {
+  flex: 0 1 auto;
+}
+
+.banda-asistencia .acciones {
+  margin: 0 0 0 auto;
+}
+
+.banda-asistencia > .ayuda {
+  margin: var(--esp-4) 0 0;
+}
+
+/* Titulo de la lista con su accion masiva en la misma fila, pegada a la tabla. */
+.titulo-con-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
   margin: 0 0 var(--esp-5);
+}
+
+.tarjeta .titulo-con-acciones h2 {
+  margin: 0;
 }
 
 .tabla td {
@@ -166,26 +207,7 @@
   color: var(--color-texto-suave);
 }
 
-/*
- * Clases del dia. La fecha va en una barra liviana, sin tarjeta, y el cupo muestra su ocupacion
- * con una barra fina ademas del numero (el texto es el dato; la barra es refuerzo).
- */
-.barra-dia {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--esp-2) var(--esp-6);
-  margin-bottom: var(--esp-6);
-}
-
-.barra-dia .campo {
-  margin-bottom: 0;
-}
-
-.barra-dia .ayuda {
-  margin: 0 0 var(--esp-3);
-}
-
+/* Clases del dia: el cupo muestra su ocupacion con una barra fina ademas del numero. */
 .cupo {
   display: flex;
   align-items: center;

@@ -22,7 +22,9 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
@@ -79,7 +81,9 @@ type Especialidades =
 
     Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
+    Icono,
     Ayuda,
     Filtros,
     PanelLateral,
@@ -122,8 +126,31 @@ export class SolicitudesCatalogoPage {
     return actual.tipo === 'listo' ? actual.solicitudes : [];
   });
 
-  /** Orden y paginado de la lista completa (plan Â§3.4): el servidor no pagina solicitudes. */
-  protected readonly tabla = tablaLocal(this.solicitudes, {
+  /**
+   * Busqueda por lo pedido o por el centro (UX-14). El backend no busca por texto en la bandeja,
+   * pero la lista llega entera: se filtra aca.
+   */
+  protected readonly busqueda = signal('');
+
+  /** Hay busqueda o un estado distinto del de entrada: decide cual de los dos vacios es. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtroEstado() !== 'PENDIENTE',
+  );
+
+  protected readonly solicitudesBuscadas = computed(() => {
+    const buscado = normalizar(this.busqueda());
+    const solicitudes = this.solicitudes();
+    return buscado === ''
+      ? solicitudes
+      : solicitudes.filter((solicitud) =>
+          [solicitud.nombrePropuesto, solicitud.codigoPropuesto, this.nombreDeCentro(solicitud)]
+            .map((texto) => normalizar(texto ?? ''))
+            .some((texto) => texto.includes(buscado)),
+        );
+  });
+
+  /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina solicitudes. */
+  protected readonly tabla = tablaLocal(this.solicitudesBuscadas, {
     columnas: {
       nombre: (solicitud) => solicitud.nombrePropuesto,
       tipo: (solicitud) => this.etiquetaDeTipo(solicitud.tipo),
@@ -178,6 +205,14 @@ export class SolicitudesCatalogoPage {
     this.cerrar();
     this.filtroEstado.set(elegido);
     this.cargar();
+  }
+
+  /** "Limpiar filtros": sin busqueda y con las pendientes, que es como se entra. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    if (this.filtroEstado() !== 'PENDIENTE') {
+      this.cambiarFiltro('PENDIENTE');
+    }
   }
 
   protected revisar(solicitud: CatalogoSolicitudResponse): void {
@@ -385,4 +420,13 @@ export class SolicitudesCatalogoPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Texto comparable: sin mayusculas, sin tildes y sin espacios de los costados. */
+function normalizar(texto: string): string {
+  return texto
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
 }

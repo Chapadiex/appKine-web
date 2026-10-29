@@ -31,14 +31,16 @@ async function filaDelColaborador(page: Page, nombre: string): Promise<Locator> 
     if ((await fila.count()) > 0) {
       return fila;
     }
-    const siguiente = page
-      .getByRole('navigation', { name: 'Paginas de colaboradores' })
-      .getByRole('button', { name: 'Siguiente' });
+    // Pie estandar (UX-14): "Página siguiente" y la pagina actual marcada con aria-current.
+    const paginas = page.getByRole('navigation', { name: 'Páginas de colaboradores' });
+    const siguiente = paginas.getByRole('button', { name: 'Página siguiente' });
     if ((await siguiente.count()) === 0 || (await siguiente.isDisabled())) {
       break;
     }
     await siguiente.click();
-    await expect(page.getByText(`Pagina ${pagina + 2} de`)).toBeVisible();
+    await expect(
+      paginas.getByRole('button', { name: `Página ${pagina + 2}`, exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
   }
   await expect(fila, `el colaborador ${nombre} figura en el listado`).toHaveCount(1);
   return fila;

@@ -13,6 +13,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { publicarMigas } from '../../../../core/services/migas.store';
 
 /**
@@ -31,7 +32,7 @@ import { publicarMigas } from '../../../../core/services/migas.store';
  */
 @Component({
   selector: 'app-versiones-page',
-  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta, EstadoVacio],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',
 })

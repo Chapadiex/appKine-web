@@ -116,8 +116,8 @@
       />
     }
 
-    <div class="grilla-compacta">
-      <div class="campo">
+    <div class="grilla-12">
+      <div class="campo campo--2">
         <label for="apertura-saldo">Saldo inicial contado</label>
         <input
           id="apertura-saldo"
@@ -130,7 +130,7 @@
         />
       </div>
 
-      <div class="campo campo--corto">
+      <div class="campo campo--2">
         <label for="apertura-moneda">Moneda</label>
         <input
           id="apertura-moneda"
@@ -171,7 +171,8 @@
 <!-- ================================ Caja abierta ================================ -->
 
 @if (jornada(); as abierta) {
-  <section class="tarjeta" aria-labelledby="titulo-jornada">
+  <!-- Banda de indicadores (UX-14 §3): compacta y sin tarjeta, para que los movimientos ocupen la pantalla. -->
+  <section class="banda-de-caja" aria-labelledby="titulo-jornada">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
       <h2 id="titulo-jornada">Caja abierta</h2>
       <app-ayuda titulo="Caja abierta">
@@ -204,10 +205,8 @@
           <span class="cifras__nota">solo efectivo</span>
         </dd>
       </div>
-    </dl>
-    @if (abierta.resumen; as r) {
-      <!-- DP-45: lo que entro y salio en la jornada, neto de reversiones, como lo calcula el servidor. -->
-      <dl class="cifras">
+      @if (abierta.resumen; as r) {
+        <!-- DP-45: lo que entro y salio en la jornada, neto de reversiones, como lo calcula el servidor. -->
         <div>
           <dt>Ingresos de la jornada</dt>
           <dd class="importe">
@@ -232,20 +231,21 @@
           <dt>Movimientos</dt>
           <dd>{{ r.cantidadMovimientos ?? 0 }}</dd>
         </div>
-      </dl>
-    }
+      }
+    </dl>
   </section>
 
   <div class="dos-columnas">
     <div class="dos-columnas__principal">
       <!-- ------------------------------ Movimientos ------------------------------ -->
-      <div class="tarjeta tarjeta--tabla">
-        <div class="tarjeta__cabecera">
-          <h2 id="titulo-tabla-movimientos">Movimientos de esta jornada</h2>
-        </div>
+      <section class="tarjeta">
+        <h2 id="titulo-tabla-movimientos">Movimientos de esta jornada</h2>
 
         @if (movimientos().length === 0) {
-          <p class="estado estado--vacio">Todavía no hay movimientos en esta jornada.</p>
+          <app-estado-vacio
+            titulo="Todavía no hay movimientos en esta jornada"
+            texto="Los cobros en efectivo y los movimientos manuales aparecen acá."
+          />
         } @else {
           <div
             class="tabla-scroll"
@@ -256,23 +256,33 @@
             <table class="tabla">
               <thead>
                 <tr>
-                  <th scope="col">Hora</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Medio</th>
-                  <th scope="col">Concepto</th>
-                  <th scope="col" class="importe">Importe</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="medio"
+                  >
+                    Medio
+                  </th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
+                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="importe">
+                    Importe
+                  </th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
-                @for (movimiento of movimientos(); track movimiento.id) {
+                @for (movimiento of tabla.visibles(); track movimiento.id) {
                   <tr
                     [class.fila--revocada]="yaRevertido(movimiento)"
                     [class.fila--seleccionada]="revirtiendo() === movimiento.id"
                   >
                     <td class="celda-fecha">{{ instanteEnPalabras(movimiento.registradoEn) }}</td>
                     <td>{{ tipoEnPalabras(movimiento.tipo) }}</td>
-                    <td>{{ medioEnPalabras(movimiento.medio) }}</td>
+                    <td class="tabla__col--secundaria">{{ medioEnPalabras(movimiento.medio) }}</td>
                     <td>
                       {{ movimiento.concepto }}
                       @if (movimiento.motivo) {
@@ -299,16 +309,17 @@
               </tbody>
             </table>
           </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de movimientos" />
           @if (listadoRecortado()) {
             <p class="ayuda">Se muestran los primeros 50 movimientos de la jornada.</p>
           }
         }
-      </div>
+      </section>
     </div>
 
     <aside class="dos-columnas__lateral">
       @if (abierta.totalesPorMedio?.length) {
-        <section class="tarjeta" aria-labelledby="titulo-por-medio">
+        <section class="caja-por-medio" aria-labelledby="titulo-por-medio">
           <h2 class="titulo-lateral" id="titulo-por-medio">Por medio de pago</h2>
           <ul class="lista-montos">
             @for (total of abierta.totalesPorMedio; track total.medio) {
@@ -355,7 +366,7 @@
           />
         }
 
-        <div class="grilla-compacta">
+        <div class="grilla-12">
           <div class="campo">
             <label for="movimiento-tipo">Tipo</label>
             <select
@@ -382,7 +393,7 @@
             </select>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--2">
             <label for="movimiento-importe">Importe</label>
             <input
               id="movimiento-importe"
@@ -394,7 +405,7 @@
             />
           </div>
 
-          <div class="campo campo--ancho">
+          <div class="campo campo--12">
             <label for="movimiento-concepto">Concepto</label>
             <input
               id="movimiento-concepto"
@@ -439,16 +450,18 @@
           />
         }
 
-        <div class="campo">
-          <label for="cierre-declarado">Efectivo contado</label>
-          <input
-            id="cierre-declarado"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="saldoDeclarado()"
-            (input)="saldoDeclarado.set($any($event.target).value)"
-          />
+        <div class="grilla-12">
+          <div class="campo campo--4">
+            <label for="cierre-declarado">Efectivo contado</label>
+            <input
+              id="cierre-declarado"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [value]="saldoDeclarado()"
+              (input)="saldoDeclarado.set($any($event.target).value)"
+            />
+          </div>
         </div>
 
         @if (diferenciaCentavos() !== null) {
@@ -463,7 +476,7 @@
         }
 
         @if (requiereMotivo()) {
-          <div class="campo">
+          <div class="campo campo--12">
             <label for="cierre-motivo">Motivo de la diferencia</label>
             <input
               id="cierre-motivo"

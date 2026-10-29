@@ -33,14 +33,18 @@
   <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-listado-servicios">
-  <h2 id="titulo-listado-servicios">Servicios del catálogo</h2>
-
+<section class="tarjeta" aria-label="Servicios del catálogo">
   <!--
     Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; el estado, que casi
     nunca se toca, detras del embudo.
   -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
+    [unidad]="['servicio', 'servicios']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="busqueda-servicio">Buscar</label>
       <div class="campo-busqueda">
@@ -96,7 +100,27 @@
 
       @case ('listo') {
         @if (servicios().length === 0) {
-          <p class="estado estado--vacio">No hay servicios que coincidan con lo que buscaste.</p>
+          @if (hayFiltros()) {
+            <app-estado-vacio
+              titulo="No encontramos servicios"
+              texto="Probá con otra búsqueda o filtros."
+            >
+              <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
+            </app-estado-vacio>
+          } @else {
+            <app-estado-vacio
+              titulo="Todavía no hay servicios activos en el catálogo"
+              texto="Los servicios son la base de las ofertas de cada sede."
+            >
+              @if (puedeAdministrar()) {
+                <button type="button" class="boton" (click)="abrirAlta()">
+                  Dar de alta el primer servicio
+                </button>
+              }
+            </app-estado-vacio>
+          }
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo de servicios">
             <table class="tabla">
@@ -108,11 +132,19 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="naturaleza">Naturaleza</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="naturaleza"
+                  >
+                    Naturaleza
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">
                     Modalidad por defecto
                   </th>
-                  <th scope="col">Valores clínicos por defecto</th>
+                  <th scope="col" class="tabla__col--secundaria">Valores clínicos por defecto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
                   @if (puedeAdministrar()) {
                     <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -132,9 +164,11 @@
                       }
                     </th>
                     <td>{{ servicio.codigo }}</td>
-                    <td>{{ etiquetaDeNaturaleza(servicio.naturaleza) }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ etiquetaDeNaturaleza(servicio.naturaleza) }}
+                    </td>
                     <td>{{ etiquetaDeModalidad(servicio.modalidadDefault) }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       <span class="etiqueta">
                         {{ servicio.requiereCasoClinicoDefault ? 'Requiere caso' : 'Sin caso' }}
                       </span>
@@ -183,15 +217,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} servicios</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de servicios"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de servicios" />
         }
       }
     }
@@ -216,7 +242,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-servicio-codigo">Código</label>
         <input
           id="alta-servicio-codigo"
@@ -243,7 +269,7 @@
         }
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-servicio-nombre">Nombre</label>
         <input
           id="alta-servicio-nombre"
@@ -278,7 +304,7 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-servicio-naturaleza">Naturaleza</label>
         <select
           id="alta-servicio-naturaleza"
@@ -299,7 +325,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--4">
         <label for="alta-servicio-modalidad">Modalidad por defecto</label>
         <select
           id="alta-servicio-modalidad"
@@ -402,7 +428,7 @@
           </app-alerta>
         }
 
-        <div class="campo campo--ancho">
+        <div class="campo campo--4">
           <label for="editar-servicio-nombre">Nombre</label>
           <input
             id="editar-servicio-nombre"

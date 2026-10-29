@@ -113,70 +113,73 @@
         </div>
 
         @if (!reservado()) {
-          <div class="campo">
-            <label for="reserva-persona">Documento, apellido, nombre o teléfono</label>
-            <input
-              id="reserva-persona"
-              name="reserva-persona"
-              type="search"
-              autocomplete="off"
-              (input)="buscarPersona($any($event.target).value)"
-            />
-          </div>
-
-          @if (errorDeBusqueda(); as fallo) {
-            <app-alerta tipo="error" titulo="No pudimos buscar en el padrón">
-              <p>{{ fallo.mensaje }}</p>
-            </app-alerta>
-          }
-
-          @if (candidatas().length > 0) {
-            <ul class="lista-personas">
-              @for (candidata of candidatas(); track candidata.id) {
-                <li>
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="elegirPersona(candidata)"
-                  >
-                    {{ candidata.apellido }}, {{ candidata.nombre }}
-                    @if (candidata.numeroDocumento) {
-                      — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
-                    }
-                  </button>
-                </li>
-              }
-            </ul>
-          } @else if (buscoPersonas()) {
-            <p class="estado estado--vacio">
-              Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
-              primero en el padrón.
-            </p>
-          }
-
-          @if (persona() !== null && coberturas().length > 0) {
-            <div class="campo">
-              <label for="reserva-cobertura"
-                >Cobertura con la que se piensa atender (opcional)</label
-              >
-              <select
-                id="reserva-cobertura"
-                aria-describedby="reserva-cobertura-ayuda"
-                (change)="elegirCobertura($any($event.target).value)"
-              >
-                <option value="" [selected]="coberturaId() === null">Sin elegir</option>
-                @for (cobertura of coberturas(); track cobertura.id) {
-                  <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
-                    {{ coberturaParaReservar(cobertura) }}
-                  </option>
-                }
-              </select>
-              <p class="ayuda" id="reserva-cobertura-ayuda">
-                Solo las vigentes el día del turno. Sin elegir, la recepción usa la primera que
-                aplique; lo elegido es una preferencia que la recepción revisa al validar.
-              </p>
+          <!-- UX-14 §2: el paciente y la cobertura ocupan media fila cada uno, no el ancho entero. -->
+          <div class="grilla-12">
+            <div class="campo campo--6">
+              <label for="reserva-persona">Documento, apellido, nombre o teléfono</label>
+              <input
+                id="reserva-persona"
+                name="reserva-persona"
+                type="search"
+                autocomplete="off"
+                (input)="buscarPersona($any($event.target).value)"
+              />
             </div>
-          }
+
+            @if (errorDeBusqueda(); as fallo) {
+              <app-alerta tipo="error" titulo="No pudimos buscar en el padrón">
+                <p>{{ fallo.mensaje }}</p>
+              </app-alerta>
+            }
+
+            @if (candidatas().length > 0) {
+              <ul class="lista-personas">
+                @for (candidata of candidatas(); track candidata.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="elegirPersona(candidata)"
+                    >
+                      {{ candidata.apellido }}, {{ candidata.nombre }}
+                      @if (candidata.numeroDocumento) {
+                        — {{ candidata.tipoDocumento }} {{ candidata.numeroDocumento }}
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (buscoPersonas()) {
+              <p class="estado estado--vacio">
+                Ninguna persona del padrón coincide con esa búsqueda. Si es alguien nuevo, cargala
+                primero en el padrón.
+              </p>
+            }
+
+            @if (persona() !== null && coberturas().length > 0) {
+              <div class="campo campo--6">
+                <label for="reserva-cobertura"
+                  >Cobertura con la que se piensa atender (opcional)</label
+                >
+                <select
+                  id="reserva-cobertura"
+                  aria-describedby="reserva-cobertura-ayuda"
+                  (change)="elegirCobertura($any($event.target).value)"
+                >
+                  <option value="" [selected]="coberturaId() === null">Sin elegir</option>
+                  @for (cobertura of coberturas(); track cobertura.id) {
+                    <option [value]="cobertura.id" [selected]="coberturaId() === cobertura.id">
+                      {{ coberturaParaReservar(cobertura) }}
+                    </option>
+                  }
+                </select>
+                <p class="ayuda" id="reserva-cobertura-ayuda">
+                  Solo las vigentes el día del turno. Sin elegir, la recepción usa la primera que
+                  aplique; lo elegido es una preferencia que la recepción revisa al validar.
+                </p>
+              </div>
+            }
+          </div>
 
           <!--
             Serie de turnos (AKINE E-3): el mismo slot viaja por la query, como llego aca. Es otra

@@ -40,7 +40,8 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import {
@@ -110,7 +111,8 @@ type TipoAccion = 'editar' | 'baja';
     Pestanas,
     Alerta,
     ColumnaOrdenable,
-    Paginacion,
+    PieDeTabla,
+    EstadoVacio,
     Ayuda,
     Filtros,
     FiltrosRapidos,
@@ -219,6 +221,14 @@ export class FinanciadoresPage {
 
   /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== null));
+
+  /**
+   * Si lo que trajo el servidor ya viene recortado por la busqueda o el tipo. Sin eso, una lista
+   * vacia es "todavia no hay"; con eso, es "no hay con estos filtros" (UX-14).
+   */
+  protected readonly hayBusqueda = computed(
+    () => this.busqueda().trim() !== '' || this.filtroTipo() !== null,
+  );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -336,6 +346,16 @@ export class FinanciadoresPage {
   protected buscar(): void {
     this.cerrarPanel();
     this.busqueda.set(this.formularioBusqueda.getRawValue().q);
+    this.cargar();
+  }
+
+  /** Vuelve la busqueda, el tipo y el estado a su valor por defecto y recarga. */
+  protected limpiarFiltros(): void {
+    this.cerrarPanel();
+    this.formularioBusqueda.reset({ q: '' });
+    this.busqueda.set('');
+    this.filtroTipo.set(null);
+    this.filtroRapido.set('ACTIVO');
     this.cargar();
   }
 

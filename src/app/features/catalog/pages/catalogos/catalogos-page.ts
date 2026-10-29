@@ -26,7 +26,11 @@ import {
 } from '../../../../api/generated/model/create-catalogo-concepto-request';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -72,9 +76,6 @@ type FiltroAlcance = 'TODOS' | 'GLOBAL' | 'ORGANIZACION';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
-
-/** Cuantos conceptos se piden por pagina. Por debajo del tope de 100 que el backend recorta. */
-const POR_PAGINA = 20;
 
 /**
  * Cuanto se espera antes de buscar mientras el usuario escribe.
@@ -135,6 +136,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
     RouterLink,
     PermisoDirective,
     Paginacion,
+    EstadoVacio,
     ConfirmacionConMotivo,
     PanelLateral,
   ],
@@ -199,6 +201,14 @@ export class CatalogosPage {
       Number(this.filtroEspecialidad() !== null),
   );
   protected readonly paginaActual = signal(0);
+
+  /** Filas por pagina, elegidas en el pie (UX-14). Viajan como `size`; el tope del backend es 100. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
+
+  /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
+  protected readonly hayFiltros = computed(
+    () => this.busqueda().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+  );
 
   /** Orden de la tabla, pedido al servidor: cambiarlo vuelve a la primera pagina (DP-45). */
   protected readonly orden = ordenDeServidor<CamposDeSort<SearchCatalogoRequestParams['sort']>>(
@@ -367,7 +377,7 @@ export class CatalogosPage {
         alcance: this.filtroAlcance(),
         especialidadId: especialidadId ?? undefined,
         page: this.paginaActual(),
-        size: POR_PAGINA,
+        size: this.porPagina(),
         sort: this.orden.sort(),
       })
       .pipe(catchError((error: unknown) => of(error instanceof Error ? error : new Error(''))))
@@ -422,6 +432,26 @@ export class CatalogosPage {
     }
     this.cerrarPanel();
     this.paginaActual.set(numero);
+    this.cargar();
+  }
+
+  /** Cambia las filas por pagina desde el pie: vuelve a la primera y relee. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.cerrarPanel();
+    this.porPagina.set(cantidad);
+    this.paginaActual.set(0);
+    this.cargar();
+  }
+
+  /** Vuelve busqueda y filtros a su valor inicial, en la primera pagina, y relee. */
+  protected limpiarFiltros(): void {
+    this.epocaDeBusqueda.update((valor) => valor + 1);
+    this.cerrarPanel();
+    this.busqueda.set('');
+    this.filtroEstado.set('ACTIVO');
+    this.filtroAlcance.set('TODOS');
+    this.filtroEspecialidad.set(null);
+    this.paginaActual.set(0);
     this.cargar();
   }
 

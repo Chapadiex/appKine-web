@@ -13,6 +13,10 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { SlotDisponible } from '../../../../api/generated/model/slot-disponible';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { SelectorDeHorario } from '../../components/selector-de-horario/selector-de-horario';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { fechaEnPalabras, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
   detalleDeEstado,
@@ -96,7 +100,9 @@ type Pedido =
   selector: 'app-serie-de-turnos-page',
   imports: [
     CabeceraDePagina,
-
+    ColumnaOrdenable,
+    EstadoVacio,
+    PieDeTabla,
     Alerta,
     Ayuda,
     RouterLink,
@@ -135,6 +141,23 @@ export class SerieDeTurnosPage {
   protected readonly textoDeOcurrenciaOmitida = textoDeOcurrenciaOmitida;
 
   protected readonly serie = signal<SerieDeTurnos | null>(null);
+
+  /**
+   * Los turnos con su numero DENTRO de la serie (el orden en que los devuelve el servidor, del mas
+   * temprano al mas tarde): ordenar la tabla por estado no les cambia el numero.
+   */
+  private readonly turnosNumerados = computed(() =>
+    (this.serie()?.turnos ?? []).map((turno, indice) => ({ turno, numero: indice + 1 })),
+  );
+
+  /** Orden y pie estandar de la tabla de turnos (UX-14 §1): la serie llega entera. */
+  protected readonly tabla = tablaLocal(this.turnosNumerados, {
+    columnas: {
+      numero: (fila) => fila.numero,
+      fecha: (fila) => (fila.turno.inicio ? new Date(fila.turno.inicio) : null),
+      estado: (fila) => nombreDeEstado(fila.turno.estado),
+    },
+  });
   protected readonly cargando = signal(false);
   /** Error al LEER la serie: va en el lugar del contenido, con Reintentar (UX-12). */
   protected readonly errorDeCarga = signal<ErrorSerie | null>(null);

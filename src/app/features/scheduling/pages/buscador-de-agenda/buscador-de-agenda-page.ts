@@ -25,6 +25,7 @@ import {
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -77,7 +78,7 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [Ayuda, CabeceraDePagina, Filtros, RouterLink, Pestanas, Alerta],
+  imports: [Ayuda, CabeceraDePagina, EstadoVacio, Filtros, RouterLink, Pestanas, Alerta],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })
@@ -113,10 +114,6 @@ export class BuscadorDeAgendaPage {
 
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly profesionalId = signal<number | null>(null);
-  /** Filtros avanzados fuera de su valor por defecto (regla de filtros, plan §3.4). */
-  protected readonly filtrosAvanzadosActivos = computed(() =>
-    Number(this.profesionalId() !== null),
-  );
   protected readonly desde = signal(this.diaDeLaSede.hoy());
   protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
 

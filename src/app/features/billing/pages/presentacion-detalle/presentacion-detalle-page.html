@@ -109,17 +109,17 @@
 
   <!-- ============================ Prestaciones del lote ============================ -->
 
-  <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-items">
-    <div class="tarjeta__cabecera">
-      <h2 id="titulo-items">Prestaciones del lote</h2>
-    </div>
+  <section class="tarjeta" aria-labelledby="titulo-items">
+    <h2 id="titulo-items">Prestaciones del lote</h2>
 
     @if (items().length > 0) {
       <!-- Regla de filtros (plan §3.4): sin busqueda por texto, el "Mostrar" va detras del embudo. -->
       <app-filtros
-        class="tarjeta__cuerpo"
-        [soloAvanzados]="true"
         [activos]="filtrosAvanzadosActivos()"
+        [resultados]="tablaItems.total()"
+        [unidad]="['prestación', 'prestaciones']"
+        limpiable
+        (limpiar)="filtrarItems('')"
       >
         <div class="campo">
           <label for="filtro-estado-item">Mostrar</label>
@@ -138,12 +138,16 @@
     }
 
     @if (items().length === 0) {
-      <p class="estado estado--vacio">
-        El lote no tiene prestaciones todavía.
-        @if (esBorrador()) {
-          Agregalas desde la bandeja de abajo.
-        }
-      </p>
+      <app-estado-vacio
+        titulo="El lote no tiene prestaciones todavía"
+        [texto]="esBorrador() ? 'Agregalas desde la bandeja de abajo.' : null"
+      />
+    } @else if (itemsVisibles().length === 0) {
+      <app-estado-vacio titulo="Ninguna prestación del lote está en ese estado.">
+        <button type="button" class="boton boton--secundario" (click)="filtrarItems('')">
+          Limpiar filtros
+        </button>
+      </app-estado-vacio>
     } @else {
       <div
         class="tabla-scroll"
@@ -156,7 +160,15 @@
             <tr>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestación</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="fecha">Fecha</th>
-              <th scope="col" appOrdenable [tabla]="tablaItems" columna="paciente">Paciente</th>
+              <th
+                scope="col"
+                class="tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tablaItems"
+                columna="paciente"
+              >
+                Paciente
+              </th>
               <th scope="col" class="importe" appOrdenable [tabla]="tablaItems" columna="importe">
                 Importe
               </th>
@@ -188,7 +200,7 @@
                   }
                 </td>
                 <td class="celda-fecha">{{ fecha(item.fechaPrestacion) }}</td>
-                <td>Persona #{{ item.personaId }}</td>
+                <td class="tabla__col--secundaria">Persona #{{ item.personaId }}</td>
                 <td class="importe">
                   {{ importe(item.importePresentado) }}
                   @if (item.importeDebitado) {
@@ -231,18 +243,7 @@
           </tbody>
         </table>
       </div>
-      <div class="tabla-pie">
-        <span>{{ tablaItems.total() }} prestaciones</span>
-        <app-paginacion
-          [paginaActual]="tablaItems.pagina()"
-          [totalPaginas]="tablaItems.totalPaginas()"
-          etiqueta="Páginas de prestaciones"
-          (cambioDePagina)="tablaItems.irA($event)"
-        />
-      </div>
-      @if (itemsVisibles().length === 0) {
-        <p class="estado estado--vacio">Ninguna prestación del lote está en ese estado.</p>
-      }
+      <app-pie-de-tabla [tabla]="tablaItems" etiqueta="Páginas de prestaciones" />
     }
   </section>
 
@@ -327,16 +328,14 @@
       </div>
     </section>
 
-    <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-elegibles">
-      <div class="tarjeta__cabecera">
-        <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
-      </div>
+    <section class="tarjeta" aria-labelledby="titulo-elegibles">
+      <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
       <p class="ayuda ayuda--fija">
         Deudas a cargo de {{ p.financiadorNombre }} devengadas en el período del lote y que no están
         en otro lote vivo.
       </p>
       @if (elegibles().length === 0) {
-        <p class="estado estado--vacio">No hay prestaciones para agregar en este período.</p>
+        <app-estado-vacio titulo="No hay prestaciones para agregar en este período" />
       } @else {
         <div
           class="tabla-scroll"
@@ -353,7 +352,13 @@
                 <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="devengada">
                   Devengada
                 </th>
-                <th scope="col" appOrdenable [tabla]="tablaElegibles" columna="paciente">
+                <th
+                  scope="col"
+                  class="tabla__col--secundaria"
+                  appOrdenable
+                  [tabla]="tablaElegibles"
+                  columna="paciente"
+                >
                   Paciente
                 </th>
                 <th
@@ -386,7 +391,7 @@
                     }
                   </td>
                   <td class="celda-fecha">{{ instante(obligacion.devengadaEn) }}</td>
-                  <td>Persona #{{ obligacion.personaId }}</td>
+                  <td class="tabla__col--secundaria">Persona #{{ obligacion.personaId }}</td>
                   <td class="importe">{{ importe(obligacion.saldo) }}</td>
                   <td class="tabla__acciones">
                     <button
@@ -403,15 +408,7 @@
             </tbody>
           </table>
         </div>
-        <div class="tabla-pie">
-          <span>{{ tablaElegibles.total() }} prestaciones elegibles</span>
-          <app-paginacion
-            [paginaActual]="tablaElegibles.pagina()"
-            [totalPaginas]="tablaElegibles.totalPaginas()"
-            etiqueta="Páginas de prestaciones elegibles"
-            (cambioDePagina)="tablaElegibles.irA($event)"
-          />
-        </div>
+        <app-pie-de-tabla [tabla]="tablaElegibles" etiqueta="Páginas de prestaciones elegibles" />
       }
     </section>
   }
@@ -434,34 +431,30 @@
                 }"
               />
             }
-            <div class="grilla-compacta">
-              <div class="campo">
-                <label for="factura-numero">Número de factura</label>
-                <input
-                  id="factura-numero"
-                  type="text"
-                  formControlName="numero"
-                  [attr.aria-invalid]="
-                    factura.controls.numero.touched && factura.controls.numero.invalid
-                      ? 'true'
-                      : null
-                  "
-                  [attr.aria-describedby]="
-                    factura.controls.numero.touched && factura.controls.numero.invalid
-                      ? 'factura-numero-error'
-                      : null
-                  "
-                />
-                @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
-                  <p class="campo__error" id="factura-numero-error" role="alert">
-                    El número es obligatorio.
-                  </p>
-                }
-              </div>
-              <div class="campo">
-                <label for="factura-fecha">Fecha</label>
-                <input id="factura-fecha" type="date" formControlName="fecha" />
-              </div>
+            <div class="campo campo--3">
+              <label for="factura-numero">Número de factura</label>
+              <input
+                id="factura-numero"
+                type="text"
+                formControlName="numero"
+                [attr.aria-invalid]="
+                  factura.controls.numero.touched && factura.controls.numero.invalid ? 'true' : null
+                "
+                [attr.aria-describedby]="
+                  factura.controls.numero.touched && factura.controls.numero.invalid
+                    ? 'factura-numero-error'
+                    : null
+                "
+              />
+              @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
+                <p class="campo__error" id="factura-numero-error" role="alert">
+                  El número es obligatorio.
+                </p>
+              }
+            </div>
+            <div class="campo">
+              <label for="factura-fecha">Fecha</label>
+              <input id="factura-fecha" type="date" formControlName="fecha" />
             </div>
             <div class="acciones">
               <button type="submit" class="boton" [disabled]="operando() !== null">
@@ -492,48 +485,46 @@
               }"
             />
           }
-          <div class="grilla-compacta">
-            <div class="campo">
-              <label for="pago-importe">Importe</label>
-              <input
-                id="pago-importe"
-                type="number"
-                min="0.01"
-                step="0.01"
-                formControlName="importe"
-                [attr.aria-invalid]="
-                  pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
-                "
-                [attr.aria-describedby]="
-                  pago.controls.importe.touched && pago.controls.importe.invalid
-                    ? 'pago-importe-error'
-                    : null
-                "
-              />
-              @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
-                <p class="campo__error" id="pago-importe-error" role="alert">
-                  El importe tiene que ser mayor que cero.
-                </p>
+          <div class="campo">
+            <label for="pago-importe">Importe</label>
+            <input
+              id="pago-importe"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="importe"
+              [attr.aria-invalid]="
+                pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
+              "
+              [attr.aria-describedby]="
+                pago.controls.importe.touched && pago.controls.importe.invalid
+                  ? 'pago-importe-error'
+                  : null
+              "
+            />
+            @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
+              <p class="campo__error" id="pago-importe-error" role="alert">
+                El importe tiene que ser mayor que cero.
+              </p>
+            }
+          </div>
+          <div class="campo">
+            <label for="pago-medio">Medio</label>
+            <select id="pago-medio" formControlName="medio">
+              @for (m of medios; track m) {
+                <option [value]="m">{{ medioEnPalabras(m) }}</option>
               }
-            </div>
-            <div class="campo">
-              <label for="pago-medio">Medio</label>
-              <select id="pago-medio" formControlName="medio">
-                @for (m of medios; track m) {
-                  <option [value]="m">{{ medioEnPalabras(m) }}</option>
-                }
-              </select>
-            </div>
-            <div class="campo">
-              <label for="pago-fecha">Fecha del pago</label>
-              <input id="pago-fecha" type="date" formControlName="fechaPago" />
-            </div>
-            <div class="campo">
-              <label for="pago-referencia"
-                >Referencia <span class="campo__opcional">(opcional)</span></label
-              >
-              <input id="pago-referencia" type="text" formControlName="referencia" />
-            </div>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="pago-fecha">Fecha del pago</label>
+            <input id="pago-fecha" type="date" formControlName="fechaPago" />
+          </div>
+          <div class="campo campo--3">
+            <label for="pago-referencia"
+              >Referencia <span class="campo__opcional">(opcional)</span></label
+            >
+            <input id="pago-referencia" type="text" formControlName="referencia" />
           </div>
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="operando() !== null">
@@ -618,7 +609,7 @@
         <label for="debito-importe">Importe debitado</label>
         <input id="debito-importe" type="number" min="0.01" step="0.01" formControlName="importe" />
       </div>
-      <div class="campo">
+      <div class="campo campo--6">
         <label for="debito-motivo">Motivo informado por el financiador</label>
         <input
           id="debito-motivo"

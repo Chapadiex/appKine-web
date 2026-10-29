@@ -325,6 +325,18 @@ describe('AtencionPage', () => {
     await estabilizar(fixture);
   });
 
+  it('los campos de la evaluación toman la grilla de 12 con anchos por dato (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const zona = raiz.querySelector('#atencion-zona')?.closest('.campo');
+    expect(zona?.classList).toContain('campo--4');
+    expect(zona?.parentElement?.classList).toContain('grilla-12');
+    // Las notas siguen a todo el ancho: un textarea ocupa la fila entera de la grilla.
+    expect(raiz.querySelector('#atencion-notas')?.closest('.campo')?.className).not.toMatch(
+      /campo--\d/,
+    );
+  });
+
   it('NO_APLICA viaja como valor cargado, que no es lo mismo que dejarlo vacío', async () => {
     const fixture = await montar();
 

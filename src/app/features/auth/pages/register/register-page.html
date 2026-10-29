@@ -30,36 +30,34 @@
         </app-alerta>
       }
 
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="registro-firstName">Nombre</label>
-          <input
-            id="registro-firstName"
-            type="text"
-            formControlName="firstName"
-            autocomplete="given-name"
-            [attr.aria-invalid]="mostrarError('firstName')"
-            [attr.aria-describedby]="mostrarError('firstName') ? 'registro-firstName-error' : null"
-          />
-          @if (mostrarError('firstName')) {
-            <p class="campo__error" id="registro-firstName-error">Escribí tu nombre.</p>
-          }
-        </div>
+      <div class="campo">
+        <label for="registro-firstName">Nombre</label>
+        <input
+          id="registro-firstName"
+          type="text"
+          formControlName="firstName"
+          autocomplete="given-name"
+          [attr.aria-invalid]="mostrarError('firstName')"
+          [attr.aria-describedby]="mostrarError('firstName') ? 'registro-firstName-error' : null"
+        />
+        @if (mostrarError('firstName')) {
+          <p class="campo__error" id="registro-firstName-error">Escribí tu nombre.</p>
+        }
+      </div>
 
-        <div class="campo">
-          <label for="registro-lastName">Apellido</label>
-          <input
-            id="registro-lastName"
-            type="text"
-            formControlName="lastName"
-            autocomplete="family-name"
-            [attr.aria-invalid]="mostrarError('lastName')"
-            [attr.aria-describedby]="mostrarError('lastName') ? 'registro-lastName-error' : null"
-          />
-          @if (mostrarError('lastName')) {
-            <p class="campo__error" id="registro-lastName-error">Escribí tu apellido.</p>
-          }
-        </div>
+      <div class="campo">
+        <label for="registro-lastName">Apellido</label>
+        <input
+          id="registro-lastName"
+          type="text"
+          formControlName="lastName"
+          autocomplete="family-name"
+          [attr.aria-invalid]="mostrarError('lastName')"
+          [attr.aria-describedby]="mostrarError('lastName') ? 'registro-lastName-error' : null"
+        />
+        @if (mostrarError('lastName')) {
+          <p class="campo__error" id="registro-lastName-error">Escribí tu apellido.</p>
+        }
       </div>
 
       <div class="campo">

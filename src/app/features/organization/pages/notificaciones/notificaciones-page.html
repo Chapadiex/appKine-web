@@ -11,15 +11,19 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-labelledby="titulo-listado-notificaciones">
-  <h2 id="titulo-listado-notificaciones">Listado</h2>
-
+<section class="tarjeta" aria-label="Listado de notificaciones">
   <!--
     Regla de filtros (plan §3.4): la busqueda, en el servidor (DP-45), a la vista; el estado
     detras del embudo. Arranca en Fallida + Agotada. El destinatario se busca EXACTO: el listado
     lo enmascara, y un "contiene" dejaria reconstruirlo letra por letra.
   -->
-  <app-filtros [activos]="filtrosAvanzadosActivos()">
+  <app-filtros
+    [activos]="filtrosAvanzadosActivos()"
+    [resultados]="estado().tipo === 'listo' ? totalNotificaciones() : null"
+    [unidad]="['notificación', 'notificaciones']"
+    limpiable
+    (limpiar)="limpiarFiltros()"
+  >
     <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="notificaciones-busqueda"
         >Tipo de notificación o destinatario exacto</label
@@ -57,7 +61,11 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('inicial') {
-        <p class="estado estado--vacio">Elegí al menos un estado para ver notificaciones.</p>
+        <app-estado-vacio titulo="Elegí al menos un estado para ver notificaciones.">
+          <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </app-estado-vacio>
       }
 
       @case ('cargando') {
@@ -65,8 +73,9 @@
       }
 
       @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        <app-estado-vacio titulo="Todavía no elegiste un contexto de trabajo.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        </app-estado-vacio>
       }
 
       @case ('error') {
@@ -83,14 +92,25 @@
       }
 
       @case ('listo') {
-        @if (filas().length === 0) {
-          @if (busqueda().trim() !== '') {
-            <p class="estado estado--vacio">
-              Ninguna notificación con esos estados coincide con la búsqueda.
-            </p>
-          } @else {
-            <p class="estado estado--vacio">No hay notificaciones con esos estados.</p>
-          }
+        @if (filas().length === 0 && busqueda().trim() === '' && filtrosAvanzadosActivos() === 0) {
+          <!-- Con los estados de entrada (Fallida + Agotada), vacio es la buena noticia. -->
+          <app-estado-vacio
+            titulo="No hay notificaciones con esos estados."
+            texto="Todos los correos de la organización salieron."
+          />
+        } @else if (filas().length === 0) {
+          <app-estado-vacio
+            [titulo]="
+              busqueda().trim() !== ''
+                ? 'Ninguna notificación con esos estados coincide con la búsqueda.'
+                : 'No hay notificaciones con esos estados.'
+            "
+            texto="Probá con otra búsqueda o filtros."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
         } @else {
           <div
             class="tabla-scroll"
@@ -110,9 +130,9 @@
                   </th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="intentos">Intentos</th>
-                  <th scope="col">Último error</th>
+                  <th scope="col" class="tabla__col--secundaria">Último error</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="creadaEn">Creada</th>
-                  <th scope="col">Último cambio</th>
+                  <th scope="col" class="tabla__col--secundaria">Último cambio</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
@@ -133,7 +153,7 @@
                       >
                     </td>
                     <td>{{ fila.intentos ?? 0 }} de {{ fila.maxIntentos ?? '-' }}</td>
-                    <td>
+                    <td class="tabla__col--secundaria">
                       @if (fila.ultimoError) {
                         <span class="marca-estado marca-estado--suspendida">{{
                           fila.ultimoError
@@ -143,7 +163,9 @@
                       }
                     </td>
                     <td>{{ formatearInstante(fila.creadaEn) ?? '-' }}</td>
-                    <td>{{ formatearInstante(fila.actualizadaEn) ?? '-' }}</td>
+                    <td class="tabla__col--secundaria">
+                      {{ formatearInstante(fila.actualizadaEn) ?? '-' }}
+                    </td>
                     <td class="tabla__acciones">
                       @if (fila.reintentable) {
                         <button
@@ -167,15 +189,15 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ totalNotificaciones() }} notificaciones, de la más nueva a la más vieja</span>
-            <akine-paginacion
-              etiqueta="Paginas de notificaciones"
-              [paginaActual]="paginaActual()"
-              [totalPaginas]="totalPaginas()"
-              (cambioDePagina)="irAPagina($event)"
-            />
-          </div>
+          <app-paginacion
+            etiqueta="Páginas de notificaciones"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="totalNotificaciones()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
         }
       }
     }

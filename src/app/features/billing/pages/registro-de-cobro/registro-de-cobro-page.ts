@@ -24,6 +24,7 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 
 /** Un medio de pago que se esta cargando. `id` es solo para el `track` del `@for`. */
 interface LineaDeMedio {
@@ -96,7 +97,7 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [Ayuda, CabeceraDeFicha, RouterLink, Alerta],
+  imports: [Ayuda, CabeceraDeFicha, RouterLink, Alerta, EstadoVacio],
   templateUrl: './registro-de-cobro-page.html',
   styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })

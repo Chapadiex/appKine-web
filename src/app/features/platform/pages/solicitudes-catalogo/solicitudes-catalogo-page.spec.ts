@@ -176,6 +176,31 @@ describe('SolicitudesCatalogoPage', () => {
     expect(anfitrion.querySelector('#resolucion-nota')).toBeNull();
   });
 
+  it('UX-14: busca en la bandeja, con el total en la toolbar, el pie y "Limpiar filtros"', async () => {
+    const { fixture, anfitrion } = await montar([PRACTICA, ESPECIALIDAD]);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '2 solicitudes',
+    );
+    expect(anfitrion.textContent).toContain('Mostrando 1–2 de 2');
+
+    escribir(anfitrion, '#solicitudes-busqueda', 'drenaje', 'input');
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(1);
+    expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
+      '1 solicitud',
+    );
+
+    escribir(anfitrion, '#solicitudes-busqueda', 'nada parecido', 'input');
+    fixture.detectChanges();
+    const vacio = anfitrion.querySelector('app-estado-vacio')!;
+    expect(vacio.textContent).toContain('No hay solicitudes con el filtro elegido.');
+    [...vacio.querySelectorAll('button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    fixture.detectChanges();
+    expect(anfitrion.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
   it('el filtro relee la bandeja con el estado elegido', async () => {
     const { fixture, anfitrion } = await montar([]);
     expect(anfitrion.textContent).toContain('No hay solicitudes');

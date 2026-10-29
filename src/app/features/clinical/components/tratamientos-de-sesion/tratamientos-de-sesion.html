@@ -30,7 +30,10 @@
   }
 
   @if (!cargando() && tratamientos().length === 0) {
-    <p class="ayuda">Todavía no hay tratamientos registrados en esta sesión.</p>
+    <app-estado-vacio
+      titulo="Todavía no hay tratamientos registrados en esta sesión"
+      [texto]="editable() ? 'Registrá el primero con el formulario de abajo.' : null"
+    />
   }
 
   @if (tratamientos().length > 0) {
@@ -132,7 +135,7 @@
   }
 
   @if (editable()) {
-    <fieldset class="grupo">
+    <fieldset class="grupo-plano">
       <legend>Registrar un tratamiento</legend>
 
       @if (error(); as problema) {
@@ -149,8 +152,9 @@
           prácticas de una oferta las configura quien administra el centro.
         </p>
       } @else {
-        <div class="grilla-campos grilla-campos--dos">
-          <div class="campo">
+        <!-- Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. -->
+        <div class="grilla-12">
+          <div class="campo campo--4">
             <label for="tratamiento-practica">Práctica</label>
             <select
               id="tratamiento-practica"
@@ -166,7 +170,7 @@
             </select>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="tratamiento-tecnica">
               Técnica o maniobra <span class="campo__opcional">(opcional)</span>
             </label>
@@ -180,7 +184,7 @@
             />
           </div>
 
-          <div class="campo">
+          <div class="campo campo--4">
             <label for="tratamiento-zona">
               Zona tratada <span class="campo__opcional">(opcional)</span>
             </label>
@@ -200,7 +204,7 @@
             </p>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--3">
             <label for="tratamiento-lateralidad">
               Lado <span class="campo__opcional">(opcional)</span>
             </label>
@@ -218,7 +222,7 @@
             </select>
           </div>
 
-          <div class="campo">
+          <div class="campo campo--2">
             <label for="tratamiento-duracion">
               Duración en minutos <span class="campo__opcional">(opcional)</span>
             </label>
@@ -233,7 +237,7 @@
           </div>
 
           @if (espacios().length > 0) {
-            <div class="campo">
+            <div class="campo campo--3">
               <label for="tratamiento-espacio">
                 Espacio utilizado <span class="campo__opcional">(opcional)</span>
               </label>
@@ -268,7 +272,7 @@
               >Intensidad, series, tiempo y una nota (opcionales)</span
             >
           </summary>
-          <fieldset class="grupo">
+          <fieldset class="grupo-plano">
             <legend>Parámetros</legend>
             <p class="ayuda">Cada parámetro con su tipo. La unidad va solo en los números.</p>
             <datalist id="tratamiento-claves">
@@ -278,8 +282,8 @@
             </datalist>
 
             @for (parametro of parametros(); track $index; let i = $index) {
-              <div class="parametro grilla-campos grilla-campos--dos">
-                <div class="campo">
+              <div class="parametro grilla-12">
+                <div class="campo campo--4">
                   <label [for]="'parametro-clave-' + i">Nombre del parámetro {{ i + 1 }}</label>
                   <input
                     [id]="'parametro-clave-' + i"
@@ -290,7 +294,7 @@
                     (input)="cambiarParametro(i, { clave: $any($event.target).value })"
                   />
                 </div>
-                <div class="campo">
+                <div class="campo campo--3">
                   <label [for]="'parametro-tipo-' + i">Tipo del parámetro {{ i + 1 }}</label>
                   <select
                     [id]="'parametro-tipo-' + i"
@@ -307,7 +311,7 @@
                   </select>
                 </div>
                 @if (parametro.tipoDato === Tipo.BOOLEANO) {
-                  <div class="campo">
+                  <div class="campo campo--3">
                     <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
                     <select
                       [id]="'parametro-valor-' + i"
@@ -326,7 +330,7 @@
                     </select>
                   </div>
                 } @else {
-                  <div class="campo">
+                  <div class="campo campo--3">
                     <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
                     <input
                       [id]="'parametro-valor-' + i"
@@ -339,7 +343,7 @@
                   </div>
                 }
                 @if (parametro.tipoDato === Tipo.NUMERICO) {
-                  <div class="campo">
+                  <div class="campo campo--2">
                     <label [for]="'parametro-unidad-' + i">
                       Unidad del parámetro {{ i + 1 }}
                       <span class="campo__opcional">(opcional)</span>

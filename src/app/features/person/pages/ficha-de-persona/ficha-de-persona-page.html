@@ -110,14 +110,13 @@
         <dt>Perfil clínico</dt>
         <dd>{{ ficha.esPaciente ? 'Paciente' : 'Persona' }}</dd>
       </div>
+      @if (ficha.notas) {
+        <div class="ficha-datos__ancho">
+          <dt>Observaciones administrativas</dt>
+          <dd class="ficha-notas">{{ ficha.notas }}</dd>
+        </div>
+      }
     </dl>
-
-    @if (ficha.notas) {
-      <p class="ficha-notas">
-        <b>Observaciones administrativas:</b>
-        {{ ficha.notas }}
-      </p>
-    }
   </section>
 
   <!-- Resumen: tarjetas de un vistazo, cada una con su entrada a la pantalla hermana. -->

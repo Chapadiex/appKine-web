@@ -1,0 +1,32 @@
+/*
+ * Estado vacio de un listado (UX-14): en lugar de la tabla, que paso y que hacer. Centrado y
+ * compacto: no una tabla vacia enorme.
+ */
+.estado-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-9) var(--esp-6);
+  border: var(--borde-fino) dashed var(--color-borde);
+  border-radius: var(--radio-md);
+  text-align: center;
+}
+
+.estado-vacio__titulo {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.estado-vacio__texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.estado-vacio__acciones:not(:empty) {
+  display: flex;
+  gap: var(--esp-4);
+  margin-top: var(--esp-4);
+}

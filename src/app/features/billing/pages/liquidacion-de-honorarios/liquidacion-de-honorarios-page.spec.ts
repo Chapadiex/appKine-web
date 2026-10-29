@@ -145,6 +145,9 @@ describe('LiquidacionDeHonorariosPage', () => {
     expect(html.querySelector('a[href="/egresos/900"]')).not.toBeNull();
     expect(html.querySelector('a[href="/egresos/honorarios/liquidaciones/77"]')).not.toBeNull();
     expect(texto(fixture)).toContain('No hay clases para liquidar');
+    // Las que no entran tienen su tabla con orden y pie (UX-14).
+    expect(html.querySelector('app-estado-vacio')).not.toBeNull();
+    expect(texto(fixture)).toContain('Mostrando 1–1 de 1');
   });
 
   it('un borrador que mezcla ofertas se confirma oferta por oferta', async () => {

@@ -137,66 +137,96 @@
           }
 
           @if (enServicio().length === 0) {
-            <p class="estado estado--vacio">
-              Ningún espacio de esta sede esta en servicio durante todo ese periodo.
-            </p>
-            <p class="ayuda">
-              Puede ser que los espacios existan pero su ventana de vigencia no cubra el periodo
-              entero, o que esten dados de baja. El listado de espacios lo muestra fila por fila,
-              con el motivo.
-            </p>
-            <a class="boton boton--secundario" routerLink="/espacios">Revisar los espacios</a>
-          } @else {
-            <div
-              class="tabla-scroll"
-              tabindex="0"
-              role="region"
-              aria-label="Espacios en servicio en el periodo consultado"
+            <!--
+              "Ninguno en el periodo" no es "ninguno con la busqueda": este invita a revisar los
+              espacios, el otro a limpiar la busqueda (UX-14).
+            -->
+            <app-estado-vacio
+              titulo="Ningún espacio de esta sede esta en servicio durante todo ese periodo."
+              texto="Puede ser que los espacios existan pero su ventana de vigencia no cubra el periodo entero, o que esten dados de baja. El listado de espacios lo muestra fila por fila, con el motivo."
             >
-              <table class="tabla">
-                <caption class="visualmente-oculto">
-                  Espacios en servicio durante el periodo consultado, con su tipo y su capacidad
-                  configurada
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col" appOrdenable [tabla]="tabla" columna="espacio">Espacio</th>
-                    <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                    <th scope="col" appOrdenable [tabla]="tabla" columna="capacidad">Capacidad</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (espacio of tabla.visibles(); track espacio.espacioId) {
-                    <tr>
-                      <th scope="row">{{ espacio.name }}</th>
-                      <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
-                      <!--
-                        Capacidad configurada, NO lugares libres. `lugaresComprometidos` viene
-                        siempre en 0 porque no hay ningun modulo que reserve: mostrarlo como
-                        "libres" seria un numero correcto hoy y falso el dia que exista la agenda.
-                      -->
-                      <td>
-                        @if (espacio.capacidad === 1) {
-                          1 persona a la vez
-                        } @else {
-                          {{ espacio.capacidad }} personas a la vez
-                        }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+              <a class="boton boton--secundario" routerLink="/espacios">Revisar los espacios</a>
+            </app-estado-vacio>
+          } @else {
+            <!-- Toolbar de la tabla (UX-14): busqueda por nombre y cuantos hay, pegada a la tabla. -->
+            <app-filtros
+              sinAvanzados
+              [resultados]="tabla.total()"
+              [unidad]="['espacio en servicio', 'espacios en servicio']"
+            >
+              <div class="campo" filtro-principal>
+                <label class="visualmente-oculto" for="disponibilidad-busqueda">
+                  Nombre del espacio
+                </label>
+                <div class="campo-busqueda">
+                  <app-icono class="campo-busqueda__icono" nombre="buscar" />
+                  <input
+                    id="disponibilidad-busqueda"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Buscar por nombre del espacio"
+                    [value]="busqueda()"
+                    (input)="busqueda.set($any($event.target).value)"
+                  />
+                </div>
+              </div>
+            </app-filtros>
 
-            <div class="tabla-pie">
-              <span>{{ tabla.total() }} espacios</span>
-              <app-paginacion
-                [paginaActual]="tabla.pagina()"
-                [totalPaginas]="tabla.totalPaginas()"
-                etiqueta="Paginas de espacios"
-                (cambioDePagina)="tabla.irA($event)"
-              />
-            </div>
+            @if (tabla.total() === 0) {
+              <app-estado-vacio
+                titulo="Ningún espacio en servicio coincide con la búsqueda."
+                texto="Probá con otra búsqueda."
+              >
+                <button type="button" class="boton boton--secundario" (click)="busqueda.set('')">
+                  Limpiar filtros
+                </button>
+              </app-estado-vacio>
+            } @else {
+              <div
+                class="tabla-scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Espacios en servicio en el periodo consultado"
+              >
+                <table class="tabla">
+                  <caption class="visualmente-oculto">
+                    Espacios en servicio durante el periodo consultado, con su tipo y su capacidad
+                    configurada
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" appOrdenable [tabla]="tabla" columna="espacio">Espacio</th>
+                      <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                      <th scope="col" appOrdenable [tabla]="tabla" columna="capacidad">
+                        Capacidad
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (espacio of tabla.visibles(); track espacio.espacioId) {
+                      <tr>
+                        <th scope="row">{{ espacio.name }}</th>
+                        <td>{{ etiquetaDeTipo(espacio.tipo) }}</td>
+                        <!--
+                          Capacidad configurada, NO lugares libres. `lugaresComprometidos` viene
+                          siempre en 0 porque no hay ningun modulo que reserve: mostrarlo como
+                          "libres" seria un numero correcto hoy y falso el dia que exista la agenda.
+                        -->
+                        <td>
+                          @if (espacio.capacidad === 1) {
+                            1 persona a la vez
+                          } @else {
+                            {{ espacio.capacidad }} personas a la vez
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de espacios en servicio" />
+            }
           }
         }
       }

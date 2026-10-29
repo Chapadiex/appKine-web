@@ -27,6 +27,8 @@
       Cargar una tarifa
     </button>
   </div>
+
+  <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 @if (oferta(); as detalle) {
@@ -36,11 +38,7 @@
   </p>
 }
 
-<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
-
-<section class="tarjeta" aria-labelledby="titulo-grilla-honorarios">
-  <h2 id="titulo-grilla-honorarios">Grilla de vigencias</h2>
-
+<section class="tarjeta" aria-label="Grilla de vigencias">
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
@@ -67,9 +65,14 @@
 
       @case ('listo') {
         @if (tarifas().length === 0) {
-          <p class="estado estado--vacio">
-            Esta oferta no tiene tarifas de honorario: sus clases no entran en ninguna liquidación.
-          </p>
+          <app-estado-vacio
+            titulo="Esta oferta no tiene tarifas de honorario todavía"
+            texto="Sin tarifa, sus clases no entran en ninguna liquidación."
+          >
+            <button type="button" class="boton" (click)="abrirAlta()">
+              Cargar la primera tarifa
+            </button>
+          </app-estado-vacio>
         } @else {
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Tarifas de honorario">
             <table class="tabla">
@@ -130,15 +133,7 @@
             </table>
           </div>
 
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} tarifas</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de tarifas"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de tarifas" />
         }
       }
     }
@@ -178,7 +173,7 @@
         </p>
       </div>
 
-      <div class="campo">
+      <div class="campo campo--2">
         <label for="alta-honorario-moneda">Moneda</label>
         <input
           id="alta-honorario-moneda"

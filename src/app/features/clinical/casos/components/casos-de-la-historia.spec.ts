@@ -71,16 +71,85 @@ describe('CasosDeLaHistoria', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('separa activos de historicos y muestra la oferta y el equipo por nombre', async () => {
-    const fixture = await montar();
-    expect(texto(fixture)).toContain('Caso 1 · Kinesiologia');
-    expect(texto(fixture)).toContain('Lopez, Maria (Responsable)');
-    const cerrados = (fixture.nativeElement as HTMLElement).querySelector(
-      '[aria-label="Casos cerrados"]',
-    );
-    expect(cerrados?.textContent).toContain('Caso 2 · Oferta #14');
+  it('lista los activos primero y muestra la oferta y el equipo por nombre', async () => {
+    // El servidor los manda con el cerrado primero: la tabla pone los activos arriba igual.
+    const fixture = await montar([CERRADO, ACTIVO]);
+    const lineas = filas(fixture);
+    expect(lineas).toHaveLength(2);
+    expect(lineas[0]).toContain('Caso 1 · Kinesiologia');
+    expect(lineas[0]).toContain('Lopez, Maria (Responsable)');
+    expect(lineas[0]).toContain('Activo');
+    expect(lineas[1]).toContain('Caso 2 · Oferta #14');
+    expect(lineas[1]).toContain('Cerrado');
     // Los nombres vienen en el caso (0.107.0): no se piden habilitaciones solo para resolverlos.
     httpMock.expectNone(HABILITACIONES);
+  });
+
+  it('sigue el patron de listado: toolbar con resultados, orden, pie y busqueda (UX-14)', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('2 casos');
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–2 de 2',
+    );
+
+    // Ordenar por caso, descendente: el 2 arriba aunque este cerrado.
+    const caso = raiz.querySelector('th.tabla__columna-ordenable button') as HTMLButtonElement;
+    caso.click();
+    caso.click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('descending');
+    expect(filas(fixture)[0]).toContain('Caso 2');
+
+    buscar(fixture, 'oferta #14');
+    expect(filas(fixture)).toHaveLength(1);
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 caso');
+  });
+
+  it('el filtro de estado acota y, sin coincidencias, ofrece limpiar los filtros', async () => {
+    const fixture = await montar();
+    elegir(fixture, '#filtro-estado-caso', 'CERRADOS');
+    expect(filas(fixture)).toHaveLength(1);
+    expect(filas(fixture)[0]).toContain('Caso 2');
+
+    buscar(fixture, 'kinesiologia');
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('No encontramos casos');
+    (
+      Array.from(vacio?.querySelectorAll('button') ?? []).find((b) =>
+        b.textContent?.includes('Limpiar filtros'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(filas(fixture)).toHaveLength(2);
+  });
+
+  it('sin casos lo dice con el estado vacio, no con una tabla vacia', async () => {
+    const fixture = await montar([]);
+    const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
+    expect(vacio?.textContent).toContain('Todavía no hay casos clínicos');
+    expect((fixture.nativeElement as HTMLElement).querySelector('table')).toBeNull();
+  });
+
+  it('pagina de a 10 con el pie estandar', async () => {
+    const muchos = Array.from({ length: 12 }, (_, i) => ({
+      ...ACTIVO,
+      id: 100 + i,
+      numeroCaso: i + 1,
+    }));
+    const fixture = await montar(muchos);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(filas(fixture)).toHaveLength(10);
+    expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+      'Mostrando 1–10 de 12',
+    );
+    (
+      Array.from(raiz.querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('Página siguiente'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(filas(fixture)).toHaveLength(2);
   });
 
   it('el posible duplicado muestra los candidatos y confirmar reenvia con la marca', async () => {
@@ -136,14 +205,16 @@ describe('CasosDeLaHistoria', () => {
     );
   });
 
-  async function montar(): Promise<ComponentFixture<CasosDeLaHistoria>> {
+  async function montar(
+    casos: readonly object[] = [ACTIVO, CERRADO],
+  ): Promise<ComponentFixture<CasosDeLaHistoria>> {
     const fixture = TestBed.createComponent(CasosDeLaHistoria);
     fixture.componentRef.setInput('historiaClinicaId', 88);
     await estabilizar(fixture);
     httpMock
       .expectOne(OFERTAS + '?estado=TODOS')
       .flush([{ id: 14, nombreComercial: 'Kinesio (listado de la sede)', estado: 'ACTIVO' }]);
-    httpMock.expectOne((r) => r.url === CASOS && r.method === 'GET').flush([ACTIVO, CERRADO]);
+    httpMock.expectOne((r) => r.url === CASOS && r.method === 'GET').flush(casos);
     await estabilizar(fixture);
     return fixture;
   }
@@ -154,8 +225,20 @@ describe('CasosDeLaHistoria', () => {
     fixture.detectChanges();
   }
 
-  function texto(fixture: ComponentFixture<CasosDeLaHistoria>): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
+  function filas(fixture: ComponentFixture<CasosDeLaHistoria>): string[] {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr'),
+      (fila) => fila.textContent ?? '',
+    );
+  }
+
+  function buscar(fixture: ComponentFixture<CasosDeLaHistoria>, valor: string): void {
+    const campo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#busqueda-casos',
+    ) as HTMLInputElement;
+    campo.value = valor;
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
   }
 
   function elegir(fixture: ComponentFixture<CasosDeLaHistoria>, sel: string, valor: string): void {

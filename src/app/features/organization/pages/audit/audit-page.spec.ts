@@ -65,6 +65,16 @@ describe('AuditPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain('No hay hechos registrados');
+
+    // UX-14: el total va en la toolbar y el vacio con filtro ofrece limpiarlo.
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('0 hechos');
+    [...host.querySelectorAll<HTMLButtonElement>('app-estado-vacio button')]
+      .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
+      .click();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('Elegí un filtro y presiona Buscar.');
+    expect(host.querySelector<HTMLInputElement>('#auditoria-filtro-entidad')!.checked).toBe(true);
   });
 
   it('una ventana de mas de 90 días no sale a la red', () => {
@@ -111,6 +121,8 @@ describe('AuditPage', () => {
     fixture.detectChanges();
 
     const host: HTMLElement = fixture.nativeElement;
+    // UX-14: pie estandar debajo de la tabla.
+    expect(texto(fixture)).toContain('Mostrando 1–1 de 1');
     const disparador = host.querySelector<HTMLButtonElement>('#auditoria-evento-77')!;
     const panel = host.querySelector<HTMLElement>('#auditoria-detalle')!;
     expect(disparador.getAttribute('aria-expanded')).toBe('false');
@@ -331,7 +343,7 @@ describe('AuditPage', () => {
     fixture.detectChanges();
 
     const siguiente = [...fixture.nativeElement.querySelectorAll('button')].find(
-      (boton: HTMLButtonElement) => (boton.textContent ?? '').trim() === 'Siguiente',
+      (boton: HTMLButtonElement) => (boton.textContent ?? '').includes('Página siguiente'),
     ) as HTMLButtonElement | undefined;
     siguiente?.click();
     fixture.detectChanges();

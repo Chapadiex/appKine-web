@@ -12,7 +12,11 @@ import {
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import {
+  FILAS_POR_PAGINA_INICIAL,
+  Paginacion,
+} from '../../../../shared/components/paginacion/paginacion';
+import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
@@ -33,9 +37,6 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** La ruta que monta esta pantalla. Los filtros se reescriben sobre ella sin navegar. */
 const RUTA = '/agenda/series';
-
-/** Filas por pagina. El backend acota a 100; veinte entran en una pantalla sin scroll largo. */
-export const FILAS_POR_PAGINA = 20;
 
 /** Valor del filtro que no filtra por estado. No viaja al backend. */
 const TODAS = 'TODAS';
@@ -95,6 +96,7 @@ interface PersonaFiltrada {
     Paginacion,
     Pestanas,
     Alerta,
+    EstadoVacio,
   ],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',
@@ -127,6 +129,8 @@ export class BandejaDeSeriesPage {
   );
   protected readonly persona = signal<PersonaFiltrada | null>(null);
   protected readonly pagina = signal(0);
+  /** Filas por pagina (UX-14 §1): viaja como `size`; el backend acota a 100. */
+  protected readonly porPagina = signal<number>(FILAS_POR_PAGINA_INICIAL);
 
   /** Paciente, oferta o profesional (DP-45, `q` del servidor). */
   protected readonly busqueda = signal('');
@@ -151,6 +155,14 @@ export class BandejaDeSeriesPage {
   protected readonly filas = computed(() => this.resultado()?.content ?? []);
   protected readonly totalPaginas = computed(() => this.resultado()?.totalPages ?? 0);
   protected readonly total = computed(() => this.resultado()?.totalElements ?? 0);
+
+  /** Hay algo que achica la lista: busqueda, persona o un estado distinto de "Vigentes". */
+  protected readonly hayFiltros = computed(
+    () =>
+      this.busqueda().trim() !== '' ||
+      this.persona() !== null ||
+      this.filtroEstado() !== SerieDeTurnosResumenEstadoEnum.VIGENTE,
+  );
 
   /** Epoch del contexto con que se abrio la pantalla. Distinto = el usuario cambio de sede. */
   private epochDeApertura: number | null = null;
@@ -203,7 +215,7 @@ export class BandejaDeSeriesPage {
         q: textoDeBusqueda(this.busqueda()),
         sort: this.orden.sort(),
         page: this.pagina(),
-        size: FILAS_POR_PAGINA,
+        size: this.porPagina(),
       })
       .subscribe({
         next: (pagina) => {
@@ -228,6 +240,21 @@ export class BandejaDeSeriesPage {
   protected irAPagina(numero: number): void {
     this.pagina.set(numero);
     this.cargar();
+  }
+
+  /** Otro tamaño de pagina: vuelve a la primera y relee. */
+  protected cambiarPorPagina(cantidad: number): void {
+    this.porPagina.set(cantidad);
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  /** "Limpiar filtros" del estado vacio: busqueda, persona y estado vuelven a su valor inicial. */
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.persona.set(null);
+    this.filtroEstado.set(SerieDeTurnosResumenEstadoEnum.VIGENTE);
+    this.recargarDesdeElPrincipio();
   }
 
   // -------------------------------------------------------------------------------------
