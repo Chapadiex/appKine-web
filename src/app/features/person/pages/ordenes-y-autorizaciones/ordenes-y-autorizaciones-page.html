@@ -1,7 +1,4 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <h1>Órdenes y autorizaciones</h1>
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Órdenes y autorizaciones">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los papeles administrativos del paciente: la orden que firmo un medico y la autorización que
@@ -22,7 +19,7 @@
       usa para corregir un error de carga.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-ficha>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {
@@ -191,7 +188,7 @@
           medico externo al centro, así que se escribe su nombre: no esta en ningún catalogo.
         </p>
       </app-ayuda>
-      <div class="encabezado__acciones">
+      <div cabeceraAcciones>
         <button
           type="button"
           class="boton"
@@ -304,7 +301,7 @@
           baja y se carga otra.
         </p>
       </app-ayuda>
-      <div class="encabezado__acciones">
+      <div cabeceraAcciones>
         <button
           type="button"
           class="boton"

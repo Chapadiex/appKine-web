@@ -1,18 +1,17 @@
-<div class="titulo-con-ayuda">
-  <h1>Sedes</h1>
+<app-cabecera-de-pagina titulo="Sedes">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los consultorios de esta organización. Cada sede tiene su propia zona horaria, que es la que
       rige su día operativo y su agenda: no la de la organización.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <a class="boton" routerLink="/organizacion/sedes/nueva">
       <app-icono nombre="agregar" />
       Abrir una sede
     </a>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 <!--
   La sede del contexto activo dejo de estar vigente. Va arriba de todo y fuera del @switch

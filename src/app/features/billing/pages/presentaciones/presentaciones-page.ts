@@ -27,6 +27,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -45,7 +46,7 @@ type EstadoListado =
  */
 @Component({
   selector: 'app-presentaciones-page',
-  imports: [PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './presentaciones-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

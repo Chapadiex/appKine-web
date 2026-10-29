@@ -1,12 +1,5 @@
-<app-migas
-  [migas]="[
-    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
-    { etiqueta: 'Prácticas' },
-  ]"
-/>
-
-<div class="titulo-con-ayuda">
-  <h1>Prácticas de la oferta</h1>
+<app-cabecera-de-pagina titulo="Prácticas de la oferta">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>Que prácticas del catalogo puede prestar esta oferta, y cual es la principal.</p>
     <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
@@ -19,9 +12,9 @@
     </p>
     <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesión.</p>
   </app-ayuda>
-</div>
 
-<app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
   @case ('cargando') {

@@ -1,7 +1,5 @@
-<div class="titulo-con-ayuda">
-  <a class="miga" routerLink="/agenda">Agenda</a>
-  <span class="miga__separador" aria-hidden="true">/</span>
-  <h1>Reservar una serie de turnos</h1>
+<app-cabecera-de-pagina titulo="Reservar una serie de turnos">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una serie reserva el mismo horario todas las semanas. Cada turno queda como un turno propio:
@@ -20,7 +18,7 @@
       · {{ profesional }}
     }
   </span>
-</div>
+</app-cabecera-de-pagina>
 
 @if (serie(); as creada) {
   <section class="tarjeta" aria-labelledby="titulo-serie-creada">

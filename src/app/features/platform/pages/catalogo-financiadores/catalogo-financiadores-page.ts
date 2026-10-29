@@ -24,6 +24,7 @@ import {
   PESTANAS_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import { releeElCatalogo, traducirErrorCatalogo } from '../../models/catalogo-financiadores-errors';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type FiltroEstado = NonNullable<ListCatalogoFinanciadoresDePlataformaRequestParams['estado']>;
 type Tipo = CatalogoFinanciadorResponseTipoEnum;
@@ -74,6 +75,7 @@ type Panel =
 @Component({
   selector: 'app-catalogo-financiadores-page',
   imports: [
+    CabeceraDePagina,
     AccionesDeFila,
     Ayuda,
     Filtros,

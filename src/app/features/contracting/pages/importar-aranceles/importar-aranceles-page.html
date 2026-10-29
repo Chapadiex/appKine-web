@@ -1,24 +1,22 @@
 @if (convenio(); as ficha) {
-  <div class="titulo-con-ayuda">
-    <h1>Importar aranceles a {{ ficha.nombre }}</h1>
+  <app-cabecera-de-pagina titulo="Importar aranceles a {{ ficha.nombre }}">
+    <app-migas enLinea [migas]="migas()" />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-  </div>
+  </app-cabecera-de-pagina>
   <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
     Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
   </p>
 } @else {
-  <div class="titulo-con-ayuda">
-    <h1>Importar aranceles al convenio #{{ convenioId }}</h1>
+  <app-cabecera-de-pagina titulo="Importar aranceles al convenio #{{ convenioId }}">
+    <app-migas enLinea [migas]="migas()" />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-  </div>
+  </app-cabecera-de-pagina>
 }
-
-<app-migas [migas]="migas()" />
 
 <!-- La ayuda de la pantalla: una sola copia para las dos ramas del titulo. -->
 <ng-template #ayudaDePantalla>

@@ -29,6 +29,7 @@ import { OpcionDeEspacio, instanteDesdeHoraDeSede } from '../../models/clases';
 import { RUTA_CLASES, rutaDeClase } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Un profesional elegible: el id que viaja es el de su membership. */
 export interface OpcionDeProfesional {
@@ -56,7 +57,7 @@ const DURACION_POR_DEFECTO = 60;
  */
 @Component({
   selector: 'app-alta-de-clase-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './alta-de-clase-page.html',
   styleUrl: '../../activity.css',
 })

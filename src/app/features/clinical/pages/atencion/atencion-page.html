@@ -1,13 +1,9 @@
-@if (rutaDeLaClase(); as rutaClase) {
-  <p class="miga">
-    <a class="enlace" [routerLink]="rutaClase">Volver a la atención clínica de la clase</a>
-  </p>
-} @else {
-  <p class="miga"><a class="enlace" routerLink="/agenda">Volver a la agenda</a></p>
-}
-
-<div class="titulo-con-ayuda">
-  <h1>Atención clínica</h1>
+<app-cabecera-de-pagina titulo="Atención clínica">
+  @if (rutaDeLaClase(); as rutaClase) {
+    <app-migas enLinea [migas]="[{ etiqueta: 'Atención clínica de la clase', ruta: rutaClase }]" />
+  } @else {
+    <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
+  }
   @if (sesion()) {
     <span
       class="marca-estado"
@@ -23,7 +19,7 @@
       distintas y esta pantalla registra la segunda.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @if (abriendo()) {
   <p class="estado estado--cargando">Abriendo la atención…</p>

@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Estado del sistema</h1>
+<app-cabecera-de-pagina titulo="Estado del sistema">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Comprueba que esta aplicación se comunica con el backend y muestra las versiones de cada lado:
@@ -7,7 +6,7 @@
       coinciden, hay que regenerar el cliente.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <button
       type="button"
       class="boton"
@@ -17,7 +16,7 @@
       Actualizar
     </button>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
 <div aria-live="polite">

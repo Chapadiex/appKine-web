@@ -46,6 +46,7 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -82,6 +83,7 @@ interface Lectura {
 @Component({
   selector: 'app-presentacion-detalle-page',
   imports: [
+    CabeceraDePagina,
     PanelLateral,
     Migas,
     Ayuda,

@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Ofertas de la sede</h1>
+<app-cabecera-de-pagina titulo="Ofertas de la sede">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Como esta sede presta cada servicio del catalogo: con que nombre comercial, cuanto dura, para
@@ -22,15 +21,15 @@
       estas viajando, lo que ves sigue siendo lo que ve el centro.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Publicar un servicio en la sede
     </button>
   </div>
-</div>
 
-<app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

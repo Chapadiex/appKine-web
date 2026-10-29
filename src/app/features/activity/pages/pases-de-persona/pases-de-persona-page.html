@@ -1,7 +1,4 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <h1>Pases</h1>
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Pases">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los packs de créditos y los abonos que esta persona compró en esta sede. Cada asistencia a una
@@ -9,10 +6,10 @@
       clase se cancela, el crédito vuelve. El saldo se explica con los movimientos de cada pase.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoCobro">
+  <div cabeceraAcciones *akinePermiso="permisoCobro">
     <a class="boton boton--secundario" [routerLink]="rutaCuentaCorriente()">Cuenta corriente</a>
   </div>
-</div>
+</app-cabecera-de-ficha>
 
 @if (puedeVender()) {
   <section class="tarjeta" aria-labelledby="titulo-vender">

@@ -44,6 +44,7 @@ import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import {
   FiltroRapido,
   FiltrosRapidos,
@@ -164,6 +165,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     Paginacion,
     ColumnaOrdenable,
     Ayuda,
+    CabeceraDePagina,
     RouterLink,
     ConfirmacionConMotivo,
     ClasesDelDia,

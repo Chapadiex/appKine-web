@@ -1,6 +1,12 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewEncapsulation,
+  computed,
+  input,
+} from '@angular/core';
 
+import { CabeceraDePagina } from '../cabecera-de-pagina/cabecera-de-pagina';
 import { Miga, Migas } from '../migas/migas';
 import { Pestana, Pestanas } from '../pestanas/pestanas';
 
@@ -31,24 +37,30 @@ export interface ModeloDeCabeceraDeFicha {
 }
 
 /**
- * Banda de una ficha (UX-01): migas, titulo, datos y marcas arriba, y las pestanas de las
- * pantallas hermanas debajo.
+ * Cabecera de una ficha (UX-01): migas, titulo, datos y marcas arriba, y las pestanas de las
+ * pantallas hermanas debajo. Desde el 29/10/2026 es una {@link CabeceraDePagina} con esos datos:
+ * la misma fila, la misma altura y el mismo lugar para la accion principal que cualquier pantalla.
  *
  * <p>Antes vivia como `app-cabecera-de-persona` en cuatro copias (person, billing, activity y
  * clinical) porque las features no pueden importarse entre si (ADR-0004). La parte de dominio
  * -que pestanas ve quien, como se escribe el documento- subio a `core/models/cabecera-de-persona`;
  * aca queda solo el dibujo, que no sabe que es una persona.
  *
- * <p><b>Dos ranuras.</b> `[cabeceraAyuda]` va pegada al titulo (el "?"); el resto, a la derecha
- * (las acciones de la pantalla).
+ * <p><b>La ficha y sus hermanas.</b> En la ficha el titulo es el nombre de la persona. En una
+ * pantalla hermana (`titulo`: "Coberturas") el titulo es el de la seccion, y la persona pasa a
+ * las migas con su documento —"Padrón / Perez, Ana · DNI 30.111.222 / Coberturas"—: antes eran
+ * dos bandas, la de la persona y la de la seccion, una debajo de la otra.
  *
- * <p>`ViewEncapsulation.None` para ajustar las pestanas compartidas dentro de la banda; las clases
- * llevan el prefijo `cabecera-ficha` y no chocan con nada.
+ * <p><b>Dos ranuras.</b> `app-ayuda` va pegada al titulo (el "?"); el resto, a la derecha (las
+ * acciones de la pantalla).
+ *
+ * <p>`ViewEncapsulation.None` para que los estilos alcancen a lo proyectado; las clases llevan el
+ * prefijo `cabecera-ficha` y no chocan con nada.
  */
 @Component({
   selector: 'app-cabecera-de-ficha',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Migas, Pestanas],
+  imports: [CabeceraDePagina, Migas, Pestanas],
   templateUrl: './cabecera-de-ficha.html',
   styleUrl: './cabecera-de-ficha.css',
   encapsulation: ViewEncapsulation.None,
@@ -56,6 +68,22 @@ export interface ModeloDeCabeceraDeFicha {
 export class CabeceraDeFicha {
   readonly modelo = input.required<ModeloDeCabeceraDeFicha>();
 
-  /** En la ficha el titulo ES el `h1` de la pantalla; en las hermanas, un enlace a ella. */
-  readonly tituloComoH1 = input(false);
+  /** El titulo de la seccion en una pantalla hermana. Sin el, el titulo es el de la ficha. */
+  readonly titulo = input<string | null>(null);
+
+  /** Pasos entre la persona y la seccion: "Cuenta corriente" en Cobros registrados. */
+  readonly migasDeSeccion = input<readonly Miga[]>([]);
+
+  /** En una hermana, la persona (con su documento) es una miga mas y enlaza a la ficha. */
+  protected readonly migas = computed<readonly Miga[]>(() => {
+    const m = this.modelo();
+    if (this.titulo() === null) {
+      return m.migas;
+    }
+    return [
+      ...m.migas,
+      { etiqueta: [m.titulo, ...m.datos].join(' · '), ruta: m.rutaTitulo },
+      ...this.migasDeSeccion(),
+    ];
+  });
 }

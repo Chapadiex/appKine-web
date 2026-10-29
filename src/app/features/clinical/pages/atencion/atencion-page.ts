@@ -57,6 +57,8 @@ import {
   rotuloDeCaso,
 } from '../../models/etiquetas-de-atencion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
 const ESPERA_AUTOSAVE = 1_500;
@@ -162,6 +164,8 @@ const ESPERA_AUTOSAVE = 1_500;
 @Component({
   selector: 'app-atencion-page',
   imports: [
+    Migas,
+    CabeceraDePagina,
     Ayuda,
     RouterLink,
     MedicionesDeSesion,

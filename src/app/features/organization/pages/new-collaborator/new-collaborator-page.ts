@@ -11,6 +11,7 @@ import { CausaColaborador, traducirErrorColaborador } from '../../models/colabor
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
 const CAMPOS = ['email', 'roleCode', 'reason'] as const;
@@ -51,7 +52,7 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-collaborator-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './new-collaborator-page.html',
   styleUrl: '../../organization.css',
 })

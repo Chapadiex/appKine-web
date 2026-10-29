@@ -20,6 +20,7 @@ import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { parteEnPalabras } from '../../models/honorarios';
 import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Una liquidacion de honorarios por clase confirmada, con su snapshot (DP-38, CA-M22-007-06).
@@ -30,7 +31,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-liquidacion-detalle-page',
-  imports: [Migas, Ayuda, RouterLink],
+  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink],
   templateUrl: './liquidacion-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

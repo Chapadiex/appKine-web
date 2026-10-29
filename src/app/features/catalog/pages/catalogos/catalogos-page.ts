@@ -60,6 +60,7 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { SearchCatalogoRequestParams } from '../../../../api/generated/api/catalogo-clinico.serviceInterface';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -119,6 +120,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
 @Component({
   selector: 'app-catalogos-page',
   imports: [
+    CabeceraDePagina,
     AccionesDeFila,
     Pestanas,
     Ayuda,

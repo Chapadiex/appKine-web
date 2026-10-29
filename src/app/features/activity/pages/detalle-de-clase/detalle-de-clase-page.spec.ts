@@ -381,7 +381,7 @@ describe('DetalleDeClasePage', () => {
     // Como en el navegador: la accion del menu "⋯" deja el foco en ese boton antes de abrir el panel.
     (
       (fixture.nativeElement as HTMLElement).querySelector(
-        '.encabezado__acciones .acciones-de-fila__boton',
+        '[cabeceraAcciones] .acciones-de-fila__boton',
       ) as HTMLButtonElement
     ).focus();
     clickear(fixture, 'Cancelar la clase');

@@ -1,8 +1,5 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
 @if (modoPrepago()) {
-  <div class="titulo-con-ayuda titulo-de-seccion-persona">
-    <h1>Registrar un prepago</h1>
+  <app-cabecera-de-ficha [modelo]="cabecera()" titulo="Registrar un prepago">
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         Esto registra un <b>anticipo</b> por el turno de hoy. No hay deuda todavía: se genera al
@@ -10,23 +7,23 @@
         paciente; si el paciente no viene, el anticipo queda disponible para reintegrarlo.
       </p>
     </app-ayuda>
-    <div class="encabezado__acciones">
-      <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-        Volver a la recepción del día
-      </a>
-    </div>
-  </div>
+    <a class="enlace" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+      Volver a la recepción del día
+    </a>
+  </app-cabecera-de-ficha>
 } @else {
-  <div class="titulo-con-ayuda titulo-de-seccion-persona">
-    <app-migas enLinea [migas]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]" />
-    <h1>Registrar un cobro</h1>
+  <app-cabecera-de-ficha
+    [modelo]="cabecera()"
+    titulo="Registrar un cobro"
+    [migasDeSeccion]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]"
+  >
     <app-ayuda titulo="Sobre esta pantalla">
       <p>
         Esto registra <b>dinero recibido</b> y lo imputa a deuda. <b>No es la caja</b>: el arqueo y
         el turno de caja son otro circuito (M20) y viven en la sección Caja.
       </p>
     </app-ayuda>
-  </div>
+  </app-cabecera-de-ficha>
 }
 
 @if (cargando()) {

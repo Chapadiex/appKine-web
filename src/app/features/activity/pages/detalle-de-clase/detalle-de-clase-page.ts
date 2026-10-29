@@ -52,6 +52,8 @@ import { ActivityApi } from '../../services/activity-api';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 const ESPERA_DE_BUSQUEDA_MS = 300;
 
@@ -89,6 +91,8 @@ type Panel =
 @Component({
   selector: 'app-detalle-de-clase-page',
   imports: [
+    Migas,
+    CabeceraDePagina,
     Ayuda,
     ReactiveFormsModule,
     RouterLink,
@@ -346,7 +350,7 @@ export class DetalleDeClasePage {
     if (abierto === 'reprogramar') {
       this.enfocarDespues('#boton-reprogramar');
     } else if (abierto === 'cancelar') {
-      this.enfocarDespues('.encabezado__acciones .acciones-de-fila__boton');
+      this.enfocarDespues('[cabeceraAcciones] .acciones-de-fila__boton');
     }
   }
 

@@ -1,7 +1,5 @@
-<div class="titulo-con-ayuda">
-  <a class="miga" routerLink="/agenda/series">Series de turnos</a>
-  <span class="miga__separador" aria-hidden="true">/</span>
-  <h1>Serie de turnos</h1>
+<app-cabecera-de-pagina titulo="Serie de turnos">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Series de turnos', ruta: '/agenda/series' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       La regla con la que se generó la serie y sus turnos tal como están hoy. Cada turno es propio:
@@ -15,7 +13,7 @@
   </app-ayuda>
   <!-- Las acciones de la serie entera, en la fila del titulo (plan §3.1). -->
   @if (serie() && puedeOperar()) {
-    <div class="encabezado__acciones">
+    <div cabeceraAcciones>
       @if (primerPendiente(); as pivote) {
         <button
           type="button"
@@ -30,7 +28,7 @@
       </button>
     </div>
   }
-</div>
+</app-cabecera-de-pagina>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo la serie…</p>

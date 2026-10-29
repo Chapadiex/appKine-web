@@ -20,6 +20,7 @@ import { TurnoDeCalendario } from '../../../../api/generated/model/turno-de-cale
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
@@ -68,7 +69,7 @@ const ID_DETALLE = 'calendario-detalle';
 @Component({
   selector: 'app-calendario-de-turnos-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Ayuda, Icono, Pestanas, RouterLink],
+  imports: [Ayuda, CabeceraDePagina, Icono, Pestanas, RouterLink],
   templateUrl: './calendario-de-turnos-page.html',
   styleUrls: ['../../agenda.css', './calendario-de-turnos-page.css'],
 })

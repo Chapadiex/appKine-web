@@ -40,6 +40,7 @@ import {
   PESTANAS_DE_HORARIOS,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una semana: es la ventana que se mira para responder "por que el martes esta vacio". */
 const DIAS_PROPUESTOS = 7;
@@ -85,7 +86,7 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })

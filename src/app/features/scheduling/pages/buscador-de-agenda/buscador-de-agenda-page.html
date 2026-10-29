@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Agenda de turnos</h1>
+<app-cabecera-de-pagina titulo="Agenda de turnos">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los turnos disponibles de una oferta, día por día. Un turno es una <b>reserva</b> de agenda:
@@ -16,13 +15,13 @@
       recortamos y te avisamos. ‹ y › corren la ventana entera, con su mismo largo.
     </p>
   </app-ayuda>
-</div>
 
-<!--
-  Las pantallas hermanas de la seccion (UX-01): recepcion del dia y series. Pestanas y no
-  enlaces sueltos: responden "que mas hay aca", y se ven iguales desde las tres.
--->
-<app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
+  <!--
+    Las pantallas hermanas de la seccion (UX-01): recepcion del dia y series. Pestanas y no
+    enlaces sueltos: responden "que mas hay aca", y se ven iguales desde las tres.
+  -->
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-busqueda-agenda">
   <div class="tarjeta__cuerpo tarjeta__cuerpo--filtros">

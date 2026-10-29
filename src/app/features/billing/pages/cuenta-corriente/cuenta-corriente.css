@@ -2,10 +2,6 @@
  * Ajustes de UX-01 para las pantallas de la cuenta de una persona (cuenta corriente, cobros y
  * registro de un cobro). El resto lo aporta `billing.css` y el design system global.
  */
-.titulo-de-seccion-persona > h1 {
-  font-size: var(--tipo-lg);
-}
-
 /* Listado: titulo, tabla y pie en una sola tarjeta. */
 .tarjeta--listado .tabla-scroll {
   margin-inline: calc(-1 * var(--esp-8));

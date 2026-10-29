@@ -39,6 +39,7 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListMembershipsRequestParams } from '../../../../api/generated/api/colaboradores.serviceInterface';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'suspender' | 'reactivar' | 'revocar' | 'permisos';
@@ -88,6 +89,7 @@ const POR_PAGINA = 20;
 @Component({
   selector: 'app-collaborators-page',
   imports: [
+    CabeceraDePagina,
     DatePipe,
     Pestanas,
     Ayuda,

@@ -9,6 +9,8 @@ import { rotuloDeCaso } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /**
  * Atender a un paciente sin turno (DP-43, U-24, RF-M14-002).
@@ -29,7 +31,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-atencion-sin-turno-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
   templateUrl: './atencion-sin-turno-page.html',
   styleUrl: '../../atencion.css',
 })

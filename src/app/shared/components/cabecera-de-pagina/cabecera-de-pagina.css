@@ -1,0 +1,155 @@
+/*
+ * Cabecera de pantalla. Sin encapsulacion: alcanza a lo proyectado (ver `CabeceraDePagina`).
+ *
+ * Alto: fila de 40 px (el de un boton) + 16 px hasta el contenido, y con pestañas otros ~40 px.
+ * Ningun `overflow` ni `max-height`: la cabecera nunca desplaza, crece lo que pide su contenido.
+ */
+
+.cabecera-pagina {
+  display: block;
+  container: cabecera-pagina / inline-size;
+  margin-bottom: var(--esp-6);
+}
+
+/*
+ * Grilla y no flex: con flex y `wrap` la accion principal bajaba de linea antes de que el titulo
+ * se acortara. Aca el espacio que falta lo cede primero el hueco del medio; despues el titulo se
+ * corta con "…" pero nunca por debajo de su minimo, y las acciones, si son varias, se parten en
+ * dos filas. Sin ese minimo, dos botones anchos dejaban el titulo en 0 px.
+ */
+.cabecera-pagina__fila {
+  display: grid;
+  grid-template-columns:
+    minmax(min(12rem, 40%), max-content) max-content minmax(0, 1fr)
+    minmax(0, max-content);
+  grid-template-areas: 'titulo contexto . principal';
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+/*
+ * Migas, titulo con su "?" y marcas de estado. Si no entran en una linea, lo que baja son las
+ * marcas (o el titulo debajo de las migas): sin `wrap`, el documento y las marcas de una ficha
+ * no se achicaban y en un telefono dejaban el nombre de la persona en 0 px.
+ */
+.cabecera-pagina__titulo {
+  grid-area: titulo;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-4);
+  min-width: 0;
+}
+
+/* El titulo y su "?" no se separan nunca: el "?" va pegado al titulo en cualquier ancho. */
+.cabecera-pagina__nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+}
+
+.cabecera-pagina__nombre > h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Lo que cede es el texto del titulo, con "…"; el "?" y las marcas no se achican. */
+.cabecera-pagina__nombre > :not(h1),
+.cabecera-pagina__titulo > :not(.cabecera-pagina__nombre) {
+  flex-shrink: 0;
+}
+
+.cabecera-pagina__contexto {
+  grid-area: contexto;
+  display: flex;
+  align-items: center;
+  margin-left: var(--esp-7);
+}
+
+.cabecera-pagina__principal {
+  grid-area: principal;
+  display: flex;
+  align-items: center;
+  margin-left: var(--esp-6);
+}
+
+/* Sin contenido la region no existe: ni su margen corre lo demas. */
+.cabecera-pagina__contexto:empty,
+.cabecera-pagina__principal:empty {
+  display: none;
+}
+
+/* Lo proyectado en las regiones: una fila de controles con el mismo espacio entre si. */
+.cabecera-pagina [cabeceraContexto],
+.cabecera-pagina [cabeceraAcciones] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.cabecera-pagina [cabeceraAcciones] {
+  justify-content: flex-end;
+}
+
+/* Segunda fila: las pantallas hermanas, pegadas a la primera. */
+.cabecera-pagina > app-pestanas,
+.cabecera-pagina > akine-pestanas {
+  display: block;
+  margin-top: var(--esp-3);
+}
+
+.cabecera-pagina .pestanas {
+  margin-bottom: 0;
+}
+
+/*
+ * Angosta: titulo y accion principal en la primera linea (la accion sigue a la vista) y el
+ * contexto abajo, a todo el ancho. Antes eso que un desplazamiento horizontal.
+ */
+@container cabecera-pagina (max-width: 48rem) {
+  .cabecera-pagina__fila {
+    grid-template-columns: minmax(min(10rem, 50%), 1fr) minmax(0, max-content);
+    grid-template-areas:
+      'titulo principal'
+      'contexto contexto';
+  }
+
+  .cabecera-pagina__contexto {
+    margin: var(--esp-4) 0 0;
+  }
+}
+
+/*
+ * Telefono: no entran el titulo y las acciones en una linea. Las acciones bajan a la suya,
+ * debajo del titulo y antes que el contexto, y el titulo puede usar dos lineas antes que
+ * cortarse a la mitad de una palabra.
+ */
+@container cabecera-pagina (max-width: 30rem) {
+  .cabecera-pagina__fila {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'titulo'
+      'principal'
+      'contexto';
+  }
+
+  .cabecera-pagina__principal {
+    margin: var(--esp-4) 0 0;
+  }
+
+  .cabecera-pagina [cabeceraAcciones] {
+    justify-content: flex-start;
+  }
+
+  .cabecera-pagina__nombre > h1 {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}

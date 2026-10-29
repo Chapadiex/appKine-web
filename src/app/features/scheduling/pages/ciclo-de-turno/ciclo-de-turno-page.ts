@@ -38,6 +38,8 @@ import { PrepagoDeRecepcionEstadoEnum } from '../../../../api/generated/model/pr
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -98,6 +100,8 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
 @Component({
   selector: 'app-ciclo-de-turno-page',
   imports: [
+    Migas,
+    CabeceraDePagina,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,

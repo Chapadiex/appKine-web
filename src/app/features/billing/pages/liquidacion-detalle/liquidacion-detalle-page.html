@@ -1,12 +1,11 @@
-<app-migas
-  [migas]="[
-    { etiqueta: 'Egresos', ruta: '/egresos' },
-    { etiqueta: 'Liquidar honorarios', ruta: '/egresos/honorarios' },
-  ]"
-/>
-
-<div class="titulo-con-ayuda">
-  <h1>Liquidación de honorarios</h1>
+<app-cabecera-de-pagina titulo="Liquidación de honorarios">
+  <app-migas
+    enLinea
+    [migas]="[
+      { etiqueta: 'Egresos', ruta: '/egresos' },
+      { etiqueta: 'Liquidar honorarios', ruta: '/egresos/honorarios' },
+    ]"
+  />
   @if (liquidacion()) {
     <span
       class="marca-estado"
@@ -21,7 +20,7 @@
       esa liquidación. Para pagarla se registra el pago desde el egreso.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @if (error(); as fallo) {
   <section class="tarjeta" role="alert" aria-labelledby="titulo-error-liquidacion">

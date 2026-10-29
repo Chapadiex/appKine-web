@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Clases</h1>
+<app-cabecera-de-pagina titulo="Clases">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Las clases grupales de esta sede, semana por semana. Una clase es un evento único con su cupo:
@@ -11,13 +10,13 @@
       pasó con una clase que ya no existe.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="PERMISO_CLASE_MANAGE">
+  <div cabeceraAcciones *akinePermiso="PERMISO_CLASE_MANAGE">
     <a class="boton" [routerLink]="RUTA_NUEVA_CLASE">
       <app-icono nombre="agregar" />
       Programar clase
     </a>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-labelledby="titulo-semana">
   <h2 id="titulo-semana" class="visualmente-oculto">Clases de la semana</h2>

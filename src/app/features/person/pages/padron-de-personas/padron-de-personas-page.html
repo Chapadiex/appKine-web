@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Padrón de personas</h1>
+<app-cabecera-de-pagina titulo="Padrón de personas">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Todas las personas registradas en la organización. Una persona <b>no es</b> un paciente:
@@ -22,13 +21,13 @@
     </p>
   </app-ayuda>
   <!-- La accion principal de la pantalla, en la fila del titulo y a la derecha (plan §3.1). -->
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Dar de alta una persona
     </button>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

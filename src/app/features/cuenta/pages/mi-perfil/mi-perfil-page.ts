@@ -8,6 +8,7 @@ import { MyProfileResponse } from '../../../../api/generated/model/my-profile-re
 import { RUTA_LOGIN } from '../../../../core/models/rutas';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
 import { SessionService } from '../../../../core/services/session.service';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoPerfil =
   | { readonly tipo: 'cargando' }
@@ -31,7 +32,7 @@ type EstadoEnvio = 'inicial' | 'enviando' | 'enviado' | 'limite' | 'error';
  */
 @Component({
   selector: 'app-mi-perfil-page',
-  imports: [Ayuda],
+  imports: [CabeceraDePagina, Ayuda],
   templateUrl: './mi-perfil-page.html',
   styleUrl: './mi-perfil-page.css',
 })

@@ -51,6 +51,7 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -101,6 +102,7 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-financiadores-page',
   imports: [
+    CabeceraDePagina,
     Pestanas,
     ColumnaOrdenable,
     Paginacion,

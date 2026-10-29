@@ -1,17 +1,13 @@
-<app-migas
-  [migas]="[
-    { etiqueta: 'Catálogo clínico', ruta: '/catalogo/nomencladores' },
-    { etiqueta: 'Vigencias' },
-  ]"
-/>
-
 <!--
   La distincion que sostiene RN-M06-002 y que explica por que esta pantalla no tiene "Editar". Era
   una tarjeta fija arriba de todo; va al "?" del titulo (refactor UX/UI del 28/10/2026). Lo que
   necesita quien opera -que no hay edicion- lo dice la propia tabla: la unica accion es la baja.
 -->
-<div class="titulo-con-ayuda">
-  <h1>Vigencias del nomenclador</h1>
+<app-cabecera-de-pagina titulo="Vigencias del nomenclador">
+  <app-migas
+    enLinea
+    [migas]="[{ etiqueta: 'Catálogo clínico', ruta: '/catalogo/nomencladores' }]"
+  />
   <app-ayuda titulo="Una vigencia no se corrige: se cierra y se abre otra">
     <p>
       Cada vigencia dice que <b>código</b> codificaba a que <b>práctica</b>, con que valor y entre
@@ -25,14 +21,14 @@
     </p>
   </app-ayuda>
   @if (estado().tipo === 'listo' && !esDeLaPlataforma()) {
-    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <div cabeceraAcciones *akinePermiso="permisoManage">
       <button type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
         Cargar una vigencia
       </button>
     </div>
   }
-</div>
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

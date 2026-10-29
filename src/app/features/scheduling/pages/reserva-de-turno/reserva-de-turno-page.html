@@ -1,7 +1,5 @@
-<div class="titulo-con-ayuda">
-  <a class="miga" routerLink="/agenda">Agenda</a>
-  <span class="miga__separador" aria-hidden="true">/</span>
-  <h1>Reservar turno</h1>
+<app-cabecera-de-pagina titulo="Reservar turno">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Agenda', ruta: '/agenda' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Un turno es una <b>reserva</b> de agenda. No dice que la atención haya ocurrido: eso lo
@@ -13,7 +11,7 @@
       mientras completás el formulario, se te avisa antes de confirmar.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 <div class="columnas">
   <div class="columnas__principal">

@@ -42,6 +42,8 @@ import {
 } from '../../../../api/generated/model/tratamiento-enmendado';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Un tratamiento de la version vigente mientras se corrige. */
 interface TratamientoEnEdicion {
@@ -103,7 +105,7 @@ interface MedicionEnEdicion {
  */
 @Component({
   selector: 'app-enmienda-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
   templateUrl: './enmienda-page.html',
   styleUrl: '../../atencion.css',
 })

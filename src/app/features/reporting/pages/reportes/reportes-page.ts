@@ -37,6 +37,7 @@ import {
 import { SerieDeReporte } from '../../../../api/generated/model/serie-de-reporte';
 import { SerieDeIndicadorDeReporte } from '../../../../api/generated/model/serie-de-indicador-de-reporte';
 import { Subscription } from 'rxjs';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
@@ -75,7 +76,7 @@ type EstadoSerie =
  */
 @Component({
   selector: 'app-reportes-page',
-  imports: [Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink],
   templateUrl: './reportes-page.html',
   styleUrl: '../../reporting.css',
 })

@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Convenios de la sede</h1>
+<app-cabecera-de-pagina titulo="Convenios de la sede">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Lo que <b>esta sede</b> acordo con un plan de un financiador: desde cuando, hasta cuando, como
@@ -24,15 +23,15 @@
       <b>todavía</b> resuelve.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Firmar un convenio
     </button>
   </div>
-</div>
 
-<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

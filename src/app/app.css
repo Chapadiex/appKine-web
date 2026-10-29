@@ -84,13 +84,14 @@
   width: 100%;
   max-width: 96rem;
   margin: 0;
-  padding: var(--esp-8) var(--esp-8) var(--esp-9);
+  padding: var(--esp-5) var(--esp-8) var(--esp-9);
 }
 
 /* Sin barra lateral (login, selector de contexto) la pagina si se centra: es una tarjeta sola. */
 .shell--sin-barra .contenido {
   max-width: 46rem;
   margin: 0 auto;
+  padding-top: var(--esp-8);
 }
 
 .contenido:focus {
@@ -126,7 +127,7 @@
   }
 
   .contenido {
-    padding: var(--esp-7) var(--esp-6) var(--esp-9);
+    padding: var(--esp-5) var(--esp-6) var(--esp-9);
   }
 }
 

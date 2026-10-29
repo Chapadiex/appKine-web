@@ -33,6 +33,7 @@ import {
   franjasDelFormulario,
 } from '../../../../shared/utils/franjas-semanales';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -106,7 +107,7 @@ const INSTITUCIONALES = [
  */
 @Component({
   selector: 'app-new-consultorio-page',
-  imports: [Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas],
   templateUrl: './new-consultorio-page.html',
   styleUrl: '../../organization.css',
 })

@@ -209,14 +209,6 @@
   content: ' →' / '';
 }
 
-/*
- * Banda de una pantalla hermana de la ficha: el titulo de la seccion (mas chico que el del
- * padron, porque la persona ya va arriba) con su ayuda y la accion principal a la derecha.
- */
-.titulo-de-seccion-persona > h1 {
-  font-size: var(--tipo-lg);
-}
-
 /* Formulario abierto en una pantalla de la persona: borde de acento, como en el diseño. */
 .tarjeta--formulario {
   border-color: var(--color-acento);

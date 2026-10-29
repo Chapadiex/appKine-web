@@ -26,6 +26,7 @@ import {
   PESTANAS_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type Estado =
   | { readonly tipo: 'inicial' }
@@ -76,7 +77,16 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-suscripcion-de-centro-page',
-  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, PanelLateral, Pestanas, Paginacion],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    PanelLateral,
+    Pestanas,
+    Paginacion,
+  ],
   templateUrl: './suscripcion-de-centro-page.html',
 })
 export class SuscripcionDeCentroPage {

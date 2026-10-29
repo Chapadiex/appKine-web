@@ -30,6 +30,7 @@ import { VisitaClinica } from '../../services/visita-clinica';
 import { CasosApi } from '../casos-api';
 import { ErrorCaso, errorDeCausaCaso, traducirErrorCaso } from '../casos-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 interface Integrante {
   readonly membershipId: number;
@@ -59,7 +60,7 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [Migas, Ayuda, RouterLink, PedidoDeMotivo],
+  imports: [CabeceraDePagina, Migas, Ayuda, RouterLink, PedidoDeMotivo],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })

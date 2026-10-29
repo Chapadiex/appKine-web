@@ -16,6 +16,7 @@ import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -38,7 +39,16 @@ type Estado =
  */
 @Component({
   selector: 'app-catalogo-de-financiadores-page',
-  imports: [Migas, ColumnaOrdenable, Paginacion, Ayuda, Filtros, Icono, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    Migas,
+    ColumnaOrdenable,
+    Paginacion,
+    Ayuda,
+    Filtros,
+    Icono,
+    RouterLink,
+  ],
   templateUrl: './catalogo-de-financiadores-page.html',
   styleUrl: '../../contracting.css',
 })

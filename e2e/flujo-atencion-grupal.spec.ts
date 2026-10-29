@@ -168,7 +168,7 @@ test.describe('Atencion clinica grupal contra el backend real', () => {
     await expect(page.getByLabel('Caso clínico de esta atención')).toHaveCount(0);
 
     // --- De vuelta en el panel: la atencion en curso, y la derivacion ya no se revierte ------
-    await page.getByRole('link', { name: 'Volver a la atención clínica de la clase' }).click();
+    await page.getByRole('link', { name: 'Atención clínica de la clase' }).click();
     const filaDespues = page.getByRole('row').filter({ hasText: persona.apellido });
     await expect(filaDespues).toContainText('Atención en curso');
     await expect(filaDespues.getByRole('button', { name: /Iniciar atención/ })).toHaveCount(0);

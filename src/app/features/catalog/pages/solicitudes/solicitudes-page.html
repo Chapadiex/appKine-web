@@ -1,12 +1,8 @@
-<app-migas
-  [migas]="[
-    { etiqueta: 'Catálogo clínico', ruta: '/catalogo/especialidades' },
-    { etiqueta: 'Pedidos al catálogo' },
-  ]"
-/>
-
-<div class="titulo-con-ayuda">
-  <h1>Pedidos al catálogo de la plataforma</h1>
+<app-cabecera-de-pagina titulo="Pedidos al catálogo de la plataforma">
+  <app-migas
+    enLinea
+    [migas]="[{ etiqueta: 'Catálogo clínico', ruta: '/catalogo/especialidades' }]"
+  />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       El catalogo comun -el que ven todos los centros- lo mantiene AKINE. Si falta algo que deberia
@@ -24,15 +20,15 @@
       esta pendiente, podés darlo de alta como un concepto de tu centro.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Pedir un concepto a la plataforma
     </button>
   </div>
-</div>
 
-<app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

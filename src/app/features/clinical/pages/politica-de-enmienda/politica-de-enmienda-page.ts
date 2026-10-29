@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { PoliticaDeEnmienda } from '../../../../api/generated/model/politica-de-enmienda';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -7,6 +6,8 @@ import { instanteEnPalabras } from '../../models/etiquetas-de-atencion';
 import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-errors';
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Rango del contrato: de 1 a 3650 dias. */
 export const VENTANA_MINIMA = 1;
@@ -25,7 +26,7 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Migas, CabeceraDePagina, Ayuda],
   templateUrl: './politica-de-enmienda-page.html',
   styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })

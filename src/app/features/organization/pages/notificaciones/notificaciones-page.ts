@@ -33,6 +33,7 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListNotificationsRequestParams } from '../../../../api/generated/api/notificaciones.serviceInterface';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 const POR_PAGINA = 20;
 
@@ -55,7 +56,16 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-notificaciones-page',
-  imports: [Pestanas, Ayuda, Icono, Filtros, ColumnaOrdenable, RouterLink, Paginacion],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    Icono,
+    Filtros,
+    ColumnaOrdenable,
+    RouterLink,
+    Paginacion,
+  ],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
 })

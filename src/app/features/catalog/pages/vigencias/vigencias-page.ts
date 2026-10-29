@@ -36,6 +36,7 @@ import { Migas } from '../../../../shared/components/migas/migas';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -78,6 +79,7 @@ const TOPE_DE_PRACTICAS = 100;
 @Component({
   selector: 'app-vigencias-page',
   imports: [
+    CabeceraDePagina,
     AccionesDeFila,
     Ayuda,
     PanelLateral,

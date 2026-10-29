@@ -28,6 +28,7 @@ import {
 import { enPalabras } from '../../models/vigencia-de-contracting';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Consulta del arancel efectivo de una practica para una fecha (M16, RF-M16-006 y RF-M16-010).
@@ -74,7 +75,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-arancel-efectivo-page',
-  imports: [Pestanas, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './arancel-efectivo-page.html',
   styleUrl: '../../contracting.css',
 })

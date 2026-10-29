@@ -1,7 +1,6 @@
-<div class="titulo-con-ayuda titulo-clinico">
+<app-cabecera-de-pagina titulo="Plan de tratamiento">
   <app-migas enLinea [migas]="migas()" />
-  <h1>Plan de tratamiento</h1>
-</div>
+</app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
   @case ('cargando') {

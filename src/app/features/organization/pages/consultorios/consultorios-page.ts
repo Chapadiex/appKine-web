@@ -43,6 +43,7 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListOrganizationConsultoriosRequestParams } from '../../../../api/generated/api/organizaciones.serviceInterface';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -101,6 +102,7 @@ const POR_PAGINA = 20;
 @Component({
   selector: 'app-consultorios-page',
   imports: [
+    CabeceraDePagina,
     Ayuda,
     Icono,
     Filtros,

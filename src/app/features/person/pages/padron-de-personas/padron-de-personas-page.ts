@@ -42,6 +42,7 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { BuscarPersonasRequestParams } from '../../../../api/generated/api/personas.serviceInterface';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
@@ -106,6 +107,7 @@ const TAMANO_DE_PAGINA = 20;
 @Component({
   selector: 'app-padron-de-personas-page',
   imports: [
+    CabeceraDePagina,
     AccionesDeFila,
     Ayuda,
     ColumnaOrdenable,

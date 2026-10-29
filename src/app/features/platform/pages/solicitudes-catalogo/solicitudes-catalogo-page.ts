@@ -32,6 +32,7 @@ import {
 } from '../../models/pestanas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
@@ -71,6 +72,7 @@ type Especialidades =
 @Component({
   selector: 'app-solicitudes-catalogo-page',
   imports: [
+    CabeceraDePagina,
     ColumnaOrdenable,
     Paginacion,
     Ayuda,

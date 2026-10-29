@@ -1,7 +1,5 @@
-<p class="miga"><a class="enlace" routerLink="/organizacion">Volver a la organización</a></p>
-
-<div class="titulo-con-ayuda">
-  <h1>Política de enmienda</h1>
+<app-cabecera-de-pagina titulo="Política de enmienda">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Organización', ruta: '/organizacion' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cuántos días desde el cierre se puede enmendar una sesión en esta organización. Pasada la
@@ -9,7 +7,7 @@
       pero no se agregan versiones nuevas.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo la política&hellip;</p>

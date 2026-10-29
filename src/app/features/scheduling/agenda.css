@@ -174,27 +174,6 @@ button.slot--libre:focus-visible {
   font-size: var(--tipo-xs);
 }
 
-/* Miga de pan que precede al título ("Agenda /"). */
-.miga {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-  text-decoration: none;
-}
-
-.miga:hover {
-  color: var(--color-enlace);
-  text-decoration: underline;
-}
-
-.miga:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-.miga__separador {
-  color: var(--color-borde-control);
-}
-
 /* Dos columnas: el contenido principal y un panel lateral angosto que baja en pantallas chicas. */
 .columnas {
   display: flex;

@@ -1,7 +1,4 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <h1>Cuenta corriente</h1>
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Cuenta corriente">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Lo que esta persona debe en <b>todo el centro</b>, no solo en esta sede: una deuda es una sola
@@ -17,7 +14,7 @@
       número que después alguien le dice a un paciente.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <!--
       La lista de cobros es lectura y se ofrece siempre. Cobrar es una MUTACION de dinero y va
       detras del permiso: ofrecerlo a quien no lo tiene seria mandarlo a llenar un formulario
@@ -29,7 +26,7 @@
       Registrar un cobro
     </a>
   </div>
-</div>
+</app-cabecera-de-ficha>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Cargando la cuenta corriente…</p>

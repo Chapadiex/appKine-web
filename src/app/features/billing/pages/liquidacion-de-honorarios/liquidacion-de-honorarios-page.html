@@ -1,7 +1,5 @@
-<app-migas [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
-
-<div class="titulo-con-ayuda">
-  <h1>Liquidar honorarios por clase</h1>
+<app-cabecera-de-pagina titulo="Liquidar honorarios por clase">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cuánto le corresponde a un instructor por las clases que dictó en un período: la tarifa de la
@@ -9,7 +7,7 @@
       la clase. Las clases que no entran se listan con su motivo.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 <p class="ayuda">
   Confirmar crea un <b>egreso en borrador</b>, imputado al servicio; no mueve la caja.

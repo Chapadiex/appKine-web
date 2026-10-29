@@ -36,6 +36,7 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -85,7 +86,7 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './egresos-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

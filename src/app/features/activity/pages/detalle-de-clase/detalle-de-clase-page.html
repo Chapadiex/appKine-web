@@ -1,11 +1,14 @@
-<p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
+@if (clase() === null) {
+  <app-cabecera-de-pagina titulo="Clase">
+    <app-migas enLinea [migas]="[{ etiqueta: 'Clases', ruta: RUTA_CLASES }]" />
+  </app-cabecera-de-pagina>
+}
 
 @if (cargando() && clase() === null) {
   <p class="estado estado--cargando" aria-live="polite">Leyendo la clase…</p>
 }
 
 @if (errorDeLectura(); as fallo) {
-  <h1>Clase</h1>
   <section class="tarjeta conflicto" aria-labelledby="titulo-error-clase">
     <h2 id="titulo-error-clase">No se pudo leer la clase</h2>
     <p class="estado estado--error">{{ fallo.mensaje }}</p>
@@ -20,8 +23,8 @@
 }
 
 @if (clase(); as actual) {
-  <div class="titulo-con-ayuda">
-    <h1>{{ titulo() }}</h1>
+  <app-cabecera-de-pagina titulo="{{ titulo() }}">
+    <app-migas enLinea [migas]="[{ etiqueta: 'Clases', ruta: RUTA_CLASES }]" />
     <span
       class="marca-estado"
       [class.marca-estado--activa]="actual.estado === 'PROGRAMADA'"
@@ -38,7 +41,7 @@
         cancela las inscripciones y avisa a cada inscripto.
       </p>
     </app-ayuda>
-    <div class="encabezado__acciones">
+    <div cabeceraAcciones>
       <!--
         Jerarquia de acciones (refactor UX/UI del 28/10/2026): tomar asistencia es la principal;
         reprogramar, secundaria; cancelar la clase, destructiva, detras del menu "⋯".
@@ -68,7 +71,7 @@
         </app-acciones-de-fila>
       }
     </div>
-  </div>
+  </app-cabecera-de-pagina>
 
   <section aria-labelledby="titulo-datos-clase">
     <h2 id="titulo-datos-clase" class="visualmente-oculto">La clase</h2>

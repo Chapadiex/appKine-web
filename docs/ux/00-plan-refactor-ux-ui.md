@@ -102,6 +102,44 @@ cita; cuando una pantalla necesite apartarse, lo dice en su análisis.
 └ (Formularios largos) barra de acciones fija al pie: [Cancelar]        [ACCIÓN PRINCIPAL]
 ```
 
+#### Cabecera de pantalla — `app-cabecera-de-pagina` (pedido del usuario del 29/10/2026)
+
+Una sola cabecera para toda la aplicación (`shared/components/cabecera-de-pagina`). Ninguna
+pantalla arma la suya con `div.titulo-con-ayuda` + `h1`; la ficha de persona usa
+`app-cabecera-de-ficha`, que es la misma cabecera con los datos de la persona.
+
+```
+[Migas /] Título (?) [estado]   [‹ contexto › Hoy]                 [ACCIÓN PRINCIPAL]
+Pestaña | Pestaña | Pestaña
+```
+
+```html
+<app-cabecera-de-pagina titulo="Calendario de turnos">
+  <app-ayuda titulo="Sobre esta pantalla">…</app-ayuda>
+  <div cabeceraContexto class="navegador-fecha">…</div>
+  <div cabeceraAcciones><a class="boton" routerLink="/agenda">Nuevo turno</a></div>
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+```
+
+- **Mismo lugar siempre.** El título arranca en el mismo punto en todas las pantallas y la acción
+  principal va pegada al borde derecho. Sin acción, ese lugar queda vacío y nada se corre.
+- **Título en una línea.** Si no entra se corta con "…"; nunca invade la zona de la acción.
+- **"?" pegado al título**, siempre con el mismo tamaño y la misma separación. Lo que no tiene
+  región (marcas de estado) va después del "?".
+- **Migas en línea**, antes del título (`app-migas enLinea`), sin repetir la pantalla actual: un
+  enlace "Volver a…" arriba del título bajaba el título en los detalles.
+- **Contexto** (fecha, semana, "Hoy") en la fila del título mientras entre; si no, baja a una
+  segunda línea antes que desplazar la página.
+- **Pestañas** en una segunda fila compacta, dentro de la cabecera.
+- **Alto:** 40 px de fila + 16 px hasta el contenido (≈ 68 px desde la barra superior); con
+  pestañas, ≈ 109 px. Antes eran 146.
+- **Nunca desplaza.** Sin `overflow` ni `max-height`: crece lo que pide su contenido. Las
+  pestañas tenían `overflow-x: auto`, que volvía `auto` también el eje vertical y dibujaba una
+  barra de desplazamiento a la derecha en cada pantalla con pestañas.
+- **Angosta** (contenedor < 48rem): título y acción en la primera línea, contexto abajo.
+  **Teléfono** (< 30rem): título, acciones y contexto en líneas propias.
+
 ### 3.2 Texto explicativo — regla del "?" (decidida por el usuario el 21/10/2026)
 
 > **Regla.** Una pantalla de uso diario no se lee todos los días. Todo texto que **explica**

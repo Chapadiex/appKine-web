@@ -33,6 +33,7 @@ import { PlanApi } from './plan-api';
 import { ErrorPlan, errorDeCausaPlan, traducirErrorPlan } from './plan-errors';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
@@ -62,7 +63,7 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral],
+  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
