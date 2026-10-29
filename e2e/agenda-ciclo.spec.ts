@@ -9,6 +9,7 @@ import {
   respuestaDe,
   test,
 } from './support/agenda-real';
+import { cerrarAvisos } from './support/avisos';
 import {
   DIAS,
   Oferta,
@@ -74,6 +75,7 @@ test.describe('Ciclo del turno contra el backend real', () => {
 
     await page.getByRole('button', { name: 'Confirmar el turno' }).click();
     await expect(page.getByText(/^Confirmado/)).toBeVisible();
+    await cerrarAvisos(page);
 
     await page.getByRole('button', { name: 'Cancelar el turno' }).click();
     // Sin motivo no se cancela (DP-04): el boton no emite y el panel lo dice.
@@ -151,6 +153,7 @@ test.describe('Ciclo del turno contra el backend real', () => {
     // respuesta, que es justamente la que va a quedar vieja.
     await page.getByRole('button', { name: 'Confirmar el turno' }).click();
     await expect(page.getByText(/^Confirmado/)).toBeVisible();
+    await cerrarAvisos(page);
 
     const leido = await verTurno(api, centro, turnoId);
     await api.exigir(

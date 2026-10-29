@@ -20,7 +20,7 @@ const IMPORTES = { total: 12000, financiador: 9600, coseguro: 2400 };
 
 function filaDeAutorizacion(page: Page, numero: string): Locator {
   return page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) });
 }

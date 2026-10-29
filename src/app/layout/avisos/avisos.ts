@@ -58,9 +58,10 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
         >
           <app-icono class="aviso__icono" [nombre]="aviso.tipo" />
           <div class="aviso__textos">
+            <!-- El titulo en su propio elemento: buscado por su texto, sin el prefijo pegado. -->
             <p class="aviso__titulo">
               <span class="visualmente-oculto">{{ prefijo[aviso.tipo] }}</span>
-              {{ aviso.titulo }}
+              <span>{{ aviso.titulo }}</span>
             </p>
             @if (aviso.descripcion; as descripcion) {
               <p class="aviso__descripcion">{{ descripcion }}</p>

@@ -49,7 +49,7 @@ function dia(dias: number): string {
  */
 function filaDeAutorizacion(page: Page, numero: string) {
   return page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) });
 }
@@ -188,7 +188,7 @@ test.describe('Cobertura, orden y autorizacion de un paciente (B-6)', () => {
     await altaDeOrden.getByLabel('Sesiones prescriptas').fill('10');
     await altaDeOrden.getByRole('button', { name: 'Registrar orden' }).click();
 
-    const tablaOrdenes = page.getByRole('table', { name: /orden\(es\) del paciente/ });
+    const tablaOrdenes = page.getByRole('region', { name: 'Listado de órdenes' });
     await expect(tablaOrdenes.getByRole('cell', { name: 'ORD-1', exact: true })).toBeVisible();
 
     // --- 6. Autorizacion aprobada, vigente, respaldada por la orden ------------------------

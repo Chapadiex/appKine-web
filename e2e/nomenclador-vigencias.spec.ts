@@ -157,8 +157,11 @@ test.describe('Vigencias de un nomenclador contra el backend real', () => {
       'aria-invalid',
       'true',
     );
+    // UX-12: el choque va en una alerta pegada al codigo, no debajo del campo.
     await expect(
-      page.locator('.campo__error[role="alert"]').filter({ hasText: /./ }),
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Se superpone con otra vigencia del mismo código' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
     await expect(filaDe(page, `Sesion pisada ${sufijo}`)).toHaveCount(0);

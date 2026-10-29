@@ -1,4 +1,5 @@
 import { abrirLaAgenda, expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import { cerrarAvisos } from './support/avisos';
 import { agendaDe, crearPersona, rango, reservar, sumarDias } from './support/sembrado';
 import {
   diaIso,
@@ -95,6 +96,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await expect(avisos.getByText('Cierre cargado')).toBeVisible();
     // Dejo un turno afuera: el aviso de atencion queda hasta que lo cierren.
     await expect(avisos.getByText('Turnos para revisar')).toBeVisible();
+    await cerrarAvisos(page);
 
     // --- El feriado en el calendario de la sede ---
     await navegar(page, '/horarios/calendario');

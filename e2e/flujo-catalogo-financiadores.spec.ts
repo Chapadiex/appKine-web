@@ -35,7 +35,7 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       await expect(
         plataforma.getByRole('heading', { name: 'Catálogo de financiadores', level: 1 }),
       ).toBeVisible();
-      await plataforma.getByRole('button', { name: 'Nuevo financiador' }).click();
+      await plataforma.getByRole('button', { name: 'Nuevo financiador' }).first().click();
       await plataforma.getByLabel('Código', { exact: true }).fill(codigo);
       await plataforma.getByLabel('Nombre', { exact: true }).fill(nombre);
       await plataforma.getByLabel('Tipo de financiador').selectOption({ value: 'OBRA_SOCIAL' });

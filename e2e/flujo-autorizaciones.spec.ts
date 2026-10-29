@@ -43,7 +43,7 @@ function dato(panel: Locator, termino: string): Locator {
 
 function filaDeAutorizacion(page: Page, numero: string): Locator {
   return page
-    .getByRole('table', { name: /autorizacion\(es\) del paciente/ })
+    .getByRole('region', { name: 'Listado de autorizaciones' })
     .getByRole('row')
     .filter({ has: page.getByRole('cell', { name: new RegExp(`^${numero}(\\s|$)`) }) });
 }
