@@ -461,7 +461,7 @@ describe('ConveniosDeLaSedePage', () => {
       // Ni la ayuda, ni el embudo, ni el orden de columna son acciones sobre convenios.
       [
         ...anfitrion.querySelectorAll(
-          'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden):not(.filtros-rapidos__opcion)',
+          'button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar):not(.filtros-barra__boton):not(.tabla__orden):not(.filtros-rapidos__opcion)',
         ),
       ].map((boton) => (boton.textContent ?? '').trim()),
     ).toEqual([]);
