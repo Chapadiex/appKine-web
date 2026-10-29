@@ -61,6 +61,9 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { DetalleOperativoRequestParams } from '../../../../api/generated/api/asistencia-de-clases.serviceInterface';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -118,7 +121,7 @@ interface Historial {
  */
 @Component({
   selector: 'app-asistencia-de-clase-page',
-  imports: [RouterLink, Paginacion, FocoAlMontar, ColumnaOrdenable],
+  imports: [Ayuda, Migas, CabeceraDePagina, RouterLink, Paginacion, FocoAlMontar, ColumnaOrdenable],
   templateUrl: './asistencia-de-clase-page.html',
   styleUrl: '../../asistencia.css',
 })

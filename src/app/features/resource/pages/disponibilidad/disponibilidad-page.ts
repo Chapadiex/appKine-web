@@ -15,6 +15,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Lo que devuelve la consulta, envuelto para reusar {@link vistaDeListado}. */
 interface ResultadoDeVentana {
@@ -57,7 +58,7 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
  */
 @Component({
   selector: 'app-disponibilidad-page',
-  imports: [Paginacion, ColumnaOrdenable, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Paginacion, ColumnaOrdenable, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './disponibilidad-page.html',
   styleUrl: '../../resource.css',
 })

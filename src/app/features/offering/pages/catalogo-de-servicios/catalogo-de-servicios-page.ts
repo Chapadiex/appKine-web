@@ -40,6 +40,7 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -90,6 +91,7 @@ const ESPERA_DE_BUSQUEDA = 250;
 @Component({
   selector: 'app-catalogo-de-servicios-page',
   imports: [
+    CabeceraDePagina,
     Pestanas,
     Ayuda,
     ColumnaOrdenable,

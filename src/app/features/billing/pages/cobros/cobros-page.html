@@ -1,8 +1,8 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <app-migas enLinea [migas]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]" />
-  <h1>Cobros registrados</h1>
+<app-cabecera-de-ficha
+  [modelo]="cabecera()"
+  titulo="Cobros registrados"
+  [migasDeSeccion]="[{ etiqueta: 'Cuenta corriente', ruta: rutaCuenta() }]"
+>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Dinero recibido de esta persona en <b>todo el centro</b>. Es la otra mitad de la cuenta
@@ -14,10 +14,10 @@
       pantalla produciria centavos que no cuadran contra lo que hay guardado.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="PERMISO_COBRO_REGISTER">
+  <div cabeceraAcciones *akinePermiso="PERMISO_COBRO_REGISTER">
     <a class="boton" [routerLink]="rutaCobrar()">Registrar un cobro</a>
   </div>
-</div>
+</app-cabecera-de-ficha>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Cargando los cobros…</p>

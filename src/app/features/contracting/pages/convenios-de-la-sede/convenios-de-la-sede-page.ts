@@ -61,6 +61,7 @@ import {
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -111,6 +112,7 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-convenios-de-la-sede-page',
   imports: [
+    CabeceraDePagina,
     Pestanas,
     Ayuda,
     ColumnaOrdenable,

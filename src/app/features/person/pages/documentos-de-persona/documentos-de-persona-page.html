@@ -1,7 +1,4 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <h1>Documentación administrativa</h1>
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Documentación administrativa">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los documentos que el paciente presenta en el mostrador: su documento de identidad, la
@@ -20,14 +17,14 @@
     </p>
   </app-ayuda>
   @if (!fichaCerrada()) {
-    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <div cabeceraAcciones *akinePermiso="permisoManage">
       <button type="button" class="boton" (click)="abrirSubida()">
         <app-icono nombre="agregar" />
         Subir un documento
       </button>
     </div>
   }
-</div>
+</app-cabecera-de-ficha>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

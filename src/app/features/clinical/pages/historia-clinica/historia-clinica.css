@@ -328,11 +328,6 @@ button.timeline__boton:focus-visible {
   color: var(--color-texto-suave);
 }
 
-/* Titulo de las pantallas hijas de la historia (Caso / Plan), en la fila con las migas. */
-.titulo-clinico > h1 {
-  font-size: var(--tipo-lg);
-}
-
 /* --- UX-01: cuerpo de la historia, el caso, el plan y la politica ----------------------- */
 
 /* Datos de cabecera de una tarjeta: pares rotulo/valor en una grilla que envuelve. */

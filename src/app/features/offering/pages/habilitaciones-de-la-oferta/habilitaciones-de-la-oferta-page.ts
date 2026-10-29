@@ -13,6 +13,7 @@ import { OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una fila de casilla, igual para profesionales y para espacios. */
 interface Candidato {
@@ -62,7 +63,7 @@ interface Candidato {
  */
 @Component({
   selector: 'app-habilitaciones-de-la-oferta-page',
-  imports: [Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
+  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
   templateUrl: './habilitaciones-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

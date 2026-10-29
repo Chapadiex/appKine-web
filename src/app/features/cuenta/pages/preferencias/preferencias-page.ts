@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PreferenciasStore, Tema } from '../../../../core/services/preferencias.store';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Preferencias personales (refactor de la cabecera global, 28/10/2026). Solo lo de quien usa la
@@ -13,7 +14,7 @@ import { PreferenciasStore, Tema } from '../../../../core/services/preferencias.
  */
 @Component({
   selector: 'app-preferencias-page',
-  imports: [Ayuda],
+  imports: [CabeceraDePagina, Ayuda],
   templateUrl: './preferencias-page.html',
 })
 export class PreferenciasPage {

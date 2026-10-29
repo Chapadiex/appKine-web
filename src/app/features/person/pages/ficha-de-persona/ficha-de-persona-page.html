@@ -4,10 +4,10 @@
   motivo y audita.
 -->
 @if (cargando()) {
-  <app-cabecera-de-ficha [modelo]="cabecera()" [tituloComoH1]="true" />
+  <app-cabecera-de-ficha [modelo]="cabecera()" />
   <p class="estado estado--cargando">Cargando la ficha...</p>
 } @else if (errorDeCarga(); as mensaje) {
-  <app-cabecera-de-ficha [modelo]="cabecera()" [tituloComoH1]="true" />
+  <app-cabecera-de-ficha [modelo]="cabecera()" />
   <p class="estado estado--error" role="alert">{{ mensaje }}</p>
   @if (faltaContexto()) {
     <p class="acciones">
@@ -19,7 +19,7 @@
     </p>
   }
 } @else if (persona(); as ficha) {
-  <app-cabecera-de-ficha [modelo]="cabecera()" [tituloComoH1]="true">
+  <app-cabecera-de-ficha [modelo]="cabecera()">
     <app-ayuda cabeceraAyuda titulo="Esta ficha no muestra nada clínico">
       <p>
         Es administrativa a propósito. El acceso a la historia clínica exige justificarlo y queda

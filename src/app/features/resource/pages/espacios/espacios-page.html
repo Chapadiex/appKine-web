@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Espacios y boxes</h1>
+<app-cabecera-de-pagina titulo="Espacios y boxes">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los recursos físicos de <b>{{ nombreDeLaSede() }}</b> donde se atiende: boxes, gimnasios,
@@ -23,7 +22,7 @@
       hasta esa fecha. La columna Estado lo dice fila por fila, con el motivo.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
       Ver espacios en servicio
     </a>
@@ -32,7 +31,7 @@
       Dar de alta un espacio
     </a>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

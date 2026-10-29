@@ -77,6 +77,7 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Cuantos dias de ventana se proponen al entrar. Un trimestre es lo que se planifica. */
 const DIAS_PROPUESTOS = 90;
@@ -155,6 +156,7 @@ const MOTIVOS: readonly {
 @Component({
   selector: 'app-excepciones-page',
   imports: [
+    CabeceraDePagina,
     PanelLateral,
     AccionesDeFila,
     Ayuda,

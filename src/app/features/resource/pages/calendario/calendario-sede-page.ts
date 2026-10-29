@@ -46,6 +46,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Ventana propuesta al entrar: el año que viene, que es donde estan los feriados que importan. */
 const DIAS_PROPUESTOS = 365;
@@ -81,6 +82,7 @@ const DIAS_PROPUESTOS = 365;
 @Component({
   selector: 'app-calendario-sede-page',
   imports: [
+    CabeceraDePagina,
     Paginacion,
     ColumnaOrdenable,
     Ayuda,

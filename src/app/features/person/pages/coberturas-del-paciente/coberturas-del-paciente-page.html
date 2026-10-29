@@ -1,7 +1,4 @@
-<app-cabecera-de-ficha [modelo]="cabecera()" />
-
-<div class="titulo-con-ayuda titulo-de-seccion-persona">
-  <h1>Coberturas</h1>
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Coberturas">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Con que cobertura se atiende hoy el paciente, y con cuales se atendio antes. Se muestran
@@ -19,13 +16,13 @@
       puede elegir pagar particular una atención.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Agregar una cobertura
     </button>
   </div>
-</div>
+</app-cabecera-de-ficha>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

@@ -34,6 +34,8 @@ import { AlcanceSerie, SeriesApi } from '../../services/series-api';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
 const PENDIENTES: ReadonlySet<string> = new Set<string>([
@@ -96,6 +98,8 @@ interface Resultado {
 @Component({
   selector: 'app-serie-de-turnos-page',
   imports: [
+    Migas,
+    CabeceraDePagina,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,

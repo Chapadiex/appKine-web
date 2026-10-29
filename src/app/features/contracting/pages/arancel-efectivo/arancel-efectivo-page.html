@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Arancel efectivo</h1>
+<app-cabecera-de-pagina titulo="Arancel efectivo">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cuánto sale una práctica para un financiador y un plan, en una fecha, en <b>esta sede</b>. La
@@ -19,9 +18,9 @@
       su motivo. Lo único que cambia entre los dos motivos posibles es que hacer después.
     </p>
   </app-ayuda>
-</div>
 
-<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <!--
   Consulta y respuesta lado a lado en escritorio (refactor UX/UI del 28/10/2026): la pregunta a la

@@ -35,6 +35,7 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ob
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -78,7 +79,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  */
 @Component({
   selector: 'app-caja-page',
-  imports: [Ayuda, RouterLink, PanelLateral],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PanelLateral],
   templateUrl: './caja-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 import { catchError, of } from 'rxjs';
 
 import { BillingApi } from '../../services/billing-api';
@@ -96,7 +95,7 @@ type EstadoDeuda =
  */
 @Component({
   selector: 'app-registro-de-cobro-page',
-  imports: [Migas, Ayuda, CabeceraDeFicha, RouterLink],
+  imports: [Ayuda, CabeceraDeFicha, RouterLink],
   templateUrl: './registro-de-cobro-page.html',
   styleUrls: ['../../billing.css', '../cuenta-corriente/cuenta-corriente.css'],
 })

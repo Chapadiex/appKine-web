@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Cierres y aperturas</h1>
+<app-cabecera-de-pagina titulo="Cierres y aperturas">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Excepciones al horario cargado en <b>{{ nombreDeLaSede() }}</b
@@ -22,7 +21,7 @@
     </p>
   </app-ayuda>
   @if (estado().tipo === 'listo') {
-    <div class="encabezado__acciones">
+    <div cabeceraAcciones>
       <button
         type="button"
         class="boton"
@@ -35,7 +34,7 @@
       </button>
     </div>
   }
-</div>
+</app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Período a mirar">
   <form id="form-ventana" [formGroup]="formularioVentana" (ngSubmit)="consultar()" novalidate>

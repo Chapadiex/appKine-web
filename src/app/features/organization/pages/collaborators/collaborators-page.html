@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Colaboradores</h1>
+<app-cabecera-de-pagina titulo="Colaboradores">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Quiénes tienen acceso a esta organización, con qué rol y sobre qué alcance. Los vínculos
@@ -7,16 +6,20 @@
       relevante.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <a class="boton boton--secundario" routerLink="/organizacion/auditoria">Ver la auditoría</a>
     <a *akinePermiso="permisoManage" class="boton" routerLink="/organizacion/colaboradores/nuevo">
       <app-icono nombre="agregar" />
       Vincular colaborador
     </a>
   </div>
-</div>
 
-<app-pestanas *akinePermiso="permisoManage" [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas
+    *akinePermiso="permisoManage"
+    [pestanas]="pestanas"
+    [etiqueta]="etiquetaDePestanas"
+  />
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

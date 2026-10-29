@@ -10,6 +10,8 @@ import { Sesion } from '../../../../api/generated/model/sesion';
 import { SesionVersion } from '../../../../api/generated/model/sesion-version';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 /**
  * Historial de versiones de una sesion cerrada (AKINE-06.06, RF-M24-005, RN-M14-006).
@@ -27,7 +29,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
  */
 @Component({
   selector: 'app-versiones-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',
 })

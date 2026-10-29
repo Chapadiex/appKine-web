@@ -1,12 +1,8 @@
-<app-migas
-  [migas]="[
-    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
-    { etiqueta: 'Catálogo de financiadores' },
-  ]"
-/>
-
-<div class="titulo-con-ayuda">
-  <h1>Catálogo de financiadores</h1>
+<app-cabecera-de-pagina titulo="Catálogo de financiadores">
+  <app-migas
+    enLinea
+    [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
+  />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Obras sociales, prepagas y ART que la plataforma ya tiene cargadas. Agregar una al centro crea
@@ -15,7 +11,7 @@
       otro financiador y los cambios posteriores del catálogo <b>no</b> la modifican.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (errorAccion(); as mensaje) {

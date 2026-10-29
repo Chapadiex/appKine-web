@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Horario del profesional</h1>
+<app-cabecera-de-pagina titulo="Horario del profesional">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       En qué días y horas atiende cada profesional en <b>{{ nombreDeLaSede() }}</b
@@ -24,7 +23,7 @@
     </p>
   </app-ayuda>
   @if (estado().tipo === 'listo') {
-    <div class="encabezado__acciones">
+    <div cabeceraAcciones>
       <button
         type="button"
         class="boton"
@@ -37,9 +36,9 @@
       </button>
     </div>
   }
-</div>
 
-<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Profesional">
   <div aria-live="polite">

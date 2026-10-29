@@ -1,26 +1,32 @@
 @if (convenio(); as ficha) {
-  <div class="titulo-con-ayuda">
-    <h1>Aranceles de {{ ficha.nombre }}</h1>
+  <app-cabecera-de-pagina titulo="Aranceles de {{ ficha.nombre }}">
+    <app-migas
+      enLinea
+      [migas]="[{ etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' }]"
+    />
     @if (convenioInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
-  </div>
+    <ng-container ngProjectAs="[cabeceraAcciones]" [ngTemplateOutlet]="accionDelTitulo" />
+  </app-cabecera-de-pagina>
   <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
     Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
   </p>
 } @else {
-  <div class="titulo-con-ayuda">
-    <h1>Aranceles del convenio #{{ convenioId }}</h1>
+  <app-cabecera-de-pagina titulo="Aranceles del convenio #{{ convenioId }}">
+    <app-migas
+      enLinea
+      [migas]="[{ etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' }]"
+    />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
-  </div>
+    <ng-container ngProjectAs="[cabeceraAcciones]" [ngTemplateOutlet]="accionDelTitulo" />
+  </app-cabecera-de-pagina>
   <!-- Es un estado de la pantalla, no una explicacion: queda a la vista. -->
   <p class="descripcion">
     No pudimos leer el convenio, así que <b>los importes se muestran sin moneda</b>: el arancel no
@@ -28,17 +34,10 @@
   </p>
 }
 
-<app-migas
-  [migas]="[
-    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
-    { etiqueta: 'Aranceles' },
-  ]"
-/>
-
 <!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
 <ng-template #accionDelTitulo>
   @if (!convenioInactivo()) {
-    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <div cabeceraAcciones *akinePermiso="permisoManage">
       <a
         class="boton boton--secundario"
         [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"

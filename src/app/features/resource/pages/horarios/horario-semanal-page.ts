@@ -68,6 +68,7 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
@@ -115,6 +116,7 @@ interface DiaConBloques {
 @Component({
   selector: 'app-horario-semanal-page',
   imports: [
+    CabeceraDePagina,
     PanelLateral,
     AccionesDeFila,
     Ayuda,

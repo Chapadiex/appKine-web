@@ -13,7 +13,6 @@ import {
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
-import { Migas } from '../../../../shared/components/migas/migas';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PERMISO_CAJA_OPERATE, PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
@@ -91,7 +90,6 @@ interface OperacionAbierta {
   selector: 'app-cobros-page',
   imports: [
     PanelLateral,
-    Migas,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,

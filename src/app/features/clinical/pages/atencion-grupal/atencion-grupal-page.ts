@@ -43,6 +43,8 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Migas } from '../../../../shared/components/migas/migas';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -124,6 +126,8 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-atencion-grupal-page',
   imports: [
+    Migas,
+    CabeceraDePagina,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,

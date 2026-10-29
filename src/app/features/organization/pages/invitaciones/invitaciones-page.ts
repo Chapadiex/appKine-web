@@ -39,6 +39,7 @@ import {
 } from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Filtro del listado. Los cuatro estados del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA';
@@ -93,6 +94,7 @@ const ROLES = [
 @Component({
   selector: 'app-invitaciones-page',
   imports: [
+    CabeceraDePagina,
     Pestanas,
     Paginacion,
     ColumnaOrdenable,

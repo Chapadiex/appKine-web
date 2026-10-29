@@ -27,6 +27,7 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Cual de los tres filtros excluyentes esta elegido.
@@ -73,7 +74,7 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [Ayuda, ColumnaOrdenable, ReactiveFormsModule, RouterLink, Paginacion],
+  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, ReactiveFormsModule, RouterLink, Paginacion],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })

@@ -1,9 +1,8 @@
-<p class="miga">
-  <a class="enlace" [routerLink]="'/asistencia/' + claseId()">Volver a la asistencia de la clase</a>
-</p>
-
-<div class="titulo-con-ayuda">
-  <h1>Atención clínica: {{ titulo() }}</h1>
+<app-cabecera-de-pagina titulo="Atención clínica: {{ titulo() }}">
+  <app-migas
+    enLinea
+    [migas]="[{ etiqueta: 'Asistencia de la clase', ruta: '/asistencia/' + claseId() }]"
+  />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cada participante que estuvo y fue derivado a un caso clínico tiene <b>su propia atención</b>,
@@ -11,7 +10,7 @@
       atención de cada uno.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
   @case ('cargando') {

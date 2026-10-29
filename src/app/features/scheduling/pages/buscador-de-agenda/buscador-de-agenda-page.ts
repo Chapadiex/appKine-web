@@ -27,6 +27,7 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -73,7 +74,7 @@ const DIAS_POR_DEFECTO = 7;
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [Ayuda, Filtros, RouterLink, Pestanas],
+  imports: [Ayuda, CabeceraDePagina, Filtros, RouterLink, Pestanas],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })

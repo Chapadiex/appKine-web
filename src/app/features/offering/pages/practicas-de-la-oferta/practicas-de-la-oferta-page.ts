@@ -14,6 +14,7 @@ import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una practica de la lista que se va a guardar. */
 interface FilaPractica {
@@ -52,7 +53,7 @@ interface FilaPractica {
  */
 @Component({
   selector: 'app-practicas-de-la-oferta-page',
-  imports: [Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
+  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
   templateUrl: './practicas-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })

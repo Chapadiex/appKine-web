@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Financiadores</h1>
+<app-cabecera-de-pagina titulo="Financiadores">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Con quien trabaja tu organización: obras sociales, prepagas, ART, mutuales y organismos. Es el
@@ -15,7 +14,7 @@
     </p>
     <p>{{ notaParticular }}</p>
   </app-ayuda>
-  <div class="encabezado__acciones" *akinePermiso="permisoManage">
+  <div cabeceraAcciones *akinePermiso="permisoManage">
     <!-- DP-43 (U-12): una copia propia de una entrada del catálogo de la plataforma. -->
     <a class="boton boton--secundario" routerLink="/contratacion/financiadores/catalogo">
       Agregar desde el catálogo
@@ -25,9 +24,9 @@
       Dar de alta un financiador
     </button>
   </div>
-</div>
 
-<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <div aria-live="polite">
   @if (exito(); as mensaje) {

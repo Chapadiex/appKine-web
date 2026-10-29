@@ -44,6 +44,7 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** El esquema de cobro que exige cada tipo de producto (RN-M29-005, RF-M29-007). */
 const ESQUEMA_DEL_TIPO: Readonly<Record<CrearProductoTipoEnum, string>> = {
@@ -79,6 +80,7 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
 @Component({
   selector: 'app-productos-de-pack-page',
   imports: [
+    CabeceraDePagina,
     Ayuda,
     ColumnaOrdenable,
     Filtros,

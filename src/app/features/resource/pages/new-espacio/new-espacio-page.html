@@ -1,9 +1,5 @@
-<app-migas
-  [migas]="[{ etiqueta: 'Espacios y boxes', ruta: '/espacios' }, { etiqueta: 'Dar de alta' }]"
-/>
-
-<div class="titulo-con-ayuda">
-  <h1>Dar de alta un espacio</h1>
+<app-cabecera-de-pagina titulo="Dar de alta un espacio">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Espacios y boxes', ruta: '/espacios' }]" />
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Un recurso fisico de <b>{{ nombreDeLaSede() }}</b> donde se atiende: un box, un gimnasio, un
@@ -15,7 +11,7 @@
       persona, en servicio desde ahora y sin fin previsto.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @if (sinSede()) {
   <section class="tarjeta" aria-labelledby="titulo-sin-sede">

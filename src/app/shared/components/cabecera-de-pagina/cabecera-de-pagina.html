@@ -1,0 +1,11 @@
+<div class="cabecera-pagina__fila">
+  <div class="cabecera-pagina__titulo">
+    <ng-content select="app-migas" />
+    <h1>{{ titulo() }}</h1>
+    <ng-content select="app-ayuda, akine-ayuda" />
+    <ng-content />
+  </div>
+  <div class="cabecera-pagina__contexto"><ng-content select="[cabeceraContexto]" /></div>
+  <div class="cabecera-pagina__principal"><ng-content select="[cabeceraAcciones]" /></div>
+</div>
+<ng-content select="app-pestanas, akine-pestanas" />

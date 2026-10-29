@@ -9,6 +9,7 @@ import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Una fila de la seccion Configuracion. */
 interface AccesoDeConfiguracion {
@@ -49,7 +50,7 @@ type EstadoOrganizacion =
  */
 @Component({
   selector: 'app-organization-page',
-  imports: [Ayuda, Icono, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Icono, RouterLink],
   templateUrl: './organization-page.html',
   styleUrls: ['../../organization.css', './organization-page.css'],
 })

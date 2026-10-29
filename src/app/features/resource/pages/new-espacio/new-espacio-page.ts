@@ -15,6 +15,7 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -56,7 +57,7 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-espacio-page',
-  imports: [Ayuda, Migas, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Migas, ReactiveFormsModule, RouterLink],
   templateUrl: './new-espacio-page.html',
   styleUrl: '../../resource.css',
 })

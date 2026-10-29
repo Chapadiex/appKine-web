@@ -1,8 +1,3 @@
-/* Ajustes de UX-01 para los pases de una persona (pestaña de la ficha). */
-.titulo-de-seccion-persona > h1 {
-  font-size: var(--tipo-lg);
-}
-
 /* Listado: tabla y pie en una sola tarjeta. */
 .tarjeta--listado .tabla-scroll {
   margin-inline: calc(-1 * var(--esp-8));

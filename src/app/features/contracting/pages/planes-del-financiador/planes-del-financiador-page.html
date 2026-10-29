@@ -1,14 +1,17 @@
 @if (financiador(); as ficha) {
-  <div class="titulo-con-ayuda">
-    <h1>Planes de {{ ficha.nombre }}</h1>
+  <app-cabecera-de-pagina titulo="Planes de {{ ficha.nombre }}">
+    <app-migas
+      enLinea
+      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
+    />
     @if (financiadorInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
-  </div>
+    <ng-container ngProjectAs="[cabeceraAcciones]" [ngTemplateOutlet]="accionDelTitulo" />
+  </app-cabecera-de-pagina>
   <!-- Datos del financiador: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">{{ etiquetaDeTipo(ficha.tipo) }} · código {{ ficha.codigo }}.</p>
 } @else {
@@ -16,29 +19,25 @@
     Degradacion honesta: si la lectura del financiador fallo, la pantalla igual sirve. Se dice que
     no se pudo leer el encabezado en vez de inventar un nombre o dejar el titulo vacio.
   -->
-  <div class="titulo-con-ayuda">
-    <h1>Planes del financiador #{{ financiadorId }}</h1>
+  <app-cabecera-de-pagina titulo="Planes del financiador #{{ financiadorId }}">
+    <app-migas
+      enLinea
+      [migas]="[{ etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' }]"
+    />
     <app-ayuda titulo="Sobre esta pantalla">
       <ng-container [ngTemplateOutlet]="ayudaDePantalla" />
     </app-ayuda>
-    <ng-container [ngTemplateOutlet]="accionDelTitulo" />
-  </div>
+    <ng-container ngProjectAs="[cabeceraAcciones]" [ngTemplateOutlet]="accionDelTitulo" />
+  </app-cabecera-de-pagina>
   <p class="descripcion">
     No pudimos leer los datos del financiador, pero sus planes se listan igual.
   </p>
 }
 
-<app-migas
-  [migas]="[
-    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
-    { etiqueta: 'Planes' },
-  ]"
-/>
-
 <!-- La accion principal del titulo: una sola copia para las dos ramas del titulo. -->
 <ng-template #accionDelTitulo>
   @if (!financiadorInactivo()) {
-    <div class="encabezado__acciones" *akinePermiso="permisoManage">
+    <div cabeceraAcciones *akinePermiso="permisoManage">
       <button type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
         Dar de alta un plan

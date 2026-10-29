@@ -15,6 +15,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -30,7 +31,7 @@ type Estado =
  */
 @Component({
   selector: 'app-clases-del-dia-page',
-  imports: [Ayuda, ColumnaOrdenable, Paginacion, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, Paginacion, RouterLink],
   templateUrl: './clases-del-dia-page.html',
   styleUrl: '../../asistencia.css',
 })

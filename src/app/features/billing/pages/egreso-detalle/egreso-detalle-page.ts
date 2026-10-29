@@ -52,6 +52,7 @@ import { EgresosApi } from '../../services/egresos-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -99,7 +100,15 @@ type Operacion = 'editar' | 'confirmar' | 'pagar' | 'anular' | 'anular-pago';
  */
 @Component({
   selector: 'app-egreso-detalle-page',
-  imports: [PanelLateral, Migas, Ayuda, ReactiveFormsModule, RouterLink, ConfirmacionConMotivo],
+  imports: [
+    CabeceraDePagina,
+    PanelLateral,
+    Migas,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './egreso-detalle-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

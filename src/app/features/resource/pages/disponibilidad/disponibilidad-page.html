@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Espacios en servicio</h1>
+<app-cabecera-de-pagina titulo="Espacios en servicio">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Qué espacios de <b>{{ nombreDeLaSede() }}</b> se pueden ofrecer durante un período: los que
@@ -22,10 +21,10 @@
       admite a la vez— y no cuántos lugares quedan.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <a class="boton boton--secundario" routerLink="/espacios">Espacios y boxes</a>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 @if (sinSede()) {
   <section class="tarjeta" aria-labelledby="titulo-sin-sede-disp">

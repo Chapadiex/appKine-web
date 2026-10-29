@@ -32,6 +32,7 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -54,6 +55,7 @@ interface DiaDeClases {
 @Component({
   selector: 'app-clases-de-la-semana-page',
   imports: [
+    CabeceraDePagina,
     Ayuda,
     ColumnaOrdenable,
     Filtros,

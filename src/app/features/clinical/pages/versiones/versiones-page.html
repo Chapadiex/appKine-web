@@ -1,15 +1,10 @@
-@if (sesion(); as atencion) {
-  @if (atencion.turnoId !== undefined) {
-    <p class="miga">
-      <a class="enlace" [routerLink]="['/atencion', 'turnos', atencion.turnoId]">
-        Volver a la atención
-      </a>
-    </p>
+<app-cabecera-de-pagina titulo="Versiones de la atención">
+  @if (sesion()?.turnoId; as turnoId) {
+    <app-migas
+      enLinea
+      [migas]="[{ etiqueta: 'Atención', ruta: ['/atencion', 'turnos', turnoId] }]"
+    />
   }
-}
-
-<div class="titulo-con-ayuda">
-  <h1>Versiones de la atención</h1>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Cada enmienda deja una versión nueva y la anterior queda intacta. La versión 1 es lo que se
@@ -22,7 +17,7 @@
   </app-ayuda>
   @if (sesion(); as atencion) {
     @if (atencion.numeroSesion !== undefined) {
-      <div class="encabezado__acciones">
+      <div cabeceraAcciones>
         <a
           class="boton boton--secundario"
           [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']"
@@ -32,7 +27,7 @@
       </div>
     }
   }
-</div>
+</app-cabecera-de-pagina>
 
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo las versiones…</p>

@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Presentaciones a financiadores</h1>
+<app-cabecera-de-pagina titulo="Presentaciones a financiadores">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Un lote es lo que la sede le reclama a una obra social o prepaga por las prestaciones de un
@@ -11,13 +10,13 @@
       cierra, y la plata entra cuando se registra el pago del financiador.
     </p>
   </app-ayuda>
-  <div class="encabezado__acciones">
+  <div cabeceraAcciones>
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Nuevo lote
     </button>
   </div>
-</div>
+</app-cabecera-de-pagina>
 
 @if (financiadoresSinPermiso()) {
   <p class="estado estado--error" role="status">

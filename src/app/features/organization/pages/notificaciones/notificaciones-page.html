@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Notificaciones</h1>
+<app-cabecera-de-pagina titulo="Notificaciones">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Correos que la organización intento enviar y no salieron —por ejemplo, porque el servidor de
@@ -8,9 +7,9 @@
       muestran enmascaradas.
     </p>
   </app-ayuda>
-</div>
 
-<app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-labelledby="titulo-listado-notificaciones">
   <h2 id="titulo-listado-notificaciones">Listado</h2>

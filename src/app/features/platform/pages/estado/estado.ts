@@ -5,6 +5,7 @@ import { PlatformService } from '../../../../api/generated/api/platform.service'
 import { VersionResponse } from '../../../../api/generated/model/version-response';
 import { environment } from '../../../../../environments/environment';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Estado de la comprobacion de conectividad con el backend.
@@ -29,7 +30,7 @@ type EstadoBackend =
  * comunican.
  */
 @Component({
-  imports: [Ayuda],
+  imports: [CabeceraDePagina, Ayuda],
   selector: 'app-estado',
   templateUrl: './estado.html',
   styleUrl: './estado.css',

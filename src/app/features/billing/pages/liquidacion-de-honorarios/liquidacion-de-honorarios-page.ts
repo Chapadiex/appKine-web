@@ -28,6 +28,7 @@ import {
 } from '../../models/honorarios';
 import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Lo que se pidio: el borrador se confirma contra exactamente esto. */
 interface Pedido {
@@ -68,7 +69,7 @@ type EstadoBorrador =
  */
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
-  imports: [Migas, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Migas, Ayuda, ReactiveFormsModule, RouterLink],
   templateUrl: './liquidacion-de-honorarios-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })

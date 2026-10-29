@@ -28,6 +28,7 @@ import { textoDeDias, textoDeEstadoDeSerie } from '../../models/series';
 import { SchedulingApi } from '../../services/scheduling-api';
 import { SeriesApi } from '../../services/series-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** La ruta que monta esta pantalla. Los filtros se reescriben sobre ella sin navegar. */
 const RUTA = '/agenda/series';
@@ -83,7 +84,16 @@ interface PersonaFiltrada {
  */
 @Component({
   selector: 'app-bandeja-de-series-page',
-  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, RouterLink, Paginacion, Pestanas],
+  imports: [
+    Ayuda,
+    CabeceraDePagina,
+    ColumnaOrdenable,
+    Filtros,
+    Icono,
+    RouterLink,
+    Paginacion,
+    Pestanas,
+  ],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',
 })

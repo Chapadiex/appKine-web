@@ -875,28 +875,30 @@ a.enlace,
 /*
  * Navegacion secundaria: las pantallas hermanas de una seccion, debajo del titulo. Es una
  * linea de enlaces con la actual subrayada, no una fila de botones bordeados: los botones
- * decian "accion" y esto es "lugar". El contenedor desplaza en horizontal cuando no entran,
- * en vez de partirse en dos filas.
+ * decian "accion" y esto es "lugar". Cuando no entran se parten en dos filas.
+ *
+ * Sin `overflow` (29/10/2026): el `overflow-x: auto` de antes volvia `auto` tambien el eje
+ * vertical, y el subrayado de la actual, que bajaba 1 px para pisar el borde, desbordaba ese
+ * pixel: cada pantalla con pestañas tenia una barra de desplazamiento vertical a la derecha. La
+ * linea de base es ahora una sombra interior, que el subrayado tapa sin salirse de la caja.
  */
 .pestanas {
   margin-bottom: var(--esp-8);
-  border-bottom: var(--borde-fino) solid var(--color-borde);
-  overflow-x: auto;
+  box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
 }
 
 .pestanas__lista {
   display: flex;
-  gap: var(--esp-2);
+  flex-wrap: wrap;
+  gap: 0 var(--esp-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* `margin-bottom` negativo para que el subrayado de la actual pise el borde del contenedor. */
 .pestanas__enlace {
   display: inline-block;
-  margin-bottom: calc(-1 * var(--borde-fino));
-  padding: var(--esp-4) var(--esp-5);
+  padding: var(--esp-3) var(--esp-5);
   border-bottom: var(--borde-medio) solid transparent;
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
@@ -928,21 +930,6 @@ a.enlace,
   align-items: center;
   gap: var(--esp-4);
   margin-bottom: var(--esp-7);
-}
-
-.titulo-con-ayuda > h1 {
-  margin: 0;
-}
-
-/*
- * Accion principal de la pantalla ("Dar de alta una persona"), en la misma fila del titulo y del
- * lado derecho (plan §3.1). En pantallas angostas baja a su propia linea.
- */
-.encabezado__acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4);
-  margin-left: auto;
 }
 
 .titulo-con-ayuda {

@@ -1,7 +1,5 @@
-<app-migas [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
-
-<div class="titulo-con-ayuda">
-  <h1>{{ egreso()?.concepto ?? 'Egreso' }}</h1>
+<app-cabecera-de-pagina titulo="{{ egreso()?.concepto ?? 'Egreso' }}">
+  <app-migas enLinea [migas]="[{ etiqueta: 'Egresos', ruta: '/egresos' }]" />
   @if (egreso(); as e) {
     <span [class]="claseDeEstado(e.estado)">{{ estadoEnPalabras(e.estado) }}</span>
   }
@@ -12,7 +10,7 @@
       borra: se anula y queda en el historial con su motivo.
     </p>
   </app-ayuda>
-</div>
+</app-cabecera-de-pagina>
 
 @if (carga().tipo === 'cargando') {
   <p class="estado estado--cargando">Cargando el egreso…</p>

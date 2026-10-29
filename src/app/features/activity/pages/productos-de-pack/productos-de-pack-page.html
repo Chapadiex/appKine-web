@@ -1,5 +1,4 @@
-<div class="titulo-con-ayuda">
-  <h1>Productos de pack y abonos</h1>
+<app-cabecera-de-pagina titulo="Productos de pack y abonos">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen
@@ -11,14 +10,14 @@
     </p>
   </app-ayuda>
   @if (puedeGestionar()) {
-    <div class="encabezado__acciones">
+    <div cabeceraAcciones>
       <button id="boton-nuevo-producto" type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
         Nuevo producto
       </button>
     </div>
   }
-</div>
+</app-cabecera-de-pagina>
 
 <!-- Regla de filtros (plan §3.4): sin busqueda por texto en el backend, el embudo va solo. -->
 <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
