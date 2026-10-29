@@ -186,7 +186,7 @@ describe('VigenciasPage', () => {
     // sobre el nomenclador: no cuentan.
     expect(
       anfitrion.querySelectorAll(
-        'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton)',
+        'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)',
       ).length,
     ).toBe(0);
     expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();

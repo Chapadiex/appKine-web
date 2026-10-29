@@ -105,6 +105,26 @@ En los E2E, una acción del menú se usa después de abrirlo:
 Aplicado en **Abrir una sede**: Datos de la sede → Configuración inicial (primer box y horario
 general lado a lado; datos institucionales plegados) → Confirmación.
 
+## 6 bis. Ayuda "?" flotante (`app-ayuda`)
+
+La pantalla da el `titulo`, el contenido y, si hace falta, `tamano="amplio"`. **No elige el
+lado**: el componente lo decide.
+
+- El panel se abre en la **capa superior** del navegador (`popover="manual"`). No lo recorta el
+  `overflow` de una tabla, una tarjeta o un panel lateral, y queda encima de un `<dialog>` modal.
+  CDK Overlay no sirve acá: cuelga del `body`, que con un panel lateral abierto es inerte y queda
+  debajo.
+- `posicionFlotante` (`shared/utils`) prueba **derecha → izquierda → abajo → arriba**, se queda
+  con el primero donde entra entero, lo corre para dejar 10 px a cada borde (shift) y, si no
+  entra en ningún lado, lo acota en alto. El título queda fijo y el texto se desplaza adentro. La
+  flecha apunta al "?" aunque el panel se haya corrido.
+- Ancho de 340 px (`amplio`: 448), nunca mayor que la ventana menos 20 px. Alto máximo de
+  `min(28rem, 70vh)`.
+- Se recalcula con el scroll, con el tamaño de la ventana y con el del panel lateral. Si el "?"
+  sale de la ventana, se cierra.
+- Se cierra con el "?", con la ×, con Escape o con un clic afuera. Escape cierra sólo la ayuda:
+  el panel lateral que la contiene sigue abierto.
+
 ## 7. Qué no se toca
 
 Servicios, cliente generado y contrato. Nombres accesibles y `id` que usan los E2E, salvo que el

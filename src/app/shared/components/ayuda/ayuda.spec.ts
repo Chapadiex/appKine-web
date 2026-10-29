@@ -63,6 +63,27 @@ describe('Ayuda', () => {
     expect(document.activeElement).toBe(boton());
   });
 
+  it('Escape abierta se consume: no cierra también el panel lateral que la contiene', () => {
+    boton().click();
+    fixture.detectChanges();
+
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+    document.dispatchEvent(escape);
+
+    expect(escape.defaultPrevented).toBe(true);
+  });
+
+  it('la cruz la cierra y devuelve el foco al botón', () => {
+    boton().click();
+    fixture.detectChanges();
+
+    html.querySelector<HTMLButtonElement>('.ayuda-contextual__cerrar')!.click();
+    fixture.detectChanges();
+
+    expect(panel().hidden).toBe(true);
+    expect(document.activeElement).toBe(boton());
+  });
+
   it('un clic afuera la cierra; uno adentro del panel no', () => {
     boton().click();
     fixture.detectChanges();
