@@ -53,7 +53,9 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     const bloque = respuestaDe(page, 'POST', /\/profesionales\/\d+\/disponibilidad$/);
     await page.getByRole('button', { name: 'Cargar el bloque' }).click();
     expect((await bloque).status()).toBe(201);
-    await expect(page.getByText('El bloque quedo cargado en el horario semanal.')).toBeVisible();
+    // UX-12: el resultado va al aviso global, no al cuerpo de la pantalla.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Bloque agregado al horario')).toBeVisible();
     await expect(page.locator('.bloque__horario', { hasText: '09:00 a 12:00' })).toBeVisible();
 
     // El bloque ya produce turnos el dia habil y el que despues se cierra; el feriado no.
@@ -90,7 +92,9 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', /\/excepciones$/);
     await page.getByRole('button', { name: 'Cargar igual' }).click();
     expect([200, 201]).toContain((await alta).status());
-    await expect(page.getByText('El cierre quedo cargado.')).toBeVisible();
+    await expect(avisos.getByText('Cierre cargado')).toBeVisible();
+    // Dejo un turno afuera: el aviso de atencion queda hasta que lo cierren.
+    await expect(avisos.getByText('Turnos para revisar')).toBeVisible();
 
     // --- El feriado en el calendario de la sede ---
     await navegar(page, '/horarios/calendario');

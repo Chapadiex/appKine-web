@@ -23,6 +23,7 @@ import {
 import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import {
   FiltroRapido,
@@ -56,6 +57,8 @@ interface DiaDeClases {
   selector: 'app-clases-de-la-semana-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     ColumnaOrdenable,
     Filtros,

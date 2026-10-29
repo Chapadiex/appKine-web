@@ -40,6 +40,8 @@ import {
 import { SECCION_COBERTURAS, coberturaDelResumen } from '../../models/etiquetas-de-cobertura';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore, OpcionesDeAviso } from '../../../../core/services/avisos.store';
 
 /** Confirmacion abierta sobre la ficha. Solo una a la vez. */
 type TipoDeBaja = 'persona' | 'perfil';
@@ -109,6 +111,7 @@ interface ConteoPorCategoria {
   selector: 'app-ficha-de-persona-page',
   imports: [
     AccionesDeFila,
+    Alerta,
     Ayuda,
     PanelLateral,
     CabeceraDeFicha,
@@ -123,6 +126,7 @@ interface ConteoPorCategoria {
 export class FichaDePersonaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(PersonApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -160,7 +164,6 @@ export class FichaDePersonaPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaPersona | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
 
@@ -284,10 +287,10 @@ export class FichaDePersonaPage {
     // que la edicion del padron.
     this.api.darDeBaja(id, motivo, persona.version ?? 0).subscribe({
       next: (actualizada) => {
-        this.terminar(
-          `${nombreCompleto(actualizada)} quedo dada de baja del padron. No se borro nada: sus ` +
-            'turnos, sus deudas y sus documentos se siguen consultando.',
-        );
+        this.terminar(`${nombreCompleto(actualizada)} quedó dada de baja del padrón`, {
+          descripcion:
+            'No se borro nada: sus turnos, sus deudas y sus documentos se siguen consultando.',
+        });
       },
       error: (error: unknown) => this.fallo(error),
     });
@@ -304,10 +307,10 @@ export class FichaDePersonaPage {
 
     this.api.darDeBajaPerfil(id, motivo).subscribe({
       next: (actualizada) => {
-        this.terminar(
-          `${nombreCompleto(actualizada)} ya no tiene perfil de paciente. Su ficha sigue vigente: ` +
-            'puede seguir participando de actividades no clínicas.',
-        );
+        this.terminar(`${nombreCompleto(actualizada)} ya no tiene perfil de paciente`, {
+          descripcion:
+            'Su ficha sigue vigente: puede seguir participando de actividades no clínicas.',
+        });
       },
       error: (error: unknown) => this.fallo(error),
     });
@@ -338,10 +341,10 @@ export class FichaDePersonaPage {
     return Number.isInteger(crudo) && crudo > 0 ? crudo : null;
   }
 
-  private terminar(mensaje: string): void {
+  private terminar(titulo: string, opciones: OpcionesDeAviso): void {
     this.enviando.set(false);
-    this.baja.set(null);
-    this.exito.set(mensaje);
+    this.cerrarPaneles();
+    this.avisos.exito(titulo, opciones);
     // La ficha se relee entera y no se parchea con la respuesta: la baja de la persona tambien
     // cierra su perfil, y las secciones que aportan otros modulos pueden haber cambiado.
     this.cargar();
@@ -357,6 +360,5 @@ export class FichaDePersonaPage {
   private limpiarAvisos(): void {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 }

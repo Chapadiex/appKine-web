@@ -31,15 +31,6 @@
   <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-  @if (errorPrepago(); as mensaje) {
-    <p class="estado estado--error">No se cambio la politica de prepago. {{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-listado-ofertas">
   <h2 id="titulo-listado-ofertas">Ofertas cargadas en esta sede</h2>
 
@@ -98,13 +89,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer las ofertas de la sede">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -275,6 +269,13 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva oferta de esta sede" ancho="amplio" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos publicar la oferta">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="alta-oferta-servicio">Servicio del catalogo</label>
         <select
@@ -548,10 +549,6 @@
         </div>
       </details>
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
@@ -583,6 +580,19 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda ayuda--fija">
           Para <b>sacarle</b> un valor usá la casilla debajo de ese campo: un campo vacío significa
           "no lo toques".
@@ -791,10 +801,6 @@
           </p>
         </div>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -807,11 +813,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el listado
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -819,6 +820,18 @@
 
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + oferta.nombreComercial" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la oferta">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el listado
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-oferta-motivo"
         [titulo]="'Dar de baja ' + oferta.nombreComercial"
@@ -835,15 +848,6 @@
           reservo con ella sigue siendo valido. Su nombre comercial queda libre para otra oferta.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar el listado
-        </button>
-      }
     </app-panel-lateral>
   }
 }

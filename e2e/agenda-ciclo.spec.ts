@@ -80,7 +80,10 @@ test.describe('Ciclo del turno contra el backend real', () => {
     await page.getByLabel('Motivo de la cancelacion').fill('El paciente aviso que viaja');
     await page.getByRole('button', { name: 'Cancelar el turno' }).click();
 
-    await expect(page.getByText('Turno cancelado. El lugar se libero')).toBeVisible();
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones' }).getByText('Turno cancelado'),
+    ).toBeVisible();
     await expect(page.getByText(/^Cancelado/).first()).toBeVisible();
     // El historial conserva el motivo y la transicion: nada se borra.
     await expect(page.getByText('El paciente aviso que viaja')).toBeVisible();
@@ -171,20 +174,23 @@ test.describe('Ciclo del turno contra el backend real', () => {
     // Desde DP-21 (appKine-api #74) toda version vieja es `concurrent-modification`.
     expect(problema.type).toBe(uriDeProblema('concurrent-modification'));
 
-    await expect(
-      page.getByRole('heading', { name: 'No se pudo operar sobre el turno' }),
-    ).toBeVisible();
+    // UX-12: el rechazo queda arriba del panel abierto, con la salida.
+    const rechazoEnElPanel = page.getByRole('alert').filter({
+      hasText: 'No pudimos cancelar el turno',
+    });
+    await expect(rechazoEnElPanel).toBeVisible();
     await page.getByRole('button', { name: 'Releer el turno' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'No se pudo operar sobre el turno' }),
-    ).toHaveCount(0);
+    await expect(rechazoEnElPanel).toHaveCount(0);
     // Releido: la pantalla ya sabe que lo movieron y vuelve a estar RESERVADO.
     await expect(page.getByText(/^Reservado/)).toBeVisible();
 
     // El panel sigue abierto con lo escrito: se corrige el motivo y se reintenta.
     await page.getByLabel('Motivo de la cancelacion').fill('Ahora con la version vigente');
     await page.getByRole('button', { name: 'Cancelar el turno' }).click();
-    await expect(page.getByText('Turno cancelado. El lugar se libero')).toBeVisible();
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones' }).getByText('Turno cancelado'),
+    ).toBeVisible();
     expect((await verTurno(api, centro, turnoId)).estado).toBe('CANCELADO');
   });
 });

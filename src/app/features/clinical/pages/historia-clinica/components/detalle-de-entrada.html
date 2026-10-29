@@ -5,12 +5,12 @@
     <p class="estado estado--cargando" role="status">Abriendo la entrada…</p>
   }
   @case ('error') {
-    <div role="alert">
-      <p class="estado estado--error">{{ error()?.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No pudimos abrir la entrada">
+      <p>{{ error()?.mensaje }}</p>
+      <p class="alerta__acciones">
         <button type="button" class="boton boton--secundario" (click)="releer()">Reintentar</button>
-      </div>
-    </div>
+      </p>
+    </app-alerta>
   }
   @case ('lista') {
     @if (entrada(); as e) {
@@ -48,6 +48,31 @@
         </div>
       } @else {
         <form class="historia__formulario" (submit)="$event.preventDefault(); enmendar()">
+          <!-- UX-12: el rechazo, arriba del formulario. Otra enmienda en el medio es un conflicto. -->
+          @if (errorDeEnmienda(); as problema) {
+            <app-alerta
+              [tipo]="conflicto() ? 'advertencia' : 'error'"
+              [titulo]="
+                conflicto()
+                  ? 'Alguien enmendó esta entrada mientras la corregías'
+                  : 'No pudimos guardar la enmienda'
+              "
+            >
+              <p>{{ problema.mensaje }}</p>
+              @if (conflicto()) {
+                <p class="alerta__acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="releerTrasConflicto()"
+                  >
+                    Releer la entrada
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
           <p class="ayuda ayuda--fija">
             La enmienda no borra lo escrito: crea la versión {{ (e.numeroVersion ?? 0) + 1 }} y la
             anterior queda en el historial con su autor y su fecha.
@@ -89,23 +114,6 @@
             }
           </div>
 
-          @if (errorDeEnmienda(); as problema) {
-            <div role="alert">
-              <p class="estado estado--error">{{ problema.mensaje }}</p>
-              @if (conflicto()) {
-                <div class="acciones">
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="releerTrasConflicto()"
-                  >
-                    Releer la entrada
-                  </button>
-                </div>
-              }
-            </div>
-          }
-
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
               @if (enviando()) {
@@ -122,7 +130,14 @@
       }
 
       @if (errorDeVersiones(); as problema) {
-        <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos leer las versiones">
+          <p>{{ problema.mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="verVersiones()">
+              Reintentar
+            </button>
+          </p>
+        </app-alerta>
       }
 
       @if (versiones(); as lista) {

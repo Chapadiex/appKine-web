@@ -79,9 +79,12 @@ test.describe('Reprogramar una clase contra el backend real', () => {
     const respuesta = await reprogramacion;
     expect(respuesta.status(), await respuesta.text()).toBe(200);
 
-    await expect(page.locator('#aviso-clase')).toHaveText(
-      'Clase reprogramada. Si cambio el horario, los inscriptos reciben un aviso.',
-    );
+    // UX-12: el panel se cierra y el resultado va al aviso global.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Clase reprogramada', { exact: true })).toBeVisible();
+    await expect(
+      avisos.getByText('Si cambio el horario, los inscriptos reciben un aviso.'),
+    ).toBeVisible();
     await expect(page.locator('.datos-en-linea')).toContainText('16:00 a 17:30');
     await expect(
       page.locator('section', { has: page.getByRole('heading', { name: 'Historial' }) }),
@@ -145,7 +148,7 @@ test.describe('Reprogramar una clase contra el backend real', () => {
       'https://akine.app/problems/concurrent-modification',
     );
     await expect(
-      page.getByRole('alert').filter({ hasText: 'No se pudo completar la operación' }),
+      formulario.getByRole('alert').filter({ hasText: 'No pudimos reprogramar la clase' }),
     ).toBeVisible();
 
     const despues = await api.exigir<ClaseLeida>('GET', ruta);

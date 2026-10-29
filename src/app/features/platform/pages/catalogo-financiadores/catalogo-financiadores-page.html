@@ -70,25 +70,17 @@
   </form>
 </section>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-  <!-- Con el panel abierto, el error se muestra adentro del panel. -->
-  @if (panel() === null) {
-    @if (errorAccion(); as mensaje) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    }
-  }
-</div>
-
 @switch (listado().tipo) {
   @case ('cargando') {
     <p class="estado estado--cargando">Leyendo el catálogo&hellip;</p>
   }
   @case ('error') {
-    <p class="estado estado--error" role="alert">{{ errorDeListado() }}</p>
-    <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+    <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
+      <p>{{ errorDeListado() }}</p>
+      <p class="alerta__acciones">
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      </p>
+    </app-alerta>
   }
   @case ('listo') {
     @if (entradas().length === 0) {
@@ -231,6 +223,16 @@
 -->
 @if (panel(); as abierto) {
   <app-panel-lateral [titulo]="tituloDelPanel(abierto)" (cerrar)="cerrar()">
+    <!--
+      Error general de la operacion del panel: arriba de todo, a la vista mientras se corrige.
+      Un codigo, nombre o CUIT en uso va pegado a su campo.
+    -->
+    @if (errorAccion() && campoEnConflicto() === null) {
+      <app-alerta tipo="error" titulo="No pudimos guardar el cambio">
+        <p>{{ errorAccion() }}</p>
+      </app-alerta>
+    }
+
     @if (abierto.tipo === 'alta-financiador' || abierto.tipo === 'editar-financiador') {
       <form
         [formGroup]="formularioFinanciador"
@@ -245,23 +247,39 @@
             type="text"
             formControlName="codigo"
             autocomplete="off"
-            aria-describedby="catalogo-financiador-codigo-ayuda"
-            [attr.aria-invalid]="invalido('financiador', 'codigo') ? 'true' : null"
+            [attr.aria-describedby]="
+              campoEnConflicto() === 'codigo'
+                ? 'catalogo-financiador-codigo-ayuda catalogo-financiador-en-uso'
+                : invalido('financiador', 'codigo')
+                  ? 'catalogo-financiador-codigo-ayuda catalogo-financiador-codigo-error'
+                  : 'catalogo-financiador-codigo-ayuda'
+            "
+            [attr.aria-invalid]="
+              invalido('financiador', 'codigo') || campoEnConflicto() === 'codigo' ? 'true' : null
+            "
           />
           @if (invalido('financiador', 'codigo')) {
-            <p class="campo__error" role="alert">El código es obligatorio.</p>
+            <p class="campo__error" id="catalogo-financiador-codigo-error">
+              El código es obligatorio.
+            </p>
           }
           <!-- Consecuencia irreversible: a la vista, no al foco. -->
           <p class="ayuda ayuda--fija" id="catalogo-financiador-codigo-ayuda">
             No se puede cambiar después.
           </p>
         </div>
+        @if (campoEnConflicto() === 'codigo') {
+          <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-financiador-en-uso' }" />
+        }
         <div class="campo">
           <label for="catalogo-financiador-tipo">Tipo de financiador</label>
           <select
             id="catalogo-financiador-tipo"
             formControlName="tipo"
             [attr.aria-invalid]="invalido('financiador', 'tipo') ? 'true' : null"
+            [attr.aria-describedby]="
+              invalido('financiador', 'tipo') ? 'catalogo-financiador-tipo-error' : null
+            "
           >
             <option value="">Elegí un tipo</option>
             @for (tipo of tipos; track tipo.valor) {
@@ -269,7 +287,9 @@
             }
           </select>
           @if (invalido('financiador', 'tipo')) {
-            <p class="campo__error" role="alert">Elegí el tipo de financiador.</p>
+            <p class="campo__error" id="catalogo-financiador-tipo-error">
+              Elegí el tipo de financiador.
+            </p>
           }
         </div>
         <div class="campo campo--ancho">
@@ -279,16 +299,41 @@
             type="text"
             formControlName="nombre"
             autocomplete="off"
-            [attr.aria-invalid]="invalido('financiador', 'nombre') ? 'true' : null"
+            [attr.aria-invalid]="
+              invalido('financiador', 'nombre') || campoEnConflicto() === 'nombre' ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              campoEnConflicto() === 'nombre'
+                ? 'catalogo-financiador-en-uso'
+                : invalido('financiador', 'nombre')
+                  ? 'catalogo-financiador-nombre-error'
+                  : null
+            "
           />
           @if (invalido('financiador', 'nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            <p class="campo__error" id="catalogo-financiador-nombre-error">
+              El nombre es obligatorio.
+            </p>
           }
         </div>
+        @if (campoEnConflicto() === 'nombre') {
+          <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-financiador-en-uso' }" />
+        }
         <div class="campo">
           <label for="catalogo-financiador-cuit">CUIT (opcional)</label>
-          <input id="catalogo-financiador-cuit" type="text" formControlName="cuit" />
+          <input
+            id="catalogo-financiador-cuit"
+            type="text"
+            formControlName="cuit"
+            [attr.aria-invalid]="campoEnConflicto() === 'cuit' ? 'true' : null"
+            [attr.aria-describedby]="
+              campoEnConflicto() === 'cuit' ? 'catalogo-financiador-en-uso' : null
+            "
+          />
         </div>
+        @if (campoEnConflicto() === 'cuit') {
+          <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-financiador-en-uso' }" />
+        }
         <details class="seccion-plegable">
           <summary>
             Datos de contacto
@@ -337,12 +382,24 @@
             type="text"
             formControlName="codigo"
             autocomplete="off"
-            [attr.aria-invalid]="invalido('plan', 'codigo') ? 'true' : null"
+            [attr.aria-invalid]="
+              invalido('plan', 'codigo') || campoEnConflicto() === 'codigo' ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              campoEnConflicto() === 'codigo'
+                ? 'catalogo-plan-en-uso'
+                : invalido('plan', 'codigo')
+                  ? 'catalogo-plan-codigo-error'
+                  : null
+            "
           />
           @if (invalido('plan', 'codigo')) {
-            <p class="campo__error" role="alert">El código es obligatorio.</p>
+            <p class="campo__error" id="catalogo-plan-codigo-error">El código es obligatorio.</p>
           }
         </div>
+        @if (campoEnConflicto() === 'codigo') {
+          <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-plan-en-uso' }" />
+        }
         <div class="campo">
           <label for="catalogo-plan-nombre">Nombre del plan</label>
           <input
@@ -350,12 +407,24 @@
             type="text"
             formControlName="nombre"
             autocomplete="off"
-            [attr.aria-invalid]="invalido('plan', 'nombre') ? 'true' : null"
+            [attr.aria-invalid]="
+              invalido('plan', 'nombre') || campoEnConflicto() === 'nombre' ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              campoEnConflicto() === 'nombre'
+                ? 'catalogo-plan-en-uso'
+                : invalido('plan', 'nombre')
+                  ? 'catalogo-plan-nombre-error'
+                  : null
+            "
           />
           @if (invalido('plan', 'nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            <p class="campo__error" id="catalogo-plan-nombre-error">El nombre es obligatorio.</p>
           }
         </div>
+        @if (campoEnConflicto() === 'nombre') {
+          <ng-container *ngTemplateOutlet="enUso; context: { id: 'catalogo-plan-en-uso' }" />
+        }
         <div class="campo">
           <label for="catalogo-plan-desde">Vigente desde</label>
           <input
@@ -363,9 +432,14 @@
             type="date"
             formControlName="vigenciaDesde"
             [attr.aria-invalid]="invalido('plan', 'vigenciaDesde') ? 'true' : null"
+            [attr.aria-describedby]="
+              invalido('plan', 'vigenciaDesde') ? 'catalogo-plan-desde-error' : null
+            "
           />
           @if (invalido('plan', 'vigenciaDesde')) {
-            <p class="campo__error" role="alert">Indicá desde cuándo rige el plan.</p>
+            <p class="campo__error" id="catalogo-plan-desde-error">
+              Indicá desde cuándo rige el plan.
+            </p>
           }
         </div>
         <div class="campo">
@@ -418,11 +492,12 @@
         (cancelado)="cerrar()"
       />
     }
-
-    <div aria-live="polite">
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-    </div>
   </app-panel-lateral>
 }
+
+<!-- Un codigo, nombre o CUIT que ya usa otra entrada vigente: pegado al campo que lo produjo. -->
+<ng-template #enUso let-id="id">
+  <app-alerta class="campo--ancho" tipo="advertencia" titulo="Ya está en uso" [id]="id">
+    <p>{{ errorAccion() }}</p>
+  </app-alerta>
+</ng-template>

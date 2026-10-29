@@ -6,6 +6,7 @@ import { MedicionesDeSesion } from './mediciones-de-sesion';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const SESION = 501;
@@ -101,7 +102,10 @@ describe('MedicionesDeSesion', () => {
     pedido.flush({ id: 1 });
     await recargar(fixture);
 
-    expect(texto(fixture)).toContain('Medición registrada: Flexion de rodilla');
+    // UX-12: el resultado es un aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Medición registrada');
+    expect(aviso?.descripcion).toBe('Flexion de rodilla');
   });
 
   it('una de si o no manda valorBooleano y una de texto manda valorTexto', async () => {
@@ -164,7 +168,10 @@ describe('MedicionesDeSesion', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('El catalogo admite de 0 a 180');
+    // El rechazo va arriba del formulario de la medicion (UX-12).
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('fieldset app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos registrar la medición');
+    expect(alerta?.textContent).toContain('El catalogo admite de 0 a 180');
   });
 
   it('volver a tomar precarga el valor anterior y el lado, sin guardar nada', async () => {
@@ -188,7 +195,7 @@ describe('MedicionesDeSesion', () => {
     expect(borrado.request.params.get('lateralidad')).toBe('DERECHA');
     borrado.flush(null, { status: 204, statusText: 'No Content' });
     await recargar(fixture);
-    expect(texto(fixture)).toContain('Medición quitada');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Medición quitada');
   });
 
   it('un 409 de propiedad o de cierre no se muestra acá: se lo pasa a la atención', async () => {

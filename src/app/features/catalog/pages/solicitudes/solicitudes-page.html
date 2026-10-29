@@ -30,12 +30,6 @@
   <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-listado-solicitudes">
   <h2 id="titulo-listado-solicitudes">Pedidos de este centro</h2>
 
@@ -75,13 +69,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los pedidos">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -162,6 +159,13 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo pedido" (cerrar)="cerrarAlta()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviar()" novalidate>
+      <!-- Error general: arriba del formulario (UX-12). El pedido repetido va junto al nombre. -->
+      @if (errorAccion() && !errorEnElNombre()) {
+        <app-alerta tipo="error" titulo="No pudimos enviar el pedido">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <!--
         La aclaracion que evita el pedido innecesario, antes de los campos: quien necesita el
         concepto HOY no tiene por que esperar a la plataforma, y si nadie se lo dice, espera.
@@ -196,10 +200,9 @@
           formControlName="nombrePropuesto"
           autocomplete="off"
           [attr.aria-invalid]="mostrarError('nombrePropuesto') || errorEnElNombre() ? 'true' : null"
+          [attr.aria-describedby]="errorEnElNombre() ? 'solicitud-nombre-duplicada' : null"
         />
-        @if (errorEnElNombre()) {
-          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-        } @else if (mostrarError('nombrePropuesto')) {
+        @if (mostrarError('nombrePropuesto')) {
           <p class="campo__error">El nombre propuesto es obligatorio.</p>
         } @else {
           <p class="ayuda">
@@ -208,6 +211,18 @@
           </p>
         }
       </div>
+
+      <!-- Ya hay un pedido igual pendiente: pegado al nombre que lo produjo (UX-12). -->
+      @if (errorEnElNombre()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ya hay un pedido igual pendiente"
+          id="solicitud-nombre-duplicada"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="solicitud-codigo">Código propuesto (opcional)</label>
@@ -240,10 +255,6 @@
           uno que nombra la resolucion, el financiador o la práctica concreta, no.
         </p>
       </div>
-
-      @if (errorAccion() && !errorEnElNombre()) {
-        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-      }
 
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">

@@ -30,6 +30,9 @@ import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
 /** Lo que se pidio: el borrador se confirma contra exactamente esto. */
 interface Pedido {
   readonly colaboradorMembershipId: number;
@@ -69,12 +72,13 @@ type EstadoBorrador =
  */
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Migas, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './liquidacion-de-honorarios-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDeHonorariosPage {
   private readonly api = inject(EgresosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -198,6 +202,11 @@ export class LiquidacionDeHonorariosPage {
         next: (liquidacion) => {
           this.confirmando.set(null);
           this.confirmadas.update((lista) => [...lista, liquidacion]);
+          // La tarjeta de la confirmada queda como contenido (lleva al egreso); el aviso, ademas.
+          this.avisos.exito('Liquidación confirmada', {
+            descripcion:
+              'Se creó el egreso en borrador: falta el comprobante, confirmarlo y pagarlo.',
+          });
           // Las clases recien liquidadas pasan a "Ya liquidada": se relee para mostrarlo.
           this.pedir(consultorioId, pedido);
         },

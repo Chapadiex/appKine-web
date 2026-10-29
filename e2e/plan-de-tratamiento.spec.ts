@@ -80,7 +80,9 @@ test.describe('Plan de tratamiento (D-c)', () => {
     await editor.getByRole('spinbutton', { name: 'Autorizadas (opcional)' }).fill('8');
     await editor.getByRole('button', { name: 'Crear el plan' }).click();
 
-    await expect(page.getByText('Se creo el plan en borrador.')).toBeVisible();
+    // UX-12: el resultado de una operacion es un aviso global, en la region de notificaciones.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones' });
+    await expect(notificaciones.getByText('Plan creado')).toBeVisible();
     await expect(page.getByTestId('plan-estado')).toHaveText('Borrador');
 
     // --- Activar y avance derivado --------------------------------------------------------------
@@ -101,7 +103,7 @@ test.describe('Plan de tratamiento (D-c)', () => {
       .getByRole('textbox', { name: 'Motivo de la modificacion (opcional)' })
       .fill('Respuesta lenta al tratamiento');
     await modificar.getByRole('button', { name: 'Guardar los cambios' }).click();
-    await expect(page.getByText('Se guardo una versión nueva del plan.')).toBeVisible();
+    await expect(notificaciones.getByText('Versión nueva del plan guardada')).toBeVisible();
 
     const versiones = page.getByRole('list', { name: 'Versiones del plan' });
     await expect(versiones.getByRole('listitem').filter({ hasText: /^Versión/ })).toHaveCount(2);

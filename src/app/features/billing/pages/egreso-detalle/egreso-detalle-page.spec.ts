@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -118,7 +119,7 @@ describe('EgresoDetallePage', () => {
       version: 4,
     });
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Cambios guardados');
+    expect(titulosDeAvisos()).toContain('Cambios guardados');
 
     // Una segunda correccion sale con la version de la respuesta, no con la leida al entrar.
     escribir(fixture, '#edicion-concepto', 'Alquiler octubre corregido');
@@ -142,7 +143,7 @@ describe('EgresoDetallePage', () => {
     httpMock.expectOne((p) => p.url === JORNADAS).flush([]);
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('Egreso confirmado');
+    expect(titulosDeAvisos()).toContain('Egreso confirmado');
     expect(contenido(fixture)).toContain('Registrar un pago');
   });
 
@@ -160,8 +161,9 @@ describe('EgresoDetallePage', () => {
     await estabilizar(fixture);
 
     expect(contenido(fixture)).toContain('la caja de esta sede no esta abierta');
+    // El rechazo queda en el formulario del pago, arriba de sus campos, con la salida a la caja.
     const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
-      '#titulo-rechazo ~ .acciones a',
+      '[aria-labelledby="titulo-pago"] form app-alerta .alerta__acciones a',
     )!;
     expect(enlace.getAttribute('href')).toBe('/caja');
 
@@ -182,7 +184,7 @@ describe('EgresoDetallePage', () => {
     httpMock.expectOne(DETALLE).flush({ ...CONFIRMADO, saldoPendiente: 200000 });
     httpMock.expectOne((p) => p.url === JORNADAS).flush([]);
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Pago registrado.');
+    expect(titulosDeAvisos()).toContain('Pago registrado');
   });
 
   it('con la caja abierta muestra cuanto hay en el cajon', async () => {
@@ -220,7 +222,7 @@ describe('EgresoDetallePage', () => {
     httpMock.expectOne((p) => p.url === JORNADAS).flush([]);
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('Pago anulado');
+    expect(titulosDeAvisos()).toContain('Pago anulado');
     expect(boton(fixture, 'Anular el egreso')).toBeDefined();
   });
 
@@ -244,7 +246,7 @@ describe('EgresoDetallePage', () => {
     });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('Egreso anulado');
+    expect(titulosDeAvisos()).toContain('Egreso anulado');
     expect(contenido(fixture)).toContain('Cargado por error');
   });
 
@@ -380,6 +382,12 @@ describe('EgresoDetallePage', () => {
   async function estabilizar(fixture: ComponentFixture<EgresoDetallePage>): Promise<void> {
     await fixture.whenStable();
     fixture.detectChanges();
+  }
+
+  function titulosDeAvisos(): string[] {
+    return TestBed.inject(AvisosStore)
+      .avisos()
+      .map((aviso) => aviso.titulo);
   }
 
   function contenido(fixture: ComponentFixture<EgresoDetallePage>): string {

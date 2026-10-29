@@ -19,6 +19,7 @@ import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { traducirErrorPersona } from '../../models/person-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Lo que se lee junto: los datos y los nombres con los que se muestran. */
 interface Lectura {
@@ -47,7 +48,7 @@ type Estado =
  * accesorios: si fallan, o el caso es de otra sede, se muestra el identificador.
  */
 @Component({
-  imports: [Ayuda],
+  imports: [Alerta, Ayuda],
   selector: 'app-datos-administrativos-de-historia',
   templateUrl: './datos-administrativos-de-historia.html',
   styleUrl: '../../person.css',

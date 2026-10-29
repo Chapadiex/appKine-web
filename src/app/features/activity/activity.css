@@ -68,10 +68,6 @@
   gap: var(--esp-2);
 }
 
-.conflicto {
-  border-left: var(--borde-acento) solid var(--color-peligro);
-}
-
 .historial {
   margin: 0;
   padding-left: var(--esp-6);
@@ -231,9 +227,4 @@
 /* Paneles laterales del detalle de una clase (refactor UX/UI del 28/10/2026). */
 .clase__nota {
   margin: 0 0 var(--esp-6);
-}
-
-.clase__error {
-  margin-top: var(--esp-5);
-  padding-left: var(--esp-5);
 }

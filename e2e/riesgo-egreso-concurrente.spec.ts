@@ -123,7 +123,11 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
       page.getByRole('heading', { name: `${egreso.concepto} (corregido)` }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Confirmar el egreso' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Egreso confirmado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Egreso confirmado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Saldo pendiente')).toContainText('3.200,00');
 
     // --- 2. Mientras la pantalla lo muestra sin pagos, otra computadora le registra uno -----------
@@ -148,12 +152,20 @@ test.describe('Egresos con dos operadores a la vez contra el backend real', () =
     await page.getByRole('button', { name: /^Anular el pago/ }).click();
     await page.getByLabel('Motivo de la anulación').fill('Pago cargado por error');
     await page.getByRole('button', { name: 'Anular el pago', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Pago anulado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago anulado', { exact: true }),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: 'Anular el egreso' }).click();
     await page.getByLabel('Motivo de la anulación').fill('Se cargo por duplicado');
     await page.getByRole('button', { name: 'Anular el egreso', exact: true }).last().click();
-    await expect(page.getByRole('status').filter({ hasText: 'Egreso anulado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Egreso anulado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Estado')).toContainText('Anulado');
     await expect(page.getByRole('heading', { name: 'Registrar un pago' })).toHaveCount(0);
   });

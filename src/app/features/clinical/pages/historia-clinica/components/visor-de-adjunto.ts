@@ -16,6 +16,7 @@ import { nombreDeContentDisposition, tamanoEnPalabras } from '../../../../../sha
 import { ErrorHistoria, traducirErrorHistoria } from '../../../models/historia-errors';
 import { ComoSeMuestra, vistaPreviaDe } from '../../../models/vista-previa';
 import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-clinica-api';
+import { Alerta } from '../../../../../shared/components/alerta/alerta';
 
 /** Lo que quedo listo despues de bajar el archivo. Las URLs son de blobs propios, y se revocan. */
 interface Archivo {
@@ -45,6 +46,7 @@ type Estado =
  */
 @Component({
   selector: 'app-visor-de-adjunto',
+  imports: [Alerta],
   templateUrl: './visor-de-adjunto.html',
   styleUrl: '../historia-clinica.css',
 })

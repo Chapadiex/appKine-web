@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -246,9 +247,10 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'NO es la forma de subir un precio',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Arancel guardado');
+    expect(aviso?.descripcion).toContain('NO es la forma de subir un precio');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   /**
@@ -327,7 +329,9 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('la hereda');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Arancel cargado');
+    expect(aviso?.descripcion).toContain('la hereda');
   });
 
   it('la edicion frena si la terna deja de cuadrar', async () => {
@@ -389,7 +393,9 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('su período quedó libre');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Arancel dado de baja');
+    expect(aviso?.descripcion).toContain('período quedó libre');
   });
 
   it('el 409 de solapamiento no ofrece recargar la grilla', async () => {
@@ -412,7 +418,9 @@ describe('ArancelesDelConvenioPage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('cerra la vigencia del que ya esta');
+    const alerta = anfitrion.querySelector('form app-alerta');
+    expect(alerta?.className).toContain('alerta--advertencia');
+    expect(alerta?.textContent).toContain('cerra la vigencia del que ya esta');
     // Recargar no mueve el periodo que choca: ofrecerlo manda a apretar algo que no cambia nada.
     expect(
       [...anfitrion.querySelectorAll('button')].some(
@@ -546,7 +554,11 @@ describe('ArancelesDelConvenioPage', () => {
     const fixture = await montar();
     const pagina = fixture.nativeElement as HTMLElement;
 
-    expect(pagina.textContent).toContain('Se importaron 3 aranceles');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Se importaron 3 aranceles']);
     const enlace = [...pagina.querySelectorAll('a')].find(
       (candidato) => (candidato.textContent ?? '').trim() === 'Importar aranceles',
     );

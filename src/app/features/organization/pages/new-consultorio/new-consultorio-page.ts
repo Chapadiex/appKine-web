@@ -11,7 +11,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
 import { CreateConsultorioRequest } from '../../../../api/generated/model/create-consultorio-request';
@@ -39,12 +42,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 type EstadoAlta =
   | { readonly tipo: 'editando' }
   | { readonly tipo: 'enviando' }
-  | {
-      readonly tipo: 'ok';
-      readonly nombre: string;
-      readonly conBox: boolean;
-      readonly conHorario: boolean;
-    }
+  | { readonly tipo: 'ok' }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaConsultorio };
 
 /** Campos de cada paso, en el orden en que se enfoca el primero invalido tras un submit. */
@@ -107,7 +105,7 @@ const INSTITUCIONALES = [
  */
 @Component({
   selector: 'app-new-consultorio-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas, Alerta],
   templateUrl: './new-consultorio-page.html',
   styleUrl: '../../organization.css',
 })
@@ -115,6 +113,8 @@ export class NewConsultorioPage {
   private readonly consultorios = inject(ConsultoriosService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly sedes = inject(SedesDelContexto);
+  private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
@@ -173,11 +173,6 @@ export class NewConsultorioPage {
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
   protected readonly hecho = computed(() => this.estado().tipo === 'ok');
 
-  protected readonly sedeCreada = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'ok' ? estado.nombre : null;
-  });
-
   protected readonly mensajeError = computed(() => {
     const estado = this.estado();
     return estado.tipo === 'error' ? estado.mensaje : null;
@@ -194,16 +189,6 @@ export class NewConsultorioPage {
   protected readonly bloqueado = computed(
     () => this.enviando() || this.hecho() || this.espera.activa(),
   );
-
-  protected readonly conBoxCreado = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'ok' && estado.conBox;
-  });
-
-  protected readonly conHorarioCreado = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'ok' && estado.conHorario;
-  });
 
   /**
    * Resumen del paso 2: lo que se va a crear, para confirmar sin volver atras.
@@ -380,12 +365,17 @@ export class NewConsultorioPage {
           // existe. El intento se cierra aca.
           this.intento.set(null);
           this.sedes.invalidar();
-          this.estado.set({
-            tipo: 'ok',
-            nombre: sede.name ?? cuerpo.name,
-            conBox: cuerpo.primerBox !== undefined,
-            conHorario: (cuerpo.horarioGeneral?.length ?? 0) > 0,
+          this.estado.set({ tipo: 'ok' });
+          // UX-12: el alta es una pantalla propia; vuelve al listado y el resultado va al
+          // aviso global, que sobrevive a la navegacion.
+          this.avisos.exito('Sede creada', {
+            descripcion: descripcionDelAlta(
+              sede.name ?? cuerpo.name,
+              cuerpo.primerBox !== undefined,
+              (cuerpo.horarioGeneral?.length ?? 0) > 0,
+            ),
           });
+          this.router.navigateByUrl('/organizacion/sedes').catch(() => undefined);
         },
         error: (error: unknown) => this.fallar(error),
       });
@@ -500,4 +490,15 @@ export class NewConsultorioPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+}
+
+/** Que quedo creado junto con la sede, para la descripcion del aviso de exito. */
+function descripcionDelAlta(nombre: string, conBox: boolean, conHorario: boolean): string {
+  const box = conBox
+    ? 'Se creo junto con su primer box.'
+    : 'Todavía no tiene boxes: se agregan desde Espacios.';
+  const horario = conHorario
+    ? 'El horario general quedo cargado: ningún turno se ofrece fuera de ese horario.'
+    : 'Sin horario general: se puede cargar desde el calendario de la sede.';
+  return `${nombre}. ${box} ${horario}`;
 }

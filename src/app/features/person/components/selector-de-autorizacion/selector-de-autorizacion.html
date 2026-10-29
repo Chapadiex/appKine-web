@@ -51,8 +51,16 @@
   </form>
 
   <div aria-live="polite">
+    <!-- La consulta no se pudo leer: en el lugar del resultado, con la salida (UX-12). -->
     @if (mensajeError(); as mensaje) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      <app-alerta tipo="error" titulo="No pudimos consultar las autorizaciones">
+        <p>{{ mensaje }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="consultar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
     }
 
     @if (listo()) {

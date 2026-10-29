@@ -27,15 +27,14 @@
   }
   @case ('error') {
     @if (error(); as fallo) {
-      <section class="tarjeta" role="alert" aria-labelledby="titulo-error-clases">
-        <h2 id="titulo-error-clases">No se pudieron cargar las clases</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        <div class="acciones">
+      <app-alerta tipo="error" titulo="No se pudieron cargar las clases">
+        <p>{{ fallo.mensaje }}</p>
+        <p class="alerta__acciones">
           <button type="button" class="boton boton--secundario" (click)="cargar()">
             Reintentar
           </button>
-        </div>
-      </section>
+        </p>
+      </app-alerta>
     }
   }
   @case ('listo') {

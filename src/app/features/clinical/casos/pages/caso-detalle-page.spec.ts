@@ -9,6 +9,7 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { VisitaClinica } from '../../services/visita-clinica';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CASO = '/api/v1/casos-clinicos/9';
 const HEADER = 'X-Justificacion-Acceso';
@@ -107,7 +108,12 @@ describe('CasoDetallePage', () => {
     segundo.flush(caso(5));
     httpMock.expectOne(`${CASO}/eventos`).flush([]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se guardo el equipo del caso.');
+    // UX-12: cada resultado es un aviso global.
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Equipo del caso guardado', 'Equipo del caso guardado']);
   });
 
   it('la oferta y el equipo se nombran con lo que trae el caso, sin pedir el listado de ofertas', async () => {
@@ -129,7 +135,10 @@ describe('CasoDetallePage', () => {
         { status: 409, statusText: 'C' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Alguien cambio este caso');
+    // Advertencia ARRIBA del formulario que mando el cierre, con la salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos cerrar el caso');
+    expect(alerta?.textContent).toContain('Alguien cambio este caso');
     expect(botones(fixture)).toContain('Releer el caso');
   });
 

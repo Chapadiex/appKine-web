@@ -13,6 +13,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Migas } from '../../../../shared/components/migas/migas';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+
 /**
  * Historial de versiones de una sesion cerrada (AKINE-06.06, RF-M24-005, RN-M14-006).
  *
@@ -29,7 +31,7 @@ import { Migas } from '../../../../shared/components/migas/migas';
  */
 @Component({
   selector: 'app-versiones-page',
-  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink],
+  imports: [Migas, CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './versiones-page.html',
   styleUrl: '../../atencion.css',
 })

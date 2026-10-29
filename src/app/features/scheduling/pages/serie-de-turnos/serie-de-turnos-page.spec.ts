@@ -11,6 +11,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { SerieDeTurnosPage } from './serie-de-turnos-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const SERIE = 7;
@@ -129,7 +130,9 @@ describe('SerieDeTurnosPage', () => {
       httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('Se cancelaron 2 turnos');
+      // UX-12: el panel se cerro, la serie se releyo y el resultado es un aviso global.
+      expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Se cancelaron 2 turnos');
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     },
     TIMEOUT_AXE,
   );
@@ -152,7 +155,13 @@ describe('SerieDeTurnosPage', () => {
       );
     await asentar(fixture);
 
-    expect(texto(fixture)).toContain('No se cancelo nada');
+    // El rechazo queda ARRIBA del panel abierto, como advertencia con su salida (UX-12).
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      'app-panel-lateral app-alerta',
+    );
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('La serie cambió desde la vista previa');
+    expect(alerta?.textContent).toContain('No se cancelo nada');
     clickear(fixture, 'Volver a previsualizar');
     httpMock.expectOne((p) => p.url === `${URL_SERIE}/alcance`).flush(ALCANCE);
   });
@@ -224,7 +233,7 @@ describe('SerieDeTurnosPage', () => {
         .flush(ALCANCE);
       httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
       await asentar(fixture);
-      expect(texto(fixture)).toContain('Se movieron 2 turnos');
+      expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Se movieron 2 turnos');
     },
     TIMEOUT_AXE,
   );

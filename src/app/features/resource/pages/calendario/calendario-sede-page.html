@@ -50,12 +50,6 @@
 </section>
 
 <div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<div aria-live="polite">
   @switch (estado().tipo) {
     @case ('inicial') {
       <p class="estado estado--vacio">Elegí un período y consultá.</p>
@@ -77,14 +71,16 @@
     }
 
     @case ('error') {
-      <section class="tarjeta">
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="consultar()">Reintentar</button>
-        }
-      </section>
+      <app-alerta tipo="error" titulo="No pudimos leer el calendario de la sede">
+        <p>{{ mensajeError() }}</p>
+        <p class="alerta__acciones">
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+          }
+        </p>
+      </app-alerta>
     }
 
     @case ('listo') {
@@ -106,6 +102,13 @@
         }
 
         <form id="form-politica" [formGroup]="formularioPolitica" (ngSubmit)="guardar()" novalidate>
+          <!-- Error del guardado: arriba del formulario, a la vista (UX-12). -->
+          @if (errorPolitica(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos guardar la política de feriados">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <label class="opcion-casilla">
             <input
               id="calendario-cierra"
@@ -162,12 +165,6 @@
           @if (modoLectura()) {
             <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
           }
-
-          <div aria-live="polite">
-            @if (errorPolitica(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
-          </div>
         </form>
       </section>
 
@@ -192,6 +189,12 @@
               (ngSubmit)="guardarHorario()"
               novalidate
             >
+              @if (errorHorario(); as mensaje) {
+                <app-alerta tipo="error" titulo="No pudimos guardar el horario general">
+                  <p>{{ mensaje }}</p>
+                </app-alerta>
+              }
+
               <app-editor-de-franjas
                 idBase="calendario-horario"
                 [franjas]="formularioHorario"
@@ -241,10 +244,12 @@
             }
           }
 
+          <!--
+            Consecuencia del ultimo guardado que no entra en un aviso global: la lista de turnos
+            que quedaron fuera del horario y el camino a la agenda. Queda a la vista hasta el
+            proximo guardado.
+          -->
           <div aria-live="polite">
-            @if (exitoHorario(); as mensaje) {
-              <p class="estado estado--ok">{{ mensaje }}</p>
-            }
             @if (avisoImpactoHorario(); as aviso) {
               <div class="aviso-apertura" role="status">
                 <p>
@@ -262,9 +267,6 @@
                   <p class="ayuda ayuda--fija">{{ nota }}</p>
                 }
               </div>
-            }
-            @if (errorHorario(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
             }
           </div>
         </section>

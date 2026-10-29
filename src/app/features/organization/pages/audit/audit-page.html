@@ -125,7 +125,11 @@
               id="auditoria-desde"
               type="date"
               formControlName="desde"
-              aria-describedby="auditoria-ventana-ayuda"
+              [attr.aria-describedby]="
+                errorVentana() !== null
+                  ? 'auditoria-ventana-ayuda auditoria-ventana-error'
+                  : 'auditoria-ventana-ayuda'
+              "
               [attr.aria-invalid]="errorVentana() !== null"
             />
           </div>
@@ -136,7 +140,11 @@
               id="auditoria-hasta"
               type="date"
               formControlName="hasta"
-              aria-describedby="auditoria-ventana-ayuda"
+              [attr.aria-describedby]="
+                errorVentana() !== null
+                  ? 'auditoria-ventana-ayuda auditoria-ventana-error'
+                  : 'auditoria-ventana-ayuda'
+              "
               [attr.aria-invalid]="errorVentana() !== null"
             />
           </div>
@@ -147,7 +155,7 @@
 
           <div aria-live="polite" class="grilla-campos__fila">
             @if (errorVentana(); as mensaje) {
-              <p class="campo__error" role="alert">{{ mensaje }}</p>
+              <p class="campo__error" id="auditoria-ventana-error">{{ mensaje }}</p>
             }
           </div>
         }
@@ -196,11 +204,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        }
+        <app-alerta tipo="error" titulo="No pudimos buscar en la auditoría">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            } @else {
+              <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {

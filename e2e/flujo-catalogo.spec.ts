@@ -36,7 +36,9 @@ test.describe('Catalogo clinico contra el backend real', () => {
     expect(creada.status(), await creada.text()).toBe(201);
     expect(((await creada.json()) as { organizationId?: number }).organizationId).toBeDefined();
     await expect(
-      page.getByText('La especialidad quedo dada de alta para este centro.'),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Concepto agregado al catálogo del centro'),
     ).toBeVisible();
 
     await abrirFiltros(page);
@@ -100,7 +102,9 @@ test.describe('Catalogo clinico contra el backend real', () => {
       await plataforma.getByRole('button', { name: 'Aprobar y publicar' }).click();
       expect((await resolucion).status()).toBe(200);
       await expect(
-        plataforma.getByText(`Aprobada: "${nombre}" ya esta publicado en el catalogo comun`),
+        plataforma
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText(`"${nombre}" ya está publicado en el catálogo común`),
       ).toBeVisible();
     } finally {
       await plataforma.context().close();

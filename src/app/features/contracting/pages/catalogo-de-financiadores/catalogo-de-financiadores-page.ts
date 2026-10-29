@@ -17,6 +17,8 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -48,6 +50,7 @@ type Estado =
     Filtros,
     Icono,
     RouterLink,
+    Alerta,
   ],
   templateUrl: './catalogo-de-financiadores-page.html',
   styleUrl: '../../contracting.css',
@@ -55,6 +58,7 @@ type Estado =
 export class CatalogoDeFinanciadoresPage {
   private readonly api = inject(ContractingApi);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly tenantContext = inject(TenantContextStore);
 
@@ -68,7 +72,6 @@ export class CatalogoDeFinanciadoresPage {
   protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroTipo() !== ''));
   /** Id de la entrada con una adopcion en vuelo, o `null`. */
   protected readonly adoptando = signal<number | null>(null);
-  protected readonly errorAccion = signal<string | null>(null);
   /** Listado en vuelo: una busqueda nueva lo cancela, para que la respuesta vieja no pise a la nueva. */
   private pedidoDeListado: Subscription | null = null;
 
@@ -97,7 +100,6 @@ export class CatalogoDeFinanciadoresPage {
       // Otro centro adopta otras cosas: `financiadorAdoptadoId` es de la organizacion del contexto.
       this.tenantContext.contextEpoch();
       untracked(() => {
-        this.errorAccion.set(null);
         this.adoptando.set(null);
         this.cargar();
       });
@@ -127,10 +129,13 @@ export class CatalogoDeFinanciadoresPage {
       return;
     }
     this.adoptando.set(id);
-    this.errorAccion.set(null);
     this.api.adoptarDelCatalogo(id).subscribe({
       next: (adopcion) => {
         this.adoptando.set(null);
+        // El aviso vive en el shell: sobrevive a la navegacion a los planes de la copia.
+        this.avisos.exito(`${entrada.nombre ?? 'El financiador'} agregado al centro`, {
+          descripcion: 'Es una copia propia: los cambios posteriores del catálogo no la modifican.',
+        });
         const copia = adopcion.financiador?.id;
         if (copia === undefined) {
           this.cargar();
@@ -140,7 +145,11 @@ export class CatalogoDeFinanciadoresPage {
       },
       error: (error: unknown) => {
         this.adoptando.set(null);
-        this.errorAccion.set(traducirErrorContracting(error, 'financiador').mensaje);
+        // Boton de fila, sin formulario: aviso global con la salida.
+        this.avisos.error(`No pudimos agregar ${entrada.nombre ?? 'el financiador'} al centro`, {
+          descripcion: traducirErrorContracting(error, 'financiador').mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.adoptar(entrada) },
+        });
         // Una entrada dada de baja entre la lectura y el click ya no se lista: se relee.
         this.cargar();
       },

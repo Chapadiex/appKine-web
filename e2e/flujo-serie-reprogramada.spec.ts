@@ -82,7 +82,10 @@ test.describe('Reprogramar una serie contra el backend real', () => {
     await page.getByRole('button', { name: 'Mover 2 turnos' }).click();
     const respuesta = await movida;
     expect(respuesta.status(), await respuesta.text()).toBeLessThan(300);
-    await expect(page.getByText(/Se movieron 2 turnos\./)).toBeVisible();
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones' }).getByText('Se movieron 2 turnos'),
+    ).toBeVisible();
 
     // --- Lo que guardo el servidor ----------------------------------------------------------
     const despues = await api.exigir<{ turnos: TurnoDeSerie[] }>(

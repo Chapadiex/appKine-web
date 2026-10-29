@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
@@ -23,8 +24,14 @@ import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
   PESTANAS_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
-import { releeElCatalogo, traducirErrorCatalogo } from '../../models/catalogo-financiadores-errors';
+import {
+  releeElCatalogo,
+  traducirErrorCatalogo,
+  CausaCatalogo,
+} from '../../models/catalogo-financiadores-errors';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 type FiltroEstado = NonNullable<ListCatalogoFinanciadoresDePlataformaRequestParams['estado']>;
 type Tipo = CatalogoFinanciadorResponseTipoEnum;
@@ -76,6 +83,8 @@ type Panel =
   selector: 'app-catalogo-financiadores-page',
   imports: [
     CabeceraDePagina,
+    Alerta,
+    NgTemplateOutlet,
     AccionesDeFila,
     Ayuda,
     Filtros,
@@ -90,6 +99,7 @@ type Panel =
 })
 export class CatalogoFinanciadoresPage {
   private readonly api = inject(CatalogoGlobalDeFinanciadoresService);
+  private readonly avisos = inject(AvisosStore);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
@@ -106,8 +116,9 @@ export class CatalogoFinanciadoresPage {
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
   protected readonly panel = signal<Panel | null>(null);
   protected readonly enviando = signal(false);
-  protected readonly exito = signal<string | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
+  /** Causa del ultimo rechazo con el panel abierto: decide si va pegado a un campo. */
+  protected readonly causaAccion = signal<CausaCatalogo | null>(null);
   /**
    * Cuenta los envios rechazados por el formulario. `markAllAsTouched` no es un signal y con
    * OnPush no re-renderiza: leer esto desde {@link invalido} es lo que hace aparecer los errores.
@@ -276,7 +287,8 @@ export class CatalogoFinanciadoresPage {
             ...datos,
           },
         }),
-        `${datos.nombre} quedo en el catalogo. Los centros ya lo pueden agregar.`,
+        'Financiador agregado al catálogo',
+        `${datos.nombre}. Los centros ya lo pueden agregar.`,
       );
     } else if (panel.tipo === 'editar-financiador' && panel.entrada.id !== undefined) {
       this.enviar(
@@ -288,7 +300,8 @@ export class CatalogoFinanciadoresPage {
             expectedVersion: panel.entrada.version ?? 0,
           },
         }),
-        `${datos.nombre} se actualizo. Las copias de los centros no cambian: veran el aviso.`,
+        'Financiador actualizado',
+        `${datos.nombre}. Las copias de los centros no cambian: verán el aviso.`,
       );
     }
   }
@@ -318,7 +331,8 @@ export class CatalogoFinanciadoresPage {
           catalogoId,
           createPlanCoberturaRequest: { codigo: v.codigo.trim(), ...datos },
         }),
-        `El plan ${datos.nombre} quedo en el catalogo.`,
+        'Plan agregado al catálogo',
+        datos.nombre,
       );
     } else if (panel.plan.id !== undefined) {
       this.enviar(
@@ -327,7 +341,8 @@ export class CatalogoFinanciadoresPage {
           planId: panel.plan.id,
           updatePlanCoberturaRequest: { ...datos, expectedVersion: panel.plan.version ?? 0 },
         }),
-        `El plan ${datos.nombre} se actualizo.`,
+        'Plan actualizado',
+        datos.nombre,
       );
     }
   }
@@ -343,7 +358,8 @@ export class CatalogoFinanciadoresPage {
           catalogoId,
           deactivateContractingRequest: { reason: motivo },
         }),
-        `${panel.entrada.nombre} se dio de baja del catalogo. Las copias de los centros siguen.`,
+        'Financiador dado de baja del catálogo',
+        `${panel.entrada.nombre ?? ''}. Las copias de los centros siguen.`,
       );
     } else if (panel.tipo === 'baja-plan' && panel.plan.id !== undefined) {
       this.enviar(
@@ -352,7 +368,8 @@ export class CatalogoFinanciadoresPage {
           planId: panel.plan.id,
           deactivateContractingRequest: { reason: motivo },
         }),
-        `El plan ${panel.plan.nombre} se dio de baja del catalogo.`,
+        'Plan dado de baja del catálogo',
+        panel.plan.nombre ?? '',
       );
     }
   }
@@ -380,30 +397,62 @@ export class CatalogoFinanciadoresPage {
   // -------------------------------------------------------------------------------------
 
   private abrir(panel: Panel): void {
-    this.exito.set(null);
     this.errorAccion.set(null);
+    this.causaAccion.set(null);
     this.panel.set(panel);
   }
 
-  private enviar(pedido: Observable<unknown>, mensaje: string): void {
+  /**
+   * El campo del formulario abierto que produjo un conflicto con otra entrada vigente, o `null`.
+   * Ese rechazo va pegado al campo (UX-12), no arriba del formulario.
+   */
+  protected campoEnConflicto(): 'codigo' | 'nombre' | 'cuit' | null {
+    switch (this.causaAccion()) {
+      case 'codigo-repetido':
+        return 'codigo';
+      case 'nombre-repetido':
+        return 'nombre';
+      case 'cuit-repetido':
+        return 'cuit';
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Envia una mutacion. Al salir bien cierra el panel, relee y publica el aviso global (UX-12).
+   *
+   * <p>Si el rechazo deja la lista vieja (version vieja, entrada que ya no existe) el panel se
+   * cierra y se relee; como ya no hay formulario donde mostrarlo, el motivo va al aviso global.
+   * Cualquier otro rechazo queda adentro del panel, arriba o pegado al campo.
+   */
+  private enviar(pedido: Observable<unknown>, titulo: string, descripcion: string): void {
     if (this.enviando()) return;
     this.enviando.set(true);
     this.errorAccion.set(null);
+    this.causaAccion.set(null);
     pedido.subscribe({
       next: () => {
         this.enviando.set(false);
         this.panel.set(null);
-        this.exito.set(mensaje);
+        this.avisos.exito(titulo, { descripcion });
         this.cargar();
       },
       error: (error: unknown) => {
         this.enviando.set(false);
         const traducido = traducirErrorCatalogo(error);
-        this.errorAccion.set(traducido.mensaje);
         if (releeElCatalogo(traducido.causa)) {
           this.panel.set(null);
+          if (traducido.causa === 'ya-dado-de-baja') {
+            this.avisos.info('Ya estaba dado de baja', { descripcion: traducido.mensaje });
+          } else {
+            this.avisos.error('No se aplicó el cambio', { descripcion: traducido.mensaje });
+          }
           this.cargar();
+          return;
         }
+        this.errorAccion.set(traducido.mensaje);
+        this.causaAccion.set(traducido.causa);
       },
     });
   }

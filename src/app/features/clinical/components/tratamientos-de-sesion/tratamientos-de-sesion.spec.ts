@@ -6,6 +6,7 @@ import { TratamientosDeSesion, parametroParaEnviar } from './tratamientos-de-ses
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ParametroDeTratamientoTipoDatoEnum } from '../../../../api/generated/model/parametro-de-tratamiento';
 
 const ORG = 1;
@@ -128,7 +129,8 @@ describe('TratamientosDeSesion', () => {
     expect(enVuelo).toEqual([true, false]);
     expect(texto(fixture)).toContain('1. Electroterapia');
     expect(texto(fixture)).toContain('20 mA');
-    expect(texto(fixture)).toContain('Tratamiento registrado');
+    // UX-12: el resultado es un aviso global.
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Tratamiento registrado');
   });
 
   it('un parametro sin nombre o un número que no es número no sale', async () => {
@@ -197,7 +199,7 @@ describe('TratamientosDeSesion', () => {
     expect(versiones).toEqual([9]);
     expect(enVuelo).toEqual([true, false]);
     expect(texto(fixture)).not.toContain('1. Electroterapia');
-    expect(texto(fixture)).toContain('dado de baja');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Tratamiento dado de baja');
   });
 
   it('cancelar la baja no manda nada', async () => {

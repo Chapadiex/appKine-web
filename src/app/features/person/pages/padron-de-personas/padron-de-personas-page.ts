@@ -44,6 +44,8 @@ import {
 import { BuscarPersonasRequestParams } from '../../../../api/generated/api/personas.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'activar-perfil';
 
@@ -109,6 +111,7 @@ const TAMANO_DE_PAGINA = 20;
   imports: [
     CabeceraDePagina,
     AccionesDeFila,
+    Alerta,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -125,6 +128,7 @@ const TAMANO_DE_PAGINA = 20;
 })
 export class PadronDePersonasPage {
   private readonly api = inject(PersonApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
 
@@ -231,7 +235,6 @@ export class PadronDePersonasPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaPersona | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
 
@@ -385,10 +388,11 @@ export class PadronDePersonasPage {
       next: (creada) => {
         this.enviando.set(false);
         this.altaAbierta.set(false);
-        this.exito.set(
-          `${nombreCompleto(creada)} quedo registrada. Todavía no es paciente: si empieza una ` +
-            'atención clínica, activale el perfil desde su fila.',
-        );
+        this.avisos.exito('Persona registrada correctamente', {
+          descripcion:
+            `${nombreCompleto(creada)}. Todavía no es paciente: si empieza una atención, ` +
+            'activale el perfil desde su fila.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -454,7 +458,7 @@ export class PadronDePersonasPage {
       next: (actualizada) => {
         this.enviando.set(false);
         this.cerrarPaneles();
-        this.exito.set(`Se guardaron los cambios de ${nombreCompleto(actualizada)}.`);
+        this.avisos.exito('Cambios guardados', { descripcion: nombreCompleto(actualizada) });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -496,10 +500,9 @@ export class PadronDePersonasPage {
       next: (actualizada) => {
         this.enviando.set(false);
         this.cerrarPaneles();
-        this.exito.set(
-          `${nombreCompleto(actualizada)} ya es paciente. Esto no le crea historia clínica: eso ` +
-            'se maneja en el modulo clínico.',
-        );
+        this.avisos.exito(`${nombreCompleto(actualizada)} ya es paciente`, {
+          descripcion: 'No se le crea historia clínica: eso se maneja en el módulo clínico.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallo(error),
@@ -534,7 +537,6 @@ export class PadronDePersonasPage {
   private limpiarAvisos(): void {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
     this.candidatos.set([]);
     this.duenioDelDocumento.set(null);
   }

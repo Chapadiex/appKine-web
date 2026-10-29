@@ -150,16 +150,6 @@ button.slot--libre:focus-visible {
   padding: 0;
 }
 
-/*
- * El bloque de conflicto de la reserva.
- *
- * Se destaca con borde propio porque es donde vive la accion que resuelve el problema, y esa
- * accion es lo que separa un rechazo util de un callejon.
- */
-.conflicto {
-  border-left: var(--borde-acento) solid var(--color-peligro);
-}
-
 /* ======================================================================================
  * Diseño del canvas (UX-01, 21/10/2026): Agenda, Reservar, Series, Serie, Recepción y Ciclo.
  *

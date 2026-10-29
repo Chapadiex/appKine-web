@@ -36,6 +36,8 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -103,6 +105,8 @@ const POR_PAGINA = 20;
   selector: 'app-consultorios-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     Icono,
     Filtros,
@@ -123,6 +127,7 @@ export class ConsultoriosPage {
   private readonly consultorios = inject(ConsultoriosService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -184,7 +189,6 @@ export class ConsultoriosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaConsultorio | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /** Datos de la sede. `slotMinutes` va como texto: el `input` siempre entrega texto. */
@@ -211,7 +215,6 @@ export class ConsultoriosPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
         this.busqueda.set('');
@@ -298,7 +301,6 @@ export class ConsultoriosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.pestanaEdicion.set('general');
     this.panel.set({ id, tipo });
 
@@ -362,7 +364,7 @@ export class ConsultoriosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
+    const nombre = this.formularioEdicion.controls.name.value.trim();
 
     this.consultorios
       .updateConsultorio({
@@ -373,7 +375,7 @@ export class ConsultoriosPage {
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set('Los datos de la sede quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: nombre });
           // Las sedes alimentan selectores de otras pantallas: un nombre editado que quedara
           // cacheado seguiria mostrandose viejo hasta el proximo cambio de contexto.
           this.sedesDelContexto.invalidar();
@@ -401,8 +403,8 @@ export class ConsultoriosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
+    const nombre = this.sedesDeLaPagina().find((sede) => sede.id === panel.id)?.name ?? 'La sede';
     const eraLaDelContexto = this.esLaDelContexto(panel.id);
 
     this.consultorios
@@ -430,15 +432,17 @@ export class ConsultoriosPage {
                 // creyendo que sigue teniendo un contexto util. Se le dice, aunque no haya
                 // mucho mas que hacer desde aca.
                 console.error('No se pudo abrir el selector de contexto tras la baja', error);
-                this.errorAccion.set(
-                  'La sede quedo dada de baja, pero no pudimos abrir la pantalla para elegir otra. ' +
-                    'Entra a "Elegir contexto" desde el menu.',
-                );
+                this.avisos.error('No pudimos abrir la pantalla para elegir otra sede', {
+                  descripcion: `${nombre} quedo dada de baja. Entra a "Elegir contexto" desde el menu.`,
+                  duracion: null,
+                });
               });
             return;
           }
 
-          this.exito.set('La sede quedo dada de baja. Sigue en el listado, con el motivo.');
+          this.avisos.exito('Sede dada de baja', {
+            descripcion: `${nombre}. Sigue en el listado, con el motivo.`,
+          });
           this.sedesDelContexto.asegurarCargadas();
           this.cargar();
         },

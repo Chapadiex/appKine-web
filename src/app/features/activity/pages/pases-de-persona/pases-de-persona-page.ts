@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Pase } from '../../../../api/generated/model/pase';
 import { PaginaDeMovimientosDePase } from '../../../../api/generated/model/pagina-de-movimientos-de-pase';
@@ -30,7 +30,6 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { ListarMovimientosDePaseRequestParams } from '../../../../api/generated/api/pases.serviceInterface';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
-import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { formatearFecha, formatearInstante } from '../../../../shared/utils/instantes';
 import {
@@ -49,6 +48,8 @@ import {
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { MOVIMIENTOS_POR_PAGINA, PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /**
  * El ledger abierto, de a paginas (0.116.0). Mientras llega otra pagina se sigue mostrando la
@@ -105,6 +106,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 @Component({
   selector: 'app-pases-de-persona-page',
   imports: [
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
@@ -112,7 +114,6 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
     PermisoDirective,
     ConfirmacionConMotivo,
     Paginacion,
-    FocoAlMontar,
     AccionesDeFila,
     PanelLateral,
   ],
@@ -121,6 +122,8 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
 })
 export class PasesDePersonaPage {
   private readonly api = inject(PasesApi);
+  private readonly avisos = inject(AvisosStore);
+  private readonly router = inject(Router);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -188,22 +191,23 @@ export class PasesDePersonaPage {
   protected readonly productoElegido = signal('');
   protected readonly enviando = signal(false);
   protected readonly errorVenta = signal<ErrorPase | null>(null);
-  protected readonly venta = signal<ResultadoDeVenta | null>(null);
+  /**
+   * Que dato de la venta falta o esta mal, para decirlo en su campo (UX-12) y no en un cartel de
+   * la seccion. `null` cuando el rechazo es general (del servidor).
+   */
+  protected readonly campoDeVenta = signal<'producto' | 'desde' | 'hasta' | null>(null);
   protected readonly periodoDesde = signal('');
   protected readonly periodoHasta = signal('');
   protected readonly renovarAlVender = signal(false);
 
   /** El pase cuya renovacion se esta cambiando, para deshabilitar solo ese boton. */
   protected readonly renovando = signal<number | null>(null);
-  protected readonly errorRenovacion = signal<ErrorPase | null>(null);
 
   protected readonly accion = signal<Accion | null>(null);
   protected readonly ajusteCantidad = signal('');
   protected readonly ajusteMotivo = signal('');
   protected readonly ajusteIntentado = signal(false);
   protected readonly errorAccion = signal<ErrorPase | null>(null);
-  protected readonly avisoAccion = signal<string | null>(null);
-  protected readonly anulacion = signal<ResultadoDeAnulacionDePase | null>(null);
 
   protected readonly zona = computed(() => this.diaDeLaSede.zona());
   protected readonly nombre = computed(() => {
@@ -273,17 +277,14 @@ export class PasesDePersonaPage {
         this.persona.set(null);
         this.pases.set(null);
         this.detalle.set(null);
-        this.venta.set(null);
         this.errorVenta.set(null);
+        this.campoDeVenta.set(null);
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
         this.renovarAlVender.set(false);
         this.renovando.set(null);
-        this.errorRenovacion.set(null);
         this.cerrarAccion();
-        this.avisoAccion.set(null);
-        this.anulacion.set(null);
         this.clave = nuevaClaveDeIntento();
         this.cargar();
         this.cargarProductos();
@@ -331,7 +332,7 @@ export class PasesDePersonaPage {
     });
   }
 
-  private cargarProductos(): void {
+  protected cargarProductos(): void {
     const ids = this.ids();
     if (ids === null || !this.puedeVender()) {
       return;
@@ -518,8 +519,11 @@ export class PasesDePersonaPage {
 
   protected cambiarRenovacion(pase: Pase, activa: boolean): void {
     const ids = this.ids();
+    const titulo = activa
+      ? 'No pudimos activar la renovación'
+      : 'No pudimos desactivar la renovación';
     if (ids === null) {
-      this.errorRenovacion.set(errorSinContextoDePase());
+      this.avisos.error(titulo, { descripcion: errorSinContextoDePase().mensaje });
       return;
     }
     if (pase.id === undefined || this.renovando() !== null) {
@@ -527,25 +531,34 @@ export class PasesDePersonaPage {
     }
     const paseId = pase.id;
     this.renovando.set(paseId);
-    this.errorRenovacion.set(null);
-    this.avisoAccion.set(null);
-    this.anulacion.set(null);
     this.api.configurarRenovacion(ids.consultorioId, paseId, activa, pase.version ?? 0).subscribe({
       next: (actualizado) => {
         this.renovando.set(null);
-        this.avisoAccion.set(
-          actualizado.renovacionAutomatica
-            ? `"${actualizado.nombre}" se va a renovar solo: unos días antes del ` +
-                `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
-                'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.'
-            : `"${actualizado.nombre}" ya no se renueva solo. El periodo actual sigue como estaba.`,
-        );
+        if (actualizado.renovacionAutomatica) {
+          this.avisos.exito('Renovación automática activada', {
+            descripcion:
+              `"${actualizado.nombre}": unos días antes del ` +
+              `${formatearFecha(actualizado.vigenciaHasta)} el sistema vende el periodo ` +
+              'siguiente, con el precio del producto de ese momento y su propia deuda. No cobra.',
+          });
+        } else {
+          this.avisos.exito('Renovación automática desactivada', {
+            descripcion: `"${actualizado.nombre}": el periodo actual sigue como estaba.`,
+          });
+        }
         this.cargar();
       },
+      // Accion de fila, sin formulario: aviso global con el mensaje del backend (UX-12).
       error: (error: unknown) => {
         this.renovando.set(null);
         const traducido = traducirErrorPase(error);
-        this.errorRenovacion.set(traducido);
+        const reintentable = traducido.causa === 'red' || traducido.causa === 'otro';
+        this.avisos.error(titulo, {
+          descripcion: traducido.mensaje,
+          accion: reintentable
+            ? { etiqueta: 'Reintentar', ejecutar: () => this.cambiarRenovacion(pase, activa) }
+            : undefined,
+        });
         // Version vieja o ya renovado: el pase en pantalla no es el del servidor.
         if (traducido.causa === 'version-vieja' || traducido.causa === 'pase-no-ajustable') {
           this.cargar();
@@ -559,6 +572,7 @@ export class PasesDePersonaPage {
   protected elegirProducto(id: string): void {
     this.productoElegido.set(id);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     // Un abono necesita su periodo: arranca hoy, que es lo mas comun.
     const producto = this.productoDeLaVenta();
     this.periodoDesde.set(producto && esAbono(producto) ? this.diaDeLaSede.hoy() : '');
@@ -572,6 +586,7 @@ export class PasesDePersonaPage {
   protected cambiarPeriodo(campo: 'desde' | 'hasta', valor: string): void {
     (campo === 'desde' ? this.periodoDesde : this.periodoHasta).set(valor);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     this.clave = nuevaClaveDeIntento();
   }
 
@@ -579,6 +594,7 @@ export class PasesDePersonaPage {
   protected cambiarRenovacionAlVender(valor: boolean): void {
     this.renovarAlVender.set(valor);
     this.errorVenta.set(null);
+    this.campoDeVenta.set(null);
     this.clave = nuevaClaveDeIntento();
   }
 
@@ -597,7 +613,7 @@ export class PasesDePersonaPage {
       return;
     }
     if (!Number.isInteger(productoId) || productoId <= 0) {
-      this.errorVenta.set(validacion('Elegí el producto a vender.'));
+      this.errorDeCampoDeVenta('producto', 'Elegí el producto a vender.');
       return;
     }
     const producto = this.productoDeLaVenta();
@@ -605,12 +621,13 @@ export class PasesDePersonaPage {
     const desde = this.periodoDesde();
     const hasta = this.periodoHasta();
     if (deAbono && desde === '') {
-      this.errorVenta.set(validacion('Indica desde que día cubre el abono.'));
+      this.errorDeCampoDeVenta('desde', 'Indica desde que día cubre el abono.');
       return;
     }
     if (deAbono && hasta !== '' && hasta < desde) {
-      this.errorVenta.set(
-        validacion('El último día del periodo no puede ser anterior al primero.'),
+      this.errorDeCampoDeVenta(
+        'hasta',
+        'El último día del periodo no puede ser anterior al primero.',
       );
       return;
     }
@@ -619,11 +636,11 @@ export class PasesDePersonaPage {
       : undefined;
     this.enviando.set(true);
     this.errorVenta.set(null);
-    this.venta.set(null);
+    this.campoDeVenta.set(null);
     this.api.vender(ids.consultorioId, productoId, ids.personaId, this.clave, periodo).subscribe({
       next: (resultado) => {
         this.enviando.set(false);
-        this.venta.set(resultado);
+        this.avisarVenta(resultado);
         this.productoElegido.set('');
         this.periodoDesde.set('');
         this.periodoHasta.set('');
@@ -689,11 +706,12 @@ export class PasesDePersonaPage {
           this.enviando.set(false);
           this.cerrarAccion();
           const ajustado = datos.pase ?? pase;
-          this.avisoAccion.set(
-            `Se ajusto el saldo de "${ajustado.nombre}": ahora tiene ` +
+          this.avisos.exito('Saldo ajustado', {
+            descripcion:
+              `"${ajustado.nombre}" ahora tiene ` +
               `${creditosEnPalabras(ajustado.creditosDisponibles)} de ` +
               `${ajustado.creditosIniciales}. El ajuste queda en los movimientos con su motivo.`,
-          );
+          });
           // El ledger abierto se relee en la pagina donde quedo el ajuste.
           this.releerMovimientos(ajustado);
           this.cargar();
@@ -719,7 +737,7 @@ export class PasesDePersonaPage {
       next: (resultado) => {
         this.enviando.set(false);
         this.cerrarAccion();
-        this.anulacion.set(resultado);
+        this.avisarAnulacion(resultado);
         this.releerMovimientos(resultado.pase ?? pase);
         this.cargar();
       },
@@ -740,8 +758,67 @@ export class PasesDePersonaPage {
   private prepararAccion(accion: Accion): void {
     this.cerrarAccion();
     this.accion.set(accion);
-    this.avisoAccion.set(null);
-    this.anulacion.set(null);
+  }
+
+  private errorDeCampoDeVenta(campo: 'producto' | 'desde' | 'hasta', mensaje: string): void {
+    this.errorVenta.set(validacion(mensaje));
+    this.campoDeVenta.set(campo);
+  }
+
+  /**
+   * El resultado de la venta va al aviso global (UX-12). Vender no es cobrar: con permiso de cobro,
+   * el aviso ofrece ir a la cuenta corriente.
+   */
+  private avisarVenta(resultado: ResultadoDeVenta): void {
+    const pase = resultado.pase;
+    const partes = [
+      `"${pase?.nombre ?? ''}": ${creditosEnPalabras(pase?.creditosDisponibles)}` +
+        (pase && esAbono(pase)
+          ? ` del ${formatearFecha(pase.vigenciaDesde)} al ${formatearFecha(pase.vigenciaHasta)}.`
+          : ` hasta el ${formatearFecha(pase?.vigenciaHasta)}.`),
+    ];
+    if (resultado.deuda) {
+      partes.push(
+        `Quedo una deuda de ${importeDePase(resultado.deuda.importe, resultado.deuda.moneda)} ` +
+          'a nombre de la persona.',
+      );
+    }
+    if (pase?.renovacionAutomatica) {
+      partes.push('Se va a renovar solo al terminar el periodo.');
+    }
+    const cobrar = this.permisos.tiene(PERMISO_COBRO_REGISTER)
+      ? {
+          etiqueta: 'Cobrar desde la cuenta corriente',
+          ejecutar: () => {
+            this.router
+              .navigateByUrl(this.rutaCuentaCorriente())
+              .catch((error: unknown) => console.error('No se pudo abrir la cuenta', error));
+          },
+        }
+      : undefined;
+    const opciones = { descripcion: partes.join(' '), accion: cobrar };
+    if (resultado.creada === false) {
+      this.avisos.info('Esa venta ya estaba registrada', opciones);
+    } else {
+      this.avisos.exito('Pase vendido', opciones);
+    }
+  }
+
+  private avisarAnulacion(resultado: ResultadoDeAnulacionDePase): void {
+    const nombre = resultado.pase?.nombre ?? '';
+    const deuda = resultado.deuda
+      ? `La deuda de la venta, ${importeDePase(resultado.deuda.importe, resultado.deuda.moneda)}, ` +
+        'quedo anulada: no se borra, sigue en la cuenta corriente como anulada y con el motivo.'
+      : 'La venta no tenia deuda.';
+    if (resultado.anulado === false) {
+      this.avisos.info(`"${nombre}" ya estaba anulado`, {
+        descripcion: `No se cambio nada. ${deuda}`,
+      });
+    } else {
+      this.avisos.exito('Pase anulado', {
+        descripcion: `"${nombre}": su saldo se descarto. ${deuda}`,
+      });
+    }
   }
 }
 

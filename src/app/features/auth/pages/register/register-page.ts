@@ -18,6 +18,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido. */
 const CAMPOS = [
@@ -58,7 +59,7 @@ const MENSAJE_CLAVE_REUSADA =
  */
 @Component({
   selector: 'app-register-page',
-  imports: [Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
+  imports: [Alerta, Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './register-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

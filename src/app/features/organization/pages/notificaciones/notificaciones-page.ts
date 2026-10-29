@@ -26,6 +26,8 @@ import {
 } from '../../models/pestanas-de-colaboradores';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -65,6 +67,7 @@ const POR_PAGINA = 20;
     ColumnaOrdenable,
     RouterLink,
     Paginacion,
+    Alerta,
   ],
   templateUrl: './notificaciones-page.html',
   styleUrl: '../../organization.css',
@@ -75,6 +78,7 @@ export class NotificacionesPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly notificaciones = inject(NotificacionesService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   protected readonly estadosFiltrables = ESTADOS_FILTRABLES;
@@ -118,8 +122,6 @@ export class NotificacionesPage {
 
   /** Id de la fila que se esta reintentando; deshabilita todos los botones mientras tanto. */
   protected readonly reintentando = signal<number | null>(null);
-  protected readonly exito = signal<string | null>(null);
-  protected readonly errorReintento = signal<string | null>(null);
 
   constructor() {
     effect(() => {
@@ -128,8 +130,6 @@ export class NotificacionesPage {
         this.paginaActual.set(0);
         this.busqueda.set('');
         this.orden.reiniciar();
-        this.exito.set(null);
-        this.errorReintento.set(null);
         this.consultar();
       });
     });
@@ -175,28 +175,32 @@ export class NotificacionesPage {
       return;
     }
     const notificationId = fila.id;
-    this.exito.set(null);
-    this.errorReintento.set(null);
     this.reintentando.set(notificationId);
 
     this.notificaciones.retryNotification({ orgId, notificationId }).subscribe({
       next: () => {
         this.reintentando.set(null);
-        this.exito.set(
-          `La notificación ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
-            'volvio a la cola de envio. Sale en el próximo ciclo; el negocio que la origino no se repite.',
-        );
+        // UX-12: accion de una fila, sin formulario: el resultado va al aviso global.
+        this.avisos.exito('Notificación en la cola de envío', {
+          descripcion:
+            `La notificación ${notificationId} (${textoTipo(fila.tipo)} a ${fila.destinatario ?? '-'}) ` +
+            'sale en el próximo ciclo; el negocio que la origino no se repite.',
+        });
         this.consultar();
       },
       error: (error: unknown) => {
         this.reintentando.set(null);
-        this.errorReintento.set(traducirErrorDeReintento(error, notificationId));
+        // Sin "Reintentar" en el aviso: el listado se relee y, si la fila sigue admitiendo
+        // reintento, su propio boton es la salida.
+        this.avisos.error('No pudimos reintentar la notificación', {
+          descripcion: traducirErrorDeReintento(error, notificationId),
+        });
         this.consultar();
       },
     });
   }
 
-  private consultar(): void {
+  protected consultar(): void {
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });

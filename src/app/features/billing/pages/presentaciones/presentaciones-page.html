@@ -123,17 +123,16 @@
 }
 
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lotes">
-    <h2 id="titulo-error-lotes">No se pudieron cargar los lotes</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudieron cargar los lotes">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.causa === 'sin-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
         <button type="button" class="boton boton--secundario" (click)="buscar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (vacia()) {
@@ -203,12 +202,20 @@
       ejemplo, un reenvío de debitadas).
     </p>
     <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
+      <!-- Rechazo del alta arriba del formulario (UX-12). -->
+      @if (errorAlta(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos abrir el borrador">
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="alta-financiador">Financiador</label>
         <select
           id="alta-financiador"
           formControlName="financiadorId"
           [attr.aria-invalid]="campoInvalido('financiadorId') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('financiadorId') ? 'alta-financiador-error' : null"
         >
           <option value="">Elegí un financiador</option>
           @for (ficha of financiadores(); track ficha.id) {
@@ -222,7 +229,9 @@
           </p>
         }
         @if (campoInvalido('financiadorId')) {
-          <p class="campo__error" role="alert">Elegí a qué financiador se presenta.</p>
+          <p class="campo__error" id="alta-financiador-error" role="alert">
+            Elegí a qué financiador se presenta.
+          </p>
         }
       </div>
 
@@ -233,9 +242,12 @@
           type="date"
           formControlName="periodoDesde"
           [attr.aria-invalid]="campoInvalido('periodoDesde') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('periodoDesde') ? 'alta-desde-error' : null"
         />
         @if (campoInvalido('periodoDesde')) {
-          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="alta-desde-error" role="alert">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
 
@@ -245,10 +257,19 @@
           id="alta-hasta"
           type="date"
           formControlName="periodoHasta"
-          [attr.aria-invalid]="campoInvalido('periodoHasta') ? 'true' : null"
+          [attr.aria-invalid]="campoInvalido('periodoHasta') || periodoInvertido() ? 'true' : null"
+          [attr.aria-describedby]="
+            campoInvalido('periodoHasta') || periodoInvertido() ? 'alta-hasta-error' : null
+          "
         />
         @if (campoInvalido('periodoHasta')) {
-          <p class="campo__error" role="alert">La fecha de fin es obligatoria.</p>
+          <p class="campo__error" id="alta-hasta-error" role="alert">
+            La fecha de fin es obligatoria.
+          </p>
+        } @else if (periodoInvertido()) {
+          <p class="campo__error" id="alta-hasta-error" role="alert">
+            El periodo termina antes de empezar. Revisa las fechas.
+          </p>
         }
       </div>
 
@@ -260,15 +281,12 @@
           maxlength="3"
           formControlName="moneda"
           [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('moneda') ? 'alta-moneda-error' : null"
         />
         @if (campoInvalido('moneda')) {
-          <p class="campo__error" role="alert">Tres letras, por ejemplo ARS.</p>
-        }
-      </div>
-
-      <div aria-live="polite">
-        @if (errorAlta(); as fallo) {
-          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+          <p class="campo__error" id="alta-moneda-error" role="alert">
+            Tres letras, por ejemplo ARS.
+          </p>
         }
       </div>
 

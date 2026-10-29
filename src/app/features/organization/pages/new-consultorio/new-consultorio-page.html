@@ -58,27 +58,6 @@
       }
     </h2>
 
-    <div aria-live="polite">
-      @if (hecho()) {
-        <p class="estado estado--ok">La sede "{{ sedeCreada() }}" quedo creada.</p>
-        <p class="ayuda ayuda--fija">
-          @if (conBoxCreado()) {
-            Se creo junto con su primer box.
-          } @else {
-            Todavía no tiene boxes: se agregan desde Espacios.
-          }
-          @if (conHorarioCreado()) {
-            El horario general quedo cargado: ningún turno se ofrece fuera de ese horario.
-          } @else {
-            Sin horario general: se puede cargar desde el calendario de la sede.
-          }
-        </p>
-        <p class="acciones">
-          <a class="boton" routerLink="/organizacion/sedes">Volver al listado de sedes</a>
-        </p>
-      }
-    </div>
-
     @if (!hecho()) {
       <form
         class="formulario--libre"
@@ -86,6 +65,22 @@
         (ngSubmit)="paso() === 3 ? enviar() : avanzar()"
         novalidate
       >
+        <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige. -->
+        @if (mensajeError(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos crear la sede">
+            <p>{{ mensaje }}</p>
+            <!--
+              El tope del plan no se resuelve reintentando: hay que cambiar de plan. Ofrecer solo
+              "reintentar" ahi seria mandar al usuario a chocar contra la misma pared.
+            -->
+            @if (esTopeDelPlan()) {
+              <p class="alerta__acciones">
+                <a class="boton" routerLink="/organizacion/suscripcion">Ver mi plan y cambiarlo</a>
+              </p>
+            }
+          </app-alerta>
+        }
+
         @switch (paso()) {
           @case (1) {
             <!-- Lo minimo para que la sede exista y funcione. -->
@@ -367,21 +362,5 @@
         }
       </form>
     }
-
-    <div aria-live="polite">
-      @if (mensajeError(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-
-        <!--
-        El tope del plan no se resuelve reintentando: hay que cambiar de plan. Ofrecer solo
-        "reintentar" ahi seria mandar al usuario a chocar contra la misma pared.
-      -->
-        @if (esTopeDelPlan()) {
-          <p class="acciones">
-            <a class="boton" routerLink="/organizacion/suscripcion">Ver mi plan y cambiarlo</a>
-          </p>
-        }
-      }
-    </div>
   </div>
 </section>

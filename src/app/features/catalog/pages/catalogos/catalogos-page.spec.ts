@@ -13,6 +13,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -173,7 +174,12 @@ describe('CatalogosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('quedaron guardados');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Cambios guardados']);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el alta crea siempre un concepto de este centro y omite lo que quedo vacío', async () => {
@@ -209,7 +215,41 @@ describe('CatalogosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Solo la ve tu organización');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Concepto agregado al catálogo del centro');
+    expect(aviso?.descripcion).toContain('Solo lo ve tu organización');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('un código en uso se muestra pegado al campo, con la salida a la vista (UX-12)', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Dar de alta una especialidad de este centro');
+    escribir(fixture, '#alta-catalogo-codigo', 'KINE');
+    escribir(fixture, '#alta-catalogo-name', 'Otra kinesiologia');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LISTADO,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/catalogo-code-taken', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = anfitrion.querySelector('#alta-catalogo-codigo-conflicto');
+    expect(alerta?.tagName.toLowerCase()).toBe('app-alerta');
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('Ese código ya está en uso');
+    const campo = anfitrion.querySelector('#alta-catalogo-codigo');
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    expect(campo?.getAttribute('aria-describedby')).toBe('alta-catalogo-codigo-conflicto');
+    // No se repite como error general arriba del formulario.
+    expect(anfitrion.querySelectorAll('app-alerta').length).toBe(1);
   });
 
   it('los dos filtros recargan con su parametro y vuelven a la primera página', async () => {
@@ -264,7 +304,9 @@ describe('CatalogosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('conserva su significado');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Concepto dado de baja');
+    expect(aviso?.descripcion).toContain('conserva su significado');
   });
 
   it('un tipo que no existe no le pide nada al backend y ofrece los tres que si', async () => {
@@ -468,7 +510,6 @@ describe('CatalogosPage', () => {
 
   it('el alta de una práctica manda especialidad, descripción y ventana cuando se cargan', async () => {
     const fixture = await montarPracticas();
-    const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Dar de alta una práctica de este centro');
 
@@ -506,7 +547,7 @@ describe('CatalogosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('quedo dada de alta para este centro');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toContain('(práctica)');
   });
 
   it('el alta de una práctica sin especialidad no manda nada y lo dice en el campo', async () => {
@@ -647,10 +688,6 @@ function elegir(
   campo.value = valor;
   campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
-}
-
-function texto(fixture: { nativeElement: HTMLElement }): string {
-  return fixture.nativeElement.textContent ?? '';
 }
 
 function abrir(fixture: { nativeElement: HTMLElement; detectChanges(): void }, etiqueta: string) {

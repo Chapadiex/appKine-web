@@ -31,19 +31,16 @@
 }
 
 @if (mensajeDeCarga(); as mensaje) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
-    <h2 id="titulo-error-carga">No se pudieron cargar las deudas</h2>
-    <p class="estado estado--error">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudieron cargar las deudas">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      </div>
-    } @else {
-      <div class="acciones">
+      } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-      </div>
-    }
-  </section>
+      }
+    </p>
+  </app-alerta>
 }
 
 @if (sinDeudaCobrable()) {
@@ -105,6 +102,82 @@
       </div>
     }
   </section>
+}
+
+<!--
+  Rechazo del cobro (UX-12): arriba del formulario, a la vista mientras se corrige. Antes iba al
+  pie de la pantalla, debajo del resumen. Un saldo que cambio o un prepago que ya estaba son
+  advertencias: chocan con algo que ya existe y la salida es releer.
+-->
+@if (error(); as fallo) {
+  <app-alerta
+    [tipo]="
+      fallo.accion === 'recargar-cuenta' || fallo.causa === 'prepago-ya-registrado'
+        ? 'advertencia'
+        : 'error'
+    "
+    titulo="No pudimos registrar el cobro"
+  >
+    <p>{{ fallo.mensaje }}</p>
+
+    @if (fallo.motivo) {
+      <p>Lo que dijo el servidor: {{ fallo.motivo }}</p>
+    }
+
+    @if (fallo.causa === 'no-cuadra' && fallo.esperado !== null && fallo.recibido !== null) {
+      <p>
+        El total declarado era {{ importeDelRechazo(fallo.esperado) }} y el servidor sumo
+        {{ importeDelRechazo(fallo.recibido) }}.
+      </p>
+    }
+
+    @if (fallo.causa === 'prepago-no-admitido' || fallo.causa === 'prepago-ya-registrado') {
+      <!-- Reintentar tal cual falla igual: lo util es ver el turno como esta ahora. -->
+      <p class="alerta__acciones">
+        <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
+          Volver a la recepción del día
+        </a>
+        @if (fallo.causa === 'prepago-ya-registrado') {
+          <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+            Ver los cobros del paciente
+          </a>
+        }
+      </p>
+    }
+
+    <!--
+      `saldo-insuficiente` NO se muestra como una falla. Es la garantia del backend funcionando:
+      descuenta con `UPDATE ... WHERE saldo >= :importe` justamente para que ningun saldo quede
+      negativo. Lo unico util es releer los saldos reales.
+    -->
+    @switch (fallo.accion) {
+      @case ('recargar-cuenta') {
+        <p class="alerta__acciones">
+          <button type="button" class="boton" (click)="recargar()">
+            Recargar los saldos y volver a armar el cobro
+          </button>
+        </p>
+      }
+      @case ('reintentar-con-clave-nueva') {
+        <p class="alerta__acciones">
+          <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
+            Volver a intentar el cobro
+          </button>
+        </p>
+      }
+      @case ('elegir-contexto') {
+        <p class="alerta__acciones">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        </p>
+      }
+      @case ('abrir-caja') {
+        <!-- El formulario sigue cargado: con la caja abierta, el mismo cobro entra. -->
+        <p class="alerta__acciones">
+          <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
+        </p>
+      }
+    }
+  </app-alerta>
 }
 
 <!-- ============================ Formulario ========================================== -->
@@ -304,72 +377,3 @@
     </aside>
   </div>
 }
-
-<!-- ============================ Rechazos ============================================ -->
-
-<div aria-live="polite">
-  @if (error(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-rechazo">
-      <h2 id="titulo-rechazo">No se registro el cobro</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-
-      @if (fallo.motivo) {
-        <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
-      }
-
-      @if (fallo.causa === 'prepago-no-admitido' || fallo.causa === 'prepago-ya-registrado') {
-        <!-- Reintentar tal cual falla igual: lo util es ver el turno como esta ahora. -->
-        <div class="acciones">
-          <a class="boton" routerLink="/agenda/recepcion" [queryParams]="queryRecepcion()">
-            Volver a la recepción del día
-          </a>
-          @if (fallo.causa === 'prepago-ya-registrado') {
-            <a class="boton boton--secundario" [routerLink]="rutaCobros()">
-              Ver los cobros del paciente
-            </a>
-          }
-        </div>
-      }
-
-      @if (fallo.causa === 'no-cuadra' && fallo.esperado !== null && fallo.recibido !== null) {
-        <p class="ayuda ayuda--fija">
-          El total declarado era {{ importeDelRechazo(fallo.esperado) }} y el servidor sumo
-          {{ importeDelRechazo(fallo.recibido) }}.
-        </p>
-      }
-
-      <!--
-        `saldo-insuficiente` NO se muestra como una falla. Es la garantia del backend funcionando:
-        descuenta con `UPDATE ... WHERE saldo >= :importe` justamente para que ningun saldo quede
-        negativo. Lo unico util es releer los saldos reales.
-      -->
-      @switch (fallo.accion) {
-        @case ('recargar-cuenta') {
-          <div class="acciones">
-            <button type="button" class="boton" (click)="recargar()">
-              Recargar los saldos y volver a armar el cobro
-            </button>
-          </div>
-        }
-        @case ('reintentar-con-clave-nueva') {
-          <div class="acciones">
-            <button type="button" class="boton" [disabled]="enviando()" (click)="reintentar()">
-              Volver a intentar el cobro
-            </button>
-          </div>
-        }
-        @case ('elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
-        }
-        @case ('abrir-caja') {
-          <!-- El formulario sigue cargado: con la caja abierta, el mismo cobro entra. -->
-          <div class="acciones">
-            <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
-          </div>
-        }
-      }
-    </section>
-  }
-</div>

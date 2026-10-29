@@ -78,12 +78,6 @@
   </p>
 </ng-template>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 @if (convenioInactivo()) {
   <p class="estado estado--vacio">
     Este convenio está dado de baja, así que <b>no admite aranceles nuevos</b>. Los que ya tenía
@@ -153,13 +147,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los aranceles">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -297,13 +294,34 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo arancel" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!--
+        Error general de la carga, arriba del formulario. Un periodo que se superpone con otro
+        arancel es una advertencia: la salida es cerrar la vigencia del que ya esta.
+      -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta
+          [tipo]="tipoDeAlerta()"
+          [titulo]="
+            causaAccion() === 'solapamiento'
+              ? 'Se superpone con otro arancel de esta práctica'
+              : 'No pudimos cargar el arancel'
+          "
+        >
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="alta-arancel-practica">Práctica</label>
         <select
           id="alta-arancel-practica"
           formControlName="practicaId"
           [attr.aria-invalid]="mostrarErrorAlta('practicaId') ? 'true' : null"
-          aria-describedby="alta-arancel-practica-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('practicaId')
+              ? 'alta-arancel-practica-error alta-arancel-practica-ayuda'
+              : 'alta-arancel-practica-ayuda'
+          "
         >
           <option value="">Elegí una práctica</option>
           @for (practica of practicas(); track practica.id) {
@@ -311,7 +329,9 @@
           }
         </select>
         @if (mostrarErrorAlta('practicaId')) {
-          <p class="campo__error" role="alert">Elegí a qué práctica le estás poniendo precio.</p>
+          <p class="campo__error" id="alta-arancel-practica-error" role="alert">
+            Elegí a qué práctica le estás poniendo precio.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="alta-arancel-practica-ayuda">
           <b>No se puede cambiar después.</b>
@@ -358,10 +378,21 @@
             min="0"
             step="0.01"
             formControlName="importeTotal"
-            [attr.aria-invalid]="mostrarErrorAlta('importeTotal') ? 'true' : null"
+            [attr.aria-invalid]="
+              mostrarErrorAlta('importeTotal') || errorImportes() ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              mostrarErrorAlta('importeTotal')
+                ? 'alta-arancel-total-error'
+                : errorImportes()
+                  ? 'alta-arancel-importes-error'
+                  : null
+            "
           />
           @if (mostrarErrorAlta('importeTotal')) {
-            <p class="campo__error" role="alert">El importe total es obligatorio.</p>
+            <p class="campo__error" id="alta-arancel-total-error" role="alert">
+              El importe total es obligatorio.
+            </p>
           }
         </div>
 
@@ -373,10 +404,21 @@
             min="0"
             step="0.01"
             formControlName="importeFinanciador"
-            [attr.aria-invalid]="mostrarErrorAlta('importeFinanciador') ? 'true' : null"
+            [attr.aria-invalid]="
+              mostrarErrorAlta('importeFinanciador') || errorImportes() ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              mostrarErrorAlta('importeFinanciador')
+                ? 'alta-arancel-financiador-error'
+                : errorImportes()
+                  ? 'alta-arancel-importes-error'
+                  : null
+            "
           />
           @if (mostrarErrorAlta('importeFinanciador')) {
-            <p class="campo__error" role="alert">Es obligatorio, y puede ser cero.</p>
+            <p class="campo__error" id="alta-arancel-financiador-error" role="alert">
+              Es obligatorio, y puede ser cero.
+            </p>
           }
         </div>
 
@@ -388,14 +430,26 @@
             min="0"
             step="0.01"
             formControlName="coseguro"
-            [attr.aria-invalid]="mostrarErrorAlta('coseguro') ? 'true' : null"
-            aria-describedby="alta-arancel-importes-ayuda"
+            [attr.aria-invalid]="mostrarErrorAlta('coseguro') || errorImportes() ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorAlta('coseguro')
+                ? 'alta-arancel-coseguro-error alta-arancel-importes-ayuda'
+                : errorImportes()
+                  ? 'alta-arancel-importes-error alta-arancel-importes-ayuda'
+                  : 'alta-arancel-importes-ayuda'
+            "
           />
           @if (mostrarErrorAlta('coseguro')) {
-            <p class="campo__error" role="alert">Es obligatorio, y puede ser cero.</p>
+            <p class="campo__error" id="alta-arancel-coseguro-error" role="alert">
+              Es obligatorio, y puede ser cero.
+            </p>
           }
         </div>
       </div>
+      <!-- La terna que no cuadra es un dato a corregir de los tres importes: va debajo de ellos. -->
+      @if (errorImportes(); as mensaje) {
+        <p class="campo__error" id="alta-arancel-importes-error" role="alert">{{ mensaje }}</p>
+      }
       <p class="ayuda ayuda--fija" id="alta-arancel-importes-ayuda">
         Tienen que cuadrar: <b>financiador + coseguro = total</b>, exacto. Coseguro en cero es
         cobertura total.
@@ -415,9 +469,14 @@
             type="date"
             formControlName="vigenciaDesde"
             [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorAlta('vigenciaDesde') ? 'alta-arancel-desde-error' : null
+            "
           />
           @if (mostrarErrorAlta('vigenciaDesde')) {
-            <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+            <p class="campo__error" id="alta-arancel-desde-error" role="alert">
+              La fecha de inicio es obligatoria.
+            </p>
           }
         </div>
 
@@ -437,10 +496,6 @@
           La del convenio es: {{ ventanaEnPalabras(ficha) }}.
         }
       </p>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
 
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -466,6 +521,30 @@
       (cerrar)="cerrarEdicion()"
     >
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <!--
+          Error de la edicion arriba del formulario. La version vieja (409) y el periodo solapado
+          son advertencias: chocan con algo que ya existe.
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta
+            [tipo]="tipoDeAlerta()"
+            [titulo]="
+              causaAccion() === 'solapamiento'
+                ? 'Se superpone con otro arancel de esta práctica'
+                : 'No pudimos guardar los cambios'
+            "
+          >
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar la grilla
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda">
           <b>Esto es para corregir una carga, no para subir el precio.</b> Para actualizarlo,
           cerrale la vigencia a este y cargá otro. Los tres importes viajan juntos aunque toques uno
@@ -481,6 +560,8 @@
               min="0"
               step="0.01"
               formControlName="importeTotal"
+              [attr.aria-invalid]="errorImportes() ? 'true' : null"
+              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
             />
           </div>
 
@@ -492,6 +573,8 @@
               min="0"
               step="0.01"
               formControlName="importeFinanciador"
+              [attr.aria-invalid]="errorImportes() ? 'true' : null"
+              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
             />
           </div>
 
@@ -503,9 +586,14 @@
               min="0"
               step="0.01"
               formControlName="coseguro"
+              [attr.aria-invalid]="errorImportes() ? 'true' : null"
+              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
             />
           </div>
         </div>
+        @if (errorImportes(); as mensaje) {
+          <p class="campo__error" id="editar-arancel-importes-error" role="alert">{{ mensaje }}</p>
+        }
 
         <div class="campo">
           <label for="editar-arancel-desde">Vigente desde</label>
@@ -526,10 +614,6 @@
           </p>
         </div>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -542,11 +626,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar la grilla
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -557,6 +636,18 @@
       [titulo]="'Dar de baja el arancel de ' + nombreDeLaPractica(arancel)"
       (cerrar)="cerrarPanel()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de baja el arancel">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar la grilla
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-arancel-motivo"
         [titulo]="'Dar de baja el arancel de ' + nombreDeLaPractica(arancel)"
@@ -574,13 +665,6 @@
           reactivación.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton" (click)="cargar()">Recargar la grilla</button>
-      }
     </app-panel-lateral>
   }
 }

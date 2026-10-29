@@ -3,6 +3,13 @@
   class="historia__formulario"
   (submit)="$event.preventDefault(); subir(formulario)"
 >
+  <!-- UX-12: el rechazo, arriba del formulario. -->
+  @if (error(); as problema) {
+    <app-alerta tipo="error" titulo="No pudimos subir el adjunto">
+      <p>{{ problema.mensaje }}</p>
+    </app-alerta>
+  }
+
   <div class="campo">
     <label for="adjunto-categoria">Categoría</label>
     <select
@@ -40,11 +47,6 @@
       <p id="adjunto-archivo-error" class="campo__error">Elegí el archivo que queres adjuntar.</p>
     }
   </div>
-
-  @if (error(); as problema) {
-    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
-  }
-  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
 
   <div class="acciones">
     <button type="submit" class="boton" [disabled]="enviando()">

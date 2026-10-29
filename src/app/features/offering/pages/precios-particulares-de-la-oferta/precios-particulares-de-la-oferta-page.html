@@ -34,12 +34,6 @@
 
 <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-grilla-precios">
   <h2 id="titulo-grilla-precios">Grilla de vigencias</h2>
 
@@ -55,12 +49,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los precios de la oferta">
+          <p>{{ mensajeDeCarga() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -151,6 +149,13 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo precio particular" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general: arriba del formulario (UX-12). El solapamiento va junto a las fechas. -->
+      @if (errorAccion() && !solapado()) {
+        <app-alerta tipo="error" titulo="No pudimos cargar el precio">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-precio-importe">Importe</label>
         <input
@@ -193,7 +198,8 @@
           id="alta-precio-desde"
           type="date"
           formControlName="vigenciaDesde"
-          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') || solapado() ? 'true' : null"
+          [attr.aria-describedby]="solapado() ? 'alta-precio-solapado' : null"
         />
         @if (mostrarErrorAlta('vigenciaDesde')) {
           <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
@@ -206,15 +212,24 @@
           id="alta-precio-hasta"
           type="date"
           formControlName="vigenciaHasta"
-          aria-describedby="alta-precio-hasta-ayuda"
+          [attr.aria-invalid]="solapado() ? 'true' : null"
+          [attr.aria-describedby]="solapado() ? 'alta-precio-solapado' : 'alta-precio-hasta-ayuda'"
         />
         <p class="ayuda" id="alta-precio-hasta-ayuda">
           Es el <b>último día</b> en que rige, inclusive. Vacío, no tiene fin previsto.
         </p>
       </div>
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      <!-- Vigencia que choca con otro precio: pegada a las fechas que la producen (UX-12). -->
+      @if (solapado()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Se superpone con otro precio de la oferta"
+          id="alta-precio-solapado"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
       }
 
       <p class="acciones">
@@ -242,13 +257,27 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioFin" (ngSubmit)="enviarFin()" novalidate>
+        @if (errorAccion() && !solapado()) {
+          <app-alerta tipo="error" titulo="No pudimos cambiar el fin del precio">
+            <p>{{ errorAccion() }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar la grilla
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <div class="campo">
           <label for="fin-precio-hasta">Rige hasta</label>
           <input
             id="fin-precio-hasta"
             type="date"
             formControlName="vigenciaHasta"
-            aria-describedby="fin-precio-hasta-ayuda"
+            [attr.aria-invalid]="solapado() ? 'true' : null"
+            [attr.aria-describedby]="solapado() ? 'fin-precio-solapado' : 'fin-precio-hasta-ayuda'"
           />
           <p class="ayuda ayuda--fija" id="fin-precio-hasta-ayuda">
             Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin fin previsto.
@@ -256,8 +285,15 @@
           </p>
         </div>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        @if (solapado()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Se superpone con otro precio de la oferta"
+            id="fin-precio-solapado"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
         }
 
         <p class="acciones">
@@ -272,11 +308,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar la grilla
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -288,6 +319,18 @@
       [subtitulo]="ventana(precio)"
       (cerrar)="cerrarPanel()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja el precio">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar la grilla
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-precio-motivo"
         [titulo]="'Dar de baja el precio de ' + importe(precio)"
@@ -304,14 +347,6 @@
           ya devengado no cambia. <b>No hay reactivacion.</b>
         </p>
       </app-confirmacion-con-motivo>
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar la grilla
-        </button>
-      }
     </app-panel-lateral>
   }
 }

@@ -98,7 +98,11 @@ test.describe('Permisos adicionales de un colaborador contra el backend real', (
     const alta = respuestaDe(page, 'POST', /\/memberships\/\d+\/grants$/);
     await page.getByRole('button', { name: 'Otorgar' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(page.getByText('Permiso adicional otorgado.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Permiso otorgado'),
+    ).toBeVisible();
     const grant = page.locator('.lista-grants li').filter({ hasText: PERMISO });
     await expect(grant).toBeVisible();
     await expect(grant.getByText('No vigente con el rol actual')).toHaveCount(0);
@@ -137,7 +141,11 @@ test.describe('Permisos adicionales de un colaborador contra el backend real', (
     const baja = respuestaDe(page, 'DELETE', /\/grants\/[^/]+$/);
     await noVigente.getByRole('button', { name: 'Dar de baja' }).click();
     expect((await baja).status()).toBe(204);
-    await expect(page.getByText('Permiso adicional dado de baja.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Permiso dado de baja'),
+    ).toBeVisible();
     await expect(page.getByText('Este colaborador no tiene permisos adicionales.')).toBeVisible();
   });
 });

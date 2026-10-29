@@ -25,7 +25,6 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { FocoAlMontar } from '../../../../shared/directives/foco-al-montar.directive';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import {
@@ -45,6 +44,9 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** El esquema de cobro que exige cada tipo de producto (RN-M29-005, RF-M29-007). */
 const ESQUEMA_DEL_TIPO: Readonly<Record<CrearProductoTipoEnum, string>> = {
@@ -81,6 +83,8 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
   selector: 'app-productos-de-pack-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -89,7 +93,6 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
-    FocoAlMontar,
     AccionesDeFila,
     PanelLateral,
   ],
@@ -98,6 +101,7 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
 })
 export class ProductosDePackPage {
   private readonly api = inject(PasesApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -141,7 +145,8 @@ export class ProductosDePackPage {
   protected readonly panel = signal<Panel>({ tipo: 'ninguno' });
   protected readonly error = signal<ErrorPase | null>(null);
   protected readonly errorAccion = signal<ErrorPase | null>(null);
-  protected readonly aviso = signal<string | null>(null);
+  /** "Se vende hasta" anterior a "desde": se dice en ese campo (UX-12). */
+  protected readonly hastaAntesDeDesde = signal(false);
   protected readonly enviando = signal(false);
   protected readonly intentado = signal(false);
 
@@ -194,7 +199,6 @@ export class ProductosDePackPage {
       untracked(() => {
         // Cambiar de sede no puede dejar productos ni formularios de la anterior.
         this.cerrarPanel();
-        this.aviso.set(null);
         this.productos.set(null);
         this.cargar();
       });
@@ -314,11 +318,16 @@ export class ProductosDePackPage {
     const eraAlta = this.panel().tipo === 'alta';
     this.cerrarPanel();
     if (eraAlta) {
-      afterNextRender(
-        () => this.host.nativeElement.querySelector<HTMLElement>('#boton-nuevo-producto')?.focus(),
-        { injector: this.injector },
-      );
+      this.enfocarNuevoProducto();
     }
+  }
+
+  /** Foco a "Nuevo producto", que se vuelve a dibujar al cerrar el panel (WCAG 2.4.3). */
+  private enfocarNuevoProducto(): void {
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>('#boton-nuevo-producto')?.focus(),
+      { injector: this.injector },
+    );
   }
 
   protected invalido(campo: keyof typeof this.formulario.controls): boolean {
@@ -356,12 +365,9 @@ export class ProductosDePackPage {
     }
     const v = this.formulario.getRawValue();
     const hasta = v.vigenciaHasta.trim();
-    if (hasta !== '' && hasta < v.vigenciaDesde) {
-      this.errorAccion.set({
-        mensaje: 'La fecha hasta la que se vende no puede ser anterior a la fecha desde.',
-        causa: 'validacion',
-        campos: {},
-      });
+    this.hastaAntesDeDesde.set(hasta !== '' && hasta < v.vigenciaDesde);
+    if (this.hastaAntesDeDesde()) {
+      this.errorAccion.set(null);
       return;
     }
     const comun = {
@@ -393,12 +399,24 @@ export class ProductosDePackPage {
     pedido$.subscribe({
       next: (producto) => {
         this.enviando.set(false);
-        this.aviso.set(
-          editado === null
-            ? `Se creo "${producto.nombre}"${esAbono(producto) ? ' (abono)' : ''}. Todavía nadie tiene saldo: se vende desde la ficha de la persona, en Pacientes.`
-            : `Se guardo "${producto.nombre}". Los pases ya vendidos no cambian.`,
-        );
-        this.cerrarPanel();
+        if (editado === null) {
+          this.avisos.exito(esAbono(producto) ? 'Abono creado' : 'Producto creado', {
+            descripcion:
+              `"${producto.nombre}". Todavía nadie tiene saldo: se vende desde la ficha de la ` +
+              'persona, en Pacientes.',
+          });
+        } else {
+          this.avisos.exito('Cambios guardados', {
+            descripcion: `"${producto.nombre}". Los pases ya vendidos no cambian.`,
+          });
+        }
+        // El aviso no toma el foco (UX-12): en el alta vuelve a "Nuevo producto"; en la edicion, el
+        // panel se lo devuelve a la fila.
+        if (editado === null) {
+          this.cancelarFormulario();
+        } else {
+          this.cerrarPanel();
+        }
         this.cargar();
       },
       error: (error: unknown) => {
@@ -421,10 +439,14 @@ export class ProductosDePackPage {
     this.api.darDeBajaProducto(consultorioId, panel.producto.id ?? -1, motivo).subscribe({
       next: (producto) => {
         this.enviando.set(false);
-        this.aviso.set(
-          `"${producto.nombre}" ya no se vende. Los pases vendidos conservan su saldo y su vigencia.`,
-        );
+        this.avisos.exito('Producto dado de baja', {
+          descripcion:
+            `"${producto.nombre}" ya no se vende. Los pases vendidos conservan su saldo y su ` +
+            'vigencia.',
+        });
+        // La fila puede desaparecer del listado (sin "dados de baja"): el foco a "Nuevo producto".
         this.cerrarPanel();
+        this.enfocarNuevoProducto();
         this.cargar();
       },
       error: (error: unknown) => {
@@ -437,7 +459,7 @@ export class ProductosDePackPage {
   private prepararPanel(panel: Panel): void {
     this.panel.set(panel);
     this.errorAccion.set(null);
-    this.aviso.set(null);
+    this.hastaAntesDeDesde.set(false);
     this.intentado.set(false);
   }
 }

@@ -21,6 +21,8 @@ import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   ETIQUETA_PESTANAS_DE_CATALOGO,
   PESTANAS_DE_CATALOGO,
@@ -72,6 +74,8 @@ type Estado =
   selector: 'app-solicitudes-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     PanelLateral,
     Migas,
     Pestanas,
@@ -92,6 +96,7 @@ export class SolicitudesPage {
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CATALOGO;
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -113,7 +118,6 @@ export class SolicitudesPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaCatalogo | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly solicitudes = computed(() => {
@@ -159,7 +163,6 @@ export class SolicitudesPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarAlta();
-        this.exito.set(null);
         this.filtroEstado.set('TODAS');
         this.cargar();
       });
@@ -204,7 +207,6 @@ export class SolicitudesPage {
   }
 
   protected abrirAlta(): void {
-    this.exito.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.intentos.set(0);
@@ -261,16 +263,15 @@ export class SolicitudesPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo.createCatalogoSolicitud({ createCatalogoSolicitudRequest: cuerpo }).subscribe({
       next: () => {
         this.cerrarAlta();
-        this.exito.set(
-          'Tu pedido quedo registrado. Lo resuelve la plataforma: vas a ver como quedo en este ' +
-            'mismo listado. Mientras tanto, si lo necesitas ya, podés darlo de alta como un ' +
+        this.avisos.exito('Pedido enviado a la plataforma', {
+          descripcion:
+            'Vas a ver cómo se resuelve en este listado. Si lo necesitás ya, dalo de alta como ' +
             'concepto de tu centro.',
-        );
+        });
         this.cargar();
       },
       error: (error: unknown) => {

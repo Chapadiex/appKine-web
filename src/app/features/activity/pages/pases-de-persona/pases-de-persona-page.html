@@ -23,8 +23,24 @@
       </app-ayuda>
     </div>
 
+    <!-- Rechazo general de la venta: arriba de lo que se esta completando (UX-12). -->
+    @if (errorVenta(); as fallo) {
+      @if (campoDeVenta() === null && fallo.causa !== 'abono-superpuesto') {
+        <app-alerta tipo="error" titulo="No pudimos vender el pase">
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+    }
+
     @if (errorProductos(); as fallo) {
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
+      <app-alerta tipo="error" titulo="No pudimos leer los productos">
+        <p>{{ fallo.mensaje }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargarProductos()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
     } @else if (productos().length === 0) {
       <p class="estado estado--vacio">
         Esta sede no tiene productos vigentes para vender. Se crean en Productos de pack.
@@ -36,6 +52,8 @@
           <select
             id="vender-producto"
             [value]="productoElegido()"
+            [attr.aria-invalid]="campoDeVenta() === 'producto' ? 'true' : null"
+            [attr.aria-describedby]="campoDeVenta() === 'producto' ? 'vender-producto-error' : null"
             (change)="elegirProducto($any($event.target).value)"
           >
             <option value="">Elegí un producto</option>
@@ -46,6 +64,9 @@
               </option>
             }
           </select>
+          @if (campoDeVenta() === 'producto') {
+            <p class="campo__error" id="vender-producto-error">{{ errorVenta()?.mensaje }}</p>
+          }
           @if (productoDeLaVenta(); as producto) {
             @if (abono(producto)) {
               <p class="ayuda ayuda--fija">
@@ -67,8 +88,25 @@
                 id="vender-periodo-desde"
                 type="date"
                 [value]="periodoDesde()"
+                [attr.aria-invalid]="
+                  campoDeVenta() === 'desde' || errorVenta()?.causa === 'abono-superpuesto'
+                    ? 'true'
+                    : null
+                "
+                [attr.aria-describedby]="
+                  campoDeVenta() === 'desde'
+                    ? 'vender-periodo-desde-error'
+                    : errorVenta()?.causa === 'abono-superpuesto'
+                      ? 'vender-periodo-superpuesto'
+                      : null
+                "
                 (input)="cambiarPeriodo('desde', $any($event.target).value)"
               />
+              @if (campoDeVenta() === 'desde') {
+                <p class="campo__error" id="vender-periodo-desde-error">
+                  {{ errorVenta()?.mensaje }}
+                </p>
+              }
             </div>
             <div class="campo">
               <label for="vender-periodo-hasta">Periodo hasta (opcional)</label>
@@ -76,13 +114,34 @@
                 id="vender-periodo-hasta"
                 type="date"
                 [value]="periodoHasta()"
-                aria-describedby="vender-periodo-hasta-ayuda"
+                [attr.aria-invalid]="campoDeVenta() === 'hasta' ? 'true' : null"
+                [attr.aria-describedby]="
+                  campoDeVenta() === 'hasta'
+                    ? 'vender-periodo-hasta-ayuda vender-periodo-hasta-error'
+                    : 'vender-periodo-hasta-ayuda'
+                "
                 (input)="cambiarPeriodo('hasta', $any($event.target).value)"
               />
               <p class="ayuda ayuda--fija" id="vender-periodo-hasta-ayuda">
                 Vacío: dura los {{ producto.vigenciaDias }} días del producto.
               </p>
+              @if (campoDeVenta() === 'hasta') {
+                <p class="campo__error" id="vender-periodo-hasta-error">
+                  {{ errorVenta()?.mensaje }}
+                </p>
+              }
             </div>
+            <!-- Ya tiene ese abono en un periodo que se pisa: pegado al periodo (UX-12). -->
+            @if (errorVenta()?.causa === 'abono-superpuesto') {
+              <app-alerta
+                class="campo--ancho"
+                tipo="advertencia"
+                titulo="Ese periodo se superpone con otro abono"
+                id="vender-periodo-superpuesto"
+              >
+                <p>{{ errorVenta()?.mensaje }}</p>
+              </app-alerta>
+            }
             <div class="campo">
               <label for="vender-renovacion">
                 <input
@@ -109,76 +168,21 @@
         </div>
       </div>
     }
-
-    <div aria-live="polite">
-      @if (errorVenta(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
-      @if (venta(); as resultado) {
-        <p class="estado estado--ok" akineFocoAlMontar>
-          {{ resultado.creada === false ? 'Esa venta ya estaba registrada' : 'Se vendio' }}
-          "{{ resultado.pase?.nombre }}": {{ creditos(resultado.pase?.creditosDisponibles) }}
-          @if (resultado.pase && abono(resultado.pase)) {
-            del {{ fecha(resultado.pase.vigenciaDesde) }} al
-            {{ fecha(resultado.pase.vigenciaHasta) }}.
-          } @else {
-            hasta el {{ fecha(resultado.pase?.vigenciaHasta) }}.
-          }
-          @if (resultado.deuda; as deuda) {
-            Quedo una deuda de {{ importe(deuda.importe, deuda.moneda) }} a nombre de la persona.
-          }
-          @if (resultado.pase?.renovacionAutomatica) {
-            Se va a renovar solo al terminar el periodo.
-          }
-        </p>
-        <p *akinePermiso="permisoCobro">
-          <a class="enlace" [routerLink]="rutaCuentaCorriente()"
-            >Cobrar desde la cuenta corriente</a
-          >
-        </p>
-      }
-    </div>
   </section>
 }
 
-<div aria-live="polite">
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-error-pases">
-      <h2 id="titulo-error-pases">No se pudieron leer los pases</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
-        @if (fallo.causa === 'sin-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        } @else {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Reintentar
-          </button>
-        }
-      </div>
-    </section>
-  }
-  @if (avisoAccion(); as texto) {
-    <p class="estado estado--ok" akineFocoAlMontar>{{ texto }}</p>
-  }
-  @if (errorRenovacion(); as fallo) {
-    <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-  }
-  @if (anulacion(); as resultado) {
-    <p class="estado estado--ok" akineFocoAlMontar>
-      @if (resultado.anulado === false) {
-        "{{ resultado.pase?.nombre }}" ya estaba anulado: no se cambio nada.
+@if (error(); as fallo) {
+  <app-alerta tipo="error" titulo="No se pudieron leer los pases">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (fallo.causa === 'sin-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
       } @else {
-        Se anulo "{{ resultado.pase?.nombre }}" y su saldo se descarto.
-      }
-      @if (resultado.deuda; as deuda) {
-        La deuda de la venta, {{ importe(deuda.importe, deuda.moneda) }}, quedo anulada: no se
-        borra, sigue en la cuenta corriente como anulada y con el motivo.
-      } @else {
-        La venta no tenia deuda.
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
     </p>
-  }
-</div>
+  </app-alerta>
+}
 
 @if (pases() === null && !error()) {
   <p class="estado estado--cargando" aria-live="polite">Leyendo los pases…</p>
@@ -394,6 +398,11 @@
 -->
 @if (enAjuste(); as pase) {
   <app-panel-lateral [titulo]="'Ajustar el saldo de ' + pase.nombre" (cerrar)="cerrarAccion()">
+    @if (errorAccion(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos ajustar el saldo">
+        <p>{{ fallo.mensaje }}</p>
+      </app-alerta>
+    }
     <p class="ayuda ayuda--fija pases__nota">
       Tiene {{ creditos(pase.creditosDisponibles) }} de {{ pase.creditosIniciales }}. El ajuste suma
       o resta creditos sin tocar la deuda ni la caja, y queda en los movimientos con el motivo y
@@ -427,13 +436,11 @@
           }
         </p>
         @if (ajusteFueraDeRango()) {
-          <p class="estado estado--error" id="ajuste-cantidad-error">
+          <p class="campo__error" id="ajuste-cantidad-error">
             El saldo tiene que quedar entre 0 y {{ pase.creditosIniciales }}.
           </p>
         } @else if (ajusteIntentado() && cantidadDelAjuste() === null) {
-          <p class="estado estado--error" id="ajuste-cantidad-error">
-            Un número entero distinto de cero.
-          </p>
+          <p class="campo__error" id="ajuste-cantidad-error">Un número entero distinto de cero.</p>
         }
       </div>
       <div class="campo">
@@ -451,16 +458,11 @@
           (input)="ajusteMotivo.set($any($event.target).value)"
         />
         @if (ajusteIntentado() && ajusteMotivo().trim() === '') {
-          <p class="estado estado--error" id="ajuste-motivo-error">
+          <p class="campo__error" id="ajuste-motivo-error">
             El motivo es obligatorio: queda en el ledger.
           </p>
         }
       </div>
-    </div>
-    <div aria-live="polite">
-      @if (errorAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
     </div>
     <div class="acciones acciones--pie">
       <button type="button" class="boton boton--secundario" (click)="cerrarAccion()">
@@ -475,6 +477,18 @@
 
 @if (enAnulacion(); as pase) {
   <app-panel-lateral [titulo]="'Anular ' + pase.nombre" (cerrar)="cerrarAccion()">
+    @if (errorAccion(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos anular el pase">
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.causa === 'pase-con-cobros') {
+          <p class="alerta__acciones" *akinePermiso="permisoCobro">
+            <a class="boton boton--secundario" [routerLink]="rutaCuentaCorriente()"
+              >Ir a la cuenta corriente</a
+            >
+          </p>
+        }
+      </app-alerta>
+    }
     <akine-confirmacion-con-motivo
       idCampo="anulacion-motivo"
       [titulo]="'Anular ' + pase.nombre"
@@ -489,16 +503,6 @@
       (confirmado)="confirmarAnulacion($event)"
       (cancelado)="cerrarAccion()"
     />
-    <div aria-live="polite">
-      @if (errorAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        @if (fallo.causa === 'pase-con-cobros') {
-          <p *akinePermiso="permisoCobro">
-            <a class="enlace" [routerLink]="rutaCuentaCorriente()">Ir a la cuenta corriente</a>
-          </p>
-        }
-      }
-    </div>
   </app-panel-lateral>
 }
 
@@ -518,7 +522,18 @@
         {{ actual.pase.creditosIniciales }}.
       </p>
       @if (actual.error; as fallo) {
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos leer los movimientos">
+          <p>{{ fallo.mensaje }}</p>
+          <p class="alerta__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="irAPaginaDeMovimientos(actual.numero)"
+            >
+              Reintentar
+            </button>
+          </p>
+        </app-alerta>
       } @else if (actual.pagina === null) {
         <p class="estado estado--cargando" aria-live="polite">Leyendo los movimientos…</p>
       } @else if ((actual.pagina.content ?? []).length === 0) {

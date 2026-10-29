@@ -12,11 +12,41 @@
 <p><a class="enlace" [routerLink]="RUTA_CLASES">Volver a las clases de la semana</a></p>
 
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
+  <!-- Error general de la operacion: arriba del formulario, a la vista mientras se corrige. -->
+  @if (error(); as fallo) {
+    @if (conflicto() === null) {
+      <app-alerta tipo="error" titulo="No pudimos programar la clase">
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.motivo) {
+          <p>Detalle: {{ fallo.motivo }}</p>
+        }
+        @if (fallo.accion === 'elegir-contexto') {
+          <p class="alerta__acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </p>
+        }
+      </app-alerta>
+    }
+  }
+
   <h2>Datos de la clase</h2>
 
   @if (ofertas() === null) {
     <p class="estado estado--cargando" aria-live="polite">Leyendo las ofertas grupales…</p>
-  } @else if (ofertas()!.length === 0 && !error()) {
+  } @else if (errorDeOfertas(); as fallo) {
+    <app-alerta tipo="error" titulo="No pudimos leer las ofertas grupales">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.accion === 'elegir-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="cargarOfertas()">
+            Reintentar
+          </button>
+        }
+      </p>
+    </app-alerta>
+  } @else if (ofertas()!.length === 0) {
     <p class="estado estado--vacio">
       Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
       grupal: se crea en Servicios.
@@ -29,8 +59,14 @@
       <select
         id="clase-oferta"
         formControlName="ofertaId"
-        [attr.aria-invalid]="invalido('ofertaId')"
-        [attr.aria-describedby]="invalido('ofertaId') ? 'clase-oferta-error' : null"
+        [attr.aria-invalid]="invalido('ofertaId') || conflicto() === 'oferta'"
+        [attr.aria-describedby]="
+          invalido('ofertaId')
+            ? 'clase-oferta-error'
+            : conflicto() === 'oferta'
+              ? 'clase-conflicto-oferta'
+              : null
+        "
       >
         <option value="">Elegí una oferta</option>
         @for (oferta of ofertas() ?? []; track oferta.id) {
@@ -38,7 +74,7 @@
         }
       </select>
       @if (invalido('ofertaId')) {
-        <p class="estado estado--error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
+        <p class="campo__error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
       }
     </div>
     <div class="campo">
@@ -46,6 +82,21 @@
       <input id="clase-titulo" type="text" maxlength="120" formControlName="titulo" />
     </div>
   </div>
+
+  <!-- La oferta no admite clases (no es grupal, esta de baja o fuera de vigencia). -->
+  @if (conflicto() === 'oferta') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Esa oferta no admite clases"
+      id="clase-conflicto-oferta"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
+      }
+    </app-alerta>
+  }
 
   <fieldset class="cuando">
     <legend>Cuándo</legend>
@@ -60,7 +111,7 @@
           [attr.aria-describedby]="invalido('fecha') ? 'clase-fecha-error' : null"
         />
         @if (invalido('fecha')) {
-          <p class="estado estado--error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
+          <p class="campo__error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
         }
       </div>
       <div class="campo">
@@ -73,7 +124,7 @@
           [attr.aria-describedby]="invalido('horaInicio') ? 'clase-inicio-error' : null"
         />
         @if (invalido('horaInicio')) {
-          <p class="estado estado--error" id="clase-inicio-error">Indica a que hora empieza.</p>
+          <p class="campo__error" id="clase-inicio-error">Indica a que hora empieza.</p>
         }
       </div>
       <div class="campo">
@@ -82,16 +133,43 @@
           id="clase-fin"
           type="time"
           formControlName="horaFin"
-          [attr.aria-invalid]="invalido('horaFin')"
-          [attr.aria-describedby]="invalido('horaFin') ? 'clase-fin-error' : null"
+          [attr.aria-invalid]="
+            invalido('horaFin') || finAntesDeInicio() || conflicto() === 'horario'
+          "
+          [attr.aria-describedby]="
+            invalido('horaFin') || finAntesDeInicio()
+              ? 'clase-fin-error'
+              : conflicto() === 'horario'
+                ? 'clase-conflicto-horario'
+                : null
+          "
         />
         @if (invalido('horaFin')) {
-          <p class="estado estado--error" id="clase-fin-error">Indica a que hora termina.</p>
+          <p class="campo__error" id="clase-fin-error">Indica a que hora termina.</p>
+        } @else if (finAntesDeInicio()) {
+          <p class="campo__error" id="clase-fin-error">
+            La hora de fin tiene que ser posterior a la de inicio.
+          </p>
         }
       </div>
     </div>
     <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
   </fieldset>
+
+  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
+  @if (conflicto() === 'horario') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese horario no está libre"
+      id="clase-conflicto-horario"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
+      }
+    </app-alerta>
+  }
 
   <div class="grilla-campos grilla-campos--tres">
     @if (exigeProfesional()) {
@@ -132,7 +210,7 @@
           en otro.
         </p>
         @if (errorDelServidor('espacioId'); as mensaje) {
-          <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
+          <p class="campo__error" id="clase-espacio-error">{{ mensaje }}</p>
         }
       </div>
     }
@@ -150,26 +228,24 @@
         No puede superar la capacidad de la oferta ni la del box.
       </p>
       @if (invalido('capacidad')) {
-        <p class="estado estado--error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
+        <p class="campo__error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
       } @else if (errorDelServidor('capacidad'); as mensaje) {
-        <p class="estado estado--error" id="clase-capacidad-error">{{ mensaje }}</p>
+        <p class="campo__error" id="clase-capacidad-error">{{ mensaje }}</p>
       }
     </div>
   </div>
 
-  <div aria-live="polite">
-    @if (error(); as fallo) {
-      <div class="conflicto tarjeta" role="alert">
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.motivo) {
-          <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-        }
-        @if (fallo.accion === 'elegir-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        }
-      </div>
-    }
-  </div>
+  <!-- El cupo no entra en la oferta o en el box, o queda por debajo de los ya inscriptos. -->
+  @if (conflicto() === 'cupo') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese cupo no se puede usar"
+      id="clase-conflicto-cupo"
+    >
+      <p>{{ error()?.mensaje }}</p>
+    </app-alerta>
+  }
 
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">

@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 
@@ -36,6 +37,14 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
+/** Seccion de la pantalla donde se hizo una operacion: su rechazo se muestra ahi. */
+type OperacionDeCaja = 'abrir' | 'movimiento' | 'reversion' | 'cierre';
+
+type FalloDeCaja = ErrorCaja & { readonly en: OperacionDeCaja };
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -79,13 +88,14 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  */
 @Component({
   selector: 'app-caja-page',
-  imports: [CabeceraDePagina, Ayuda, RouterLink, PanelLateral],
+  imports: [CabeceraDePagina, Ayuda, RouterLink, PanelLateral, Alerta, NgTemplateOutlet],
   templateUrl: './caja-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class CajaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CajaApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -105,8 +115,8 @@ export class CajaPage {
   protected readonly estado = signal<EstadoCaja>({ tipo: 'cargando' });
   /** El arqueo recien registrado, para que el operador vea la diferencia que quedo asentada. */
   protected readonly cierre = signal<JornadaCaja | null>(null);
-  protected readonly error = signal<ErrorCaja | null>(null);
-  protected readonly aviso = signal<string | null>(null);
+  /** El rechazo de la ultima operacion y en que seccion se hizo: se muestra ahi (UX-12). */
+  protected readonly error = signal<FalloDeCaja | null>(null);
   protected readonly enviando = signal(false);
 
   // Apertura
@@ -297,10 +307,12 @@ export class CajaPage {
         this.enviando.set(false);
         this.cierre.set(null);
         this.saldoInicial.set('');
-        this.aviso.set('Caja abierta.');
+        this.avisos.exito('Caja abierta', {
+          descripcion: `Saldo inicial: ${importeEnPalabras(deCentavos(centavos), moneda)}`,
+        });
         this.cargar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) => this.fallar(error, 'abrir'),
     });
   }
 
@@ -340,13 +352,14 @@ export class CajaPage {
       return;
     }
 
+    const concepto = this.conceptoMovimiento().trim();
     this.iniciarEnvio();
     this.api
       .registrarMovimiento(consultorioId, {
         tipo: this.tipoMovimiento(),
         medio: this.medioMovimiento(),
         importe: deCentavos(centavos),
-        concepto: this.conceptoMovimiento().trim(),
+        concepto,
         idempotencyKey: this.clave(),
       })
       .subscribe({
@@ -355,7 +368,9 @@ export class CajaPage {
           this.importeMovimiento.set('');
           this.conceptoMovimiento.set('');
           this.claveDeMovimiento = '';
-          this.aviso.set('Movimiento registrado.');
+          this.avisos.exito('Movimiento registrado', {
+            descripcion: `${concepto} · ${importeEnPalabras(deCentavos(centavos), this.jornada()?.moneda)}`,
+          });
           this.cargar();
         },
         error: (error: unknown) => {
@@ -363,7 +378,7 @@ export class CajaPage {
           if (traducirErrorCaja(error).renovarClave === true) {
             this.claveDeMovimiento = '';
           }
-          this.fallar(error);
+          this.fallar(error, 'movimiento');
         },
       });
   }
@@ -426,10 +441,12 @@ export class CajaPage {
       next: () => {
         this.enviando.set(false);
         this.cancelarReversion();
-        this.aviso.set('Movimiento revertido. El original queda en el listado, compensado.');
+        this.avisos.exito('Movimiento revertido', {
+          descripcion: 'El original queda en el listado, compensado.',
+        });
         this.cargar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) => this.fallar(error, 'reversion'),
     });
   }
 
@@ -467,10 +484,10 @@ export class CajaPage {
           this.enviando.set(false);
           this.limpiarFormularios();
           this.cierre.set(cerrada);
-          this.aviso.set('Caja cerrada. El arqueo quedo registrado.');
+          this.avisos.exito('Caja cerrada', { descripcion: 'El arqueo quedó registrado.' });
           this.estado.set({ tipo: 'cerrada' });
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => this.fallar(error, 'cierre'),
       });
   }
 
@@ -508,17 +525,21 @@ export class CajaPage {
   private iniciarEnvio(): void {
     this.enviando.set(true);
     this.error.set(null);
-    this.aviso.set(null);
   }
 
-  private fallar(error: unknown): void {
+  private fallar(error: unknown, en: OperacionDeCaja): void {
     this.enviando.set(false);
-    this.error.set(traducirErrorCaja(error));
+    this.error.set({ ...traducirErrorCaja(error), en });
+  }
+
+  /** El rechazo de la operacion `en`, si fue la ultima en fallar. */
+  protected falloEn(en: OperacionDeCaja): ErrorCaja | null {
+    const fallo = this.error();
+    return fallo?.en === en ? fallo : null;
   }
 
   private limpiarFormularios(): void {
     this.error.set(null);
-    this.aviso.set(null);
     this.saldoInicial.set('');
     this.importeMovimiento.set('');
     this.conceptoMovimiento.set('');

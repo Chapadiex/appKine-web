@@ -97,7 +97,9 @@ test.describe('Honorarios por clase contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', /\/honorarios-por-clase$/);
     await page.getByRole('button', { name: 'Cargar tarifa' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(page.getByText('La tarifa quedo cargada')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones', exact: true }).getByText('Tarifa cargada'),
+    ).toBeVisible();
     await expect(page.getByRole('row').filter({ hasText: '1500' })).toContainText('Rige hoy');
 
     // ---- 2. Dos instructores adicionales en la clase (sin principal: la oferta no lo exige).
@@ -114,7 +116,11 @@ test.describe('Honorarios por clase contra el backend real', () => {
     expect(respuestaReemplazo.request().postDataJSON()).toEqual({
       adicionales: [profesional.id, administradora.id].sort((a, b) => a - b),
     });
-    await expect(page.getByText('La clase quedo con 2 instructores')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('La clase quedo con 2 instructores'),
+    ).toBeVisible();
     await expect(instructores).toContainText('partes iguales entre los 2 instructores');
 
     // ---- 3. La asistencia, por la API: dos presentes; el cierre deja ausente a la tercera.
@@ -253,7 +259,11 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await expect(dato(page, 'Servicio u oferta')).toContainText(oferta.nombre);
 
     await page.getByRole('button', { name: 'Confirmar el egreso' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Egreso confirmado' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Egreso confirmado', { exact: true }),
+    ).toBeVisible();
 
     // El reporte de servicios lo resta de la rentabilidad de esa oferta.
     await navegar(page, '/reportes');

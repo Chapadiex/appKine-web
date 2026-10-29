@@ -142,7 +142,8 @@ test.describe('Reserva de turno contra el backend real', () => {
     await page
       .getByRole('button', { name: `Tomar el siguiente: ${hora(segundo.desde, centro.timezone)}` })
       .click();
-    await expect(page.getByRole('heading', { name: 'No se pudo reservar' })).toHaveCount(0);
+    // UX-12: el conflicto es una alerta arriba del formulario; resuelto, desaparece.
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByText(rango(segundo, centro.timezone))).toBeVisible();
 
     const creado = respuestaDe(page, 'POST', RESERVA);
@@ -185,7 +186,8 @@ test.describe('Reserva de turno contra el backend real', () => {
     await expect(page.getByText(`Lo que cambio: ${String(problema['motivo'])}`)).toBeVisible();
 
     await page.getByRole('button', { name: 'Recargar la agenda' }).click();
-    await expect(page.getByRole('heading', { name: 'No se pudo reservar' })).toHaveCount(0);
+    // UX-12: el conflicto es una alerta arriba del formulario; resuelto, desaparece.
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(
       page.getByText('Ese horario ya no figura en la agenda de este día.'),
     ).toBeVisible();

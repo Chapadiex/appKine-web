@@ -27,6 +27,8 @@ import { CasosApi } from '../casos-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /**
@@ -42,12 +44,13 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
  */
 @Component({
   selector: 'app-casos-de-la-historia',
-  imports: [Ayuda, Icono, PanelLateral, RouterLink],
+  imports: [Alerta, Ayuda, Icono, PanelLateral, RouterLink],
   templateUrl: './casos-de-la-historia.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
 export class CasosDeLaHistoria {
   private readonly api = inject(CasosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
   private readonly router = inject(Router);
@@ -188,6 +191,10 @@ export class CasosDeLaHistoria {
         next: (caso) => {
           this.guardando.set(false);
           this.cambiaron.emit();
+          // El aviso vive en el shell: sobrevive a la navegacion al caso (UX-12).
+          this.avisos.exito('Caso abierto', {
+            ...(caso.numeroCaso === undefined ? {} : { descripcion: `Caso ${caso.numeroCaso}` }),
+          });
           if (caso.id !== undefined) {
             this.router.navigateByUrl(this.visita.rutaCaso(caso.id));
           }

@@ -100,17 +100,19 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     const asociada = await asociar;
     expect(asociada.status()).toBe(200);
     expect(((await asociada.json()) as { casoId?: number }).casoId).toBe(segundo.id);
-    await expect(page.getByRole('status').filter({ hasText: 'quedo asociada' })).toContainText(
-      `Caso ${segundo.numeroCaso}`,
-    );
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones' });
+    await expect(
+      notificaciones.getByText(`quedo asociada al Caso ${segundo.numeroCaso}`),
+    ).toBeVisible();
 
     await selector.selectOption(String(primero.id));
     const cambiar = respuestaDe(page, 'PUT', /\/sesiones\/\d+\/caso$/);
     await page.getByRole('button', { name: 'Guardar el caso' }).click();
     expect((await cambiar).status()).toBe(200);
-    await expect(page.getByRole('status').filter({ hasText: 'quedo asociada' })).toContainText(
-      `Caso ${primero.numeroCaso}`,
-    );
+    await expect(
+      notificaciones.getByText(`quedo asociada al Caso ${primero.numeroCaso}`),
+    ).toBeVisible();
 
     // --- Tratamiento: alta y baja, y el guardado que sigue no come un 409 ----------------
     const tratamiento = page.getByRole('region', { name: 'Tratamiento aplicado' });
@@ -118,7 +120,7 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     const registro = respuestaDe(page, 'POST', /\/sesiones\/\d+\/tratamientos$/);
     await tratamiento.getByRole('button', { name: 'Registrar el tratamiento' }).click();
     expect((await registro).ok()).toBe(true);
-    await expect(tratamiento.getByRole('status')).toContainText('Tratamiento registrado');
+    await expect(notificaciones.getByText('Tratamiento registrado')).toBeVisible();
 
     await tratamiento.getByRole('button', { name: /^Dar de baja/ }).click();
     await tratamiento
@@ -134,7 +136,7 @@ test.describe('Pedidos de la atencion clinica contra el backend real', () => {
     };
     expect(dadoDeBaja.vigente).toBe(false);
     expect(dadoDeBaja.sesionVersion).toBeGreaterThan(0);
-    await expect(tratamiento.getByRole('status')).toContainText('dado de baja');
+    await expect(notificaciones.getByText('Tratamiento dado de baja')).toBeVisible();
 
     await page.getByLabel('Lo que quieras anotar').fill('Sin tratamiento estructurado hoy.');
     const borrador = respuestaDe(page, 'PUT', /\/borrador$/);

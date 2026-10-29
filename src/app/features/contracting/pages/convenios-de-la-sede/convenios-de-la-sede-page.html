@@ -33,12 +33,6 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-convenios">
   <div class="tarjeta__cabecera">
     <h2 id="titulo-listado-convenios">Convenios firmados en esta sede</h2>
@@ -82,13 +76,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los convenios">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -269,6 +266,23 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo convenio de esta sede" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!--
+        Error general de la firma, arriba del formulario. Un periodo que se superpone con otro
+        convenio es una advertencia: la salida es cerrar la vigencia del que ya esta.
+      -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta
+          [tipo]="tipoDeAlerta()"
+          [titulo]="
+            causaAccion() === 'solapamiento'
+              ? 'Se superpone con otro convenio de esta sede'
+              : 'No pudimos firmar el convenio'
+          "
+        >
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-convenio-financiador">Financiador</label>
         <select
@@ -276,7 +290,11 @@
           formControlName="financiadorId"
           (change)="elegirFinanciador($any($event.target).value)"
           [attr.aria-invalid]="mostrarErrorAlta('financiadorId') ? 'true' : null"
-          aria-describedby="alta-convenio-financiador-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('financiadorId')
+              ? 'alta-convenio-financiador-error alta-convenio-financiador-ayuda'
+              : 'alta-convenio-financiador-ayuda'
+          "
         >
           <option value="">Elegí un financiador</option>
           @for (ficha of financiadores(); track ficha.id) {
@@ -284,7 +302,9 @@
           }
         </select>
         @if (mostrarErrorAlta('financiadorId')) {
-          <p class="campo__error" role="alert">Elegí con qué financiador se firma.</p>
+          <p class="campo__error" id="alta-convenio-financiador-error" role="alert">
+            Elegí con qué financiador se firma.
+          </p>
         }
         <p class="ayuda" id="alta-convenio-financiador-ayuda">
           Solo aparecen los <b>activos</b>: uno dado de baja no admite convenios nuevos.
@@ -305,7 +325,11 @@
           id="alta-convenio-plan"
           formControlName="planId"
           [attr.aria-invalid]="mostrarErrorAlta('planId') ? 'true' : null"
-          aria-describedby="alta-convenio-plan-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('planId')
+              ? 'alta-convenio-plan-error alta-convenio-plan-ayuda'
+              : 'alta-convenio-plan-ayuda'
+          "
         >
           <option value="">Elegí un plan</option>
           @for (plan of planes(); track plan.id) {
@@ -313,7 +337,7 @@
           }
         </select>
         @if (mostrarErrorAlta('planId')) {
-          <p class="campo__error" role="alert">
+          <p class="campo__error" id="alta-convenio-plan-error" role="alert">
             El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
             entero.
           </p>
@@ -339,10 +363,16 @@
           formControlName="codigo"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
-          aria-describedby="alta-convenio-codigo-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('codigo')
+              ? 'alta-convenio-codigo-error alta-convenio-codigo-ayuda'
+              : 'alta-convenio-codigo-ayuda'
+          "
         />
         @if (mostrarErrorAlta('codigo')) {
-          <p class="campo__error" role="alert">El código es obligatorio.</p>
+          <p class="campo__error" id="alta-convenio-codigo-error" role="alert">
+            El código es obligatorio.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="alta-convenio-codigo-ayuda">
           <b>No se puede cambiar después.</b> Único entre los vigentes de esta sede.
@@ -357,9 +387,12 @@
           formControlName="nombre"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          [attr.aria-describedby]="mostrarErrorAlta('nombre') ? 'alta-convenio-nombre-error' : null"
         />
         @if (mostrarErrorAlta('nombre')) {
-          <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          <p class="campo__error" id="alta-convenio-nombre-error" role="alert">
+            El nombre es obligatorio.
+          </p>
         }
       </div>
 
@@ -369,7 +402,11 @@
           id="alta-convenio-modalidad"
           formControlName="modalidad"
           [attr.aria-invalid]="mostrarErrorAlta('modalidad') ? 'true' : null"
-          aria-describedby="alta-convenio-modalidad-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('modalidad')
+              ? 'alta-convenio-modalidad-error alta-convenio-modalidad-ayuda'
+              : 'alta-convenio-modalidad-ayuda'
+          "
         >
           <option value="">Elegí una modalidad</option>
           @for (opcion of modalidades; track opcion.valor) {
@@ -377,7 +414,9 @@
           }
         </select>
         @if (mostrarErrorAlta('modalidad')) {
-          <p class="campo__error" role="alert">Elegí cómo se liquida este convenio.</p>
+          <p class="campo__error" id="alta-convenio-modalidad-error" role="alert">
+            Elegí cómo se liquida este convenio.
+          </p>
         }
         <p class="ayuda" id="alta-convenio-modalidad-ayuda">
           Elegí la que figura en el contrato firmado. Hoy se guarda y se muestra; la va a aplicar la
@@ -394,10 +433,16 @@
           formControlName="moneda"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('moneda') ? 'true' : null"
-          aria-describedby="alta-convenio-moneda-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('moneda')
+              ? 'alta-convenio-moneda-error alta-convenio-moneda-ayuda'
+              : 'alta-convenio-moneda-ayuda'
+          "
         />
         @if (mostrarErrorAlta('moneda')) {
-          <p class="campo__error" role="alert">La moneda es obligatoria.</p>
+          <p class="campo__error" id="alta-convenio-moneda-error" role="alert">
+            La moneda es obligatoria.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="alta-convenio-moneda-ayuda">
           Tres letras (ARS). <b>No se puede cambiar después</b>: la heredan los aranceles.
@@ -411,9 +456,14 @@
           type="date"
           formControlName="vigenciaDesde"
           [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('vigenciaDesde') ? 'alta-convenio-desde-error' : null
+          "
         />
         @if (mostrarErrorAlta('vigenciaDesde')) {
-          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="alta-convenio-desde-error" role="alert">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
 
@@ -501,10 +551,6 @@
         <p class="ayuda">Los requisitos se declaran y se muestran; hoy no bloquean nada.</p>
       </details>
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Firmar convenio' }}
@@ -526,6 +572,23 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral [titulo]="'Editar ' + convenio.nombre" (cerrar)="cerrarPanel()">
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <!--
+          Error de la edicion arriba del formulario. La version vieja (409) es una advertencia:
+          ya se releyo el listado y lo escrito sigue en pantalla para volver a guardar.
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos guardar los cambios">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda">
           Se guarda <b>solo lo que cambies</b>. Una fecha en "vigente hasta"
           <b>cierra la vigencia</b> y el convenio sigue activo; borrarla no la saca.
@@ -540,9 +603,14 @@
             formControlName="nombre"
             autocomplete="off"
             [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorEdicion('nombre') ? 'editar-convenio-nombre-error' : null
+            "
           />
           @if (mostrarErrorEdicion('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            <p class="campo__error" id="editar-convenio-nombre-error" role="alert">
+              El nombre es obligatorio.
+            </p>
           }
         </div>
 
@@ -643,10 +711,6 @@
           </div>
         </details>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -659,11 +723,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el listado
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -671,6 +730,18 @@
 
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + convenio.nombre" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de baja el convenio">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el listado
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-convenio-motivo"
         [titulo]="'Dar de baja ' + convenio.nombre"
@@ -690,13 +761,6 @@
           el período quedan libres.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
-      }
     </app-panel-lateral>
   }
 }

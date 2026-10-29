@@ -9,6 +9,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -120,9 +121,11 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Guardamos la configuración',
-    );
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Profesionales habilitados guardados']);
   });
 
   it('una habilitación cuyo vinculo ya no esta vigente se muestra con su advertencia', async () => {
@@ -389,9 +392,16 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Guardamos la configuración de la oferta.');
-    expect(texto).toContain('sin su versión no se puede guardar');
+    // El exito no se borra -es cierto, ese guardado si entro- y va al aviso global; el aviso de
+    // que no hay version con que seguir queda en la pantalla, arriba de las listas.
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Profesionales habilitados guardados']);
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos leer la oferta');
+    expect(alerta?.textContent).toContain('sin su versión no se puede guardar');
     expect(botonPorTexto(fixture, 'Guardar los espacios')?.disabled).toBe(true);
     expect(botonPorTexto(fixture, 'Recargar la configuración')).not.toBeNull();
   });

@@ -34,26 +34,18 @@
   </div>
 </app-filtros>
 
-<div aria-live="polite">
-  @if (aviso(); as texto) {
-    <p class="estado estado--ok" akineFocoAlMontar>{{ texto }}</p>
-  }
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-error-productos">
-      <h2 id="titulo-error-productos">No se pudieron leer los productos</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
-        @if (fallo.causa === 'sin-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        } @else {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Reintentar
-          </button>
-        }
-      </div>
-    </section>
-  }
-</div>
+@if (error(); as fallo) {
+  <app-alerta tipo="error" titulo="No se pudieron leer los productos">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (fallo.causa === 'sin-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      } @else {
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      }
+    </p>
+  </app-alerta>
+}
 
 <div>
   @if (productos() === null && !error()) {
@@ -166,6 +158,16 @@
     (cerrar)="cancelarFormulario()"
   >
     <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <!-- Error general del guardado: arriba del formulario, a la vista mientras se corrige. -->
+      @if (errorAccion(); as fallo) {
+        <app-alerta
+          tipo="error"
+          [titulo]="enEdicion() ? 'No pudimos guardar el producto' : 'No pudimos crear el producto'"
+        >
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+
       @if (enEdicion(); as producto) {
         <p class="ayuda ayuda--fija">
           {{ tipoDeProducto(producto) }} sobre la oferta <b>{{ nombreDeOferta(producto) }}</b
@@ -209,9 +211,7 @@
             }
           </p>
           @if (invalido('ofertaId')) {
-            <p class="estado estado--error" id="producto-ofertaId-error">
-              Elegí la oferta del producto.
-            </p>
+            <p class="campo__error" id="producto-ofertaId-error">Elegí la oferta del producto.</p>
           }
         </div>
       }
@@ -228,9 +228,9 @@
           [attr.aria-describedby]="descritoPor('nombre')"
         />
         @if (invalido('nombre')) {
-          <p class="estado estado--error" id="producto-nombre-error">El nombre es obligatorio.</p>
+          <p class="campo__error" id="producto-nombre-error">El nombre es obligatorio.</p>
         } @else if (errorDelServidor('nombre'); as mensaje) {
-          <p class="estado estado--error" id="producto-nombre-error">{{ mensaje }}</p>
+          <p class="campo__error" id="producto-nombre-error">{{ mensaje }}</p>
         }
       </div>
 
@@ -259,9 +259,7 @@
             [attr.aria-describedby]="descritoPor('creditos')"
           />
           @if (invalido('creditos')) {
-            <p class="estado estado--error" id="producto-creditos-error">
-              Tiene que ser al menos 1.
-            </p>
+            <p class="campo__error" id="producto-creditos-error">Tiene que ser al menos 1.</p>
           }
         </div>
         <div class="campo">
@@ -276,7 +274,7 @@
             [attr.aria-describedby]="descritoPor('precio')"
           />
           @if (invalido('precio')) {
-            <p class="estado estado--error" id="producto-precio-error">
+            <p class="campo__error" id="producto-precio-error">
               Un importe mayor que cero, con hasta dos decimales.
             </p>
           }
@@ -314,9 +312,7 @@
             }
           </p>
           @if (invalido('vigenciaDias')) {
-            <p class="estado estado--error" id="producto-vigenciaDias-error">
-              Entre 1 y 3660 días.
-            </p>
+            <p class="campo__error" id="producto-vigenciaDias-error">Entre 1 y 3660 días.</p>
           }
         </div>
       </div>
@@ -332,7 +328,7 @@
             [attr.aria-describedby]="descritoPor('vigenciaDesde')"
           />
           @if (invalido('vigenciaDesde')) {
-            <p class="estado estado--error" id="producto-vigenciaDesde-error">
+            <p class="campo__error" id="producto-vigenciaDesde-error">
               Indica desde cuando se vende.
             </p>
           }
@@ -343,16 +339,20 @@
             id="producto-hasta"
             type="date"
             formControlName="vigenciaHasta"
-            aria-describedby="producto-hasta-ayuda"
+            [attr.aria-invalid]="hastaAntesDeDesde() ? 'true' : null"
+            [attr.aria-describedby]="
+              hastaAntesDeDesde()
+                ? 'producto-hasta-ayuda producto-hasta-error'
+                : 'producto-hasta-ayuda'
+            "
           />
           <p class="ayuda" id="producto-hasta-ayuda">Vacío: se vende sin fecha de fin.</p>
+          @if (hastaAntesDeDesde()) {
+            <p class="campo__error" id="producto-hasta-error">
+              La fecha hasta la que se vende no puede ser anterior a la fecha desde.
+            </p>
+          }
         </div>
-      </div>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as fallo) {
-          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        }
       </div>
 
       <div class="acciones">
@@ -370,6 +370,11 @@
 @if (productoEnPanel(); as producto) {
   @if (panel().tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + producto.nombre" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja el producto">
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="producto-baja-motivo"
         [titulo]="'Dar de baja ' + producto.nombre"
@@ -383,11 +388,6 @@
         (confirmado)="confirmarBaja($event)"
         (cancelado)="cerrarPanel()"
       />
-      <div aria-live="polite">
-        @if (errorAccion(); as fallo) {
-          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

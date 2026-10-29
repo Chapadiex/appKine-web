@@ -9,6 +9,7 @@ import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { SolicitudesPage } from './solicitudes-page';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -118,7 +119,12 @@ describe('SolicitudesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Tu pedido quedo registrado');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Pedido enviado a la plataforma']);
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('pedir dos veces lo mismo se explica en el campo, no como un error generico', async () => {
@@ -158,7 +164,9 @@ describe('SolicitudesPage', () => {
     // El duplicado aterriza en el campo del nombre -es lo que hay que cambiar- y no al pie.
     const campo = anfitrion.querySelector('#solicitud-nombre');
     expect(campo?.getAttribute('aria-invalid')).toBe('true');
-    expect(anfitrion.textContent).toContain('pedirlo dos veces no la acelera');
+    expect(campo?.getAttribute('aria-describedby')).toBe('solicitud-nombre-duplicada');
+    const alerta = anfitrion.querySelector('#solicitud-nombre-duplicada');
+    expect(alerta?.textContent).toContain('pedirlo dos veces no la acelera');
   });
 
   it('el filtro por estado recarga con su parametro y la lista vacía no es un error', async () => {

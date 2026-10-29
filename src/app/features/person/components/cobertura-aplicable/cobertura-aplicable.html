@@ -9,8 +9,12 @@
     }
 
     @case ('error') {
-      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-      <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+      <app-alerta tipo="error" titulo="No pudimos resolver la cobertura">
+        <p>{{ mensajeError() }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+        </p>
+      </app-alerta>
     }
 
     @case ('listo') {

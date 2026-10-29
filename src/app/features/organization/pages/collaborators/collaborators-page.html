@@ -21,12 +21,6 @@
   />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-colaboradores">
   <h2 id="titulo-colaboradores">Vínculos de la organización</h2>
 
@@ -64,13 +58,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los colaboradores">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -237,6 +234,12 @@
         (cerrar)="cerrarPanel()"
       >
         <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos cambiar el rol o el alcance">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <div class="campo campo--ancho">
             <label for="edicion-roleCode">Rol</label>
             <select id="edicion-roleCode" formControlName="roleCode">
@@ -314,12 +317,6 @@
             }
           </div>
 
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
-          </div>
-
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">Aplicar el cambio</button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
@@ -336,6 +333,16 @@
         [subtitulo]="nombreDe(colaborador)"
         (cerrar)="cerrarPanel()"
       >
+        <!--
+          Error de otorgar o de dar de baja: al principio del panel, a la vista, sirve a las dos
+          operaciones (la baja es un boton de la lista, no del formulario).
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos actualizar los permisos">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
           <h3>Permisos vigentes</h3>
           <app-ayuda titulo="Sobre los permisos adicionales">
@@ -448,14 +455,24 @@
               id="grant-reason"
               type="text"
               formControlName="reason"
-              aria-describedby="grant-reason-ayuda"
               [attr.aria-invalid]="mostrarErrorGrant('reason')"
+              [attr.aria-describedby]="
+                mostrarErrorGrant('reason')
+                  ? 'grant-reason-ayuda grant-reason-error'
+                  : 'grant-reason-ayuda'
+              "
             />
             <p class="ayuda" id="grant-reason-ayuda">
               Sirve para otorgar y para dar de baja: las dos quedan auditadas.
             </p>
             @if (mostrarErrorGrant('reason')) {
-              <p class="campo__error" id="grant-reason-error">Escribi el motivo.</p>
+              <p class="campo__error" id="grant-reason-error">
+                {{
+                  bajaSinMotivo()
+                    ? 'Escribi el motivo antes de dar de baja el permiso.'
+                    : 'Escribi el motivo.'
+                }}
+              </p>
             }
           </div>
 
@@ -472,12 +489,6 @@
             <p class="ayuda" id="grant-validUntil-ayuda">
               Sin fecha, rige hasta que se de de baja.
             </p>
-          </div>
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
           </div>
 
           <div class="acciones">
@@ -497,6 +508,12 @@
         [subtitulo]="nombreDe(colaborador)"
         (cerrar)="cerrarPanel()"
       >
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" [titulo]="'No pudimos ' + verboDelPanel()">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <akine-confirmacion-con-motivo
           idCampo="panel-motivo"
           textoError="El motivo es obligatorio: es lo que explica esta decision mas adelante."
@@ -544,12 +561,6 @@
             </div>
           }
         </akine-confirmacion-con-motivo>
-
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
       </app-panel-lateral>
     }
   }

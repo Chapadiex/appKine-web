@@ -18,6 +18,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { CoberturaDelHitoResponseEstadoCredencialEnum } from '../../../../api/generated/model/cobertura-del-hito-response';
 
 const PERSONA = 7;
@@ -333,8 +334,11 @@ describe('FichaDePersonaPage', () => {
     await estabilizar(fixture);
 
     // El texto de exito tiene que decir que no se borro nada: "dar de baja" en cualquier otro
-    // sistema significa otra cosa.
-    expect(texto(fixture)).toContain('No se borro nada');
+    // sistema significa otra cosa. Va al aviso global y el panel se cierra (UX-12).
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('quedó dada de baja del padrón');
+    expect(aviso?.descripcion).toContain('No se borro nada');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('con el motivo vacío no manda ninguna baja', async () => {
@@ -367,7 +371,9 @@ describe('FichaDePersonaPage', () => {
     });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Su ficha sigue vigente');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('ya no tiene perfil de paciente');
+    expect(aviso?.descripcion).toContain('Su ficha sigue vigente');
   });
 
   it('una persona que no es paciente no ofrece dar de baja el perfil', async () => {

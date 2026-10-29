@@ -64,6 +64,13 @@
         <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
 
         <form [formGroup]="formularioAlta" (ngSubmit)="aceptar()" novalidate>
+          <!-- Error de aceptar o rechazar: arriba del formulario, a la vista (UX-12). -->
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos responder la invitación">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           @if (requiereRegistro()) {
             <!--
               Solo cuando hace falta: a quien ya tiene cuenta pedirle una contrasena nueva seria
@@ -85,9 +92,14 @@
                     formControlName="nombre"
                     autocomplete="given-name"
                     [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
+                    "
                   />
                   @if (mostrarErrorDe('nombre')) {
-                    <p class="campo__error">El nombre es obligatorio.</p>
+                    <p class="campo__error" id="invitacion-nombre-error">
+                      El nombre es obligatorio.
+                    </p>
                   }
                 </div>
 
@@ -111,11 +123,17 @@
                   autocomplete="new-password"
                   placeholder="Mínimo 10 caracteres"
                   [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
-                  aria-describedby="invitacion-password-ayuda"
+                  [attr.aria-describedby]="
+                    mostrarErrorDe('password')
+                      ? 'invitacion-password-error invitacion-password-ayuda'
+                      : 'invitacion-password-ayuda'
+                  "
                 />
                 <app-medidor-de-contrasena [valor]="passwordEscrita()" />
                 @if (mostrarErrorDe('password')) {
-                  <p class="campo__error">La contraseña tiene que tener al menos 10 caracteres.</p>
+                  <p class="campo__error" id="invitacion-password-error">
+                    La contraseña tiene que tener al menos 10 caracteres.
+                  </p>
                 }
                 <p class="ayuda" id="invitacion-password-ayuda">
                   Es con la que vas a entrar a AKINE de ahora en más.
@@ -133,10 +151,6 @@
               Ya tenés una cuenta con este correo: al aceptar vas a poder entrar con la contraseña
               de siempre.
             </p>
-          }
-
-          @if (errorAccion(); as mensaje) {
-            <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensaje }}</p>
           }
 
           <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">

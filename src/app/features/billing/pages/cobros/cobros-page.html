@@ -23,24 +23,17 @@
   <p class="estado estado--cargando">Cargando los cobros…</p>
 }
 
-@if (exito(); as mensaje) {
-  <p class="estado estado--ok" role="status">{{ mensaje }}</p>
-}
-
 @if (mensajeError(); as mensaje) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cobros">
-    <h2 id="titulo-error-cobros">No se pudieron cargar los cobros</h2>
-    <p class="estado estado--error">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudieron cargar los cobros">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      </div>
-    } @else {
-      <div class="acciones">
+      } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-      </div>
-    }
-  </section>
+      }
+    </p>
+  </app-alerta>
 }
 
 @if (vacia()) {
@@ -252,20 +245,6 @@
   </section>
 }
 
-<div aria-live="polite">
-  @if (errorDetalle(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-error-detalle">
-      <h2 id="titulo-error-detalle">No se pudo abrir el comprobante</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Recargar los cobros
-        </button>
-      </div>
-    </section>
-  }
-</div>
-
 <!--
   Anular y reintegrar en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abrian en una
   fila de la tabla, que partia el listado; ahora la tabla queda quieta con la fila marcada.
@@ -277,6 +256,16 @@
       [subtitulo]="'Por ' + importe(cobro, cobro.total)"
       (cerrar)="cerrarOperacion()"
     >
+      @if (errorOperacion()) {
+        <app-alerta tipo="error" titulo="No pudimos anular el cobro">
+          <p>{{ mensajeDelRechazo() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
+              Recargar los cobros
+            </button>
+          </p>
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         [idCampo]="'anular-cobro-' + cobro.id"
         [mostrarTitulo]="false"
@@ -301,14 +290,6 @@
           este la plata.
         </p>
       </akine-confirmacion-con-motivo>
-      @if (errorOperacion()) {
-        <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
-            Recargar los cobros
-          </button>
-        </div>
-      }
     </app-panel-lateral>
   }
   @if (operacion()?.tipo === 'reintegrar') {
@@ -317,6 +298,17 @@
       (cerrar)="cerrarOperacion()"
     >
       <form (submit)="$event.preventDefault(); confirmarReintegro()">
+        @if (errorOperacion()) {
+          <app-alerta tipo="error" titulo="No pudimos reintegrar el saldo a favor">
+            <p>{{ mensajeDelRechazo() }}</p>
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
+                Recargar los cobros
+              </button>
+            </p>
+          </app-alerta>
+        }
+
         <p class="ayuda ayuda--fija">
           Devuelve en dinero parte de lo que el paciente dejo a favor. Saldo a favor disponible:
           <b class="importe">{{ importe(cobro, cobro.saldoAFavor) }}</b
@@ -332,15 +324,18 @@
             autocomplete="off"
             [value]="importeReintegro()"
             [attr.aria-invalid]="reintegroIntentado() && problemaDelImporte() !== null"
-            [attr.aria-describedby]="'reintegro-importe-ayuda-' + cobro.id"
+            [attr.aria-describedby]="
+              reintegroIntentado() && problemaDelImporte()
+                ? 'reintegro-importe-error-' + cobro.id + ' reintegro-importe-ayuda-' + cobro.id
+                : 'reintegro-importe-ayuda-' + cobro.id
+            "
             (input)="editarReintegro('importe', $any($event.target).value)"
           />
+          @if (reintegroIntentado() && problemaDelImporte(); as problema) {
+            <p class="campo__error" [id]="'reintegro-importe-error-' + cobro.id">{{ problema }}</p>
+          }
           <p class="ayuda ayuda--fija" [id]="'reintegro-importe-ayuda-' + cobro.id">
-            @if (reintegroIntentado() && problemaDelImporte(); as problema) {
-              <span class="estado--error">{{ problema }}</span>
-            } @else {
-              Hasta {{ importe(cobro, cobro.saldoAFavor) }}.
-            }
+            Hasta {{ importe(cobro, cobro.saldoAFavor) }}.
           </p>
         </div>
 
@@ -377,15 +372,20 @@
             maxlength="280"
             [value]="motivoReintegro()"
             [attr.aria-invalid]="reintegroIntentado() && faltaMotivo()"
-            [attr.aria-describedby]="'reintegro-motivo-ayuda-' + cobro.id"
+            [attr.aria-describedby]="
+              reintegroIntentado() && faltaMotivo()
+                ? 'reintegro-motivo-error-' + cobro.id + ' reintegro-motivo-ayuda-' + cobro.id
+                : 'reintegro-motivo-ayuda-' + cobro.id
+            "
             (input)="editarReintegro('motivo', $any($event.target).value)"
           ></textarea>
+          @if (reintegroIntentado() && faltaMotivo()) {
+            <p class="campo__error" [id]="'reintegro-motivo-error-' + cobro.id">
+              El motivo es obligatorio.
+            </p>
+          }
           <p class="ayuda ayuda--fija" [id]="'reintegro-motivo-ayuda-' + cobro.id">
-            @if (reintegroIntentado() && faltaMotivo()) {
-              <span class="estado--error">El motivo es obligatorio.</span>
-            } @else {
-              Queda en el reintegro y en la auditoria.
-            }
+            Queda en el reintegro y en la auditoria.
           </p>
         </div>
 
@@ -403,20 +403,11 @@
           />
         </div>
 
-        @if (errorOperacion()) {
-          <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-        }
-
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">Reintegrar</button>
           <button type="button" class="boton boton--secundario" (click)="cerrarOperacion()">
             Cancelar
           </button>
-          @if (errorOperacion()) {
-            <button type="button" class="boton boton--secundario" (click)="recargarTrasRechazo()">
-              Recargar los cobros
-            </button>
-          }
         </div>
       </form>
     </app-panel-lateral>

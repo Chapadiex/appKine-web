@@ -11,6 +11,7 @@ import { FranjaResueltaResponse } from '../../../../api/generated/model/franja-r
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
 import {
   TEXTO_LISTA_INCOMPLETA,
@@ -86,7 +87,7 @@ const DIAS_PROPUESTOS = 7;
  */
 @Component({
   selector: 'app-horario-efectivo-page',
-  imports: [CabeceraDePagina, Ayuda, Pestanas, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Pestanas, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './horario-efectivo-page.html',
   styleUrl: '../../resource.css',
 })

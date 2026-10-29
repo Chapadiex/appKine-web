@@ -28,7 +28,11 @@ export type NombreDeIcono =
   | 'perfil'
   | 'preferencias'
   | 'tilde'
-  | 'flecha-derecha';
+  | 'flecha-derecha'
+  | 'exito'
+  | 'info'
+  | 'advertencia'
+  | 'error';
 
 /**
  * Icono SVG en linea (UX-01, decision §9.3 del plan: sin libreria). Trazos propios de 24 px.
@@ -142,6 +146,22 @@ export type NombreDeIcono =
         }
         @case ('flecha-derecha') {
           <path d="M5 12h14M13 6l6 6-6 6" />
+        }
+        @case ('exito') {
+          <circle cx="12" cy="12" r="9.5" />
+          <path d="M7.8 12.3l2.8 2.8 5.6-5.8" />
+        }
+        @case ('info') {
+          <circle cx="12" cy="12" r="9.5" />
+          <path d="M12 11v5.5M12 7.6h.01" />
+        }
+        @case ('advertencia') {
+          <path d="M12 3.5l9.5 16.5h-19z" />
+          <path d="M12 10v4.5M12 17.4h.01" />
+        }
+        @case ('error') {
+          <circle cx="12" cy="12" r="9.5" />
+          <path d="M9 9l6 6M15 9l-6 6" />
         }
       }
     </svg>

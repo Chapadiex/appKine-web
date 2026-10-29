@@ -16,6 +16,8 @@ import { InstructoresDeClase } from '../../../../api/generated/model/instructore
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ErrorActividad, traducirErrorActividad } from '../../models/actividad-errors';
 import { ActivityApi } from '../../services/activity-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 interface Candidato {
   readonly membershipId: number;
@@ -35,11 +37,13 @@ interface Candidato {
  */
 @Component({
   selector: 'app-instructores-de-clase',
+  imports: [Alerta],
   templateUrl: './instructores-de-clase.html',
   styleUrl: '../../activity.css',
 })
 export class InstructoresDeClaseComponent {
   private readonly api = inject(ActivityApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -55,7 +59,6 @@ export class InstructoresDeClaseComponent {
   protected readonly elegidos = signal<ReadonlySet<number>>(new Set());
   protected readonly enviando = signal(false);
   protected readonly errorDeAccion = signal<ErrorActividad | null>(null);
-  protected readonly aviso = signal('');
 
   protected readonly adicionales = computed(() => this.instructores()?.adicionales ?? []);
   /** Sin el principal: no puede ser adicional de su propia clase. */
@@ -94,7 +97,6 @@ export class InstructoresDeClaseComponent {
       this.tenant.contextEpoch();
       untracked(() => {
         this.editando.set(false);
-        this.aviso.set('');
         this.errorDeAccion.set(null);
         this.cargar(clase);
       });
@@ -135,7 +137,6 @@ export class InstructoresDeClaseComponent {
       ),
     );
     this.errorDeAccion.set(null);
-    this.aviso.set('');
     this.editando.set(true);
     this.candidatos.set(null);
     if (consultorioId !== null && ofertaId !== undefined) {
@@ -180,16 +181,17 @@ export class InstructoresDeClaseComponent {
       next: (respuesta) => {
         this.enviando.set(false);
         this.instructores.set(respuesta);
-        this.editando.set(false);
         const adicionales = (respuesta.adicionales ?? []).length;
         const total = adicionales + (respuesta.principalMembershipId === undefined ? 0 : 1);
-        this.aviso.set(
-          adicionales === 0
-            ? 'La clase quedo sin instructores adicionales.'
-            : `La clase quedo con ${total} instructores: los honorarios se reparten en partes ` +
-                'iguales.',
-        );
-        this.enfocarDespues('#aviso-instructores');
+        // El resultado va al aviso global (UX-12); el formulario se cierra y el foco vuelve al boton.
+        if (adicionales === 0) {
+          this.avisos.exito('La clase quedo sin instructores adicionales');
+        } else {
+          this.avisos.exito(`La clase quedo con ${total} instructores`, {
+            descripcion: 'Los honorarios se reparten en partes iguales.',
+          });
+        }
+        this.cerrar();
       },
       error: (error: unknown) => {
         this.enviando.set(false);

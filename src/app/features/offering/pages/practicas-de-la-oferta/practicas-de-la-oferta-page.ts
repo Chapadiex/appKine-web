@@ -16,6 +16,9 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
 /** Una practica de la lista que se va a guardar. */
 interface FilaPractica {
   readonly practicaId: number;
@@ -53,12 +56,13 @@ interface FilaPractica {
  */
 @Component({
   selector: 'app-practicas-de-la-oferta-page',
-  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective],
+  imports: [CabeceraDePagina, Migas, Pestanas, Ayuda, RouterLink, PermisoDirective, Alerta],
   templateUrl: './practicas-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
 })
 export class PracticasDeLaOfertaPage {
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly contexto = inject(TenantContextStore);
   private readonly ruta = inject(ActivatedRoute);
 
@@ -72,7 +76,6 @@ export class PracticasDeLaOfertaPage {
     tipo: 'cargando',
   });
   protected readonly guardando = signal(false);
-  protected readonly exito = signal<string | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
 
@@ -192,7 +195,6 @@ export class PracticasDeLaOfertaPage {
     if (this.principal() === null) {
       this.principal.set(practicaId);
     }
-    this.exito.set(null);
   }
 
   /** Saca una practica. Si era la principal, la marca pasa a la primera que quede. */
@@ -202,12 +204,10 @@ export class PracticasDeLaOfertaPage {
     if (this.principal() === practicaId) {
       this.principal.set(restantes[0]?.practicaId ?? null);
     }
-    this.exito.set(null);
   }
 
   protected marcarPrincipal(practicaId: number): void {
     this.principal.set(practicaId);
-    this.exito.set(null);
   }
 
   protected guardar(): void {
@@ -219,7 +219,6 @@ export class PracticasDeLaOfertaPage {
     }
 
     this.guardando.set(true);
-    this.exito.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
 
@@ -236,7 +235,7 @@ export class PracticasDeLaOfertaPage {
         next: (respuesta) => {
           this.guardando.set(false);
           this.pintar(respuesta);
-          this.exito.set('Guardamos las prácticas de la oferta.');
+          this.avisos.exito('Prácticas guardadas');
         },
         error: (error: unknown) => {
           this.guardando.set(false);

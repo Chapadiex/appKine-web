@@ -1,12 +1,16 @@
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   HostListener,
   Injector,
+  ViewContainerRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import {
   ActivatedRoute,
@@ -20,6 +24,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
+import { AvisosStore } from './core/services/avisos.store';
 import { BarraSuperior } from './layout/barra-superior/barra-superior';
 import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
 import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
@@ -62,9 +67,36 @@ export class App {
   private readonly tenant = inject(TenantContextStore);
   private readonly injector = inject(Injector);
 
+  private readonly anclaAvisos = viewChild.required('avisos', { read: ViewContainerRef });
+
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
     inject(PreferenciasStore);
+
+    // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
+    // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
+    // asi su region viva ya existe cuando llega el primer aviso.
+    let destruido = false;
+    inject(DestroyRef).onDestroy(() => (destruido = true));
+    afterNextRender(() => {
+      import('./layout/avisos/avisos').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaAvisos().createComponent(m.Avisos);
+          }
+        },
+        // Sin el chunk (red caida, despliegue nuevo) no hay avisos, pero la pantalla sigue.
+        () => undefined,
+      );
+    });
+
+    // Al cerrar sesion nada de lo que decian los avisos sigue siendo cierto.
+    const avisos = inject(AvisosStore);
+    effect(() => {
+      if (this.session.estado() === 'anonimo') {
+        avisos.vaciar();
+      }
+    });
   }
 
   protected readonly avisoDeServicio = this.servicio.aviso;

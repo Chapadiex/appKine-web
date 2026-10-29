@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 
 import { ConsultoriosPage } from './consultorios-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -134,7 +135,10 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('quedaron guardados');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toBe('Sede Centro Nueva');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   /**
@@ -481,7 +485,9 @@ describe('ConsultoriosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Sigue en el listado, con el motivo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Sede dada de baja');
+    expect(aviso?.descripcion).toContain('Sigue en el listado, con el motivo');
   });
 
   it('si la navegacion posterior a la baja falla, el fallo no queda en silencio', async () => {
@@ -506,10 +512,12 @@ describe('ConsultoriosPage', () => {
     fixture.detectChanges();
 
     expect(consola).toHaveBeenCalled();
-    // Y se dice EN LA PANTALLA. El exito de la baja cierra el panel, asi que el aviso se escribe
-    // sin ningun panel abierto: mientras `errorAccion` solo se renderizaba dentro de los paneles,
-    // el unico rastro de esto era la consola del navegador, que el usuario no mira.
-    expect(texto(fixture)).toContain('no pudimos abrir la pantalla para elegir otra');
+    // Y se le dice al usuario: el exito de la baja cerro el panel, asi que va al aviso global
+    // (UX-12), que no se va solo. Sin esto el unico rastro era la consola del navegador.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos abrir la pantalla para elegir otra sede');
+    expect(aviso?.duracion).toBeNull();
     consola.mockRestore();
   });
 

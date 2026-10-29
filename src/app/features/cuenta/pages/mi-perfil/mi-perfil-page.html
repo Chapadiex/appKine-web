@@ -13,8 +13,11 @@
       <p class="estado estado--cargando">Cargando tus datos&hellip;</p>
     }
     @case ('error') {
-      <p class="estado estado--error" role="alert">No pudimos cargar tus datos.</p>
-      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      <app-alerta tipo="error" titulo="No pudimos cargar tus datos">
+        <p class="alerta__acciones">
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        </p>
+      </app-alerta>
     }
   }
 </div>
@@ -60,35 +63,14 @@
       Te mandamos a {{ perfil.email }} un enlace para elegir una contraseña nueva.
     </p>
 
-    <div aria-live="polite">
-      @switch (envio()) {
-        @case ('enviado') {
-          <p class="estado estado--ok">
-            Listo: revisá tu correo. El enlace vence en un rato; si no llega, mirá en correo no
-            deseado.
-          </p>
-        }
-        @case ('limite') {
-          <p class="estado estado--error" role="alert">
-            Pediste varios cambios seguidos. Esperá unos minutos y volvé a intentar.
-          </p>
-        }
-        @case ('error') {
-          <p class="estado estado--error" role="alert">
-            No pudimos mandar el correo. Probá de nuevo.
-          </p>
-        }
-      }
-    </div>
-
     <div class="acciones">
       <button
         type="button"
         class="boton boton--secundario"
-        [disabled]="envio() === 'enviando'"
+        [disabled]="enviandoEnlace()"
         (click)="pedirCambioDeContrasena()"
       >
-        {{ envio() === 'enviando' ? 'Enviando…' : 'Cambiar contraseña' }}
+        {{ enviandoEnlace() ? 'Enviando…' : 'Cambiar contraseña' }}
       </button>
     </div>
   </section>
@@ -96,42 +78,48 @@
   <section class="tarjeta" aria-labelledby="titulo-sesiones">
     <h2 id="titulo-sesiones">Sesiones abiertas</h2>
 
-    @if (confirmandoCierre()) {
-      <!-- Advertencia de una accion que no se deshace: queda a la vista, no detras de un "?". -->
-      <p class="advertencia">
-        Vas a salir de AKINE en todos tus dispositivos, también en este, y vas a tener que volver a
-        ingresar. En los demás puede tardar hasta diez minutos.
-      </p>
-      @if (errorCierre()) {
-        <p class="estado estado--error" role="alert">
-          No pudimos cerrar las sesiones. Probá de nuevo.
-        </p>
-      }
-      <div class="acciones">
-        <button
-          type="button"
-          class="boton"
-          [disabled]="cerrandoSesiones()"
-          (click)="cerrarTodasLasSesiones()"
-        >
-          {{ cerrandoSesiones() ? 'Cerrando…' : 'Cerrar todas las sesiones' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          [disabled]="cerrandoSesiones()"
-          (click)="confirmandoCierre.set(false)"
-        >
-          Cancelar
-        </button>
-      </div>
-    } @else {
-      <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
-      <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
-          Cerrar sesión en todos los dispositivos
-        </button>
-      </div>
-    }
+    <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
+        Cerrar sesión en todos los dispositivos
+      </button>
+    </div>
   </section>
+}
+
+<!--
+  Confirmacion de algo que no se deshace: en un dialogo modal (UX-12), no en linea dentro de la
+  tarjeta. No pide motivo: cerrar las propias sesiones no se audita con uno.
+-->
+@if (confirmandoCierre()) {
+  <app-panel-lateral titulo="Cerrar sesión en todos los dispositivos" (cerrar)="cancelarCierre()">
+    @if (errorCierre()) {
+      <app-alerta tipo="error" titulo="No pudimos cerrar las sesiones">
+        <p>Probá de nuevo.</p>
+      </app-alerta>
+    }
+    <!-- Advertencia de una accion que no se deshace: queda a la vista, no detras de un "?". -->
+    <p class="advertencia">
+      Vas a salir de AKINE en todos tus dispositivos, también en este, y vas a tener que volver a
+      ingresar. En los demás puede tardar hasta diez minutos.
+    </p>
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton"
+        [disabled]="cerrandoSesiones()"
+        (click)="cerrarTodasLasSesiones()"
+      >
+        {{ cerrandoSesiones() ? 'Cerrando…' : 'Cerrar todas las sesiones' }}
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="cerrandoSesiones()"
+        (click)="cancelarCierre()"
+      >
+        Cancelar
+      </button>
+    </div>
+  </app-panel-lateral>
 }

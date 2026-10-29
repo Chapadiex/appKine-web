@@ -5,6 +5,8 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideRouter } from '@angular/router';
 
 import { CollaboratorsPage } from './collaborators-page';
@@ -205,7 +207,11 @@ describe('CollaboratorsPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Colaborador suspendido');
+    // UX-12: el resultado va al aviso global y el panel se cierra.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('exito');
+    expect(aviso?.titulo).toBe('Colaborador suspendido');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un conflicto del backend se muestra con su mensaje y deja el panel abierto', async () => {
@@ -232,7 +238,9 @@ describe('CollaboratorsPage', () => {
 
     // El panel sigue abierto con el motivo escrito: cerrarlo obligaria a rehacer todo para
     // leer el mensaje, y el conflicto puede resolverse cambiando de fila, no de motivo.
-    expect(texto(fixture)).toContain('No podés revocar al último administrador');
+    const alerta = fixture.nativeElement.querySelector('app-alerta') as HTMLElement;
+    expect(alerta.textContent).toContain('No pudimos revocar el vínculo');
+    expect(alerta.textContent).toContain('No podés revocar al último administrador');
     expect(texto(fixture)).toContain('Revocar el vinculo de la cuenta 100');
   });
 
@@ -306,6 +314,11 @@ describe('CollaboratorsPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).toContain('no tiene permisos adicionales');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Permiso dado de baja']);
   });
 
   it(

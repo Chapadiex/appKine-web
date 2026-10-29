@@ -152,7 +152,9 @@ describe('OrganizationPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
+    fixture.nativeElement
+      .querySelector('button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)')
+      ?.click();
     fixture.detectChanges();
     httpMock.expectOne('/api/v1/organizations/1').flush(ORGANIZACION);
     await fixture.whenStable();
@@ -177,7 +179,11 @@ describe('OrganizationPage', () => {
     fixture.detectChanges();
 
     // Reintentar sin cambiar nada volveria a fallar exactamente igual.
-    expect(fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector(
+        'button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)',
+      ),
+    ).toBeNull();
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).toBeTruthy();
   });
 

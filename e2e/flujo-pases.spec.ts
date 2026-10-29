@@ -62,7 +62,12 @@ test.describe('Pases contra el backend real', () => {
     const alta = respuestaDe(page, 'POST', PRODUCTOS);
     await page.getByRole('button', { name: 'Crear producto' }).click();
     expect((await alta).status()).toBe(201);
-    await expect(page.getByText(`Se creo "${producto}"`)).toBeVisible();
+    // UX-12: los resultados de esta pantalla son avisos globales.
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}". Todavía nadie tiene saldo`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 creditos');
 
     // ---- Venta: crea el pase y una deuda, sin cobrar.
@@ -84,7 +89,14 @@ test.describe('Pases contra el backend real', () => {
       deuda: { estado: string };
     };
     expect(vendida.deuda.estado).toBe('PENDIENTE');
-    await expect(page.getByText(`Se vendio "${producto}"`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pase vendido', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Notificaciones', exact: true }).getByText(`"${producto}":`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 2');
 
     // ---- Asistencia: presente en una clase de la oferta del pase consume un credito.
@@ -183,7 +195,11 @@ test.describe('Pases contra el backend real', () => {
     expect(respuestaAjuste.status()).toBe(200);
     // La pantalla relee la pagina del ledger: pide el ajuste sin el ledger entero (0.117.0).
     expect(new URL(respuestaAjuste.url()).searchParams.get('sinMovimientos')).toBe('true');
-    await expect(page.getByText(`Se ajusto el saldo de "${producto}"`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}" ahora tiene`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('2 de 3');
     // El ajuste manual no cuenta como credito usado: el pase sigue anulable.
     await expect(filaDe(page, producto)).toContainText('0 usados');
@@ -221,7 +237,16 @@ test.describe('Pases contra el backend real', () => {
         deuda: expect.objectContaining({ estado: 'ANULADA' }),
       }),
     );
-    await expect(page.getByText(`Se anulo "${producto}" y su saldo se descarto.`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pase anulado', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`"${producto}": su saldo se descarto.`),
+    ).toBeVisible();
     await expect(filaDe(page, producto)).toContainText('Anulado');
     await expect(filaDe(page, producto)).toContainText('Motivo: Vendido por error');
     await expect(
@@ -333,7 +358,9 @@ test.describe('Pases contra el backend real', () => {
     };
     expect(vendida.pase.renovacionAutomatica).toBe(true);
     await expect(
-      page.getByText('Se va a renovar solo al terminar el periodo.').first(),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Se va a renovar solo al terminar el periodo.'),
     ).toBeVisible();
     await expect(filaDe(page, abono)).toContainText('Se renueva solo al terminar el periodo.');
 
@@ -348,7 +375,11 @@ test.describe('Pases contra el backend real', () => {
     expect(respuestaRenovacion.request().postDataJSON()).toEqual(
       expect.objectContaining({ activa: false }),
     );
-    await expect(page.getByText(`"${abono}" ya no se renueva solo.`)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Renovación automática desactivada', { exact: true }),
+    ).toBeVisible();
     await expect(filaDe(page, abono)).toContainText('No se renueva solo.');
     await abrirAcciones(filaDe(page, abono));
     await expect(

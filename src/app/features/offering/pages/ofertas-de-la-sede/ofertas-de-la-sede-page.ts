@@ -59,6 +59,8 @@ import {
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -130,6 +132,7 @@ type Heredable = '' | 'true' | 'false';
   imports: [
     CabeceraDePagina,
     AccionesDeFila,
+    Alerta,
     FiltrosRapidos,
     Pestanas,
     Ayuda,
@@ -150,6 +153,7 @@ export class OfertasDeLaSedePage {
   protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -298,15 +302,12 @@ export class OfertasDeLaSedePage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
 
   /** Oferta cuya politica de prepago se esta guardando, o `null` (E-6). */
   protected readonly prepagoEnVuelo = signal<number | null>(null);
-  /** Rechazo del ultimo cambio de politica de prepago. Vive aparte: no es un panel. */
-  protected readonly errorPrepago = signal<string | null>(null);
 
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
@@ -425,7 +426,6 @@ export class OfertasDeLaSedePage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       servicioId: '',
       nombreComercial: '',
@@ -458,7 +458,6 @@ export class OfertasDeLaSedePage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -641,16 +640,20 @@ export class OfertasDeLaSedePage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.crearOferta(consultorioId, cuerpo).subscribe({
-      next: () => {
+      next: (creada) => {
         this.cerrarPanel();
-        this.exito.set(
-          'La oferta quedo dada de alta en esta sede. Si su vigencia arranca mas adelante, va a ' +
-            'figurar como activa pero todavía sin vigencia: es correcto, y empieza a ofrecerse sola ' +
-            'ese día.',
-        );
+        // La aclaracion solo suma si la vigencia arranca mas adelante: es cuando la fila va a
+        // figurar "activa pero todavía sin vigencia" y el operador podria creer que fallo.
+        const arrancaDespues =
+          cuerpo.vigenciaDesde !== undefined && cuerpo.vigenciaDesde > this.hoy;
+        this.avisos.exito('Oferta publicada', {
+          descripcion: arrancaDespues
+            ? `${creada.nombreComercial ?? cuerpo.nombreComercial}. Figura sin vigencia hasta ` +
+              'su fecha de inicio y empieza a ofrecerse sola ese día.'
+            : (creada.nombreComercial ?? cuerpo.nombreComercial),
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -679,12 +682,13 @@ export class OfertasDeLaSedePage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.editarOferta(consultorioId, panel.id, cambios).subscribe({
-      next: () => {
+      next: (actualizada) => {
         this.cerrarPanel();
-        this.exito.set('Los datos de la oferta quedaron guardados.');
+        this.avisos.exito('Cambios guardados', {
+          descripcion: actualizada.nombreComercial ?? undefined,
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -707,15 +711,16 @@ export class OfertasDeLaSedePage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.api.darDeBajaOferta(consultorioId, panel.id, motivo).subscribe({
       next: () => {
+        const nombre = this.ofertaEnPanel()?.nombreComercial;
         this.cerrarPanel();
-        this.exito.set(
-          'La oferta quedo dada de baja. No admite reservas nuevas, y lo que ya se reservo con ella ' +
-            'conserva su significado. Su nombre comercial queda libre.',
-        );
+        this.avisos.exito('Oferta dada de baja', {
+          descripcion:
+            `${nombre ? nombre + '. ' : ''}No admite reservas nuevas; lo ya reservado se ` +
+            'conserva y su nombre comercial queda libre.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -741,18 +746,19 @@ export class OfertasDeLaSedePage {
     }
     const exigir = !(oferta.exigePrepago ?? false);
     this.prepagoEnVuelo.set(oferta.id);
-    this.errorPrepago.set(null);
-    this.exito.set(null);
 
     this.api.fijarPoliticaDePrepago(consultorioId, oferta.id, exigir, oferta.version).subscribe({
       next: (actualizada) => {
         this.prepagoEnVuelo.set(null);
-        this.exito.set(
-          exigir
-            ? `"${oferta.nombreComercial}" exige prepago: la recepción avisa cuando alguien llega ` +
-                'sin anticipo. Es un aviso, no impide atenderlo.'
-            : `"${oferta.nombreComercial}" ya no exige prepago.`,
-        );
+        if (exigir) {
+          this.avisos.exito(`"${oferta.nombreComercial}" exige prepago`, {
+            descripcion:
+              'La recepción avisa cuando alguien llega sin anticipo. Es un aviso, no impide ' +
+              'atenderlo.',
+          });
+        } else {
+          this.avisos.exito(`"${oferta.nombreComercial}" ya no exige prepago`);
+        }
         this.estado.update((actual) =>
           actual.tipo === 'listo'
             ? {
@@ -767,10 +773,17 @@ export class OfertasDeLaSedePage {
       error: (error: unknown) => {
         this.prepagoEnVuelo.set(null);
         const traducido = traducirErrorOffering(error, 'oferta');
-        this.errorPrepago.set(traducido.mensaje);
         // Concurrencia: la version leida quedo vieja. Se relee para que el proximo clic lleve la
-        // nueva y el operador vea lo que el otro puesto dejo antes de decidir de nuevo.
-        if (traducido.causa === 'concurrencia' || hayQueRecargar(traducido.causa)) {
+        // nueva y el operador vea lo que el otro puesto dejo antes de decidir de nuevo. Ahi NO se
+        // ofrece reintentar: repetir el clic a ciegas podria deshacer lo que hizo el otro puesto.
+        const releer = traducido.causa === 'concurrencia' || hayQueRecargar(traducido.causa);
+        this.avisos.error('No pudimos cambiar la política de prepago', {
+          descripcion: traducido.mensaje,
+          accion: releer
+            ? undefined
+            : { etiqueta: 'Reintentar', ejecutar: () => this.alternarPrepago(oferta) },
+        });
+        if (releer) {
           this.cargar();
         }
       },
@@ -952,7 +965,6 @@ export class OfertasDeLaSedePage {
   /** Deja la pantalla como recien entrada: sin panel, sin filtros. */
   private reiniciar(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
     this.filtroServicio.set(null);
     this.filtroModalidad.set('TODAS');

@@ -25,21 +25,20 @@
   @if (cargando()) {
     <p class="estado estado--cargando">Leyendo las series…</p>
   }
-
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-error-series">
-      <h2 id="titulo-error-series">No se pudieron leer las series</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
-        @if (fallo.accion === 'elegir-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
-      </div>
-    </section>
-  }
 </div>
+
+@if (error(); as fallo) {
+  <app-alerta tipo="error" titulo="No pudimos leer las series">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (fallo.accion === 'elegir-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      } @else {
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+    </p>
+  </app-alerta>
+}
 
 <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-filtros-series">
   <div class="tarjeta__cuerpo tarjeta__cuerpo--filtros">

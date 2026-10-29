@@ -20,6 +20,8 @@ import { SaldoAutorizacionResponse } from '../../../../api/generated/model/saldo
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { ConsumosApi } from '../../services/consumos-api';
 import { traducirErrorPersona } from '../../models/person-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   alertaEnPalabras,
   cantidadOSinTope,
@@ -65,7 +67,7 @@ type Estado =
  */
 @Component({
   selector: 'app-consumo-de-autorizacion',
-  imports: [ConfirmacionConMotivo, PermisoDirective],
+  imports: [Alerta, ConfirmacionConMotivo, PermisoDirective],
   templateUrl: './consumo-de-autorizacion.html',
   styleUrl: '../../person.css',
 })
@@ -116,7 +118,7 @@ export class ConsumoDeAutorizacion {
   protected readonly aRevertir = signal<number | null>(null);
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
-  protected readonly exito = signal<string | null>(null);
+  private readonly avisos = inject(AvisosStore);
 
   private enVuelo: Subscription | null = null;
 
@@ -145,7 +147,6 @@ export class ConsumoDeAutorizacion {
       return;
     }
     this.errorAccion.set(null);
-    this.exito.set(null);
     this.aRevertir.set(movimientoId);
   }
 
@@ -165,10 +166,11 @@ export class ConsumoDeAutorizacion {
       next: () => {
         this.enviando.set(false);
         this.aRevertir.set(null);
-        this.exito.set(
-          `Se revirtio el consumo #${movimientoId}: la unidad volvio al saldo y, si tenia una ` +
-            'alerta pendiente, quedo resuelta. El consumo original sigue en el ledger.',
-        );
+        this.avisos.exito(`Consumo #${movimientoId} revertido`, {
+          descripcion:
+            'La unidad volvio al saldo y, si tenia una alerta pendiente, quedo resuelta. El ' +
+            'consumo original sigue en el ledger.',
+        });
         this.leer(this.autorizacionId());
         this.revertido.emit();
       },

@@ -1,3 +1,21 @@
+<!--
+  Rechazo de una operacion (UX-12): donde se hizo —la revision, la factura, el pago, el cierre o
+  el panel—, arriba de sus campos. Los botones de fila y el CSV avisan en el aviso global. Una
+  version vieja ("recargar") es advertencia: alguien cambio el lote mientras tanto.
+-->
+<ng-template #alertaDeOperacion let-fallo let-titulo="titulo">
+  <app-alerta [tipo]="fallo.recargar ? 'advertencia' : 'error'" [titulo]="titulo">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.recargar) {
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar el lote
+        </button>
+      </p>
+    }
+  </app-alerta>
+</ng-template>
+
 @if (lote() === null) {
   <app-cabecera-de-pagina titulo="Lote de presentación">
     <app-migas enLinea [migas]="[{ etiqueta: 'Presentaciones', ruta: '/presentaciones' }]" />
@@ -10,10 +28,9 @@
 
 @if (carga(); as estadoCarga) {
   @if (estadoCarga.tipo === 'error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-lote">
-      <h2 id="titulo-error-lote">No se pudo cargar el lote</h2>
-      <p class="estado estado--error">{{ estadoCarga.error.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudo cargar el lote">
+      <p>{{ estadoCarga.error.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (estadoCarga.error.causa === 'sin-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
         } @else {
@@ -21,8 +38,8 @@
             Reintentar
           </button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
 }
 
@@ -92,25 +109,6 @@
       <dd class="importe">{{ importe(p.saldo) }}</dd>
     </div>
   </dl>
-
-  <div aria-live="polite">
-    @if (aviso(); as texto) {
-      <p class="estado estado--ok" role="status">{{ texto }}</p>
-    }
-    @if (errorOperacion(); as fallo) {
-      <section class="tarjeta" aria-labelledby="titulo-error-operacion">
-        <h2 id="titulo-error-operacion">No se pudo completar la operación</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.recargar) {
-          <div class="acciones">
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el lote
-            </button>
-          </div>
-        }
-      </section>
-    }
-  </div>
 
   <!-- ============================ Prestaciones del lote ============================ -->
 
@@ -302,6 +300,12 @@
           }
         </ul>
       }
+      @if (falloEn('confirmar'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos presentar el lote' }"
+        />
+      }
       <!-- Jerarquia: presentar es la principal; revisar, secundaria; descartar, destructiva y aparte. -->
       <div class="acciones">
         <button
@@ -424,12 +428,37 @@
         <section class="tarjeta" aria-labelledby="titulo-factura">
           <h2 id="titulo-factura">Factura del lote</h2>
           <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
+            @if (falloEn('factura'); as fallo) {
+              <ng-container
+                [ngTemplateOutlet]="alertaDeOperacion"
+                [ngTemplateOutletContext]="{
+                  $implicit: fallo,
+                  titulo: 'No pudimos registrar la factura',
+                }"
+              />
+            }
             <div class="grilla-compacta">
               <div class="campo">
                 <label for="factura-numero">Número de factura</label>
-                <input id="factura-numero" type="text" formControlName="numero" />
+                <input
+                  id="factura-numero"
+                  type="text"
+                  formControlName="numero"
+                  [attr.aria-invalid]="
+                    factura.controls.numero.touched && factura.controls.numero.invalid
+                      ? 'true'
+                      : null
+                  "
+                  [attr.aria-describedby]="
+                    factura.controls.numero.touched && factura.controls.numero.invalid
+                      ? 'factura-numero-error'
+                      : null
+                  "
+                />
                 @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
-                  <p class="campo__error" role="alert">El número es obligatorio.</p>
+                  <p class="campo__error" id="factura-numero-error" role="alert">
+                    El número es obligatorio.
+                  </p>
                 }
               </div>
               <div class="campo">
@@ -457,6 +486,15 @@
           </app-ayuda>
         </div>
         <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
+          @if (falloEn('pago'); as fallo) {
+            <ng-container
+              [ngTemplateOutlet]="alertaDeOperacion"
+              [ngTemplateOutletContext]="{
+                $implicit: fallo,
+                titulo: 'No pudimos registrar el pago',
+              }"
+            />
+          }
           <div class="grilla-compacta">
             <div class="campo">
               <label for="pago-importe">Importe</label>
@@ -466,9 +504,19 @@
                 min="0.01"
                 step="0.01"
                 formControlName="importe"
+                [attr.aria-invalid]="
+                  pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
+                "
+                [attr.aria-describedby]="
+                  pago.controls.importe.touched && pago.controls.importe.invalid
+                    ? 'pago-importe-error'
+                    : null
+                "
               />
               @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
-                <p class="campo__error" role="alert">El importe tiene que ser mayor que cero.</p>
+                <p class="campo__error" id="pago-importe-error" role="alert">
+                  El importe tiene que ser mayor que cero.
+                </p>
               }
             </div>
             <div class="campo">
@@ -508,6 +556,12 @@
             </p>
           </app-ayuda>
         </div>
+        @if (falloEn('conciliar'); as fallo) {
+          <ng-container
+            [ngTemplateOutlet]="alertaDeOperacion"
+            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar el lote' }"
+          />
+        }
         <div class="acciones">
           <button
             type="button"
@@ -553,6 +607,12 @@
     (cerrar)="cerrarPaneles()"
   >
     <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
+      @if (falloEn('debito'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos registrar el débito' }"
+        />
+      }
       <p class="ayuda">
         Registrá lo que el financiador no reconoce. La deuda de la prestación sigue pendiente y se
         puede volver a presentar.
@@ -563,14 +623,25 @@
       </div>
       <div class="campo">
         <label for="debito-motivo">Motivo informado por el financiador</label>
-        <input id="debito-motivo" type="text" formControlName="motivo" />
+        <input
+          id="debito-motivo"
+          type="text"
+          formControlName="motivo"
+          [attr.aria-invalid]="
+            debito.controls.motivo.touched && debito.controls.motivo.invalid ? 'true' : null
+          "
+          [attr.aria-describedby]="
+            debito.controls.motivo.touched && debito.controls.motivo.invalid
+              ? 'debito-motivo-error'
+              : null
+          "
+        />
         @if (debito.controls.motivo.touched && debito.controls.motivo.invalid) {
-          <p class="campo__error" role="alert">El motivo es obligatorio.</p>
+          <p class="campo__error" id="debito-motivo-error" role="alert">
+            El motivo es obligatorio.
+          </p>
         }
       </div>
-      @if (errorOperacion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="operando() !== null">
           Confirmar el débito
@@ -585,6 +656,12 @@
 
 @if (anulando()) {
   <app-panel-lateral titulo="Descartar el borrador" (cerrar)="cerrarPaneles()">
+    @if (falloEn('anular'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos descartar el borrador' }"
+      />
+    }
     <app-confirmacion-con-motivo
       idCampo="anular-presentacion-motivo"
       titulo="Descartar el borrador"
@@ -596,8 +673,5 @@
       (confirmado)="anular($event)"
       (cancelado)="cerrarPaneles()"
     />
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-    }
   </app-panel-lateral>
 }

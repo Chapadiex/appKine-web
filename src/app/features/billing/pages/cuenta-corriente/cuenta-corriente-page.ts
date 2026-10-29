@@ -41,6 +41,8 @@ import {
 } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -102,6 +104,7 @@ type EstadoCuenta =
   selector: 'app-cuenta-corriente-page',
   imports: [
     PanelLateral,
+    Alerta,
     CabeceraDeFicha,
     Ayuda,
     ColumnaOrdenable,
@@ -117,6 +120,7 @@ type EstadoCuenta =
 export class CuentaCorrientePage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(BillingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
@@ -189,7 +193,6 @@ export class CuentaCorrientePage {
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<ErrorObligacion | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly obligaciones = computed<readonly Obligacion[]>(() => {
     const actual = this.estado();
@@ -470,16 +473,18 @@ export class CuentaCorrientePage {
 
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.exito.set(null);
 
     this.api.anular(consultorioId, obligacion.id, motivo, obligacion.version ?? 0).subscribe({
       next: (anulada) => {
         this.enviando.set(false);
         this.objetivo.set(null);
-        this.exito.set(
-          `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)} por ` +
-            `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
-            'con su motivo: no se borra.',
+        this.avisos.exito(
+          `Se anulo la deuda de ${this.importe(anulada, anulada.importeOriginal)}`,
+          {
+            descripcion:
+              `"${anulada.snapshotNombre ?? 'la prestación'}". Queda registrada como anulada, ` +
+              'con su motivo: no se borra.',
+          },
         );
         this.cargar();
       },
@@ -493,7 +498,6 @@ export class CuentaCorrientePage {
   protected cerrarPanel(): void {
     this.objetivo.set(null);
     this.errorAccion.set(null);
-    this.exito.set(null);
   }
 
   // -------------------------------------------------------------------------------------
@@ -573,7 +577,6 @@ export class CuentaCorrientePage {
     this.enviandoImputacion.set(true);
     this.errorImputacion.set(null);
     this.imputadasAntesDelRechazo.set(0);
-    this.exito.set(null);
 
     concat(...pedidos).subscribe({
       error: (error: unknown) => {
@@ -584,10 +587,13 @@ export class CuentaCorrientePage {
         this.enviandoImputacion.set(false);
         const cuantas = pedidos.length;
         this.cerrarImputacion();
-        this.exito.set(
-          `Se imputo el saldo a favor del comprobante N.º ${cobro.comprobanteNumero} a ` +
-            `${cuantas === 1 ? 'una deuda' : `${cuantas} deudas`}. No se movio la caja: la plata ` +
-            'entro cuando se cobro.',
+        this.avisos.exito(
+          `Se imputo el saldo a favor del comprobante N.º ${cobro.comprobanteNumero}`,
+          {
+            descripcion:
+              `A ${cuantas === 1 ? 'una deuda' : `${cuantas} deudas`}. No se movio la caja: la ` +
+              'plata entro cuando se cobro.',
+          },
         );
         this.cargar();
       },

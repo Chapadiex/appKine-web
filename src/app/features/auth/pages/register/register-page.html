@@ -20,12 +20,16 @@
       @if (estado().tipo === 'enviando') {
         <p class="acceso-aviso acceso-aviso--ok">Creando la cuenta&hellip;</p>
       }
-      @if (estado().tipo === 'error') {
-        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
-      }
     </div>
 
     <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+      <!-- Error del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+      @if (estado().tipo === 'error') {
+        <app-alerta tipo="error" titulo="No pudimos crear la cuenta">
+          <p>{{ mensajeError() }}</p>
+        </app-alerta>
+      }
+
       <div class="grilla-campos grilla-campos--dos">
         <div class="campo">
           <label for="registro-firstName">Nombre</label>

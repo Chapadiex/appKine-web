@@ -18,12 +18,6 @@
     <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
   </app-cabecera-de-pagina>
 
-  <div aria-live="polite">
-    @if (exito(); as mensaje) {
-      <p class="estado estado--ok">{{ mensaje }}</p>
-    }
-  </div>
-
   <section class="tarjeta" aria-labelledby="titulo-listado-catalogo">
     <!--
       La distincion que esta pantalla no puede aplanar (ADR-0021) se nombra en cada fila (columna
@@ -135,13 +129,16 @@
         }
 
         @case ('error') {
-          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-          @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-          } @else {
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-          }
+          <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              @if (faltaContexto()) {
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              } @else {
+                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              }
+            </p>
+          </app-alerta>
         }
 
         @case ('listo') {
@@ -302,6 +299,13 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+        <!-- Error general del alta: arriba del formulario (UX-12). Lo repetido va junto al campo. -->
+        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
+          <app-alerta tipo="error" titulo="No pudimos dar de alta el concepto">
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
+
         <div class="campo">
           <label for="alta-catalogo-codigo">Código</label>
           <input
@@ -318,11 +322,7 @@
                   : 'alta-catalogo-codigo-ayuda'
             "
           />
-          @if (errorEnElCodigo()) {
-            <p class="campo__error" id="alta-catalogo-codigo-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('codigo')) {
+          @if (mostrarErrorAlta('codigo')) {
             <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
           } @else {
             <p class="ayuda" id="alta-catalogo-codigo-ayuda">
@@ -331,6 +331,18 @@
             </p>
           }
         </div>
+
+        <!-- Código en uso: pegado al campo que lo produjo (UX-12). -->
+        @if (errorEnElCodigo()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese código ya está en uso"
+            id="alta-catalogo-codigo-conflicto"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
 
         <div class="campo">
           <label for="alta-catalogo-name">Nombre</label>
@@ -348,14 +360,21 @@
                   : null
             "
           />
-          @if (errorEnElNombre()) {
-            <p class="campo__error" id="alta-catalogo-name-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('name')) {
+          @if (mostrarErrorAlta('name')) {
             <p class="campo__error" id="alta-catalogo-name-error">El nombre es obligatorio.</p>
           }
         </div>
+
+        @if (errorEnElNombre()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese nombre ya está en uso"
+            id="alta-catalogo-name-conflicto"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
+        }
 
         @if (tipoActual.exigeEspecialidad) {
           <div class="campo">
@@ -415,10 +434,6 @@
           <input id="alta-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
         </div>
 
-        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
-          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
@@ -444,6 +459,19 @@
         (cerrar)="cerrarPanel()"
       >
         <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+          @if (errorAccion() && !errorEnElNombre()) {
+            <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
+              <p>{{ errorAccion() }}</p>
+              @if (hayQueRecargar()) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton" (click)="cargar()">
+                    Recargar el listado
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
           <div class="campo">
             <label for="editar-catalogo-name">Nombre</label>
             <input
@@ -452,10 +480,9 @@
               formControlName="name"
               autocomplete="off"
               [attr.aria-invalid]="mostrarErrorEdicion('name') || errorEnElNombre() ? 'true' : null"
+              [attr.aria-describedby]="errorEnElNombre() ? 'editar-catalogo-name-conflicto' : null"
             />
-            @if (errorEnElNombre()) {
-              <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-            } @else if (mostrarErrorEdicion('name')) {
+            @if (mostrarErrorEdicion('name')) {
               <p class="campo__error">El nombre es obligatorio.</p>
             } @else {
               <p class="ayuda">
@@ -464,6 +491,17 @@
               </p>
             }
           </div>
+
+          @if (errorEnElNombre()) {
+            <app-alerta
+              class="campo--ancho"
+              tipo="advertencia"
+              titulo="Ese nombre ya está en uso"
+              id="editar-catalogo-name-conflicto"
+            >
+              <p>{{ errorAccion() }}</p>
+            </app-alerta>
+          }
 
           <div class="campo">
             <label for="editar-catalogo-descripcion">Descripción</label>
@@ -502,10 +540,6 @@
             </p>
           </div>
 
-          @if (errorAccion() && !errorEnElNombre()) {
-            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-          }
-
           <p class="acciones">
             <button type="submit" class="boton" [disabled]="enviando() || edicionBloqueada()">
               {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -518,9 +552,6 @@
             >
               Cancelar
             </button>
-            @if (hayQueRecargar()) {
-              <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
-            }
           </p>
         </form>
       </app-panel-lateral>
@@ -528,6 +559,18 @@
 
     @if (panel()?.tipo === 'baja') {
       <app-panel-lateral [titulo]="'Dar de baja ' + concepto.name" (cerrar)="cerrarPanel()">
+        @if (errorAccion()) {
+          <app-alerta tipo="error" titulo="No pudimos dar de baja el concepto">
+            <p>{{ errorAccion() }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
         <app-confirmacion-con-motivo
           idCampo="baja-catalogo-motivo"
           [titulo]="'Dar de baja ' + concepto.name"
@@ -544,15 +587,6 @@
             significado; si vuelve a hacer falta se da de alta uno nuevo.
           </p>
         </app-confirmacion-con-motivo>
-
-        @if (errorAccion()) {
-          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-        }
-        @if (hayQueRecargar()) {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Recargar el listado
-          </button>
-        }
       </app-panel-lateral>
     }
   }

@@ -34,36 +34,22 @@
   <p class="estado estado--cargando">Leyendo la serie…</p>
 }
 
-<div aria-live="polite">
-  @if (resultado(); as hecho) {
-    <p class="estado estado--ok">
-      @if (hecho.operacion === 'reprogramar') {
-        Se movieron {{ hecho.alcance.afectados?.length ?? 0 }} turnos. Cada uno conserva su número,
-        su paciente y su historial, y vuelve a quedar reservado.
+<!--
+  UX-12: el resultado de cancelar o mover es un aviso global (lo dibuja el shell); el rechazo,
+  arriba del panel abierto. Aca solo queda el error de LEER la serie, en el lugar del contenido.
+-->
+@if (errorDeCarga(); as fallo) {
+  <app-alerta tipo="error" titulo="No pudimos leer la serie">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (fallo.accion === 'elegir-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
       } @else {
-        Se cancelaron {{ hecho.alcance.afectados?.length ?? 0 }} turnos.
-      }
-      @if ((hecho.alcance.omitidos?.length ?? 0) > 0) {
-        {{ hecho.alcance.omitidos?.length }} quedaron como estaban.
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
       }
     </p>
-  }
-
-  <!-- Con un panel abierto, el rechazo se muestra dentro del panel (ver abajo). -->
-  @if (pedido() === null) {
-    @if (error(); as fallo) {
-      <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
-        <h2 id="titulo-conflicto-serie">No se pudo completar la operación</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.accion === 'elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
-        }
-      </section>
-    }
-  }
-</div>
+  </app-alerta>
+}
 
 @if (serie(); as actual) {
   <!-- La regla en una linea, debajo del titulo, como en el canvas. -->
@@ -384,20 +370,18 @@
   </app-panel-lateral>
 }
 
-<!-- El rechazo de una operacion del panel se muestra dentro del panel, que es lo que esta a la vista. -->
+<!-- El rechazo de una operacion del panel va ARRIBA del panel, que es lo que esta a la vista. -->
 <ng-template #rechazoEnElPanel>
-  <div aria-live="polite">
-    @if (error(); as fallo) {
-      <div class="conflicto" role="alert">
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.accion === 'releer-alcance') {
-          <div class="acciones">
-            <button type="button" class="boton" (click)="previsualizar()">
-              Volver a previsualizar
-            </button>
-          </div>
-        }
-      </div>
-    }
-  </div>
+  @if (error(); as fallo) {
+    <app-alerta [tipo]="esConflicto() ? 'advertencia' : 'error'" [titulo]="tituloDelError()">
+      <p>{{ fallo.mensaje }}</p>
+      @if (fallo.accion === 'releer-alcance') {
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="previsualizar()">
+            Volver a previsualizar
+          </button>
+        </p>
+      }
+    </app-alerta>
+  }
 </ng-template>

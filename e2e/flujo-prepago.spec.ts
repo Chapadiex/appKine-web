@@ -154,7 +154,9 @@ test.describe('Prepago antes del check-in contra el backend real', () => {
     expect(respuesta.status()).toBe(409);
     expect((await problemaDe(respuesta)).type).toBe(uriDeProblema('prepago-no-admitido'));
 
-    await expect(page.getByRole('heading', { name: 'No se registro el cobro' })).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'No pudimos registrar el cobro' }),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Volver a la recepción del día' }).last(),
     ).toBeVisible();

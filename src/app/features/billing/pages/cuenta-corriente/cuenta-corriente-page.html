@@ -33,23 +33,16 @@
 }
 
 @if (mensajeError(); as mensaje) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-cuenta">
-    <h2 id="titulo-error-cuenta">No se pudo cargar la cuenta corriente</h2>
-    <p class="estado estado--error">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo cargar la cuenta corriente">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      </div>
-    } @else {
-      <div class="acciones">
+      } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
-      </div>
-    }
-  </section>
-}
-
-@if (exito(); as mensaje) {
-  <p class="estado estado--ok" role="status">{{ mensaje }}</p>
+      }
+    </p>
+  </app-alerta>
 }
 
 @if (vacia()) {
@@ -195,13 +188,14 @@
     </div>
 
     @if (cobrosNoCargaron()) {
-      <p class="estado estado--error">
-        No se pudieron leer los cobros, así que no sabemos si hay saldo a favor. La deuda de arriba
-        esta bien.
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
-          Volver a leer
-        </button>
-      </p>
+      <app-alerta tipo="error" titulo="No pudimos leer los cobros">
+        <p>No sabemos si hay saldo a favor. La deuda de arriba esta bien.</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Volver a leer
+          </button>
+        </p>
+      </app-alerta>
     } @else if (conSaldoAFavor().length === 0) {
       <p class="estado estado--vacio">
         Esta persona no tiene saldo a favor: no hay anticipos ni sobrantes sin imputar.
@@ -255,6 +249,52 @@
     (cerrar)="cerrarPanel()"
   >
     <!--
+      Rechazo de la anulacion, arriba del panel (UX-12). Que tenga cobros, que sea de una venta o
+      que otro la haya cambiado son advertencias: chocan con algo que ya existe y tienen salida.
+    -->
+    @if (errorAccion(); as problema) {
+      <app-alerta
+        [tipo]="
+          problema.causa === 'con-cobros' || problema.causa === 'de-venta' || recargable()
+            ? 'advertencia'
+            : 'error'
+        "
+        titulo="No pudimos anular la deuda"
+      >
+        <p>{{ mensajeDelRechazo() }}</p>
+
+        @if (problema.causa === 'con-cobros') {
+          <!--
+            Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa: una
+            devolucion, que es su propio circuito (M19) y todavia no tiene pantalla. Un "no se
+            puede" pelado manda a pedir un permiso que no existe.
+          -->
+          <p>
+            Lo que corresponde en este caso es registrar una <b>devolucion</b>, que tiene su propio
+            circuito y su propio registro. Todavía no se hace desde el sistema: hay que resolverlo
+            por caja.
+          </p>
+        }
+
+        @if (problema.causa === 'de-venta') {
+          <p class="alerta__acciones">
+            <a class="boton boton--secundario" [routerLink]="rutaPases()">
+              Ir a los pases de la persona
+            </a>
+          </p>
+        }
+
+        @if (recargable()) {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar la cuenta corriente
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    <!--
       `motivoObligatorio` se deja en su default (`true`). Aca el motivo no se puede omitir: una
       deuda que se borra sin explicacion es exactamente lo que una auditoria busca, y la baja
       logica sin motivo no seria auditable.
@@ -277,39 +317,6 @@
         {{ fechaEnPalabras(obligacion.devengadaEn) }}.
       </p>
     </akine-confirmacion-con-motivo>
-
-    @if (errorAccion(); as problema) {
-      <p class="estado estado--error" role="alert">{{ mensajeDelRechazo() }}</p>
-
-      @if (problema.causa === 'con-cobros') {
-        <!--
-                      Explicitamente NO se dice "no se puede". Hay algo que hacer y es otra cosa:
-                      una devolucion, que es su propio circuito (M19) y todavia no tiene pantalla.
-                      Un "no se puede" pelado manda a pedir un permiso que no existe.
-                    -->
-        <p class="ayuda">
-          Lo que corresponde en este caso es registrar una <b>devolucion</b>, que tiene su propio
-          circuito y su propio registro. Todavía no se hace desde el sistema: hay que resolverlo por
-          caja.
-        </p>
-      }
-
-      @if (problema.causa === 'de-venta') {
-        <div class="acciones">
-          <a class="boton boton--secundario" [routerLink]="rutaPases()">
-            Ir a los pases de la persona
-          </a>
-        </div>
-      }
-
-      @if (recargable()) {
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Recargar la cuenta corriente
-          </button>
-        </div>
-      }
-    }
   </app-panel-lateral>
 }
 
@@ -320,6 +327,27 @@
     (cerrar)="cerrarImputacion()"
   >
     <form (submit)="$event.preventDefault(); confirmarImputacion()">
+      @if (errorImputacion(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos imputar el saldo a favor">
+          <p>{{ fallo.mensaje }}</p>
+          @if (imputadasAntesDelRechazo() > 0) {
+            <p>
+              Antes del rechazo entraron {{ imputadasAntesDelRechazo() }}
+              imputaciones. Recarga para ver como quedaron los saldos.
+            </p>
+          }
+          <p class="alerta__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarTrasImputacion()"
+            >
+              Recargar la cuenta corriente
+            </button>
+          </p>
+        </app-alerta>
+      }
+
       <p class="ayuda ayuda--fija">
         Disponible:
         <b class="importe">{{ importeEnPalabras(cobro.saldoAFavor, cobro.moneda) }}</b
@@ -332,7 +360,14 @@
           favor solo se imputa a deudas de la misma sede.
         </p>
       } @else {
-        <fieldset class="grupo">
+        <fieldset
+          class="grupo"
+          [attr.aria-describedby]="
+            imputacionIntentada() && problemaDeImputacion()
+              ? 'imputar-' + cobro.id + '-error'
+              : null
+          "
+        >
           <legend>Deudas pendientes de la misma sede</legend>
           @for (deuda of deudasDelImputando(); track deuda.id) {
             <div class="campo">
@@ -346,6 +381,9 @@
                 inputmode="decimal"
                 autocomplete="off"
                 [value]="importeTipeado(deuda)"
+                [attr.aria-invalid]="
+                  imputacionIntentada() && problemaDeImputacion() ? 'true' : null
+                "
                 (input)="cambiarImporteDeImputacion(deuda, $any($event.target).value)"
               />
             </div>
@@ -353,20 +391,10 @@
         </fieldset>
 
         @if (imputacionIntentada() && problemaDeImputacion(); as problema) {
-          <p class="estado estado--error" role="alert">{{ problema }}</p>
+          <p class="campo__error" [id]="'imputar-' + cobro.id + '-error'" role="alert">
+            {{ problema }}
+          </p>
         }
-      }
-
-      @if (errorImputacion(); as fallo) {
-        <div role="alert">
-          <p class="estado estado--error">{{ fallo.mensaje }}</p>
-          @if (imputadasAntesDelRechazo() > 0) {
-            <p class="ayuda ayuda--fija">
-              Antes del rechazo entraron {{ imputadasAntesDelRechazo() }}
-              imputaciones. Recarga para ver como quedaron los saldos.
-            </p>
-          }
-        </div>
       }
 
       <div class="acciones">
@@ -376,11 +404,6 @@
         <button type="button" class="boton boton--secundario" (click)="cerrarImputacion()">
           Cancelar
         </button>
-        @if (errorImputacion()) {
-          <button type="button" class="boton boton--secundario" (click)="recargarTrasImputacion()">
-            Recargar la cuenta corriente
-          </button>
-        }
       </div>
     </form>
   </app-panel-lateral>

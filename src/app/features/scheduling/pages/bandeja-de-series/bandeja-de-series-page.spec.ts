@@ -155,7 +155,9 @@ describe('BandejaDeSeriesPage', () => {
     const fixture = await montar();
     esperarListado().flush(null, { status: 500, statusText: 'Server Error' });
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('No se pudieron leer las series');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-alerta')?.textContent,
+    ).toContain('No pudimos leer las series');
     clickear(fixture, 'Reintentar');
     esperarListado().flush(pagina([]));
   });

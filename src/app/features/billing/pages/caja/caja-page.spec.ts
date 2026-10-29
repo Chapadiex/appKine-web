@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -104,7 +105,9 @@ describe('CajaPage', () => {
     pedido.flush(JORNADA);
 
     await responderAbierta(fixture, []);
-    expect(texto(fixture)).toContain('Caja abierta.');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Caja abierta');
+    expect(aviso?.descripcion).toContain('250,50');
     expect(texto(fixture)).toContain('Todavía no hay movimientos');
   });
 
@@ -146,7 +149,9 @@ describe('CajaPage', () => {
     pedido.flush({ ...MANUAL, id: 600, tipo: 'EGRESO' });
 
     await recargarAbierta(fixture, []);
-    expect(texto(fixture)).toContain('Movimiento registrado.');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Movimiento registrado');
+    expect(aviso?.descripcion).toContain('Articulos de limpieza');
   });
 
   it('un egreso que deja el cajon en negativo muestra el rechazo y no relee', async () => {
@@ -164,7 +169,12 @@ describe('CajaPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('deja el cajon en negativo');
+    // En la seccion del movimiento, arriba de sus campos: es donde se corrige el importe.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-labelledby="titulo-movimiento"] app-alerta',
+    );
+    expect(alerta?.textContent).toContain('No pudimos registrar el movimiento');
+    expect(alerta?.textContent).toContain('deja el cajon en negativo');
   });
 
   it('revertir exige motivo y lo manda', async () => {
@@ -201,6 +211,8 @@ describe('CajaPage', () => {
     ]);
     expect(texto(fixture)).toContain('Revertido');
     expect(botones(fixture, 'Revertir')).toHaveLength(0);
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Movimiento revertido');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un arqueo que no cuadra pide motivo y manda el teorico que se mostraba', async () => {
@@ -235,6 +247,7 @@ describe('CajaPage', () => {
     expect(contenido).toContain('Arqueo registrado');
     expect(contenido).toContain('Faltante de');
     expect(contenido).toContain('La caja está cerrada');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Caja cerrada');
   });
 
   it('si el teorico cambio mientras se contaba, no cierra y ofrece recargar', async () => {
@@ -254,7 +267,11 @@ describe('CajaPage', () => {
     );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('el saldo teorico cambio');
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-labelledby="titulo-cierre"] app-alerta',
+    );
+    expect(alerta?.className).toContain('alerta--advertencia');
+    expect(alerta?.textContent).toContain('el saldo teorico cambio');
     apretar(fixture, 'Recargar la caja');
     await recargarAbierta(fixture, []);
   });

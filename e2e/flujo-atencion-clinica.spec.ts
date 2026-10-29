@@ -113,7 +113,9 @@ test.describe('Atencion clinica contra el backend real', () => {
 
     await examen.getByLabel('Valor en grados').fill('95');
     await examen.getByRole('button', { name: 'Registrar la medición' }).click();
-    await expect(examen.getByRole('status')).toContainText('Medición registrada');
+    // UX-12: el resultado es un aviso global, en la region de notificaciones.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones' });
+    await expect(notificaciones.getByText('Medición registrada')).toBeVisible();
     const filaRom = examen.getByRole('row').filter({ hasText: `Flexion de rodilla E2E ${sufijo}` });
     await expect(filaRom).toContainText('95 grados');
     await expect(filaRom).toContainText('Derecha');
@@ -132,7 +134,7 @@ test.describe('Atencion clinica contra el backend real', () => {
     const registro = respuestaDe(page, 'POST', /\/sesiones\/\d+\/tratamientos$/);
     await tratamiento.getByRole('button', { name: 'Registrar el tratamiento' }).click();
     expect((await registro).ok()).toBe(true);
-    await expect(tratamiento.getByRole('status')).toContainText('Tratamiento registrado');
+    await expect(notificaciones.getByText('Tratamiento registrado')).toBeVisible();
     await expect(tratamiento.getByRole('listitem')).toContainText('20 mA');
 
     // La version avanzo con el tratamiento: el guardado de las notas tiene que mandar la nueva.
@@ -160,11 +162,12 @@ test.describe('Atencion clinica contra el backend real', () => {
       'Movilidad y fisioterapia, buena tolerancia.',
     );
     await page.getByRole('button', { name: 'Registrar la enmienda', exact: true }).click();
-    await expect(
-      page.getByRole('region', { name: 'Registrar la enmienda' }).getByRole('status'),
-    ).toContainText('Falta el motivo');
+    // UX-12: la validacion va en el campo, no al pie del formulario.
+    const motivoDeEnmienda = page.getByLabel('Motivo de la enmienda');
+    await expect(motivoDeEnmienda).toHaveAttribute('aria-invalid', 'true');
+    await expect(motivoDeEnmienda).toHaveAccessibleDescription(/Falta el motivo/);
 
-    await page.getByLabel('Motivo de la enmienda').fill('La intensidad y el ROM se cargaron mal');
+    await motivoDeEnmienda.fill('La intensidad y el ROM se cargaron mal');
     await page.getByLabel('Intensidad (mA)').fill('25');
     await page.getByLabel('Valor en grados').fill('100');
     const enmienda = respuestaDe(page, 'POST', /\/enmiendas$/);

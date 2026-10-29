@@ -48,23 +48,26 @@
   </p>
 }
 
+<!-- UX-12: el problema, arriba del formulario. Otra enmienda en el medio es un conflicto. -->
 @if (error(); as problema) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-problema-enmienda">
-    <h2 id="titulo-problema-enmienda">
-      @if (hayConflicto()) {
-        Alguien enmendó esta atención mientras la corregías
-      } @else {
-        No se pudo enmendar
-      }
-    </h2>
-    <p class="estado estado--error">{{ problema.mensaje }}</p>
+  <app-alerta
+    [tipo]="hayConflicto() ? 'advertencia' : 'error'"
+    [titulo]="
+      hayConflicto()
+        ? 'Alguien enmendó esta atención mientras la corregías'
+        : errorAlLeer()
+          ? 'No pudimos leer la atención'
+          : 'No pudimos registrar la enmienda'
+    "
+  >
+    <p>{{ problema.mensaje }}</p>
     @if (hayConflicto()) {
-      <p class="ayuda">
+      <p>
         No se guardó nada. Al releer, el formulario vuelve a cargarse con la versión nueva —lo que
         corregiste se reemplaza— y el motivo que escribiste se conserva.
       </p>
     }
-    <div class="acciones">
+    <p class="alerta__acciones">
       <button type="button" class="boton boton--secundario" (click)="cargar()">
         @if (hayConflicto()) {
           Releer la última versión
@@ -72,8 +75,8 @@
           Reintentar
         }
       </button>
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (sesion() && !cerrada()) {
@@ -101,11 +104,18 @@
         name="enmienda-motivo"
         rows="3"
         maxlength="1000"
-        aria-describedby="ayuda-enmienda-motivo"
-        [attr.aria-invalid]="aviso() !== '' && motivo().trim() === ''"
+        [attr.aria-describedby]="
+          campoDelAviso() === 'motivo' && motivo().trim() === ''
+            ? 'enmienda-motivo-error ayuda-enmienda-motivo'
+            : 'ayuda-enmienda-motivo'
+        "
+        [attr.aria-invalid]="campoDelAviso() === 'motivo' && motivo().trim() === '' ? 'true' : null"
         [value]="motivo()"
         (input)="motivo.set($any($event.target).value)"
       ></textarea>
+      @if (campoDelAviso() === 'motivo' && motivo().trim() === '') {
+        <p class="campo__error" id="enmienda-motivo-error">{{ aviso() }}</p>
+      }
       <p id="ayuda-enmienda-motivo" class="ayuda">
         Obligatorio. Es lo que el historial muestra para explicar por qué cambió el registro.
       </p>
@@ -218,10 +228,20 @@
         id="enmienda-nota"
         rows="4"
         maxlength="2000"
-        aria-describedby="ayuda-enmienda-nota"
+        [attr.aria-describedby]="
+          campoDelAviso() === 'nota' && notaDeCierre().trim() === ''
+            ? 'enmienda-nota-error ayuda-enmienda-nota'
+            : 'ayuda-enmienda-nota'
+        "
+        [attr.aria-invalid]="
+          campoDelAviso() === 'nota' && notaDeCierre().trim() === '' ? 'true' : null
+        "
         [value]="notaDeCierre()"
         (input)="notaDeCierre.set($any($event.target).value)"
       ></textarea>
+      @if (campoDelAviso() === 'nota' && notaDeCierre().trim() === '') {
+        <p class="campo__error" id="enmienda-nota-error">{{ aviso() }}</p>
+      }
       <p id="ayuda-enmienda-nota" class="ayuda">
         @if (presente()) {
           El paciente vino: la nota no puede quedar vacía.
@@ -291,6 +311,11 @@
           </p>
         </app-ayuda>
       </div>
+      @if (campoDelAviso() === 'tratamientos') {
+        <app-alerta tipo="error" titulo="Revisá los tratamientos">
+          <p>{{ aviso() }}</p>
+        </app-alerta>
+      }
 
       <ol class="lista-tratamientos">
         @for (t of tratamientos(); track t.tratamientoId ?? $index; let i = $index) {
@@ -429,6 +454,11 @@
           </p>
         </app-ayuda>
       </div>
+      @if (campoDelAviso() === 'mediciones') {
+        <app-alerta tipo="error" titulo="Revisá el examen físico">
+          <p>{{ aviso() }}</p>
+        </app-alerta>
+      }
 
       @for (m of mediciones(); track m.definicionId + '-' + m.lateralidad; let i = $index) {
         <fieldset class="grupo">
@@ -492,7 +522,6 @@
         <p>Cada enmienda crea una versión nueva; ninguna versión anterior se borra.</p>
       </app-ayuda>
     </div>
-    <p role="status" [class]="aviso() ? 'estado estado--error' : 'ayuda'">{{ aviso() }}</p>
     <div class="pie-tarjeta">
       @if (sesion(); as atencion) {
         <a

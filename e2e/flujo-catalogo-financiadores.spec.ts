@@ -44,7 +44,11 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       const creada = await alta;
       expect(creada.status(), await creada.text()).toBe(201);
       catalogoId = ((await creada.json()) as { id: number }).id;
-      await expect(plataforma.getByText(`${nombre} quedo en el catalogo`)).toBeVisible();
+      await expect(
+        plataforma
+          .getByRole('region', { name: 'Notificaciones', exact: true })
+          .getByText(`${nombre}. Los centros ya lo pueden agregar.`),
+      ).toBeVisible();
 
       await plataforma
         .getByRole('button', { name: `Agregar un plan a ${nombre}`, exact: true })

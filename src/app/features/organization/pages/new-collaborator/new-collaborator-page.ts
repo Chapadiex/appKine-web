@@ -1,6 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ColaboradoresService } from '../../../../api/generated/api/colaboradores.service';
 import { CreateMembershipRequest } from '../../../../api/generated/model/create-membership-request';
@@ -12,6 +12,9 @@ import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
 const CAMPOS = ['email', 'roleCode', 'reason'] as const;
@@ -52,7 +55,7 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-collaborator-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './new-collaborator-page.html',
   styleUrl: '../../organization.css',
 })
@@ -60,6 +63,8 @@ export class NewCollaboratorPage {
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly router = inject(Router);
+  private readonly avisos = inject(AvisosStore);
 
   protected readonly sedes = inject(SedesDelContexto);
   protected readonly roles = ROLES_DE_VINCULO;
@@ -80,11 +85,6 @@ export class NewCollaboratorPage {
 
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
   protected readonly hecho = computed(() => this.estado().tipo === 'ok');
-
-  protected readonly membershipCreado = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'ok' ? estado.membershipId : null;
-  });
 
   protected readonly mensajeError = computed(() => {
     const estado = this.estado();
@@ -141,7 +141,7 @@ export class NewCollaboratorPage {
     this.colaboradores
       .createDirectMembership({ createMembershipRequest: this.armarCuerpo() })
       .subscribe({
-        next: (respuesta) => this.estado.set({ tipo: 'ok', membershipId: respuesta.membershipId }),
+        next: (respuesta) => this.vinculado(respuesta.membershipId),
         error: (error: unknown) => this.fallar(error),
       });
   }
@@ -161,6 +161,20 @@ export class NewCollaboratorPage {
     }
 
     return cuerpo;
+  }
+
+  /**
+   * UX-12: el alta es una pantalla propia, asi que al salir bien vuelve al listado (donde se ve
+   * la fila nueva) y publica el aviso global, que sobrevive a la navegacion.
+   */
+  private vinculado(membershipId: number | undefined): void {
+    this.estado.set({ tipo: 'ok', membershipId });
+    this.avisos.exito('Colaborador vinculado', {
+      descripcion:
+        `Vínculo número ${membershipId ?? '-'}. La persona ya puede elegir esta organización ` +
+        'como contexto la próxima vez que entre; AKINE no le manda ningún aviso.',
+    });
+    this.router.navigateByUrl('/organizacion/colaboradores').catch(() => undefined);
   }
 
   private fallar(error: unknown): void {

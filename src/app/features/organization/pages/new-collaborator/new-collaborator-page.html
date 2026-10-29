@@ -11,6 +11,18 @@
   <h2 id="titulo-alta">Datos del vínculo</h2>
 
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <!-- Error general del alta (no de un campo): arriba del formulario, a la vista. -->
+    @if (mensajeError() && causaError() !== 'conflicto') {
+      <app-alerta tipo="error" titulo="No pudimos vincular al colaborador">
+        <p>{{ mensajeError() }}</p>
+        @if (causaError() === 'sin-contexto') {
+          <p class="alerta__acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+          </p>
+        }
+      </app-alerta>
+    }
+
     <div class="campo">
       <label for="alta-email">Email de la cuenta</label>
       <input
@@ -18,8 +30,14 @@
         type="email"
         formControlName="email"
         autocomplete="off"
-        aria-describedby="alta-email-ayuda"
-        [attr.aria-invalid]="mostrarError('email')"
+        [attr.aria-invalid]="mostrarError('email') || causaError() === 'conflicto' ? 'true' : null"
+        [attr.aria-describedby]="
+          causaError() === 'conflicto'
+            ? 'alta-email-ayuda alta-email-vinculado'
+            : mostrarError('email')
+              ? 'alta-email-ayuda alta-email-error'
+              : 'alta-email-ayuda'
+        "
       />
       <p class="ayuda" id="alta-email-ayuda">
         Tiene que ser el email exacto con el que esa persona se registro.
@@ -28,6 +46,30 @@
         <p class="campo__error" id="alta-email-error">Escribi un email valido.</p>
       }
     </div>
+
+    <!--
+      Conflicto con un vinculo que ya existe: pegado al email que lo produjo, con la salida. Si
+      esta suspendido o revocado se gestiona desde el listado, no creando otro.
+    -->
+    @if (causaError() === 'conflicto') {
+      <app-alerta
+        class="campo--ancho"
+        tipo="advertencia"
+        titulo="Esta cuenta ya tiene un vínculo con la organización"
+        id="alta-email-vinculado"
+      >
+        <p>{{ mensajeError() }}</p>
+        <p>
+          Si el vinculo existe pero esta suspendido o revocado, se gestiona desde el listado y no
+          creando uno nuevo.
+        </p>
+        <p class="alerta__acciones">
+          <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+            Ver el listado
+          </a>
+        </p>
+      </app-alerta>
+    }
 
     <div class="campo">
       <label for="alta-roleCode">Rol</label>
@@ -111,37 +153,8 @@
   </form>
 
   <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('enviando') {
-        <p class="estado estado--cargando">Creando el vinculo&hellip;</p>
-      }
-
-      @case ('ok') {
-        <p class="estado estado--ok">Vinculo creado (número {{ membershipCreado() }}).</p>
-        <p class="ayuda">
-          La persona ya puede elegir esta organización como contexto de trabajo la próxima vez que
-          entre. No recibe ningún aviso de AKINE.
-        </p>
-        <a class="boton" routerLink="/organizacion/colaboradores">Volver al listado</a>
-      }
-
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (causaError() === 'sin-contexto') {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        }
-
-        @if (causaError() === 'conflicto') {
-          <p class="ayuda">
-            Si el vinculo existe pero esta suspendido o revocado, se gestiona desde el listado y no
-            creando uno nuevo.
-          </p>
-          <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
-            Ver el listado
-          </a>
-        }
-      }
+    @if (enviando()) {
+      <p class="estado estado--cargando">Creando el vinculo&hellip;</p>
     }
   </div>
 </section>

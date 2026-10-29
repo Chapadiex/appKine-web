@@ -58,36 +58,6 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto">
-      <h2 id="titulo-conflicto">No se pudo completar la operación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-
-      @if (fallo.motivo) {
-        <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
-      }
-
-      @switch (fallo.accion) {
-        @case ('recargar-dia') {
-          <div class="acciones">
-            <button type="button" class="boton" (click)="cargar()">Volver a leer el día</button>
-          </div>
-        }
-        @case ('elegir-contexto') {
-          <div class="acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-          </div>
-        }
-      }
-    </section>
-  }
-</div>
-
 @if (cargando()) {
   <p class="estado estado--cargando">Leyendo los turnos del día…</p>
 }
@@ -99,169 +69,190 @@
   </p>
 }
 
-<section class="tarjeta tarjeta--plana" aria-labelledby="titulo-dia">
-  <h2 id="titulo-dia" class="visualmente-oculto">Turnos del día</h2>
-
-  <!-- La barra del canvas: buscar, actualizar, y lo que el mostrador mira sin leer la tabla. -->
-  <div class="tarjeta__barra">
-    <div class="campo campo--barra">
-      <div class="campo-busqueda">
-        <app-icono class="campo-busqueda__icono" nombre="buscar" />
-        <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
-        <input
-          id="recepcion-busqueda"
-          name="recepcion-busqueda"
-          type="search"
-          autocomplete="off"
-          placeholder="Buscar paciente o documento"
-          [value]="busqueda()"
-          (input)="busqueda.set($any($event.target).value)"
-        />
-      </div>
-    </div>
-    <button type="button" class="boton boton--secundario" (click)="cargar()">
-      Actualizar la lista
-    </button>
-    <span class="tarjeta__barra-fin">
-      <span class="recepcion__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
-      @if (hayTurnos()) {
-        {{ turnos().length }} turno(s), <b>{{ enEspera() }} en espera</b> ·
-      }
-      @if (zonaConocida()) {
-        horarios en la zona de la sede ({{ timezone() }})
+<!--
+  UX-12: el resultado de cada transicion es un aviso global (lo dibuja el shell). Aca solo queda
+  el error de LEER el dia, en el lugar de la lista: sin ella, "no hay turnos" mentiria.
+-->
+@if (errorDeCarga(); as fallo) {
+  <app-alerta tipo="error" titulo="No pudimos leer los turnos del día">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.motivo) {
+      <p>Lo que dijo el servidor: {{ fallo.motivo }}</p>
+    }
+    <p class="alerta__acciones">
+      @if (fallo.accion === 'elegir-contexto') {
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
       } @else {
-        <!--
+        <button type="button" class="boton" (click)="releerDia()">Reintentar</button>
+      }
+    </p>
+  </app-alerta>
+} @else {
+  <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-dia">
+    <h2 id="titulo-dia" class="visualmente-oculto">Turnos del día</h2>
+
+    <!-- La barra del canvas: buscar, actualizar, y lo que el mostrador mira sin leer la tabla. -->
+    <div class="tarjeta__barra">
+      <div class="campo campo--barra">
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
+          <input
+            id="recepcion-busqueda"
+            name="recepcion-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar paciente o documento"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <button type="button" class="boton boton--secundario" (click)="cargar()">
+        Actualizar la lista
+      </button>
+      <span class="tarjeta__barra-fin">
+        <span class="recepcion__fecha">{{ fechaEnPalabras(dia()) }}</span> ·
+        @if (hayTurnos()) {
+          {{ turnos().length }} turno(s), <b>{{ enEspera() }} en espera</b> ·
+        }
+        @if (zonaConocida()) {
+          horarios en la zona de la sede ({{ timezone() }})
+        } @else {
+          <!--
           No es un cartel defensivo: `GET /turnos?fecha=` no publica el `timezone` de la sede, a
           diferencia de la agenda. Rotularlo es lo unico honesto; usar la zona del navegador
           correria las horas del mostrador sin que nada falle.
         -->
-        horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede
-      }
-    </span>
-  </div>
-
-  @if (!hayTurnos() && !cargando()) {
-    <div class="tarjeta__cuerpo">
-      <p class="estado estado--vacio">
-        Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha.
-      </p>
+          horarios en <b>UTC</b>: no se pudo averiguar la zona horaria de la sede
+        }
+      </span>
     </div>
-  } @else if (hayTurnos()) {
-    <app-filtros-rapidos
-      etiqueta="Filtrar por estado de la recepción"
-      [opciones]="opcionesDeRecepcion()"
-      [(valor)]="filtroDeRecepcion"
-    />
 
-    @if (tabla.total() === 0) {
+    @if (!hayTurnos() && !cargando()) {
       <div class="tarjeta__cuerpo">
-        <p class="estado estado--vacio">Ningún turno del día coincide con esa búsqueda.</p>
+        <p class="estado estado--vacio">
+          Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha.
+        </p>
       </div>
-    }
+    } @else if (hayTurnos()) {
+      <app-filtros-rapidos
+        etiqueta="Filtrar por estado de la recepción"
+        [opciones]="opcionesDeRecepcion()"
+        [(valor)]="filtroDeRecepcion"
+      />
 
-    <!--
+      @if (tabla.total() === 0) {
+        <div class="tarjeta__cuerpo">
+          <p class="estado estado--vacio">Ningún turno del día coincide con esa búsqueda.</p>
+        </div>
+      }
+
+      <!--
     `tabindex`, `role` y nombre en el contenedor que scrollea: sin ellos, las columnas escondidas
     tras el desborde quedan fuera del alcance del teclado (WCAG 2.1.1). Ver `design-system.css`.
   -->
-    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de turnos">
-      <table class="tabla">
-        <caption class="visualmente-oculto">
-          Turnos de la sede en la fecha elegida, con el estado de la reserva, el de la recepción y
-          la hora de llegada
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
-            <th scope="col">Prestación</th>
-            <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
-            <th scope="col">Recepción</th>
-            <th scope="col">Llegada</th>
-            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (turno of tabla.visibles(); track turno.id) {
-            <tr
-              [class.fila--revocada]="cancelado(turno)"
-              [class.fila--seleccionada]="panel()?.turno?.id === turno.id"
-            >
-              <td>{{ rango(turno) }}</td>
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de turnos">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Turnos de la sede en la fecha elegida, con el estado de la reserva, el de la recepción y
+            la hora de llegada
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="paciente">Paciente</th>
+              <th scope="col">Prestación</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Turno</th>
+              <th scope="col">Recepción</th>
+              <th scope="col">Llegada</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (turno of tabla.visibles(); track turno.id) {
+              <tr
+                [class.fila--revocada]="cancelado(turno)"
+                [class.fila--seleccionada]="panel()?.turno?.id === turno.id"
+              >
+                <td>{{ rango(turno) }}</td>
 
-              <td>
-                {{ turno.personaNombre }}
-                @if (turno.documento) {
-                  <span class="celda-secundaria">{{ turno.documento }}</span>
-                }
-              </td>
+                <td>
+                  {{ turno.personaNombre }}
+                  @if (turno.documento) {
+                    <span class="celda-secundaria">{{ turno.documento }}</span>
+                  }
+                </td>
 
-              <td>{{ turno.ofertaNombre }}</td>
+                <td>{{ turno.ofertaNombre }}</td>
 
-              <td>
-                <!--
+                <td>
+                  <!--
                 El estado se dice con TEXTO y no solo con el color de la fila: el color solo no
                 comunica (WCAG 1.4.1). Esta columna es la RESERVA; la llegada es de la recepcion.
               -->
-                <span class="marca-estado" [class.marca-estado--revocada]="cancelado(turno)">
-                  {{ turno.estado }}
-                </span>
-                <span class="celda-secundaria">{{ textoDeEstado(turno.estado) }}</span>
-
-                @if (cancelado(turno) && turno.motivoCancelacion) {
-                  <p class="ayuda ayuda--fija">Motivo: {{ turno.motivoCancelacion }}</p>
-                }
-              </td>
-
-              <td>
-                @if (turno.recepcion; as recepcion) {
-                  <span class="marca-estado" [class.marca-estado--activa]="esperando(turno)">
-                    {{ recepcion.estado }}
+                  <span class="marca-estado" [class.marca-estado--revocada]="cancelado(turno)">
+                    {{ turno.estado }}
                   </span>
-                  <span class="celda-secundaria">{{ textoDeRecepcion(recepcion.estado) }}</span>
-                  @if (textoDeModalidad(recepcion.modalidad); as modalidad) {
-                    <p class="ayuda ayuda--fija">{{ modalidad }}</p>
+                  <span class="celda-secundaria">{{ textoDeEstado(turno.estado) }}</span>
+
+                  @if (cancelado(turno) && turno.motivoCancelacion) {
+                    <p class="ayuda ayuda--fija">Motivo: {{ turno.motivoCancelacion }}</p>
                   }
-                  @if (retirado(turno) && recepcion.motivoCierre) {
-                    <p class="ayuda ayuda--fija">Motivo del retiro: {{ recepcion.motivoCierre }}</p>
+                </td>
+
+                <td>
+                  @if (turno.recepcion; as recepcion) {
+                    <span class="marca-estado" [class.marca-estado--activa]="esperando(turno)">
+                      {{ recepcion.estado }}
+                    </span>
+                    <span class="celda-secundaria">{{ textoDeRecepcion(recepcion.estado) }}</span>
+                    @if (textoDeModalidad(recepcion.modalidad); as modalidad) {
+                      <p class="ayuda ayuda--fija">{{ modalidad }}</p>
+                    }
+                    @if (retirado(turno) && recepcion.motivoCierre) {
+                      <p class="ayuda ayuda--fija">
+                        Motivo del retiro: {{ recepcion.motivoCierre }}
+                      </p>
+                    }
+                    @if (recepcion.observacion) {
+                      <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
+                      <p class="ayuda ayuda--fija">Observación: {{ recepcion.observacion }}</p>
+                    }
+                  } @else {
+                    <span class="ayuda">Sin recepción</span>
                   }
-                  @if (recepcion.observacion) {
-                    <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
-                    <p class="ayuda ayuda--fija">Observación: {{ recepcion.observacion }}</p>
-                  }
-                } @else {
-                  <span class="ayuda">Sin recepción</span>
-                }
-                @if (textoDePrepago(turno); as prepago) {
-                  <!--
+                  @if (textoDePrepago(turno); as prepago) {
+                    <!--
                   E-6/E-8: el prepago AVISA y no bloquea (DP-06), y se ve tambien antes de la
                   llegada: sale del turno, no de la recepcion. Se dice con texto, no solo con el
                   color de la pastilla (WCAG 1.4.1).
                 -->
-                  <p class="ayuda ayuda--fija">
-                    <span
-                      class="marca-estado"
-                      [class.marca-estado--suspendida]="prepagoPendiente(turno)"
-                      [class.marca-estado--activa]="!prepagoPendiente(turno)"
-                    >
-                      {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
-                    </span>
-                    {{ prepago }}
-                  </p>
-                }
-              </td>
+                    <p class="ayuda ayuda--fija">
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--suspendida]="prepagoPendiente(turno)"
+                        [class.marca-estado--activa]="!prepagoPendiente(turno)"
+                      >
+                        {{ prepagoPendiente(turno) ? 'Prepago pendiente' : 'Prepago registrado' }}
+                      </span>
+                      {{ prepago }}
+                    </p>
+                  }
+                </td>
 
-              <td>
-                @if (horaDeLlegada(turno); as hora) {
-                  {{ hora }}
-                } @else {
-                  <span class="celda-secundaria">Todavía no llego</span>
-                }
-              </td>
+                <td>
+                  @if (horaDeLlegada(turno); as hora) {
+                    {{ hora }}
+                  } @else {
+                    <span class="celda-secundaria">Todavía no llego</span>
+                  }
+                </td>
 
-              <td class="tabla__acciones">
-                @let acciones = accionesDe(turno);
-                @let conPrepago = puedeCobrar() && admitePrepago(turno);
-                <!--
+                <td class="tabla__acciones">
+                  @let acciones = accionesDe(turno);
+                  @let conPrepago = puedeCobrar() && admitePrepago(turno);
+                  <!--
                   Una accion a la vista y el resto en el menu "⋯" (refactor UX/UI del 28/10/2026):
                   la transicion siguiente de la recepcion (llegada, validar, espera, llamar) es la
                   que el mostrador busca con la vista; Particular, retiro, anular, el prepago y el
@@ -269,90 +260,94 @@
                   del mostrador no es un error; el `disabled` evita mandar dos veces el mismo
                   pedido, no castiga.
                 -->
-                <!--
+                  <!--
                   El prepago se cobra en el registro de cobro (billing), como anticipo atado al
                   turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia y la
                   fila pasa a REGISTRADO. Sin transiciones (solo cobro) es la accion a la vista.
                   Cada rama del `@if` de la accion principal tiene un solo elemento: asi se
                   proyecta en el `[principal]` del menu.
                 -->
-                @if (acciones.length > 0 || conPrepago) {
-                  <app-acciones-de-fila [de]="turno.personaNombre ?? 'el turno'">
-                    @if (acciones.length > 0) {
-                      <button
-                        principal
-                        type="button"
-                        class="boton boton--chico"
-                        [class.boton--secundario]="acciones[0].secundaria"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="acciones[0].ejecutar(); enfocarMenu($event)"
-                      >
-                        {{ acciones[0].texto }}
-                      </button>
-                    } @else {
-                      <a
-                        principal
-                        class="boton boton--secundario boton--chico"
-                        [routerLink]="rutaDePrepago(turno)"
-                        [queryParams]="queryDePrepago(turno)"
-                      >
-                        Registrar prepago
-                      </a>
-                    }
-                    @for (accion of acciones.slice(1); track accion.clave) {
-                      <button
-                        type="button"
-                        [class.accion--peligro]="accion.peligro"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="accion.ejecutar(); enfocarMenu($event)"
-                      >
-                        {{ accion.texto }}
-                      </button>
-                    }
-                    @if (conPrepago && acciones.length > 0) {
-                      <a [routerLink]="rutaDePrepago(turno)" [queryParams]="queryDePrepago(turno)">
-                        Registrar prepago
-                      </a>
-                    }
-                    <!--
+                  @if (acciones.length > 0 || conPrepago) {
+                    <app-acciones-de-fila [de]="turno.personaNombre ?? 'el turno'">
+                      @if (acciones.length > 0) {
+                        <button
+                          principal
+                          type="button"
+                          class="boton boton--chico"
+                          [class.boton--secundario]="acciones[0].secundaria"
+                          [disabled]="enVuelo() === turno.id"
+                          (click)="acciones[0].ejecutar(); enfocarMenu($event)"
+                        >
+                          {{ acciones[0].texto }}
+                        </button>
+                      } @else {
+                        <a
+                          principal
+                          class="boton boton--secundario boton--chico"
+                          [routerLink]="rutaDePrepago(turno)"
+                          [queryParams]="queryDePrepago(turno)"
+                        >
+                          Registrar prepago
+                        </a>
+                      }
+                      @for (accion of acciones.slice(1); track accion.clave) {
+                        <button
+                          type="button"
+                          [class.accion--peligro]="accion.peligro"
+                          [disabled]="enVuelo() === turno.id"
+                          (click)="accion.ejecutar(); enfocarMenu($event)"
+                        >
+                          {{ accion.texto }}
+                        </button>
+                      }
+                      @if (conPrepago && acciones.length > 0) {
+                        <a
+                          [routerLink]="rutaDePrepago(turno)"
+                          [queryParams]="queryDePrepago(turno)"
+                        >
+                          Registrar prepago
+                        </a>
+                      }
+                      <!--
                       Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla
                       del ciclo del turno, que es la que sabe manejar la version y los conflictos.
                       Este enlace le pasa lo que esa pantalla necesita para poder operar.
                     -->
+                      <a
+                        [routerLink]="['/agenda', 'turnos', turno.id]"
+                        [queryParams]="queryDelTurno(turno)"
+                      >
+                        Ver el turno
+                      </a>
+                    </app-acciones-de-fila>
+                  } @else {
                     <a
+                      class="boton boton--secundario boton--chico"
                       [routerLink]="['/agenda', 'turnos', turno.id]"
                       [queryParams]="queryDelTurno(turno)"
                     >
                       Ver el turno
                     </a>
-                  </app-acciones-de-fila>
-                } @else {
-                  <a
-                    class="boton boton--secundario boton--chico"
-                    [routerLink]="['/agenda', 'turnos', turno.id]"
-                    [queryParams]="queryDelTurno(turno)"
-                  >
-                    Ver el turno
-                  </a>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
-    <div class="tabla-pie">
-      <span>{{ tabla.total() }} turnos</span>
-      <app-paginacion
-        [paginaActual]="tabla.pagina()"
-        [totalPaginas]="tabla.totalPaginas()"
-        etiqueta="Páginas de turnos"
-        (cambioDePagina)="tabla.irA($event)"
-      />
-    </div>
-  }
-</section>
+      <div class="tabla-pie">
+        <span>{{ tabla.total() }} turnos</span>
+        <app-paginacion
+          [paginaActual]="tabla.pagina()"
+          [totalPaginas]="tabla.totalPaginas()"
+          etiqueta="Páginas de turnos"
+          (cambioDePagina)="tabla.irA($event)"
+        />
+      </div>
+    }
+  </section>
+}
 
 <!--
   Los motivos de Particular, retiro y anulacion en un panel lateral (refactor UX/UI del
@@ -361,6 +356,22 @@
 -->
 @if (panel(); as abierto) {
   <app-panel-lateral [titulo]="tituloDelPanel(abierto)" (cerrar)="cerrarPanel()">
+    <!-- El panel se cierra recien cuando la transicion sale bien; si falla, el error va arriba. -->
+    @if (errorDelPanel(); as fallo) {
+      <app-alerta tipo="error" [titulo]="fallo.titulo">
+        <p>{{ fallo.error.mensaje }}</p>
+        @if (fallo.error.motivo) {
+          <p>Lo que dijo el servidor: {{ fallo.error.motivo }}</p>
+        }
+        @if (fallo.error.accion === 'recargar-dia') {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="releerDia()">
+              Volver a leer el día
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
     @if (abierto.tipo === 'particular') {
       <app-confirmacion-con-motivo
         idCampo="recepcion-motivo-particular"

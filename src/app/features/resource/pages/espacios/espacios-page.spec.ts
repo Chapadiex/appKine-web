@@ -7,6 +7,7 @@ import { EspaciosPage } from './espacios-page';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -271,7 +272,12 @@ describe('EspaciosPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('quedaron guardados');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Cambios guardados']);
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('una versión vieja no pisa nada: relee el espacio, avisa y deja el panel abierto', async () => {
@@ -353,7 +359,9 @@ describe('EspaciosPage', () => {
     fixture.detectChanges();
 
     // El nombre queda libre: es lo que evita que alguien crea que perdio el nombre para siempre.
-    expect(texto(fixture)).toContain('queda libre');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Espacio dado de baja');
+    expect(aviso?.descripcion).toContain('queda libre');
   });
 
   it('el nombre ya tomado se muestra EN el campo nombre, no al pie del panel', async () => {
@@ -380,8 +388,12 @@ describe('EspaciosPage', () => {
     expect(nombre?.getAttribute('aria-describedby')).toBe('editar-espacio-name-conflicto');
     expect(fixture.nativeElement.querySelector('#editar-espacio-name-conflicto')).not.toBeNull();
 
-    // Y no se repite al pie: el mismo texto dos veces se lee como dos problemas distintos.
-    expect(fixture.nativeElement.querySelectorAll('.estado--error[role="alert"]').length).toBe(0);
+    // Es una advertencia pegada al campo (UX-12), y no se repite como error general: el mismo
+    // texto dos veces se lee como dos problemas distintos.
+    const alertas = fixture.nativeElement.querySelectorAll('app-alerta');
+    expect(alertas.length).toBe(1);
+    expect(alertas[0].id).toBe('editar-espacio-name-conflicto');
+    expect(alertas[0].className).toContain('alerta--advertencia');
     // El nombre de un espacio dado de baja SI se reusa, y eso solo lo sabe el frontend.
     expect(texto(fixture)).toContain('revisa el filtro "Todos"');
   });

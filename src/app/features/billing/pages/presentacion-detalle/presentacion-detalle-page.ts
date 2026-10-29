@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Migas } from '../../../../shared/components/migas/migas';
 import { Observable, forkJoin, of } from 'rxjs';
@@ -41,6 +42,8 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ob
 import { medioEnPalabras } from '../../models/etiquetas-de-cobro';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -59,6 +62,9 @@ interface Lectura {
   readonly elegibles: readonly Obligacion[];
   readonly pagos: readonly PagoDeFinanciador[];
 }
+
+/** El rechazo de una operacion y su clave (`factura`, `debito-12`...): se muestra ahi (UX-12). */
+type FalloDePresentacion = ErrorPresentacion & { readonly clave: string };
 
 /**
  * Un lote de presentacion a un financiador, de punta a punta (M21, RF-M21-002 a RF-M21-008).
@@ -85,8 +91,10 @@ interface Lectura {
   imports: [
     CabeceraDePagina,
     PanelLateral,
+    Alerta,
     Migas,
     Ayuda,
+    NgTemplateOutlet,
     ColumnaOrdenable,
     Filtros,
     Paginacion,
@@ -99,6 +107,8 @@ interface Lectura {
 })
 export class PresentacionDetallePage {
   private readonly api = inject(PresentacionesApi);
+  /** Aviso global (UX-12). No confundir con `avisos`, que son los reparos que no frenan. */
+  private readonly notificaciones = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -128,8 +138,8 @@ export class PresentacionDetallePage {
 
   /** Que operacion esta en vuelo, para deshabilitar sus botones. `null` si ninguna. */
   protected readonly operando = signal<string | null>(null);
-  protected readonly errorOperacion = signal<ErrorPresentacion | null>(null);
-  protected readonly aviso = signal<string | null>(null);
+  /** El rechazo de la ultima operacion y su clave (`factura`, `debito-12`...): se muestra ahi. */
+  protected readonly errorOperacion = signal<FalloDePresentacion | null>(null);
 
   protected readonly anulando = signal(false);
   protected readonly exportando = signal(false);
@@ -246,7 +256,6 @@ export class PresentacionDetallePage {
         this.validacion.set(null);
         this.filtroDeItem.set('');
         this.errorOperacion.set(null);
-        this.aviso.set(null);
         this.cerrarPaneles();
         this.cargar();
       });
@@ -283,7 +292,7 @@ export class PresentacionDetallePage {
     this.operar(
       `agregar-${obligacionId}`,
       (c, p) => this.api.agregarItem(c, p, obligacionId),
-      'Se agrego la prestación al lote.',
+      'Prestación agregada al lote',
     );
   }
 
@@ -293,7 +302,8 @@ export class PresentacionDetallePage {
     this.operar(
       `quitar-${itemId}`,
       (c, p) => this.api.quitarItem(c, p, itemId),
-      'Se quito la prestación del lote. Vuelve a estar disponible.',
+      'Prestación quitada del lote',
+      'Vuelve a estar disponible.',
     );
   }
 
@@ -302,7 +312,12 @@ export class PresentacionDetallePage {
     if (ids === null) return;
     this.api.validar(ids.consultorioId, ids.presentacionId).subscribe({
       next: (resultado) => this.validacion.set(resultado),
-      error: (error: unknown) => this.errorOperacion.set(traducirErrorPresentacion(error)),
+      // Boton sin formulario: aviso global con la salida.
+      error: (error: unknown) =>
+        this.notificaciones.error('No pudimos revisar el lote', {
+          descripcion: traducirErrorPresentacion(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.revisar() },
+        }),
     });
   }
 
@@ -310,12 +325,14 @@ export class PresentacionDetallePage {
     this.operar(
       'confirmar',
       (c, p) => this.api.confirmar(c, p),
-      'Lote presentado: tiene número y su total quedo congelado. Todavía no se cobro nada.',
+      'Lote presentado',
+      'Tiene número y su total quedo congelado. Todavía no se cobro nada.',
     );
   }
 
   protected abrirAnulacion(): void {
     this.cerrarPaneles();
+    this.errorOperacion.set(null);
     this.anulando.set(true);
   }
 
@@ -323,7 +340,8 @@ export class PresentacionDetallePage {
     this.operar(
       'anular',
       (c, p) => this.api.anular(c, p, motivo),
-      'El borrador se descarto. Sus prestaciones vuelven a estar disponibles.',
+      'Borrador descartado',
+      'Sus prestaciones vuelven a estar disponibles.',
     );
   }
 
@@ -338,12 +356,13 @@ export class PresentacionDetallePage {
     this.operar(
       'factura',
       (c, p) => this.api.registrarFactura(c, p, numero.trim(), fecha),
-      'Factura registrada.',
+      'Factura registrada',
     );
   }
 
   protected abrirDebito(item: PresentacionItem): void {
     this.cerrarPaneles();
+    this.errorOperacion.set(null);
     this.debito.reset({ importe: item.importePresentado ?? 0, motivo: '' });
     this.itemDebitando.set(item.id ?? null);
   }
@@ -356,8 +375,9 @@ export class PresentacionDetallePage {
     this.operar(
       `debito-${itemId}`,
       (c, p) => this.api.debitar(c, p, itemId, importe, motivo.trim()),
-      'Debito registrado. Si fue por el total, la prestación sale del lote y su deuda sigue ' +
-        'pendiente; si fue parcial, sigue en el lote y al cerrarlo se salda lo no debitado.',
+      'Debito registrado',
+      'Si fue por el total, la prestación sale del lote y su deuda sigue pendiente; si fue ' +
+        'parcial, sigue en el lote y al cerrarlo se salda lo no debitado.',
     );
   }
 
@@ -376,7 +396,8 @@ export class PresentacionDetallePage {
           referencia: valor.referencia.trim() || undefined,
           idempotencyKey: clave,
         }),
-      'Pago registrado. Las deudas se saldan recien al cerrar el lote.',
+      'Pago registrado',
+      'Las deudas se saldan recien al cerrar el lote.',
       () => {
         this.claveDePago = nuevaClaveDeIntento();
         this.pago.reset({
@@ -393,8 +414,9 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado. Cada prestación aceptada salda su deuda por lo presentado; las debitadas en ' +
-        'parte, por lo presentado menos lo debitado, que queda pendiente para otro lote.',
+      'Lote cerrado',
+      'Cada prestación aceptada salda su deuda por lo presentado; las debitadas en parte, por lo ' +
+        'presentado menos lo debitado, que queda pendiente para otro lote.',
     );
   }
 
@@ -415,7 +437,6 @@ export class PresentacionDetallePage {
     const lote = this.lote();
     const respaldo = `presentacion-${lote?.numero ?? ids.presentacionId}.csv`;
     this.exportando.set(true);
-    this.errorOperacion.set(null);
     this.api.exportar(ids.consultorioId, ids.presentacionId).subscribe({
       next: (respuesta) => {
         this.exportando.set(false);
@@ -426,7 +447,10 @@ export class PresentacionDetallePage {
       },
       error: (error: unknown) => {
         this.exportando.set(false);
-        this.errorOperacion.set(traducirErrorPresentacion(error));
+        this.notificaciones.error('No pudimos exportar el CSV', {
+          descripcion: traducirErrorPresentacion(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.exportarCsv() },
+        });
       },
     });
   }
@@ -468,32 +492,56 @@ export class PresentacionDetallePage {
   private operar(
     clave: string,
     llamada: (consultorioId: number, presentacionId: number) => Observable<unknown>,
-    mensajeOk: string,
+    titulo: string,
+    descripcion?: string,
     alTerminar?: () => void,
   ): void {
     const ids = this.ids();
     if (ids === null || this.operando() !== null) return;
     this.operando.set(clave);
     this.errorOperacion.set(null);
-    this.aviso.set(null);
 
     llamada(ids.consultorioId, ids.presentacionId).subscribe({
       next: () => {
         this.operando.set(null);
         this.cerrarPaneles();
         alTerminar?.();
-        this.aviso.set(mensajeOk);
+        this.notificaciones.exito(titulo, descripcion === undefined ? undefined : { descripcion });
         this.cargar();
       },
       error: (error: unknown) => {
         this.operando.set(null);
         const traducido = traducirErrorPresentacion(error);
-        this.errorOperacion.set(traducido);
+        if (clave.startsWith('agregar-') || clave.startsWith('quitar-')) {
+          // Boton de fila, sin formulario: aviso global, con Reintentar.
+          this.notificaciones.error(
+            clave.startsWith('agregar-')
+              ? 'No pudimos agregar la prestación'
+              : 'No pudimos quitar la prestación',
+            {
+              descripcion: traducido.mensaje,
+              accion: {
+                etiqueta: 'Reintentar',
+                ejecutar: () => this.operar(clave, llamada, titulo, descripcion, alTerminar),
+              },
+            },
+          );
+          return;
+        }
+        this.errorOperacion.set({ ...traducido, clave });
         if (traducido.causa === 'con-hallazgos') {
           this.revisar();
         }
       },
     });
+  }
+
+  /** El rechazo de la operacion `en` (o de cualquier `en-<id>`), si fue la ultima en fallar. */
+  protected falloEn(en: string): ErrorPresentacion | null {
+    const fallo = this.errorOperacion();
+    return fallo !== null && (fallo.clave === en || fallo.clave.startsWith(`${en}-`))
+      ? fallo
+      : null;
   }
 
   private leer(consultorioId: number, presentacionId: number): Observable<Lectura> {

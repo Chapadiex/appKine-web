@@ -5,6 +5,8 @@ import { RegistrarEntradaClinicaRequestTipoEnum } from '../../../../../api/gener
 import { ErrorHistoria, traducirErrorHistoria } from '../../../models/historia-errors';
 import { TIPOS_DE_ENTRADA } from '../../../models/etiquetas-de-historia';
 import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-clinica-api';
+import { Alerta } from '../../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../../core/services/avisos.store';
 
 /**
  * Registrar una entrada clinica (D-a, RF-M09-003).
@@ -15,11 +17,13 @@ import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-cl
  */
 @Component({
   selector: 'app-nueva-entrada',
+  imports: [Alerta],
   templateUrl: './nueva-entrada.html',
   styleUrl: '../historia-clinica.css',
 })
 export class NuevaEntrada {
   private readonly api = inject(HistoriaClinicaApi);
+  private readonly avisos = inject(AvisosStore);
 
   readonly historiaClinicaId = input.required<number>();
   readonly justificacion = input.required<Justificacion>();
@@ -38,7 +42,6 @@ export class NuevaEntrada {
   protected readonly enviando = signal(false);
   protected readonly intentoEnviar = signal(false);
   protected readonly error = signal<ErrorHistoria | null>(null);
-  protected readonly aviso = signal('');
 
   protected readonly faltaCuerpo = computed(() => this.cuerpo().trim() === '');
 
@@ -65,7 +68,8 @@ export class NuevaEntrada {
           this.enviando.set(false);
           this.intentoEnviar.set(false);
           this.cuerpo.set('');
-          this.aviso.set('Entrada registrada. Ya aparece en el timeline.');
+          // UX-12: el resultado es un aviso global.
+          this.avisos.exito('Entrada registrada', { descripcion: 'Ya aparece en el timeline.' });
           this.registrada.emit(entrada);
         },
         error: (error: unknown) => {

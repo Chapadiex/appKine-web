@@ -170,7 +170,7 @@ describe('ArancelEfectivoPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
     // Ni un cartel de error ni un vacio: el servidor respondio 200 y esto es el desenlace mas
     // frecuente de todos.
-    expect(anfitrion.querySelector('.estado--error')).toBeNull();
+    expect(anfitrion.querySelector('app-alerta')).toBeNull();
     expect(anfitrion.textContent).toContain('No hay convenio vigente');
     expect(anfitrion.textContent).toContain('se cobra como particular');
   });
@@ -277,8 +277,9 @@ describe('ArancelEfectivoPage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.querySelector('.estado--error')).not.toBeNull();
-    expect(anfitrion.textContent).toContain('hace falta administrar convenios');
+    const alerta = anfitrion.querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos consultar el arancel');
+    expect(alerta?.textContent).toContain('hace falta administrar convenios');
   });
 
   it('dejar el financiador en vacío limpia el plan y no pide nada', async () => {

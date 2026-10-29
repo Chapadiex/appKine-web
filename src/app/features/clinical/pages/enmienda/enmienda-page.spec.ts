@@ -11,6 +11,7 @@ import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { PERMISO_SESION_AMEND, PERMISO_SESION_REGISTER } from '../../../../core/models/permisos';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const SESION = 501;
@@ -120,7 +121,10 @@ describe('EnmiendaPage', () => {
   it('sin motivo no manda nada y dice por que', async () => {
     const fixture = await montar();
     apretar(fixture, 'Registrar la enmienda');
-    expect(texto(fixture)).toContain('Falta el motivo');
+    // Validacion en el campo (UX-12), no al pie del formulario.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#enmienda-motivo-error')?.textContent).toContain('Falta el motivo');
+    expect(raiz.querySelector('#enmienda-motivo')?.getAttribute('aria-invalid')).toBe('true');
     httpMock.expectNone((p) => p.method === 'POST');
   });
 
@@ -129,7 +133,9 @@ describe('EnmiendaPage', () => {
     escribir(fixture, '#enmienda-motivo', 'Corrijo la nota');
     escribir(fixture, '#enmienda-nota', '   ');
     apretar(fixture, 'Registrar la enmienda');
-    expect(texto(fixture)).toContain('la nota de cierre no puede quedar vacía');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#enmienda-nota-error')?.textContent,
+    ).toContain('la nota de cierre no puede quedar vacía');
     httpMock.expectNone((p) => p.method === 'POST');
   });
 
@@ -158,6 +164,8 @@ describe('EnmiendaPage', () => {
     await estabilizar(fixture);
 
     expect(navegar).toHaveBeenCalledWith(['/atencion', 'sesiones', SESION, 'versiones']);
+    // El aviso vive en el shell y sobrevive a la navegacion.
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Enmienda guardada');
   });
 
   it('al tocar un tratamiento manda la lista entera, con su id, práctica y parametros', async () => {

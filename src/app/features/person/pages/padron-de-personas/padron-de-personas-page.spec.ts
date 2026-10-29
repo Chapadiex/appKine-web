@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -157,9 +158,12 @@ describe('PadronDePersonasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // El mensaje de exito aclara que todavia no es paciente: es el momento donde el operador
-    // podria suponer lo contrario.
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavía no es paciente');
+    // El aviso de exito aclara que todavia no es paciente: es el momento donde el operador
+    // podria suponer lo contrario. El panel se cerro: no queda abierto solo para el mensaje.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Persona registrada correctamente');
+    expect(aviso?.descripcion).toContain('Todavía no es paciente');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el 409 de posible duplicado muestra las fichas y ofrece confirmar', async () => {
@@ -262,7 +266,7 @@ describe('PadronDePersonasPage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Ese documento ya esta en el padron');
+    expect(texto).toContain('Este documento ya está registrado');
     expect(texto).toContain('Perez, Ana Maria');
 
     // Ofrecerlo seria un callejon: el operador confirmaria y recibiria el mismo error otra vez.
@@ -492,7 +496,12 @@ describe('PadronDePersonasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('ya es paciente');
+    // El resultado va al aviso global, no al cuerpo de la pantalla.
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Perez, Ana Maria ya es paciente']);
   });
 
   it(

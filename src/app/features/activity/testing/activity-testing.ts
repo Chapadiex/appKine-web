@@ -58,7 +58,7 @@ export function boton(fixture: ComponentFixture<unknown>, texto: string): HTMLBu
   const encontrado = (
     Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll(
-        'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden)',
+        'button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar):not(.filtros-barra__boton):not(.tabla__orden)',
       ),
     ) as HTMLButtonElement[]
   ).find((b) => (b.textContent ?? '').replace(/\s+/g, ' ').includes(texto));

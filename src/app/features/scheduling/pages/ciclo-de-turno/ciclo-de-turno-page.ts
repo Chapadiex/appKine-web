@@ -1,6 +1,6 @@
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
@@ -40,6 +40,9 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Migas } from '../../../../shared/components/migas/migas';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AccionDeAviso, AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Panel abierto. Uno solo a la vez: son tres confirmaciones sobre el mismo turno. */
 type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
@@ -102,6 +105,8 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
   imports: [
     Migas,
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,
@@ -114,6 +119,8 @@ type Panel = 'ninguno' | 'cancelar' | 'ausencia' | 'reprogramar';
 })
 export class CicloDeTurnoPage {
   private readonly api = inject(SchedulingApi);
+  private readonly avisos = inject(AvisosStore);
+  private readonly router = inject(Router);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
@@ -144,8 +151,15 @@ export class CicloDeTurnoPage {
   protected readonly eventosDeRecepcion = signal<readonly EventoDeRecepcion[]>([]);
   protected readonly cargando = signal(false);
   protected readonly enviando = signal(false);
+  /**
+   * Rechazo de la transicion mandada desde un panel: queda arriba del panel abierto (UX-12). El
+   * resultado que sale bien y el rechazo de "Confirmar" —que no tiene formulario— son avisos
+   * globales.
+   */
   protected readonly error = signal<ErrorAgenda | null>(null);
-  protected readonly exito = signal<string | null>(null);
+
+  /** Error al LEER el historial: va en el lugar del historial, con Reintentar. */
+  protected readonly errorDeHistorial = signal<ErrorAgenda | null>(null);
   protected readonly panel = signal<Panel>('ninguno');
 
   /** Ultimo turno devuelto por una transicion. Es la fuente mas fresca de `version`. */
@@ -295,7 +309,7 @@ export class CicloDeTurnoPage {
         this.eventos.set([]);
         this.eventosDeRecepcion.set([]);
         this.error.set(null);
-        this.exito.set(null);
+        this.errorDeHistorial.set(null);
         this.panel.set('ninguno');
         this.instanteDestino.set('');
         // `!fecha` y no `=== ''`: con `withComponentInputBinding` un query param ausente llega
@@ -387,6 +401,7 @@ export class CicloDeTurnoPage {
     }
 
     this.cargando.set(true);
+    this.errorDeHistorial.set(null);
     this.api.historial(consultorioId, turnoId).subscribe({
       next: (eventos) => {
         this.eventos.set(eventos);
@@ -394,7 +409,7 @@ export class CicloDeTurnoPage {
       },
       error: (error: unknown) => {
         this.cargando.set(false);
-        this.error.set(traducirErrorAgenda(error));
+        this.errorDeHistorial.set(traducirErrorAgenda(error));
       },
     });
   }
@@ -467,8 +482,9 @@ export class CicloDeTurnoPage {
     }
     this.ejecutar(
       this.api.confirmar(consultorioId, turnoId),
-      'Turno confirmado. Confirmar es un estado de la reserva: no dice nada del cobro ni de que el ' +
-        'paciente haya llegado.',
+      'Turno confirmado',
+      'Confirmar es un estado de la reserva: no dice nada del cobro ni de que el paciente haya ' +
+        'llegado.',
     );
   }
 
@@ -482,7 +498,8 @@ export class CicloDeTurnoPage {
     }
     this.ejecutar(
       this.api.cancelar(consultorioId, turnoId, { motivo, expectedVersion }),
-      'Turno cancelado. El lugar se libero y vuelve a estar disponible en la agenda.',
+      'Turno cancelado',
+      'El lugar se libero y vuelve a estar disponible en la agenda.',
     );
   }
 
@@ -503,7 +520,8 @@ export class CicloDeTurnoPage {
     }
     this.ejecutar(
       this.api.registrarAusencia(consultorioId, turnoId, { expectedVersion, motivo }),
-      'Ausencia registrada. El lugar NO se libero: la hora se consumio igual.',
+      'Ausencia registrada',
+      'El lugar NO se libero: la hora se consumio igual.',
     );
   }
 
@@ -529,26 +547,42 @@ export class CicloDeTurnoPage {
         expectedVersion,
         profesionalId,
       }),
-      'Turno reprogramado. Es el mismo turno: conserva su número, su paciente y su historial. Si ' +
-        'estaba confirmado vuelve a quedar reservado, porque lo confirmado era otro horario.',
+      'Turno reprogramado',
+      'Es el mismo turno: conserva su número, su paciente y su historial. Si estaba confirmado ' +
+        'vuelve a quedar reservado, porque lo confirmado era otro horario.',
     );
   }
 
   protected abrir(panel: Panel): void {
     this.panel.set(panel);
     this.error.set(null);
-    this.exito.set(null);
     this.faltaHorario.set(false);
   }
 
   protected cerrar(): void {
     this.panel.set('ninguno');
+    this.error.set(null);
     this.faltaHorario.set(false);
+  }
+
+  /** Titulo de la alerta del panel abierto cuando su transicion se rechaza. */
+  protected tituloDelRechazo(): string {
+    switch (this.panel()) {
+      case 'cancelar':
+        return 'No pudimos cancelar el turno';
+      case 'ausencia':
+        return 'No pudimos registrar la ausencia';
+      case 'reprogramar':
+        return 'No pudimos mover el turno';
+      default:
+        return 'No pudimos operar sobre el turno';
+    }
   }
 
   /** Accion de `recargar-turno` y de `recargar-agenda`: lo que hay en pantalla quedo viejo. */
   protected recargar(): void {
     this.error.set(null);
+    this.errorDeHistorial.set(null);
     this.cargarTurnoYHistorial();
     this.cargarDestino();
   }
@@ -567,25 +601,64 @@ export class CicloDeTurnoPage {
    * <p>Las cuatro terminan igual —turno nuevo, historial releido, version reescrita en la URL— y
    * escribirlo una vez es lo que impide que una de las cuatro se olvide de una de las tres cosas.
    */
-  private ejecutar(peticion: Observable<Turno>, mensaje: string): void {
+  private ejecutar(peticion: Observable<Turno>, titulo: string, descripcion: string): void {
+    const desdeElPanel = this.panel() !== 'ninguno';
     this.enviando.set(true);
     this.error.set(null);
-    this.exito.set(null);
     peticion.subscribe({
       next: (turno) => {
         this.enviando.set(false);
         this.turno.set(turno);
         this.panel.set('ninguno');
         this.instanteDestino.set('');
-        this.exito.set(mensaje);
+        this.avisos.exito(titulo, { descripcion });
         this.fijarVersionEnLaUrl(turno.version);
         this.cargarHistorial();
       },
       error: (error: unknown) => {
         this.enviando.set(false);
-        this.error.set(traducirErrorAgenda(error));
+        const traducido = traducirErrorAgenda(error);
+        if (desdeElPanel && this.panel() !== 'ninguno') {
+          this.error.set(traducido);
+          return;
+        }
+        // "Confirmar" no tiene formulario: su rechazo es un aviso global con la salida.
+        const accion = this.salidaDelAviso(traducido);
+        this.avisos.error('No pudimos confirmar el turno', {
+          descripcion: traducido.motivo
+            ? `${traducido.mensaje} Lo que dijo el servidor: ${traducido.motivo}`
+            : traducido.mensaje,
+          ...(accion ? { accion } : {}),
+        });
       },
     });
+  }
+
+  /** La salida del aviso de error de "Confirmar", segun lo que sugiere la traduccion. */
+  private salidaDelAviso(fallo: ErrorAgenda): AccionDeAviso | null {
+    switch (fallo.accion) {
+      case 'recargar-turno':
+      case 'recargar-agenda':
+        return { etiqueta: 'Releer el turno', ejecutar: () => this.recargar() };
+      case 'resolver-atencion':
+        return {
+          etiqueta: 'Ver la atención',
+          ejecutar: () => {
+            this.router.navigate(['/atencion', 'turnos', this.turnoId()]).catch(() => undefined);
+          },
+        };
+      case 'elegir-contexto':
+        return {
+          etiqueta: 'Elegir contexto',
+          ejecutar: () => {
+            this.router.navigateByUrl('/seleccionar-contexto').catch(() => undefined);
+          },
+        };
+      default:
+        return fallo.causa === 'red' || fallo.causa === 'otro'
+          ? { etiqueta: 'Reintentar', ejecutar: () => this.confirmar() }
+          : null;
+    }
   }
 
   /**

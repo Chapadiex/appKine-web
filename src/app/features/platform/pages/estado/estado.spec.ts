@@ -91,7 +91,7 @@ describe('Estado', () => {
     fixture.detectChanges();
 
     const boton = (fixture.nativeElement as HTMLElement).querySelector(
-      'button:not(.ayuda-contextual__boton)',
+      'button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)',
     );
     (boton as HTMLButtonElement | null)?.click();
     fixture.detectChanges();

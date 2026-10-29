@@ -69,12 +69,6 @@
   </p>
 </ng-template>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 @if (financiadorInactivo()) {
   <p class="estado estado--vacio">
     Este financiador está dado de baja, así que <b>no admite planes nuevos</b>. Sus planes actuales
@@ -141,13 +135,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer los planes">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -285,6 +282,13 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nuevo plan" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige. -->
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de alta el plan">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-plan-codigo">Código</label>
         <input
@@ -293,10 +297,16 @@
           formControlName="codigo"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
-          aria-describedby="alta-plan-codigo-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('codigo')
+              ? 'alta-plan-codigo-error alta-plan-codigo-ayuda'
+              : 'alta-plan-codigo-ayuda'
+          "
         />
         @if (mostrarErrorAlta('codigo')) {
-          <p class="campo__error" role="alert">El código es obligatorio.</p>
+          <p class="campo__error" id="alta-plan-codigo-error" role="alert">
+            El código es obligatorio.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="alta-plan-codigo-ayuda">
           <b>No se puede cambiar después.</b> Único dentro de este financiador.
@@ -311,9 +321,12 @@
           formControlName="nombre"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+          [attr.aria-describedby]="mostrarErrorAlta('nombre') ? 'alta-plan-nombre-error' : null"
         />
         @if (mostrarErrorAlta('nombre')) {
-          <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          <p class="campo__error" id="alta-plan-nombre-error" role="alert">
+            El nombre es obligatorio.
+          </p>
         }
       </div>
 
@@ -324,9 +337,14 @@
           type="date"
           formControlName="vigenciaDesde"
           [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorAlta('vigenciaDesde') ? 'alta-plan-desde-error' : null
+          "
         />
         @if (mostrarErrorAlta('vigenciaDesde')) {
-          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="alta-plan-desde-error" role="alert">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
 
@@ -408,10 +426,6 @@
         <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
       </details>
 
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
@@ -433,6 +447,23 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral [titulo]="'Editar ' + plan.nombre" (cerrar)="cerrarPanel()">
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <!--
+          Error de la edicion arriba del formulario. La version vieja (409) es una advertencia:
+          ya se releyo el listado y lo escrito sigue en pantalla para volver a guardar.
+        -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos guardar los cambios">
+            <p>{{ mensaje }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <p class="ayuda">
           Se guarda <b>solo lo que cambies</b>. Una fecha en "vigente hasta"
           <b>cierra la vigencia</b> y el plan sigue activo; borrar esa fecha <b>no la saca</b>.
@@ -451,9 +482,14 @@
             formControlName="nombre"
             autocomplete="off"
             [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorEdicion('nombre') ? 'editar-plan-nombre-error' : null
+            "
           />
           @if (mostrarErrorEdicion('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+            <p class="campo__error" id="editar-plan-nombre-error" role="alert">
+              El nombre es obligatorio.
+            </p>
           }
         </div>
 
@@ -535,10 +571,6 @@
           </div>
         </details>
 
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
@@ -551,11 +583,6 @@
           >
             Cancelar
           </button>
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el listado
-            </button>
-          }
         </p>
       </form>
     </app-panel-lateral>
@@ -563,6 +590,18 @@
 
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + plan.nombre" (cerrar)="cerrarPanel()">
+      @if (errorAccion(); as mensaje) {
+        <app-alerta [tipo]="tipoDeAlerta()" titulo="No pudimos dar de baja el plan">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el listado
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <app-confirmacion-con-motivo
         idCampo="baja-plan-motivo"
         [titulo]="'Dar de baja ' + plan.nombre"
@@ -581,13 +620,6 @@
           quedan libres.
         </p>
       </app-confirmacion-con-motivo>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
-      }
     </app-panel-lateral>
   }
 }

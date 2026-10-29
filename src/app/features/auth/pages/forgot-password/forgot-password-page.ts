@@ -6,6 +6,7 @@ import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /**
  * Mensaje unico del `202`.
@@ -21,7 +22,7 @@ export const MENSAJE_UNIFORME_RESET =
 /** Pedido de restablecimiento de contrasena (M02, AKINE-01.02). */
 @Component({
   selector: 'app-forgot-password-page',
-  imports: [Icono, ReactiveFormsModule, RouterLink],
+  imports: [Alerta, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './forgot-password-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

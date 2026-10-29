@@ -46,8 +46,12 @@
       <p class="estado estado--cargando">Cargando los profesionales de la sede&hellip;</p>
     }
     @if (errorProfesionales(); as mensaje) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      <button type="button" class="boton" (click)="cargarProfesionales()">Reintentar</button>
+      <app-alerta tipo="error" titulo="No pudimos leer los profesionales de la sede">
+        <p>{{ mensaje }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton" (click)="cargarProfesionales()">Reintentar</button>
+        </p>
+      </app-alerta>
     }
   </div>
 
@@ -103,17 +107,6 @@
   }
 </section>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-  @if (avisoTurnos(); as aviso) {
-    <div class="aviso-apertura">
-      <p><b>Turnos para revisar.</b> {{ aviso }}</p>
-    </div>
-  }
-</div>
-
 <section class="tarjeta tarjeta--semana" aria-labelledby="titulo-semana">
   <div class="seccion-cabecera">
     <h2 id="titulo-semana">
@@ -152,13 +145,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer el horario">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -270,9 +266,21 @@
     (cerrar)="cerrarAlta()"
   >
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general del alta: arriba del formulario (UX-12). El solapamiento va junto al horario. -->
+      @if (!panel() && errorAccion() && !solapado()) {
+        <app-alerta tipo="error" titulo="No pudimos cargar el bloque">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-bloque-dia">Día de la semana</label>
-        <select id="alta-bloque-dia" formControlName="diaSemana">
+        <select
+          id="alta-bloque-dia"
+          formControlName="diaSemana"
+          [attr.aria-invalid]="solapado() ? 'true' : null"
+          [attr.aria-describedby]="solapado() ? 'alta-bloque-solapado' : null"
+        >
           @for (dia of dias; track dia.numero) {
             <option [value]="dia.numero">{{ dia.etiqueta }}</option>
           }
@@ -290,9 +298,13 @@
             placeholder="09:00"
             [attr.pattern]="patronHora"
             formControlName="horaDesde"
-            [attr.aria-invalid]="mostrarError(true, 'horaDesde')"
+            [attr.aria-invalid]="mostrarError(true, 'horaDesde') || solapado()"
             [attr.aria-describedby]="
-              mostrarError(true, 'horaDesde') ? 'alta-bloque-desde-error' : null
+              mostrarError(true, 'horaDesde')
+                ? 'alta-bloque-desde-error'
+                : solapado()
+                  ? 'alta-bloque-solapado'
+                  : null
             "
           />
           @if (mostrarError(true, 'horaDesde')) {
@@ -312,9 +324,17 @@
             placeholder="13:00"
             [attr.pattern]="patronHora"
             formControlName="horaHasta"
-            [attr.aria-invalid]="mostrarError(true, 'horaHasta')"
+            [attr.aria-invalid]="
+              mostrarError(true, 'horaHasta') || rangoInvertido(true) || solapado()
+            "
             [attr.aria-describedby]="
-              mostrarError(true, 'horaHasta') ? 'alta-bloque-hasta-error' : null
+              mostrarError(true, 'horaHasta')
+                ? 'alta-bloque-hasta-error'
+                : rangoInvertido(true)
+                  ? 'alta-bloque-rango-error'
+                  : solapado()
+                    ? 'alta-bloque-solapado'
+                    : null
             "
           />
           @if (mostrarError(true, 'horaHasta')) {
@@ -327,11 +347,23 @@
       </div>
 
       @if (rangoInvertido(true)) {
-        <p class="campo__error" role="alert">
+        <p class="campo__error" id="alta-bloque-rango-error" role="alert">
           La hora de fin tiene que ser posterior a la de inicio. Un bloque nunca cruza al día
           siguiente: si el profesional atiende de noche y sigue después de las
           {{ horaMedianoche }}, son dos bloques, uno en cada día.
         </p>
+      }
+
+      <!-- Solapamiento con otro bloque: pegado al día y las horas que lo producen (UX-12). -->
+      @if (!panel() && solapado()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Se superpone con otro bloque del horario"
+          id="alta-bloque-solapado"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
       }
 
       <p class="ayuda ayuda--fija">
@@ -365,12 +397,6 @@
         </p>
       </details>
 
-      <div aria-live="polite">
-        @if (!panel() && errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-      </div>
-
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">Cargar el bloque</button>
         <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
@@ -393,6 +419,19 @@
       (cerrar)="cerrarPanel()"
     >
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        @if (errorAccion() && !solapado()) {
+          <app-alerta tipo="error" titulo="No pudimos guardar los cambios del bloque">
+            <p>{{ errorAccion() }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el horario
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
           <p class="ayuda ayuda--fija">Se envia solo lo que cambies.</p>
           <app-ayuda titulo="Sobre la edición">
@@ -410,7 +449,12 @@
 
         <div class="campo">
           <label for="editar-bloque-dia">Día de la semana</label>
-          <select id="editar-bloque-dia" formControlName="diaSemana">
+          <select
+            id="editar-bloque-dia"
+            formControlName="diaSemana"
+            [attr.aria-invalid]="solapado() ? 'true' : null"
+            [attr.aria-describedby]="solapado() ? 'editar-bloque-solapado' : null"
+          >
             @for (opcion of dias; track opcion.numero) {
               <option [value]="opcion.numero">{{ opcion.etiqueta }}</option>
             }
@@ -427,9 +471,13 @@
               autocomplete="off"
               [attr.pattern]="patronHora"
               formControlName="horaDesde"
-              [attr.aria-invalid]="mostrarError(false, 'horaDesde')"
+              [attr.aria-invalid]="mostrarError(false, 'horaDesde') || solapado()"
               [attr.aria-describedby]="
-                mostrarError(false, 'horaDesde') ? 'editar-bloque-desde-error' : null
+                mostrarError(false, 'horaDesde')
+                  ? 'editar-bloque-desde-error'
+                  : solapado()
+                    ? 'editar-bloque-solapado'
+                    : null
               "
             />
             @if (mostrarError(false, 'horaDesde')) {
@@ -448,9 +496,17 @@
               autocomplete="off"
               [attr.pattern]="patronHora"
               formControlName="horaHasta"
-              [attr.aria-invalid]="mostrarError(false, 'horaHasta')"
+              [attr.aria-invalid]="
+                mostrarError(false, 'horaHasta') || rangoInvertido(false) || solapado()
+              "
               [attr.aria-describedby]="
-                mostrarError(false, 'horaHasta') ? 'editar-bloque-hasta-error' : null
+                mostrarError(false, 'horaHasta')
+                  ? 'editar-bloque-hasta-error'
+                  : rangoInvertido(false)
+                    ? 'editar-bloque-rango-error'
+                    : solapado()
+                      ? 'editar-bloque-solapado'
+                      : null
               "
             />
             @if (mostrarError(false, 'horaHasta')) {
@@ -462,9 +518,20 @@
         </div>
 
         @if (rangoInvertido(false)) {
-          <p class="campo__error" role="alert">
+          <p class="campo__error" id="editar-bloque-rango-error" role="alert">
             La hora de fin tiene que ser posterior a la de inicio.
           </p>
+        }
+
+        @if (solapado()) {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Se superpone con otro bloque del horario"
+            id="editar-bloque-solapado"
+          >
+            <p>{{ errorAccion() }}</p>
+          </app-alerta>
         }
 
         <div class="grilla-campos grilla-campos--dos">
@@ -498,17 +565,6 @@
 
         <app-impacto-previo [estado]="impacto()" />
 
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-          @if (hayQueRecargar()) {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar el horario
-            </button>
-          }
-        </div>
-
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ edicionConImpacto() ? 'Guardar igual' : 'Guardar los cambios' }}
@@ -529,6 +585,18 @@
       "
       (cerrar)="cerrarPanel()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja el bloque">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar el horario
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="baja-bloque-reason"
         etiqueta="Motivo de la baja"
@@ -555,17 +623,6 @@
         </p>
         <app-impacto-previo [estado]="impacto()" />
       </akine-confirmacion-con-motivo>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-        @if (hayQueRecargar()) {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Recargar el horario
-          </button>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

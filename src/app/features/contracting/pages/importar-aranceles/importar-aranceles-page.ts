@@ -40,6 +40,8 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+
 /** Tamano maximo del archivo que se lee en el navegador. 500 filas de CSV entran holgadas. */
 const TAMANO_MAXIMO_DE_ARCHIVO = 512 * 1024;
 
@@ -82,7 +84,7 @@ interface Desenlace {
  */
 @Component({
   selector: 'app-importar-aranceles-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PermisoDirective],
+  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PermisoDirective, Alerta],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
 })

@@ -18,42 +18,40 @@
 }
 
 @if (mensajeDeCarga(); as mensaje) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
-    <h2 id="titulo-error-carga">No se pudo cargar la caja</h2>
-    <p class="estado estado--error">{{ mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo cargar la caja">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
       @if (faltaContexto()) {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
-<div aria-live="polite">
-  @if (aviso(); as texto) {
-    <p class="estado estado--ok" role="status">{{ texto }}</p>
-  }
-  @if (error(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-rechazo">
-      <h2 id="titulo-rechazo">No se pudo completar la operación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      @if (fallo.accion === 'recargar') {
-        <div class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Recargar la caja
-          </button>
-        </div>
-      }
-      @if (fallo.accion === 'elegir-contexto') {
-        <div class="acciones">
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        </div>
-      }
-    </section>
-  }
-</div>
+<!--
+  Rechazo de una operacion (UX-12): en la seccion donde se hizo —abrir, movimiento, cierre o el
+  panel de reversion—, arriba de sus campos. El exito va al aviso global.
+  Una version vieja ("recargar") es advertencia: alguien movio la caja mientras tanto.
+-->
+<ng-template #alertaDeOperacion let-fallo let-titulo="titulo">
+  <app-alerta [tipo]="fallo.accion === 'recargar' ? 'advertencia' : 'error'" [titulo]="titulo">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.accion === 'recargar') {
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar la caja
+        </button>
+      </p>
+    }
+    @if (fallo.accion === 'elegir-contexto') {
+      <p class="alerta__acciones">
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+      </p>
+    }
+  </app-alerta>
+</ng-template>
 
 <!-- ================================ Caja cerrada ================================ -->
 
@@ -110,6 +108,13 @@
         </p>
       </app-ayuda>
     </div>
+
+    @if (falloEn('abrir'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos abrir la caja' }"
+      />
+    }
 
     <div class="grilla-compacta">
       <div class="campo">
@@ -340,6 +345,16 @@
           </app-ayuda>
         </div>
 
+        @if (falloEn('movimiento'); as fallo) {
+          <ng-container
+            [ngTemplateOutlet]="alertaDeOperacion"
+            [ngTemplateOutletContext]="{
+              $implicit: fallo,
+              titulo: 'No pudimos registrar el movimiento',
+            }"
+          />
+        }
+
         <div class="grilla-compacta">
           <div class="campo">
             <label for="movimiento-tipo">Tipo</label>
@@ -417,6 +432,13 @@
           </app-ayuda>
         </div>
 
+        @if (falloEn('cierre'); as fallo) {
+          <ng-container
+            [ngTemplateOutlet]="alertaDeOperacion"
+            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar la caja' }"
+          />
+        }
+
         <div class="campo">
           <label for="cierre-declarado">Efectivo contado</label>
           <input
@@ -479,6 +501,15 @@
     [subtitulo]="movimiento.concepto + ' · ' + importeConSigno(movimiento)"
     (cerrar)="cancelarReversion()"
   >
+    @if (falloEn('reversion'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{
+          $implicit: fallo,
+          titulo: 'No pudimos revertir el movimiento',
+        }"
+      />
+    }
     <p class="ayuda">
       Revertir no borra nada: asienta un movimiento opuesto en la jornada abierta hoy. Un movimiento
       se revierte una sola vez.
@@ -508,9 +539,5 @@
         </button>
       </div>
     </form>
-    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
-    @if (error(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-    }
   </app-panel-lateral>
 }

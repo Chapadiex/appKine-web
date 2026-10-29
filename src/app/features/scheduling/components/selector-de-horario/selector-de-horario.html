@@ -8,7 +8,7 @@
   />
 </div>
 
-<fieldset>
+<fieldset [attr.aria-describedby]="faltaHorario() ? idDia() + '-falta' : null">
   <legend>Horario destino — {{ fechaEnPalabras(fecha()) }}</legend>
   @if (slots().length === 0) {
     <p class="estado estado--vacio">
@@ -38,6 +38,6 @@
     </ul>
   }
   @if (faltaHorario()) {
-    <p class="campo__error">{{ textoFaltaHorario() }}</p>
+    <p class="campo__error" [id]="idDia() + '-falta'">{{ textoFaltaHorario() }}</p>
   }
 </fieldset>

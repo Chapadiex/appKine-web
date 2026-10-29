@@ -25,6 +25,8 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateEspacioRequest } from '../../../../api/generated/model/update-espacio-request';
 import { CausaEspacio, traducirErrorEspacio } from '../../models/espacio-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { SituacionDeServicio, situacionDeServicio } from '../../models/situacion-de-servicio';
 import { TIPOS_DE_ESPACIO, etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import {
@@ -101,6 +103,8 @@ const POR_PAGINA = 20;
   selector: 'app-espacios-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     Icono,
     Filtros,
@@ -119,6 +123,7 @@ const POR_PAGINA = 20;
 export class EspaciosPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -178,7 +183,6 @@ export class EspaciosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaEspacio | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /**
@@ -243,7 +247,6 @@ export class EspaciosPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.paginaActual.set(0);
         this.filtro.set('ACTIVO');
         this.busqueda.set('');
@@ -335,7 +338,6 @@ export class EspaciosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -402,7 +404,6 @@ export class EspaciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.espacios
       .updateEspacio({
@@ -412,9 +413,9 @@ export class EspaciosPage {
         updateEspacioRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (actualizado) => {
           this.cerrarPanel();
-          this.exito.set('Los datos del espacio quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: actualizado.name ?? undefined });
           this.cargar();
         },
         error: (error: unknown) => this.fallarEdicion(error, orgId, consultorioId, panel.id),
@@ -442,7 +443,6 @@ export class EspaciosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.espacios
       .deactivateEspacio({
@@ -453,11 +453,13 @@ export class EspaciosPage {
       })
       .subscribe({
         next: () => {
+          const nombre = this.espacioEnPanel()?.name;
           this.cerrarPanel();
-          this.exito.set(
-            'El espacio quedo dado de baja. Sigue en el listado, con su motivo, y su nombre ' +
-              'queda libre para un espacio nuevo de esta sede.',
-          );
+          this.avisos.exito('Espacio dado de baja', {
+            descripcion:
+              `${nombre ? nombre + '. ' : ''}Sigue en el listado con su motivo; su nombre queda ` +
+              'libre para un espacio nuevo.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),

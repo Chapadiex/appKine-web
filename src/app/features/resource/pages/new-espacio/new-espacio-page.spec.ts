@@ -1,9 +1,10 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { NewEspacioPage } from './new-espacio-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -31,7 +32,8 @@ describe('NewEspacioPage', () => {
       providers: [
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
-        provideRouter([]),
+        // El alta bien hecha vuelve al listado (UX-12): la ruta tiene que existir.
+        provideRouter([{ path: 'espacios', children: [] }]),
         provideApi(''),
       ],
     }).compileComponents();
@@ -89,7 +91,10 @@ describe('NewEspacioPage', () => {
     const campo = fixture.nativeElement.querySelector('#espacio-name');
     expect(campo?.getAttribute('aria-invalid')).toBe('true');
     expect(campo?.getAttribute('aria-describedby')).toBe('espacio-name-conflicto');
-    expect(texto(fixture)).toContain('SI se puede reusar');
+    const alerta = fixture.nativeElement.querySelector('#espacio-name-conflicto');
+    expect(alerta?.textContent).toContain('SI se puede reusar');
+    // Una sola alerta: el conflicto no se repite como error general.
+    expect(fixture.nativeElement.querySelectorAll('app-alerta').length).toBe(1);
   });
 
   /**
@@ -125,6 +130,12 @@ describe('NewEspacioPage', () => {
     alta.flush({ id: 9, name: 'Box 9' });
     await fixture.whenStable();
     fixture.detectChanges();
+
+    // Pantalla propia de alta (UX-12): vuelve al listado y el resultado va al aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Espacio dado de alta');
+    expect(aviso?.descripcion).toContain('Box 9');
+    expect(TestBed.inject(Router).url).toBe('/espacios');
   });
 });
 

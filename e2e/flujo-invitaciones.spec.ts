@@ -34,7 +34,11 @@ test.describe('Invitaciones contra el backend real', () => {
     await page.getByRole('button', { name: 'Enviar la invitacion' }).click();
     const creada = await alta;
     expect(creada.status(), await creada.text()).toBe(201);
-    await expect(page.getByText('La invitación salio por correo.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Invitación enviada'),
+    ).toBeVisible();
     const fila = page
       .getByRole('region', { name: 'Invitaciones enviadas por la organización' })
       .getByRole('row', { name: new RegExp(email.replace(/[.]/g, '\\.')) });

@@ -73,20 +73,23 @@ test.describe('Casos clinicos (D-b)', () => {
       .getByRole('textbox', { name: 'Diagnostico presuntivo' })
       .fill('Lumbalgia mecanica sintetica, sin irradiacion');
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
-    await expect(page.getByText('Se guardaron el diagnostico y el objetivo.')).toBeVisible();
+    // UX-12: el resultado de cada operacion es un aviso global, en la region de notificaciones.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones' });
+    await expect(notificaciones.getByText('Caso actualizado')).toBeVisible();
 
     // --- Equipo: dos cambios seguidos sin releer (#109) -----------------------------------
     await equipo
       .getByRole('combobox', { name: new RegExp(`Rol de .*${sembrada.nombreProfesional}`) })
       .selectOption('TRATANTE');
     await page.getByRole('button', { name: 'Guardar el equipo' }).click();
-    await expect(page.getByText('Se guardo el equipo del caso.')).toBeVisible();
+    await expect(notificaciones.getByText('Equipo del caso guardado')).toBeVisible();
 
     await equipo
       .getByRole('combobox', { name: new RegExp(`Rol de .*${sembrada.nombreProfesional}`) })
       .selectOption('RESPONSABLE');
     await page.getByRole('button', { name: 'Guardar el equipo' }).click();
-    await expect(page.getByText('Se guardo el equipo del caso.')).toBeVisible();
+    // El aviso del primer guardado puede seguir a la vista: se mira el ultimo.
+    await expect(notificaciones.getByText('Equipo del caso guardado').last()).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
 
     const historial = page.getByRole('list', { name: 'Movimientos del caso' });

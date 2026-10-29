@@ -14,6 +14,7 @@ import {
   veredictoDeCandidata,
 } from '../../models/etiquetas-de-consumo';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 type Estado =
   | { readonly tipo: 'inicial' }
@@ -43,7 +44,7 @@ type Estado =
  */
 @Component({
   selector: 'app-selector-de-autorizacion',
-  imports: [Ayuda, ReactiveFormsModule],
+  imports: [Alerta, Ayuda, ReactiveFormsModule],
   templateUrl: './selector-de-autorizacion.html',
   styleUrl: '../../person.css',
 })

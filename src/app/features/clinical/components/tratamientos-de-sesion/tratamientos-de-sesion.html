@@ -13,8 +13,20 @@
     <p class="estado estado--cargando">Leyendo los tratamientos…</p>
   }
 
+  <!-- UX-12: el rechazo de registrar va arriba de su formulario; el resto, aca. -->
   @if (error(); as problema) {
-    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+    @if (origenDelError() !== 'registrar') {
+      <app-alerta
+        tipo="error"
+        [titulo]="
+          origenDelError() === 'baja'
+            ? 'No pudimos dar de baja el tratamiento'
+            : 'No pudimos leer los tratamientos'
+        "
+      >
+        <p>{{ problema.mensaje }}</p>
+      </app-alerta>
+    }
   }
 
   @if (!cargando() && tratamientos().length === 0) {
@@ -73,9 +85,18 @@
                   [id]="'baja-motivo-' + tratamiento.id"
                   rows="2"
                   maxlength="500"
+                  [attr.aria-describedby]="
+                    aviso() && avisoDe() === 'baja' ? 'baja-motivo-error-' + tratamiento.id : null
+                  "
+                  [attr.aria-invalid]="aviso() && avisoDe() === 'baja' ? 'true' : null"
                   [value]="motivoBaja()"
                   (input)="motivoBaja.set($any($event.target).value)"
                 ></textarea>
+                @if (aviso() && avisoDe() === 'baja') {
+                  <p class="campo__error" [id]="'baja-motivo-error-' + tratamiento.id">
+                    {{ aviso() }}
+                  </p>
+                }
               </div>
               <div class="acciones">
                 <button
@@ -113,6 +134,14 @@
   @if (editable()) {
     <fieldset class="grupo">
       <legend>Registrar un tratamiento</legend>
+
+      @if (error(); as problema) {
+        @if (origenDelError() === 'registrar') {
+          <app-alerta tipo="error" titulo="No pudimos registrar el tratamiento">
+            <p>{{ problema.mensaje }}</p>
+          </app-alerta>
+        }
+      }
 
       @if (practicas().length === 0) {
         <p class="ayuda">
@@ -354,14 +383,23 @@
           </div>
         </details>
 
+        @if (aviso() && avisoDe() === 'registrar') {
+          <p class="campo__error" id="tratamiento-falta">{{ aviso() }}</p>
+        }
         <div class="acciones">
-          <button type="button" class="boton" [disabled]="bloqueado()" (click)="registrar()">
+          <button
+            type="button"
+            class="boton"
+            [disabled]="bloqueado()"
+            [attr.aria-describedby]="
+              aviso() && avisoDe() === 'registrar' ? 'tratamiento-falta' : null
+            "
+            (click)="registrar()"
+          >
             Registrar el tratamiento
           </button>
         </div>
       }
     </fieldset>
   }
-
-  <p class="ayuda ayuda--fija" role="status">{{ aviso() }}</p>
 </section>

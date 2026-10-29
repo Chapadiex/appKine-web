@@ -34,6 +34,9 @@ import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-e
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 type Desenlace = 'APROBAR' | 'RECHAZAR';
 
@@ -73,6 +76,8 @@ type Especialidades =
   selector: 'app-solicitudes-catalogo-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     ColumnaOrdenable,
     Paginacion,
     Ayuda,
@@ -86,6 +91,7 @@ type Especialidades =
 export class SolicitudesCatalogoPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
@@ -110,7 +116,6 @@ export class SolicitudesCatalogoPage {
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaSolicitud | null>(null);
   /** Mensaje de la bandeja: el resultado de la ultima resolucion, o por que se recargo. */
-  protected readonly aviso = signal<{ readonly ok: boolean; readonly texto: string } | null>(null);
 
   protected readonly solicitudes = computed(() => {
     const actual = this.estado();
@@ -171,13 +176,11 @@ export class SolicitudesCatalogoPage {
     const elegido: FiltroEstado =
       valor === 'TODAS' || valor === 'APROBADA' || valor === 'RECHAZADA' ? valor : 'PENDIENTE';
     this.cerrar();
-    this.aviso.set(null);
     this.filtroEstado.set(elegido);
     this.cargar();
   }
 
   protected revisar(solicitud: CatalogoSolicitudResponse): void {
-    this.aviso.set(null);
     this.seleccionada.set(solicitud);
     // El foco lo lleva el panel lateral al abrirse.
     this.elegirDesenlace(null);
@@ -287,23 +290,27 @@ export class SolicitudesCatalogoPage {
       .subscribe({
         next: (resuelta) => {
           this.cerrar();
-          this.aviso.set({
-            ok: true,
-            texto:
-              resuelta.estado === 'APROBADA'
-                ? `Aprobada: "${cuerpo.nombre}" ya esta publicado en el catalogo comun` +
-                  (resuelta.conceptoId === undefined ? '.' : ` (concepto ${resuelta.conceptoId}).`)
-                : `Rechazada. El centro va a ver tu nota en sus pedidos.`,
-          });
+          if (resuelta.estado === 'APROBADA') {
+            this.avisos.exito('Solicitud aprobada', {
+              descripcion:
+                `"${cuerpo.nombre}" ya está publicado en el catálogo común` +
+                (resuelta.conceptoId === undefined ? '.' : ` (concepto ${resuelta.conceptoId}).`),
+            });
+          } else {
+            this.avisos.exito('Solicitud rechazada', {
+              descripcion: 'El centro va a ver tu nota en sus pedidos.',
+            });
+          }
           this.cargar();
         },
         error: (error: unknown) => {
           const traducido = traducirErrorSolicitud(error);
           this.enviando.set(false);
           if (traducido.causa === 'ya-resuelta' || traducido.causa === 'no-encontrado') {
-            // Lo que hay en pantalla quedo viejo: se descarta y se relee la bandeja.
+            // Lo que hay en pantalla quedo viejo: se descarta y se relee la bandeja. Sin panel
+            // donde mostrarlo, el motivo va al aviso global (UX-12).
             this.cerrar();
-            this.aviso.set({ ok: false, texto: traducido.mensaje });
+            this.avisos.error('No se aplicó la resolución', { descripcion: traducido.mensaje });
             this.cargar();
             return;
           }

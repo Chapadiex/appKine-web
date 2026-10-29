@@ -18,10 +18,9 @@
 
 @if (carga(); as estado) {
   @if (estado.tipo === 'error') {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-carga">
-      <h2 id="titulo-error-carga">No se pudo cargar el egreso</h2>
-      <p class="estado estado--error">{{ estado.error.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudo cargar el egreso">
+      <p>{{ estado.error.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (estado.error.causa === 'sin-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
         } @else {
@@ -29,20 +28,21 @@
             Reintentar
           </button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
 }
 
-<div aria-live="polite">
-  @if (aviso(); as texto) {
-    <p class="estado estado--ok" role="status">{{ texto }}</p>
-  }
-  @if (errorOperacion(); as fallo) {
-    <section class="tarjeta" aria-labelledby="titulo-rechazo">
-      <h2 id="titulo-rechazo">No se pudo completar la operación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
+<!--
+  Rechazo de una operacion (UX-12): donde se hizo —la correccion, la confirmacion, el pago o el
+  panel de anulacion—, arriba de sus campos. El exito va al aviso global. Una version vieja
+  ("recargar") es advertencia: alguien cambio el egreso mientras tanto.
+-->
+<ng-template #alertaDeOperacion let-fallo let-titulo="titulo">
+  <app-alerta [tipo]="fallo.recargar ? 'advertencia' : 'error'" [titulo]="titulo">
+    <p>{{ fallo.mensaje }}</p>
+    @if (fallo.irACaja || fallo.recargar) {
+      <p class="alerta__acciones">
         @if (fallo.irACaja) {
           <a class="boton" routerLink="/caja">Ir a la caja</a>
         }
@@ -51,10 +51,10 @@
             Recargar el egreso
           </button>
         }
-      </div>
-    </section>
-  }
-</div>
+      </p>
+    }
+  </app-alerta>
+</ng-template>
 
 @if (egreso(); as e) {
   <!-- Franja de resumen (refactor UX/UI del 28/10/2026): lo que se mira primero, arriba. -->
@@ -204,6 +204,15 @@
               </span>
             </summary>
             <form [formGroup]="edicion" (ngSubmit)="guardar()" novalidate>
+              @if (falloEn('editar'); as fallo) {
+                <ng-container
+                  [ngTemplateOutlet]="alertaDeOperacion"
+                  [ngTemplateOutletContext]="{
+                    $implicit: fallo,
+                    titulo: 'No pudimos guardar los cambios',
+                  }"
+                />
+              }
               <div class="grilla-compacta">
                 <div class="campo campo--ancho">
                   <label for="edicion-concepto">Concepto</label>
@@ -214,9 +223,14 @@
                     maxlength="200"
                     formControlName="concepto"
                     [attr.aria-invalid]="campoDeEdicionInvalido('concepto') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      campoDeEdicionInvalido('concepto') ? 'edicion-concepto-error' : null
+                    "
                   />
                   @if (campoDeEdicionInvalido('concepto')) {
-                    <p class="campo__error" role="alert">El concepto es obligatorio.</p>
+                    <p class="campo__error" id="edicion-concepto-error" role="alert">
+                      El concepto es obligatorio.
+                    </p>
                   }
                 </div>
                 <div class="campo">
@@ -236,9 +250,14 @@
                     autocomplete="off"
                     formControlName="importe"
                     [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      campoDeEdicionInvalido('importe') ? 'edicion-importe-error' : null
+                    "
                   />
                   @if (campoDeEdicionInvalido('importe')) {
-                    <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+                    <p class="campo__error" id="edicion-importe-error" role="alert">
+                      Un importe mayor que cero.
+                    </p>
                   }
                 </div>
                 <div class="campo">
@@ -268,9 +287,12 @@
                     type="date"
                     formControlName="periodoHasta"
                     [attr.aria-invalid]="campoDeEdicionInvalido('periodo') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      campoDeEdicionInvalido('periodo') ? 'edicion-periodo-hasta-error' : null
+                    "
                   />
                   @if (campoDeEdicionInvalido('periodo')) {
-                    <p class="campo__error" role="alert">
+                    <p class="campo__error" id="edicion-periodo-hasta-error" role="alert">
                       El período va completo y no puede terminar antes de empezar.
                     </p>
                   }
@@ -393,6 +415,15 @@
       @if (esBorrador()) {
         <section class="tarjeta tarjeta--destacada" aria-labelledby="titulo-confirmacion">
           <h2 id="titulo-confirmacion">Confirmar</h2>
+          @if (falloEn('confirmar'); as fallo) {
+            <ng-container
+              [ngTemplateOutlet]="alertaDeOperacion"
+              [ngTemplateOutletContext]="{
+                $implicit: fallo,
+                titulo: 'No pudimos confirmar el egreso',
+              }"
+            />
+          }
           <p class="ayuda">
             Confirmar no mueve plata: deja el egreso firme y habilita los pagos. Exige el tipo y el
             número de comprobante guardados.
@@ -430,6 +461,15 @@
             </app-ayuda>
           </div>
           <form [formGroup]="pago" (ngSubmit)="pagar()" novalidate>
+            @if (falloEn('pagar'); as fallo) {
+              <ng-container
+                [ngTemplateOutlet]="alertaDeOperacion"
+                [ngTemplateOutletContext]="{
+                  $implicit: fallo,
+                  titulo: 'No pudimos registrar el pago',
+                }"
+              />
+            }
             <div class="grilla-compacta">
               <div class="campo">
                 <label for="pago-importe">Importe del pago</label>
@@ -440,9 +480,12 @@
                   autocomplete="off"
                   formControlName="importe"
                   [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
+                  [attr.aria-describedby]="importeDePagoInvalido() ? 'pago-importe-error' : null"
                 />
                 @if (importeDePagoInvalido()) {
-                  <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+                  <p class="campo__error" id="pago-importe-error" role="alert">
+                    Un importe mayor que cero.
+                  </p>
                 }
               </div>
               <div class="campo">
@@ -534,6 +577,12 @@
     [subtitulo]="importe(pagoAAnular.importe) + ' · ' + medioEnPalabras(pagoAAnular.medio)"
     (cerrar)="cancelarAnulacionDePago()"
   >
+    @if (falloEn('anular-pago'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos anular el pago' }"
+      />
+    }
     <app-confirmacion-con-motivo
       [idCampo]="'motivo-anular-pago-' + pagoAAnular.id"
       titulo="Anular el pago"
@@ -545,13 +594,6 @@
       (confirmado)="anularPago($event)"
       (cancelado)="cancelarAnulacionDePago()"
     />
-    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      @if (fallo.irACaja) {
-        <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
-      }
-    }
   </app-panel-lateral>
 }
 
@@ -561,6 +603,12 @@
     [subtitulo]="e.concepto ?? null"
     (cerrar)="cancelarAnulacion()"
   >
+    @if (falloEn('anular'); as fallo) {
+      <ng-container
+        [ngTemplateOutlet]="alertaDeOperacion"
+        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos anular el egreso' }"
+      />
+    }
     <app-confirmacion-con-motivo
       idCampo="motivo-anular-egreso"
       titulo="Anular el egreso"
@@ -576,12 +624,5 @@
       (confirmado)="anular($event)"
       (cancelado)="cancelarAnulacion()"
     />
-    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
-    @if (errorOperacion(); as fallo) {
-      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      @if (fallo.irACaja) {
-        <a class="boton boton--secundario" routerLink="/caja">Ir a la caja</a>
-      }
-    }
   </app-panel-lateral>
 }

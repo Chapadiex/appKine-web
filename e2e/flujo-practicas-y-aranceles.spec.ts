@@ -70,7 +70,9 @@ test.describe('Practicas de una oferta contra el backend real', () => {
     await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
     expect((await guardado).status()).toBe(200);
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Prácticas guardadas'),
     ).toBeVisible();
 
     const leidas = await api.exigir<{ practicaPrincipalId: number; practicas: PracticaDeOferta[] }>(
@@ -90,8 +92,12 @@ test.describe('Practicas de una oferta contra el backend real', () => {
       .getByRole('button', { name: /^Quitar / })
       .click();
     await page.getByRole('button', { name: 'Guardar las prácticas' }).click();
+    // El aviso del primer guardado puede seguir a la vista: se mira el ultimo.
     await expect(
-      page.getByRole('status').filter({ hasText: 'Guardamos las prácticas de la oferta.' }),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Prácticas guardadas')
+        .last(),
     ).toBeVisible();
     await expect(declarada(page, 'KIN_SESION')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Dadas de baja' })).toBeVisible();

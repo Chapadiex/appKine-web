@@ -20,6 +20,7 @@ import {
 } from '../../models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** En cual de los cinco estados esta la pantalla. */
 type Estado =
@@ -66,7 +67,7 @@ type Estado =
  */
 @Component({
   selector: 'app-invitacion-page',
-  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
+  imports: [Alerta, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './invitacion-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

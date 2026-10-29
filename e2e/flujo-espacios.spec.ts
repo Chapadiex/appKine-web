@@ -42,9 +42,11 @@ test.describe('Espacios y boxes contra el backend real', () => {
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { id: espacioId } = (await creado.json()) as { id: number };
-    await expect(page.getByText(`${nombre} quedo dado de alta`)).toBeVisible();
-
-    await page.getByRole('link', { name: 'Ver los espacios de la sede' }).click();
+    // UX-12: el alta vuelve sola al listado y el resultado va al aviso global.
+    const notificaciones = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(notificaciones.getByText('Espacio dado de alta')).toBeVisible();
+    await expect(notificaciones.getByText(nombre, { exact: false })).toBeVisible();
+    await expect(page).toHaveURL(/\/espacios$/);
     const fila = page.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
     await expect(fila.getByText('En servicio', { exact: false })).toBeVisible();

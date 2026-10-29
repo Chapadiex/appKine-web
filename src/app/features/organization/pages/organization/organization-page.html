@@ -47,13 +47,16 @@
         }
 
         @case ('error') {
-          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-          @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-          } @else {
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-          }
+          <app-alerta tipo="error" titulo="No pudimos leer los datos del centro">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              @if (faltaContexto()) {
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+              } @else {
+                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              }
+            </p>
+          </app-alerta>
         }
       }
     </div>

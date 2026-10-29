@@ -37,6 +37,9 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Migas } from '../../../../shared/components/migas/migas';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
 const PENDIENTES: ReadonlySet<string> = new Set<string>([
   TurnoEstadoEnum.RESERVADO,
@@ -59,11 +62,6 @@ type Pedido =
       readonly turnoId: number;
       readonly pivote: Turno;
     };
-
-interface Resultado {
-  readonly operacion: OperacionDeSerie;
-  readonly alcance: AlcanceDeSerie;
-}
 
 /**
  * Una serie de turnos y la cancelacion con alcance (M12, AKINE E-3, DP-04).
@@ -100,6 +98,8 @@ interface Resultado {
   imports: [
     Migas,
     CabeceraDePagina,
+
+    Alerta,
     Ayuda,
     RouterLink,
     NgTemplateOutlet,
@@ -113,6 +113,7 @@ interface Resultado {
 })
 export class SerieDeTurnosPage {
   private readonly api = inject(SeriesApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly agenda = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
@@ -137,13 +138,26 @@ export class SerieDeTurnosPage {
 
   protected readonly serie = signal<SerieDeTurnos | null>(null);
   protected readonly cargando = signal(false);
+  /** Error al LEER la serie: va en el lugar del contenido, con Reintentar (UX-12). */
+  protected readonly errorDeCarga = signal<ErrorSerie | null>(null);
+
+  /**
+   * Rechazo de la previsualizacion o de la operacion del panel abierto: arriba del panel. Lo que
+   * sale bien es un aviso global.
+   */
   protected readonly error = signal<ErrorSerie | null>(null);
+  protected readonly tituloDelError = signal('');
+
+  /** Un rechazo que pide releer o elegir otro horario es un conflicto, no una falla. */
+  protected readonly esConflicto = computed(() => {
+    const accion = this.error()?.accion;
+    return accion === 'releer-alcance' || accion === 'revisar-ocurrencias';
+  });
 
   protected readonly pedido = signal<Pedido | null>(null);
   protected readonly alcance = signal<AlcanceDeSerie | null>(null);
   protected readonly previsualizando = signal(false);
   protected readonly enviando = signal(false);
-  protected readonly resultado = signal<Resultado | null>(null);
 
   /** Horario nuevo del pivote, en la reprogramacion. */
   protected readonly agendaDestino = signal<Agenda | null>(null);
@@ -191,7 +205,6 @@ export class SerieDeTurnosPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrar();
-        this.resultado.set(null);
         this.cargar();
       });
     });
@@ -204,6 +217,7 @@ export class SerieDeTurnosPage {
       return;
     }
     this.cargando.set(true);
+    this.errorDeCarga.set(null);
     this.api.ver(consultorioId, serieId).subscribe({
       next: (serie) => {
         this.cargando.set(false);
@@ -211,7 +225,7 @@ export class SerieDeTurnosPage {
       },
       error: (error: unknown) => {
         this.cargando.set(false);
-        this.error.set(traducirErrorSerie(error));
+        this.errorDeCarga.set(traducirErrorSerie(error));
       },
     });
   }
@@ -232,7 +246,6 @@ export class SerieDeTurnosPage {
   /** Abre la cancelacion de un alcance y pide su previsualizacion. */
   protected elegir(alcance: AlcanceSerie, turnoId?: number): void {
     this.pedido.set({ operacion: 'cancelar', alcance, turnoId });
-    this.resultado.set(null);
     this.previsualizar();
   }
 
@@ -253,6 +266,7 @@ export class SerieDeTurnosPage {
       },
       error: (error: unknown) => {
         this.previsualizando.set(false);
+        this.tituloDelError.set('No pudimos calcular qué turnos entran');
         this.error.set(traducirErrorSerie(error, this.timezone(), pedido.operacion));
       },
     });
@@ -296,7 +310,6 @@ export class SerieDeTurnosPage {
       return;
     }
     this.pedido.set({ operacion: 'reprogramar', alcance, turnoId: pivote.id, pivote });
-    this.resultado.set(null);
     this.cambiarProfesional.set(false);
     this.instanteDestino.set('');
     this.faltaHorario.set(false);
@@ -415,10 +428,24 @@ export class SerieDeTurnosPage {
     this.faltaHorario.set(false);
   }
 
+  /** Salio bien: el panel se cierra, la serie se relee y el resultado va al aviso global. */
   private hecho(operacion: OperacionDeSerie, alcance: AlcanceDeSerie): void {
     this.enviando.set(false);
     this.cerrar();
-    this.resultado.set({ operacion, alcance });
+    const cuantos = alcance.afectados?.length ?? 0;
+    const omitidos = alcance.omitidos?.length ?? 0;
+    const quedaron = omitidos > 0 ? ` ${omitidos} quedaron como estaban.` : '';
+    if (operacion === 'reprogramar') {
+      this.avisos.exito(`Se movieron ${cuantos} turnos`, {
+        descripcion:
+          'Cada uno conserva su número, su paciente y su historial, y vuelve a quedar ' +
+          `reservado.${quedaron}`,
+      });
+    } else {
+      this.avisos.exito(`Se cancelaron ${cuantos} turnos`, {
+        ...(quedaron === '' ? {} : { descripcion: quedaron.trim() }),
+      });
+    }
     this.cargar();
   }
 
@@ -432,6 +459,15 @@ export class SerieDeTurnosPage {
     if (traducido.accion === 'releer-alcance') {
       this.alcance.set(null);
     }
+    this.tituloDelError.set(
+      traducido.accion === 'releer-alcance'
+        ? 'La serie cambió desde la vista previa'
+        : traducido.accion === 'revisar-ocurrencias'
+          ? 'El horario nuevo no tiene lugar'
+          : operacion === 'reprogramar'
+            ? 'No pudimos mover los turnos'
+            : 'No pudimos cancelar los turnos',
+    );
     this.error.set(traducido);
   }
 

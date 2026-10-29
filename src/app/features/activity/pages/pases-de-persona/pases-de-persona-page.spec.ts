@@ -17,6 +17,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { PasesDePersonaPage } from './pases-de-persona-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 512;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}`;
@@ -56,6 +57,14 @@ const PRODUCTOS = [
   { id: 8, nombre: 'Pack viejo', active: false },
   ABONO,
 ];
+
+/** Titulos y descripciones de los avisos globales publicados (UX-12). */
+function avisos(): string {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => `${aviso.titulo}. ${aviso.descripcion ?? ''}`)
+    .join(' | ');
+}
 
 describe('PasesDePersonaPage', () => {
   let httpMock: HttpTestingController;
@@ -208,10 +217,12 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([PASE]);
     await asentar(fixture);
-    const texto = textoDe(fixture);
-    expect(texto).toContain('Se vendio "Pack Pilates 8": 8 creditos hasta el 29/11/2026');
-    expect(texto).toContain('Quedo una deuda de');
-    expect(texto).toContain('Cobrar desde la cuenta corriente');
+    // UX-12: el resultado va al aviso global, con la salida a cobrar.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Pase vendido');
+    expect(aviso?.descripcion).toContain('"Pack Pilates 8": 8 creditos hasta el 29/11/2026');
+    expect(aviso?.descripcion).toContain('Quedo una deuda de');
+    expect(aviso?.accion?.etiqueta).toBe('Cobrar desde la cuenta corriente');
   });
 
   it('producto no vendible muestra el motivo del servidor', async () => {
@@ -297,7 +308,11 @@ describe('PasesDePersonaPage', () => {
     const clave = primero.request.body.idempotencyKey as string;
     primero.flush(...conflicto('abono-periodo-superpuesto'));
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('ya tiene ese abono en un periodo que se superpone');
+    // Conflicto con otro abono: pegado al periodo que lo produjo.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#vender-periodo-superpuesto')
+        ?.textContent,
+    ).toContain('ya tiene ese abono en un periodo que se superpone');
 
     escribir(fixture, '#vender-periodo-desde', '2026-11-14');
     clickear(fixture, 'Vender pase');
@@ -316,7 +331,7 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([PASE]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('del 14/11/2026 al 14/12/2026');
+    expect(avisos()).toContain('del 14/11/2026 al 14/12/2026');
   });
 
   it(
@@ -418,7 +433,8 @@ describe('PasesDePersonaPage', () => {
       responderPases([{ ...PASE, creditosDisponibles: 0, version: 5 }]);
       await asentar(fixture);
       const texto = textoDe(fixture);
-      expect(texto).toContain('ahora tiene 0 creditos de 8');
+      expect(avisos()).toContain('Saldo ajustado');
+      expect(avisos()).toContain('ahora tiene 0 creditos de 8');
       expect(texto).toContain('ajuste manual');
       expect(texto).toContain('Motivo: Cortesia');
     },
@@ -469,8 +485,8 @@ describe('PasesDePersonaPage', () => {
       responderPases([{ ...PASE, estado: 'ANULADO', creditosDisponibles: 0, anulable: false }]);
       await asentar(fixture);
       const texto = textoDe(fixture);
-      expect(texto).toContain('Se anulo "Pack Pilates 8" y su saldo se descarto.');
-      expect(texto).toContain('quedo anulada: no se borra, sigue en la cuenta corriente');
+      expect(avisos()).toContain('Pase anulado. "Pack Pilates 8": su saldo se descarto.');
+      expect(avisos()).toContain('quedo anulada: no se borra, sigue en la cuenta corriente');
       // Un pase anulado ya no ofrece anularse ni ajustarse.
       expect(texto).not.toContain('Ajustar saldo');
       expect(boton(fixture, 'Anular Pack Pilates 8')).toBeNull();
@@ -488,8 +504,8 @@ describe('PasesDePersonaPage', () => {
       .flush({ anulado: false, pase: { ...PASE, estado: 'ANULADO', anulable: false } });
     responderPases();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('ya estaba anulado: no se cambio nada');
-    expect(textoDe(fixture)).toContain('La venta no tenia deuda.');
+    expect(avisos()).toContain('ya estaba anulado. No se cambio nada.');
+    expect(avisos()).toContain('La venta no tenia deuda.');
   });
 
   it('una deuda con cobros no deja anular y lleva a la cuenta corriente', async () => {
@@ -702,7 +718,7 @@ describe('PasesDePersonaPage', () => {
     });
     responderPases([]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Se va a renovar solo al terminar el periodo.');
+    expect(avisos()).toContain('Se va a renovar solo al terminar el periodo.');
     // Despues de vender, la casilla vuelve a apagada.
     escribir(fixture, '#vender-producto', '10');
     expect(
@@ -846,8 +862,8 @@ describe('PasesDePersonaPage', () => {
     prender.flush({ ...ABONO_SIN, renovacionAutomatica: true, version: 3 });
     responderPases([{ ...ABONO_SIN, renovacionAutomatica: true, version: 3 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('"Abono yoga" se va a renovar solo');
-    expect(textoDe(fixture)).toContain('31/10/2026');
+    expect(avisos()).toContain('Renovación automática activada. "Abono yoga"');
+    expect(avisos()).toContain('31/10/2026');
 
     boton(fixture, 'Desactivar la renovación automática de Abono yoga')!.click();
     const apagar = httpMock.expectOne(`${BASE}/pases/31/renovacion`);
@@ -855,7 +871,7 @@ describe('PasesDePersonaPage', () => {
     apagar.flush({ ...ABONO_SIN, version: 4 });
     responderPases([{ ...ABONO_SIN, version: 4 }]);
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('"Abono yoga" ya no se renueva solo.');
+    expect(avisos()).toContain('Renovación automática desactivada. "Abono yoga"');
   });
 
   it('YA_RENOVADO tiene su mensaje y relee los pases', async () => {
@@ -869,9 +885,10 @@ describe('PasesDePersonaPage', () => {
       { ...ABONO_NOV, renuevaPaseId: 31 },
     ]);
     await asentar(fixture);
-    const texto = textoDe(fixture);
-    expect(texto).toContain('este periodo del abono ya se renovo');
-    expect(texto).toContain('hacelo sobre el periodo siguiente');
+    // Accion de fila: aviso global de error con el mensaje del backend.
+    expect(avisos()).toContain('No pudimos activar la renovación');
+    expect(avisos()).toContain('este periodo del abono ya se renovo');
+    expect(avisos()).toContain('hacelo sobre el periodo siguiente');
     expect(boton(fixture, 'Activar la renovación automática de Abono yoga')).toBeNull();
   });
 

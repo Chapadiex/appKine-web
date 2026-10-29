@@ -9,17 +9,16 @@
 }
 
 @if (errorDeLectura(); as fallo) {
-  <section class="tarjeta conflicto" aria-labelledby="titulo-error-clase">
-    <h2 id="titulo-error-clase">No se pudo leer la clase</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo leer la clase">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.accion === 'elegir-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
       } @else {
         <button type="button" class="boton" (click)="cargar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (clase(); as actual) {
@@ -92,31 +91,6 @@
     </ul>
   </section>
 
-  <div aria-live="polite">
-    @if (aviso()) {
-      <p id="aviso-clase" class="estado estado--ok" role="status" tabindex="-1">{{ aviso() }}</p>
-    }
-    <!-- Con un panel abierto, el error se muestra adentro del panel: el resto queda inerte. -->
-    @if (errorDeAccion(); as fallo) {
-      @if (panel().tipo === 'ninguno') {
-        <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
-          <h2 id="titulo-error-accion">No se pudo completar la operación</h2>
-          <p class="estado estado--error">{{ fallo.mensaje }}</p>
-          @if (fallo.motivo) {
-            <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-          }
-          @if (fallo.accion === 'ofrecer-espera' && persona()) {
-            <div class="acciones">
-              <button type="button" class="boton" [disabled]="enviando()" (click)="inscribir(true)">
-                Anotar en la lista de espera
-              </button>
-            </div>
-          }
-        </section>
-      }
-    }
-  </div>
-
   <div class="dos-paneles">
     <div class="dos-paneles__principal">
       @if (puedeInscribir()) {
@@ -128,6 +102,23 @@
             </app-ayuda>
           </div>
 
+          <!-- Error de la busqueda o de la inscripcion: arriba de lo que se esta completando. -->
+          @if (errorDeInscripcion(); as fallo) {
+            @if (!conflictoDeInscripcion()) {
+              <app-alerta
+                tipo="error"
+                [titulo]="
+                  persona() ? 'No pudimos inscribir a la persona' : 'No pudimos buscar en el padrón'
+                "
+              >
+                <p>{{ fallo.mensaje }}</p>
+                @if (fallo.motivo) {
+                  <p>Detalle: {{ fallo.motivo }}</p>
+                }
+              </app-alerta>
+            }
+          }
+
           @if (persona(); as elegida) {
             <p>
               Persona elegida: <b>{{ elegida.apellido }}, {{ elegida.nombre }}</b>
@@ -138,6 +129,31 @@
                 Elegir otra
               </button>
             </p>
+            <!-- La persona elegida choca con la clase: pegado a ella, con la salida (UX-12). -->
+            @if (conflictoDeInscripcion()) {
+              <app-alerta
+                tipo="advertencia"
+                [titulo]="
+                  errorDeInscripcion()?.causa === 'clase-completa'
+                    ? 'La clase no tiene lugar'
+                    : 'Ya está anotada en esta clase'
+                "
+              >
+                <p>{{ errorDeInscripcion()?.mensaje }}</p>
+                @if (errorDeInscripcion()?.accion === 'ofrecer-espera') {
+                  <p class="alerta__acciones">
+                    <button
+                      type="button"
+                      class="boton"
+                      [disabled]="enviando()"
+                      (click)="inscribir(true)"
+                    >
+                      Anotar en la lista de espera
+                    </button>
+                  </p>
+                }
+              </app-alerta>
+            }
             <div class="campo">
               <label>
                 <input
@@ -194,7 +210,7 @@
       @if (puedeVerParticipantes()) {
         <section class="tarjeta" aria-labelledby="titulo-participantes">
           <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-            <h2 id="titulo-participantes">Participantes</h2>
+            <h2 id="titulo-participantes" tabindex="-1">Participantes</h2>
             <app-ayuda titulo="Participantes">
               <p>
                 Desde “Tomar asistencia” se inicia la clase, se registra quién vino y se cierra.
@@ -216,6 +232,15 @@
           }
           @if (participantes() === null) {
             <p class="estado estado--cargando">Leyendo los participantes…</p>
+          } @else if (errorDeParticipantes(); as fallo) {
+            <app-alerta tipo="error" titulo="No pudimos leer los participantes">
+              <p>{{ fallo.mensaje }}</p>
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="releer()">
+                  Reintentar
+                </button>
+              </p>
+            </app-alerta>
           } @else if (conLugar().length === 0) {
             <p class="estado estado--vacio">Todavía no hay nadie inscripto con lugar.</p>
           } @else {
@@ -387,6 +412,16 @@
         aria-label="Reprogramar la clase"
         novalidate
       >
+        @if (errorDeAccion(); as fallo) {
+          @if (conflictoDeReprogramacion() === null) {
+            <app-alerta tipo="error" titulo="No pudimos reprogramar la clase">
+              <p>{{ fallo.mensaje }}</p>
+              @if (fallo.motivo) {
+                <p>Detalle: {{ fallo.motivo }}</p>
+              }
+            </app-alerta>
+          }
+        }
         <div class="campo campo--ancho">
           <label for="reprogramar-fecha">Fecha</label>
           <input id="reprogramar-fecha" type="date" formControlName="fecha" />
@@ -397,12 +432,61 @@
         </div>
         <div class="campo">
           <label for="reprogramar-fin">Hora de fin</label>
-          <input id="reprogramar-fin" type="time" formControlName="horaFin" />
+          <input
+            id="reprogramar-fin"
+            type="time"
+            formControlName="horaFin"
+            [attr.aria-invalid]="finAntesDeInicio() || conflictoDeReprogramacion() === 'horario'"
+            [attr.aria-describedby]="
+              finAntesDeInicio()
+                ? 'reprogramar-fin-error'
+                : conflictoDeReprogramacion() === 'horario'
+                  ? 'reprogramar-conflicto-horario'
+                  : null
+            "
+          />
+          @if (finAntesDeInicio()) {
+            <p class="campo__error" id="reprogramar-fin-error">
+              La hora de fin tiene que ser posterior a la de inicio.
+            </p>
+          }
         </div>
+        @if (conflictoDeReprogramacion() === 'horario') {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese horario no está libre"
+            id="reprogramar-conflicto-horario"
+          >
+            <p>{{ errorDeAccion()?.mensaje }}</p>
+            @if (errorDeAccion()?.motivo) {
+              <p>Detalle: {{ errorDeAccion()?.motivo }}</p>
+            }
+          </app-alerta>
+        }
         <div class="campo">
           <label for="reprogramar-capacidad">Cupo</label>
-          <input id="reprogramar-capacidad" type="number" min="1" formControlName="capacidad" />
+          <input
+            id="reprogramar-capacidad"
+            type="number"
+            min="1"
+            formControlName="capacidad"
+            [attr.aria-invalid]="conflictoDeReprogramacion() === 'cupo'"
+            [attr.aria-describedby]="
+              conflictoDeReprogramacion() === 'cupo' ? 'reprogramar-conflicto-cupo' : null
+            "
+          />
         </div>
+        @if (conflictoDeReprogramacion() === 'cupo') {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ese cupo no se puede usar"
+            id="reprogramar-conflicto-cupo"
+          >
+            <p>{{ errorDeAccion()?.mensaje }}</p>
+          </app-alerta>
+        }
         <div class="campo">
           <label for="reprogramar-espacio">Box</label>
           <select
@@ -420,22 +504,6 @@
             box elegido se valida tal cual: si no esta libre, la clase no se mueve.
           </p>
         </div>
-        <div aria-live="polite">
-          @if (errorDeAccion(); as fallo) {
-            <section
-              class="conflicto clase__error"
-              role="alert"
-              aria-label="No se pudo completar la operación"
-            >
-              <p class="estado estado--error">
-                <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
-              </p>
-              @if (fallo.motivo) {
-                <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-              }
-            </section>
-          }
-        </div>
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">Guardar el cambio</button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
@@ -448,6 +516,14 @@
 
   @if (panel().tipo === 'cancelar') {
     <app-panel-lateral titulo="Cancelar la clase" (cerrar)="cerrarPanel()">
+      @if (errorDeAccion(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos cancelar la clase">
+          <p>{{ fallo.mensaje }}</p>
+          @if (fallo.motivo) {
+            <p>Detalle: {{ fallo.motivo }}</p>
+          }
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="clase-cancelar-motivo"
         titulo="Cancelar la clase"
@@ -459,22 +535,6 @@
         (confirmado)="cancelarClase($event)"
         (cancelado)="cerrarPanel()"
       />
-      <div aria-live="polite">
-        @if (errorDeAccion(); as fallo) {
-          <section
-            class="conflicto clase__error"
-            role="alert"
-            aria-label="No se pudo completar la operación"
-          >
-            <p class="estado estado--error">
-              <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
-            </p>
-            @if (fallo.motivo) {
-              <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-            }
-          </section>
-        }
-      </div>
     </app-panel-lateral>
   }
 
@@ -483,6 +543,14 @@
       [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
       (cerrar)="cerrarPanel()"
     >
+      @if (errorDeAccion(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la inscripción">
+          <p>{{ fallo.mensaje }}</p>
+          @if (fallo.motivo) {
+            <p>Detalle: {{ fallo.motivo }}</p>
+          }
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="inscripcion-baja-motivo"
         [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
@@ -494,22 +562,6 @@
         (confirmado)="darDeBaja($event)"
         (cancelado)="cerrarPanel()"
       />
-      <div aria-live="polite">
-        @if (errorDeAccion(); as fallo) {
-          <section
-            class="conflicto clase__error"
-            role="alert"
-            aria-label="No se pudo completar la operación"
-          >
-            <p class="estado estado--error">
-              <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
-            </p>
-            @if (fallo.motivo) {
-              <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
-            }
-          </section>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

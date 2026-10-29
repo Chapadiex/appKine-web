@@ -13,6 +13,7 @@ import {
 } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -204,7 +205,8 @@ describe('HorarioSemanalPage', () => {
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('quedo cargado en el horario semanal');
+    expect(titulosDeAvisos()).toEqual(['Bloque agregado al horario']);
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un 409 de solapamiento muestra los dos bloques que chocan, no un cartel generico', async () => {
@@ -245,6 +247,15 @@ describe('HorarioSemanalPage', () => {
 
     // 4. El panel sigue abierto con lo escrito: la correccion es sobre eso mismo.
     expect(campo(fixture, '#alta-bloque-desde')).toBe('10:00');
+
+    // 5. UX-12: el choque es una advertencia pegada al día y las horas que lo producen.
+    const alerta = fixture.nativeElement.querySelector('#alta-bloque-solapado');
+    expect(alerta?.textContent).toContain('Se superpone con otro bloque del horario');
+    for (const selector of ['#alta-bloque-dia', '#alta-bloque-desde', '#alta-bloque-hasta']) {
+      const control = fixture.nativeElement.querySelector(selector);
+      expect(control?.getAttribute('aria-invalid')).toBe('true');
+      expect(control?.getAttribute('aria-describedby')).toBe('alta-bloque-solapado');
+    }
   });
 
   it('la baja pide motivo antes de enviar nada a la red', async () => {
@@ -302,10 +313,18 @@ describe('HorarioSemanalPage', () => {
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('sobrevive con su motivo');
-    // Manda el numero de la mutacion, y si difiere de la consulta previa se dice por que.
-    expect(texto(fixture)).toContain('3 turnos pendientes de este profesional en la sede quedaron');
-    expect(texto(fixture)).toContain('La consulta previa habia calculado 2');
+    const [exito, turnos] = TestBed.inject(AvisosStore).avisos();
+    expect(exito?.titulo).toBe('Bloque dado de baja');
+    expect(exito?.descripcion).toContain('Sobrevive con su motivo');
+    // Manda el numero de la mutacion, y si difiere de la consulta previa se dice por que. Es una
+    // advertencia que queda hasta que la cierren: hay turnos que revisar en la agenda.
+    expect(turnos?.tipo).toBe('advertencia');
+    expect(turnos?.titulo).toBe('Turnos para revisar');
+    expect(turnos?.duracion).toBeNull();
+    expect(turnos?.descripcion).toContain(
+      '3 turnos pendientes de este profesional en la sede quedaron',
+    );
+    expect(turnos?.descripcion).toContain('La consulta previa habia calculado 2');
   });
 
   it('la edicion manda solo lo que cambio, y siempre la versión', async () => {
@@ -337,9 +356,8 @@ describe('HorarioSemanalPage', () => {
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('quedaron guardados');
-    // Sin turnos afectados no hay aviso que hacer.
-    expect(texto(fixture)).not.toContain('Turnos para revisar');
+    // Sin turnos afectados no hay aviso de turnos que hacer.
+    expect(titulosDeAvisos()).toEqual(['Cambios del bloque guardados']);
   });
 
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {
@@ -426,8 +444,11 @@ describe('HorarioSemanalPage', () => {
     await estabilizar(fixture);
 
     // Coincide con lo previsto: se informa el numero, sin hablar de diferencias.
-    expect(texto(fixture)).toContain('1 turno pendiente de este profesional en la sede quedo');
-    expect(texto(fixture)).not.toContain('La consulta previa habia calculado');
+    const turnos = TestBed.inject(AvisosStore)
+      .avisos()
+      .find((aviso) => aviso.titulo === 'Turnos para revisar');
+    expect(turnos?.descripcion).toContain('1 turno pendiente de este profesional en la sede quedo');
+    expect(turnos?.descripcion).not.toContain('La consulta previa habia calculado');
   });
 
   it('si la consulta previa falla por otra causa, lo dice y deja guardar igual', async () => {
@@ -451,7 +472,7 @@ describe('HorarioSemanalPage', () => {
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('quedo dado de baja');
+    expect(titulosDeAvisos()).toEqual(['Bloque dado de baja']);
   });
 
   it('si el listado de profesionales falla, se puede reintentar sin recargar la página', async () => {
@@ -750,4 +771,11 @@ function campo(fixture: { nativeElement: HTMLElement }, selector: string): strin
   return (
     (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector)?.value ?? ''
   );
+}
+
+/** Titulos de los avisos globales publicados (UX-12): el shell los dibuja, el spec mira el store. */
+function titulosDeAvisos(): string[] {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => aviso.titulo);
 }

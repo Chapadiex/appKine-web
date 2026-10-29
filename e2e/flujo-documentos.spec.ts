@@ -78,7 +78,9 @@ test.describe('Documentos de la persona contra el backend real', () => {
     const respuesta = await rechazo;
     expect(respuesta.status()).toBeGreaterThanOrEqual(400);
     expect((await problemaDe(respuesta)).type).toBe(uriDeProblema('archivo-no-aceptado'));
-    await expect(page.getByRole('alert')).toBeVisible();
+    // UX-12: es un dato a corregir (elegir otro archivo): el error va junto al campo.
+    await expect(page.locator('#subida-archivo-error')).toBeVisible();
+    await expect(page.getByLabel('Archivo')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.getByRole('row').filter({ hasText: 'no-es-un.pdf' })).toHaveCount(0);
   });
 });

@@ -11,6 +11,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 7;
 const FICHA = `/api/v1/personas/${PERSONA}`;
@@ -228,7 +229,11 @@ describe('OrdenesYAutorizacionesPage', () => {
     });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Aprobada es terminal');
+    // UX-12: el panel se cierra y el resultado va al aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Autorización aprobada');
+    expect(aviso?.descripcion).toContain('Aprobada es terminal');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('observar sin motivo no manda nada: sin motivo el mostrador no sabe que corregir', async () => {
@@ -295,7 +300,10 @@ describe('OrdenesYAutorizacionesPage', () => {
 
     // Es tambien la respuesta a la aprobacion concurrente: el segundo en llegar encuentra la
     // autorizacion ya resuelta.
-    expect(texto(fixture)).toContain('no admite la acción APROBAR');
+    // Error general del panel: arriba del formulario, con la salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form > app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos registrar la respuesta');
+    expect(alerta?.textContent).toContain('no admite la acción APROBAR');
     expect(rotulosDeBoton(fixture)).toContain('Recargar');
   });
 
@@ -320,6 +328,14 @@ describe('OrdenesYAutorizacionesPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.fila-senalada').length).toBe(
       1,
     );
+    // El conflicto va pegado a la vigencia, como advertencia, con la salida a la fila que estorba.
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alerta = raiz.querySelector(`#resolver-superpuesta-${PENDIENTE.id}`);
+    expect(alerta?.getAttribute('tipo')).toBe('advertencia');
+    expect(raiz.querySelector('form > app-alerta[tipo="error"]')).toBeNull();
+    apretar(fixture, 'Ver la autorización');
+    expect(raiz.querySelector('app-panel-lateral')).toBeNull();
+    expect(raiz.querySelectorAll('.fila-senalada').length).toBe(1);
   });
 
   // -------------------------------------------------------------------------------------
@@ -404,7 +420,9 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
 
     // El archivo sigue en la ficha: desvincular no es dar de baja el documento.
-    expect(texto(fixture)).toContain('El archivo sigue estando en la ficha');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Documento desvinculado');
+    expect(aviso?.descripcion).toContain('El archivo sigue estando en la ficha');
   });
 
   it('corregir una orden manda la versión y dice que el paciente no se cambia', async () => {
@@ -744,7 +762,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     // Solo el listado de autorizaciones: la pantalla no vuelve a "cargando" y el panel sigue abierto.
     httpMock.expectOne(esListado(AUTORIZACIONES)).flush([{ ...PENDIENTE, saldo: 20 }]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se revirtio el consumo #1');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Consumo #1 revertido');
 
     apretar(fixture, 'Cerrar el saldo');
     expect(texto(fixture)).not.toContain('Saldo y consumos de la autorización AUT-1');

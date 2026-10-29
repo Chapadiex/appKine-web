@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { SolicitudesCatalogoPage } from './solicitudes-catalogo-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -107,8 +108,10 @@ describe('SolicitudesCatalogoPage', () => {
       httpMock.expectOne(esListado).flush([]);
       fixture.detectChanges();
 
-      expect(anfitrion.textContent).toContain('ya esta publicado en el catalogo comun');
-      expect(anfitrion.textContent).toContain('concepto 77');
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.titulo).toBe('Solicitud aprobada');
+      expect(aviso?.descripcion).toContain('ya está publicado en el catálogo común');
+      expect(aviso?.descripcion).toContain('concepto 77');
     },
     TIMEOUT_AXE,
   );
@@ -135,7 +138,10 @@ describe('SolicitudesCatalogoPage', () => {
 
     const codigo = anfitrion.querySelector('#resolucion-codigo');
     expect(codigo?.getAttribute('aria-invalid')).toBe('true');
-    expect(anfitrion.textContent).toContain('La solicitud sigue pendiente');
+    expect(codigo?.getAttribute('aria-describedby')).toBe('resolucion-codigo-en-uso');
+    const alerta = anfitrion.querySelector('#resolucion-codigo-en-uso');
+    expect(alerta?.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta?.textContent).toContain('La solicitud sigue pendiente');
     // No se relee la bandeja: el formulario queda para corregir.
   });
 
@@ -164,7 +170,9 @@ describe('SolicitudesCatalogoPage', () => {
     httpMock.expectOne(esListado).flush([]);
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Otra persona resolvio');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('Otra persona resolvio');
     expect(anfitrion.querySelector('#resolucion-nota')).toBeNull();
   });
 

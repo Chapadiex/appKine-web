@@ -10,6 +10,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const AUTORIZACION = 600;
 const BASE = `/api/v1/autorizaciones/${AUTORIZACION}`;
@@ -161,7 +162,10 @@ describe('ConsumoDeAutorizacion', () => {
     await estabilizar(fixture);
 
     expect(avisos).toBe(1);
-    expect(texto(fixture)).toContain('Se revirtio el consumo #3');
+    // El resultado va al aviso global (UX-12), no al cuerpo del panel.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Consumo #3 revertido');
+    expect(aviso?.descripcion).toContain('El consumo original sigue en el ledger');
   });
 
   it('muestra el rechazo de una reversión repetida y la incoherencia del saldo', async () => {
@@ -191,7 +195,9 @@ describe('ConsumoDeAutorizacion', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Ese consumo ya estaba revertido');
+    expect(fixture.nativeElement.querySelector('app-alerta')?.textContent).toContain(
+      'Ese consumo ya estaba revertido',
+    );
     apretar(fixture, 'Cancelar');
     expect(texto(fixture)).not.toContain('Ese consumo ya estaba revertido');
   });

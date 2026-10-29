@@ -8,6 +8,7 @@ import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { VisitaClinica } from '../../services/visita-clinica';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CASOS = '/api/v1/historias-clinicas/88/casos';
 const OFERTAS = '/api/v1/consultorios/3/ofertas';
@@ -111,7 +112,11 @@ describe('CasosDeLaHistoria', () => {
         { status: 409, statusText: 'C' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Ver el caso 1');
+    // Coincidencia con lo que ya existe: advertencia arriba del formulario, con las salidas.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form app-alerta');
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('Ya hay un caso parecido para esta persona');
+    expect(alerta?.textContent).toContain('Ver el caso 1');
 
     const confirmar = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
@@ -123,7 +128,12 @@ describe('CasosDeLaHistoria', () => {
       diagnosticoPresuntivo: 'Cervicalgia',
       confirmaPosibleDuplicado: true,
     });
-    segundo.flush({ id: 10 });
+    segundo.flush({ id: 10, numeroCaso: 3 });
+    await estabilizar(fixture);
+    // El aviso vive en el shell y sobrevive a la navegacion al caso nuevo (UX-12).
+    expect(TestBed.inject(AvisosStore).avisos()[0]).toEqual(
+      expect.objectContaining({ titulo: 'Caso abierto', descripcion: 'Caso 3' }),
+    );
   });
 
   async function montar(): Promise<ComponentFixture<CasosDeLaHistoria>> {

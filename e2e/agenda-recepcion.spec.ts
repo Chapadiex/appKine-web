@@ -152,14 +152,17 @@ test.describe('Recepcion del dia contra el backend real', () => {
     const problema = await problemaDe(respuesta);
     expect(problema.type).toBe(uriDeProblema('recepcion-transicion-no-permitida'));
 
-    await expect(
-      page.getByRole('heading', { name: 'No se pudo completar la operación' }),
-    ).toBeVisible();
-    await expect(page.getByText('Lo que dijo el servidor:')).toBeVisible();
+    // UX-12: una accion de la fila, sin formulario: el rechazo es un aviso global con la salida.
+    const aviso = page
+      .getByRole('region', { name: 'Notificaciones' })
+      .getByRole('alert')
+      .filter({ hasText: 'No pudimos validar la recepción' });
+    await expect(aviso).toBeVisible();
+    await expect(aviso).toContainText('Lo que dijo el servidor:');
     // La pantalla corrige la fila sola con lo que dice el servidor: sin recepcion abierta, vuelve
     // a ofrecer el check-in. Releer el dia entero lo confirma.
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
-    await page.getByRole('button', { name: 'Volver a leer el día' }).click();
+    await aviso.getByRole('button', { name: 'Releer el día' }).click();
     await expect(fila.getByText('Sin recepción')).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toBeVisible();
   });

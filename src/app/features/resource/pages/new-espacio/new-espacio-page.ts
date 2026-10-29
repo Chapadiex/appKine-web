@@ -1,6 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { CreateEspacioRequest } from '../../../../api/generated/model/create-espacio-request';
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
@@ -16,6 +16,9 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Migas } from '../../../../shared/components/migas/migas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -57,13 +60,15 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-espacio-page',
-  imports: [CabeceraDePagina, Ayuda, Migas, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, Migas, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './new-espacio-page.html',
   styleUrl: '../../resource.css',
 })
 export class NewEspacioPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
+  private readonly avisos = inject(AvisosStore);
+  private readonly router = inject(Router);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -89,11 +94,6 @@ export class NewEspacioPage {
 
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
   protected readonly hecho = computed(() => this.estado().tipo === 'ok');
-
-  protected readonly espacioCreado = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'ok' ? estado.nombre : null;
-  });
 
   protected readonly mensajeError = computed(() => {
     const estado = this.estado();
@@ -178,7 +178,21 @@ export class NewEspacioPage {
 
     this.espacios.createEspacio({ orgId, consultorioId, createEspacioRequest: cuerpo }).subscribe({
       next: (espacio) => {
-        this.estado.set({ tipo: 'ok', nombre: espacio.name ?? cuerpo.name });
+        const nombre = espacio.name ?? cuerpo.name;
+        this.estado.set({ tipo: 'ok', nombre });
+        // Pantalla propia de alta (UX-12): vuelve al listado y publica el aviso, que sobrevive a
+        // la navegacion porque vive en el shell. La aclaracion de la fecha futura solo suma si
+        // se cargo un inicio: es cuando la fila va a figurar "activo pero todavía sin servicio".
+        this.avisos.exito('Espacio dado de alta', {
+          descripcion:
+            cuerpo.validFrom === undefined
+              ? `${nombre} · ${this.nombreDeLaSede()}`
+              : `${nombre} · ${this.nombreDeLaSede()}. Si su inicio es futuro, figura sin ` +
+                'servicio hasta esa fecha.',
+        });
+        this.router
+          .navigateByUrl('/espacios')
+          .catch((error: unknown) => console.error('No se pudo abrir el listado', error));
       },
       error: (error: unknown) => this.fallar(error),
     });

@@ -1,4 +1,11 @@
 <form class="historia__formulario" (submit)="$event.preventDefault(); registrar()">
+  <!-- UX-12: el rechazo, arriba del formulario. -->
+  @if (error(); as problema) {
+    <app-alerta tipo="error" titulo="No pudimos registrar la entrada">
+      <p>{{ problema.mensaje }}</p>
+    </app-alerta>
+  }
+
   <div class="campo">
     <label for="entrada-tipo">Tipo de entrada</label>
     <select id="entrada-tipo" [value]="tipo()" (change)="elegirTipo($any($event.target).value)">
@@ -22,11 +29,6 @@
       <p id="entrada-cuerpo-error" class="campo__error">Escribí el contenido de la entrada.</p>
     }
   </div>
-
-  @if (error(); as problema) {
-    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
-  }
-  <p class="visualmente-oculto" aria-live="polite">{{ aviso() }}</p>
 
   <div class="acciones">
     <button type="submit" class="boton" [disabled]="enviando()">

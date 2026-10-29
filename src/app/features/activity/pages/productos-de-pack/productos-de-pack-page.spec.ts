@@ -18,6 +18,7 @@ import {
   textoDe,
 } from '../../testing/activity-testing';
 import { ProductosDePackPage } from './productos-de-pack-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const URL_PRODUCTOS = `/api/v1/consultorios/${CONSULTORIO}/productos`;
 
@@ -39,6 +40,14 @@ const PACK = {
   active: true,
   version: 3,
 };
+
+/** Titulos y descripciones de los avisos globales publicados (UX-12). */
+function avisos(): string {
+  return TestBed.inject(AvisosStore)
+    .avisos()
+    .map((aviso) => `${aviso.titulo}. ${aviso.descripcion ?? ''}`)
+    .join(' | ');
+}
 
 describe('ProductosDePackPage', () => {
   let httpMock: HttpTestingController;
@@ -129,7 +138,7 @@ describe('ProductosDePackPage', () => {
     responder([{ ...PACK, id: 11, nombre: 'Abono mensual', tipo: 'ABONO', ofertaId: 44 }]);
     await asentar(fixture);
     const texto = textoDe(fixture);
-    expect(texto).toContain('Se creo "Abono mensual" (abono)');
+    expect(avisos()).toContain('Abono creado. "Abono mensual"');
     expect(texto).toContain('Periodo de hasta 60 días');
     expect(texto).toContain('Abono');
   });
@@ -161,7 +170,7 @@ describe('ProductosDePackPage', () => {
       pedido.flush({ ...PACK, id: 10, nombre: 'Pack 4' });
       responder([PACK]);
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Se creo "Pack 4". Todavía nadie tiene saldo');
+      expect(avisos()).toContain('Producto creado. "Pack 4". Todavía nadie tiene saldo');
     },
     TIMEOUT_AXE,
   );
@@ -243,7 +252,8 @@ describe('ProductosDePackPage', () => {
     pedido.flush({ ...PACK, precio: 45000 });
     responder();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Los pases ya vendidos no cambian.');
+    expect(avisos()).toContain('Cambios guardados');
+    expect(avisos()).toContain('Los pases ya vendidos no cambian.');
   });
 
   it('da de baja con motivo y avisa que no cascadea', async () => {
@@ -261,9 +271,10 @@ describe('ProductosDePackPage', () => {
     pedido.flush({ ...PACK, active: false });
     responder();
     await asentar(fixture);
-    expect(textoDe(fixture)).toContain('Los pases vendidos conservan su saldo');
-    // El aviso se lleva el foco: el panel de la baja ya no esta.
-    expect(document.activeElement?.textContent).toContain('Los pases vendidos conservan su saldo');
+    expect(avisos()).toContain('Producto dado de baja');
+    expect(avisos()).toContain('Los pases vendidos conservan su saldo');
+    // El panel de la baja ya no esta: el foco vuelve a "Nuevo producto", no al cuerpo.
+    expect(document.activeElement?.id).toBe('boton-nuevo-producto');
   });
 
   it('incluir bajas relee con el filtro y muestra el motivo', async () => {

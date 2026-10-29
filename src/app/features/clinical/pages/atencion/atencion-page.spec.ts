@@ -19,6 +19,7 @@ import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { PERMISO_SESION_REASSIGN, PERMISO_SESION_REGISTER } from '../../../../core/models/permisos';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const TURNO = 77;
@@ -409,7 +410,14 @@ describe('AtencionPage', () => {
     // hizo. Y el rechazo tiene que ser visible: un boton que no hace nada es el defecto que ya
     // dejo inejecutable una accion del padron.
     httpMock.expectNone(esCierre());
-    expect(texto(fixture)).toContain('hace falta la nota de cierre');
+    // Validacion en el campo (UX-12): debajo de la nota, que queda marcada como invalida.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#cierre-nota-error')?.textContent).toContain(
+      'hace falta la nota de cierre',
+    );
+    const nota = raiz.querySelector('#cierre-nota') as HTMLTextAreaElement;
+    expect(nota.getAttribute('aria-invalid')).toBe('true');
+    expect(nota.getAttribute('aria-describedby')).toContain('cierre-nota-error');
   });
 
   it('cerrar no exige tolerancia, indicaciones ni próxima conducta', async () => {
@@ -448,6 +456,10 @@ describe('AtencionPage', () => {
 
     // El correlativo por historia clinica es lo que el profesional cuenta.
     expect(texto(fixture)).toContain('Sesión número 8');
+    // Y el resultado, ademas, es un aviso global (UX-12).
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Atención cerrada');
+    expect(aviso?.descripcion).toBe('Sesión 8 de la historia clínica.');
   });
 
   it('los campos opcionales del cierre viajan si se cargan, y se leen con su rotulo', async () => {
@@ -654,7 +666,10 @@ describe('AtencionPage', () => {
     cambio.flush({ ...ABIERTA, casoId: 32, version: 4 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('quedo asociada al Caso 2');
+    // El resultado es un aviso global (UX-12); el selector ya muestra el caso vigente.
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toContain(
+      'quedo asociada al Caso 2',
+    );
     expect(texto(fixture)).not.toContain('Último guardado');
     guardarAhora(fixture);
     const guardado = httpMock.expectOne(esBorrador());
@@ -673,7 +688,9 @@ describe('AtencionPage', () => {
     expect(cambio.request.body).toEqual({ version: 3 });
     cambio.flush({ ...ABIERTA, version: 4 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('La atención quedo sin caso');
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.descripcion).toContain(
+      'La atención quedo sin caso',
+    );
   });
 
   it('un caso que se cerro mientras se elegia lo dice y vuelve el selector al caso actual', async () => {
@@ -1024,7 +1041,9 @@ describe('AtencionPage', () => {
     });
     pedido.flush({ ...ABIERTA, ofertaId: 4, profesionalId: 8, version: 4 });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('ahora la continua Diaz, Bruno');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Profesional reemplazado');
+    expect(aviso?.descripcion).toContain('ahora la continua Diaz, Bruno');
     expect((fixture.nativeElement as HTMLElement).querySelector('dialog.panel-lateral')).toBeNull();
   });
 

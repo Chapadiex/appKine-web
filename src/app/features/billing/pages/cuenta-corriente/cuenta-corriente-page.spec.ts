@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -439,7 +440,9 @@ describe('CuentaCorrientePage', () => {
     ]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('no se borra');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('Se anulo la deuda de');
+    expect(aviso?.descripcion).toContain('no se borra');
     expect(texto(fixture)).toContain('Anulada');
   });
 
@@ -476,7 +479,9 @@ describe('CuentaCorrientePage', () => {
     responderListado(httpMock.expectOne(esListado()), [{ ...PENDIENTE, saldo: 5500.5 }]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se movio la caja');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('Se imputo el saldo a favor');
+    expect(aviso?.descripcion).toContain('No se movio la caja');
     expect(texto(fixture)).toContain('2.000,00');
   });
 

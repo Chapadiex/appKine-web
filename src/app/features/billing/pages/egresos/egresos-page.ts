@@ -33,6 +33,8 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-ob
 import { fechaIsoEnPalabras } from '../../models/etiquetas-de-presentacion';
 import { EgresosApi } from '../../services/egresos-api';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -86,12 +88,22 @@ const PAGINA = 50;
  */
 @Component({
   selector: 'app-egresos-page',
-  imports: [CabeceraDePagina, PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    PanelLateral,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './egresos-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresosPage {
   private readonly api = inject(EgresosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly router = inject(Router);
@@ -327,6 +339,10 @@ export class EgresosPage {
       .subscribe({
         next: (creado) => {
           this.creando.set(false);
+          // El aviso vive en el shell: sobrevive a la navegacion al detalle del egreso.
+          this.avisos.exito('Egreso cargado en borrador', {
+            descripcion: 'Se corrige hasta confirmarlo con su comprobante.',
+          });
           this.router.navigate(['/egresos', creado.id]).catch(() => undefined);
         },
         error: (error: unknown) => {
@@ -385,7 +401,7 @@ export class EgresosPage {
     return periodoDesde === '' || periodoHasta === '' || periodoHasta < periodoDesde;
   }
 
-  private cargarResumen(): void {
+  protected cargarResumen(): void {
     // Sin sede no hay tira: el listado ya dice que falta el contexto.
     this.estadoResumen.set({ tipo: 'cargando' });
     const consultorioId = this.tenantContext.consultorioId();

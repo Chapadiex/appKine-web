@@ -25,6 +25,9 @@
           id="honorarios-colaborador"
           formControlName="colaborador"
           [attr.aria-invalid]="campoInvalido('colaborador') ? 'true' : null"
+          [attr.aria-describedby]="
+            campoInvalido('colaborador') ? 'honorarios-colaborador-error' : null
+          "
         >
           <option value="">Elegí un colaborador</option>
           @for (vinculo of colaboradores(); track vinculo.id) {
@@ -35,7 +38,9 @@
           <p class="ayuda">No se pudo leer el padrón de colaboradores.</p>
         }
         @if (campoInvalido('colaborador')) {
-          <p class="campo__error" role="alert">Elegí a quién se le liquida.</p>
+          <p class="campo__error" id="honorarios-colaborador-error" role="alert">
+            Elegí a quién se le liquida.
+          </p>
         }
       </div>
 
@@ -51,9 +56,10 @@
           type="date"
           formControlName="hasta"
           [attr.aria-invalid]="campoInvalido('hasta') ? 'true' : null"
+          [attr.aria-describedby]="campoInvalido('hasta') ? 'honorarios-hasta-error' : null"
         />
         @if (campoInvalido('hasta')) {
-          <p class="campo__error" role="alert">
+          <p class="campo__error" id="honorarios-hasta-error" role="alert">
             El período va completo y no puede terminar antes de empezar.
           </p>
         }
@@ -99,11 +105,21 @@
     </section>
   }
 
+  <!--
+    Rechazo de la confirmacion, arriba del borrador (UX-12): si el borrador cambio, el grupo que se
+    queria confirmar puede no estar mas. Un borrador que cambio es advertencia: ya se releyo.
+  -->
   @if (errorConfirmacion(); as fallo) {
-    <section class="tarjeta" role="alert" aria-labelledby="titulo-error-confirmacion">
-      <h2 id="titulo-error-confirmacion">No se confirmó la liquidación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    </section>
+    <app-alerta
+      [tipo]="
+        fallo.causa === 'borrador-desactualizado' || fallo.causa === 'liquidacion-vacia'
+          ? 'advertencia'
+          : 'error'
+      "
+      titulo="No se confirmó la liquidación"
+    >
+      <p>{{ fallo.mensaje }}</p>
+    </app-alerta>
   }
 </div>
 
@@ -112,10 +128,9 @@
 }
 
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-borrador">
-    <h2 id="titulo-error-borrador">No se pudo calcular el borrador</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo calcular el borrador">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.causa === 'sin-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
@@ -123,8 +138,8 @@
           Reintentar
         </button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (borrador(); as b) {

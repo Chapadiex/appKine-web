@@ -30,6 +30,8 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+
 /**
  * Consulta del arancel efectivo de una practica para una fecha (M16, RF-M16-006 y RF-M16-010).
  *
@@ -75,7 +77,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
  */
 @Component({
   selector: 'app-arancel-efectivo-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './arancel-efectivo-page.html',
   styleUrl: '../../contracting.css',
 })

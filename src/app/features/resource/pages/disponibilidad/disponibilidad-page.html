@@ -69,9 +69,13 @@
           id="ventana-hasta"
           type="datetime-local"
           formControlName="hasta"
-          [attr.aria-invalid]="mostrarError('hasta')"
+          [attr.aria-invalid]="mostrarError('hasta') || errorVentana() !== null"
           [attr.aria-describedby]="
-            mostrarError('hasta') ? 'ventana-hasta-error' : 'ventana-hasta-ayuda'
+            mostrarError('hasta')
+              ? 'ventana-hasta-error'
+              : errorVentana()
+                ? 'ventana-rango-error'
+                : 'ventana-hasta-ayuda'
           "
         />
         @if (mostrarError('hasta')) {
@@ -81,17 +85,18 @@
 
       <button type="submit" class="boton">Ver que espacios hay</button>
 
+      <!-- El periodo pedido no se puede consultar: error de las fechas, junto a ellas (UX-12). -->
+      @if (errorVentana(); as mensaje) {
+        <p class="campo__error barra-consulta__ancho" id="ventana-rango-error" role="alert">
+          {{ mensaje }}
+        </p>
+      }
+
       <p class="ayuda ayuda--fija barra-consulta__ancho" id="ventana-hasta-ayuda">
         El fin es <b>exclusivo</b>: no se incluye a sí mismo. Como máximo {{ maximoDeDias }} días
         por consulta.
       </p>
     </form>
-
-    <div aria-live="assertive">
-      @if (errorVentana(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-    </div>
 
     <div aria-live="polite">
       @switch (estado().tipo) {
@@ -111,13 +116,16 @@
         }
 
         @case ('error') {
-          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-          @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-          } @else {
-            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
-          }
+          <app-alerta tipo="error" titulo="No pudimos consultar los espacios">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              @if (faltaContexto()) {
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              } @else {
+                <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+              }
+            </p>
+          </app-alerta>
         }
 
         @case ('listo') {

@@ -35,6 +35,9 @@ import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
+import { Alerta } from '../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../core/services/avisos.store';
+
 /** Una fila del editor. Texto mientras se escribe; se valida y convierte al guardar. */
 interface FilaDeItem {
   readonly ofertaId: number | null;
@@ -50,6 +53,17 @@ type Estado =
 
 type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonly plan: number };
 
+/** Titulo de la alerta del rechazo, segun la operacion que se mando (UX-12). */
+const TITULO_DEL_RECHAZO: Readonly<Record<string, string>> = {
+  'Plan creado': 'No pudimos crear el plan',
+  'Borrador guardado': 'No pudimos guardar el borrador',
+  'Versión nueva del plan guardada': 'No pudimos guardar los cambios del plan',
+  'Plan activado': 'No pudimos activar el plan',
+  'Plan reanudado': 'No pudimos reanudar el plan',
+  'Plan suspendido': 'No pudimos suspender el plan',
+  'Plan finalizado': 'No pudimos finalizar el plan',
+};
+
 /**
  * El Plan de Tratamiento de un caso (D-c, RF-M11-001..006).
  *
@@ -63,12 +77,13 @@ type Editor = { readonly modo: 'crear' } | { readonly modo: 'modificar'; readonl
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral],
+  imports: [CabeceraDePagina, Migas, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral, Alerta],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
 export class PlanPage {
   private readonly api = inject(PlanApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly casos = inject(CasosApi);
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
@@ -92,8 +107,12 @@ export class PlanPage {
   private readonly ofertas = signal<readonly OfertaResponse[]>([]);
 
   protected readonly enVuelo = signal(false);
+  /**
+   * Rechazo de una operacion: arriba del editor abierto, o arriba de la tarjeta "Estado del plan"
+   * desde la que se mando la transicion (UX-12). Lo que sale bien es un aviso global.
+   */
   protected readonly errorDeOperacion = signal<ErrorPlan | null>(null);
-  protected readonly aviso = signal('');
+  protected readonly tituloDelError = signal('');
 
   // Editor
   protected readonly editor = signal<Editor | null>(null);
@@ -265,11 +284,13 @@ export class PlanPage {
     if (editor.modo === 'crear') {
       this.operar(
         this.api.crear(caso.id, contenido, this.visita.motivo()),
+        'Plan creado',
         'Se creo el plan en borrador. Activarlo es otra decision.',
       );
       return;
     }
     const plan = this.plan();
+    const borrador = plan?.estado === 'BORRADOR';
     this.operar(
       this.api.modificar(
         editor.plan,
@@ -280,9 +301,8 @@ export class PlanPage {
         },
         this.visita.motivo(),
       ),
-      plan?.estado === 'BORRADOR'
-        ? 'Se guardo el borrador.'
-        : 'Se guardo una versión nueva del plan. La anterior sigue consultable.',
+      borrador ? 'Borrador guardado' : 'Versión nueva del plan guardada',
+      borrador ? '' : 'Se guardo una versión nueva del plan. La anterior sigue consultable.',
     );
   }
 
@@ -293,7 +313,8 @@ export class PlanPage {
     if (plan?.id === undefined) return;
     this.operar(
       this.api.activar(plan.id, plan.version ?? 0, this.visita.motivo()),
-      'El plan quedo activo.',
+      'Plan activado',
+      '',
     );
   }
 
@@ -302,7 +323,8 @@ export class PlanPage {
     if (plan?.id === undefined) return;
     this.operar(
       this.api.reanudar(plan.id, plan.version ?? 0, this.visita.motivo()),
-      'El plan se reanudo.',
+      'Plan reanudado',
+      '',
     );
   }
 
@@ -310,7 +332,8 @@ export class PlanPage {
     this.conMotivo((plan, motivo) =>
       this.operar(
         this.api.suspender(plan.id!, motivo, plan.version ?? 0, this.visita.motivo()),
-        'El plan quedo suspendido. Sigue ocupando el lugar del vigente hasta reanudarlo o finalizarlo.',
+        'Plan suspendido',
+        'Sigue ocupando el lugar del vigente hasta reanudarlo o finalizarlo.',
       ),
     );
   }
@@ -319,7 +342,8 @@ export class PlanPage {
     this.conMotivo((plan, motivo) =>
       this.operar(
         this.api.finalizar(plan.id!, motivo, plan.version ?? 0, this.visita.motivo()),
-        'El plan quedo finalizado. No se reabre: si hace falta, se crea uno nuevo.',
+        'Plan finalizado',
+        'No se reabre: si hace falta, se crea uno nuevo.',
       ),
     );
   }
@@ -340,10 +364,10 @@ export class PlanPage {
     accion(plan, this.motivoTransicion().trim());
   }
 
-  private operar(pedido: Observable<PlanTratamiento>, exito: string): void {
+  private operar(pedido: Observable<PlanTratamiento>, titulo: string, descripcion: string): void {
     this.enVuelo.set(true);
     this.errorDeOperacion.set(null);
-    this.aviso.set('');
+    this.tituloDelError.set(TITULO_DEL_RECHAZO[titulo] ?? 'No pudimos guardar el plan');
     pedido.subscribe({
       next: (plan) => {
         this.enVuelo.set(false);
@@ -351,7 +375,7 @@ export class PlanPage {
         this.motivoTransicion.set('');
         this.intentoTransicion.set(false);
         this.motivoModificacion.set('');
-        this.aviso.set(exito);
+        this.avisos.exito(titulo, descripcion === '' ? undefined : { descripcion });
         // Activar uno puede finalizar otro: se relee la lista entera, no solo este plan.
         this.cargar(plan.id ?? null);
       },

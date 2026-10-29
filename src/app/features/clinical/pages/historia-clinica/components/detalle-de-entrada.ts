@@ -15,6 +15,8 @@ import { EntradaClinicaVersionResponse } from '../../../../../api/generated/mode
 import { ErrorHistoria, traducirErrorHistoria } from '../../../models/historia-errors';
 import { TIPOS_DE_ENTRADA, fechaYHora, rotulo } from '../../../models/etiquetas-de-historia';
 import { HistoriaClinicaApi, Justificacion } from '../../../services/historia-clinica-api';
+import { Alerta } from '../../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../../core/services/avisos.store';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -34,11 +36,13 @@ type Estado =
  */
 @Component({
   selector: 'app-detalle-de-entrada',
+  imports: [Alerta],
   templateUrl: './detalle-de-entrada.html',
   styleUrl: '../historia-clinica.css',
 })
 export class DetalleDeEntrada {
   private readonly api = inject(HistoriaClinicaApi);
+  private readonly avisos = inject(AvisosStore);
 
   readonly entradaId = input.required<number>();
   readonly justificacion = input.required<Justificacion>();
@@ -140,7 +144,12 @@ export class DetalleDeEntrada {
           this.enviando.set(false);
           this.enmendando.set(false);
           this.estado.set({ tipo: 'lista', entrada: enmendada });
-          this.aviso.set(`Enmienda guardada como versión ${enmendada.numeroVersion ?? ''}.`);
+          // UX-12: el resultado es un aviso global; el formulario ya se cerro.
+          this.avisos.exito('Enmienda guardada', {
+            ...(enmendada.numeroVersion === undefined
+              ? {}
+              : { descripcion: `Quedó como la versión ${enmendada.numeroVersion}.` }),
+          });
           if (this.versiones() !== null) {
             this.verVersiones();
           }

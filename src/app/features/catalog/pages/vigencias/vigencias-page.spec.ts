@@ -8,6 +8,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { VigenciasPage } from './vigencias-page';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -171,7 +172,9 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('conserva el código y el valor que tenia');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Vigencia dada de baja');
+    expect(aviso?.descripcion).toContain('conserva el código y el valor que tenía');
   });
 
   it('un nomenclador de la plataforma se consulta pero no se administra', async () => {
@@ -186,7 +189,7 @@ describe('VigenciasPage', () => {
     // sobre el nomenclador: no cuentan.
     expect(
       anfitrion.querySelectorAll(
-        'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton)',
+        'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)',
       ).length,
     ).toBe(0);
     expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
@@ -233,7 +236,48 @@ describe('VigenciasPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Las anteriores del mismo código no se tocaron');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Vigencia 260101 cargada');
+    expect(aviso?.descripcion).toContain('Las anteriores del mismo código no se tocaron');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('dos vigencias que se pisan se explican pegado al código y las fechas (UX-12)', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    pulsar(anfitrion, fixture, 'Cargar una vigencia');
+    escribir(anfitrion, '#alta-vigencia-codigo', '250101');
+    escribir(anfitrion, '#alta-vigencia-name', 'Sesión de kinesiologia');
+    elegir(anfitrion, '#alta-vigencia-practica', '9');
+    fixture.detectChanges();
+    anfitrion.querySelector('form')?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === VIGENCIAS,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/nomenclador-vigencia-overlap', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alerta = anfitrion.querySelector('#alta-vigencia-codigo-conflicto');
+    expect(alerta?.textContent).toContain('Se superpone con otra vigencia del mismo código');
+    for (const selector of [
+      '#alta-vigencia-codigo',
+      '#alta-vigencia-desde',
+      '#alta-vigencia-hasta',
+    ]) {
+      const control = anfitrion.querySelector(selector);
+      expect(control?.getAttribute('aria-invalid')).toBe('true');
+      expect(control?.getAttribute('aria-describedby')).toBe('alta-vigencia-codigo-conflicto');
+    }
+    expect(anfitrion.querySelectorAll('app-alerta').length).toBe(1);
   });
 
   it('el filtro por código es lo que muestra la historia completa de un código', async () => {

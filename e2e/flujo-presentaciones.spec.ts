@@ -224,7 +224,11 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await elegibles
       .getByRole('button', { name: `Agregar la deuda ${sembrado.deFinanciador.id}` })
       .click();
-    await expect(page.getByText('Se agrego la prestación al lote.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Prestación agregada al lote', { exact: true }),
+    ).toBeVisible();
     const items = page.getByRole('region', { name: 'Tabla de prestaciones del lote' });
     await expect(
       items.getByRole('row').filter({ hasText: `Persona #${sembrado.persona.id}` }),
@@ -234,7 +238,11 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await expect(page.getByText('Ninguna prestación tiene observaciones.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Confirmar y presentar' }).click();
-    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Lote presentado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Estado')).toHaveText('Presentada');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('N.º');
     await expect(dato(page, 'Presentado')).toContainText('9.600,00');
@@ -250,7 +258,11 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
 
     await page.getByLabel('Número de factura').fill(`0001-${sufijoDeFactura()}`);
     await page.getByRole('button', { name: 'Registrar la factura' }).click();
-    await expect(page.getByText('Factura registrada.')).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Factura registrada', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Estado')).toHaveText('Facturada');
 
     // Transferencia: un pago en efectivo entraria a la caja, que la opera `flujo-caja.spec.ts`.
@@ -258,12 +270,20 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await page.locator('#pago-medio').selectOption({ label: 'Transferencia' });
     await page.getByLabel('Referencia (opcional)').fill(`TRF-${presentacionId}`);
     await page.getByRole('button', { name: 'Registrar el pago' }).click();
-    await expect(page.getByText(/Pago registrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Pago registrado', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Pagos registrados' })).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
 
     await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
-    await expect(page.getByText(/Lote cerrado\./)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Lote cerrado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Estado')).toHaveText('Conciliada');
 
     // Recien al conciliar se salda la deuda del financiador; el coseguro sigue siendo del paciente.
@@ -431,7 +451,11 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
     const confirmar = page.getByRole('button', { name: 'Confirmar y presentar' });
     await expect(confirmar).toBeEnabled();
     await confirmar.click();
-    await expect(page.getByText(/Lote presentado: tiene número/)).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText('Lote presentado', { exact: true }),
+    ).toBeVisible();
     await expect(dato(page, 'Presentado')).toContainText('9.600,00');
   });
 });

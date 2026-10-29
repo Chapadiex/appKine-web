@@ -73,7 +73,14 @@
     }
   </section>
 } @else if (estadoResumen().tipo === 'error') {
-  <p class="ayuda" role="status">No se pudieron leer los totales del mes.</p>
+  <app-alerta tipo="error" titulo="No pudimos leer los totales del mes">
+    <p>El listado de abajo no depende de ellos.</p>
+    <p class="alerta__acciones">
+      <button type="button" class="boton boton--secundario" (click)="cargarResumen()">
+        Reintentar
+      </button>
+    </p>
+  </app-alerta>
 }
 
 <!-- ================================ Filtros =================================== -->
@@ -146,17 +153,16 @@
 }
 
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-egresos">
-    <h2 id="titulo-error-egresos">No se pudieron cargar los egresos</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudieron cargar los egresos">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.causa === 'sin-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
         <button type="button" class="boton boton--secundario" (click)="buscar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 }
 
 @if (vacio()) {
@@ -256,6 +262,16 @@
     (cerrar)="cerrarAlta()"
   >
     <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
+      <!-- Rechazo del alta arriba del formulario (UX-12). Un comprobante repetido es advertencia. -->
+      @if (errorAlta(); as fallo) {
+        <app-alerta
+          [tipo]="fallo.causa === 'comprobante-duplicado' ? 'advertencia' : 'error'"
+          titulo="No pudimos cargar el egreso"
+        >
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+
       <fieldset class="grupo">
         <legend>Beneficiario</legend>
         <label class="opcion-radio">
@@ -276,6 +292,9 @@
               id="alta-colaborador"
               formControlName="beneficiarioMembershipId"
               [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
+              [attr.aria-describedby]="
+                campoInvalido('beneficiarioMembershipId') ? 'alta-colaborador-error' : null
+              "
             >
               <option value="">Elegí un colaborador</option>
               @for (vinculo of colaboradores(); track vinculo.id) {
@@ -288,7 +307,9 @@
               </p>
             }
             @if (campoInvalido('beneficiarioMembershipId')) {
-              <p class="campo__error" role="alert">Elegí a quién se le paga.</p>
+              <p class="campo__error" id="alta-colaborador-error" role="alert">
+                Elegí a quién se le paga.
+              </p>
             }
           </div>
         } @else {
@@ -301,9 +322,14 @@
               maxlength="200"
               formControlName="beneficiarioNombre"
               [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
+              [attr.aria-describedby]="
+                campoInvalido('beneficiarioNombre') ? 'alta-nombre-error' : null
+              "
             />
             @if (campoInvalido('beneficiarioNombre')) {
-              <p class="campo__error" role="alert">Escribí a quién se le paga.</p>
+              <p class="campo__error" id="alta-nombre-error" role="alert">
+                Escribí a quién se le paga.
+              </p>
             }
           </div>
           <div class="campo">
@@ -338,9 +364,12 @@
             maxlength="200"
             formControlName="concepto"
             [attr.aria-invalid]="campoInvalido('concepto') ? 'true' : null"
+            [attr.aria-describedby]="campoInvalido('concepto') ? 'alta-concepto-error' : null"
           />
           @if (campoInvalido('concepto')) {
-            <p class="campo__error" role="alert">El concepto es obligatorio.</p>
+            <p class="campo__error" id="alta-concepto-error" role="alert">
+              El concepto es obligatorio.
+            </p>
           }
         </div>
 
@@ -353,9 +382,10 @@
             autocomplete="off"
             formControlName="importe"
             [attr.aria-invalid]="campoInvalido('importe') ? 'true' : null"
+            [attr.aria-describedby]="campoInvalido('importe') ? 'alta-importe-error' : null"
           />
           @if (campoInvalido('importe')) {
-            <p class="campo__error" role="alert">
+            <p class="campo__error" id="alta-importe-error" role="alert">
               Un importe mayor que cero, por ejemplo 15000,50.
             </p>
           }
@@ -369,9 +399,12 @@
             maxlength="3"
             formControlName="moneda"
             [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
+            [attr.aria-describedby]="campoInvalido('moneda') ? 'alta-moneda-error' : null"
           />
           @if (campoInvalido('moneda')) {
-            <p class="campo__error" role="alert">Tres letras, por ejemplo ARS.</p>
+            <p class="campo__error" id="alta-moneda-error" role="alert">
+              Tres letras, por ejemplo ARS.
+            </p>
           }
         </div>
       </div>
@@ -440,21 +473,18 @@
               type="date"
               formControlName="periodoHasta"
               [attr.aria-invalid]="campoInvalido('periodoHasta') ? 'true' : null"
+              [attr.aria-describedby]="
+                campoInvalido('periodoHasta') ? 'alta-periodo-hasta-error' : null
+              "
             />
             @if (campoInvalido('periodoHasta')) {
-              <p class="campo__error" role="alert">
+              <p class="campo__error" id="alta-periodo-hasta-error" role="alert">
                 El período va completo —desde y hasta— y no puede terminar antes de empezar.
               </p>
             }
           </div>
         </div>
       </details>
-
-      <div aria-live="polite">
-        @if (errorAlta(); as fallo) {
-          <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        }
-      </div>
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="creando()">Cargar el borrador</button>

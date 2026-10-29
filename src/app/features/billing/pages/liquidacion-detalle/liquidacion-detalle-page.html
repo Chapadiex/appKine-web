@@ -23,17 +23,16 @@
 </app-cabecera-de-pagina>
 
 @if (error(); as fallo) {
-  <section class="tarjeta" role="alert" aria-labelledby="titulo-error-liquidacion">
-    <h2 id="titulo-error-liquidacion">No se pudo cargar la liquidación</h2>
-    <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    <div class="acciones">
+  <app-alerta tipo="error" titulo="No se pudo cargar la liquidación">
+    <p>{{ fallo.mensaje }}</p>
+    <p class="alerta__acciones">
       @if (fallo.causa === 'sin-contexto') {
         <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
       } @else {
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
-    </div>
-  </section>
+    </p>
+  </app-alerta>
 } @else if (liquidacion() === null) {
   <p class="estado estado--cargando">Cargando la liquidación…</p>
 }

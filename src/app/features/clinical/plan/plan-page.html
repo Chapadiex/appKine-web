@@ -14,17 +14,16 @@
   @case ('error') {
     @if (estado(); as e) {
       @if (e.tipo === 'error') {
-        <section class="tarjeta" role="alert" aria-labelledby="titulo-error-plan">
-          <h2 id="titulo-error-plan">No se pudo abrir el plan</h2>
-          <p class="estado estado--error">{{ e.error.mensaje }}</p>
+        <app-alerta tipo="error" titulo="No pudimos abrir el plan">
+          <p>{{ e.error.mensaje }}</p>
           @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'no-encontrado') {
-            <div class="acciones">
+            <p class="alerta__acciones">
               <button type="button" class="boton boton--secundario" (click)="releer()">
                 Reintentar
               </button>
-            </div>
+            </p>
           }
-        </section>
+        </app-alerta>
       }
     }
   }
@@ -37,12 +36,6 @@
           <span><b>El caso está cerrado:</b> para planificar hay que reabrirlo desde el caso.</span>
         }
       </p>
-    }
-
-    <p class="estado estado--ok" role="status">{{ aviso() }}</p>
-    <!-- Con el editor abierto, el rechazo se muestra dentro del panel, que es lo que esta a la vista. -->
-    @if (editor() === null) {
-      <ng-container *ngTemplateOutlet="rechazo" />
     }
 
     @if (planes().length === 0) {
@@ -247,6 +240,13 @@
           @if (p.estado !== 'FINALIZADO' && casoActivo()) {
             <section class="tarjeta" aria-labelledby="titulo-transiciones">
               <h2 id="titulo-transiciones">Estado del plan</h2>
+              <!--
+                El rechazo de una transicion, arriba de los botones que la mandaron (UX-12). Con el
+                editor abierto, va dentro del panel.
+              -->
+              @if (editor() === null) {
+                <ng-container *ngTemplateOutlet="rechazo" />
+              }
               <div class="acciones">
                 @if (p.estado === 'BORRADOR') {
                   <button type="button" class="boton" [disabled]="enVuelo()" (click)="activar()">
@@ -321,8 +321,8 @@
         [titulo]="e.modo === 'crear' ? 'Crear un plan' : 'Modificar el plan'"
         (cerrar)="cerrarEditor()"
       >
-        <ng-container *ngTemplateOutlet="rechazo" />
         <form (submit)="$event.preventDefault(); guardar()">
+          <ng-container *ngTemplateOutlet="rechazo" />
           <div class="campo">
             <label for="plan-objetivos">Objetivos</label>
             <textarea
@@ -464,24 +464,41 @@
 
 <ng-template #rechazo>
   @if (errorDeOperacion(); as problema) {
-    <div class="tarjeta" role="alert">
-      <p class="estado estado--error">{{ problema.mensaje }}</p>
-      <div class="acciones">
-        @if (problema.planQueOcupaId; as otro) {
-          <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
-            Ir al plan que ocupa el lugar
-          </button>
-        }
-        @if (
-          problema.causa === 'version-vieja' ||
-          problema.causa === 'transicion-invalida' ||
-          problema.causa === 'conflicto'
-        ) {
-          <button type="button" class="boton boton--secundario" (click)="releer()">
-            Releer el plan
-          </button>
-        }
-      </div>
-    </div>
+    <!-- Otro plan vigente o una version vieja son conflictos con lo que ya existe: advertencia. -->
+    <app-alerta
+      [tipo]="
+        problema.planQueOcupaId ||
+        problema.causa === 'version-vieja' ||
+        problema.causa === 'conflicto'
+          ? 'advertencia'
+          : 'error'
+      "
+      [titulo]="tituloDelError()"
+    >
+      <p>{{ problema.mensaje }}</p>
+      @if (
+        problema.planQueOcupaId ||
+        problema.causa === 'version-vieja' ||
+        problema.causa === 'transicion-invalida' ||
+        problema.causa === 'conflicto'
+      ) {
+        <p class="alerta__acciones">
+          @if (problema.planQueOcupaId; as otro) {
+            <button type="button" class="boton boton--secundario" (click)="irAlPlan(otro)">
+              Ir al plan que ocupa el lugar
+            </button>
+          }
+          @if (
+            problema.causa === 'version-vieja' ||
+            problema.causa === 'transicion-invalida' ||
+            problema.causa === 'conflicto'
+          ) {
+            <button type="button" class="boton boton--secundario" (click)="releer()">
+              Releer el plan
+            </button>
+          }
+        </p>
+      }
+    </app-alerta>
   }
 </ng-template>

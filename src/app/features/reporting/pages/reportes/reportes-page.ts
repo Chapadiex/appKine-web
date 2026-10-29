@@ -30,6 +30,8 @@ import { ReportesApi } from '../../services/reportes-api';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { guardarComoArchivo, nombreDelEncabezado } from '../../../../shared/utils/descarga';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   BarraDeGrafico,
   GraficoDeBarras,
@@ -76,12 +78,13 @@ type EstadoSerie =
  */
 @Component({
   selector: 'app-reportes-page',
-  imports: [CabeceraDePagina, Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, GraficoDeBarras, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './reportes-page.html',
   styleUrl: '../../reporting.css',
 })
 export class ReportesPage {
   private readonly api = inject(ReportesApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
@@ -104,7 +107,6 @@ export class ReportesPage {
   protected readonly estado = signal<EstadoReporte>({ tipo: 'inicial' });
   protected readonly problemaDeRango = signal<string | null>(null);
   protected readonly exportando = signal(false);
-  protected readonly errorExport = signal<ErrorReporte | null>(null);
 
   /** Reportes que se ofrecen: los del catalogo de la sede si llego, si no los cinco del MVP. */
   protected readonly opciones = computed(() => {
@@ -131,6 +133,18 @@ export class ReportesPage {
   protected readonly error = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' ? actual.error : null;
+  });
+
+  /**
+   * Lo que esta mal del periodo, se haya visto aca o lo haya rechazado el servidor: es un dato a
+   * corregir y se dice junto a las fechas (UX-12), no en el lugar del resultado.
+   */
+  protected readonly errorDeRango = computed(() => {
+    const delServidor = this.error();
+    return (
+      this.problemaDeRango() ??
+      (delServidor?.causa === 'rango-invalido' ? delServidor.mensaje : null)
+    );
   });
 
   protected readonly actividadPropia = computed(
@@ -265,7 +279,6 @@ export class ReportesPage {
         this.catalogo.set([]);
         this.estado.set({ tipo: 'inicial' });
         this.descartarSerie();
-        this.errorExport.set(null);
         this.cargarCatalogo();
       });
     });
@@ -312,7 +325,6 @@ export class ReportesPage {
 
     this.estado.set({ tipo: 'cargando' });
     this.descartarSerie();
-    this.errorExport.set(null);
     this.api.generar(consultorioId, reporte, desde, hasta).subscribe({
       next: (resultado) => {
         this.estado.set({ tipo: 'listo', reporte: resultado });
@@ -343,6 +355,16 @@ export class ReportesPage {
       });
   }
 
+  /** Vuelve a pedir la serie del reporte en pantalla, con su mismo periodo. */
+  protected reintentarSerie(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const actual = this.reporte();
+    if (consultorioId === null || actual === null || !esCodigoDeReporte(actual.reporte)) {
+      return;
+    }
+    this.cargarSerie(consultorioId, actual.reporte, actual.desde ?? '', actual.hasta ?? '');
+  }
+
   /** Un grafico viejo, o una respuesta en vuelo, no puede quedar al lado de otro reporte. */
   private descartarSerie(): void {
     this.pedidoDeSerie?.unsubscribe();
@@ -361,7 +383,6 @@ export class ReportesPage {
     const desde = actual.desde ?? '';
     const hasta = actual.hasta ?? '';
     this.exportando.set(true);
-    this.errorExport.set(null);
     this.api.exportar(consultorioId, actual.reporte, desde, hasta).subscribe({
       next: (respuesta) => {
         this.exportando.set(false);
@@ -372,9 +393,13 @@ export class ReportesPage {
             nombreDeArchivo(actual.reporte ?? 'reporte', desde, hasta),
         );
       },
+      // Boton suelto, sin formulario: el rechazo va al aviso global, con Reintentar (UX-12).
       error: (error: unknown) => {
         this.exportando.set(false);
-        this.errorExport.set(traducirErrorReporte(error));
+        this.avisos.error('No pudimos descargar el CSV', {
+          descripcion: traducirErrorReporte(error).mensaje,
+          accion: { etiqueta: 'Reintentar', ejecutar: () => this.exportar() },
+        });
       },
     });
   }

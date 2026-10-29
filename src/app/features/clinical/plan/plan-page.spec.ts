@@ -9,6 +9,7 @@ import { errorInterceptor } from '../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
 import { VisitaClinica } from '../services/visita-clinica';
+import { AvisosStore } from '../../../core/services/avisos.store';
 
 const CASO = '/api/v1/casos-clinicos/9';
 const PLANES = `${CASO}/planes`;
@@ -80,7 +81,11 @@ describe('PlanPage', () => {
     await estabilizar(fixture);
     responderCarga(fixture, [BORRADOR]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se creo el plan en borrador.');
+    // UX-12: el panel se cerro, el plan se releyo y el resultado es un aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Plan creado');
+    expect(aviso?.descripcion).toContain('Se creo el plan en borrador.');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('activar manda la versión leida; plan-vivo ofrece ir al que ocupa el lugar', async () => {
@@ -97,7 +102,10 @@ describe('PlanPage', () => {
       { status: 409, statusText: 'C' },
     );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('otro plan vigente');
+    // Otro plan vigente: advertencia arriba de los botones que mandaron la transicion.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos activar el plan');
+    expect(alerta?.textContent).toContain('otro plan vigente');
     expect(botones(fixture)).toContain('Ir al plan que ocupa el lugar');
   });
 
@@ -190,10 +198,6 @@ describe('PlanPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-  }
-
-  function texto(fixture: ComponentFixture<PlanPage>): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
   function botones(fixture: ComponentFixture<PlanPage>): string[] {

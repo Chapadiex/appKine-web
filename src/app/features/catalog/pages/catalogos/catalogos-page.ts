@@ -33,6 +33,8 @@ import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/a
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateCatalogoConceptoRequest } from '../../../../api/generated/model/update-catalogo-concepto-request';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import {
   DatosDeTipo,
   ETIQUETA_PESTANAS_DE_CATALOGO,
@@ -121,6 +123,8 @@ const TOPE_DE_ESPECIALIDADES = 100;
   selector: 'app-catalogos-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     AccionesDeFila,
     Pestanas,
     Ayuda,
@@ -151,6 +155,7 @@ export class CatalogosPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -247,7 +252,6 @@ export class CatalogosPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaCatalogo | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /**
@@ -423,7 +427,6 @@ export class CatalogosPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.enable();
     this.formularioAlta.reset({
       codigo: '',
@@ -444,7 +447,6 @@ export class CatalogosPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -544,17 +546,15 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .createCatalogoConcepto({ tipo: datos.slug, createCatalogoConceptoRequest: cuerpo })
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set(
-            `La ${datos.singular} quedo dada de alta para este centro. Solo la ve tu ` +
-              'organización: los conceptos de la plataforma los mantiene AKINE.',
-          );
+          this.avisos.exito('Concepto agregado al catálogo del centro', {
+            descripcion: `${cuerpo.name} (${datos.singular}). Solo lo ve tu organización.`,
+          });
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
         },
@@ -585,7 +585,6 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .updateCatalogoConcepto({
@@ -594,9 +593,9 @@ export class CatalogosPage {
         updateCatalogoConceptoRequest: cambios,
       })
       .subscribe({
-        next: () => {
+        next: (actualizado) => {
           this.cerrarPanel();
-          this.exito.set('Los datos del concepto quedaron guardados.');
+          this.avisos.exito('Cambios guardados', { descripcion: actualizado.name ?? undefined });
           this.cargar();
         },
         error: (error: unknown) => this.fallarEdicion(error, datos.slug, panel.id),
@@ -620,7 +619,6 @@ export class CatalogosPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .deactivateCatalogoConcepto({
@@ -630,11 +628,13 @@ export class CatalogosPage {
       })
       .subscribe({
         next: () => {
+          const nombre = this.conceptoEnPanel()?.name;
           this.cerrarPanel();
-          this.exito.set(
-            'El concepto quedo dado de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'registro con el conserva su significado. Su código y su nombre quedan libres.',
-          );
+          this.avisos.exito('Concepto dado de baja', {
+            descripcion:
+              `${nombre ? nombre + '. ' : ''}Lo ya registrado con él conserva su significado; ` +
+              'su código y su nombre quedan libres.',
+          });
           this.cargar();
           this.cargarEspecialidadesSiHacenFalta();
         },
@@ -774,7 +774,6 @@ export class CatalogosPage {
   private reiniciar(): void {
     this.epocaDeBusqueda.update((valor) => valor + 1);
     this.cerrarPanel();
-    this.exito.set(null);
     this.busqueda.set('');
     this.filtroEstado.set('ACTIVO');
     this.filtroAlcance.set('TODOS');

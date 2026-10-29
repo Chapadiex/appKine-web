@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -126,7 +127,11 @@ describe('CobrosPage', () => {
       );
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se pudo abrir el comprobante');
+    // Boton de fila, sin formulario: el error va al aviso global, con Reintentar.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos abrir el comprobante');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
     // El listado no se voltea: perder los cobros porque uno no abrio seria peor.
     expect(texto(fixture)).toContain('142');
   });
@@ -172,8 +177,10 @@ describe('CobrosPage', () => {
     // queda marcada como tal en vez de desaparecer.
     responder(httpMock.expectOne(esListado()), [anulado]);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Se anulo el comprobante N.º 142');
-    expect(texto(fixture)).toContain('no se borra nada');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Se anulo el comprobante N.º 142');
+    expect(aviso?.descripcion).toContain('no se borra nada');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     expect(texto(fixture)).toContain('Anulado');
     expect(texto(fixture)).not.toContain('no tiene ningún cobro');
     expect(boton(fixture, 'Anular')?.disabled).toBe(true);

@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -213,9 +214,10 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'cerrar la vigencia no es darlo de baja',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toContain('cerrar la vigencia no es darlo de baja');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el alta manda todos los campos cuando estan completos', async () => {
@@ -255,9 +257,9 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'activo pero todavía sin vigencia',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Plan dado de alta');
+    expect(aviso?.descripcion).toContain('activo pero todavía sin vigencia');
   });
 
   it('el alta sin los obligatorios no manda nada', async () => {
@@ -358,9 +360,9 @@ describe('PlanesDelFinanciadorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'siguen resolviendo con su copia congelada',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('quedó dado de baja');
+    expect(aviso?.descripcion).toContain('siguen resolviendo con su copia congelada');
   });
 
   it('el 409 conflict relee y deja el panel abierto con lo escrito', async () => {

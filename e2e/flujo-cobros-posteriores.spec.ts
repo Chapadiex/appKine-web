@@ -106,7 +106,9 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     await page.getByRole('button', { name: 'Imputar', exact: true }).click();
     expect((await imputacion).status()).toBeLessThan(300);
     await expect(
-      page.getByText(`Se imputo el saldo a favor del comprobante N.º ${cobroA.comprobanteNumero}`),
+      page
+        .getByRole('region', { name: 'Notificaciones', exact: true })
+        .getByText(`Se imputo el saldo a favor del comprobante N.º ${cobroA.comprobanteNumero}`),
     ).toBeVisible();
     await expect(filaA).toContainText('1.500,00');
     const imputada = await deuda(api, centro, pendiente.id);
@@ -123,10 +125,10 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     const anulacion = respuestaDe(page, 'POST', /\/cobros\/\d+\/anulacion$/);
     await page.getByRole('button', { name: 'Anular el cobro' }).click();
     expect((await anulacion).status()).toBeLessThan(300);
+    // El resultado va al aviso global (UX-12), no al cuerpo de la pantalla.
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
     await expect(
-      page
-        .getByRole('status')
-        .filter({ hasText: `Se anulo el comprobante N.º ${cobroA.comprobanteNumero}` }),
+      avisos.getByText(`Se anulo el comprobante N.º ${cobroA.comprobanteNumero}`),
     ).toBeVisible();
     // Desde el contrato 0.90.0 el listado trae tambien los anulados: la fila queda, marcada como
     // anulada, y la pantalla dice por que ya no se puede anular de nuevo.
@@ -164,9 +166,10 @@ test.describe('Imputacion posterior, anulacion y reintegro de cobros contra el b
     const reintegro = respuestaDe(page, 'POST', /\/cobros\/\d+\/reintegros$/);
     await page.getByRole('button', { name: 'Reintegrar', exact: true }).click();
     expect((await reintegro).status()).toBeLessThan(300);
-    await expect(
-      page.getByRole('status').filter({ hasText: /Se devolvieron .*1\.000,00/ }),
-    ).toContainText(/Al cobro le quedan .*2\.000,00 a favor/);
+    const avisoDelReintegro = avisos
+      .locator('.aviso')
+      .filter({ hasText: /Se devolvieron .*1\.000,00/ });
+    await expect(avisoDelReintegro).toContainText(/Al cobro le quedan .*2\.000,00 a favor/);
     await expect(filaDeCobro(page, cobroB)).toContainText('2.000,00');
     // Con plata ya devuelta, anularlo sacaria esa plata dos veces: la pantalla dice por que no.
     await abrirAcciones(filaDeCobro(page, cobroB));

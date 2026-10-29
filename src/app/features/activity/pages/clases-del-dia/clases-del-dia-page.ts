@@ -12,6 +12,7 @@ import {
 import { etiquetaDeEstadoDeClase, horaEnZona } from '../../models/etiquetas-de-asistencia';
 import { AsistenciaApi } from '../../services/asistencia-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
@@ -31,7 +32,7 @@ type Estado =
  */
 @Component({
   selector: 'app-clases-del-dia-page',
-  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, Paginacion, RouterLink],
+  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, Paginacion, RouterLink, Alerta],
   templateUrl: './clases-del-dia-page.html',
   styleUrl: '../../asistencia.css',
 })

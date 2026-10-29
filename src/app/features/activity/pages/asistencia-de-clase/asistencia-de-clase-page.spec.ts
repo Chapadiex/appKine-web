@@ -10,6 +10,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const CLASE = 7;
@@ -413,10 +414,13 @@ describe('AsistenciaDeClasePage', () => {
       .expectOne(`${BASE}/cierre`)
       .flush({ cerroAhora: true, ausentados: [{ id: 1 }, { id: 2 }], esperaCancelada: 1 });
     await responderDetalle(fixture, detalle('REALIZADA'));
-    expect(texto(fixture)).toContain(
+    // UX-12: el resultado va al aviso global; "Cerrar clase" desaparece y el foco va al titulo.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Clase cerrada');
+    expect(aviso?.descripcion).toBe(
       'Se marcaron ausentes 2 sin resolver y se cancelaron 1 de la lista de espera.',
     );
-    expect(document.activeElement?.textContent).toContain('Clase cerrada');
+    expect(document.activeElement?.id).toBe('titulo-clase');
   });
 
   it('sin inscripción:manage no ofrece cerrar la clase: el backend la rechazaria (0.120.0)', async () => {
@@ -440,10 +444,13 @@ describe('AsistenciaDeClasePage', () => {
         { status: 503, statusText: 'Service Unavailable', headers: { 'Retry-After': '7' } },
       );
     await responderDetalle(fixture, detalle('EN_CURSO'));
-    expect(texto(fixture)).toContain(
+    // Error del lote: arriba de la lista que se esta marcando, no en un aviso que se va.
+    const alerta = el(fixture).querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos guardar la asistencia');
+    expect(alerta?.textContent).toContain(
       'Hay muchos registros de asistencia en curso en esta sede. Probá de nuevo en 7 segundos.',
     );
-    expect(texto(fixture)).toContain('No se guardó nada');
+    expect(alerta?.textContent).toContain('No se guardó nada');
     const radioMarcado = el(fixture).querySelector(
       'input[name="asistencia-1"][value="PRESENTE"]',
     ) as HTMLInputElement;
@@ -462,7 +469,11 @@ describe('AsistenciaDeClasePage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await responderDetalle(fixture, detalle('CANCELADA'));
-    expect(texto(fixture)).toContain('La clase esta cancelada');
+    // Boton suelto, sin formulario: aviso global de error con el mensaje del servidor.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos cerrar la clase');
+    expect(aviso?.descripcion).toContain('La clase esta cancelada');
     expect(texto(fixture)).toContain('no tuvo asistentes');
   });
 

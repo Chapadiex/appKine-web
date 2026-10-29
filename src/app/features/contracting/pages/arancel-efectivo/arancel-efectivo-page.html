@@ -38,7 +38,11 @@
           formControlName="financiadorId"
           (change)="elegirFinanciador($any($event.target).value)"
           [attr.aria-invalid]="mostrarError('financiadorId') ? 'true' : null"
-          aria-describedby="consulta-financiador-ayuda"
+          [attr.aria-describedby]="
+            mostrarError('financiadorId')
+              ? 'consulta-financiador-error consulta-financiador-ayuda'
+              : 'consulta-financiador-ayuda'
+          "
         >
           <option value="">Elegí un financiador</option>
           @for (ficha of financiadores(); track ficha.id) {
@@ -46,7 +50,9 @@
           }
         </select>
         @if (mostrarError('financiadorId')) {
-          <p class="campo__error" role="alert">Elegí el financiador del paciente.</p>
+          <p class="campo__error" id="consulta-financiador-error" role="alert">
+            Elegí el financiador del paciente.
+          </p>
         }
         <p class="ayuda ayuda--fija" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
       </div>
@@ -57,7 +63,11 @@
           id="consulta-plan"
           formControlName="planId"
           [attr.aria-invalid]="mostrarError('planId') ? 'true' : null"
-          aria-describedby="consulta-plan-ayuda"
+          [attr.aria-describedby]="
+            mostrarError('planId')
+              ? 'consulta-plan-error consulta-plan-ayuda'
+              : 'consulta-plan-ayuda'
+          "
         >
           <option value="">Elegí un plan</option>
           @for (plan of planes(); track plan.id) {
@@ -65,7 +75,7 @@
           }
         </select>
         @if (mostrarError('planId')) {
-          <p class="campo__error" role="alert">
+          <p class="campo__error" id="consulta-plan-error" role="alert">
             El plan es obligatorio: el convenio se firma contra un plan, no contra el financiador
             entero.
           </p>
@@ -81,6 +91,7 @@
           id="consulta-practica"
           formControlName="practicaId"
           [attr.aria-invalid]="mostrarError('practicaId') ? 'true' : null"
+          [attr.aria-describedby]="mostrarError('practicaId') ? 'consulta-practica-error' : null"
         >
           <option value="">Elegí una práctica</option>
           @for (practica of practicas(); track practica.id) {
@@ -88,7 +99,9 @@
           }
         </select>
         @if (mostrarError('practicaId')) {
-          <p class="campo__error" role="alert">Elegí que práctica se presto.</p>
+          <p class="campo__error" id="consulta-practica-error" role="alert">
+            Elegí que práctica se presto.
+          </p>
         }
       </div>
 
@@ -137,10 +150,14 @@
       Un error DE VERDAD: sin sede, sin permiso, servidor caido. "No hay arancel" no llega nunca
       hasta aca, y ese es todo el punto de la pantalla.
     -->
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      @if (faltaContexto()) {
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-      }
+      <app-alerta tipo="error" titulo="No pudimos consultar el arancel">
+        <p>{{ mensaje }}</p>
+        @if (faltaContexto()) {
+          <p class="alerta__acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          </p>
+        }
+      </app-alerta>
     }
 
     @if (resultado(); as respuesta) {

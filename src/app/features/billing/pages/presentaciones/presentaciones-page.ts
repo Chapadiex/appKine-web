@@ -23,6 +23,8 @@ import {
 } from '../../models/etiquetas-de-presentacion';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -46,12 +48,22 @@ type EstadoListado =
  */
 @Component({
   selector: 'app-presentaciones-page',
-  imports: [CabeceraDePagina, PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    PanelLateral,
+    Ayuda,
+    Filtros,
+    Icono,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './presentaciones-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionesPage {
   private readonly api = inject(PresentacionesApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -161,8 +173,12 @@ export class PresentacionesPage {
   /** El panel de alta (refactor UX/UI del 28/10/2026): se abre desde "Nuevo lote". */
   protected readonly altaAbierta = signal(false);
 
+  /** El "hasta" es anterior al "desde": un dato a corregir del campo, no un rechazo. */
+  protected readonly periodoInvertido = signal(false);
+
   protected abrirAlta(): void {
     this.errorAlta.set(null);
+    this.periodoInvertido.set(false);
     this.altaAbierta.set(true);
   }
 
@@ -180,12 +196,8 @@ export class PresentacionesPage {
     if (this.alta.invalid || consultorioId === null || financiadorId === null) {
       return;
     }
-    if (valor.periodoHasta < valor.periodoDesde) {
-      this.errorAlta.set({
-        mensaje: 'El periodo termina antes de empezar. Revisa las fechas.',
-        causa: 'datos-invalidos',
-        recargar: false,
-      });
+    this.periodoInvertido.set(valor.periodoHasta < valor.periodoDesde);
+    if (this.periodoInvertido()) {
       return;
     }
 
@@ -201,6 +213,8 @@ export class PresentacionesPage {
       .subscribe({
         next: (creada) => {
           this.creando.set(false);
+          // El aviso vive en el shell: sobrevive a la navegacion al detalle del lote.
+          this.avisos.exito('Borrador del lote abierto');
           this.router.navigate(['/presentaciones', creada.id]).catch(() => undefined);
         },
         error: (error: unknown) => {

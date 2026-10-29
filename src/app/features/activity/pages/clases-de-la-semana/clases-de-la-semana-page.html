@@ -82,17 +82,16 @@
   }
 
   @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-error-clases">
-      <h2 id="titulo-error-clases">No se pudieron leer las clases</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      <div class="acciones">
+    <app-alerta tipo="error" titulo="No se pudieron leer las clases">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
         @if (fallo.accion === 'elegir-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
         } @else {
           <button type="button" class="boton" (click)="cargar()">Reintentar</button>
         }
-      </div>
-    </section>
+      </p>
+    </app-alerta>
   }
 </div>
 

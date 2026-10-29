@@ -20,6 +20,7 @@ import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-fi
 import { motivoDeNoAplicable } from '../../models/etiquetas-de-cobertura';
 import { traducirErrorPersona } from '../../models/person-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 type EstadoDeConsulta =
   | { readonly tipo: 'sin-oferta' }
@@ -45,6 +46,7 @@ type EstadoDeConsulta =
  */
 @Component({
   selector: 'app-cobertura-aplicable',
+  imports: [Alerta],
   templateUrl: './cobertura-aplicable.html',
   styleUrl: '../../person.css',
 })

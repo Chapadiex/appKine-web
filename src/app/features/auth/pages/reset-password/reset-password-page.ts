@@ -13,6 +13,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RecuperacionService } from '../../../../api/generated/api/recuperacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** Verifica que las dos contrasenas coincidan. Errores de tipeo, no de politica. */
 function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
@@ -33,7 +34,7 @@ function contrasenasIguales(grupo: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-reset-password-page',
-  imports: [MedidorDeContrasena, ReactiveFormsModule, RouterLink],
+  imports: [Alerta, MedidorDeContrasena, ReactiveFormsModule, RouterLink],
   templateUrl: './reset-password-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

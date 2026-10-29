@@ -12,6 +12,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -233,8 +234,10 @@ describe('CicloDeTurnoPage', () => {
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     await asentar(fixture);
 
-    // Y el texto tiene que decir lo que la ausencia NO hace, que es lo que la separa de cancelar.
-    expect(textoDe(fixture)).toContain('El lugar NO se libero');
+    // Y el aviso tiene que decir lo que la ausencia NO hace, que es lo que la separa de cancelar.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Ausencia registrada');
+    expect(aviso?.descripcion).toContain('El lugar NO se libero');
   });
 
   it('cancelar manda motivo y versión, y la versión se refresca con la respuesta', async () => {
@@ -256,8 +259,12 @@ describe('CicloDeTurnoPage', () => {
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     await asentar(fixture);
 
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Turno cancelado');
+    expect(aviso?.descripcion).toContain('El lugar se libero');
+    // El panel se cerro al guardar: no queda abierto solo para el mensaje.
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     const texto = textoDe(fixture);
-    expect(texto).toContain('El lugar se libero');
     // Ciclo cerrado: no se ofrece ninguna transicion mas sobre un turno cancelado.
     expect(texto).toContain('ya cerró su ciclo');
     expect(boton(fixture, 'Cancelar el turno')).toBeNull();
@@ -285,8 +292,10 @@ describe('CicloDeTurnoPage', () => {
     httpMock.expectOne(HISTORIAL).flush(EVENTOS);
     await asentar(fixture);
 
-    // Es el MISMO turno: el mensaje lo dice, porque cancelar-y-crear seria otra cosa.
-    expect(textoDe(fixture)).toContain('Es el mismo turno');
+    // Es el MISMO turno: el aviso lo dice, porque cancelar-y-crear seria otra cosa.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Turno reprogramado');
+    expect(aviso?.descripcion).toContain('Es el mismo turno');
   });
 
   it('sin horario elegido no manda nada y lo dice, en vez de fallar en el servidor', async () => {
@@ -315,9 +324,13 @@ describe('CicloDeTurnoPage', () => {
     );
     await asentar(fixture);
 
-    const texto = textoDe(fixture);
-    expect(texto).toContain('atención clínica registrada');
-    expect(texto).not.toContain('No pudimos completar la operación');
+    // El rechazo queda arriba del panel abierto (UX-12), con su salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      'app-panel-lateral app-alerta',
+    );
+    expect(alerta?.textContent).toContain('No pudimos cancelar el turno');
+    expect(alerta?.textContent).toContain('atención clínica registrada');
+    expect(alerta?.textContent).not.toContain('No pudimos completar la operación');
     // La unica salida real: reintentar devuelve el mismo 409 para siempre.
     const enlace = enlaceCon(fixture, 'Ver la atención clínica');
     expect(enlace?.getAttribute('href')).toBe(`/atencion/turnos/${TURNO}`);
@@ -340,7 +353,10 @@ describe('CicloDeTurnoPage', () => {
     );
     await asentar(fixture);
 
-    expect(textoDe(fixture)).toContain('ya empezo y no se puede mover');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral app-alerta')
+        ?.textContent,
+    ).toContain('ya empezo y no se puede mover');
 
     clickear(fixture, 'Releer el turno');
     responderLectura(false);
@@ -355,6 +371,21 @@ describe('CicloDeTurnoPage', () => {
    * relectura: si otra persona movia el turno, "Releer el turno" traia la version nueva pero la
    * pantalla seguia mostrando el estado viejo y mandando la version vieja. El 409 no tenia salida.
    */
+  it('el rechazo de "Confirmar", que no tiene formulario, es un aviso global con Reintentar', async () => {
+    const fixture = await montar();
+
+    clickear(fixture, 'Confirmar el turno');
+    httpMock.expectOne(CONFIRMACION).error(new ProgressEvent('error'));
+    await asentar(fixture);
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos confirmar el turno');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
+    TestBed.inject(AvisosStore).ejecutar(aviso?.id ?? 0);
+    httpMock.expectOne(CONFIRMACION);
+  });
+
   it('releer después de un 409 reemplaza lo que dejo la última transicion', async () => {
     const fixture = await montar();
 

@@ -8,23 +8,19 @@
     esto consume: las unidades se descuentan solo al cerrar una sesión.
   </p>
 
-  <div aria-live="polite">
-    @if (exito(); as mensaje) {
-      <p class="estado estado--ok">{{ mensaje }}</p>
-    }
-  </div>
-
   @switch (estado().tipo) {
     @case ('cargando') {
       <p class="estado estado--cargando">Cargando el saldo y los consumos&hellip;</p>
     }
     @case ('error') {
-      <p class="estado estado--error" role="alert">{{ mensajeDeCarga() }}</p>
-      <p class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="reintentar()">
-          Reintentar
-        </button>
-      </p>
+      <app-alerta tipo="error" titulo="No pudimos leer el saldo y los consumos">
+        <p>{{ mensajeDeCarga() }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="reintentar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
     }
     @case ('listo') {
       @if (lectura(); as datos) {
@@ -143,6 +139,12 @@
         }
 
         @if (aRevertir(); as movimientoId) {
+          <!-- Error de la reversion: arriba de la confirmacion, donde el operador decide (UX-12). -->
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos revertir el consumo">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
           <akine-confirmacion-con-motivo
             [idCampo]="'revertir-consumo-' + movimientoId"
             [titulo]="'Revertir el consumo #' + movimientoId"
@@ -153,9 +155,6 @@
             (confirmado)="confirmarReversion($event)"
             (cancelado)="cancelarReversion()"
           />
-        }
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
         }
       }
     }

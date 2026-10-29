@@ -31,12 +31,6 @@
 </app-cabecera-de-pagina>
 
 <div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
-<div aria-live="polite">
   @switch (estado().tipo) {
     @case ('cargando') {
       <p class="estado estado--cargando">Cargando las vigencias&hellip;</p>
@@ -52,13 +46,16 @@
     }
 
     @case ('error') {
-      <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-      @if (faltaContexto()) {
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-      } @else {
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-      }
+      <app-alerta tipo="error" titulo="No pudimos leer las vigencias">
+        <p>{{ mensajeError() }}</p>
+        <p class="alerta__acciones">
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          } @else {
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          }
+        </p>
+      </app-alerta>
     }
 
     @case ('listo') {
@@ -257,6 +254,13 @@
     (cerrar)="cerrarPaneles()"
   >
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general: arriba del formulario (UX-12). El código repetido va junto al campo. -->
+      @if (errorAccion() && !errorEnElCodigo()) {
+        <app-alerta tipo="error" titulo="No pudimos cargar la vigencia">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-vigencia-codigo">Código</label>
         <input
@@ -265,10 +269,9 @@
           formControlName="codigo"
           autocomplete="off"
           [attr.aria-invalid]="mostrarErrorAlta('codigo') || errorEnElCodigo() ? 'true' : null"
+          [attr.aria-describedby]="errorEnElCodigo() ? 'alta-vigencia-codigo-conflicto' : null"
         />
-        @if (errorEnElCodigo()) {
-          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-        } @else if (mostrarErrorAlta('codigo')) {
+        @if (mostrarErrorAlta('codigo')) {
           <p class="campo__error">El código es obligatorio.</p>
         } @else {
           <p class="ayuda">
@@ -278,6 +281,22 @@
           </p>
         }
       </div>
+
+      <!-- Código en uso o vigencias que se pisan: pegado al código que lo produjo (UX-12). -->
+      @if (errorEnElCodigo()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          [titulo]="
+            causaAccion() === 'vigencias-solapadas'
+              ? 'Se superpone con otra vigencia del mismo código'
+              : 'Ese código ya está en uso'
+          "
+          id="alta-vigencia-codigo-conflicto"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="alta-vigencia-practica">Práctica que codifica</label>
@@ -359,18 +378,30 @@
 
       <div class="campo">
         <label for="alta-vigencia-desde">Vigente desde (opcional)</label>
-        <input id="alta-vigencia-desde" type="datetime-local" formControlName="validFrom" />
+        <input
+          id="alta-vigencia-desde"
+          type="datetime-local"
+          formControlName="validFrom"
+          [attr.aria-invalid]="causaAccion() === 'vigencias-solapadas' ? 'true' : null"
+          [attr.aria-describedby]="
+            causaAccion() === 'vigencias-solapadas' ? 'alta-vigencia-codigo-conflicto' : null
+          "
+        />
         <p class="ayuda">Sin fecha, rige desde ya.</p>
       </div>
 
       <div class="campo">
         <label for="alta-vigencia-hasta">Vigente hasta (opcional)</label>
-        <input id="alta-vigencia-hasta" type="datetime-local" formControlName="validUntil" />
+        <input
+          id="alta-vigencia-hasta"
+          type="datetime-local"
+          formControlName="validUntil"
+          [attr.aria-invalid]="causaAccion() === 'vigencias-solapadas' ? 'true' : null"
+          [attr.aria-describedby]="
+            causaAccion() === 'vigencias-solapadas' ? 'alta-vigencia-codigo-conflicto' : null
+          "
+        />
       </div>
-
-      @if (errorAccion() && !errorEnElCodigo()) {
-        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-      }
 
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -395,6 +426,18 @@
     [subtitulo]="vigencia.name ?? null"
     (cerrar)="cerrarPaneles()"
   >
+    @if (errorAccion()) {
+      <app-alerta tipo="error" titulo="No pudimos dar de baja la vigencia">
+        <p>{{ errorAccion() }}</p>
+        @if (hayQueRecargar()) {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar el listado
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
     <app-confirmacion-con-motivo
       idCampo="baja-vigencia-motivo"
       [titulo]="'Dar de baja la vigencia ' + vigencia.codigo"
@@ -411,14 +454,5 @@
         conserva su código y su valor. Solo deja de ofrecerse de ahora en más.
       </p>
     </app-confirmacion-con-motivo>
-
-    @if (errorAccion()) {
-      <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-    }
-    @if (hayQueRecargar()) {
-      <button type="button" class="boton boton--secundario" (click)="cargar()">
-        Recargar el listado
-      </button>
-    }
   </app-panel-lateral>
 }

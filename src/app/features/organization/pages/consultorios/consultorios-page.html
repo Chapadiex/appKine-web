@@ -31,12 +31,6 @@
   </section>
 }
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-sedes">
   <h2 id="titulo-sedes">Sedes de la organización</h2>
 
@@ -95,13 +89,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer las sedes">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -265,6 +262,12 @@
       </div>
 
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos guardar los cambios de la sede">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <div
           id="editar-general"
           class="panel-lateral__seccion"
@@ -403,12 +406,6 @@
           </div>
         </div>
 
-        <div aria-live="polite" class="panel-lateral__error">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
-
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">Guardar los cambios</button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
@@ -422,6 +419,12 @@
       [titulo]="'Dar de baja ' + (sede.name ?? 'la sede')"
       (cerrar)="cerrarPanel()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la sede">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <akine-confirmacion-con-motivo
         idCampo="baja-reason"
         etiqueta="Motivo de la baja"
@@ -446,24 +449,6 @@
           </p>
         }
       </akine-confirmacion-con-motivo>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-      </div>
     </app-panel-lateral>
-  }
-}
-
-<!--
-  Error de una accion que ya no tiene panel donde mostrarse. Pasa con la baja de la sede del
-  contexto: el exito cierra el panel y despues, si la navegacion al selector falla, el aviso se
-  escribe con la pantalla entera en su estado normal. Sin esto el unico rastro quedaba en la
-  consola y el usuario se quedaba con un contexto inservible sin enterarse.
--->
-@if (errorAccion(); as mensaje) {
-  @if (panel() === null) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
   }
 }

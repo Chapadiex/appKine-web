@@ -24,8 +24,20 @@
     <p class="estado estado--cargando">Leyendo las mediciones…</p>
   }
 
+  <!-- UX-12: el rechazo de registrar va arriba de su formulario; el resto, aca. -->
   @if (error(); as problema) {
-    <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+    @if (origenDelError() !== 'registrar') {
+      <app-alerta
+        tipo="error"
+        [titulo]="
+          origenDelError() === 'quitar'
+            ? 'No pudimos quitar la medición'
+            : 'No pudimos leer las mediciones'
+        "
+      >
+        <p>{{ problema.mensaje }}</p>
+      </app-alerta>
+    }
   }
 
   @if (comparacion() !== null) {
@@ -107,6 +119,14 @@
     <fieldset class="grupo">
       <legend>Registrar una medición</legend>
 
+      @if (error(); as problema) {
+        @if (origenDelError() === 'registrar') {
+          <app-alerta tipo="error" titulo="No pudimos registrar la medición">
+            <p>{{ problema.mensaje }}</p>
+          </app-alerta>
+        }
+      }
+
       @if (catalogoSinPermiso()) {
         <p class="estado estado--error" role="status">
           No tenés permiso para consultar el catálogo de medidas, así que no podés registrar una
@@ -165,7 +185,10 @@
                   name="medicion-valor"
                   type="text"
                   inputmode="decimal"
-                  aria-describedby="ayuda-medicion-valor"
+                  [attr.aria-describedby]="
+                    aviso() ? 'medicion-falta ayuda-medicion-valor' : 'ayuda-medicion-valor'
+                  "
+                  [attr.aria-invalid]="aviso() ? 'true' : null"
                   [value]="valorNumero()"
                   (input)="valorNumero.set($any($event.target).value)"
                 />
@@ -202,6 +225,8 @@
                   name="medicion-valor"
                   type="text"
                   maxlength="500"
+                  [attr.aria-describedby]="aviso() ? 'medicion-falta' : null"
+                  [attr.aria-invalid]="aviso() ? 'true' : null"
                   [value]="valorTexto()"
                   (input)="valorTexto.set($any($event.target).value)"
                 />
@@ -228,6 +253,9 @@
           </div>
         }
 
+        @if (aviso()) {
+          <p class="campo__error" id="medicion-falta">{{ aviso() }}</p>
+        }
         <div class="acciones">
           <button type="button" class="boton" [disabled]="guardando()" (click)="registrar()">
             Registrar la medición
@@ -236,6 +264,4 @@
       }
     </fieldset>
   }
-
-  <p class="ayuda ayuda--fija" role="status">{{ aviso() }}</p>
 </section>

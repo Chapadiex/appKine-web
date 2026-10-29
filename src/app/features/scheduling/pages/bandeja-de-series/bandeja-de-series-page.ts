@@ -29,6 +29,7 @@ import { SchedulingApi } from '../../services/scheduling-api';
 import { SeriesApi } from '../../services/series-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /** La ruta que monta esta pantalla. Los filtros se reescriben sobre ella sin navegar. */
 const RUTA = '/agenda/series';
@@ -93,6 +94,7 @@ interface PersonaFiltrada {
     RouterLink,
     Paginacion,
     Pestanas,
+    Alerta,
   ],
   templateUrl: './bandeja-de-series-page.html',
   styleUrl: '../../agenda.css',

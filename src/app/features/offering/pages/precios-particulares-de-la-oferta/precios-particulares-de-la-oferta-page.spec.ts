@@ -9,6 +9,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS, rutaOfertas } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 
@@ -112,6 +113,15 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('cerrale la vigencia al actual el día anterior');
+    // UX-12: el choque va pegado a las fechas que lo producen, no como error general.
+    const host = fixture.nativeElement as HTMLElement;
+    const alerta = host.querySelector('#alta-precio-solapado');
+    expect(alerta?.getAttribute('role')).toBe('alert');
+    expect(alerta?.textContent).toContain('cerrale la vigencia al actual el día anterior');
+    expect(host.querySelector('#alta-precio-desde')?.getAttribute('aria-describedby')).toBe(
+      'alta-precio-solapado',
+    );
+    expect(host.querySelector('#alta-precio-hasta')?.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('sin precio de lista la moneda es obligatoria y viaja la que se escribe', async () => {
@@ -141,7 +151,11 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     alta.flush({ id: 900, importe: 9000, moneda: 'USD', vigenciaDesde: '2026-11-01' });
     responderCarga({ id: OFERTA, nombreComercial: 'Drenaje', estado: 'ACTIVO' });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('El precio quedo cargado');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Precio cargado']);
   });
 
   it('el alta con el importe vacío no manda nada', async () => {
@@ -182,7 +196,11 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     reapertura.flush(VIGENTE);
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('sin fin previsto');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Precio vigente hasta el 31 de octubre de 2026', 'Precio sin fin previsto']);
   });
 
   it('la baja manda el motivo', async () => {
@@ -200,7 +218,9 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     baja.flush(null, { status: 204, statusText: 'No Content' });
     responderCarga(PILATES);
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('vuelve a regir el precio de lista');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Precio dado de baja');
+    expect(aviso?.descripcion).toContain('vuelve a regir el precio de lista');
   });
 
   it(

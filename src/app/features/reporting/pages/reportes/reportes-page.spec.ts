@@ -8,6 +8,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const BASE = `/api/v1/consultorios/${CONSULTORIO}/reportes`;
@@ -303,7 +304,15 @@ describe('ReportesPage', () => {
     );
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('El periodo pedido son 400 días y el máximo es 366');
+    // El rango es un dato a corregir: va junto a las fechas, que apuntan al mensaje (UX-12).
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#error-rango.campo__error')?.textContent).toContain(
+      'El periodo pedido son 400 días y el máximo es 366',
+    );
+    expect(raiz.querySelector('#reporte-desde')?.getAttribute('aria-describedby')).toContain(
+      'error-rango',
+    );
+    expect(raiz.querySelector('app-alerta')).toBeNull();
   });
 
   it('descarga el CSV pidiendolo como text/csv y con el periodo del reporte', async () => {
@@ -351,6 +360,23 @@ describe('ReportesPage', () => {
       'reporte-operativo-2026-09-01_2026-09-30.csv',
     );
     click.mockRestore();
+  });
+
+  it('una descarga rechazada va al aviso global con Reintentar', async () => {
+    const fixture = await generado();
+
+    boton(fixture, 'Descargar CSV').click();
+    httpMock
+      .expectOne(`${BASE}/OPERATIVO/export?desde=2026-09-01&hasta=2026-09-30`)
+      .flush('', { status: 500, statusText: 'Server Error' });
+    await estabilizar(fixture);
+
+    // Boton suelto, sin formulario: aviso global de error, no un texto dentro del reporte.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos descargar el CSV');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
+    expect(boton(fixture, 'Descargar CSV').disabled).toBe(false);
   });
 
   it('sin sede en el contexto no pide nada y manda al selector', async () => {

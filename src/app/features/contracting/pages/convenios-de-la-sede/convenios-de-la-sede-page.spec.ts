@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -194,9 +195,10 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Todavía no resuelve ningún precio',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Convenio firmado');
+    expect(aviso?.descripcion).toContain('Todavía no resuelve ningún precio');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el 409 de solapamiento manda a cerrar la vigencia y NO ofrece recargar', async () => {
@@ -228,8 +230,11 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('cerra la vigencia del que ya esta');
+    // Advertencia arriba del formulario: es un choque con un convenio que ya existe.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form app-alerta');
+    expect(alerta?.className).toContain('alerta--advertencia');
+    expect(alerta?.textContent).toContain('Se superpone con otro convenio de esta sede');
+    expect(alerta?.textContent).toContain('cerra la vigencia del que ya esta');
     // Recargar no arregla un solapamiento: el periodo que choca sigue estando ahi. Ofrecer el
     // boton mandaria al usuario a apretar algo que no cambia nada.
     expect(
@@ -258,9 +263,9 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'cerrar la vigencia no es darlo de baja',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toContain('cerrar la vigencia no es darlo de baja');
   });
 
   it('el alta manda los opcionales que estan cargados', async () => {
@@ -386,9 +391,10 @@ describe('ConveniosDeLaSedePage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El código y el período quedan libres',
-    );
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('quedó dado de baja');
+    expect(aviso?.descripcion).toContain('Sus aranceles dejan de resolver');
+    expect(aviso?.descripcion).toContain('El código y el período quedan libres');
   });
 
   it('el 409 conflict relee y deja el panel abierto', async () => {
@@ -461,7 +467,7 @@ describe('ConveniosDeLaSedePage', () => {
       // Ni la ayuda, ni el embudo, ni el orden de columna son acciones sobre convenios.
       [
         ...anfitrion.querySelectorAll(
-          'button:not(.ayuda-contextual__boton):not(.filtros-barra__boton):not(.tabla__orden):not(.filtros-rapidos__opcion)',
+          'button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar):not(.filtros-barra__boton):not(.tabla__orden):not(.filtros-rapidos__opcion)',
         ),
       ].map((boton) => (boton.textContent ?? '').trim()),
     ).toEqual([]);

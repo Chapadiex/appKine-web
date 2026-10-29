@@ -105,7 +105,7 @@ describe('EgresosPage', () => {
   it('sin totales del mes el listado sigue y lo dice', async () => {
     const fixture = await montar([EGRESO], null);
 
-    expect(contenido(fixture)).toContain('No se pudieron leer los totales del mes.');
+    expect(contenido(fixture)).toContain('No pudimos leer los totales del mes');
     expect(contenido(fixture)).toContain('Lic. Sintetica');
   });
 

@@ -9,6 +9,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -102,7 +103,11 @@ describe('SerieDeTurnosAltaPage', () => {
     });
     await asentar(fixture);
 
+    // El detalle queda como contenido; el resultado, ademas, es un aviso global (UX-12).
     expect(texto(fixture)).toContain('Serie reservada');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Serie reservada');
+    expect(aviso?.descripcion).toContain('1 turnos reservados');
     const enlace = (fixture.nativeElement as HTMLElement).querySelector(
       'a[href="/agenda/series/7"]',
     );

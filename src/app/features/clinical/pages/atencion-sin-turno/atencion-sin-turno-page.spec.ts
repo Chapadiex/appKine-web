@@ -82,7 +82,10 @@ describe('AtencionSinTurnoPage', () => {
     await elegirPaciente(fixture, []);
     elegir(fixture, '#sin-turno-oferta', '4');
     apretar(fixture, 'Iniciar atención');
-    expect(texto(fixture)).toContain('es obligatorio');
+    // Validacion en el campo (UX-12): debajo del motivo, que queda marcado.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#sin-turno-motivo-error')?.textContent).toContain('es obligatorio');
+    expect(raiz.querySelector('#sin-turno-motivo')?.getAttribute('aria-invalid')).toBe('true');
     httpMock.expectNone((p) => p.method === 'POST');
   });
 
@@ -138,6 +141,10 @@ describe('AtencionSinTurnoPage', () => {
       { status: 409, statusText: 'Conflict' },
     );
     await estabilizar(fixture);
+    // El rechazo del servidor, arriba del formulario de la atencion.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-alerta')?.textContent,
+    ).toContain('No pudimos iniciar la atención');
     expect(texto(fixture)).toContain('no esta habilitado para prestar esta oferta');
 
     escribir(fixture, '#sin-turno-motivo', 'Urgencia, otra');

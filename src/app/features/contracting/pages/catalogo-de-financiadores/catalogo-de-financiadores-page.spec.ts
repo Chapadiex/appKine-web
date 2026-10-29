@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -113,7 +114,11 @@ describe('CatalogoDeFinanciadoresPage', () => {
     await asentar(fixture);
 
     expect(textoDe(fixture)).not.toContain('Agregar al centro');
-    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+    // Boton de fila, sin formulario: el error va al aviso global, con el mensaje del backend.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toContain('No pudimos agregar');
+    expect(aviso?.descripcion).toBeTruthy();
   });
 
   it('buscar manda q y tipo', async () => {

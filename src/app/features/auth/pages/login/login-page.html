@@ -11,13 +11,17 @@
       @case ('ok') {
         <p class="acceso-aviso acceso-aviso--ok">Sesión iniciada. Te estamos llevando adentro.</p>
       }
-      @case ('error') {
-        <p class="acceso-aviso acceso-aviso--error" role="alert">{{ mensajeError() }}</p>
-      }
     }
   </div>
 
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <!-- Error del ingreso: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+    @if (estado().tipo === 'error') {
+      <app-alerta tipo="error" titulo="No pudimos iniciar sesión">
+        <p>{{ mensajeError() }}</p>
+      </app-alerta>
+    }
+
     <div class="campo">
       <label for="login-email">Correo electrónico</label>
       <input

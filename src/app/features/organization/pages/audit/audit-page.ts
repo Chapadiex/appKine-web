@@ -20,6 +20,7 @@ import { ListAuditEventsRequestParams } from '../../../../api/generated/api/audi
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
@@ -74,7 +75,15 @@ const POR_PAGINA = 20;
  */
 @Component({
   selector: 'app-audit-page',
-  imports: [CabeceraDePagina, Ayuda, ColumnaOrdenable, ReactiveFormsModule, RouterLink, Paginacion],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ColumnaOrdenable,
+    ReactiveFormsModule,
+    RouterLink,
+    Paginacion,
+    Alerta,
+  ],
   templateUrl: './audit-page.html',
   styleUrl: '../../organization.css',
 })
@@ -206,7 +215,7 @@ export class AuditPage {
     this.consultar();
   }
 
-  private consultar(): void {
+  protected consultar(): void {
     const orgId = this.tenantContext.organizationId();
     if (orgId === null) {
       this.estado.set({ tipo: 'sin-contexto' });

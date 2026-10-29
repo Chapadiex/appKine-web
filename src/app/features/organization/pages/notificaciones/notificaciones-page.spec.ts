@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { NotificacionesPage } from './notificaciones-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { NotificationPageResponse } from '../../../../api/generated/model/notification-page-response';
 import { EstadoNotificacion, TipoNotificacion } from '../../models/notificaciones';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -147,8 +148,9 @@ describe('NotificacionesPage', () => {
     esperarListado().flush({ ...PAGINA, content: [], totalElements: 0 });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('La notificación 42');
-    expect(texto(fixture)).toContain('volvio a la cola de envio');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Notificación en la cola de envío');
+    expect(aviso?.descripcion).toContain('La notificación 42');
   });
 
   it('el 409 nombra el estado actual en español y relee', async () => {
@@ -166,7 +168,9 @@ describe('NotificacionesPage', () => {
     esperarListado().flush(PAGINA);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('ya no admite reintento: ahora esta Enviada');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('ya no admite reintento: ahora esta Enviada');
   });
 
   it(

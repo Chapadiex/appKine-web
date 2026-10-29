@@ -24,12 +24,6 @@
   </div>
 </app-cabecera-de-ficha>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <!-- Con que se atiende hoy y que aplica a una oferta: las preguntas operativas, antes que el
   historial (refactor UX/UI del 28/10/2026). -->
 <div class="coberturas-resumen">
@@ -151,16 +145,16 @@
   @if (cargando()) {
     <p class="estado">Cargando las coberturas...</p>
   } @else if (mensajeError(); as mensaje) {
-    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-    @if (faltaContexto()) {
-      <p class="acciones">
-        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+    <app-alerta tipo="error" titulo="No pudimos leer las coberturas">
+      <p>{{ mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (faltaContexto()) {
+          <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
       </p>
-    } @else {
-      <p class="acciones">
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-      </p>
-    }
+    </app-alerta>
   } @else if (coberturas().length === 0) {
     <p class="estado">
       Este paciente no tiene ninguna cobertura cargada. No es un error: sin cobertura financiada se
@@ -268,23 +262,10 @@
         (cambioDePagina)="tabla.irA($event)"
       />
     </div>
-
     <!--
-      El error de las acciones de fila -marcar principal, sobre todo- se muestra al pie de la tabla y
-      no dentro de una fila: la fila involucrada es OTRA, y esa ya queda resaltada.
+      El error de las acciones de fila -marcar principal, sobre todo- va al aviso global (UX-12): no
+      hay formulario. La fila involucrada es OTRA, y esa queda resaltada en la tabla.
     -->
-    @if (errorAccion(); as mensaje) {
-      @if (panel() === null && !altaAbierta()) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        @if (hayQueRecargar()) {
-          <p class="acciones">
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Recargar las coberturas
-            </button>
-          </p>
-        }
-      }
-    }
   }
 </section>
 
@@ -295,6 +276,20 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva cobertura" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
+      @if (errorAccion() && !esConflictoDeCampo()) {
+        <app-alerta tipo="error" titulo="No pudimos agregar la cobertura">
+          <p>{{ errorAccion() }}</p>
+          @if (faltaPerfil()) {
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
+                >Ir a la ficha para activar el perfil</a
+              >
+            </p>
+          }
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="alta-cobertura-tipo">Tipo</label>
         <select id="alta-cobertura-tipo" formControlName="tipo">
@@ -309,16 +304,40 @@
           id="alta-cobertura-desde"
           type="date"
           formControlName="vigenciaDesde"
-          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
-          aria-describedby="alta-cobertura-desde-ayuda"
+          [attr.aria-invalid]="
+            mostrarErrorAlta('vigenciaDesde') || causaAccion() === 'plan-no-seleccionable'
+              ? 'true'
+              : null
+          "
+          [attr.aria-describedby]="
+            'alta-cobertura-desde-ayuda' +
+            (mostrarErrorAlta('vigenciaDesde') ? ' alta-cobertura-desde-error' : '') +
+            (causaAccion() === 'plan-no-seleccionable'
+              ? ' alta-cobertura-plan-no-seleccionable'
+              : '')
+          "
         />
         <p class="ayuda" id="alta-cobertura-desde-ayuda">
           El plan se congela contra <b>esta</b> fecha y no contra hoy.
         </p>
         @if (mostrarErrorAlta('vigenciaDesde')) {
-          <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="alta-cobertura-desde-error">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
+
+      <!-- El plan no se podia elegir en esa fecha: pegado a la fecha que lo produjo. -->
+      @if (causaAccion() === 'plan-no-seleccionable') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ese plan no se puede elegir desde esa fecha"
+          id="alta-cobertura-plan-no-seleccionable"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
 
       @if (esFinanciada()) {
         <div class="campo">
@@ -343,7 +362,16 @@
 
         <div class="campo">
           <label for="alta-cobertura-plan">Plan</label>
-          <select id="alta-cobertura-plan" formControlName="planId">
+          <select
+            id="alta-cobertura-plan"
+            formControlName="planId"
+            [attr.aria-invalid]="mostrarFaltaPlan() ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarFaltaPlan()
+                ? 'alta-cobertura-plan-ayuda alta-cobertura-plan-error'
+                : 'alta-cobertura-plan-ayuda'
+            "
+          >
             <option value="">Elegí un plan</option>
             @for (plan of planes(); track plan.id) {
               <option [value]="plan.id">
@@ -354,10 +382,15 @@
               </option>
             }
           </select>
-          <p class="ayuda">
+          <p class="ayuda" id="alta-cobertura-plan-ayuda">
             Se listan los planes vigentes en la fecha de inicio. Si no aparece el que buscás, revisá
             esa fecha.
           </p>
+          @if (mostrarFaltaPlan()) {
+            <p class="campo__error" id="alta-cobertura-plan-error">
+              Elegí el plan de la cobertura financiada.
+            </p>
+          }
         </div>
 
         <div class="campo">
@@ -391,16 +424,52 @@
           id="alta-cobertura-hasta"
           type="date"
           formControlName="vigenciaHasta"
-          aria-describedby="alta-cobertura-hasta-ayuda"
+          [attr.aria-invalid]="causaAccion() === 'cobertura-superpuesta' ? 'true' : null"
+          [attr.aria-describedby]="
+            causaAccion() === 'cobertura-superpuesta'
+              ? 'alta-cobertura-hasta-ayuda alta-cobertura-superpuesta'
+              : 'alta-cobertura-hasta-ayuda'
+          "
         />
         <p class="ayuda" id="alta-cobertura-hasta-ayuda">
           Sin fecha de fin, la cobertura queda abierta: es el caso normal.
         </p>
       </div>
 
+      <!-- Ya hay una del mismo plan en ese periodo: pegado a la vigencia que lo produjo. -->
+      @if (causaAccion() === 'cobertura-superpuesta') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ya hay una cobertura de ese plan en ese periodo"
+          id="alta-cobertura-superpuesta"
+        >
+          <p>{{ errorAccion() }}</p>
+          @if (senalada() !== null) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                Ver la cobertura
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="alta-cobertura-principal">
-          <input id="alta-cobertura-principal" type="checkbox" formControlName="principal" />
+          <input
+            id="alta-cobertura-principal"
+            type="checkbox"
+            formControlName="principal"
+            [attr.aria-invalid]="
+              causaAccion() === 'cobertura-principal-superpuesta' ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              causaAccion() === 'cobertura-principal-superpuesta'
+                ? 'alta-cobertura-principal-superpuesta'
+                : null
+            "
+          />
           Marcarla como cobertura principal
         </label>
         <p class="ayuda">
@@ -408,6 +477,25 @@
           finalizar o desmarcar la anterior.
         </p>
       </div>
+
+      <!-- Ya hay otra principal vigente: pegado a la marca que lo produjo. -->
+      @if (causaAccion() === 'cobertura-principal-superpuesta') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ya hay otra cobertura principal en ese periodo"
+          id="alta-cobertura-principal-superpuesta"
+        >
+          <p>{{ errorAccion() }}</p>
+          @if (senalada() !== null) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                Ver la cobertura
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
 
       <details class="seccion-plegable">
         <summary>Observaciones <span class="seccion-plegable__resumen">Opcional</span></summary>
@@ -420,19 +508,6 @@
           ></textarea>
         </div>
       </details>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          @if (faltaPerfil()) {
-            <p class="acciones">
-              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
-                >Ir a la ficha para activar el perfil</a
-              >
-            </p>
-          }
-        }
-      </div>
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -458,6 +533,19 @@
       </p>
 
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        @if (errorAccion() && !esConflictoDeCampo()) {
+          <app-alerta tipo="error" titulo="No pudimos guardar la cobertura">
+            <p>{{ errorAccion() }}</p>
+            @if (hayQueRecargar()) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar las coberturas
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <div class="campo">
           <label for="editar-afiliado-{{ cobertura.id }}">Número de afiliado</label>
           <input
@@ -487,9 +575,34 @@
             id="editar-hasta-{{ cobertura.id }}"
             type="date"
             formControlName="vigenciaHasta"
-            aria-describedby="editar-hasta-ayuda-{{ cobertura.id }}"
+            [attr.aria-invalid]="causaAccion() === 'cobertura-superpuesta' ? 'true' : null"
+            [attr.aria-describedby]="
+              'editar-hasta-ayuda-' +
+              cobertura.id +
+              (causaAccion() === 'cobertura-superpuesta'
+                ? ' editar-superpuesta-' + cobertura.id
+                : '')
+            "
           />
         </div>
+
+        @if (causaAccion() === 'cobertura-superpuesta') {
+          <app-alerta
+            class="campo--ancho"
+            tipo="advertencia"
+            titulo="Ya hay una cobertura de ese plan en ese periodo"
+            id="editar-superpuesta-{{ cobertura.id }}"
+          >
+            <p>{{ errorAccion() }}</p>
+            @if (senalada() !== null) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                  Ver la cobertura
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
 
         <!-- Consecuencia de un campo: a la vista, no a demanda. -->
         <p class="ayuda ayuda--fija" id="editar-hasta-ayuda-{{ cobertura.id }}">
@@ -507,19 +620,6 @@
           ></textarea>
         </div>
 
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            @if (hayQueRecargar()) {
-              <p class="acciones">
-                <button type="button" class="boton boton--secundario" (click)="cargar()">
-                  Recargar las coberturas
-                </button>
-              </p>
-            }
-          }
-        </div>
-
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
             {{ enviando() ? 'Guardando...' : 'Guardar' }}
@@ -535,6 +635,18 @@
       [titulo]="'Dar de baja ' + coberturaEnUnaLinea(cobertura)"
       (cerrar)="cerrarPaneles()"
     >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la cobertura">
+          <p>{{ mensaje }}</p>
+          @if (hayQueRecargar()) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Recargar las coberturas
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
       <akine-confirmacion-con-motivo
         idCampo="baja-cobertura-{{ cobertura.id }}"
         titulo="Dar de baja {{ coberturaEnUnaLinea(cobertura) }}"
@@ -546,12 +658,6 @@
         (confirmado)="confirmarBaja($event)"
         (cancelado)="cerrarPaneles()"
       />
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-      </div>
     </app-panel-lateral>
   }
 }

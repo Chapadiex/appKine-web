@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { CatalogoFinanciadoresPage } from './catalogo-financiadores-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
@@ -106,7 +107,10 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([OSDE]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('quedo en el catalogo');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Financiador agregado al catálogo');
+    expect(aviso?.descripcion).toBe('IOSFA. Los centros ya lo pueden agregar.');
+    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('edita sin el código y con la versión leida', async () => {
@@ -146,7 +150,33 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([OSDE]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('Otro cambio llego a esta entrada');
+    // El panel se cerro para releer: el motivo va al aviso global.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.descripcion).toContain('Otro cambio llego a esta entrada');
+  });
+
+  it('un nombre en uso queda pegado al campo, con el panel abierto', async () => {
+    const fixture = await montar();
+    boton(fixture, 'Editar OSDE')?.click();
+    fixture.detectChanges();
+    enviarFormulario(fixture);
+    httpMock
+      .expectOne((p) => p.method === 'PUT')
+      .flush(
+        { type: 'https://akine.app/problems/financiador-nombre-taken', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await asentar(fixture);
+
+    const alerta = fixture.nativeElement.querySelector(
+      '#catalogo-financiador-en-uso',
+    ) as HTMLElement;
+    expect(alerta.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta.textContent).toContain('Ese nombre ya lo usa otra entrada vigente');
+    const nombre = campo(fixture, '#catalogo-financiador-nombre');
+    expect(nombre.getAttribute('aria-invalid')).toBe('true');
+    expect(nombre.getAttribute('aria-describedby')).toBe('catalogo-financiador-en-uso');
   });
 
   it('la baja exige motivo', async () => {
@@ -164,7 +194,11 @@ describe('CatalogoFinanciadoresPage', () => {
     await asentar(fixture);
     httpMock.expectOne((p) => p.method === 'GET' && p.url === CATALOGO).flush([]);
     await asentar(fixture);
-    expect(texto(fixture)).toContain('se dio de baja del catalogo');
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Financiador dado de baja del catálogo']);
   });
 
   it('planes: alta, edicion y baja', async () => {

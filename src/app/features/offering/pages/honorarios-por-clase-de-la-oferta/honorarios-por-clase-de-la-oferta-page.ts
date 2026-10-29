@@ -23,6 +23,8 @@ import { OfertaResponse } from '../../../../api/generated/model/oferta-response'
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { OfferingApi } from '../../services/offering-api';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import { enPalabras } from '../../models/situacion-de-vigencia';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
@@ -65,6 +67,8 @@ interface SituacionDeLaTarifa {
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Migas,
     Pestanas,
     ColumnaOrdenable,
@@ -82,6 +86,7 @@ interface SituacionDeLaTarifa {
 })
 export class HonorariosPorClaseDeLaOfertaPage {
   private readonly api = inject(OfferingApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly contexto = inject(TenantContextStore);
   private readonly ruta = inject(ActivatedRoute);
@@ -147,10 +152,12 @@ export class HonorariosPorClaseDeLaOfertaPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaOffering | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+
+  /** Vigencia que choca con otra tarifa (UX-12): va pegada a las fechas, no arriba. */
+  protected readonly solapado = computed(() => this.causaAccion() === 'honorario-solapado');
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     importe: ['', [Validators.required]],
@@ -171,7 +178,6 @@ export class HonorariosPorClaseDeLaOfertaPage {
       this.contexto.contextEpoch();
       untracked(() => {
         this.cerrarPanel();
-        this.exito.set(null);
         this.oferta.set(null);
         this.cargar();
       });
@@ -236,7 +242,6 @@ export class HonorariosPorClaseDeLaOfertaPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       importe: '',
       moneda: this.oferta()?.moneda || MONEDA_POR_DEFECTO,
@@ -252,7 +257,6 @@ export class HonorariosPorClaseDeLaOfertaPage {
       return;
     }
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id: tarifa.id, tipo });
     if (tipo === 'fin') {
       this.original.set(tarifa);
@@ -316,10 +320,9 @@ export class HonorariosPorClaseDeLaOfertaPage {
     this.api.crearHonorarioPorClase(consultorioId, this.ofertaId, cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'La tarifa quedo cargada. Se aplica a las clases de los días que cubre; lo ya ' +
-            'liquidado no cambia.',
-        );
+        this.avisos.exito('Tarifa cargada', {
+          descripcion: 'Se aplica a las clases de los días que cubre; lo ya liquidado no cambia.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -354,10 +357,11 @@ export class HonorariosPorClaseDeLaOfertaPage {
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set(
+          this.avisos.exito(
             hasta === ''
-              ? 'La tarifa quedo sin fin previsto.'
-              : `La tarifa rige hasta el ${enPalabras(hasta)} inclusive.`,
+              ? 'Tarifa sin fin previsto'
+              : `Tarifa vigente hasta el ${enPalabras(hasta)}`,
+            { descripcion: hasta === '' ? undefined : 'Ese día inclusive.' },
           );
           this.cargar();
         },
@@ -381,10 +385,11 @@ export class HonorariosPorClaseDeLaOfertaPage {
     this.api.darDeBajaHonorarioPorClase(consultorioId, this.ofertaId, panel.id, motivo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'La tarifa quedo dada de baja y su periodo quedo libre. Las clases de esos días no ' +
-            'entran en ninguna liquidación hasta que cargues otra.',
-        );
+        this.avisos.exito('Tarifa dada de baja', {
+          descripcion:
+            'Su período quedó libre: las clases de esos días no entran en ninguna liquidación ' +
+            'hasta que cargues otra.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallar(error),
@@ -416,7 +421,6 @@ export class HonorariosPorClaseDeLaOfertaPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   private enfocar(selector: string): void {

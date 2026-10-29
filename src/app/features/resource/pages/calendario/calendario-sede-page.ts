@@ -21,6 +21,8 @@ import {
 } from '../../models/parametros-de-horarios';
 import { TEXTO_MODO_LECTURA, modoLectura, puedeGestionar } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { etiquetaDeTipoDeFeriado } from '../../models/tipos-de-feriado';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
@@ -83,6 +85,8 @@ const DIAS_PROPUESTOS = 365;
   selector: 'app-calendario-sede-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     Paginacion,
     ColumnaOrdenable,
     Ayuda,
@@ -96,6 +100,7 @@ const DIAS_PROPUESTOS = 365;
 })
 export class CalendarioSedePage {
   private readonly calendario = inject(CalendarioDeSedeService);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly destroyRef = inject(DestroyRef);
   private readonly tenantContext = inject(TenantContextStore);
@@ -162,7 +167,6 @@ export class CalendarioSedePage {
   protected readonly errorVentana = signal<string | null>(null);
   protected readonly guardando = signal(false);
   protected readonly errorPolitica = signal<string | null>(null);
-  protected readonly exito = signal<string | null>(null);
 
   protected readonly formularioVentana = this.formBuilder.nonNullable.group({
     desde: ['', [Validators.required]],
@@ -194,7 +198,6 @@ export class CalendarioSedePage {
   protected readonly intentosHorario = signal(0);
   protected readonly errorHorario = signal<string | null>(null);
   protected readonly erroresFranja = signal<ReadonlyMap<number, string>>(new Map());
-  protected readonly exitoHorario = signal<string | null>(null);
 
   /**
    * Turnos pendientes que el ultimo guardado del horario dejo fuera (A-8b, DP-19), o `null`
@@ -264,7 +267,6 @@ export class CalendarioSedePage {
         this.parametros = SIN_PARAMETROS;
 
         this.politica.set(null);
-        this.exito.set(null);
         this.errorPolitica.set(null);
         // El horario de la sede anterior no puede quedar en el editor bajo la sede nueva.
         reemplazarFranjas(this.formularioHorario, []);
@@ -384,7 +386,6 @@ export class CalendarioSedePage {
 
     this.guardando.set(true);
     this.errorPolitica.set(null);
-    this.exito.set(null);
 
     this.calendario
       .updateCalendarioSede({ consultorioId, updateCalendarioRequest: { cierraPorFeriado } })
@@ -394,11 +395,15 @@ export class CalendarioSedePage {
           // Se conserva la lista que ya estaba: la del PUT viene vacia y vacia significa "no se
           // pregunto", nunca "no hay feriados".
           this.politica.set({ ...respuesta, feriados: this.politica()?.feriados ?? [] });
-          this.exito.set(
-            cierraPorFeriado
-              ? 'Listo: la sede vuelve a cerrar los feriados de su calendario.'
-              : 'Listo: la sede pasa a atender los feriados. El horario habitual se aplica también esos días, salvo que cargues un cierre explicito.',
-          );
+          if (cierraPorFeriado) {
+            this.avisos.exito('La sede cierra los feriados');
+          } else {
+            this.avisos.exito('La sede atiende los feriados', {
+              descripcion:
+                'El horario habitual se aplica también esos días, salvo que cargues un cierre ' +
+                'explícito.',
+            });
+          }
         },
         error: (error: unknown) => {
           this.guardando.set(false);
@@ -461,11 +466,15 @@ export class CalendarioSedePage {
           // El backend devuelve el horario ordenado por dia y hora: el editor queda como quedo
           // guardado, no como se tipeo.
           this.cargarHorario(respuesta.horarioGeneral);
-          this.exitoHorario.set(
-            horarioGeneral.length === 0
-              ? 'Listo: la sede ya no tiene horario general declarado.'
-              : 'Listo: el horario general quedo guardado. Desde ahora la agenda no ofrece turnos fuera de el.',
-          );
+          if (horarioGeneral.length === 0) {
+            this.avisos.exito('Horario general borrado', {
+              descripcion: 'La sede ya no tiene horario general declarado.',
+            });
+          } else {
+            this.avisos.exito('Horario general guardado', {
+              descripcion: 'Desde ahora la agenda no ofrece turnos fuera de él.',
+            });
+          }
           const impacto = respuesta.impactoDelHorario ?? null;
           this.impactoHorario.set((impacto?.turnosAfectados ?? 0) > 0 ? impacto : null);
         },
@@ -486,7 +495,6 @@ export class CalendarioSedePage {
   private limpiarAvisosDeHorario(): void {
     this.errorHorario.set(null);
     this.erroresFranja.set(new Map());
-    this.exitoHorario.set(null);
     this.impactoHorario.set(null);
   }
 }

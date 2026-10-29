@@ -170,7 +170,7 @@ describe('VersionesPage', () => {
     httpMock.match((p) => p.url === VERSIONES);
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('No se pudieron leer las versiones');
+    expect(texto(fixture)).toContain('No pudimos leer las versiones');
   });
 
   it(

@@ -95,6 +95,13 @@
       </h2>
 
       @if (paso() === 1) {
+        <!-- Error de la vista previa: arriba del paso, a la vista mientras se corrige. -->
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos revisar la planilla">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <div class="importacion">
           <div class="importacion__carga">
             <div class="campo">
@@ -104,7 +111,12 @@
                 type="file"
                 accept=".csv,.txt,text/csv,text/plain"
                 (change)="elegirArchivo($event.target)"
-                aria-describedby="importacion-archivo-ayuda"
+                [attr.aria-invalid]="errorDeArchivo() ? 'true' : null"
+                [attr.aria-describedby]="
+                  errorDeArchivo()
+                    ? 'importacion-archivo-error importacion-archivo-ayuda'
+                    : 'importacion-archivo-ayuda'
+                "
               />
               <p class="ayuda ayuda--fija" id="importacion-archivo-ayuda">
                 Desde Excel: "Guardar como" CSV. Se lee en tu navegador y queda en el cuadro de
@@ -115,7 +127,9 @@
                 }
               </p>
               @if (errorDeArchivo(); as mensaje) {
-                <p class="campo__error" role="alert">{{ mensaje }}</p>
+                <p class="campo__error" id="importacion-archivo-error" role="alert">
+                  {{ mensaje }}
+                </p>
               }
             </div>
 
@@ -127,7 +141,11 @@
                 spellcheck="false"
                 [value]="texto()"
                 (input)="cambiarTexto($any($event.target).value)"
-                aria-describedby="planilla-columnas importacion-texto-estado"
+                [attr.aria-describedby]="
+                  erroresDeFormato().length > 0
+                    ? 'importacion-texto-errores planilla-columnas importacion-texto-estado'
+                    : 'planilla-columnas importacion-texto-estado'
+                "
                 [attr.aria-invalid]="erroresDeFormato().length > 0 ? 'true' : null"
               ></textarea>
               <p class="ayuda ayuda--fija" id="importacion-texto-estado" aria-live="polite">
@@ -146,6 +164,22 @@
                   La planilla tiene {{ erroresDeFormato().length }} problemas de formato.
                 }
               </p>
+              <!-- Los problemas de formato son datos a corregir del cuadro: van debajo de él. -->
+              @if (erroresDeFormato().length > 0) {
+                <div class="campo__error" id="importacion-texto-errores" role="alert">
+                  <p>Corregí la planilla antes de pedir la vista previa:</p>
+                  <ul class="errores-de-planilla">
+                    @for (error of erroresDeFormato(); track $index) {
+                      <li>
+                        @if (error.linea !== null) {
+                          <b>Linea {{ error.linea }}:</b>
+                        }
+                        {{ error.mensaje }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
             </div>
           </div>
 
@@ -165,26 +199,6 @@
           </aside>
         </div>
 
-        @if (erroresDeFormato().length > 0) {
-          <div class="estado estado--error" role="alert">
-            <p>Corregí la planilla antes de pedir la vista previa:</p>
-            <ul class="errores-de-planilla">
-              @for (error of erroresDeFormato(); track $index) {
-                <li>
-                  @if (error.linea !== null) {
-                    <b>Linea {{ error.linea }}:</b>
-                  }
-                  {{ error.mensaje }}
-                </li>
-              }
-            </ul>
-          </div>
-        }
-
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        }
-
         <p class="acciones asistente__acciones" *akinePermiso="permisoManage">
           <button
             type="button"
@@ -201,18 +215,23 @@
         @if (paso() === 2) {
           <div aria-live="polite">
             @if (resultado.tipo === 'rechazo') {
-              <p class="estado estado--error" role="alert">
-                No se cargo ningún arancel: {{ filasRechazadas() }} de
-                {{ resultado.filas.length }} filas no entran, y la importación es todo o nada. Algo
-                pudo haber cambiado desde la vista previa; corregi las filas marcadas y volvé a
-                pedirla.
-              </p>
+              <app-alerta tipo="error" titulo="No pudimos importar los aranceles">
+                <p>
+                  No se cargo ningún arancel: {{ filasRechazadas() }} de
+                  {{ resultado.filas.length }} filas no entran, y la importación es todo o nada.
+                  Algo pudo haber cambiado desde la vista previa; corregi las filas marcadas y volvé
+                  a pedirla.
+                </p>
+              </app-alerta>
             } @else if (filasRechazadas() > 0) {
-              <p class="estado estado--error">
-                {{ filasRechazadas() }} de {{ resultado.filas.length }} filas no entrarian. Como la
-                importación es todo o nada, corregilas en la planilla y volvé a pedir la vista
-                previa.
-              </p>
+              <!-- Filas que chocan con lo que ya esta cargado: advertencia, con la salida. -->
+              <app-alerta tipo="advertencia" titulo="Hay filas que no entran">
+                <p>
+                  {{ filasRechazadas() }} de {{ resultado.filas.length }} filas no entrarian. Como
+                  la importación es todo o nada, corregilas en la planilla y volvé a pedir la vista
+                  previa.
+                </p>
+              </app-alerta>
             } @else {
               <p class="estado estado--ok">
                 Las {{ resultado.filas.length }} filas entran como aranceles nuevos. Todavía no se
@@ -292,15 +311,17 @@
         }
 
         @if (paso() === 3) {
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos importar los aranceles">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <p>
             Se van a cargar <b>{{ resultado.filas.length }} aranceles</b> como aranceles nuevos del
             convenio. La importación es <b>todo o nada</b>: si una sola fila dejó de entrar desde la
             vista previa, no se escribe ninguna.
           </p>
-
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
 
           <p class="acciones asistente__acciones">
             <ng-container *akinePermiso="permisoManage">

@@ -19,6 +19,9 @@ import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-c
 import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalogo-concepto-response';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { tipoDeAlertaContracting } from '../feedback-de-contracting';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { ConvenioResponse } from '../../../../api/generated/model/convenio-response';
 import { ConveniosApi } from '../../services/convenios-api';
@@ -109,6 +112,7 @@ type TipoAccion = 'editar' | 'baja';
   imports: [
     CabeceraDePagina,
     Migas,
+    Alerta,
     ColumnaOrdenable,
     Paginacion,
     Icono,
@@ -127,6 +131,7 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ArancelesDelConvenioPage {
   private readonly api = inject(ConveniosApi);
+  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogoClinico = inject(CatalogoClinicoService);
   private readonly ruta = inject(ActivatedRoute);
@@ -228,11 +233,14 @@ export class ArancelesDelConvenioPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
-  protected readonly exito = signal<string | null>(null);
+  /** La terna de importes que no cuadra (o un importe vaciado): va debajo de los tres campos. */
+  protected readonly errorImportes = signal<string | null>(null);
   private importacionAnunciada = false;
   protected readonly intentos = signal(0);
 
   protected readonly hayQueRecargar = computed(() => hayQueRecargar(this.causaAccion()));
+  /** Un choque con algo existente (periodo solapado, version vieja) es advertencia; lo demas, error. */
+  protected readonly tipoDeAlerta = computed(() => tipoDeAlertaContracting(this.causaAccion()));
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     practicaId: ['', [Validators.required]],
@@ -391,7 +399,6 @@ export class ArancelesDelConvenioPage {
 
   protected abrirAlta(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.formularioAlta.reset({
       practicaId: '',
       importeTotal: '',
@@ -415,7 +422,6 @@ export class ArancelesDelConvenioPage {
     }
 
     this.cerrarPanel();
-    this.exito.set(null);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -460,6 +466,7 @@ export class ArancelesDelConvenioPage {
     this.enviando.set(false);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
+    this.errorImportes.set(null);
     this.intentos.set(0);
   }
 
@@ -499,8 +506,9 @@ export class ArancelesDelConvenioPage {
     const financiador = Number(valores.importeFinanciador);
     const coseguro = Number(valores.coseguro);
 
+    this.errorImportes.set(null);
     if (!importesCuadran(total, financiador, coseguro)) {
-      this.errorAccion.set(mensajeDeTerna(total, financiador, coseguro));
+      this.errorImportes.set(mensajeDeTerna(total, financiador, coseguro));
       this.enfocar('#alta-arancel-financiador');
       return;
     }
@@ -524,10 +532,9 @@ export class ArancelesDelConvenioPage {
     this.api.crearArancel(consultorioId, this.convenioId, cuerpo).subscribe({
       next: () => {
         this.cerrarPanel();
-        this.exito.set(
-          'El arancel quedó cargado. La moneda es la del convenio: el arancel no la declara, la ' +
-            'hereda.',
-        );
+        this.avisos.exito('Arancel cargado', {
+          descripcion: 'La moneda es la del convenio: el arancel no la declara, la hereda.',
+        });
         this.cargar();
       },
       error: (error: unknown) =>
@@ -554,11 +561,11 @@ export class ArancelesDelConvenioPage {
     this.api.editarArancel(consultorioId, this.convenioId, panel.id, cambios).subscribe({
       next: () => {
         this.cerrarEditando();
-        this.exito.set(
-          'El arancel quedó guardado. Recorda que esto NO es la forma de subir un precio: para eso ' +
-            'se le cierra la vigencia a este y se carga otro, así lo ya liquidado se sigue ' +
-            'explicando con el precio que regía entonces.',
-        );
+        this.avisos.exito('Arancel guardado', {
+          descripcion:
+            'Esto NO es la forma de subir un precio: para eso se le cierra la vigencia y se ' +
+            'carga otro, así lo ya liquidado se sigue explicando con el precio de entonces.',
+        });
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -579,11 +586,11 @@ export class ArancelesDelConvenioPage {
       .subscribe({
         next: () => {
           this.cerrarPanel();
-          this.exito.set(
-            'El arancel quedó dado de baja y su período quedó libre: se puede volver a cargar un ' +
-              'arancel de esa práctica para las mismas fechas. Lo ya liquidado con este arancel ' +
-              'guarda su propio snapshot congelado y no se toca.',
-          );
+          this.avisos.exito('Arancel dado de baja', {
+            descripcion:
+              'Su período quedó libre: se puede volver a cargar un arancel de esa práctica para ' +
+              'las mismas fechas. Lo ya liquidado guarda su copia congelada.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -609,6 +616,7 @@ export class ArancelesDelConvenioPage {
       return null;
     }
 
+    this.errorImportes.set(null);
     const valores = this.formularioEdicion.getRawValue();
     const cambios: UpdateArancelRequest = { expectedVersion: version };
 
@@ -626,7 +634,7 @@ export class ArancelesDelConvenioPage {
       // cero pesos CON cartel de exito. Es el unico de los cuatro campos numericos del repo que
       // no terminaba en un 400.
       if (total === null || financiador === null || coseguro === null) {
-        this.errorAccion.set(MENSAJE_IMPORTE_VACIO);
+        this.errorImportes.set(MENSAJE_IMPORTE_VACIO);
         this.enfocar(
           total === null
             ? '#editar-arancel-total'
@@ -637,7 +645,7 @@ export class ArancelesDelConvenioPage {
         return null;
       }
       if (!importesCuadran(total, financiador, coseguro)) {
-        this.errorAccion.set(mensajeDeTerna(total, financiador, coseguro));
+        this.errorImportes.set(mensajeDeTerna(total, financiador, coseguro));
         this.enfocar('#editar-arancel-financiador');
         return null;
       }
@@ -701,7 +709,6 @@ export class ArancelesDelConvenioPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
   }
 
   /** Fecha inicial sugerida para el alta: el inicio del convenio si todavia no arranco. */
@@ -802,16 +809,14 @@ export class ArancelesDelConvenioPage {
     this.importacionAnunciada = true;
     const importados = Number(this.ruta.snapshot.queryParamMap?.get('importados') ?? '');
     if (Number.isInteger(importados) && importados > 0) {
-      this.exito.set(
-        `Se importaron ${importados} aranceles. La grilla ya los muestra; la moneda es la del ` +
-          'convenio.',
-      );
+      this.avisos.exito(`Se importaron ${importados} aranceles`, {
+        descripcion: 'La grilla ya los muestra; la moneda es la del convenio.',
+      });
     }
   }
 
   private reiniciar(): void {
     this.cerrarPanel();
-    this.exito.set(null);
     this.filtroEstado.set('ACTIVO');
     this.fecha.set(this.diaDeLaSede.hoy());
     this.convenio.set(null);

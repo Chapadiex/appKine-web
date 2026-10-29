@@ -103,25 +103,18 @@
         <p class="campo__error" role="alert">{{ mensaje }}</p>
       }
       @if (errorProfesionales(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-        <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
-          Reintentar los profesionales
-        </button>
+        <app-alerta tipo="error" titulo="No pudimos leer los profesionales de la sede">
+          <p>{{ mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
+              Reintentar los profesionales
+            </button>
+          </p>
+        </app-alerta>
       }
     </div>
   </form>
 </section>
-
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-  @if (avisoTurnos(); as aviso) {
-    <div class="aviso-apertura">
-      <p><b>Turnos para revisar.</b> {{ aviso }}</p>
-    </div>
-  }
-</div>
 
 <div
   class="excepciones-columnas"
@@ -148,12 +141,16 @@
         }
 
         @case ('error') {
-          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-          @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-          } @else {
-            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
-          }
+          <app-alerta tipo="error" titulo="No pudimos leer los cierres y aperturas">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              @if (faltaContexto()) {
+                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              } @else {
+                <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+              }
+            </p>
+          </app-alerta>
         }
 
         @case ('listo') {
@@ -311,6 +308,13 @@
             </app-ayuda>
           </div>
 
+          <!-- Error general del alta: arriba del formulario, nunca al pie (UX-12). -->
+          @if (errorAccion(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos cargar la excepción">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <div class="campo">
             <label for="alta-excepcion-tipo">Que se carga</label>
             <select id="alta-excepcion-tipo" formControlName="tipo">
@@ -355,14 +359,21 @@
                 <p class="ayuda ayuda--fija">{{ textoListaIncompleta }}</p>
               }
             } @else {
-              <p class="estado estado--error" role="alert">
-                No pudimos leer los profesionales de la sede, así que no sabemos a quien podés
-                alcanzar. La unica opción que quedaria es <b>toda la sede</b>, que alcanza a todos:
-                no la ofrecemos a ciegas.
-              </p>
-              <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
-                Reintentar los profesionales
-              </button>
+              <app-alerta tipo="error" titulo="No pudimos leer los profesionales de la sede">
+                <p>
+                  Así que no sabemos a quien podés alcanzar. La unica opción que quedaria es
+                  <b>toda la sede</b>, que alcanza a todos: no la ofrecemos a ciegas.
+                </p>
+                <p class="alerta__acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="cargarProfesionales()"
+                  >
+                    Reintentar los profesionales
+                  </button>
+                </p>
+              </app-alerta>
             }
           </div>
 
@@ -576,12 +587,6 @@
               </div>
             }
           }
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
-          </div>
         </div>
 
         <div class="panel-formulario__pie">
@@ -619,6 +624,18 @@
     "
     (cerrar)="cerrarBaja()"
   >
+    @if (errorAccion(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos dar de baja la excepción">
+        <p>{{ mensaje }}</p>
+        @if (hayQueRecargar()) {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="consultar()">
+              Recargar el periodo
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
     <akine-confirmacion-con-motivo
       idCampo="baja-excepcion-reason"
       etiqueta="Motivo de la baja"
@@ -644,16 +661,5 @@
         [nombreDe]="excepcion.membershipId ? null : nombreDeProfesional"
       />
     </akine-confirmacion-con-motivo>
-
-    <div aria-live="polite">
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-      @if (hayQueRecargar()) {
-        <button type="button" class="boton boton--secundario" (click)="consultar()">
-          Recargar el periodo
-        </button>
-      }
-    </div>
   </app-panel-lateral>
 }

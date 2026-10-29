@@ -15,6 +15,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const PERSONA = 7;
 const FICHA = `/api/v1/personas/${PERSONA}`;
@@ -224,7 +225,12 @@ describe('CoberturasDelPacientePage', () => {
     apretar(fixture, 'Agregar cobertura');
 
     httpMock.expectNone(esAlta());
-    expect(texto(fixture)).toContain('Elegí el plan');
+    // Es un dato a corregir: va debajo del campo, y el campo apunta al mensaje.
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#alta-cobertura-plan-error.campo__error')?.textContent).toContain(
+      'Elegí el plan',
+    );
+    expect(raiz.querySelector('#alta-cobertura-plan')?.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('sin fecha de inicio no manda el alta: es contra esa fecha que se congela el plan', async () => {
@@ -253,7 +259,10 @@ describe('CoberturasDelPacientePage', () => {
     rechazar(httpMock.expectOne(esAlta()), 'persona-sin-perfil-paciente');
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Activale el perfil de paciente');
+    // Error general del alta: arriba del formulario, dentro de la alerta, con la salida.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('form > app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos agregar la cobertura');
+    expect(alerta?.textContent).toContain('Activale el perfil de paciente');
     expect(enlaces(fixture)).toContain('Ir a la ficha para activar el perfil');
   });
 
@@ -270,7 +279,14 @@ describe('CoberturasDelPacientePage', () => {
     rechazar(httpMock.expectOne(esAlta()), 'plan-no-seleccionable');
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('Revisa la fecha');
+    // Choca con el catalogo en esa fecha: advertencia pegada a la fecha que lo produjo.
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alerta = raiz.querySelector('#alta-cobertura-plan-no-seleccionable');
+    expect(alerta?.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta?.textContent).toContain('Revisa la fecha');
+    expect(raiz.querySelector('#alta-cobertura-desde')?.getAttribute('aria-describedby')).toContain(
+      'alta-cobertura-plan-no-seleccionable',
+    );
   });
 
   // -------------------------------------------------------------------------------------
@@ -307,6 +323,10 @@ describe('CoberturasDelPacientePage', () => {
     pedido.flush({ ...OSDE, vigenciaHasta: '2026-06-30', version: 1 });
     responderListado(httpMock.expectOne(esListado()), [{ ...OSDE, vigenciaHasta: '2026-06-30' }]);
     await estabilizar(fixture);
+
+    // UX-12: el panel se cierra y el resultado va al aviso global.
+    expect(raiz.querySelector('app-panel-lateral')).toBeNull();
+    expect(titulosDeAvisos()).toEqual(['Cambios guardados']);
   });
 
   it('la baja exige motivo y aclara que finalizar es otra cosa', async () => {
@@ -332,7 +352,10 @@ describe('CoberturasDelPacientePage', () => {
     responderListado(httpMock.expectOne(esListado()), []);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No se borro');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cobertura dada de baja');
+    expect(aviso?.descripcion).toContain('No se borro');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('una cobertura dada de baja no ofrece ninguna acción', async () => {
@@ -364,6 +387,8 @@ describe('CoberturasDelPacientePage', () => {
     pedido.flush({ ...OSDE, principal: true });
     responderListado(httpMock.expectOne(esListado()), [OSDE]);
     await estabilizar(fixture);
+
+    expect(titulosDeAvisos()).toEqual(['Cobertura marcada como principal']);
   });
 
   it('el 409 de principal superpuesta resalta la fila que estorba, no muestra un id', async () => {
@@ -376,7 +401,11 @@ describe('CoberturasDelPacientePage', () => {
     });
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('No la desmarcamos solas');
+    // Accion de fila, sin formulario: el error va al aviso global con el mensaje del backend.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos cambiar la cobertura principal');
+    expect(aviso?.descripcion).toContain('No la desmarcamos solas');
     // La fila que impide el cambio queda senalada: un id en un cartel no le sirve a nadie que este
     // mirando una tabla.
     expect(texto(fixture)).toContain('Es la que impide el cambio');
@@ -396,7 +425,9 @@ describe('CoberturasDelPacientePage', () => {
     responderListado(httpMock.expectOne(esListado()), [{ ...OSDE, principal: false }]);
     await estabilizar(fixture);
 
-    expect(texto(fixture)).toContain('puede no tener ninguna preferida');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Marca de principal quitada');
+    expect(aviso?.descripcion).toContain('puede no tener ninguna preferida');
   });
 
   // -------------------------------------------------------------------------------------
@@ -570,6 +601,12 @@ describe('CoberturasDelPacientePage', () => {
     return Array.from(
       fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
     ).map((enlace) => (enlace.textContent ?? '').trim());
+  }
+
+  function titulosDeAvisos(): readonly string[] {
+    return TestBed.inject(AvisosStore)
+      .avisos()
+      .map((aviso) => aviso.titulo);
   }
 
   function texto(fixture: ComponentFixture<CoberturasDelPacientePage>): string {

@@ -21,25 +21,19 @@
   </app-ayuda>
 </app-cabecera-de-ficha>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 @if (cargando()) {
   <p class="estado">Cargando los documentos del paciente...</p>
 } @else if (errorDeCarga(); as mensaje) {
-  <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-  @if (faltaContexto()) {
-    <p class="acciones">
-      <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+  <app-alerta tipo="error" titulo="No pudimos leer las órdenes y autorizaciones">
+    <p>{{ mensaje }}</p>
+    <p class="alerta__acciones">
+      @if (faltaContexto()) {
+        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+      } @else {
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
     </p>
-  } @else {
-    <p class="acciones">
-      <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-    </p>
-  }
+  </app-alerta>
 } @else {
   @if (sinCoberturas()) {
     <p class="estado">
@@ -67,6 +61,12 @@
     </div>
 
     <form [formGroup]="formularioElegibilidad" (ngSubmit)="consultarElegibilidad()" novalidate>
+      @if (errorDeElegibilidad(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos consultar qué le falta">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
       <div class="filtros">
         <div class="campo">
           <label for="elegibilidad-cobertura">Cobertura</label>
@@ -74,6 +74,9 @@
             id="elegibilidad-cobertura"
             formControlName="coberturaId"
             [attr.aria-invalid]="mostrarErrorDeElegibilidad('coberturaId') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorDeElegibilidad('coberturaId') ? 'elegibilidad-cobertura-error' : null
+            "
           >
             <option value="">Elegí una cobertura</option>
             @for (cobertura of coberturas(); track cobertura.id) {
@@ -81,7 +84,7 @@
             }
           </select>
           @if (mostrarErrorDeElegibilidad('coberturaId')) {
-            <p class="estado estado--error">Elegí la cobertura.</p>
+            <p class="campo__error" id="elegibilidad-cobertura-error">Elegí la cobertura.</p>
           }
         </div>
 
@@ -91,6 +94,9 @@
             id="elegibilidad-practica"
             formControlName="practicaId"
             [attr.aria-invalid]="mostrarErrorDeElegibilidad('practicaId') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorDeElegibilidad('practicaId') ? 'elegibilidad-practica-error' : null
+            "
           >
             <option value="">Elegí una práctica</option>
             @for (practica of practicas(); track practica.id) {
@@ -104,7 +110,7 @@
             </p>
           }
           @if (mostrarErrorDeElegibilidad('practicaId')) {
-            <p class="estado estado--error">Elegí la práctica.</p>
+            <p class="campo__error" id="elegibilidad-practica-error">Elegí la práctica.</p>
           }
         </div>
 
@@ -457,18 +463,6 @@
       </div>
     }
   </section>
-
-  <!-- Error de una accion sin panel abierto: la fila involucrada puede ser otra, y ya esta marcada. -->
-  @if (errorAccion(); as mensaje) {
-    @if (panel() === null && !altaDeOrden() && !altaDeAutorizacion()) {
-      <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      @if (hayQueRecargar()) {
-        <p class="acciones">
-          <button type="button" class="boton boton--secundario" (click)="cargar()">Recargar</button>
-        </p>
-      }
-    }
-  }
 }
 
 <!--
@@ -480,6 +474,19 @@
 @if (altaDeOrden()) {
   <app-panel-lateral titulo="Registrar una orden" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioOrden" (ngSubmit)="enviarOrden()" novalidate>
+      @if (mensajeGeneral(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos registrar la orden">
+          <p>{{ mensaje }}</p>
+          @if (faltaPerfil()) {
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
+                >Ir a la ficha para activar el perfil</a
+              >
+            </p>
+          }
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="orden-emisor">Profesional que la firmo</label>
         <input
@@ -487,9 +494,12 @@
           type="text"
           formControlName="profesionalEmisor"
           [attr.aria-invalid]="mostrarErrorDeOrden('profesionalEmisor') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorDeOrden('profesionalEmisor') ? 'orden-emisor-error' : null
+          "
         />
         @if (mostrarErrorDeOrden('profesionalEmisor')) {
-          <p class="estado estado--error">Escribi quien firmo la orden.</p>
+          <p class="campo__error" id="orden-emisor-error">Escribi quien firmo la orden.</p>
         }
       </div>
 
@@ -510,8 +520,26 @@
 
       <div class="campo">
         <label for="orden-numero">Número</label>
-        <input id="orden-numero" type="text" formControlName="numero" />
+        <input
+          id="orden-numero"
+          type="text"
+          formControlName="numero"
+          [attr.aria-invalid]="causaAccion() === 'numero-en-uso' ? 'true' : null"
+          [attr.aria-describedby]="causaAccion() === 'numero-en-uso' ? 'orden-numero-en-uso' : null"
+        />
       </div>
+
+      <!-- Numero repetido: pegado al numero que lo produjo (UX-12). -->
+      @if (causaAccion() === 'numero-en-uso') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ese número ya está en uso"
+          id="orden-numero-en-uso"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="orden-emision">Fecha de emision</label>
@@ -520,9 +548,12 @@
           type="date"
           formControlName="fechaEmision"
           [attr.aria-invalid]="mostrarErrorDeOrden('fechaEmision') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorDeOrden('fechaEmision') ? 'orden-emision-error' : null
+          "
         />
         @if (mostrarErrorDeOrden('fechaEmision')) {
-          <p class="estado estado--error">La fecha de emision es obligatoria.</p>
+          <p class="campo__error" id="orden-emision-error">La fecha de emision es obligatoria.</p>
         }
       </div>
 
@@ -589,19 +620,6 @@
         </div>
       </details>
 
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          @if (faltaPerfil()) {
-            <p class="acciones">
-              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
-                >Ir a la ficha para activar el perfil</a
-              >
-            </p>
-          }
-        }
-      </div>
-
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Registrar orden' }}
@@ -617,18 +635,56 @@
 @if (altaDeAutorizacion()) {
   <app-panel-lateral titulo="Registrar una autorización" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioAutorizacion" (ngSubmit)="enviarAutorizacion()" novalidate>
+      @if (mensajeGeneral(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos registrar la autorización">
+          <p>{{ mensaje }}</p>
+          @if (faltaPerfil()) {
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
+                >Ir a la ficha para activar el perfil</a
+              >
+            </p>
+          }
+        </app-alerta>
+      }
+
       <div class="campo">
         <label for="autorizacion-numero">Número</label>
         <input
           id="autorizacion-numero"
           type="text"
           formControlName="numero"
-          [attr.aria-invalid]="mostrarErrorDeAutorizacion('numero') ? 'true' : null"
+          [attr.aria-invalid]="
+            mostrarErrorDeAutorizacion('numero') || causaAccion() === 'numero-en-uso'
+              ? 'true'
+              : null
+          "
+          [attr.aria-describedby]="
+            mostrarErrorDeAutorizacion('numero')
+              ? 'autorizacion-numero-error'
+              : causaAccion() === 'numero-en-uso'
+                ? 'autorizacion-numero-en-uso'
+                : null
+          "
         />
         @if (mostrarErrorDeAutorizacion('numero')) {
-          <p class="estado estado--error">El número de la autorización es obligatorio.</p>
+          <p class="campo__error" id="autorizacion-numero-error">
+            El número de la autorización es obligatorio.
+          </p>
         }
       </div>
+
+      <!-- Numero repetido: pegado al numero que lo produjo (UX-12). -->
+      @if (causaAccion() === 'numero-en-uso') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ese número ya está en uso"
+          id="autorizacion-numero-en-uso"
+        >
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="autorizacion-estado">Estado inicial</label>
@@ -652,7 +708,11 @@
           id="autorizacion-cobertura"
           formControlName="coberturaId"
           [attr.aria-invalid]="mostrarErrorDeAutorizacion('coberturaId') ? 'true' : null"
-          aria-describedby="autorizacion-cobertura-ayuda"
+          [attr.aria-describedby]="
+            mostrarErrorDeAutorizacion('coberturaId')
+              ? 'autorizacion-cobertura-ayuda autorizacion-cobertura-error'
+              : 'autorizacion-cobertura-ayuda'
+          "
         >
           <option value="">Elegí una cobertura</option>
           @for (cobertura of coberturas(); track cobertura.id) {
@@ -663,7 +723,7 @@
           No se puede cambiar después: cambiarla seria otra autorización.
         </p>
         @if (mostrarErrorDeAutorizacion('coberturaId')) {
-          <p class="estado estado--error">Elegí la cobertura.</p>
+          <p class="campo__error" id="autorizacion-cobertura-error">Elegí la cobertura.</p>
         }
       </div>
 
@@ -673,6 +733,9 @@
           id="autorizacion-practica"
           formControlName="practicaId"
           [attr.aria-invalid]="mostrarErrorDeAutorizacion('practicaId') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorDeAutorizacion('practicaId') ? 'autorizacion-practica-error' : null
+          "
         >
           <option value="">Elegí una práctica</option>
           @for (practica of practicas(); track practica.id) {
@@ -686,7 +749,7 @@
           </p>
         }
         @if (mostrarErrorDeAutorizacion('practicaId')) {
-          <p class="estado estado--error">Elegí la práctica.</p>
+          <p class="campo__error" id="autorizacion-practica-error">Elegí la práctica.</p>
         }
       </div>
 
@@ -719,16 +782,48 @@
           type="date"
           formControlName="vigenciaDesde"
           [attr.aria-invalid]="mostrarErrorDeAutorizacion('vigenciaDesde') ? 'true' : null"
+          [attr.aria-describedby]="
+            mostrarErrorDeAutorizacion('vigenciaDesde') ? 'autorizacion-desde-error' : null
+          "
         />
         @if (mostrarErrorDeAutorizacion('vigenciaDesde')) {
-          <p class="estado estado--error">La fecha de inicio es obligatoria.</p>
+          <p class="campo__error" id="autorizacion-desde-error">
+            La fecha de inicio es obligatoria.
+          </p>
         }
       </div>
 
       <div class="campo">
         <label for="autorizacion-hasta">Vigente hasta</label>
-        <input id="autorizacion-hasta" type="date" formControlName="vigenciaHasta" />
+        <input
+          id="autorizacion-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          [attr.aria-invalid]="causaAccion() === 'autorizacion-superpuesta' ? 'true' : null"
+          [attr.aria-describedby]="
+            causaAccion() === 'autorizacion-superpuesta' ? 'autorizacion-superpuesta' : null
+          "
+        />
       </div>
+
+      <!-- Otra aprobada de la misma practica en ese periodo: pegado a la vigencia (UX-12). -->
+      @if (causaAccion() === 'autorizacion-superpuesta') {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          titulo="Ya hay una autorización aprobada para esa práctica"
+          id="autorizacion-superpuesta"
+        >
+          <p>{{ errorAccion() }}</p>
+          @if (senalada() !== null) {
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                Ver la autorización
+              </button>
+            </p>
+          }
+        </app-alerta>
+      }
 
       <details class="seccion-plegable">
         <summary>Observaciones <span class="seccion-plegable__resumen">Opcional</span></summary>
@@ -741,19 +836,6 @@
           ></textarea>
         </div>
       </details>
-
-      <div aria-live="polite">
-        @if (errorAccion(); as mensaje) {
-          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          @if (faltaPerfil()) {
-            <p class="acciones">
-              <a class="boton boton--secundario" [routerLink]="rutaFicha()"
-                >Ir a la ficha para activar el perfil</a
-              >
-            </p>
-          }
-        }
-      </div>
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
@@ -779,6 +861,19 @@
         </p>
 
         <form [formGroup]="formularioEdicionDeOrden" (ngSubmit)="enviarEdicionDeOrden()" novalidate>
+          @if (mensajeGeneral(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos corregir la orden">
+              <p>{{ mensaje }}</p>
+              @if (hayQueRecargar()) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="cargar()">
+                    Recargar
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
           <div class="campo campo--ancho">
             <label for="editar-orden-emisor-{{ orden.id }}">Profesional</label>
             <input
@@ -799,8 +894,27 @@
 
           <div class="campo">
             <label for="editar-orden-numero-{{ orden.id }}">Número</label>
-            <input id="editar-orden-numero-{{ orden.id }}" type="text" formControlName="numero" />
+            <input
+              id="editar-orden-numero-{{ orden.id }}"
+              type="text"
+              formControlName="numero"
+              [attr.aria-invalid]="causaAccion() === 'numero-en-uso' ? 'true' : null"
+              [attr.aria-describedby]="
+                causaAccion() === 'numero-en-uso' ? 'editar-orden-numero-en-uso-' + orden.id : null
+              "
+            />
           </div>
+
+          @if (causaAccion() === 'numero-en-uso') {
+            <app-alerta
+              class="campo--ancho"
+              tipo="advertencia"
+              titulo="Ese número ya está en uso"
+              id="editar-orden-numero-en-uso-{{ orden.id }}"
+            >
+              <p>{{ errorAccion() }}</p>
+            </app-alerta>
+          }
 
           <div class="campo">
             <label for="editar-orden-emision-{{ orden.id }}">Fecha de emision</label>
@@ -857,19 +971,6 @@
             ></textarea>
           </div>
 
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-              @if (hayQueRecargar()) {
-                <p class="acciones">
-                  <button type="button" class="boton boton--secundario" (click)="cargar()">
-                    Recargar
-                  </button>
-                </p>
-              }
-            }
-          </div>
-
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
               {{ enviando() ? 'Guardando...' : 'Guardar la orden' }}
@@ -890,6 +991,12 @@
         </p>
 
         <form [formGroup]="formularioDocumento" (ngSubmit)="enviarDocumento()" novalidate>
+          @if (mensajeGeneral(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos vincular el documento">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <div class="campo campo--ancho">
             <label for="doc-orden-{{ orden.id }}">Documento</label>
             <select id="doc-orden-{{ orden.id }}" formControlName="adjuntoId">
@@ -900,12 +1007,6 @@
                 </option>
               }
             </select>
-          </div>
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
           </div>
 
           <div class="acciones">
@@ -924,6 +1025,12 @@
         [titulo]="'Dar de baja la orden de ' + emisorEnPalabras(orden)"
         (cerrar)="cerrarPaneles()"
       >
+        @if (mensajeGeneral(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos dar de baja la orden">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <akine-confirmacion-con-motivo
           idCampo="baja-orden-{{ orden.id }}"
           titulo="Dar de baja la orden de {{ emisorEnPalabras(orden) }}"
@@ -935,12 +1042,6 @@
           (confirmado)="confirmarBajaDeOrden($event)"
           (cancelado)="cerrarPaneles()"
         />
-
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
       </app-panel-lateral>
     }
   }
@@ -960,6 +1061,19 @@
         </p>
 
         <form [formGroup]="formularioResolucion" (ngSubmit)="enviarResolucion()" novalidate>
+          @if (mensajeGeneral(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos registrar la respuesta">
+              <p>{{ mensaje }}</p>
+              @if (hayQueRecargar()) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="cargar()">
+                    Recargar
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
           <div class="campo campo--ancho">
             <label for="resolver-accion-{{ autorizacion.id }}">Que contesto</label>
             <select id="resolver-accion-{{ autorizacion.id }}" formControlName="accion">
@@ -994,8 +1108,32 @@
               id="resolver-hasta-{{ autorizacion.id }}"
               type="date"
               formControlName="vigenciaHasta"
+              [attr.aria-invalid]="causaAccion() === 'autorizacion-superpuesta' ? 'true' : null"
+              [attr.aria-describedby]="
+                causaAccion() === 'autorizacion-superpuesta'
+                  ? 'resolver-superpuesta-' + autorizacion.id
+                  : null
+              "
             />
           </div>
+
+          @if (causaAccion() === 'autorizacion-superpuesta') {
+            <app-alerta
+              class="campo--ancho"
+              tipo="advertencia"
+              titulo="Ya hay una autorización aprobada para esa práctica"
+              id="resolver-superpuesta-{{ autorizacion.id }}"
+            >
+              <p>{{ errorAccion() }}</p>
+              @if (senalada() !== null) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                    Ver la autorización
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
 
           <div class="campo campo--ancho">
             <label for="resolver-motivo-{{ autorizacion.id }}">
@@ -1013,19 +1151,6 @@
             <p class="ayuda" id="resolver-motivo-ayuda-{{ autorizacion.id }}">
               Sin motivo, el mostrador no sabe que corregir para volver a presentarla.
             </p>
-          </div>
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-              @if (hayQueRecargar()) {
-                <p class="acciones">
-                  <button type="button" class="boton boton--secundario" (click)="cargar()">
-                    Recargar
-                  </button>
-                </p>
-              }
-            }
           </div>
 
           <div class="acciones">
@@ -1054,14 +1179,44 @@
           (ngSubmit)="enviarEdicionDeAutorizacion()"
           novalidate
         >
+          @if (mensajeGeneral(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos corregir la autorización">
+              <p>{{ mensaje }}</p>
+              @if (hayQueRecargar()) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="cargar()">
+                    Recargar
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+
           <div class="campo">
             <label for="editar-aut-numero-{{ autorizacion.id }}">Número</label>
             <input
               id="editar-aut-numero-{{ autorizacion.id }}"
               type="text"
               formControlName="numero"
+              [attr.aria-invalid]="causaAccion() === 'numero-en-uso' ? 'true' : null"
+              [attr.aria-describedby]="
+                causaAccion() === 'numero-en-uso'
+                  ? 'editar-aut-numero-en-uso-' + autorizacion.id
+                  : null
+              "
             />
           </div>
+
+          @if (causaAccion() === 'numero-en-uso') {
+            <app-alerta
+              class="campo--ancho"
+              tipo="advertencia"
+              titulo="Ese número ya está en uso"
+              id="editar-aut-numero-en-uso-{{ autorizacion.id }}"
+            >
+              <p>{{ errorAccion() }}</p>
+            </app-alerta>
+          }
 
           <div class="campo">
             <label for="editar-aut-cantidad-{{ autorizacion.id }}">Cantidad</label>
@@ -1110,19 +1265,6 @@
             ></textarea>
           </div>
 
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-              @if (hayQueRecargar()) {
-                <p class="acciones">
-                  <button type="button" class="boton boton--secundario" (click)="cargar()">
-                    Recargar
-                  </button>
-                </p>
-              }
-            }
-          </div>
-
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
               {{ enviando() ? 'Guardando...' : 'Guardar la autorización' }}
@@ -1143,6 +1285,12 @@
         </p>
 
         <form [formGroup]="formularioDocumento" (ngSubmit)="enviarDocumento()" novalidate>
+          @if (mensajeGeneral(); as mensaje) {
+            <app-alerta tipo="error" titulo="No pudimos vincular el documento">
+              <p>{{ mensaje }}</p>
+            </app-alerta>
+          }
+
           <div class="campo campo--ancho">
             <label for="doc-aut-{{ autorizacion.id }}">Documento</label>
             <select id="doc-aut-{{ autorizacion.id }}" formControlName="adjuntoId">
@@ -1153,12 +1301,6 @@
                 </option>
               }
             </select>
-          </div>
-
-          <div aria-live="polite">
-            @if (errorAccion(); as mensaje) {
-              <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-            }
           </div>
 
           <div class="acciones">
@@ -1177,6 +1319,12 @@
         [titulo]="'Dar de baja la autorización ' + autorizacion.numero"
         (cerrar)="cerrarPaneles()"
       >
+        @if (mensajeGeneral(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos dar de baja la autorización">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
         <akine-confirmacion-con-motivo
           idCampo="baja-autorizacion-{{ autorizacion.id }}"
           titulo="Dar de baja la autorizacion {{ autorizacion.numero }}"
@@ -1188,12 +1336,6 @@
           (confirmado)="confirmarBajaDeAutorizacion($event)"
           (cancelado)="cerrarPaneles()"
         />
-
-        <div aria-live="polite">
-          @if (errorAccion(); as mensaje) {
-            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-          }
-        </div>
       </app-panel-lateral>
     }
     @case ('consumo') {
@@ -1230,18 +1372,18 @@
                 <p class="estado estado--cargando">Cargando el historial&hellip;</p>
               }
               @case ('error') {
-                <p class="estado estado--error" role="alert">
-                  {{ mensajeDeHistorial() }}
-                </p>
-                <p class="acciones">
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    (click)="paginaDeHistorial(0)"
-                  >
-                    Reintentar
-                  </button>
-                </p>
+                <app-alerta tipo="error" titulo="No pudimos leer el historial">
+                  <p>{{ mensajeDeHistorial() }}</p>
+                  <p class="alerta__acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      (click)="paginaDeHistorial(0)"
+                    >
+                      Reintentar
+                    </button>
+                  </p>
+                </app-alerta>
               }
               @case ('listo') {
                 @if (historialListo(); as respuesta) {

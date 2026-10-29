@@ -6,6 +6,7 @@ import { EstadoFormulario, traducirYEsperar } from '../../models/auth-errors';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 
 /**
  * Mensaje unico del `202`.
@@ -21,7 +22,7 @@ export const MENSAJE_UNIFORME_ACTIVACION =
 /** Reenvio del enlace de activacion (M02, AKINE-01.02). */
 @Component({
   selector: 'app-resend-activation-page',
-  imports: [Icono, ReactiveFormsModule, RouterLink],
+  imports: [Alerta, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './resend-activation-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })

@@ -36,12 +36,6 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<div aria-live="polite">
-  @if (exito(); as mensaje) {
-    <p class="estado estado--ok">{{ mensaje }}</p>
-  }
-</div>
-
 <section class="tarjeta" aria-labelledby="titulo-listado-invitaciones">
   <h2 id="titulo-listado-invitaciones">Invitaciones enviadas</h2>
 
@@ -87,13 +81,16 @@
       }
 
       @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
+        <app-alerta tipo="error" titulo="No pudimos leer las invitaciones">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            } @else {
+              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            }
+          </p>
+        </app-alerta>
       }
 
       @case ('listo') {
@@ -201,10 +198,6 @@
               (cambioDePagina)="tabla.irA($event)"
             />
           </div>
-
-          @if (errorAccion() && cancelacionAbierta() === null && !altaAbierta()) {
-            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-          }
         }
       }
     }
@@ -218,6 +211,13 @@
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva invitación" (cerrar)="cerrarPaneles()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <!-- Error general del alta (no del email): arriba del formulario, a la vista. -->
+      @if (errorAccion() && !errorEnElEmail()) {
+        <app-alerta tipo="error" titulo="No pudimos enviar la invitación">
+          <p>{{ errorAccion() }}</p>
+        </app-alerta>
+      }
+
       <div class="campo campo--ancho">
         <label for="invitacion-email">Email de la persona</label>
         <input
@@ -226,20 +226,49 @@
           formControlName="email"
           autocomplete="off"
           [attr.aria-describedby]="
-            errorEnElEmail() || mostrarError('email') ? null : 'invitacion-email-ayuda'
+            errorEnElEmail()
+              ? 'invitacion-email-en-uso'
+              : mostrarError('email')
+                ? 'invitacion-email-error'
+                : 'invitacion-email-ayuda'
           "
           [attr.aria-invalid]="mostrarError('email') || errorEnElEmail() ? 'true' : null"
         />
-        @if (errorEnElEmail()) {
-          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-        } @else if (mostrarError('email')) {
-          <p class="campo__error">Escribí un correo válido.</p>
-        } @else {
+        <!-- Con un conflicto, lo que se ve es la alerta pegada abajo, con su salida. -->
+        @if (mostrarError('email') && !errorEnElEmail()) {
+          <p class="campo__error" id="invitacion-email-error">Escribí un correo válido.</p>
+        } @else if (!errorEnElEmail()) {
           <p class="ayuda" id="invitacion-email-ayuda">
             Le llega el enlace y queda como su usuario. No hace falta que ya tenga cuenta.
           </p>
         }
       </div>
+
+      <!--
+        Conflicto con algo que ya existe (una invitacion pendiente o un vinculo): pegado al email
+        que lo produjo, con la salida si la hay. Lo que hay que cambiar es el email, no el rol.
+      -->
+      @if (errorEnElEmail()) {
+        <app-alerta
+          class="campo--ancho"
+          tipo="advertencia"
+          id="invitacion-email-en-uso"
+          [titulo]="
+            causaAccion() === 'ya-vinculado'
+              ? 'Esta persona ya trabaja en la organización'
+              : 'Ya hay una invitación pendiente para este email'
+          "
+        >
+          <p>{{ errorAccion() }}</p>
+          @if (causaAccion() === 'ya-vinculado') {
+            <p class="alerta__acciones">
+              <a class="boton boton--secundario" routerLink="/organizacion/colaboradores"
+                >Ver colaboradores</a
+              >
+            </p>
+          }
+        </app-alerta>
+      }
 
       <div class="campo">
         <label for="invitacion-rol">Rol con el que entraria</label>
@@ -272,10 +301,6 @@
         </p>
       </div>
 
-      @if (errorAccion() && !errorEnElEmail()) {
-        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-      }
-
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Enviando...' : 'Enviar la invitacion' }}
@@ -299,6 +324,12 @@
     [subtitulo]="invitacion.email ?? null"
     (cerrar)="cerrarPaneles()"
   >
+    @if (errorAccion()) {
+      <app-alerta tipo="error" titulo="No pudimos cancelar la invitación">
+        <p>{{ errorAccion() }}</p>
+      </app-alerta>
+    }
+
     <app-confirmacion-con-motivo
       idCampo="cancelar-invitacion-motivo"
       [titulo]="'Cancelar la invitación a ' + invitacion.email"
@@ -310,9 +341,5 @@
       (confirmado)="enviarCancelacion($event)"
       (cancelado)="cerrarPaneles()"
     />
-
-    @if (errorAccion()) {
-      <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-    }
   </app-panel-lateral>
 }

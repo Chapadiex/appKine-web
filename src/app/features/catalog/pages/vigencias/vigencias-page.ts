@@ -22,6 +22,8 @@ import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaCatalogo, traducirErrorCatalogo } from '../../models/catalogo-errors';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { esGlobal, etiquetaDeAlcance } from '../../models/tipos-de-catalogo';
 import { aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
@@ -80,6 +82,8 @@ const TOPE_DE_PRACTICAS = 100;
   selector: 'app-vigencias-page',
   imports: [
     CabeceraDePagina,
+
+    Alerta,
     AccionesDeFila,
     Ayuda,
     PanelLateral,
@@ -102,6 +106,7 @@ export class VigenciasPage {
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly catalogo = inject(CatalogoClinicoService);
+  private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -142,7 +147,6 @@ export class VigenciasPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaCatalogo | null>(null);
-  protected readonly exito = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
   /** Id ya convertido, o `null` si el segmento de la URL no era un numero. */
@@ -217,7 +221,6 @@ export class VigenciasPage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.cerrarPaneles();
-        this.exito.set(null);
         this.filtroEstado.set('ACTIVO');
         this.filtroCodigo.set('');
         this.cargar();
@@ -297,7 +300,6 @@ export class VigenciasPage {
 
   protected abrirAlta(): void {
     this.cerrarPaneles();
-    this.exito.set(null);
     this.formularioAlta.enable();
     this.formularioAlta.reset({
       codigo: '',
@@ -318,7 +320,6 @@ export class VigenciasPage {
       return;
     }
     this.cerrarPaneles();
-    this.exito.set(null);
     this.bajaAbierta.set(id);
   }
 
@@ -383,17 +384,17 @@ export class VigenciasPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .createNomencladorVigencia({ nomencladorId: id, createVigenciaRequest: cuerpo })
       .subscribe({
         next: () => {
           this.cerrarPaneles();
-          this.exito.set(
-            'La vigencia quedo cargada. Las anteriores del mismo código no se tocaron: lo que se ' +
-              'presento con ellas sigue resolviendo con el valor que tenia entonces.',
-          );
+          this.avisos.exito(`Vigencia ${cuerpo.codigo} cargada`, {
+            descripcion:
+              'Las anteriores del mismo código no se tocaron: lo presentado con ellas conserva ' +
+              'su valor.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -417,7 +418,6 @@ export class VigenciasPage {
     this.enviando.set(true);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
-    this.exito.set(null);
 
     this.catalogo
       .deactivateNomencladorVigencia({
@@ -428,10 +428,9 @@ export class VigenciasPage {
       .subscribe({
         next: () => {
           this.cerrarPaneles();
-          this.exito.set(
-            'La vigencia quedo dada de baja. Sigue en el listado, con su motivo, y lo que ya se ' +
-              'presento con ella conserva el código y el valor que tenia.',
-          );
+          this.avisos.exito('Vigencia dada de baja', {
+            descripcion: 'Lo ya presentado con ella conserva el código y el valor que tenía.',
+          });
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),

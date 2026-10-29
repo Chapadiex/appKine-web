@@ -7,6 +7,7 @@ import { EspacioAvailabilityResponse } from '../../../../api/generated/model/esp
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { etiquetaDeTipo } from '../../models/tipos-de-espacio';
 import { traducirErrorEspacio } from '../../models/espacio-errors';
 import { aCampoLocal, aInstanteUtc, formatearInstante } from '../../../../shared/utils/instantes';
@@ -58,7 +59,15 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
  */
 @Component({
   selector: 'app-disponibilidad-page',
-  imports: [CabeceraDePagina, Paginacion, ColumnaOrdenable, Ayuda, ReactiveFormsModule, RouterLink],
+  imports: [
+    CabeceraDePagina,
+    Paginacion,
+    ColumnaOrdenable,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+  ],
   templateUrl: './disponibilidad-page.html',
   styleUrl: '../../resource.css',
 })

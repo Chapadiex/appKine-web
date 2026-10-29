@@ -16,6 +16,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -277,8 +278,11 @@ describe('RecepcionDelDiaPage', () => {
     });
     await asentar(fixture);
 
+    // UX-12: el resultado es un aviso global, no un mensaje en el cuerpo de la pantalla.
+    expect(avisos()).toEqual([
+      expect.objectContaining({ tipo: 'exito', titulo: 'Llegada registrada' }),
+    ]);
     const texto = textoDe(fixture);
-    expect(texto).toContain('Llegada registrada');
     expect(texto).not.toContain('atendiendo');
     // 11:40Z -> 08:40 en Cordoba.
     expect(texto).toContain('08:40');
@@ -305,9 +309,8 @@ describe('RecepcionDelDiaPage', () => {
       .forEach((p) => p.flush({ ...DEL_DIA[0], recepcion: respuesta }));
     await asentar(fixture);
 
-    const texto = textoDe(fixture);
-    expect(texto).toContain('Llegada registrada');
-    expect(texto).not.toContain('No se pudo completar la operación');
+    expect(avisos().map((a) => a.titulo)).toContain('Llegada registrada');
+    expect(avisos().some((a) => a.tipo === 'error')).toBe(false);
   });
 
   it('una validacion OBSERVADA no es un error: muestra la observación y deja seguir', async () => {
@@ -327,10 +330,11 @@ describe('RecepcionDelDiaPage', () => {
     });
     await asentar(fixture);
 
-    const texto = textoDe(fixture);
-    expect(texto).toContain('quedo observada');
-    expect(texto).toContain('SIN_COBERTURA_APLICABLE');
-    expect(texto).not.toContain('No se pudo completar la operación');
+    // Observada no es un error: advertencia, y la observacion queda a la vista en la fila.
+    const [aviso] = avisos();
+    expect(aviso?.tipo).toBe('advertencia');
+    expect(aviso?.descripcion).toContain('quedo observada');
+    expect(textoDe(fixture)).toContain('SIN_COBERTURA_APLICABLE');
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
       'Validar cobertura',
       'Pasar a espera',
@@ -373,7 +377,9 @@ describe('RecepcionDelDiaPage', () => {
     });
     await asentar(fixture);
 
-    expect(textoDe(fixture)).toContain('se atiende como Particular');
+    // El panel se cierra recien con la respuesta, y el resultado va al aviso global.
+    expect(avisos().map((a) => a.titulo)).toEqual(['Se atiende como Particular']);
+    expect(raiz.querySelector('dialog.panel-lateral')).toBeNull();
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
       'Pasar a espera',
       'Anular la llegada',
@@ -390,11 +396,60 @@ describe('RecepcionDelDiaPage', () => {
     pedido.flush({ ...DEL_DIA[1].recepcion, estado: 'LLAMADA', version: 5 });
     await asentar(fixture);
 
+    expect(avisos()[0]?.descripcion).toContain('Llamar no registra la atención');
     const texto = textoDe(fixture);
-    expect(texto).toContain('Llamar no registra la atención');
     expect(texto).toContain('la atención es otro registro');
     expect(texto).toContain('0 en espera');
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
+  });
+
+  it('el error de una acción de la fila es un aviso global con Reintentar', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Llamar');
+    httpMock.expectOne(recepcion(302, 'llamado')).error(new ProgressEvent('error'));
+    await asentar(fixture);
+
+    const [aviso] = avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos llamar al paciente');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
+
+    // Reintentar manda el mismo pedido otra vez.
+    TestBed.inject(AvisosStore).ejecutar(aviso?.id ?? 0);
+    httpMock.expectOne(recepcion(302, 'llamado'));
+  });
+
+  it('si no se puede leer el día, la alerta va en el lugar de la lista con Reintentar', async () => {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Centro Belgrano',
+      consultorioId: CONSULTORIO,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock
+      .expectOne(RUTA_PERMISOS_EFECTIVOS)
+      .flush({ permissions: [PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE] });
+    const fixture = TestBed.createComponent(RecepcionDelDiaPage);
+    fixture.componentRef.setInput('fecha', FECHA);
+    fixture.detectChanges();
+    httpMock.expectOne(esDelDia()).error(new ProgressEvent('error'));
+    await asentar(fixture);
+
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
+    expect(alerta?.textContent).toContain('No pudimos leer los turnos del día');
+    // Sin la lista, "no hay turnos" mentiria.
+    expect(textoDe(fixture)).not.toContain('no tiene ningún turno agendado');
+
+    (
+      Array.from(alerta?.querySelectorAll('button') ?? []).find((b) =>
+        (b.textContent ?? '').includes('Reintentar'),
+      ) as HTMLButtonElement
+    ).click();
+    httpMock.expectOne(esDelDia()).flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Ramirez, Ana');
   });
 
   it('Particular se ofrece desde la sala de espera (U-21) y la recepción sigue EN_ESPERA', async () => {
@@ -463,7 +518,8 @@ describe('RecepcionDelDiaPage', () => {
     await asentar(fixture);
 
     const texto = textoDe(fixture);
-    expect(texto).toContain('se retiro sin ser atendido');
+    expect(avisos()[0]?.titulo).toBe('Retiro registrado');
+    expect(avisos()[0]?.descripcion).toContain('se retiro sin ser atendido');
     expect(texto).toContain('RETIRADO');
     expect(texto).toContain('Motivo del retiro: Se canso de esperar');
     expect(texto).toContain('0 en espera');
@@ -497,7 +553,7 @@ describe('RecepcionDelDiaPage', () => {
     pedido.flush({ ...DEL_DIA[3].recepcion, estado: 'EN_ESPERA', version: 2 });
     await asentar(fixture);
 
-    expect(textoDe(fixture)).toContain('paso a la sala de espera');
+    expect(avisos().map((a) => a.titulo)).toEqual(['Pasó a la sala de espera']);
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual([
       'Llamar',
       'Atender como Particular',
@@ -528,7 +584,7 @@ describe('RecepcionDelDiaPage', () => {
       .flush({ ...DEL_DIA[3], recepcion: undefined, llegadaEn: undefined, version: 5 });
     await asentar(fixture);
 
-    expect(textoDe(fixture)).toContain('anulada');
+    expect(avisos().map((a) => a.titulo)).toEqual(['Llegada anulada']);
     expect(botonesDeLaFila(fixture, 'Ibarra, Dario')).toEqual(['Registrar la llegada']);
   });
 
@@ -554,10 +610,15 @@ describe('RecepcionDelDiaPage', () => {
     );
     await asentar(fixture);
 
-    const texto = textoDe(fixture);
-    expect(texto).toContain('idempotente');
-    expect(texto).toContain('no hay ninguna llegada que anular');
-    expect(texto).not.toContain('No pudimos completar la operación');
+    // El error de una operacion del panel queda ARRIBA del panel abierto (UX-12), no en un aviso
+    // global que quedaria inerte detras del dialogo modal.
+    const alerta = (fixture.nativeElement as HTMLElement).querySelector(
+      'dialog.panel-lateral app-alerta',
+    );
+    expect(alerta?.textContent).toContain('No pudimos anular la llegada');
+    expect(alerta?.textContent).toContain('idempotente');
+    expect(alerta?.textContent).toContain('no hay ninguna llegada que anular');
+    expect(avisos()).toEqual([]);
 
     // Relee ESA fila sola, no el dia entero.
     httpMock.expectNone(esDelDia());
@@ -751,7 +812,7 @@ describe('RecepcionDelDiaPage', () => {
         .flush({ ...PENDIENTE.recepcion, estado: 'EN_ESPERA', version: 2 });
       await asentar(fixture);
 
-      expect(textoDe(fixture)).toContain('Paso sin el prepago que exige la prestación');
+      expect(avisos()[0]?.descripcion).toContain('Paso sin el prepago que exige la prestación');
     });
 
     it('REGISTRADO muestra el anticipo y no ofrece cobrar de nuevo', async () => {
@@ -835,6 +896,10 @@ describe('RecepcionDelDiaPage', () => {
   // -------------------------------------------------------------------------------------
   // Apoyo
   // -------------------------------------------------------------------------------------
+
+  function avisos(): ReturnType<AvisosStore['avisos']> {
+    return TestBed.inject(AvisosStore).avisos();
+  }
 
   function textoDe(fixture: ComponentFixture<RecepcionDelDiaPage>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';

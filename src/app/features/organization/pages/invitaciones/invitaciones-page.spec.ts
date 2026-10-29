@@ -8,6 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { InvitacionesPage } from './invitaciones-page';
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PERMISO_COLABORADOR_MANAGE } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
@@ -138,7 +139,11 @@ describe('InvitacionesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('el vinculo se crea cuando acepta, no ahora');
+    // UX-12: el resultado va al aviso global y el panel se cierra.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Invitación enviada');
+    expect(aviso?.descripcion).toContain('el vínculo se crea cuando acepta, no ahora');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('el duplicado aterriza en el campo del email y no al pie', async () => {
@@ -170,7 +175,6 @@ describe('InvitacionesPage', () => {
 
   it('reenviar avisa que el enlace anterior dejo de servir', async () => {
     const fixture = await montar();
-    const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Reenviar');
 
@@ -186,7 +190,9 @@ describe('InvitacionesPage', () => {
 
     // Es un efecto que el usuario no pidio y que importa: si el invitado tenia el correo viejo
     // abierto, ese enlace ya no funciona.
-    expect(anfitrion.textContent).toContain('El anterior dejo de servir');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Invitación reenviada');
+    expect(aviso?.descripcion).toContain('El anterior dejó de servir');
   });
 
   it('cancelar exige motivo y libera el email', async () => {
@@ -213,7 +219,9 @@ describe('InvitacionesPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('Podés volver a invitar a esa persona');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Invitación cancelada');
+    expect(aviso?.descripcion).toContain('Podés volver a invitar a esa persona');
   });
 
   it('cambiar de filtro con una relectura en vuelo descarta la vieja', async () => {
@@ -343,7 +351,10 @@ describe('InvitacionesPage', () => {
 
     // Es el mismo tratamiento que el duplicado: lo que hay que cambiar es el email, no el rol.
     expect(anfitrion.querySelector('#invitacion-email')?.getAttribute('aria-invalid')).toBe('true');
-    expect(anfitrion.textContent).toContain('ya trabaja en esta organización');
+    const alerta = anfitrion.querySelector('#invitacion-email-en-uso') as HTMLElement;
+    expect(alerta.getAttribute('tipo')).toBe('advertencia');
+    expect(alerta.textContent).toContain('ya trabaja en esta organización');
+    expect(alerta.querySelector('a[href="/organizacion/colaboradores"]')).not.toBeNull();
   });
 
   it('un 429 dice cuantos segundos hay que esperar y no repite el intento', async () => {
@@ -375,7 +386,6 @@ describe('InvitacionesPage', () => {
 
   it('reenviar una invitación que ya fue resuelta lo dice y no relee el listado a ciegas', async () => {
     const fixture = await montar();
-    const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Reenviar');
 
@@ -389,7 +399,12 @@ describe('InvitacionesPage', () => {
       );
     fixture.detectChanges();
 
-    expect(anfitrion.textContent).toContain('ya fue resuelta');
+    // Un boton de fila sin formulario: el error va al aviso global, con la salida de releer.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.titulo).toBe('No pudimos reenviar la invitación');
+    expect(aviso?.descripcion).toContain('ya fue resuelta');
+    expect(aviso?.accion?.etiqueta).toBe('Recargar');
     // Y no se dispara la relectura, que solo corre en el camino feliz.
     httpMock.expectNone(esListado());
   });

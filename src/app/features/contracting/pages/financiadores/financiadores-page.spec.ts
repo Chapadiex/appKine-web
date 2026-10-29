@@ -1,3 +1,4 @@
+import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -112,8 +113,12 @@ describe('FinanciadoresPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // El exito explica el paso siguiente: sin plan no se puede firmar ningun convenio.
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Todavía no tiene planes');
+    // El aviso de exito explica el paso siguiente: sin plan no se puede firmar ningun convenio.
+    // El panel se cerro: no queda abierto solo para el mensaje.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Financiador dado de alta');
+    expect(aviso?.descripcion).toContain('Todavía no tiene planes');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('la edicion NO manda el código, y el campo ni siquiera se puede tipear', async () => {
@@ -353,7 +358,9 @@ describe('FinanciadoresPage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.querySelector('.estado--error')).not.toBeNull();
+    expect(anfitrion.querySelector('app-alerta')?.textContent).toContain(
+      'No pudimos leer los financiadores',
+    );
 
     const reintentar = [...anfitrion.querySelectorAll('button')].find(
       (boton) => (boton.textContent ?? '').trim() === 'Reintentar',
