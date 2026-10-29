@@ -45,6 +45,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--esp-6);
+  /* La grilla global de `form` alinea al inicio: aca los campos ocupan el ancho de la tarjeta. */
+  align-items: stretch;
 }
 
 .acceso-subtitulo {
