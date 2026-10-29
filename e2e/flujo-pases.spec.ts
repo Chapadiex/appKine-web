@@ -53,7 +53,8 @@ test.describe('Pases contra el backend real', () => {
     // ---- Catalogo: el alta solo ofrece ofertas POR_PACK.
     await navegar(page, '/productos');
     await expect(page.getByRole('heading', { name: 'Productos de pack', level: 1 })).toBeVisible();
-    await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    // El estado vacio repite el alta: la de la cabecera es la primera.
+    await page.getByRole('button', { name: 'Nuevo producto' }).first().click();
     await page.getByLabel('Oferta').selectOption({ label: clase.ofertaNombre });
     await page.getByLabel('Nombre', { exact: true }).fill(producto);
     await page.getByLabel('Creditos').fill('2');
@@ -270,7 +271,8 @@ test.describe('Pases contra el backend real', () => {
 
     // ---- Catalogo: el tipo ABONO solo ofrece ofertas POR_ABONO.
     await navegar(page, '/productos');
-    await page.getByRole('button', { name: 'Nuevo producto' }).click();
+    // El estado vacio repite el alta: la de la cabecera es la primera.
+    await page.getByRole('button', { name: 'Nuevo producto' }).first().click();
     await page.getByLabel('Tipo').selectOption('ABONO');
     await page.getByLabel('Oferta').selectOption({ label: ofertaNombre });
     await page.getByLabel('Nombre', { exact: true }).fill(abono);
