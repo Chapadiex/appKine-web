@@ -337,7 +337,7 @@ describe('ContextSelectorPage', () => {
     // Lo que prueba que no hay bucle: nadie volvio a pedir la lista solo.
     httpMock.expectNone(URL_CONTEXTOS);
     expect(
-      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)'),
     ).toBeTruthy();
   });
 
@@ -386,7 +386,7 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('No se pudo contactar al servidor');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeTruthy();
 
-    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)')?.click();
+    fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)')?.click();
     fixture.detectChanges();
 
     httpMock.expectOne(URL_CONTEXTOS).flush([]);
@@ -423,7 +423,7 @@ describe('ContextSelectorPage', () => {
 
     expect(texto(fixture)).toContain('Fallo al resolver contextos');
     expect(
-      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton)'),
+      fixture.nativeElement.querySelector('button:not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)'),
     ).toBeTruthy();
   });
 
