@@ -27,15 +27,29 @@
   min-height: 2.5rem;
 }
 
+/*
+ * Migas, titulo con su "?" y marcas de estado. Si no entran en una linea, lo que baja son las
+ * marcas (o el titulo debajo de las migas): sin `wrap`, el documento y las marcas de una ficha
+ * no se achicaban y en un telefono dejaban el nombre de la persona en 0 px.
+ */
 .cabecera-pagina__titulo {
   grid-area: titulo;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-4);
+  min-width: 0;
+}
+
+/* El titulo y su "?" no se separan nunca: el "?" va pegado al titulo en cualquier ancho. */
+.cabecera-pagina__nombre {
   display: flex;
   align-items: center;
   gap: var(--esp-4);
   min-width: 0;
 }
 
-.cabecera-pagina__titulo > h1 {
+.cabecera-pagina__nombre > h1 {
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -43,8 +57,9 @@
   text-overflow: ellipsis;
 }
 
-/* El "?" y las marcas de estado no se achican: lo que cede es el texto del titulo. */
-.cabecera-pagina__titulo > :not(h1) {
+/* Lo que cede es el texto del titulo, con "…"; el "?" y las marcas no se achican. */
+.cabecera-pagina__nombre > :not(h1),
+.cabecera-pagina__titulo > :not(.cabecera-pagina__nombre) {
   flex-shrink: 0;
 }
 
@@ -131,7 +146,7 @@
     justify-content: flex-start;
   }
 
-  .cabecera-pagina__titulo > h1 {
+  .cabecera-pagina__nombre > h1 {
     display: -webkit-box;
     white-space: normal;
     -webkit-line-clamp: 2;
