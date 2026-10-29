@@ -1,0 +1,172 @@
+/*
+ * Ayuda contextual ("?"). Sin encapsulacion: los estilos alcanzan al contenido que cada pantalla
+ * proyecta. Viven aca y no en `design-system.css` porque solo hacen falta donde hay un "?", y la
+ * hoja global entra en la carga inicial.
+ */
+
+.ayuda-contextual {
+  position: relative;
+  display: inline-flex;
+}
+
+/*
+ * Boton redondo con contorno de control (3:1, WCAG 1.4.11): sin borde no se distingue de un
+ * adorno. Dentro de un `h1` no va nunca: su nombre se sumaria al del encabezado.
+ */
+.ayuda-contextual__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-base);
+  cursor: pointer;
+}
+
+.ayuda-contextual__boton:hover,
+.ayuda-contextual__boton[aria-expanded='true'] {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+}
+
+/*
+ * El panel flota en la capa superior (`popover`), en coordenadas de la ventana que calcula el
+ * componente: `inset` y `margin` anulan el centrado de la hoja del navegador. Ancho de lectura
+ * acotado a la ventana con 10 px por lado, y un alto maximo: lo que no entra se desplaza en el
+ * cuerpo, con el titulo fijo.
+ */
+.ayuda-contextual__panel {
+  position: fixed;
+  inset: auto;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(21.25rem, calc(100vw - 20px));
+  max-height: min(28rem, 70vh);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-acento) solid var(--color-acento);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+  text-align: left;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+
+.ayuda-contextual__panel--amplio {
+  width: min(28rem, calc(100vw - 20px));
+}
+
+.ayuda-contextual__panel[hidden] {
+  display: none;
+}
+
+.ayuda-contextual__cabecera {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  padding: var(--esp-6) var(--esp-5) var(--esp-4) var(--esp-7);
+}
+
+.ayuda-contextual__titulo {
+  flex: 1;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.ayuda-contextual__cerrar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: -0.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: transparent;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+}
+
+.ayuda-contextual__cerrar:hover {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+}
+
+.ayuda-contextual__cuerpo {
+  min-height: 0;
+  padding: 0 var(--esp-6) var(--esp-6) var(--esp-7);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ayuda-contextual__cuerpo p {
+  margin: 0 0 var(--esp-4);
+}
+
+.ayuda-contextual__cuerpo > :last-child {
+  margin-bottom: 0;
+}
+
+.ayuda-contextual__subtitulo {
+  margin-top: var(--esp-6);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+/*
+ * Flecha hacia el "?": un cuadrado girado, con borde solo en las dos caras que quedan afuera.
+ * `--flecha` la pone frente al centro del boton aunque el panel se haya corrido.
+ */
+.ayuda-contextual__panel[data-lado]::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+  transform: rotate(45deg);
+}
+
+.ayuda-contextual__panel[data-lado='derecha']::before {
+  top: calc(var(--flecha) - 5px);
+  left: -9px;
+  border-color: var(--color-acento);
+  background: var(--color-acento);
+}
+
+.ayuda-contextual__panel[data-lado='izquierda']::before {
+  top: calc(var(--flecha) - 5px);
+  right: -6px;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.ayuda-contextual__panel[data-lado='abajo']::before {
+  top: -6px;
+  left: calc(var(--flecha) - 5px - var(--borde-acento));
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.ayuda-contextual__panel[data-lado='arriba']::before {
+  bottom: -6px;
+  left: calc(var(--flecha) - 5px - var(--borde-acento));
+  border-top: 0;
+  border-left: 0;
+}
