@@ -1,4 +1,14 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -36,11 +46,30 @@ type EstadoAlta =
     }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaConsultorio };
 
-/** Campos del paso 1, en el orden en que se enfoca el primero invalido tras un submit. */
-const CAMPOS_PASO_1 = ['name', 'slotMinutes', 'boxCapacidad'] as const;
+/** Campos de cada paso, en el orden en que se enfoca el primero invalido tras un submit. */
+const CAMPOS_PASO_1 = ['name', 'slotMinutes'] as const;
+const CAMPOS_PASO_2 = ['boxCapacidad', 'contactEmail'] as const;
+
+type Paso = 1 | 2 | 3;
+
+/** Los tres pasos del alta, con lo que se carga en cada uno. */
+const PASOS: readonly { readonly numero: Paso; readonly titulo: string; readonly sub: string }[] = [
+  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, zona horaria y agenda' },
+  { numero: 2, titulo: 'Configuración inicial', sub: 'Opcional: box, horario y datos' },
+  { numero: 3, titulo: 'Confirmación', sub: 'Revisar y crear' },
+];
+
+/** Datos institucionales, con el rotulo que lleva cada uno en el resumen. */
+const INSTITUCIONALES = [
+  ['legalName', 'Razón social'],
+  ['taxId', 'CUIT'],
+  ['addressLine', 'Dirección'],
+  ['phone', 'Teléfono'],
+  ['contactEmail', 'Email'],
+] as const;
 
 /**
- * Alta de una sede adicional, en dos pasos (M01, AKINE-02.01).
+ * Alta de una sede adicional, en tres pasos (M01, AKINE-02.01; refactor UX/UI del 28/10/2026).
  *
  * <p>Consume `POST /organizations/{orgId}/consultorios`, que exige `consultorio:manage` con
  * alcance de <b>organizacion</b>: un administrador de una sola sede no puede crear otras, y
@@ -48,12 +77,11 @@ const CAMPOS_PASO_1 = ['name', 'slotMinutes', 'boxCapacidad'] as const;
  * asi que la interseccion con un alcance de una sola sede es vacia y el backend responde
  * `403`—.
  *
- * <p><b>Por que dos pasos y no un formulario largo.</b> Lo unico obligatorio es el nombre.
- * Todo lo demas —razon social, CUIT, direccion, telefono, email— es administrativo y muchas
- * veces no esta a mano en el momento de abrir la sede. Un solo formulario con ocho campos
- * hace que se vean igual de necesarios y frena el alta; separandolos, el paso 1 es lo que la
- * sede necesita para funcionar y el paso 2 se puede saltear entero y completar despues desde
- * la edicion.
+ * <p><b>Por que tres pasos y no un formulario largo.</b> Lo unico obligatorio es el nombre.
+ * El paso 1 es lo minimo para que la sede exista (nombre, zona, agenda). El paso 2 junta la
+ * configuracion inicial OPCIONAL —primer box y horario general lado a lado, y los datos
+ * institucionales plegados—: se puede saltear entero y completar despues. El paso 3 muestra
+ * todo lo que se va a crear antes de crearlo, agrupado como se cargo.
  *
  * <h2>La clave de idempotencia</h2>
  *
@@ -87,6 +115,9 @@ export class NewConsultorioPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly sedes = inject(SedesDelContexto);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
+  protected readonly pasos = PASOS;
 
   protected readonly zonas = zonasHorarias();
   protected readonly etiquetaDeZona = etiquetaDeZona;
@@ -121,7 +152,10 @@ export class NewConsultorioPage {
   /** Error del primer box en el ultimo `400` (`primerBox.name`, `primerBox.capacidad`). */
   protected readonly errorPrimerBox = signal<string | null>(null);
 
-  protected readonly paso = signal<1 | 2>(1);
+  protected readonly paso = signal<Paso>(1);
+
+  /** "Datos institucionales" plegado: se abre solo si hay algo cargado o algo que corregir. */
+  protected readonly institucionalAbierto = signal(false);
   protected readonly estado = signal<EstadoAlta>({ tipo: 'editando' });
   protected readonly intentos = signal(0);
 
@@ -193,7 +227,19 @@ export class NewConsultorioPage {
         (franja) =>
           `${etiquetaDeDia(franja.diaSemana)}: ${rangoHorario(franja.horaDesde, franja.horaHasta)}`,
       ),
+      institucional: INSTITUCIONALES.filter(([campo]) => valores[campo].trim() !== '').map(
+        ([campo, rotulo]) => `${rotulo}: ${valores[campo].trim()}`,
+      ),
     };
+  }
+
+  /** Lo que dice la seccion plegada de datos institucionales sin abrirla. */
+  protected resumenInstitucional(): string {
+    const valores = this.formulario.getRawValue();
+    const cargados = INSTITUCIONALES.filter(([campo]) => valores[campo].trim() !== '').length;
+    return cargados === 0
+      ? 'Razón social, CUIT, dirección, teléfono y email'
+      : `${cargados} de 5 cargados`;
   }
 
   constructor() {
@@ -216,6 +262,7 @@ export class NewConsultorioPage {
         this.erroresHorario.set(new Map());
         this.errorPrimerBox.set(null);
         this.paso.set(1);
+        this.institucionalAbierto.set(false);
         this.estado.set({ tipo: 'editando' });
         this.intentos.set(0);
         // La clave identifica un alta contra una organizacion concreta: reusarla despues de
@@ -239,48 +286,75 @@ export class NewConsultorioPage {
     return control.invalid && (control.touched || this.intentos() > 0);
   }
 
+  /** Valida el paso actual y pasa al siguiente. */
   protected avanzar(): void {
     this.intentos.update((valor) => valor + 1);
 
-    const invalido = CAMPOS_PASO_1.find((campo) => this.formulario.controls[campo].invalid);
-    if (invalido !== undefined) {
-      this.formulario.markAllAsTouched();
-      this.enfocar(`#sede-${invalido}`);
+    if (this.paso() === 1) {
+      if (!this.pasoValido(1)) {
+        return;
+      }
+      this.irAPaso(2);
       return;
     }
 
-    if (this.horario.invalid) {
-      this.horario.markAllAsTouched();
-      this.enfocar('#titulo-horario-general');
+    if (!this.pasoValido(2)) {
       return;
     }
-
-    this.intentos.set(0);
-    this.paso.set(2);
+    this.irAPaso(3);
   }
 
   protected volver(): void {
-    this.paso.set(1);
+    this.irAPaso(this.paso() === 3 ? 2 : 1);
+  }
+
+  /** Cambia de paso y lleva el foco al titulo del paso nuevo: el lector anuncia donde quedo. */
+  protected irAPaso(destino: Paso): void {
+    this.paso.set(destino);
     this.intentos.set(0);
     if (this.estado().tipo === 'error') {
       this.estado.set({ tipo: 'editando' });
     }
+    afterNextRender(() => this.enfocar('#titulo-alta-sede'), { injector: this.injector });
+  }
+
+  /**
+   * Si el paso tiene algo invalido, lo marca y enfoca el primer campo a corregir.
+   *
+   * <p>El email esta en una seccion plegada: se despliega antes de enfocarlo.
+   */
+  private pasoValido(paso: 1 | 2): boolean {
+    const campos = paso === 1 ? CAMPOS_PASO_1 : CAMPOS_PASO_2;
+    const invalido = campos.find((campo) => this.formulario.controls[campo].invalid);
+    if (invalido !== undefined) {
+      this.formulario.markAllAsTouched();
+      if (invalido === 'contactEmail') {
+        this.institucionalAbierto.set(true);
+      }
+      afterNextRender(() => this.enfocar(`#sede-${invalido}`), { injector: this.injector });
+      return false;
+    }
+
+    if (paso === 2 && this.horario.invalid) {
+      this.horario.markAllAsTouched();
+      this.enfocar('#titulo-horario-general');
+      return false;
+    }
+    return true;
   }
 
   protected enviar(): void {
     this.intentos.update((valor) => valor + 1);
 
+    // Lo invalido se corrige en su paso: se vuelve ahi en vez de marcar campos que no se ven.
+    if (this.formulario.controls.name.invalid || this.formulario.controls.slotMinutes.invalid) {
+      this.paso.set(1);
+      this.pasoValido(1);
+      return;
+    }
     if (this.formulario.invalid || this.horario.invalid) {
-      this.formulario.markAllAsTouched();
-      if (this.formulario.controls.contactEmail.valid && this.formulario.controls.name.valid) {
-        // Lo invalido esta en el paso 1 —el box o el horario—: se vuelve a donde se corrige.
-        this.horario.markAllAsTouched();
-        this.paso.set(1);
-        return;
-      }
-      this.enfocar(
-        this.formulario.controls.contactEmail.invalid ? '#sede-contactEmail' : '#sede-name',
-      );
+      this.paso.set(2);
+      this.pasoValido(2);
       return;
     }
 
@@ -407,7 +481,7 @@ export class NewConsultorioPage {
 
     if (traducido.causa === 'validacion' && error instanceof AkineHttpError) {
       // El alta es atomica: un box o una franja invalidos rechazan todo con 400 y no queda
-      // nada creado. Lo que falla se marca junto al campo, en el paso 1, que es donde se
+      // nada creado. Lo que falla se marca junto al campo, en el paso 2, que es donde se
       // corrige; un cartel "la franja 3 es invalida" obligaria a contar filas.
       const campos = error.erroresPorCampo;
       const franjas = erroresDeFranjasDelServidor(campos);
@@ -415,7 +489,7 @@ export class NewConsultorioPage {
       this.erroresHorario.set(franjas);
       this.errorPrimerBox.set(box === undefined ? null : box[1]);
       if (franjas.size > 0 || box !== undefined) {
-        this.paso.set(1);
+        this.paso.set(2);
       }
     }
 

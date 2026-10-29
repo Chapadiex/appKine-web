@@ -14,6 +14,8 @@ import { RouterLink } from '@angular/router';
 import { Subscription, catchError, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CreateInvitacionRequest } from '../../../../api/generated/model/create-invitacion-request';
 import { InvitacionResponse } from '../../../../api/generated/model/invitacion-response';
 import { InvitacionesService } from '../../../../api/generated/api/invitaciones.service';
@@ -101,6 +103,8 @@ const ROLES = [
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './invitaciones-page.html',
   styleUrl: '../../organization.css',
@@ -142,6 +146,15 @@ export class InvitacionesPage {
   protected readonly filas = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.invitaciones : [];
+  });
+
+  /**
+   * La invitacion con el panel de cancelacion abierto. El panel lateral vive fuera de la tabla
+   * (refactor UX/UI del 28/10/2026), asi que la busca en la lista.
+   */
+  protected readonly invitacionEnPanel = computed(() => {
+    const id = this.cancelacionAbierta();
+    return id === null ? null : (this.filas().find((invitacion) => invitacion.id === id) ?? null);
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no la pagina. */

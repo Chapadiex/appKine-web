@@ -22,6 +22,7 @@ import {
   fechaIsoEnPalabras,
 } from '../../models/etiquetas-de-presentacion';
 import { importeEnPalabras } from '../../models/etiquetas-de-obligacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -44,7 +45,7 @@ type EstadoListado =
  */
 @Component({
   selector: 'app-presentaciones-page',
-  imports: [Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
+  imports: [PanelLateral, Ayuda, Filtros, Icono, ReactiveFormsModule, RouterLink],
   templateUrl: './presentaciones-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -153,6 +154,20 @@ export class PresentacionesPage {
         // La cuenta corriente es un resumen accesorio: si falla, la bandeja sigue en pie.
         error: () => this.cuenta.set(null),
       });
+    }
+  }
+
+  /** El panel de alta (refactor UX/UI del 28/10/2026): se abre desde "Nuevo lote". */
+  protected readonly altaAbierta = signal(false);
+
+  protected abrirAlta(): void {
+    this.errorAlta.set(null);
+    this.altaAbierta.set(true);
+  }
+
+  protected cerrarAlta(): void {
+    if (!this.creando()) {
+      this.altaAbierta.set(false);
     }
   }
 

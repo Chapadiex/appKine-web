@@ -101,23 +101,29 @@
     <p class="estado estado--error">{{ problema.mensaje }}</p>
 
     @if (problema.motivo) {
-      <p class="ayuda">Motivo que dio el servidor: {{ problema.motivo }}</p>
+      <p class="ayuda ayuda--fija">Motivo que dio el servidor: {{ problema.motivo }}</p>
     }
 
     @if (problema.causa === 'caso-requerido' && personaDelTurno(); as persona) {
-      <p>
-        <a class="enlace" [routerLink]="['/historia-clinica', 'personas', persona]">
+      <div class="acciones">
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/historia-clinica', 'personas', persona]"
+        >
           Abrir un caso en la historia clínica del paciente
         </a>
-      </p>
+      </div>
     }
 
     @if (problema.causa === 'oferta-sin-precio' && problema.ofertaId) {
-      <p>
-        <a class="enlace" [routerLink]="['/servicios/ofertas', problema.ofertaId, 'precios']">
+      <div class="acciones">
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/servicios/ofertas', problema.ofertaId, 'precios']"
+        >
           Cargar el precio de la oferta
         </a>
-      </p>
+      </div>
     }
 
     @if (hayConflicto()) {
@@ -244,10 +250,8 @@
         -->
         @if (esGrupal() && !cerrada()) {
           <p class="ayuda">
-            El caso de esta atención lo fijó la derivación del participante en la clase, y no se
-            cambia desde acá. Con la atención abierta la derivación ya no se puede revertir: si el
-            caso era otro, cerrá esta atención con lo que pasó (ausente, si no hubo atención) y
-            derivá al participante al caso que corresponde.
+            El caso lo fijó la derivación de la clase y no se cambia desde acá. Si era otro, cerrá
+            esta atención con lo que pasó y derivá al participante al caso que corresponde.
           </p>
         }
 
@@ -302,7 +306,7 @@
             </button>
           </div>
           @if (avisoCaso(); as aviso) {
-            <p class="ayuda" role="status">{{ aviso }}</p>
+            <p class="ayuda ayuda--fija" role="status">{{ aviso }}</p>
           }
         }
 
@@ -315,20 +319,26 @@
             DP-43 (U-24): solo el administrador de la sede. Cambia al dueno de la atencion; no da
             permiso para escribir en la ajena.
           -->
-          @if (!reemplazando()) {
-            <div class="acciones">
-              <button type="button" class="boton-texto" (click)="abrirReemplazo()">
-                Reemplazar profesional
-              </button>
-            </div>
-          } @else {
-            <hr class="separador" />
-            <section aria-labelledby="titulo-reemplazo">
-              <h3 id="titulo-reemplazo">Reemplazar al profesional de esta atención</h3>
-              <p class="ayuda">
-                Otro profesional continúa la atención abierta. Queda registrado quién reemplazó a
-                quién y por qué. El turno no cambia.
-              </p>
+          <!--
+            El reemplazo es administrativo: se completa en un panel lateral (refactor UX/UI del
+            28/10/2026) para no meter un formulario de gestion entre los datos clinicos.
+          -->
+          <div class="acciones">
+            <button
+              type="button"
+              class="boton-texto"
+              [attr.aria-expanded]="reemplazando()"
+              (click)="abrirReemplazo()"
+            >
+              Reemplazar profesional
+            </button>
+          </div>
+          @if (reemplazando()) {
+            <app-panel-lateral
+              titulo="Reemplazar al profesional de esta atención"
+              subtitulo="Queda registrado quién reemplazó a quién y por qué. El turno no cambia."
+              (cerrar)="cancelarReemplazo()"
+            >
               <div class="campo">
                 <label for="atencion-profesional-nuevo">Profesional que continúa</label>
                 <select
@@ -355,6 +365,7 @@
               <app-confirmacion-con-motivo
                 idCampo="atencion-motivo-reemplazo"
                 titulo="Motivo del reemplazo"
+                [mostrarTitulo]="false"
                 etiqueta="Motivo (obligatorio)"
                 textoError="Escribí por qué se reemplaza al profesional: es obligatorio."
                 textoConfirmar="Reemplazar"
@@ -362,7 +373,18 @@
                 (confirmado)="reemplazar($event)"
                 (cancelado)="cancelarReemplazo()"
               />
-            </section>
+              <!-- El rechazo se ve dentro del panel: el resto de la pantalla queda detras. -->
+              <div aria-live="polite">
+                @if (error(); as problema) {
+                  <p class="estado estado--error" role="alert">{{ problema.mensaje }}</p>
+                  @if (problema.motivo) {
+                    <p class="ayuda ayuda--fija">
+                      Motivo que dio el servidor: {{ problema.motivo }}
+                    </p>
+                  }
+                }
+              </div>
+            </app-panel-lateral>
           }
         }
       </section>
@@ -472,6 +494,12 @@
                   falta: cambiar de modo no borra nada de lo que ya cargaste, y ningún campo se
                   vuelve obligatorio.
                 </p>
+                <p class="ayuda-contextual__subtitulo">Dolor y evolución</p>
+                <p>Volvé a apretar el número de dolor elegido para dejarlo sin cargar.</p>
+                <p>
+                  «Sin referencia» es la evolución de la primera sesión: decir «igual» cuando no hay
+                  contra qué comparar sería inventar un dato clínico.
+                </p>
               </app-ayuda>
               <fieldset class="segmentado paso__extremo">
                 <legend>Cuánto mostrar</legend>
@@ -522,7 +550,6 @@
                   </button>
                 }
               </div>
-              <p class="ayuda">Volvé a apretar el número elegido para dejarlo sin cargar.</p>
             </fieldset>
 
             <div class="grilla-campos grilla-campos--dos">
@@ -545,7 +572,8 @@
                     <option [value]="zona"></option>
                   }
                 </datalist>
-                <p id="ayuda-zona" class="ayuda">
+                <!-- El aviso de zona faltante se ve sin foco: anticipa un rechazo del servidor. -->
+                <p id="ayuda-zona" class="ayuda" [class.ayuda--fija]="faltaZona()">
                   Escribí la que quieras: la lista es solo una sugerencia.
                   @if (faltaZona()) {
                     <b>Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.</b>
@@ -591,10 +619,6 @@
                   </button>
                 }
               </div>
-              <p class="ayuda">
-                «Sin referencia» es el de la primera sesión: decir «igual» cuando no hay contra qué
-                comparar sería inventar un dato clínico.
-              </p>
             </fieldset>
 
             <div class="campo">
@@ -696,9 +720,8 @@
                 (input)="escribirNotas($any($event.target).value)"
               ></textarea>
               <p id="ayuda-notas" class="ayuda">
-                Se guarda solo después de un momento sin escribir. Si hubo un conflicto con otra
-                pestaña, el guardado automático se frena hasta que lo resuelvas: lo que escribas
-                mientras tanto no se pierde, pero tampoco se manda.
+                Se guarda solo después de un momento sin escribir. Con un conflicto con otra pestaña
+                el guardado automático se frena hasta que lo resuelvas.
               </p>
             </div>
 
@@ -731,9 +754,8 @@
             <fieldset class="grupo-plano">
               <legend>Asistencia</legend>
               <p class="ayuda">
-                Es lo único que el cierre siempre necesita: sin esto no se sabe si hubo prestación.
-                <b>Que no haya venido también es un cierre válido</b>, y es lo que evita que el
-                turno quede abierto para siempre.
+                Lo único que el cierre siempre necesita.
+                <b>Que no haya venido también es un cierre válido.</b>
               </p>
               <div class="segmentado">
                 @for (opcion of asistencias; track opcion.valor) {
@@ -770,86 +792,106 @@
                 </p>
               </div>
 
-              <div class="grilla-campos grilla-campos--dos">
-                <div class="campo">
-                  <label for="cierre-respuesta">
-                    Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
-                  </label>
-                  <input
-                    id="cierre-respuesta"
-                    name="cierre-respuesta"
-                    type="text"
-                    maxlength="500"
-                    [value]="respuestaTratamiento()"
-                    (input)="respuestaTratamiento.set($any($event.target).value)"
-                  />
-                </div>
-
-                <div class="campo">
-                  <label for="cierre-tolerancia">
-                    Tolerancia <span class="campo__opcional">(opcional)</span>
-                  </label>
-                  <select
-                    id="cierre-tolerancia"
-                    name="cierre-tolerancia"
-                    aria-describedby="ayuda-cierre-tolerancia"
-                    (change)="elegirTolerancia($any($event.target).value)"
+              <!--
+                Lo opcional del cierre, plegado: un seguimiento normal cierra con la asistencia y la
+                nota. Llega abierto si ya hay algo cargado, para no esconder un dato.
+              -->
+              <details
+                class="seccion-plegable"
+                [open]="
+                  respuestaTratamiento() !== '' ||
+                  tolerancia() !== null ||
+                  indicaciones() !== '' ||
+                  proximaConducta() !== null
+                "
+              >
+                <summary>
+                  Más datos del cierre
+                  <span class="seccion-plegable__resumen"
+                    >Respuesta, tolerancia, indicaciones y próxima conducta (opcionales)</span
                   >
-                    <option value="" [selected]="tolerancia() === null">Sin cargar</option>
-                    @for (opcion of tolerancias; track opcion.valor) {
-                      <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
-                        {{ opcion.etiqueta }}
-                      </option>
-                    }
-                  </select>
-                  <p id="ayuda-cierre-tolerancia" class="ayuda">
-                    Cómo toleró lo que se le hizo. <b>Es distinto del resultado</b>: se puede
-                    tolerar mal algo que funciona.
-                  </p>
-                </div>
+                </summary>
+                <div class="grilla-campos grilla-campos--dos">
+                  <div class="campo">
+                    <label for="cierre-respuesta">
+                      Respuesta al tratamiento <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <input
+                      id="cierre-respuesta"
+                      name="cierre-respuesta"
+                      type="text"
+                      maxlength="500"
+                      [value]="respuestaTratamiento()"
+                      (input)="respuestaTratamiento.set($any($event.target).value)"
+                    />
+                  </div>
 
-                <div class="campo">
-                  <label for="cierre-indicaciones">
-                    Indicaciones <span class="campo__opcional">(opcional)</span>
-                  </label>
-                  <textarea
-                    id="cierre-indicaciones"
-                    name="cierre-indicaciones"
-                    rows="3"
-                    maxlength="1000"
-                    aria-describedby="ayuda-cierre-indicaciones"
-                    [value]="indicaciones()"
-                    (input)="indicaciones.set($any($event.target).value)"
-                  ></textarea>
-                  <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
-                </div>
+                  <div class="campo">
+                    <label for="cierre-tolerancia">
+                      Tolerancia <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <select
+                      id="cierre-tolerancia"
+                      name="cierre-tolerancia"
+                      aria-describedby="ayuda-cierre-tolerancia"
+                      (change)="elegirTolerancia($any($event.target).value)"
+                    >
+                      <option value="" [selected]="tolerancia() === null">Sin cargar</option>
+                      @for (opcion of tolerancias; track opcion.valor) {
+                        <option [value]="opcion.valor" [selected]="tolerancia() === opcion.valor">
+                          {{ opcion.etiqueta }}
+                        </option>
+                      }
+                    </select>
+                    <p id="ayuda-cierre-tolerancia" class="ayuda">
+                      Cómo toleró lo que se le hizo. <b>Es distinto del resultado</b>: se puede
+                      tolerar mal algo que funciona.
+                    </p>
+                  </div>
 
-                <div class="campo">
-                  <label for="cierre-conducta">
-                    Próxima conducta <span class="campo__opcional">(opcional)</span>
-                  </label>
-                  <select
-                    id="cierre-conducta"
-                    name="cierre-conducta"
-                    aria-describedby="ayuda-cierre-conducta"
-                    (change)="elegirConducta($any($event.target).value)"
-                  >
-                    <option value="" [selected]="proximaConducta() === null">Sin cargar</option>
-                    @for (opcion of conductas; track opcion.valor) {
-                      <option
-                        [value]="opcion.valor"
-                        [selected]="proximaConducta() === opcion.valor"
-                      >
-                        {{ opcion.etiqueta }}
-                      </option>
-                    }
-                  </select>
-                  <p id="ayuda-cierre-conducta" class="ayuda">
-                    Qué sigue. Es lo que convierte una sesión suelta en un tratamiento, y se puede
-                    dejar sin cargar si todavía no se decidió.
-                  </p>
+                  <div class="campo">
+                    <label for="cierre-indicaciones">
+                      Indicaciones <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <textarea
+                      id="cierre-indicaciones"
+                      name="cierre-indicaciones"
+                      rows="3"
+                      maxlength="1000"
+                      aria-describedby="ayuda-cierre-indicaciones"
+                      [value]="indicaciones()"
+                      (input)="indicaciones.set($any($event.target).value)"
+                    ></textarea>
+                    <p id="ayuda-cierre-indicaciones" class="ayuda">Lo que el paciente se lleva.</p>
+                  </div>
+
+                  <div class="campo">
+                    <label for="cierre-conducta">
+                      Próxima conducta <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <select
+                      id="cierre-conducta"
+                      name="cierre-conducta"
+                      aria-describedby="ayuda-cierre-conducta"
+                      (change)="elegirConducta($any($event.target).value)"
+                    >
+                      <option value="" [selected]="proximaConducta() === null">Sin cargar</option>
+                      @for (opcion of conductas; track opcion.valor) {
+                        <option
+                          [value]="opcion.valor"
+                          [selected]="proximaConducta() === opcion.valor"
+                        >
+                          {{ opcion.etiqueta }}
+                        </option>
+                      }
+                    </select>
+                    <p id="ayuda-cierre-conducta" class="ayuda">
+                      Qué sigue. Es lo que convierte una sesión suelta en un tratamiento, y se puede
+                      dejar sin cargar si todavía no se decidió.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </details>
             } @else if (asistencia() !== null) {
               <p class="ayuda">
                 No vino, así que no hay nada más que completar: pedir el resultado de una atención

@@ -56,7 +56,9 @@
             />
             <span class="ayuda" aria-hidden="true">días desde el cierre</span>
           </div>
-          <p class="ayuda" id="politica-dias-ayuda">De {{ minima }} a {{ maxima }} días.</p>
+          <p class="ayuda ayuda--fija" id="politica-dias-ayuda">
+            De {{ minima }} a {{ maxima }} días.
+          </p>
           @if (!diasValidos()) {
             <p class="campo__error" role="alert">
               Indicá un número entero de {{ minima }} a {{ maxima }}.

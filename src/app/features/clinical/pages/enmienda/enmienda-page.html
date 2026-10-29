@@ -488,13 +488,16 @@
           Enmendar no vuelve a cobrar nada ni consume autorizaciones: ninguno de estos campos los
           afecta.
         </p>
+        <p>Cada enmienda crea una versión nueva; ninguna versión anterior se borra.</p>
       </app-ayuda>
     </div>
-    <p class="ayuda">Cada enmienda crea una versión nueva; ninguna versión anterior se borra.</p>
     <p role="status" [class]="aviso() ? 'estado estado--error' : 'ayuda'">{{ aviso() }}</p>
     <div class="pie-tarjeta">
       @if (sesion(); as atencion) {
-        <a class="boton-texto" [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']">
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/atencion', 'sesiones', atencion.id, 'versiones']"
+        >
           Cancelar
         </a>
       }

@@ -21,6 +21,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import {
@@ -113,6 +114,7 @@ const ENTERO_CON_SIGNO = /^[+-]?\d+$/;
     Paginacion,
     FocoAlMontar,
     AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './pases-de-persona-page.html',
   styleUrls: ['../../activity.css', './pases-de-persona.css'],
@@ -231,6 +233,11 @@ export class PasesDePersonaPage {
     const accion = this.accion();
     return accion?.tipo === 'anulacion' ? accion.pase : null;
   });
+
+  /** El pase del panel lateral abierto (ajuste, anulacion o movimientos), para marcar su fila. */
+  protected readonly paseEnPanel = computed(
+    () => this.enAjuste() ?? this.enAnulacion() ?? this.detalle()?.pase ?? null,
+  );
   /** La cantidad escrita, si es un entero distinto de cero; si no, `null`. */
   protected readonly cantidadDelAjuste = computed(() => {
     const texto = this.ajusteCantidad().trim();

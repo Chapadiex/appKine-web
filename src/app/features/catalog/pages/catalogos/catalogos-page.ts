@@ -59,6 +59,7 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { SearchCatalogoRequestParams } from '../../../../api/generated/api/catalogo-clinico.serviceInterface';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -129,6 +130,7 @@ const TOPE_DE_ESPECIALIDADES = 100;
     PermisoDirective,
     Paginacion,
     ConfirmacionConMotivo,
+    PanelLateral,
   ],
   templateUrl: './catalogos-page.html',
   styleUrl: '../../catalog.css',
@@ -158,17 +160,12 @@ export class CatalogosPage {
   protected readonly esGlobal = esGlobal;
 
   /**
-   * Cuantas acciones muestra la fila, con las mismas condiciones que la plantilla: "Ver
-   * vigencias" en nomencladores; Editar y Dar de baja si el concepto es del centro, esta activo
-   * y hay permiso. Con tres o mas la fila usa el menu "⋯" (decision del 22/10/2026).
+   * Si la cuenta administra el catalogo de su centro. Las filas propias y activas muestran sus
+   * acciones solo con este permiso (refactor UX/UI del 28/10/2026: Editar a la vista y el resto,
+   * con la baja, en el menu "⋯").
    */
-  protected cantidadDeAcciones(concepto: CatalogoConceptoResponse, esNomenclador: boolean): number {
-    const verVigencias = esNomenclador ? 1 : 0;
-    const propias =
-      !esGlobal(concepto) && concepto.estado === 'ACTIVO' && this.permisos.tiene(this.permisoManage)
-        ? 2
-        : 0;
-    return verVigencias + propias;
+  protected puedeGestionar(): boolean {
+    return this.permisos.tiene(this.permisoManage);
   }
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
@@ -222,6 +219,17 @@ export class CatalogosPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * Lo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del 28/10/2026),
+   * asi que lo busca en el listado en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly conceptoEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.conceptosDeLaPagina().find((concepto) => concepto.id === panel.id) ?? null);
+  });
 
   /** `true` mientras el panel de alta esta abierto. El alta y la edicion se excluyen. */
   protected readonly altaAbierta = signal(false);
@@ -409,11 +417,6 @@ export class CatalogosPage {
     this.cerrarPanel();
     this.paginaActual.set(numero);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

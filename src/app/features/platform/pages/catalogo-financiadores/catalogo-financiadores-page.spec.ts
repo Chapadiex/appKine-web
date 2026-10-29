@@ -83,6 +83,12 @@ describe('CatalogoFinanciadoresPage', () => {
     const fixture = await montar();
     boton(fixture, 'Nuevo financiador')?.click();
     fixture.detectChanges();
+    // El alta se abre en el panel lateral, no en una tarjeta que empuje el catalogo.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.panel-lateral [data-testid="formulario-catalogo"]',
+      ),
+    ).not.toBeNull();
 
     // Vacio no manda nada.
     enviarFormulario(fixture);

@@ -169,7 +169,7 @@ describe('RecepcionDelDiaPage', () => {
     expect(enlace?.getAttribute('href')).toBe('/agenda');
   });
 
-  it('con tres o más acciones la fila deja a la vista la transición siguiente y el resto va al menú', async () => {
+  it('la fila deja a la vista solo la transición siguiente y el resto va al menú', async () => {
     const fixture = await montar();
 
     // En la sala de espera: Llamar (principal), Particular, retiro, anular, ver el turno.
@@ -179,8 +179,37 @@ describe('RecepcionDelDiaPage', () => {
       'Llamar',
     );
     expect((menu as HTMLElement).hidden).toBe(true);
-    // El cancelado solo tiene "Ver el turno": no lleva menu.
+    // El cancelado solo tiene "Ver el turno": no lleva menu, el enlace queda a la vista.
     expect(fila(fixture, 'Vega, Carla').querySelector('.acciones-de-fila__panel')).toBeNull();
+    expect(fila(fixture, 'Vega, Carla').querySelector('a.boton')?.textContent).toContain(
+      'Ver el turno',
+    );
+  });
+
+  it('el motivo se pide en un panel lateral fuera de la tabla, con la fila marcada', async () => {
+    const fixture = await montar();
+
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Atender como Particular');
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const panel = raiz.querySelector('dialog.panel-lateral');
+    expect(panel).not.toBeNull();
+    expect(panel?.closest('table')).toBeNull();
+    expect(panel?.querySelector('.panel-lateral__titulo')?.textContent).toContain(
+      'Atender como Particular a Sosa, Bruno',
+    );
+    expect(fila(fixture, 'Sosa, Bruno').classList).toContain('fila--seleccionada');
+
+    // Cancelar lo cierra y la fila deja de estar marcada.
+    (
+      Array.from(panel?.querySelectorAll('button') ?? []).find(
+        (b) => (b.textContent ?? '').trim() === 'Cancelar',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.querySelector('dialog.panel-lateral')).toBeNull();
+    expect(fila(fixture, 'Sosa, Bruno').classList).not.toContain('fila--seleccionada');
   });
 
   it('los filtros rápidos cuentan por estado de la recepción y se combinan con la búsqueda', async () => {
@@ -316,7 +345,9 @@ describe('RecepcionDelDiaPage', () => {
     clickearEnLaFila(fixture, 'Ibarra, Dario', 'Atender como Particular');
     const raiz = fixture.nativeElement as HTMLElement;
     const confirmar = (): void => {
-      (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+      (
+        raiz.querySelector('dialog.panel-lateral form button[type="submit"]') as HTMLButtonElement
+      ).click();
       fixture.detectChanges();
     };
 
@@ -380,7 +411,9 @@ describe('RecepcionDelDiaPage', () => {
     const campo = raiz.querySelector('#recepcion-motivo-particular') as HTMLInputElement;
     campo.value = 'Prefiere abonar';
     campo.dispatchEvent(new Event('input'));
-    (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+    (
+      raiz.querySelector('dialog.panel-lateral form button[type="submit"]') as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
 
     const pedido = httpMock.expectOne(recepcion(302, 'particular'));
@@ -403,7 +436,9 @@ describe('RecepcionDelDiaPage', () => {
     clickearEnLaFila(fixture, 'Sosa, Bruno', 'Se retiro sin ser atendido');
     const raiz = fixture.nativeElement as HTMLElement;
     const confirmar = (): void => {
-      (raiz.querySelector('section form button[type="submit"]') as HTMLButtonElement).click();
+      (
+        raiz.querySelector('dialog.panel-lateral form button[type="submit"]') as HTMLButtonElement
+      ).click();
       fixture.detectChanges();
     };
     confirmar();
@@ -478,7 +513,7 @@ describe('RecepcionDelDiaPage', () => {
     // El motivo es opcional: se confirma vacio.
     (
       (fixture.nativeElement as HTMLElement).querySelector(
-        'section form button[type="submit"]',
+        'dialog.panel-lateral form button[type="submit"]',
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
@@ -503,7 +538,7 @@ describe('RecepcionDelDiaPage', () => {
     clickearEnLaFila(fixture, 'Sosa, Bruno', 'Anular la llegada');
     (
       (fixture.nativeElement as HTMLElement).querySelector(
-        'section form button[type="submit"]',
+        'dialog.panel-lateral form button[type="submit"]',
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
@@ -668,6 +703,20 @@ describe('RecepcionDelDiaPage', () => {
       prepago: PREPAGO_PENDIENTE,
       recepcion: { ...DEL_DIA[3].recepcion, estado: 'VALIDADA', prepago: PREPAGO_PENDIENTE },
     };
+
+    it('quien solo cobra ve "Registrar prepago" como la acción de la fila, fuera del menú', async () => {
+      const fixture = await montar({
+        permisos: [PERMISO_TURNO_READ, PERMISO_COBRO_REGISTER],
+        turnos: [PENDIENTE],
+      });
+
+      const principal = fila(fixture, 'Ibarra, Dario').querySelector('a[principal]');
+      expect(principal?.textContent).toContain('Registrar prepago');
+      expect(principal?.closest('.acciones-de-fila__panel')).toBeNull();
+      // "Ver el turno" queda en el menú.
+      const menu = fila(fixture, 'Ibarra, Dario').querySelector('.acciones-de-fila__panel');
+      expect(menu?.textContent).toContain('Ver el turno');
+    });
 
     it('PENDIENTE avisa con el sugerido, no bloquea y lleva al cobro con el turno', async () => {
       const fixture = await montar({

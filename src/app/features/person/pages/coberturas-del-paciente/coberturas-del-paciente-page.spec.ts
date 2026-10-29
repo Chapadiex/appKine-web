@@ -281,6 +281,13 @@ describe('CoberturasDelPacientePage', () => {
     const fixture = await montar([OSDE]);
 
     apretar(fixture, 'Editar o finalizar');
+    // Refactor UX/UI del 28/10/2026: el formulario se abre en un panel lateral, fuera de la tabla,
+    // y la fila queda marcada.
+    const raiz = fixture.nativeElement as HTMLElement;
+    const campo = raiz.querySelector(`#editar-hasta-${OSDE.id}`)!;
+    expect(campo.closest('dialog.panel-lateral')).not.toBeNull();
+    expect(campo.closest('table')).toBeNull();
+    expect(raiz.querySelector('tr.fila--seleccionada')?.textContent).toContain('62-1234567-01');
     const panel = texto(fixture);
     expect(panel).toContain('finaliza la vigencia');
     expect(panel).toContain('No es lo mismo que darla de baja');

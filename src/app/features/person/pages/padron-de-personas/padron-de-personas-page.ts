@@ -8,6 +8,7 @@ import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import {
   PERMISO_COBRO_REGISTER,
   PERMISO_PACIENTE_MANAGE,
@@ -114,6 +115,7 @@ const TAMANO_DE_PAGINA = 20;
     PermisoDirective,
     ConfirmacionConMotivo,
     Paginacion,
+    PanelLateral,
     RouterLink,
   ],
   templateUrl: './padron-de-personas-page.html',
@@ -207,6 +209,17 @@ export class PadronDePersonasPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * La persona del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en la pagina en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly personaEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.personas().find((persona) => persona.id === panel.id) ?? null);
+  });
 
   protected readonly altaAbierta = signal(false);
 
@@ -506,16 +519,6 @@ export class PadronDePersonasPage {
   protected mostrarErrorAlta(campo: string): boolean {
     const control = this.formularioAlta.get(campo);
     return control !== null && control.invalid && (control.touched || control.dirty);
-  }
-
-  protected esPanel(persona: PersonaResponse, tipo: TipoAccion): boolean {
-    const abierto = this.panel();
-    return (
-      abierto !== null &&
-      persona.id !== undefined &&
-      abierto.id === persona.id &&
-      abierto.tipo === tipo
-    );
   }
 
   /** Cierra el aviso de duplicados y deja el formulario de alta como estaba, para corregirlo. */

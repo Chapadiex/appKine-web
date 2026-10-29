@@ -252,6 +252,15 @@ describe('DocumentosDePersonaPage', () => {
 
     apretar(fixture, 'Reclasificar');
     expect(texto(fixture)).toContain('El archivo, su nombre');
+    // Refactor UX/UI del 28/10/2026: el formulario se abre en un panel lateral, fuera de la tabla,
+    // y la fila queda marcada.
+    const raiz = fixture.nativeElement as HTMLElement;
+    const campo = raiz.querySelector(`#reclasificar-categoria-${CREDENCIAL.id}`)!;
+    expect(campo.closest('dialog.panel-lateral')).not.toBeNull();
+    expect(campo.closest('table')).toBeNull();
+    expect(raiz.querySelector('tr.fila--seleccionada')?.textContent).toContain(
+      CREDENCIAL.nombreArchivo,
+    );
     elegirEn(fixture, `#reclasificar-categoria-${CREDENCIAL.id}`, 'OTRO');
     apretar(fixture, 'Guardar');
 

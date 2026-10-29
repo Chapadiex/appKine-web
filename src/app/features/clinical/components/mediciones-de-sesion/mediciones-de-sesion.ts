@@ -30,6 +30,7 @@ import {
   MedicionDefinicionResponseTipoEnum,
 } from '../../../../api/generated/model/medicion-definicion-response';
 import { RegistrarMedicion } from '../../../../api/generated/model/registrar-medicion';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 /** Causas que no son de este bloque sino de la atencion entera: las resuelve la pantalla. */
 const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesion-ajena']);
@@ -59,6 +60,7 @@ const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesio
  * <p><b>Completitud informa y no gatea</b>: "4 de 18" no impide cerrar.
  */
 @Component({
+  imports: [Ayuda],
   selector: 'app-mediciones-de-sesion',
   templateUrl: './mediciones-de-sesion.html',
   styleUrl: '../../atencion.css',

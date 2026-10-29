@@ -160,7 +160,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     escribir(fixture, '#fin-precio-hasta', '2026-10-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const cierre = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'PUT' && peticion.url === `${PRECIOS}/500`,
@@ -174,7 +174,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     botones(fixture, 'Cambiar fin')[0].click();
     fixture.detectChanges();
     escribir(fixture, '#fin-precio-hasta', '');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const reapertura = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
@@ -191,7 +191,7 @@ describe('PreciosParticularesDeLaOfertaPage', () => {
     fixture.detectChanges();
 
     escribir(fixture, '#baja-precio-motivo', 'Mal cargado');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, 'app-panel-lateral form');
     const baja = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'DELETE' && peticion.url === `${PRECIOS}/500`,

@@ -19,173 +19,34 @@
 
   <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 
-  <!--
-    La distincion que esta pantalla no puede aplanar (ADR-0021). Va arriba y no en un tooltip:
-    es la causa del reporte de bug mas probable del modulo -"lo veo y no lo puedo editar"- y
-    quien lee la tabla tiene que llegar a la columna De quien es ya sabiendo que hay dos
-    poblaciones mezcladas a proposito.
-  -->
-  <section class="tarjeta nota-alcance" aria-labelledby="titulo-nota-alcance">
-    <h2 id="titulo-nota-alcance">Hay dos catalogos en esta lista, y es a proposito</h2>
-    <p>
-      Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son la
-      base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar ni dar
-      de baja desde acá, y por eso sus filas no traen acciones.
-    </p>
-    <p>
-      Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-      organización y los administras desde esta misma tabla. Si necesitas que algo entre al catalogo
-      comun, <a routerLink="/catalogo/solicitudes">pedilo a la plataforma</a>.
-    </p>
-  </section>
-
   <div aria-live="polite">
     @if (exito(); as mensaje) {
       <p class="estado estado--ok">{{ mensaje }}</p>
     }
   </div>
 
-  @if (altaAbierta()) {
-    <section class="tarjeta" aria-labelledby="titulo-alta-catalogo">
-      <h2 id="titulo-alta-catalogo">Nueva {{ tipoActual.singular }} de este centro</h2>
-
-      <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-        <div class="campo">
-          <label for="alta-catalogo-codigo">Código</label>
-          <input
-            id="alta-catalogo-codigo"
-            type="text"
-            formControlName="codigo"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('codigo') || errorEnElCodigo() ? 'true' : null"
-            [attr.aria-describedby]="
-              errorEnElCodigo()
-                ? 'alta-catalogo-codigo-conflicto'
-                : mostrarErrorAlta('codigo')
-                  ? 'alta-catalogo-codigo-error'
-                  : 'alta-catalogo-codigo-ayuda'
-            "
-          />
-          @if (errorEnElCodigo()) {
-            <p class="campo__error" id="alta-catalogo-codigo-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
-          } @else {
-            <p class="ayuda" id="alta-catalogo-codigo-ayuda">
-              La clave estable con la que este concepto se referencia. Elegila pensando que no se
-              renombra: lo que ya quedo registrado con ella la conserva para siempre.
-            </p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="alta-catalogo-name">Nombre</label>
-          <input
-            id="alta-catalogo-name"
-            type="text"
-            formControlName="name"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('name') || errorEnElNombre() ? 'true' : null"
-            [attr.aria-describedby]="
-              errorEnElNombre()
-                ? 'alta-catalogo-name-conflicto'
-                : mostrarErrorAlta('name')
-                  ? 'alta-catalogo-name-error'
-                  : null
-            "
-          />
-          @if (errorEnElNombre()) {
-            <p class="campo__error" id="alta-catalogo-name-conflicto" role="alert">
-              {{ errorAccion() }}
-            </p>
-          } @else if (mostrarErrorAlta('name')) {
-            <p class="campo__error" id="alta-catalogo-name-error">El nombre es obligatorio.</p>
-          }
-        </div>
-
-        @if (tipoActual.exigeEspecialidad) {
-          <div class="campo">
-            <label for="alta-catalogo-especialidad">Especialidad</label>
-            <select
-              id="alta-catalogo-especialidad"
-              formControlName="especialidadId"
-              [attr.aria-invalid]="mostrarErrorAlta('especialidadId') ? 'true' : null"
-              aria-describedby="alta-catalogo-especialidad-ayuda"
-            >
-              <option value="">Elegí una especialidad</option>
-              @for (especialidad of especialidades(); track especialidad.id) {
-                <option [value]="especialidad.id">
-                  {{ especialidad.name }} ({{ etiquetaDeAlcance(especialidad) }})
-                </option>
-              }
-            </select>
-            @if (mostrarErrorAlta('especialidadId')) {
-              <p class="campo__error" role="alert">
-                Una práctica siempre cuelga de una especialidad: elegí cual.
-              </p>
-            }
-            <p class="ayuda" id="alta-catalogo-especialidad-ayuda">
-              Solo aparecen las especialidades <b>activas</b>: una práctica no puede colgar de una
-              dada de baja. Estan las de la plataforma y las de tu centro.
-              @if (especialidades().length === 0) {
-                <b>
-                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacío, dala de
-                  alta primero desde la solapa Especialidades.
-                </b>
-              }
-            </p>
-          </div>
-        }
-
-        <div class="campo">
-          <label for="alta-catalogo-descripcion">Descripción (opcional)</label>
-          <input
-            id="alta-catalogo-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="campo">
-          <label for="alta-catalogo-desde">Vigente desde (opcional)</label>
-          <input id="alta-catalogo-desde" type="datetime-local" formControlName="validFrom" />
-          <p class="ayuda">
-            Sin fecha, rige desde ya. Con una fecha futura el concepto queda activo pero
-            <b>todavía sin vigencia</b>: no aparece en los selectores hasta ese momento.
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="alta-catalogo-hasta">Vigente hasta (opcional)</label>
-          <input id="alta-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
-        </div>
-
-        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
-          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-        }
-
-        <p class="acciones">
-          <button type="submit" class="boton" [disabled]="enviando()">
-            {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
-          </button>
-          <button
-            type="button"
-            class="boton boton--secundario"
-            (click)="cerrarPanel()"
-            [disabled]="enviando()"
-          >
-            Cancelar
-          </button>
-        </p>
-      </form>
-    </section>
-  }
-
   <section class="tarjeta" aria-labelledby="titulo-listado-catalogo">
-    <h2 id="titulo-listado-catalogo">{{ tipoActual.plural }} que este centro puede usar</h2>
+    <!--
+      La distincion que esta pantalla no puede aplanar (ADR-0021) se nombra en cada fila (columna
+      De quien es, y "La mantiene AKINE" en las de la plataforma). La explicacion completa, que
+      antes era una tarjeta fija arriba de todo, va al "?" del listado (refactor UX/UI del
+      28/10/2026).
+    -->
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-listado-catalogo">{{ tipoActual.plural }} que este centro puede usar</h2>
+      <app-ayuda titulo="Hay dos catalogos en esta lista, y es a proposito">
+        <p>
+          Los conceptos <b>de la plataforma</b> los mantiene AKINE y los ven todos los centros: son
+          la base comun para que un centro nuevo pueda trabajar el primer día. No se pueden editar
+          ni dar de baja desde acá, y por eso sus filas no traen acciones.
+        </p>
+        <p>
+          Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
+          organización y los administras desde esta misma tabla. Si necesitas que algo entre al
+          catalogo comun, pedilo a la plataforma desde Solicitudes.
+        </p>
+      </app-ayuda>
+    </div>
 
     <!--
       Regla de filtros (plan §3.4): la busqueda, que se usa siempre, a la vista; estado, alcance y
@@ -290,7 +151,7 @@
               No hay {{ tipoActual.plural.toLowerCase() }} que coincidan con lo que buscaste.
             </p>
           } @else {
-            <p class="ayuda">{{ totalConceptos() }} en total.</p>
+            <p class="ayuda ayuda--fija">{{ totalConceptos() }} en total.</p>
 
             <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catalogo clínico">
               <table class="tabla">
@@ -307,16 +168,19 @@
                     <th scope="col" appOrdenable [tabla]="orden" columna="codigo">Código</th>
                     <th scope="col" appOrdenable [tabla]="orden" columna="alcance">De quien es</th>
                     <th scope="col">Estado</th>
-                    <th scope="col">Acciones</th>
+                    <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (concepto of conceptosDeLaPagina(); track concepto.id) {
-                    <tr [class.fila--revocada]="concepto.estado === 'INACTIVO'">
+                    <tr
+                      [class.fila--revocada]="concepto.estado === 'INACTIVO'"
+                      [class.fila--seleccionada]="conceptoEnPanel()?.id === concepto.id"
+                    >
                       <th scope="row">
                         {{ concepto.name }}
                         @if (concepto.descripcion) {
-                          <p class="ayuda">{{ concepto.descripcion }}</p>
+                          <p class="ayuda ayuda--fija">{{ concepto.descripcion }}</p>
                         }
                       </th>
                       <td>{{ concepto.codigo }}</td>
@@ -327,13 +191,13 @@
                         @if (concepto.estado === 'INACTIVO') {
                           <span class="marca-estado">Dado de baja</span>
                           @if (concepto.deactivationReason) {
-                            <p class="ayuda">{{ concepto.deactivationReason }}</p>
+                            <p class="ayuda ayuda--fija">{{ concepto.deactivationReason }}</p>
                           }
                         } @else if (concepto.vigente) {
                           <span class="marca-estado">Activo y vigente</span>
                         } @else {
                           <span class="marca-estado">Activo, sin vigencia hoy</span>
-                          <p class="ayuda">
+                          <p class="ayuda ayuda--fija">
                             @if (formatearInstante(concepto.validFrom); as desde) {
                               Rige desde {{ desde }}.
                             }
@@ -344,204 +208,60 @@
                           </p>
                         }
                       </td>
-                      <td class="acciones-fila">
-                        @if (
-                          cantidadDeAcciones(concepto, tipoActual.slug === 'nomencladores') >= 3
-                        ) {
-                          <app-acciones-de-fila [de]="concepto.name ?? concepto.codigo ?? ''">
-                            <button
-                              principal
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="abrirPanel(concepto, 'editar')"
-                            >
-                              Editar
-                            </button>
+                      <td class="tabla__acciones">
+                        <!--
+                          Editar a la vista; Ver vigencias (nomencladores) y la baja, destructiva,
+                          en el menu "⋯". Una fila que no se administra desde acá solo ofrece la
+                          navegacion: ver vigencias o pedir un cambio.
+                        -->
+                        @if (esGlobal(concepto)) {
+                          @if (tipoActual.slug === 'nomencladores') {
                             <a
-                              class="boton boton--secundario"
+                              class="boton boton--secundario boton--chico"
                               [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
                             >
                               Ver vigencias
                             </a>
+                          }
+                          <span class="ayuda">
+                            La mantiene AKINE.
+                            <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
+                          </span>
+                        } @else if (concepto.estado === 'ACTIVO' && puedeGestionar()) {
+                          <app-acciones-de-fila [de]="concepto.name ?? concepto.codigo ?? ''">
+                            <button
+                              principal
+                              type="button"
+                              class="boton boton--secundario boton--chico"
+                              (click)="abrirPanel(concepto, 'editar')"
+                            >
+                              Editar
+                            </button>
+                            @if (tipoActual.slug === 'nomencladores') {
+                              <a
+                                [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
+                              >
+                                Ver vigencias
+                              </a>
+                            }
                             <button
                               type="button"
-                              class="boton boton--secundario accion--peligro"
+                              class="accion--peligro"
                               (click)="abrirPanel(concepto, 'baja')"
                             >
                               Dar de baja
                             </button>
                           </app-acciones-de-fila>
-                        } @else {
-                          @if (tipoActual.slug === 'nomencladores') {
-                            <a
-                              class="boton boton--secundario"
-                              [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
-                            >
-                              Ver vigencias
-                            </a>
-                          }
-
-                          @if (esGlobal(concepto)) {
-                            <span class="ayuda">
-                              La mantiene AKINE.
-                              <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
-                            </span>
-                          } @else if (concepto.estado === 'ACTIVO') {
-                            <ng-container *akinePermiso="permisoManage">
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                (click)="abrirPanel(concepto, 'editar')"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                (click)="abrirPanel(concepto, 'baja')"
-                              >
-                                Dar de baja
-                              </button>
-                            </ng-container>
-                          }
+                        } @else if (tipoActual.slug === 'nomencladores') {
+                          <a
+                            class="boton boton--secundario boton--chico"
+                            [routerLink]="['/catalogo/nomencladores', concepto.id, 'vigencias']"
+                          >
+                            Ver vigencias
+                          </a>
                         }
                       </td>
                     </tr>
-
-                    @if (panelAbierto(concepto.id, 'editar')) {
-                      <tr class="fila-panel">
-                        <td colspan="5">
-                          <form
-                            [formGroup]="formularioEdicion"
-                            (ngSubmit)="enviarEdicion()"
-                            novalidate
-                          >
-                            <h3>Editar {{ concepto.name }}</h3>
-
-                            <div class="campo">
-                              <label for="editar-catalogo-name">Nombre</label>
-                              <input
-                                id="editar-catalogo-name"
-                                type="text"
-                                formControlName="name"
-                                autocomplete="off"
-                                [attr.aria-invalid]="
-                                  mostrarErrorEdicion('name') || errorEnElNombre() ? 'true' : null
-                                "
-                              />
-                              @if (errorEnElNombre()) {
-                                <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-                              } @else if (mostrarErrorEdicion('name')) {
-                                <p class="campo__error">El nombre es obligatorio.</p>
-                              } @else {
-                                <p class="ayuda">
-                                  Renombrar no cambia lo que ya quedo registrado: el código es la
-                                  clave estable y no se edita.
-                                </p>
-                              }
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-catalogo-descripcion">Descripción</label>
-                              <input
-                                id="editar-catalogo-descripcion"
-                                type="text"
-                                formControlName="descripcion"
-                                autocomplete="off"
-                              />
-                              <p class="ayuda">Vaciar el campo borra la descripción.</p>
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-catalogo-desde">Vigente desde</label>
-                              <input
-                                id="editar-catalogo-desde"
-                                type="datetime-local"
-                                formControlName="validFrom"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-catalogo-hasta">Vigente hasta</label>
-                              <input
-                                id="editar-catalogo-hasta"
-                                type="datetime-local"
-                                formControlName="validUntil"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label class="opcion-casilla" for="editar-catalogo-sin-fin">
-                                <input
-                                  id="editar-catalogo-sin-fin"
-                                  type="checkbox"
-                                  formControlName="clearValidUntil"
-                                  aria-describedby="editar-catalogo-sin-fin-ayuda"
-                                />
-                                Sacarle el fin de vigencia
-                              </label>
-                              <p class="ayuda" id="editar-catalogo-sin-fin-ayuda">
-                                Dejar el campo vacío significa <b>no lo toques</b>. Para que el
-                                concepto pase a no vencer nunca hay que marcar esto.
-                              </p>
-                            </div>
-
-                            @if (errorAccion() && !errorEnElNombre()) {
-                              <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-                            }
-
-                            <p class="acciones">
-                              <button
-                                type="submit"
-                                class="boton"
-                                [disabled]="enviando() || edicionBloqueada()"
-                              >
-                                {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
-                              </button>
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                (click)="cerrarPanel()"
-                                [disabled]="enviando()"
-                              >
-                                Cancelar
-                              </button>
-                              @if (hayQueRecargar()) {
-                                <button type="button" class="boton" (click)="cargar()">
-                                  Recargar el listado
-                                </button>
-                              }
-                            </p>
-                          </form>
-                        </td>
-                      </tr>
-                    }
-
-                    @if (panelAbierto(concepto.id, 'baja')) {
-                      <tr class="fila-panel">
-                        <td colspan="5">
-                          <app-confirmacion-con-motivo
-                            idCampo="baja-catalogo-motivo"
-                            [titulo]="'Dar de baja ' + concepto.name"
-                            etiqueta="Motivo de la baja"
-                            ayuda="Queda registrado junto al concepto y se muestra en el listado. La baja no se deshace: lo que ya se registro con este concepto conserva su significado, y si vuelve a hacer falta se da de alta uno nuevo."
-                            textoConfirmar="Dar de baja"
-                            [enviando]="enviando()"
-                            (confirmado)="enviarBaja($event)"
-                            (cancelado)="cerrarPanel()"
-                          />
-
-                          @if (errorAccion()) {
-                            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-                          }
-                          @if (hayQueRecargar()) {
-                            <button type="button" class="boton" (click)="cargar()">
-                              Recargar el listado
-                            </button>
-                          }
-                        </td>
-                      </tr>
-                    }
                   }
                 </tbody>
               </table>
@@ -570,4 +290,272 @@
   </div>
 
   <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
+}
+
+<!--
+  Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). El alta era una tarjeta
+  encima del listado y la edicion una fila de la tabla.
+-->
+@if (datos(); as tipoActual) {
+  @if (altaAbierta()) {
+    <app-panel-lateral
+      [titulo]="'Nueva ' + tipoActual.singular + ' de este centro'"
+      subtitulo="La ve solo tu organización"
+      (cerrar)="cerrarPanel()"
+    >
+      <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+        <div class="campo">
+          <label for="alta-catalogo-codigo">Código</label>
+          <input
+            id="alta-catalogo-codigo"
+            type="text"
+            formControlName="codigo"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorAlta('codigo') || errorEnElCodigo() ? 'true' : null"
+            [attr.aria-describedby]="
+              errorEnElCodigo()
+                ? 'alta-catalogo-codigo-conflicto'
+                : mostrarErrorAlta('codigo')
+                  ? 'alta-catalogo-codigo-error'
+                  : 'alta-catalogo-codigo-ayuda'
+            "
+          />
+          @if (errorEnElCodigo()) {
+            <p class="campo__error" id="alta-catalogo-codigo-conflicto" role="alert">
+              {{ errorAccion() }}
+            </p>
+          } @else if (mostrarErrorAlta('codigo')) {
+            <p class="campo__error" id="alta-catalogo-codigo-error">El código es obligatorio.</p>
+          } @else {
+            <p class="ayuda" id="alta-catalogo-codigo-ayuda">
+              La clave estable con la que este concepto se referencia. Elegila pensando que no se
+              renombra: lo que ya quedo registrado con ella la conserva para siempre.
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="alta-catalogo-name">Nombre</label>
+          <input
+            id="alta-catalogo-name"
+            type="text"
+            formControlName="name"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorAlta('name') || errorEnElNombre() ? 'true' : null"
+            [attr.aria-describedby]="
+              errorEnElNombre()
+                ? 'alta-catalogo-name-conflicto'
+                : mostrarErrorAlta('name')
+                  ? 'alta-catalogo-name-error'
+                  : null
+            "
+          />
+          @if (errorEnElNombre()) {
+            <p class="campo__error" id="alta-catalogo-name-conflicto" role="alert">
+              {{ errorAccion() }}
+            </p>
+          } @else if (mostrarErrorAlta('name')) {
+            <p class="campo__error" id="alta-catalogo-name-error">El nombre es obligatorio.</p>
+          }
+        </div>
+
+        @if (tipoActual.exigeEspecialidad) {
+          <div class="campo">
+            <label for="alta-catalogo-especialidad">Especialidad</label>
+            <select
+              id="alta-catalogo-especialidad"
+              formControlName="especialidadId"
+              [attr.aria-invalid]="mostrarErrorAlta('especialidadId') ? 'true' : null"
+              aria-describedby="alta-catalogo-especialidad-ayuda"
+            >
+              <option value="">Elegí una especialidad</option>
+              @for (especialidad of especialidades(); track especialidad.id) {
+                <option [value]="especialidad.id">
+                  {{ especialidad.name }} ({{ etiquetaDeAlcance(especialidad) }})
+                </option>
+              }
+            </select>
+            @if (mostrarErrorAlta('especialidadId')) {
+              <p class="campo__error" role="alert">
+                Una práctica siempre cuelga de una especialidad: elegí cual.
+              </p>
+            }
+            <p class="ayuda ayuda--fija" id="alta-catalogo-especialidad-ayuda">
+              Solo aparecen las especialidades <b>activas</b>: una práctica no puede colgar de una
+              dada de baja. Estan las de la plataforma y las de tu centro.
+              @if (especialidades().length === 0) {
+                <b>
+                  No pudimos traer las especialidades. Recarga la pantalla; si sigue vacío, dala de
+                  alta primero desde la solapa Especialidades.
+                </b>
+              }
+            </p>
+          </div>
+        }
+
+        <div class="campo">
+          <label for="alta-catalogo-descripcion">Descripción (opcional)</label>
+          <input
+            id="alta-catalogo-descripcion"
+            type="text"
+            formControlName="descripcion"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="alta-catalogo-desde">Vigente desde (opcional)</label>
+          <input id="alta-catalogo-desde" type="datetime-local" formControlName="validFrom" />
+          <p class="ayuda">
+            Sin fecha, rige desde ya. Con una fecha futura el concepto queda activo pero
+            <b>todavía sin vigencia</b>: no aparece en los selectores hasta ese momento.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="alta-catalogo-hasta">Vigente hasta (opcional)</label>
+          <input id="alta-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
+        </div>
+
+        @if (errorAccion() && !errorEnElNombre() && !errorEnElCodigo()) {
+          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+        }
+
+        <p class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarPanel()"
+            [disabled]="enviando()"
+          >
+            Cancelar
+          </button>
+        </p>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (conceptoEnPanel(); as concepto) {
+    @if (panel()?.tipo === 'editar') {
+      <app-panel-lateral
+        [titulo]="'Editar ' + concepto.name"
+        [subtitulo]="'Código ' + concepto.codigo"
+        (cerrar)="cerrarPanel()"
+      >
+        <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+          <div class="campo">
+            <label for="editar-catalogo-name">Nombre</label>
+            <input
+              id="editar-catalogo-name"
+              type="text"
+              formControlName="name"
+              autocomplete="off"
+              [attr.aria-invalid]="mostrarErrorEdicion('name') || errorEnElNombre() ? 'true' : null"
+            />
+            @if (errorEnElNombre()) {
+              <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+            } @else if (mostrarErrorEdicion('name')) {
+              <p class="campo__error">El nombre es obligatorio.</p>
+            } @else {
+              <p class="ayuda">
+                Renombrar no cambia lo que ya quedo registrado: el código es la clave estable y no
+                se edita.
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="editar-catalogo-descripcion">Descripción</label>
+            <input
+              id="editar-catalogo-descripcion"
+              type="text"
+              formControlName="descripcion"
+              autocomplete="off"
+            />
+            <p class="ayuda">Vaciar el campo borra la descripción.</p>
+          </div>
+
+          <div class="campo">
+            <label for="editar-catalogo-desde">Vigente desde</label>
+            <input id="editar-catalogo-desde" type="datetime-local" formControlName="validFrom" />
+          </div>
+
+          <div class="campo">
+            <label for="editar-catalogo-hasta">Vigente hasta</label>
+            <input id="editar-catalogo-hasta" type="datetime-local" formControlName="validUntil" />
+          </div>
+
+          <div class="campo">
+            <label class="opcion-casilla" for="editar-catalogo-sin-fin">
+              <input
+                id="editar-catalogo-sin-fin"
+                type="checkbox"
+                formControlName="clearValidUntil"
+                aria-describedby="editar-catalogo-sin-fin-ayuda"
+              />
+              Sacarle el fin de vigencia
+            </label>
+            <p class="ayuda" id="editar-catalogo-sin-fin-ayuda">
+              Dejar el campo vacío significa <b>no lo toques</b>. Para que el concepto pase a no
+              vencer nunca hay que marcar esto.
+            </p>
+          </div>
+
+          @if (errorAccion() && !errorEnElNombre()) {
+            <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+          }
+
+          <p class="acciones">
+            <button type="submit" class="boton" [disabled]="enviando() || edicionBloqueada()">
+              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="cerrarPanel()"
+              [disabled]="enviando()"
+            >
+              Cancelar
+            </button>
+            @if (hayQueRecargar()) {
+              <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
+            }
+          </p>
+        </form>
+      </app-panel-lateral>
+    }
+
+    @if (panel()?.tipo === 'baja') {
+      <app-panel-lateral [titulo]="'Dar de baja ' + concepto.name" (cerrar)="cerrarPanel()">
+        <app-confirmacion-con-motivo
+          idCampo="baja-catalogo-motivo"
+          [titulo]="'Dar de baja ' + concepto.name"
+          [mostrarTitulo]="false"
+          etiqueta="Motivo de la baja"
+          ayuda="Queda registrado junto al concepto y se muestra en el listado."
+          textoConfirmar="Dar de baja"
+          [enviando]="enviando()"
+          (confirmado)="enviarBaja($event)"
+          (cancelado)="cerrarPanel()"
+        >
+          <p class="ayuda ayuda--fija">
+            <b>La baja no se deshace.</b> Lo que ya se registro con este concepto conserva su
+            significado; si vuelve a hacer falta se da de alta uno nuevo.
+          </p>
+        </app-confirmacion-con-motivo>
+
+        @if (errorAccion()) {
+          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+        }
+        @if (hayQueRecargar()) {
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Recargar el listado
+          </button>
+        }
+      </app-panel-lateral>
+    }
+  }
 }

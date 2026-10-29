@@ -38,6 +38,8 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -97,6 +99,8 @@ const ESPERA_DE_BUSQUEDA = 250;
     ReactiveFormsModule,
     RouterLink,
     ConfirmacionConMotivo,
+    PanelLateral,
+    AccionesDeFila,
   ],
   templateUrl: './catalogo-de-servicios-page.html',
   styleUrl: '../../offering.css',
@@ -170,6 +174,17 @@ export class CatalogoDeServiciosPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * Lo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del 28/10/2026),
+   * asi que lo busca en el listado en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly servicioEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.servicios().find((servicio) => servicio.id === panel.id) ?? null);
+  });
 
   /** `true` mientras el panel de alta esta abierto. El alta y la edicion se excluyen. */
   protected readonly altaAbierta = signal(false);
@@ -280,11 +295,6 @@ export class CatalogoDeServiciosPage {
     this.cerrarPanel();
     this.filtroEstado.set(elegido);
     this.cargar();
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

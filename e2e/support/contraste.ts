@@ -340,6 +340,25 @@ async function correr(
       }
     }
 
+    // Texto dentro de un `dialog` modal abierto (el panel lateral, UX-11): axe no resuelve el
+    // apilado de la capa superior y devuelve `incomplete` (`elmPartiallyObscuring` o `bgOverlap`)
+    // para algunos nodos,
+    // aunque `elementsFromPoint` del navegador muestra que nada los tapa. No se toleran: se miden
+    // con la misma aritmetica contra el primer fondo opaco, que dentro del panel es el suyo.
+    for (const regla of resultado.incomplete) {
+      regla.nodes = regla.nodes.filter((nodo) => {
+        const datos = (nodo.any as { data?: { messageKey?: string } }[])[0]?.data;
+        const elemento = document.querySelector(nodo.target[0] ?? '');
+        const tapado = ['bgOverlap', 'elmPartiallyObscuring'].includes(datos?.messageKey ?? '');
+        if (!tapado || elemento?.closest('dialog[open]') == null) {
+          return true;
+        }
+        medidos.push(medir(elemento, `dialog ${nodo.target.join(' ')}`));
+        return false;
+      });
+    }
+    resultado.incomplete = resultado.incomplete.filter((regla) => regla.nodes.length > 0);
+
     return { axe: resultado as unknown as CorridaDeAxe, medidos, vacios };
   }, selectoresAMano);
 }

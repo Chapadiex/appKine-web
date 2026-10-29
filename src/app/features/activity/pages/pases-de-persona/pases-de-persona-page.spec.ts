@@ -10,6 +10,7 @@ import {
   CONSULTORIO,
   asentar,
   clickear,
+  clickearEnPanel,
   escribir,
   otorgar,
   proveerDiaDeLaSede,
@@ -385,7 +386,7 @@ describe('PasesDePersonaPage', () => {
 
       escribir(fixture, '#ajuste-cantidad', '4');
       expect(textoDe(fixture)).toContain('El saldo tiene que quedar entre 0 y 8.');
-      clickear(fixture, 'Ajustar saldo');
+      clickearEnPanel(fixture, 'Ajustar saldo');
       expect(textoDe(fixture)).toContain('El motivo es obligatorio');
       httpMock.expectNone((r) => r.method === 'POST');
 
@@ -394,7 +395,7 @@ describe('PasesDePersonaPage', () => {
       escribir(fixture, '#ajuste-cantidad', '-5');
       expect(textoDe(fixture)).toContain('El saldo quedaria en 0 de 8.');
       escribir(fixture, '#ajuste-motivo', ' Cortesia ');
-      clickear(fixture, 'Ajustar saldo');
+      clickearEnPanel(fixture, 'Ajustar saldo');
       const pedido = httpMock.expectOne(AJUSTES);
       expect(pedido.request.body).toEqual({ cantidad: -5, motivo: 'Cortesia', version: 4 });
       // La pantalla relee la pagina del ledger: el ledger entero en la respuesta sobra (0.117.0).
@@ -429,7 +430,7 @@ describe('PasesDePersonaPage', () => {
     clickear(fixture, 'Ajustar saldo');
     escribir(fixture, '#ajuste-cantidad', '1');
     escribir(fixture, '#ajuste-motivo', 'Error de carga');
-    clickear(fixture, 'Ajustar saldo');
+    clickearEnPanel(fixture, 'Ajustar saldo');
     httpMock.expectOne(AJUSTES).flush(
       ...conflicto('pase-no-ajustable', {
         causa: 'FUERA_DE_VIGENCIA',
@@ -440,7 +441,7 @@ describe('PasesDePersonaPage', () => {
     expect(textoDe(fixture)).toContain('la vigencia del pase ya termino');
     expect(textoDe(fixture)).not.toContain('2026-10-10');
 
-    clickear(fixture, 'Ajustar saldo');
+    clickearEnPanel(fixture, 'Ajustar saldo');
     httpMock.expectOne(AJUSTES).flush(...conflicto('concurrent-modification'));
     responderPases();
     await asentar(fixture);
@@ -639,7 +640,7 @@ describe('PasesDePersonaPage', () => {
     clickear(fixture, 'Ajustar saldo');
     escribir(fixture, '#ajuste-cantidad', '1');
     escribir(fixture, '#ajuste-motivo', 'Cortesia');
-    clickear(fixture, 'Ajustar saldo');
+    clickearEnPanel(fixture, 'Ajustar saldo');
     httpMock
       .expectOne(AJUSTES)
       .flush({ pase: { ...PASE, creditosDisponibles: 6, version: 5 }, movimientos: [] });

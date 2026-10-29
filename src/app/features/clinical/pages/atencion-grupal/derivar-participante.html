@@ -1,13 +1,12 @@
-<section class="tarjeta" aria-labelledby="titulo-derivar-participante" akineFocoAlMontar>
-  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-derivar-participante">Derivar a {{ nombre() }} a un caso clínico</h2>
-    <app-ayuda titulo="Sobre esta sección">
-      <p>
-        Derivar vincula su asistencia a esta clase con un caso clínico activo de su historia. No es
-        atender: la atención se inicia después, desde la tabla, y se numera dentro de ese caso.
-      </p>
-    </app-ayuda>
-  </div>
+<!--
+  Vive dentro del panel lateral de la pantalla de la clase (refactor UX/UI del 28/10/2026), que
+  lleva el titulo a la vista y la explicacion en su subtitulo. El `h2` queda para el nombre de la
+  region, que es lo que la ubica para un lector de pantalla.
+-->
+<section aria-labelledby="titulo-derivar-participante" akineFocoAlMontar>
+  <h2 id="titulo-derivar-participante" class="visualmente-oculto">
+    Derivar a {{ nombre() }} a un caso clínico
+  </h2>
 
   @switch (elegibilidad().tipo) {
     @case ('cargando') {
@@ -70,7 +69,9 @@
             historia clínica.
           </p>
           @if (rutaDeLaFicha(); as ruta) {
-            <p><a class="enlace" [routerLink]="ruta">Ir a su ficha del padrón</a></p>
+            <div class="acciones">
+              <a class="boton boton--secundario" [routerLink]="ruta">Ir a su ficha del padrón</a>
+            </div>
           }
         } @else {
           @if (casos(); as carga) {
@@ -101,9 +102,11 @@
                       con el diagnóstico presuntivo, y después se vuelve a esta clase.
                     </p>
                     @if (rutaDeLaHistoria(); as ruta) {
-                      <p>
-                        <a class="enlace" [routerLink]="ruta">Ir a su historia clínica</a>
-                      </p>
+                      <div class="acciones">
+                        <a class="boton boton--secundario" [routerLink]="ruta"
+                          >Ir a su historia clínica</a
+                        >
+                      </div>
                     }
                   } @else {
                     <form (submit)="$event.preventDefault(); derivar()" novalidate>
@@ -143,7 +146,7 @@
                       @if (error(); as fallo) {
                         <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
                       }
-                      <div class="pie-tarjeta">
+                      <div class="acciones">
                         <button type="submit" class="boton" [disabled]="enviando()">
                           @if (enviando()) {
                             Derivando…
@@ -164,6 +167,6 @@
   }
 
   <div class="acciones">
-    <button type="button" class="boton-texto" (click)="cerrar.emit()">Cerrar</button>
+    <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">Cerrar</button>
   </div>
 </section>

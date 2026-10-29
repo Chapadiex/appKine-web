@@ -51,23 +51,19 @@
     </p>
   }
 
-  @if (error(); as fallo) {
-    <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
-      <h2 id="titulo-conflicto-serie">No se pudo completar la operación</h2>
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-      @if (fallo.accion === 'releer-alcance' && pedido() !== null) {
-        <div class="acciones">
-          <button type="button" class="boton" (click)="previsualizar()">
-            Volver a previsualizar
-          </button>
-        </div>
-      }
-      @if (fallo.accion === 'elegir-contexto') {
-        <div class="acciones">
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
-        </div>
-      }
-    </section>
+  <!-- Con un panel abierto, el rechazo se muestra dentro del panel (ver abajo). -->
+  @if (pedido() === null) {
+    @if (error(); as fallo) {
+      <section class="tarjeta conflicto" aria-labelledby="titulo-conflicto-serie">
+        <h2 id="titulo-conflicto-serie">No se pudo completar la operación</h2>
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @if (fallo.accion === 'elegir-contexto') {
+          <div class="acciones">
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          </div>
+        }
+      </section>
+    }
   }
 </div>
 
@@ -125,171 +121,6 @@
     </section>
   }
 
-  @if (reprogramacion(); as mover) {
-    <section class="tarjeta" aria-labelledby="titulo-reprogramar">
-      <h2 id="titulo-reprogramar">
-        Reprogramar desde el turno del {{ fechaHora(mover.pivote.inicio) }}
-      </h2>
-
-      <akine-confirmacion-con-motivo
-        idCampo="serie-reprogramar-motivo"
-        titulo="Confirmar la reprogramacion"
-        etiqueta="Motivo del cambio"
-        ayuda="Queda en el historial de cada turno, junto al horario del que vino."
-        [textoConfirmar]="'Mover ' + afectados().length + ' turnos'"
-        [enviando]="enviando() || previsualizando() || afectados().length === 0"
-        (confirmado)="reprogramar($event)"
-        (cancelado)="cerrar()"
-      >
-        <p class="ayuda">
-          Se elige el horario nuevo del turno de partida. Los demas se corren lo mismo, en hora de
-          la sede: si este pasa del lunes 09:00 al martes 10:00, todos pasan un día y una hora mas
-          tarde. Se mueven todos o ninguno, y los que estaban confirmados vuelven a quedar
-          reservados.
-        </p>
-
-        <fieldset class="grupo">
-          <legend>Que turnos se mueven</legend>
-          @for (opcion of alcancesDeReprogramacion; track opcion) {
-            <label class="opcion-radio" [for]="'serie-reprogramar-alcance-' + opcion">
-              <input
-                type="radio"
-                name="serie-reprogramar-alcance"
-                [id]="'serie-reprogramar-alcance-' + opcion"
-                [checked]="mover.alcance === opcion"
-                (change)="cambiarAlcance(opcion)"
-              />
-              {{ textoDeAlcance(opcion) }}
-            </label>
-          }
-        </fieldset>
-
-        <app-selector-de-horario
-          idDia="serie-reprogramar-dia"
-          [fecha]="fechaDestino()"
-          [slots]="slotsDestino()"
-          [timezone]="timezone()"
-          [elegido]="instanteDestino()"
-          [faltaHorario]="faltaHorario()"
-          textoFaltaHorario="Elegí el horario nuevo del turno de partida antes de mover la serie."
-          (diaCambiado)="cambiarDiaDestino($event)"
-          (slotElegido)="elegirDestino($event)"
-        />
-
-        <label class="opcion-radio" for="serie-reprogramar-profesional">
-          <input
-            id="serie-reprogramar-profesional"
-            type="checkbox"
-            [checked]="cambiarProfesional()"
-            (change)="alternarProfesional($any($event.target).checked)"
-          />
-          Pasar los turnos al profesional del horario elegido
-        </label>
-        <p class="ayuda">
-          Sin marcar, cada turno conserva su profesional y solo se ofrecen los horarios del
-          profesional de este turno.
-        </p>
-
-        @if (previsualizando()) {
-          <p class="estado estado--cargando">Calculando que turnos se moverian…</p>
-        }
-
-        @if (alcance(); as calculado) {
-          @if (afectados().length > 0) {
-            <p>Se moverian estos {{ afectados().length }} turnos:</p>
-            <ul>
-              @for (turno of afectados(); track turno.id) {
-                <li>
-                  {{ fechaHora(turno.inicio) }}
-                  @if (destinoEstimado(turno); as destino) {
-                    → {{ destino }}
-                  }
-                </li>
-              }
-            </ul>
-            @if (instanteDestino() === '') {
-              <p class="ayuda">Elegí un horario para ver a donde pasaria cada uno.</p>
-            } @else {
-              <p class="ayuda">
-                El horario nuevo de cada uno es una estimacion: el servidor lo calcula y revisa que
-                haya lugar al confirmar.
-              </p>
-            }
-          } @else {
-            <p class="estado estado--vacio">
-              No hay ningún turno pendiente en ese alcance: no hay nada que mover.
-            </p>
-          }
-
-          @if ((calculado.omitidos?.length ?? 0) > 0) {
-            <p>Quedan como estan:</p>
-            <ul>
-              @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
-                <li>
-                  {{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}
-                </li>
-              }
-            </ul>
-          }
-        }
-      </akine-confirmacion-con-motivo>
-    </section>
-  } @else if (pedido(); as elegido) {
-    <section class="tarjeta" aria-labelledby="titulo-alcance">
-      <h2 id="titulo-alcance">Cancelar: {{ textoDeAlcance(elegido.alcance) }}</h2>
-
-      @if (previsualizando()) {
-        <p class="estado estado--cargando">Calculando que turnos se cancelarian…</p>
-      }
-
-      @if (alcance(); as calculado) {
-        @if (afectados().length > 0) {
-          <p>Se cancelarian estos {{ afectados().length }} turnos:</p>
-          <ul>
-            @for (turno of afectados(); track turno.id) {
-              <li>{{ fechaHora(turno.inicio) }}</li>
-            }
-          </ul>
-        } @else {
-          <p class="estado estado--vacio">
-            No hay ningún turno pendiente en ese alcance: no hay nada que cancelar.
-          </p>
-        }
-
-        @if ((calculado.omitidos?.length ?? 0) > 0) {
-          <p>Quedan como estan:</p>
-          <ul>
-            @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
-              <li>{{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}</li>
-            }
-          </ul>
-        }
-
-        @if (afectados().length > 0) {
-          <akine-confirmacion-con-motivo
-            idCampo="serie-cancelar-motivo"
-            titulo="Confirmar la cancelacion"
-            etiqueta="Motivo de la cancelacion"
-            ayuda="Queda registrado en el historial de cada turno, junto a quien lo cancelo."
-            [textoConfirmar]="'Cancelar ' + afectados().length + ' turnos'"
-            [enviando]="enviando()"
-            (confirmado)="cancelar($event)"
-            (cancelado)="cerrar()"
-          >
-            <p class="ayuda">
-              Cancelar libera cada lugar, que vuelve a la agenda. No borra nada: cada turno queda
-              con su motivo y su historial.
-            </p>
-          </akine-confirmacion-con-motivo>
-        } @else {
-          <div class="acciones">
-            <button type="button" class="boton boton--secundario" (click)="cerrar()">Cerrar</button>
-          </div>
-        }
-      }
-    </section>
-  }
-
   <section class="tarjeta tarjeta--plana" aria-labelledby="titulo-turnos-serie">
     <div class="tarjeta__barra">
       <h2 id="titulo-turnos-serie">Turnos</h2>
@@ -309,7 +140,10 @@
         </thead>
         <tbody>
           @for (turno of actual.turnos ?? []; track turno.id; let i = $index) {
-            <tr [class.fila--revocada]="turno.estado === 'CANCELADO'">
+            <tr
+              [class.fila--revocada]="turno.estado === 'CANCELADO'"
+              [class.fila--seleccionada]="pedido()?.turnoId === turno.id"
+            >
               <td>{{ i + 1 }}</td>
               <td>{{ fechaHora(turno.inicio) }}</td>
               <td>
@@ -324,16 +158,16 @@
                   <span class="celda-secundaria">{{ detalle }}</span>
                 }
               </td>
-              <td class="celda-acciones">
+              <td class="tabla__acciones">
                 <!--
-                  Cuatro acciones: menu "⋯" (decidido el 22/10/2026). La frecuente, "Ver o mover",
-                  queda a la vista; reprogramar y cancelar van detras del menu.
+                  Una accion a la vista y el resto en el menu "⋯". La frecuente, "Ver o mover",
+                  queda a la vista; reprogramar y cancelar (destructiva) van detras del menu.
                 -->
                 <app-acciones-de-fila [de]="'turno del ' + fechaHora(turno.inicio)">
                   @if (turno.id) {
                     <a
                       principal
-                      class="enlace"
+                      class="boton boton--secundario boton--chico"
                       [routerLink]="['/agenda', 'turnos', turno.id]"
                       [queryParams]="{
                         version: turno.version,
@@ -380,3 +214,192 @@
     </div>
   </section>
 }
+
+<!--
+  Reprogramar y cancelar en un panel lateral (refactor UX/UI del 28/10/2026). Antes eran una tarjeta
+  entre los indicadores y la tabla: abrirla corria la tabla para abajo y el turno elegido quedaba
+  fuera de la vista. El panel deja la fila marcada y la tabla quieta.
+-->
+@if (reprogramacion(); as mover) {
+  <app-panel-lateral
+    ancho="amplio"
+    [titulo]="'Reprogramar desde el turno del ' + fechaHora(mover.pivote.inicio)"
+    (cerrar)="cerrar()"
+  >
+    <ng-container *ngTemplateOutlet="rechazoEnElPanel" />
+
+    <akine-confirmacion-con-motivo
+      idCampo="serie-reprogramar-motivo"
+      titulo="Confirmar la reprogramacion"
+      [mostrarTitulo]="false"
+      etiqueta="Motivo del cambio"
+      ayuda="Queda en el historial de cada turno, junto al horario del que vino."
+      [textoConfirmar]="'Mover ' + afectados().length + ' turnos'"
+      [enviando]="enviando() || previsualizando() || afectados().length === 0"
+      (confirmado)="reprogramar($event)"
+      (cancelado)="cerrar()"
+    >
+      <fieldset class="grupo">
+        <legend>Que turnos se mueven</legend>
+        @for (opcion of alcancesDeReprogramacion; track opcion) {
+          <label class="opcion-radio" [for]="'serie-reprogramar-alcance-' + opcion">
+            <input
+              type="radio"
+              name="serie-reprogramar-alcance"
+              [id]="'serie-reprogramar-alcance-' + opcion"
+              [checked]="mover.alcance === opcion"
+              (change)="cambiarAlcance(opcion)"
+            />
+            {{ textoDeAlcance(opcion) }}
+          </label>
+        }
+      </fieldset>
+
+      <!-- Consecuencia de la operacion: se lee antes de elegir el horario. -->
+      <p class="ayuda">
+        Elegí el horario nuevo del turno de partida: los demás se corren lo mismo, en hora de la
+        sede. Se mueven todos o ninguno, y los confirmados vuelven a quedar reservados.
+      </p>
+
+      <app-selector-de-horario
+        idDia="serie-reprogramar-dia"
+        [fecha]="fechaDestino()"
+        [slots]="slotsDestino()"
+        [timezone]="timezone()"
+        [elegido]="instanteDestino()"
+        [faltaHorario]="faltaHorario()"
+        textoFaltaHorario="Elegí el horario nuevo del turno de partida antes de mover la serie."
+        (diaCambiado)="cambiarDiaDestino($event)"
+        (slotElegido)="elegirDestino($event)"
+      />
+
+      <label class="opcion-radio" for="serie-reprogramar-profesional">
+        <input
+          id="serie-reprogramar-profesional"
+          type="checkbox"
+          aria-describedby="serie-reprogramar-profesional-ayuda"
+          [checked]="cambiarProfesional()"
+          (change)="alternarProfesional($any($event.target).checked)"
+        />
+        Pasar los turnos al profesional del horario elegido
+      </label>
+      <p class="ayuda" id="serie-reprogramar-profesional-ayuda">
+        Sin marcar, cada turno conserva su profesional y solo se ofrecen sus horarios.
+      </p>
+
+      @if (previsualizando()) {
+        <p class="estado estado--cargando">Calculando que turnos se moverian…</p>
+      }
+
+      @if (alcance(); as calculado) {
+        @if (afectados().length > 0) {
+          <p>Se moverian estos {{ afectados().length }} turnos:</p>
+          <ul>
+            @for (turno of afectados(); track turno.id) {
+              <li>
+                {{ fechaHora(turno.inicio) }}
+                @if (destinoEstimado(turno); as destino) {
+                  → {{ destino }}
+                }
+              </li>
+            }
+          </ul>
+          @if (instanteDestino() === '') {
+            <p class="ayuda">Elegí un horario para ver a donde pasaria cada uno.</p>
+          } @else {
+            <p class="ayuda">
+              El horario nuevo de cada uno es una estimacion: el servidor lo calcula y revisa que
+              haya lugar al confirmar.
+            </p>
+          }
+        } @else {
+          <p class="estado estado--vacio">
+            No hay ningún turno pendiente en ese alcance: no hay nada que mover.
+          </p>
+        }
+
+        @if ((calculado.omitidos?.length ?? 0) > 0) {
+          <p>Quedan como estan:</p>
+          <ul>
+            @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
+              <li>{{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}</li>
+            }
+          </ul>
+        }
+      }
+    </akine-confirmacion-con-motivo>
+  </app-panel-lateral>
+} @else if (pedido(); as elegido) {
+  <app-panel-lateral [titulo]="'Cancelar: ' + textoDeAlcance(elegido.alcance)" (cerrar)="cerrar()">
+    <ng-container *ngTemplateOutlet="rechazoEnElPanel" />
+
+    @if (previsualizando()) {
+      <p class="estado estado--cargando">Calculando que turnos se cancelarian…</p>
+    }
+
+    @if (alcance(); as calculado) {
+      @if (afectados().length > 0) {
+        <p>Se cancelarian estos {{ afectados().length }} turnos:</p>
+        <ul>
+          @for (turno of afectados(); track turno.id) {
+            <li>{{ fechaHora(turno.inicio) }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="estado estado--vacio">
+          No hay ningún turno pendiente en ese alcance: no hay nada que cancelar.
+        </p>
+      }
+
+      @if ((calculado.omitidos?.length ?? 0) > 0) {
+        <p>Quedan como estan:</p>
+        <ul>
+          @for (omitido of calculado.omitidos ?? []; track omitido.turno?.id) {
+            <li>{{ fechaHora(omitido.turno?.inicio) }} — {{ textoDeOmitido(omitido.motivo) }}</li>
+          }
+        </ul>
+      }
+
+      @if (afectados().length > 0) {
+        <akine-confirmacion-con-motivo
+          idCampo="serie-cancelar-motivo"
+          titulo="Confirmar la cancelacion"
+          [mostrarTitulo]="false"
+          etiqueta="Motivo de la cancelacion"
+          ayuda="Queda registrado en el historial de cada turno, junto a quien lo cancelo."
+          [textoConfirmar]="'Cancelar ' + afectados().length + ' turnos'"
+          [enviando]="enviando()"
+          (confirmado)="cancelar($event)"
+          (cancelado)="cerrar()"
+        >
+          <p class="ayuda">
+            Cancelar libera cada lugar, que vuelve a la agenda. No borra nada: cada turno queda con
+            su motivo y su historial.
+          </p>
+        </akine-confirmacion-con-motivo>
+      } @else {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cerrar</button>
+        </div>
+      }
+    }
+  </app-panel-lateral>
+}
+
+<!-- El rechazo de una operacion del panel se muestra dentro del panel, que es lo que esta a la vista. -->
+<ng-template #rechazoEnElPanel>
+  <div aria-live="polite">
+    @if (error(); as fallo) {
+      <div class="conflicto" role="alert">
+        <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        @if (fallo.accion === 'releer-alcance') {
+          <div class="acciones">
+            <button type="button" class="boton" (click)="previsualizar()">
+              Volver a previsualizar
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

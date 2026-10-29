@@ -162,12 +162,12 @@
                 Importe
               </th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="estado">Estado</th>
-              <th scope="col">Acciones</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
             @for (item of tablaItems.visibles(); track item.id) {
-              <tr>
+              <tr [class.fila--seleccionada]="itemEnDebito()?.id === item.id">
                 <td>
                   {{ item.concepto }}
                   @if (item.id !== undefined && hallazgosPorItem().get(item.id); as observaciones) {
@@ -185,7 +185,7 @@
                     </ul>
                   }
                   @if (item.motivoDebito) {
-                    <p class="ayuda">Débito: {{ item.motivoDebito }}</p>
+                    <p class="ayuda ayuda--fija">Débito: {{ item.motivoDebito }}</p>
                   }
                 </td>
                 <td class="celda-fecha">{{ fecha(item.fechaPrestacion) }}</td>
@@ -201,79 +201,33 @@
                     estadoDeItem(item.estado)
                   }}</span>
                   @if (detalleDeEstadoDeItem(item.estado); as detalle) {
-                    <p class="ayuda">{{ detalle }}</p>
+                    <p class="ayuda ayuda--fija">{{ detalle }}</p>
                   }
                 </td>
-                <td>
-                  <div class="acciones-fila">
-                    @if (esBorrador()) {
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [disabled]="operando() !== null"
-                        (click)="quitar(item)"
-                      >
-                        Quitar
-                      </button>
-                    }
-                    @if (enCurso() && esDebitable(item)) {
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        [disabled]="operando() !== null"
-                        (click)="abrirDebito(item)"
-                      >
-                        Registrar débito
-                      </button>
-                    }
-                  </div>
+                <td class="tabla__acciones">
+                  <!-- Una sola accion por fila: quitar en borrador, debitar con el lote presentado. -->
+                  @if (esBorrador()) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [disabled]="operando() !== null"
+                      (click)="quitar(item)"
+                    >
+                      Quitar
+                    </button>
+                  }
+                  @if (enCurso() && esDebitable(item)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [disabled]="operando() !== null"
+                      (click)="abrirDebito(item)"
+                    >
+                      Registrar débito
+                    </button>
+                  }
                 </td>
               </tr>
-
-              @if (itemDebitando() !== null && itemDebitando() === item.id) {
-                <tr class="fila-panel">
-                  <td colspan="6">
-                    <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
-                      <h3>Débito o rechazo de la prestación</h3>
-                      <p class="ayuda">
-                        Registrá lo que el financiador no reconoce. La deuda de la prestación sigue
-                        pendiente y se puede volver a presentar.
-                      </p>
-                      <div class="grilla-compacta">
-                        <div class="campo">
-                          <label for="debito-importe">Importe debitado</label>
-                          <input
-                            id="debito-importe"
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            formControlName="importe"
-                          />
-                        </div>
-                        <div class="campo">
-                          <label for="debito-motivo">Motivo informado por el financiador</label>
-                          <input id="debito-motivo" type="text" formControlName="motivo" />
-                          @if (debito.controls.motivo.touched && debito.controls.motivo.invalid) {
-                            <p class="campo__error" role="alert">El motivo es obligatorio.</p>
-                          }
-                        </div>
-                      </div>
-                      <div class="acciones">
-                        <button type="submit" class="boton" [disabled]="operando() !== null">
-                          Confirmar el débito
-                        </button>
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="cerrarPaneles()"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </form>
-                  </td>
-                </tr>
-              }
             }
           </tbody>
         </table>
@@ -344,10 +298,8 @@
           }
         </ul>
       }
+      <!-- Jerarquia: presentar es la principal; revisar, secundaria; descartar, destructiva y aparte. -->
       <div class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="revisar()">
-          Volver a revisar
-        </button>
         <button
           type="button"
           class="boton"
@@ -356,35 +308,25 @@
         >
           Confirmar y presentar
         </button>
+        <button type="button" class="boton boton--secundario" (click)="revisar()">
+          Volver a revisar
+        </button>
         <button
           type="button"
-          class="boton boton--secundario"
+          class="boton boton--secundario accion--peligro acciones__aparte"
           [disabled]="operando() !== null"
           (click)="abrirAnulacion()"
         >
           Descartar el borrador
         </button>
       </div>
-
-      @if (anulando()) {
-        <app-confirmacion-con-motivo
-          idCampo="anular-presentacion-motivo"
-          titulo="Descartar el borrador"
-          etiqueta="Motivo"
-          ayuda="El lote queda anulado con este motivo y sus prestaciones vuelven a la bandeja. No se deshace."
-          textoConfirmar="Descartar"
-          [enviando]="operando() === 'anular'"
-          (confirmado)="anular($event)"
-          (cancelado)="cerrarPaneles()"
-        />
-      }
     </section>
 
     <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-elegibles">
       <div class="tarjeta__cabecera">
         <h2 id="titulo-elegibles">Prestaciones elegibles</h2>
       </div>
-      <p class="ayuda">
+      <p class="ayuda ayuda--fija">
         Deudas a cargo de {{ p.financiadorNombre }} devengadas en el período del lote y que no están
         en otro lote vivo.
       </p>
@@ -418,7 +360,7 @@
                 >
                   Saldo
                 </th>
-                <th scope="col">Acciones</th>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
               </tr>
             </thead>
             <tbody>
@@ -430,7 +372,7 @@
                       <span class="ayuda">({{ obligacion.convenio?.convenioNombre }})</span>
                     }
                     @if (requisitos(obligacion); as texto) {
-                      <p class="ayuda">{{ texto }}</p>
+                      <p class="ayuda ayuda--fija">{{ texto }}</p>
                     }
                     @if (esSaldoDeDebitoParcial(obligacion)) {
                       <p class="ayuda">
@@ -441,10 +383,10 @@
                   <td class="celda-fecha">{{ instante(obligacion.devengadaEn) }}</td>
                   <td>Persona #{{ obligacion.personaId }}</td>
                   <td class="importe">{{ importe(obligacion.saldo) }}</td>
-                  <td>
+                  <td class="tabla__acciones">
                     <button
                       type="button"
-                      class="boton boton--secundario"
+                      class="boton boton--secundario boton--chico"
                       [disabled]="operando() !== null"
                       (click)="agregar(obligacion)"
                     >
@@ -472,100 +414,108 @@
   <!-- ============================ Lote presentado ============================ -->
 
   @if (enCurso()) {
-    @if (admiteFactura()) {
-      <section class="tarjeta" aria-labelledby="titulo-factura">
-        <h2 id="titulo-factura">Factura del lote</h2>
-        <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
+    <!-- Factura, pago y cierre lado a lado en escritorio: son tres operaciones cortas. -->
+    <div class="grilla-de-tarjetas">
+      @if (admiteFactura()) {
+        <section class="tarjeta" aria-labelledby="titulo-factura">
+          <h2 id="titulo-factura">Factura del lote</h2>
+          <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
+            <div class="grilla-compacta">
+              <div class="campo">
+                <label for="factura-numero">Número de factura</label>
+                <input id="factura-numero" type="text" formControlName="numero" />
+                @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
+                  <p class="campo__error" role="alert">El número es obligatorio.</p>
+                }
+              </div>
+              <div class="campo">
+                <label for="factura-fecha">Fecha</label>
+                <input id="factura-fecha" type="date" formControlName="fecha" />
+              </div>
+            </div>
+            <div class="acciones">
+              <button type="submit" class="boton" [disabled]="operando() !== null">
+                Registrar la factura
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+
+      <section class="tarjeta" aria-labelledby="titulo-pago">
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-pago">Pago del financiador</h2>
+          <app-ayuda titulo="Pago del financiador">
+            <p>
+              Un pago en efectivo entra a la caja del día y necesita una jornada abierta.
+              Transferencia o tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
+            </p>
+          </app-ayuda>
+        </div>
+        <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
           <div class="grilla-compacta">
             <div class="campo">
-              <label for="factura-numero">Número de factura</label>
-              <input id="factura-numero" type="text" formControlName="numero" />
-              @if (factura.controls.numero.touched && factura.controls.numero.invalid) {
-                <p class="campo__error" role="alert">El número es obligatorio.</p>
+              <label for="pago-importe">Importe</label>
+              <input
+                id="pago-importe"
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="importe"
+              />
+              @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
+                <p class="campo__error" role="alert">El importe tiene que ser mayor que cero.</p>
               }
             </div>
             <div class="campo">
-              <label for="factura-fecha">Fecha</label>
-              <input id="factura-fecha" type="date" formControlName="fecha" />
+              <label for="pago-medio">Medio</label>
+              <select id="pago-medio" formControlName="medio">
+                @for (m of medios; track m) {
+                  <option [value]="m">{{ medioEnPalabras(m) }}</option>
+                }
+              </select>
+            </div>
+            <div class="campo">
+              <label for="pago-fecha">Fecha del pago</label>
+              <input id="pago-fecha" type="date" formControlName="fechaPago" />
+            </div>
+            <div class="campo">
+              <label for="pago-referencia"
+                >Referencia <span class="campo__opcional">(opcional)</span></label
+              >
+              <input id="pago-referencia" type="text" formControlName="referencia" />
             </div>
           </div>
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="operando() !== null">
-              Registrar la factura
+              Registrar el pago
             </button>
           </div>
         </form>
       </section>
-    }
 
-    <section class="tarjeta" aria-labelledby="titulo-pago">
-      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-pago">Pago del financiador</h2>
-        <app-ayuda titulo="Pago del financiador">
-          <p>
-            Un pago en efectivo entra a la caja del día y necesita una jornada abierta.
-            Transferencia o tarjeta no tocan el arqueo. Un pago mayor que el saldo se rechaza.
-          </p>
-        </app-ayuda>
-      </div>
-      <form [formGroup]="pago" (ngSubmit)="registrarPago()" novalidate>
-        <div class="grilla-compacta">
-          <div class="campo">
-            <label for="pago-importe">Importe</label>
-            <input
-              id="pago-importe"
-              type="number"
-              min="0.01"
-              step="0.01"
-              formControlName="importe"
-            />
-            @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
-              <p class="campo__error" role="alert">El importe tiene que ser mayor que cero.</p>
-            }
-          </div>
-          <div class="campo">
-            <label for="pago-medio">Medio</label>
-            <select id="pago-medio" formControlName="medio">
-              @for (m of medios; track m) {
-                <option [value]="m">{{ medioEnPalabras(m) }}</option>
-              }
-            </select>
-          </div>
-          <div class="campo">
-            <label for="pago-fecha">Fecha del pago</label>
-            <input id="pago-fecha" type="date" formControlName="fechaPago" />
-          </div>
-          <div class="campo">
-            <label for="pago-referencia"
-              >Referencia <span class="campo__opcional">(opcional)</span></label
-            >
-            <input id="pago-referencia" type="text" formControlName="referencia" />
-          </div>
+      <section class="tarjeta" aria-labelledby="titulo-cierre">
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-cierre">Cerrar el lote</h2>
+          <app-ayuda titulo="Cerrar el lote">
+            <p>
+              Se cierra cuando el saldo llega a cero: todo lo presentado quedó explicado por débitos
+              o pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
+            </p>
+          </app-ayuda>
         </div>
         <div class="acciones">
-          <button type="submit" class="boton" [disabled]="operando() !== null">
-            Registrar el pago
+          <button
+            type="button"
+            class="boton"
+            [disabled]="operando() !== null"
+            (click)="conciliar()"
+          >
+            Cerrar (conciliar) el lote
           </button>
         </div>
-      </form>
-    </section>
-
-    <section class="tarjeta" aria-labelledby="titulo-cierre">
-      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-cierre">Cerrar el lote</h2>
-        <app-ayuda titulo="Cerrar el lote">
-          <p>
-            Se cierra cuando el saldo llega a cero: todo lo presentado quedó explicado por débitos o
-            pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
-          </p>
-        </app-ayuda>
-      </div>
-      <div class="acciones">
-        <button type="button" class="boton" [disabled]="operando() !== null" (click)="conciliar()">
-          Cerrar (conciliar) el lote
-        </button>
-      </div>
-    </section>
+      </section>
+    </div>
   }
 
   @if (pagos().length > 0) {
@@ -586,4 +536,64 @@
       </ul>
     </section>
   }
+}
+
+<!--
+  Debito y descarte en un panel lateral (refactor UX/UI del 28/10/2026). Antes el debito se abria
+  en una fila de la tabla y el descarte dentro de la tarjeta de revision.
+-->
+@if (itemEnDebito(); as item) {
+  <app-panel-lateral
+    titulo="Débito o rechazo de la prestación"
+    [subtitulo]="item.concepto + ' · ' + importe(item.importePresentado)"
+    (cerrar)="cerrarPaneles()"
+  >
+    <form [formGroup]="debito" (ngSubmit)="debitar(item)" novalidate>
+      <p class="ayuda">
+        Registrá lo que el financiador no reconoce. La deuda de la prestación sigue pendiente y se
+        puede volver a presentar.
+      </p>
+      <div class="campo">
+        <label for="debito-importe">Importe debitado</label>
+        <input id="debito-importe" type="number" min="0.01" step="0.01" formControlName="importe" />
+      </div>
+      <div class="campo">
+        <label for="debito-motivo">Motivo informado por el financiador</label>
+        <input id="debito-motivo" type="text" formControlName="motivo" />
+        @if (debito.controls.motivo.touched && debito.controls.motivo.invalid) {
+          <p class="campo__error" role="alert">El motivo es obligatorio.</p>
+        }
+      </div>
+      @if (errorOperacion(); as fallo) {
+        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+      }
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="operando() !== null">
+          Confirmar el débito
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (anulando()) {
+  <app-panel-lateral titulo="Descartar el borrador" (cerrar)="cerrarPaneles()">
+    <app-confirmacion-con-motivo
+      idCampo="anular-presentacion-motivo"
+      titulo="Descartar el borrador"
+      [mostrarTitulo]="false"
+      etiqueta="Motivo"
+      ayuda="El lote queda anulado con este motivo y sus prestaciones vuelven a la bandeja. No se deshace."
+      textoConfirmar="Descartar"
+      [enviando]="operando() === 'anular'"
+      (confirmado)="anular($event)"
+      (cancelado)="cerrarPaneles()"
+    />
+    @if (errorOperacion(); as fallo) {
+      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+    }
+  </app-panel-lateral>
 }

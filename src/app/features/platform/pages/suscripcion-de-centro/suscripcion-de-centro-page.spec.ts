@@ -129,7 +129,7 @@ describe('SuscripcionDeCentroPage', () => {
     elegirCentro(fixture, 'Kinesio Norte');
     httpMock.expectOne(LECTURA).flush(suscripcion(7));
     await estabilizar(fixture);
-    expect(texto(fixture, '#titulo-suscripcion')).toBe('Kinesio Norte');
+    expect(texto(fixture, '.panel-lateral__titulo')).toBe('Kinesio Norte');
   });
 
   it('busca por texto y estado, y página con el filtro enviado, no con el que se escribe', async () => {

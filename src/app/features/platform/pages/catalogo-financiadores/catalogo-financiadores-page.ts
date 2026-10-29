@@ -11,6 +11,8 @@ import {
 import { CreateFinanciadorRequestTipoEnum } from '../../../../api/generated/model/create-financiador-request';
 import { UpdateFinanciadorRequestTipoEnum } from '../../../../api/generated/model/update-financiador-request';
 import { PlanCatalogoResponse } from '../../../../api/generated/model/plan-catalogo-response';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -71,8 +73,18 @@ type Panel =
  */
 @Component({
   selector: 'app-catalogo-financiadores-page',
-  imports: [Ayuda, Filtros, Icono, Pestanas, ReactiveFormsModule, ConfirmacionConMotivo],
+  imports: [
+    AccionesDeFila,
+    Ayuda,
+    Filtros,
+    Icono,
+    PanelLateral,
+    Pestanas,
+    ReactiveFormsModule,
+    ConfirmacionConMotivo,
+  ],
   templateUrl: './catalogo-financiadores-page.html',
+  styleUrl: './catalogo-financiadores-page.css',
 })
 export class CatalogoFinanciadoresPage {
   private readonly api = inject(CatalogoGlobalDeFinanciadoresService);
@@ -99,6 +111,12 @@ export class CatalogoFinanciadoresPage {
    * OnPush no re-renderiza: leer esto desde {@link invalido} es lo que hace aparecer los errores.
    */
   private readonly intentos = signal(0);
+
+  /** El plan con el panel abierto, para marcar su fila mientras se edita o se da de baja. */
+  protected readonly planEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel?.tipo === 'editar-plan' || panel?.tipo === 'baja-plan' ? panel.plan.id : null;
+  });
 
   protected readonly entradas = computed(() => {
     const actual = this.listado();
@@ -334,6 +352,24 @@ export class CatalogoFinanciadoresPage {
         }),
         `El plan ${panel.plan.nombre} se dio de baja del catalogo.`,
       );
+    }
+  }
+
+  /** Titulo del panel lateral: la operacion y sobre que entrada se hace. */
+  protected tituloDelPanel(panel: Panel): string {
+    switch (panel.tipo) {
+      case 'alta-financiador':
+        return 'Nuevo financiador del catálogo';
+      case 'editar-financiador':
+        return `Editar ${panel.entrada.nombre ?? 'el financiador'}`;
+      case 'alta-plan':
+        return `Nuevo plan de ${panel.entrada.nombre ?? 'el financiador'}`;
+      case 'editar-plan':
+        return `Editar el plan ${panel.plan.nombre ?? ''}`;
+      case 'baja-financiador':
+        return `Dar de baja ${panel.entrada.nombre ?? 'el financiador'}`;
+      case 'baja-plan':
+        return `Dar de baja el plan ${panel.plan.nombre ?? ''}`;
     }
   }
 

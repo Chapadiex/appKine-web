@@ -84,158 +84,6 @@
   </p>
 }
 
-@if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-plan">
-    <h2 id="titulo-alta-plan">Nuevo plan</h2>
-
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="alta-plan-codigo">Código</label>
-          <input
-            id="alta-plan-codigo"
-            type="text"
-            formControlName="codigo"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
-            aria-describedby="alta-plan-codigo-ayuda"
-          />
-          @if (mostrarErrorAlta('codigo')) {
-            <p class="campo__error" role="alert">El código es obligatorio.</p>
-          }
-          <p class="ayuda" id="alta-plan-codigo-ayuda">
-            <b>No se puede cambiar después</b>, igual que el del financiador. Es único
-            <b>dentro de este financiador</b> y no de toda la organización: dos financiadores
-            distintos pueden tener los dos un plan 210, que es como se llaman de verdad.
-          </p>
-        </div>
-
-        <div class="campo">
-          <label for="alta-plan-nombre">Nombre</label>
-          <input
-            id="alta-plan-nombre"
-            type="text"
-            formControlName="nombre"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
-          />
-          @if (mostrarErrorAlta('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-          }
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="alta-plan-descripcion">Descripción (opcional)</label>
-        <input
-          id="alta-plan-descripcion"
-          type="text"
-          formControlName="descripcion"
-          autocomplete="off"
-        />
-      </div>
-
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="alta-plan-desde">Vigente desde</label>
-          <input
-            id="alta-plan-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
-          />
-          @if (mostrarErrorAlta('vigenciaDesde')) {
-            <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="alta-plan-hasta">Vigente hasta (opcional)</label>
-          <input
-            id="alta-plan-hasta"
-            type="date"
-            formControlName="vigenciaHasta"
-            aria-describedby="alta-plan-vigencia-ayuda"
-          />
-        </div>
-      </div>
-      <p class="ayuda" id="alta-plan-vigencia-ayuda">
-        El fin es <b>inclusivo</b>: el día que pongas es el último en que el plan todavía se ofrece,
-        y puede coincidir con el inicio —un plan que vale un solo día es un estado real—. Sin fin,
-        no vence: queda "sin fin previsto", que no es lo mismo que para siempre.
-      </p>
-
-      <div class="grilla-campos grilla-campos--dos">
-        <div class="campo">
-          <label for="alta-plan-copago">Copago (opcional)</label>
-          <input id="alta-plan-copago" type="number" min="0" step="0.01" formControlName="copago" />
-        </div>
-
-        <div class="campo">
-          <label for="alta-plan-moneda">Moneda</label>
-          <input
-            id="alta-plan-moneda"
-            type="text"
-            maxlength="3"
-            formControlName="moneda"
-            autocomplete="off"
-            aria-describedby="alta-plan-copago-ayuda"
-          />
-        </div>
-      </div>
-      <p class="ayuda" id="alta-plan-copago-ayuda">
-        Copago y moneda <b>van juntos o no van ninguno</b>: un importe sin moneda no es un importe.
-        Tres letras, como ARS o USD. Dejar el copago vacío significa <b>sin copago declarado</b>,
-        que <b>no</b> es lo mismo que cero — cero quiere decir que el paciente no paga nada.
-      </p>
-
-      <details class="mas-opciones">
-        <summary>Requisitos del plan</summary>
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-autorizacion">
-            <input
-              id="alta-plan-autorizacion"
-              type="checkbox"
-              formControlName="requiereAutorizacion"
-            />
-            Requiere autorización previa
-          </label>
-        </div>
-
-        <div class="campo">
-          <label class="opcion-casilla" for="alta-plan-credencial">
-            <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
-            Requiere credencial
-          </label>
-          <p class="ayuda">
-            Estos dos se <b>guardan y se muestran</b>, y hoy todavía no bloquean nada: quien los
-            aplique es el modulo de órdenes y autorizaciones. Cargalos igual, porque el día que se
-            apliquen van a leerse de acá.
-          </p>
-        </div>
-      </details>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="cerrarPanel()"
-          [disabled]="enviando()"
-        >
-          Cancelar
-        </button>
-      </p>
-    </form>
-  </section>
-}
-
 <section class="tarjeta tarjeta--tabla" aria-labelledby="titulo-listado-planes">
   <div class="tarjeta__cabecera">
     <h2 id="titulo-listado-planes">Planes cargados</h2>
@@ -344,6 +192,7 @@
                   <tr
                     [class.fila--revocada]="plan.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                    [class.fila--seleccionada]="planEnPanel()?.id === plan.id"
                   >
                     <th scope="row" class="celda-ancha">
                       <span class="celda-principal">{{ plan.nombre }}</span>
@@ -385,204 +234,31 @@
                         <span class="celda-secundaria">{{ plan.deactivationReason }}</span>
                       }
                     </td>
-                    <td class="celda-acciones">
+                    <td class="tabla__acciones">
                       @if (plan.estado === 'ACTIVO') {
-                        <ng-container *akinePermiso="permisoManage">
+                        <app-acciones-de-fila
+                          *akinePermiso="permisoManage"
+                          [de]="plan.nombre ?? ''"
+                        >
                           <button
+                            principal
                             type="button"
-                            class="accion-texto"
+                            class="boton boton--secundario boton--chico"
                             (click)="abrirPanel(plan, 'editar')"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
-                            class="accion-texto accion-texto--peligro"
+                            class="accion--peligro"
                             (click)="abrirPanel(plan, 'baja')"
                           >
                             Dar de baja
                           </button>
-                        </ng-container>
+                        </app-acciones-de-fila>
                       }
                     </td>
                   </tr>
-
-                  @if (panelAbierto(plan.id, 'editar')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <form
-                          [formGroup]="formularioEdicion"
-                          (ngSubmit)="enviarEdicion()"
-                          novalidate
-                        >
-                          <h3>Editar {{ plan.nombre }}</h3>
-
-                          <p class="ayuda">
-                            Se manda <b>solo lo que cambies</b>. Poner una fecha en "vigente hasta"
-                            es lo que <b>cierra la vigencia</b>, y el plan queda activo igual.
-                            Borrar esa fecha, en cambio, <b>no la saca</b>: un campo vacío significa
-                            "no lo toques". El <b>código no se puede cambiar</b>.
-                          </p>
-
-                          <div class="campo">
-                            <label for="editar-plan-codigo">Código</label>
-                            <input
-                              id="editar-plan-codigo"
-                              type="text"
-                              [value]="plan.codigo ?? ''"
-                              disabled
-                            />
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-plan-nombre">Nombre</label>
-                            <input
-                              id="editar-plan-nombre"
-                              type="text"
-                              formControlName="nombre"
-                              autocomplete="off"
-                              [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
-                            />
-                            @if (mostrarErrorEdicion('nombre')) {
-                              <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-                            }
-                          </div>
-
-                          <div class="campo">
-                            <label for="editar-plan-descripcion">Descripción</label>
-                            <input
-                              id="editar-plan-descripcion"
-                              type="text"
-                              formControlName="descripcion"
-                              autocomplete="off"
-                            />
-                          </div>
-
-                          <div class="grilla-campos grilla-campos--dos">
-                            <div class="campo">
-                              <label for="editar-plan-desde">Vigente desde</label>
-                              <input
-                                id="editar-plan-desde"
-                                type="date"
-                                formControlName="vigenciaDesde"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-plan-hasta">Vigente hasta</label>
-                              <input
-                                id="editar-plan-hasta"
-                                type="date"
-                                formControlName="vigenciaHasta"
-                                aria-describedby="editar-plan-hasta-ayuda"
-                              />
-                              <p class="ayuda" id="editar-plan-hasta-ayuda">
-                                El fin es <b>inclusivo</b>: ese día el plan todavía se ofrece.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div class="grilla-campos grilla-campos--dos">
-                            <div class="campo">
-                              <label for="editar-plan-copago">Copago</label>
-                              <input
-                                id="editar-plan-copago"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                formControlName="copago"
-                              />
-                            </div>
-
-                            <div class="campo">
-                              <label for="editar-plan-moneda">Moneda</label>
-                              <input
-                                id="editar-plan-moneda"
-                                type="text"
-                                maxlength="3"
-                                formControlName="moneda"
-                                autocomplete="off"
-                              />
-                            </div>
-                          </div>
-
-                          <details class="mas-opciones">
-                            <summary>Requisitos del plan</summary>
-                            <div class="campo">
-                              <label class="opcion-casilla" for="editar-plan-autorizacion">
-                                <input
-                                  id="editar-plan-autorizacion"
-                                  type="checkbox"
-                                  formControlName="requiereAutorizacion"
-                                />
-                                Requiere autorización previa
-                              </label>
-                            </div>
-
-                            <div class="campo">
-                              <label class="opcion-casilla" for="editar-plan-credencial">
-                                <input
-                                  id="editar-plan-credencial"
-                                  type="checkbox"
-                                  formControlName="requiereCredencial"
-                                />
-                                Requiere credencial
-                              </label>
-                            </div>
-                          </details>
-
-                          @if (errorAccion(); as mensaje) {
-                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                          }
-
-                          <p class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                              [disabled]="enviando()"
-                            >
-                              Cancelar
-                            </button>
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
-                                Recargar el listado
-                              </button>
-                            }
-                          </p>
-                        </form>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (panelAbierto(plan.id, 'baja')) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <app-confirmacion-con-motivo
-                          idCampo="baja-plan-motivo"
-                          [titulo]="'Dar de baja ' + plan.nombre"
-                          etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto al plan y se muestra en el listado. Ojo: si lo que queres es que el plan deje de ofrecerse a partir de una fecha pero siga vigente hasta entonces, la operación NO es esta — es cerrar la vigencia desde Editar. Dar de baja es terminal y no hay reactivación. Las coberturas ya firmadas bajo este plan siguen resolviendo con su copia congelada, y su código y su nombre quedan libres."
-                          textoConfirmar="Dar de baja"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarBaja($event)"
-                          (cancelado)="cerrarPanel()"
-                        />
-
-                        @if (errorAccion(); as mensaje) {
-                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                        }
-                        @if (hayQueRecargar()) {
-                          <button type="button" class="boton" (click)="cargar()">
-                            Recargar el listado
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -602,3 +278,317 @@
     }
   </div>
 </section>
+
+<!--
+  Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes el alta iba en
+  una tarjeta arriba del listado y la edicion en una fila de la tabla, que partia el listado.
+-->
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Nuevo plan" (cerrar)="cerrarPanel()">
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-plan-codigo">Código</label>
+        <input
+          id="alta-plan-codigo"
+          type="text"
+          formControlName="codigo"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('codigo') ? 'true' : null"
+          aria-describedby="alta-plan-codigo-ayuda"
+        />
+        @if (mostrarErrorAlta('codigo')) {
+          <p class="campo__error" role="alert">El código es obligatorio.</p>
+        }
+        <p class="ayuda ayuda--fija" id="alta-plan-codigo-ayuda">
+          <b>No se puede cambiar después.</b> Único dentro de este financiador.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-plan-nombre">Nombre</label>
+        <input
+          id="alta-plan-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          [attr.aria-invalid]="mostrarErrorAlta('nombre') ? 'true' : null"
+        />
+        @if (mostrarErrorAlta('nombre')) {
+          <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-plan-desde">Vigente desde</label>
+        <input
+          id="alta-plan-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+        />
+        @if (mostrarErrorAlta('vigenciaDesde')) {
+          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-plan-hasta">Vigente hasta (opcional)</label>
+        <input
+          id="alta-plan-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          aria-describedby="alta-plan-vigencia-ayuda"
+        />
+        <p class="ayuda" id="alta-plan-vigencia-ayuda">
+          Inclusivo: ese día el plan todavía se ofrece, y puede coincidir con el inicio. Vacío: sin
+          fin previsto.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-plan-copago">Copago (opcional)</label>
+        <input
+          id="alta-plan-copago"
+          type="number"
+          min="0"
+          step="0.01"
+          formControlName="copago"
+          aria-describedby="alta-plan-copago-ayuda"
+        />
+        <p class="ayuda" id="alta-plan-copago-ayuda">
+          Copago y moneda <b>van juntos o no van ninguno</b>. Vacío es <b>sin copago declarado</b>,
+          que no es lo mismo que cero.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-plan-moneda">Moneda</label>
+        <input
+          id="alta-plan-moneda"
+          type="text"
+          maxlength="3"
+          formControlName="moneda"
+          autocomplete="off"
+          placeholder="ARS"
+          aria-describedby="alta-plan-copago-ayuda"
+        />
+      </div>
+
+      <details class="seccion-plegable">
+        <summary>
+          Más datos del plan
+          <span class="seccion-plegable__resumen">Descripción y requisitos (opcionales)</span>
+        </summary>
+        <div class="campo">
+          <label for="alta-plan-descripcion">Descripción (opcional)</label>
+          <input
+            id="alta-plan-descripcion"
+            type="text"
+            formControlName="descripcion"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="campo">
+          <label class="opcion-casilla" for="alta-plan-autorizacion">
+            <input
+              id="alta-plan-autorizacion"
+              type="checkbox"
+              formControlName="requiereAutorizacion"
+            />
+            Requiere autorización previa
+          </label>
+        </div>
+
+        <div class="campo">
+          <label class="opcion-casilla" for="alta-plan-credencial">
+            <input id="alta-plan-credencial" type="checkbox" formControlName="requiereCredencial" />
+            Requiere credencial
+          </label>
+        </div>
+        <p class="ayuda">Los requisitos se guardan y se muestran; todavía no bloquean nada.</p>
+      </details>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (planEnPanel(); as plan) {
+  @if (panel()?.tipo === 'editar') {
+    <app-panel-lateral [titulo]="'Editar ' + plan.nombre" (cerrar)="cerrarPanel()">
+      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+        <p class="ayuda">
+          Se guarda <b>solo lo que cambies</b>. Una fecha en "vigente hasta"
+          <b>cierra la vigencia</b> y el plan sigue activo; borrar esa fecha <b>no la saca</b>.
+        </p>
+
+        <div class="campo">
+          <label for="editar-plan-codigo">Código</label>
+          <input id="editar-plan-codigo" type="text" [value]="plan.codigo ?? ''" disabled />
+        </div>
+
+        <div class="campo">
+          <label for="editar-plan-nombre">Nombre</label>
+          <input
+            id="editar-plan-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            [attr.aria-invalid]="mostrarErrorEdicion('nombre') ? 'true' : null"
+          />
+          @if (mostrarErrorEdicion('nombre')) {
+            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="editar-plan-desde">Vigente desde</label>
+          <input id="editar-plan-desde" type="date" formControlName="vigenciaDesde" />
+        </div>
+
+        <div class="campo">
+          <label for="editar-plan-hasta">Vigente hasta</label>
+          <input
+            id="editar-plan-hasta"
+            type="date"
+            formControlName="vigenciaHasta"
+            aria-describedby="editar-plan-hasta-ayuda"
+          />
+          <p class="ayuda" id="editar-plan-hasta-ayuda">
+            El fin es <b>inclusivo</b>: ese día el plan todavía se ofrece.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label for="editar-plan-copago">Copago</label>
+          <input
+            id="editar-plan-copago"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="copago"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="editar-plan-moneda">Moneda</label>
+          <input
+            id="editar-plan-moneda"
+            type="text"
+            maxlength="3"
+            formControlName="moneda"
+            autocomplete="off"
+          />
+        </div>
+
+        <details class="seccion-plegable">
+          <summary>
+            Más datos del plan
+            <span class="seccion-plegable__resumen">Descripción y requisitos</span>
+          </summary>
+          <div class="campo">
+            <label for="editar-plan-descripcion">Descripción</label>
+            <input
+              id="editar-plan-descripcion"
+              type="text"
+              formControlName="descripcion"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label class="opcion-casilla" for="editar-plan-autorizacion">
+              <input
+                id="editar-plan-autorizacion"
+                type="checkbox"
+                formControlName="requiereAutorizacion"
+              />
+              Requiere autorización previa
+            </label>
+          </div>
+
+          <div class="campo">
+            <label class="opcion-casilla" for="editar-plan-credencial">
+              <input
+                id="editar-plan-credencial"
+                type="checkbox"
+                formControlName="requiereCredencial"
+              />
+              Requiere credencial
+            </label>
+          </div>
+        </details>
+
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <p class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarPanel()"
+            [disabled]="enviando()"
+          >
+            Cancelar
+          </button>
+          @if (hayQueRecargar()) {
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar el listado
+            </button>
+          }
+        </p>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (panel()?.tipo === 'baja') {
+    <app-panel-lateral [titulo]="'Dar de baja ' + plan.nombre" (cerrar)="cerrarPanel()">
+      <app-confirmacion-con-motivo
+        idCampo="baja-plan-motivo"
+        [titulo]="'Dar de baja ' + plan.nombre"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        ayuda="Queda registrado junto al plan y se muestra en el listado."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="enviarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="ayuda">
+          Si querés que el plan deje de ofrecerse a partir de una fecha, la operación NO es esta: es
+          cerrar la vigencia desde Editar. Dar de baja es terminal y no hay reactivación. Las
+          coberturas ya firmadas siguen resolviendo con su copia congelada, y su código y su nombre
+          quedan libres.
+        </p>
+      </app-confirmacion-con-motivo>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+      @if (hayQueRecargar()) {
+        <button type="button" class="boton" (click)="cargar()">Recargar el listado</button>
+      }
+    </app-panel-lateral>
+  }
+}

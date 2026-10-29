@@ -6,19 +6,25 @@
       período. Cada lote agrupa las prestaciones de un financiador; los débitos se registran al
       recibir la liquidación del financiador.
     </p>
+    <p>
+      <b>Presentar no es cobrar</b>: la deuda de cada prestación se salda recién cuando el lote se
+      cierra, y la plata entra cuando se registra el pago del financiador.
+    </p>
   </app-ayuda>
   <div class="encabezado__acciones">
-    <button type="button" class="boton" (click)="tituloAlta.focus()">
+    <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Nuevo lote
     </button>
   </div>
 </div>
 
-<p class="ayuda">
-  <b>Presentar no es cobrar</b>: la deuda de cada prestación se salda recién cuando el lote se
-  cierra, y la plata entra cuando se registra el pago del financiador.
-</p>
+@if (financiadoresSinPermiso()) {
+  <p class="estado estado--error" role="status">
+    No tenés permiso para consultar los financiadores (hace falta el permiso de convenios), así que
+    no podés armar un lote nuevo. Los que ya existen se ven igual.
+  </p>
+}
 
 <!-- ================================ Filtros =================================== -->
 
@@ -132,7 +138,7 @@
 }
 
 @if (vacia()) {
-  <p class="estado estado--vacio">No hay lotes con esos filtros. Podés abrir uno abajo.</p>
+  <p class="estado estado--vacio">No hay lotes con esos filtros.</p>
 }
 
 @if (lotes().length > 0) {
@@ -170,8 +176,11 @@
               </td>
               <td class="importe">{{ importe(lote, lote.totalPresentado) }}</td>
               <td class="importe">{{ importe(lote, lote.saldo) }}</td>
-              <td>
-                <a class="enlace" [routerLink]="['/presentaciones', lote.id]">
+              <td class="tabla__acciones">
+                <a
+                  class="boton boton--secundario boton--chico"
+                  [routerLink]="['/presentaciones', lote.id]"
+                >
                   Abrir el lote<span class="visualmente-oculto"> {{ lote.id }}</span>
                 </a>
               </td>
@@ -183,21 +192,19 @@
   </div>
 }
 
-<!-- ================================ Alta =================================== -->
+<!--
+  Alta en un panel lateral abierto desde "Nuevo lote" (refactor UX/UI del 28/10/2026). Antes el
+  formulario vivia debajo del listado.
+-->
 
-<section class="tarjeta" aria-labelledby="titulo-alta">
-  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-    <h2 id="titulo-alta" tabindex="-1" #tituloAlta>Abrir un borrador</h2>
-    <app-ayuda titulo="Abrir un borrador">
-      <p>
-        El período es un filtro de la bandeja de prestaciones, no una restricción: dos lotes del
-        mismo período son válidos (por ejemplo, un reenvío de debitadas).
-      </p>
-    </app-ayuda>
-  </div>
-  <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
-    <div class="grilla-compacta">
-      <div class="campo">
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Abrir un borrador" (cerrar)="cerrarAlta()">
+    <p class="ayuda">
+      El período filtra la bandeja de prestaciones: dos lotes del mismo período son válidos (por
+      ejemplo, un reenvío de debitadas).
+    </p>
+    <form [formGroup]="alta" (ngSubmit)="crear()" novalidate>
+      <div class="campo campo--ancho">
         <label for="alta-financiador">Financiador</label>
         <select
           id="alta-financiador"
@@ -259,16 +266,19 @@
           <p class="campo__error" role="alert">Tres letras, por ejemplo ARS.</p>
         }
       </div>
-    </div>
 
-    <div class="acciones">
-      <button type="submit" class="boton" [disabled]="creando()">Abrir el borrador</button>
-    </div>
-  </form>
+      <div aria-live="polite">
+        @if (errorAlta(); as fallo) {
+          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+        }
+      </div>
 
-  <div aria-live="polite">
-    @if (errorAlta(); as fallo) {
-      <p class="estado estado--error">{{ fallo.mensaje }}</p>
-    }
-  </div>
-</section>
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="creando()">Abrir el borrador</button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}

@@ -86,8 +86,11 @@
                     >
                   </span>
                 </td>
-                <td>
-                  <a class="boton boton--secundario" [routerLink]="['/asistencia', clase.eventoId]">
+                <td class="tabla__acciones">
+                  <a
+                    class="boton boton--secundario boton--chico"
+                    [routerLink]="['/asistencia', clase.eventoId]"
+                  >
                     Tomar asistencia
                     <span class="visualmente-oculto">
                       de {{ clase.titulo || clase.ofertaNombre }} a las

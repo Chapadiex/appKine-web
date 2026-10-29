@@ -257,12 +257,15 @@
                   <th scope="col">Medio</th>
                   <th scope="col">Concepto</th>
                   <th scope="col" class="importe">Importe</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (movimiento of movimientos(); track movimiento.id) {
-                  <tr [class.fila--revocada]="yaRevertido(movimiento)">
+                  <tr
+                    [class.fila--revocada]="yaRevertido(movimiento)"
+                    [class.fila--seleccionada]="revirtiendo() === movimiento.id"
+                  >
                     <td class="celda-fecha">{{ instanteEnPalabras(movimiento.registradoEn) }}</td>
                     <td>{{ tipoEnPalabras(movimiento.tipo) }}</td>
                     <td>{{ medioEnPalabras(movimiento.medio) }}</td>
@@ -273,66 +276,21 @@
                       }
                     </td>
                     <td class="importe">{{ importeConSigno(movimiento) }}</td>
-                    <td>
-                      <div class="acciones-fila">
-                        @if (yaRevertido(movimiento)) {
-                          <span class="ayuda">Revertido</span>
-                        } @else if (
-                          sePuedeRevertir(movimiento) && revirtiendo() !== movimiento.id
-                        ) {
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            [id]="'revertir-' + movimiento.id"
-                            (click)="pedirReversion(movimiento)"
-                          >
-                            Revertir
-                          </button>
-                        }
-                      </div>
+                    <td class="tabla__acciones">
+                      @if (yaRevertido(movimiento)) {
+                        <span class="ayuda">Revertido</span>
+                      } @else if (sePuedeRevertir(movimiento)) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [id]="'revertir-' + movimiento.id"
+                          (click)="pedirReversion(movimiento)"
+                        >
+                          Revertir
+                        </button>
+                      }
                     </td>
                   </tr>
-
-                  @if (revirtiendo() === movimiento.id) {
-                    <tr class="fila-panel">
-                      <td colspan="6">
-                        <p class="ayuda">
-                          Revertir no borra nada: asienta un movimiento opuesto en la jornada
-                          abierta hoy. Un movimiento se revierte una sola vez.
-                        </p>
-                        <div class="campo">
-                          <label [for]="'motivo-reversion-' + movimiento.id"
-                            >Motivo de la reversión</label
-                          >
-                          <input
-                            [id]="'motivo-reversion-' + movimiento.id"
-                            type="text"
-                            autocomplete="off"
-                            maxlength="200"
-                            [value]="motivoReversion()"
-                            (input)="motivoReversion.set($any($event.target).value)"
-                          />
-                        </div>
-                        <div class="acciones">
-                          <button
-                            type="button"
-                            class="boton"
-                            [disabled]="motivoReversion().trim() === '' || enviando()"
-                            (click)="confirmarReversion()"
-                          >
-                            Confirmar la reversión
-                          </button>
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            (click)="cancelarReversion()"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -473,7 +431,7 @@
         </div>
 
         @if (diferenciaCentavos() !== null) {
-          <p class="ayuda" role="status">
+          <p class="ayuda ayuda--fija" role="status">
             @if (requiereMotivo()) {
               Diferencia contra el teórico: <b>{{ diferenciaEnPalabras() }}</b
               >. Se registra tal cual, pero hay que explicarla.
@@ -510,4 +468,50 @@
       </section>
     </aside>
   </div>
+}
+
+<!--
+  Reversion en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abria en una fila de la
+  tabla de movimientos, que partia el listado; ahora la tabla queda quieta con la fila marcada.
+-->
+@if (movimientoEnPanel(); as movimiento) {
+  <app-panel-lateral
+    titulo="Revertir el movimiento"
+    [subtitulo]="movimiento.concepto + ' · ' + importeConSigno(movimiento)"
+    (cerrar)="cancelarReversion()"
+  >
+    <p class="ayuda">
+      Revertir no borra nada: asienta un movimiento opuesto en la jornada abierta hoy. Un movimiento
+      se revierte una sola vez.
+    </p>
+    <form (submit)="$event.preventDefault(); confirmarReversion()">
+      <div class="campo campo--ancho">
+        <label [for]="'motivo-reversion-' + movimiento.id">Motivo de la reversión</label>
+        <input
+          [id]="'motivo-reversion-' + movimiento.id"
+          type="text"
+          autocomplete="off"
+          maxlength="200"
+          [value]="motivoReversion()"
+          (input)="motivoReversion.set($any($event.target).value)"
+        />
+      </div>
+      <div class="acciones">
+        <button
+          type="submit"
+          class="boton"
+          [disabled]="motivoReversion().trim() === '' || enviando()"
+        >
+          Confirmar la reversión
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cancelarReversion()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+    <!-- El rechazo se repite adentro del panel: el aviso de la pagina queda detras del modal. -->
+    @if (error(); as fallo) {
+      <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+    }
+  </app-panel-lateral>
 }

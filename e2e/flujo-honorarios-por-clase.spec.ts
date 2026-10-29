@@ -222,9 +222,13 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
 
     await navegar(page, '/egresos');
     await expect(page.getByRole('heading', { name: 'Egresos', level: 1 })).toBeVisible();
+    // El alta vive en un panel lateral que se abre desde el encabezado (refactor UX/UI).
+    await page.getByRole('button', { name: 'Registrar egreso' }).click();
     const colaborador = page.getByLabel('Colaborador', { exact: true });
     await colaborador.locator('option').nth(1).waitFor({ state: 'attached' });
     await colaborador.selectOption({ index: 1 });
+    // El servicio es opcional: va en la seccion plegada del alta.
+    await page.getByText('Servicio y período liquidado').click();
     await page.getByLabel('Servicio u oferta (opcional)').selectOption({ label: oferta.nombre });
     await page.getByLabel('Concepto', { exact: true }).fill(concepto);
     await page.getByLabel('Importe total').fill('2000');
@@ -240,6 +244,8 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await expect(dato(page, 'Servicio u oferta')).toContainText(oferta.nombre);
 
     // La correccion reemplaza: tiene que volver a mandar la oferta, o el egreso queda sin imputar.
+    // UX-11: la correccion vive en una seccion plegada, abierta sola solo si falta el comprobante.
+    await page.locator('summary', { hasText: 'Concepto, importe, período y comprobante' }).click();
     await page.getByLabel('Concepto', { exact: true }).fill(`${concepto} corregido`);
     const edicion = respuestaDe(page, 'PUT', /\/egresos\/\d+$/);
     await page.getByRole('button', { name: 'Guardar los cambios' }).click();

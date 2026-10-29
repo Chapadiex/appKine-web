@@ -91,7 +91,7 @@
         }
       </div>
     </div>
-    <p class="ayuda">Fecha y horas en la zona de la sede.</p>
+    <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
   </fieldset>
 
   <div class="grilla-campos grilla-campos--tres">
@@ -104,9 +104,7 @@
             <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
           }
         </select>
-        <p class="ayuda">
-          La oferta exige profesional. Tiene que estar habilitado y atender en ese horario.
-        </p>
+        <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
       </div>
     }
 
@@ -131,8 +129,8 @@
           }
         </select>
         <p class="ayuda" id="clase-espacio-ayuda">
-          Un box elegido se valida tal cual: tiene que estar habilitado para la oferta y libre en
-          ese horario. Si no lo esta, la clase no se programa en otro.
+          Un box elegido tiene que estar habilitado y libre: si no lo esta, la clase no se programa
+          en otro.
         </p>
         @if (errorDelServidor('espacioId'); as mensaje) {
           <p class="estado estado--error" id="clase-espacio-error">{{ mensaje }}</p>
@@ -165,7 +163,7 @@
       <div class="conflicto tarjeta" role="alert">
         <p class="estado estado--error">{{ fallo.mensaje }}</p>
         @if (fallo.motivo) {
-          <p class="ayuda">Detalle: {{ fallo.motivo }}</p>
+          <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
         }
         @if (fallo.accion === 'elegir-contexto') {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
@@ -174,10 +172,11 @@
     }
   </div>
 
+  <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">
-    <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Cancelar</a>
     <button type="submit" class="boton" [disabled]="enviando()">
       {{ enviando() ? 'Programando…' : 'Programar clase' }}
     </button>
+    <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Cancelar</a>
   </div>
 </form>

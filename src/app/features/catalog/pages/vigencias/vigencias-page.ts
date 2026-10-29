@@ -33,6 +33,9 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -75,6 +78,9 @@ const TOPE_DE_PRACTICAS = 100;
 @Component({
   selector: 'app-vigencias-page',
   imports: [
+    AccionesDeFila,
+    Ayuda,
+    PanelLateral,
     Migas,
     ColumnaOrdenable,
     Paginacion,
@@ -121,6 +127,15 @@ export class VigenciasPage {
 
   /** Vigencia con el panel de baja abierto, o `null`. */
   protected readonly bajaAbierta = signal<number | null>(null);
+
+  /**
+   * La vigencia del panel de baja. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en el listado en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly vigenciaEnBaja = computed(() => {
+    const id = this.bajaAbierta();
+    return id === null ? null : (this.vigencias().find((vigencia) => vigencia.id === id) ?? null);
+  });
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);

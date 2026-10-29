@@ -1,0 +1,31 @@
+/*
+  Entrada del catalogo (refactor UX/UI del 28/10/2026): el nombre con su accion en una fila y los
+  datos en una linea, para que el catalogo no sea una columna de fichas de cuatro renglones.
+*/
+.catalogo-entrada__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-6);
+  margin-bottom: var(--esp-4);
+}
+
+.catalogo-entrada__cabecera > h2 {
+  margin: 0;
+}
+
+.catalogo-entrada__cabecera > app-acciones-de-fila {
+  margin-left: auto;
+}
+
+.detalle--en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3) var(--esp-8);
+  margin-bottom: var(--esp-6);
+}
+
+.detalle--en-linea > div {
+  display: flex;
+  gap: var(--esp-3);
+}

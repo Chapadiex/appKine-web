@@ -1,14 +1,24 @@
 <section class="tarjeta" [class.paso]="editable()" aria-labelledby="titulo-examen">
-  <h2 id="titulo-examen" class="paso__titulo">Examen físico</h2>
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-examen" class="paso__titulo">Examen físico</h2>
+    <app-ayuda titulo="Examen físico">
+      <p>
+        Mediciones del catálogo del centro. Ninguna es obligatoria: un seguimiento normal no exige
+        examen completo, y las que falten no impiden cerrar.
+      </p>
+      <p>
+        Una medición de los dos lados son dos mediciones, una por lado: sus valores son distintos y
+        eso es lo que se mide.
+      </p>
+    </app-ayuda>
+  </div>
 
-  <p class="ayuda">
-    Mediciones del catálogo del centro. Ninguna es obligatoria: un seguimiento normal no exige
-    examen completo.
-    @if (cubiertas() !== null && disponibles() !== null) {
+  <!-- El dato queda a la vista; la explicacion, detras del "?" (regla del plan §3.2). -->
+  @if (cubiertas() !== null && disponibles() !== null) {
+    <p class="ayuda ayuda--fija">
       <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas del catálogo tomadas en esta sesión.
-      No impide cerrar.
-    }
-  </p>
+    </p>
+  }
 
   @if (cargando()) {
     <p class="estado estado--cargando">Leyendo las mediciones…</p>
@@ -19,7 +29,7 @@
   }
 
   @if (comparacion() !== null) {
-    <p class="ayuda">{{ baseline() }}</p>
+    <p class="ayuda ayuda--fija">{{ baseline() }}</p>
 
     @if (medidas().length === 0) {
       <p class="ayuda">Todavía no hay mediciones en esta sesión.</p>
@@ -138,83 +148,83 @@
                 </option>
               }
             </select>
-            <p id="ayuda-medicion-lado" class="ayuda">
-              Una medición de los dos lados son dos mediciones, una por lado: sus valores son
-              distintos y eso es lo que se mide.
-            </p>
+            <p id="ayuda-medicion-lado" class="ayuda">Los dos lados se registran por separado.</p>
           </div>
         </div>
 
         @if (definicion(); as elegida) {
-          @if (esNumerica()) {
-            <div class="campo">
-              <label for="medicion-valor">
-                Valor{{ elegida.unidad ? ' en ' + elegida.unidad : '' }}
-              </label>
-              <input
-                id="medicion-valor"
-                name="medicion-valor"
-                type="text"
-                inputmode="decimal"
-                aria-describedby="ayuda-medicion-valor"
-                [value]="valorNumero()"
-                (input)="valorNumero.set($any($event.target).value)"
-              />
-              <p id="ayuda-medicion-valor" class="ayuda">{{ rango() }}</p>
-            </div>
-          } @else if (elegida.tipo === Tipo.BOOLEANO) {
-            <fieldset class="grupo">
-              <legend>Presente</legend>
-              <label class="opcion-radio">
+          <!-- El valor y como se tomo, lado a lado: son la misma medicion. -->
+          <div class="grilla-campos grilla-campos--dos">
+            @if (esNumerica()) {
+              <div class="campo">
+                <label for="medicion-valor">
+                  Valor{{ elegida.unidad ? ' en ' + elegida.unidad : '' }}
+                </label>
                 <input
                   id="medicion-valor"
-                  type="radio"
-                  name="medicion-si-no"
-                  [checked]="valorSiNo() === true"
-                  (change)="elegirSiNo(true)"
+                  name="medicion-valor"
+                  type="text"
+                  inputmode="decimal"
+                  aria-describedby="ayuda-medicion-valor"
+                  [value]="valorNumero()"
+                  (input)="valorNumero.set($any($event.target).value)"
                 />
-                Sí
-              </label>
-              <label class="opcion-radio">
+                <p id="ayuda-medicion-valor" class="ayuda ayuda--fija">{{ rango() }}</p>
+              </div>
+            } @else if (elegida.tipo === Tipo.BOOLEANO) {
+              <fieldset class="grupo">
+                <legend>Presente</legend>
+                <label class="opcion-radio">
+                  <input
+                    id="medicion-valor"
+                    type="radio"
+                    name="medicion-si-no"
+                    [checked]="valorSiNo() === true"
+                    (change)="elegirSiNo(true)"
+                  />
+                  Sí
+                </label>
+                <label class="opcion-radio">
+                  <input
+                    type="radio"
+                    name="medicion-si-no"
+                    [checked]="valorSiNo() === false"
+                    (change)="elegirSiNo(false)"
+                  />
+                  No
+                </label>
+              </fieldset>
+            } @else {
+              <div class="campo">
+                <label for="medicion-valor">Hallazgo</label>
                 <input
-                  type="radio"
-                  name="medicion-si-no"
-                  [checked]="valorSiNo() === false"
-                  (change)="elegirSiNo(false)"
+                  id="medicion-valor"
+                  name="medicion-valor"
+                  type="text"
+                  maxlength="500"
+                  [value]="valorTexto()"
+                  (input)="valorTexto.set($any($event.target).value)"
                 />
-                No
-              </label>
-            </fieldset>
-          } @else {
+              </div>
+            }
+
             <div class="campo">
-              <label for="medicion-valor">Hallazgo</label>
+              <label for="medicion-nota">
+                Cómo se tomó <span class="campo__opcional">(opcional)</span>
+              </label>
               <input
-                id="medicion-valor"
-                name="medicion-valor"
+                id="medicion-nota"
+                name="medicion-nota"
                 type="text"
                 maxlength="500"
-                [value]="valorTexto()"
-                (input)="valorTexto.set($any($event.target).value)"
+                aria-describedby="ayuda-medicion-nota"
+                [value]="nota()"
+                (input)="nota.set($any($event.target).value)"
               />
+              <p id="ayuda-medicion-nota" class="ayuda">
+                No reemplaza al valor y no entra en ninguna comparación.
+              </p>
             </div>
-          }
-
-          <div class="campo">
-            <label for="medicion-nota">
-              Cómo se tomó <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="medicion-nota"
-              name="medicion-nota"
-              type="text"
-              maxlength="500"
-              aria-describedby="ayuda-medicion-nota"
-              [value]="nota()"
-              (input)="nota.set($any($event.target).value)"
-            />
-            <p id="ayuda-medicion-nota" class="ayuda">
-              No reemplaza al valor y no entra en ninguna comparación.
-            </p>
           </div>
         }
 
@@ -227,5 +237,5 @@
     </fieldset>
   }
 
-  <p class="ayuda" role="status">{{ aviso() }}</p>
+  <p class="ayuda ayuda--fija" role="status">{{ aviso() }}</p>
 </section>

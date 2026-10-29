@@ -150,7 +150,7 @@ describe('PlanesDelFinanciadorPage', () => {
     escribir(fixture, '#alta-plan-codigo', '450');
     escribir(fixture, '#alta-plan-nombre', 'Plan 450');
     escribir(fixture, '#alta-plan-copago', '2000');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     // Ni una peticion: el backend lo rechazaria con un 400 generico y el usuario no sabria cual
     // de los dos campos completar.
@@ -160,7 +160,7 @@ describe('PlanesDelFinanciadorPage', () => {
     );
 
     escribir(fixture, '#alta-plan-moneda', 'ars');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === PLANES,
@@ -198,7 +198,7 @@ describe('PlanesDelFinanciadorPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-plan-hasta', '2026-12-31');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -233,7 +233,7 @@ describe('PlanesDelFinanciadorPage', () => {
     escribir(fixture, '#alta-plan-moneda', 'ARS');
     marcar(fixture, '#alta-plan-autorizacion');
     marcar(fixture, '#alta-plan-credencial');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === PLANES,
@@ -265,7 +265,7 @@ describe('PlanesDelFinanciadorPage', () => {
 
     abrir(fixture, 'Dar de alta un plan');
     // `vigenciaDesde` arranca en hoy, asi que lo que falta es codigo y nombre.
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -283,7 +283,7 @@ describe('PlanesDelFinanciadorPage', () => {
     escribir(fixture, '#editar-plan-copago', '1800');
     escribir(fixture, '#editar-plan-moneda', 'ARS');
     marcar(fixture, '#editar-plan-credencial');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -314,7 +314,7 @@ describe('PlanesDelFinanciadorPage', () => {
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-plan-copago', '');
     escribir(fixture, '#editar-plan-nombre', 'Plan 210 Plus');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -335,14 +335,14 @@ describe('PlanesDelFinanciadorPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
-    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('.panel-lateral');
     // Es la advertencia que evita el error caro: dar de baja no se deshace y cerrar la vigencia si.
     expect(panel?.textContent).toContain('la operación NO es esta');
     expect(panel?.textContent).toContain('no hay reactivación');
 
     escribir(fixture, '#baja-plan-motivo', 'El financiador lo discontinuo');
     const confirmar = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.panel-lateral button'),
     ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
     (confirmar as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -368,7 +368,7 @@ describe('PlanesDelFinanciadorPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-plan-nombre', 'Plan 210 Plus');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(

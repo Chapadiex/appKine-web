@@ -10,7 +10,7 @@
       <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
     </p>
   </app-ayuda>
-  @if (puedeGestionar() && panel().tipo === 'ninguno') {
+  @if (puedeGestionar()) {
     <div class="encabezado__acciones">
       <button id="boton-nuevo-producto" type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
@@ -56,150 +56,122 @@
   }
 </div>
 
-@if (panel(); as actual) {
-  @if (actual.tipo === 'baja') {
-    <section class="tarjeta">
-      <akine-confirmacion-con-motivo
-        idCampo="producto-baja-motivo"
-        [titulo]="'Dar de baja ' + actual.producto.nombre"
-        etiqueta="Motivo de la baja"
-        ayuda="El producto deja de venderse. Los pases ya vendidos conservan su saldo y su vigencia,
-          y las clases los siguen consumiendo."
-        textoError="El motivo es obligatorio para dar de baja un producto."
-        textoConfirmar="Dar de baja"
-        [enviando]="enviando()"
-        (confirmado)="confirmarBaja($event)"
-        (cancelado)="cerrarPanel()"
-      />
-      @if (errorAccion(); as fallo) {
-        <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
-      }
-    </section>
-  }
-}
-
-<div class="dos-paneles">
-  <div class="dos-paneles__principal">
-    @if (productos() === null && !error()) {
-      <p class="estado estado--cargando" aria-live="polite">Leyendo los productos…</p>
-    } @else if (productos()?.length === 0 && !error()) {
-      <p class="estado estado--vacio">
-        Esta sede no tiene productos{{ incluirBajas() ? '' : ' vigentes' }}.
-      </p>
-    } @else if (productos(); as lista) {
-      @if (lista.length > 0) {
-        <div
-          class="tabla-scroll"
-          tabindex="0"
-          role="region"
-          aria-labelledby="titulo-tabla-productos"
-        >
-          <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de la sede</h2>
-          <table class="tabla">
-            <thead>
-              <tr>
-                <th scope="col" appOrdenable [tabla]="tabla" columna="producto">Producto</th>
-                <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                <th scope="col" appOrdenable [tabla]="tabla" columna="oferta">Oferta</th>
-                <th scope="col">Creditos</th>
-                <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
-                <th scope="col">Vale</th>
-                <th scope="col">Se vende</th>
-                <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+<div>
+  @if (productos() === null && !error()) {
+    <p class="estado estado--cargando" aria-live="polite">Leyendo los productos…</p>
+  } @else if (productos()?.length === 0 && !error()) {
+    <p class="estado estado--vacio">
+      Esta sede no tiene productos{{ incluirBajas() ? '' : ' vigentes' }}.
+    </p>
+  } @else if (productos(); as lista) {
+    @if (lista.length > 0) {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-labelledby="titulo-tabla-productos">
+        <h2 id="titulo-tabla-productos" class="visualmente-oculto">Productos de la sede</h2>
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="producto">Producto</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="oferta">Oferta</th>
+              <th scope="col">Creditos</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
+              <th scope="col">Vale</th>
+              <th scope="col">Se vende</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+              @if (puedeGestionar()) {
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (producto of tabla.visibles(); track producto.id) {
+              <tr
+                [class.fila--revocada]="producto.active === false"
+                [class.fila--seleccionada]="(enEdicion() ?? productoEnPanel())?.id === producto.id"
+              >
+                <td>
+                  {{ producto.nombre }}
+                  @if (producto.descripcion) {
+                    <div class="ayuda">{{ producto.descripcion }}</div>
+                  }
+                </td>
+                <td>{{ tipoDeProducto(producto) }}</td>
+                <td>{{ nombreDeOferta(producto) }}</td>
+                <td>{{ creditos(producto.creditos) }}</td>
+                <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
+                <td>
+                  {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} días
+                </td>
+                <td>{{ ventana(producto) }}</td>
+                <td>
+                  @if (producto.active === false) {
+                    <span class="marca-estado marca-estado--revocada">Dado de baja</span>
+                    @if (producto.deactivationReason) {
+                      <div class="ayuda">Motivo: {{ producto.deactivationReason }}</div>
+                    }
+                  } @else {
+                    <span class="marca-estado marca-estado--activa">Vigente</span>
+                  }
+                </td>
                 @if (puedeGestionar()) {
-                  <th scope="col">Acciones</th>
+                  <td class="tabla__acciones">
+                    @if (producto.active !== false) {
+                      <app-acciones-de-fila [de]="producto.nombre ?? ''">
+                        <button
+                          principal
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [attr.aria-label]="'Editar ' + producto.nombre"
+                          (click)="abrirEdicion(producto)"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="accion--peligro"
+                          [attr.aria-label]="'Dar de baja ' + producto.nombre"
+                          (click)="abrirBaja(producto)"
+                        >
+                          Dar de baja
+                        </button>
+                      </app-acciones-de-fila>
+                    }
+                  </td>
                 }
               </tr>
-            </thead>
-            <tbody>
-              @for (producto of tabla.visibles(); track producto.id) {
-                <tr [class.fila--revocada]="producto.active === false">
-                  <td>
-                    {{ producto.nombre }}
-                    @if (producto.descripcion) {
-                      <div class="ayuda">{{ producto.descripcion }}</div>
-                    }
-                  </td>
-                  <td>{{ tipoDeProducto(producto) }}</td>
-                  <td>{{ nombreDeOferta(producto) }}</td>
-                  <td>{{ creditos(producto.creditos) }}</td>
-                  <td class="importe">{{ importe(producto.precio, producto.moneda) }}</td>
-                  <td>
-                    {{ abono(producto) ? 'Periodo de hasta ' : '' }}{{ producto.vigenciaDias }} días
-                  </td>
-                  <td>{{ ventana(producto) }}</td>
-                  <td>
-                    @if (producto.active === false) {
-                      <span class="marca-estado marca-estado--revocada">Dado de baja</span>
-                      @if (producto.deactivationReason) {
-                        <div class="ayuda">Motivo: {{ producto.deactivationReason }}</div>
-                      }
-                    } @else {
-                      <span class="marca-estado marca-estado--activa">Vigente</span>
-                    }
-                  </td>
-                  @if (puedeGestionar()) {
-                    <td>
-                      @if (producto.active !== false) {
-                        <div class="acciones-fila">
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            [attr.aria-label]="'Editar ' + producto.nombre"
-                            (click)="abrirEdicion(producto)"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            class="boton boton--secundario"
-                            [attr.aria-label]="'Dar de baja ' + producto.nombre"
-                            (click)="abrirBaja(producto)"
-                          >
-                            Dar de baja
-                          </button>
-                        </div>
-                      }
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+            }
+          </tbody>
+        </table>
+      </div>
 
-        <div class="tabla-pie">
-          <span>{{ tabla.total() }} productos</span>
-          <app-paginacion
-            [paginaActual]="tabla.pagina()"
-            [totalPaginas]="tabla.totalPaginas()"
-            etiqueta="Paginas de productos"
-            (cambioDePagina)="tabla.irA($event)"
-          />
-        </div>
-      }
+      <div class="tabla-pie">
+        <span>{{ tabla.total() }} productos</span>
+        <app-paginacion
+          [paginaActual]="tabla.pagina()"
+          [totalPaginas]="tabla.totalPaginas()"
+          etiqueta="Paginas de productos"
+          (cambioDePagina)="tabla.irA($event)"
+        />
+      </div>
     }
-  </div>
-  @if (formularioAbierto()) {
-    <form
-      class="tarjeta dos-paneles__lateral"
-      [formGroup]="formulario"
-      (ngSubmit)="guardar()"
-      novalidate
-      akineFocoAlMontar="campo"
-    >
-      <h2>{{ enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto' }}</h2>
-      @if (enEdicion()) {
-        <p class="ayuda">
-          Los pases ya vendidos no cambian: cada uno conserva los creditos, el precio y la vigencia
-          con los que se vendio.
-        </p>
-      }
+  }
+</div>
 
+<!--
+  Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes el formulario
+  achicaba la tabla a la mitad del ancho y la baja se abria encima del listado.
+-->
+@if (formularioAbierto()) {
+  <app-panel-lateral
+    [titulo]="enEdicion() ? 'Editar ' + enEdicion()!.nombre : 'Nuevo producto'"
+    (cerrar)="cancelarFormulario()"
+  >
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
       @if (enEdicion(); as producto) {
-        <p>
+        <p class="ayuda ayuda--fija">
           {{ tipoDeProducto(producto) }} sobre la oferta <b>{{ nombreDeOferta(producto) }}</b
-          >. El tipo y la oferta de un producto no se cambian.
+          >. El tipo y la oferta de un producto no se cambian. Los pases ya vendidos conservan los
+          creditos, el precio y la vigencia con los que se vendieron.
         </p>
       } @else {
         <div class="campo">
@@ -208,7 +180,7 @@
             <option value="PACK">Pack de creditos</option>
             <option value="ABONO">Abono por periodo</option>
           </select>
-          <p class="ayuda" id="producto-tipo-ayuda">
+          <p class="ayuda ayuda--fija" id="producto-tipo-ayuda">
             @if (tipoElegido() === 'ABONO') {
               Cubre un periodo que se elige al vender; los creditos son las asistencias que permite.
             } @else {
@@ -229,7 +201,7 @@
               <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
             }
           </select>
-          <p class="ayuda" id="producto-oferta-ayuda">
+          <p class="ayuda ayuda--fija" id="producto-oferta-ayuda">
             @if (ofertasDelTipo().length === 0) {
               Esta sede no tiene ofertas activas con esquema de cobro {{ esquemaDelTipo() }}. Se
               declara en Servicios, en la oferta.
@@ -335,7 +307,7 @@
             [attr.aria-invalid]="invalido('vigenciaDias')"
             [attr.aria-describedby]="descritoPor('vigenciaDias', 'producto-vigencia-dias-ayuda')"
           />
-          <p class="ayuda" id="producto-vigencia-dias-ayuda">
+          <p class="ayuda ayuda--fija" id="producto-vigencia-dias-ayuda">
             @if (tipoElegido() === 'ABONO') {
               Lo mas largo que puede durar el periodo de un abono; al vender se puede elegir menos.
             } @else {
@@ -384,7 +356,7 @@
         }
       </div>
 
-      <div class="acciones acciones--pie">
+      <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando…' : enEdicion() ? 'Guardar cambios' : 'Crear producto' }}
         </button>
@@ -393,5 +365,30 @@
         </button>
       </div>
     </form>
+  </app-panel-lateral>
+}
+
+@if (productoEnPanel(); as producto) {
+  @if (panel().tipo === 'baja') {
+    <app-panel-lateral [titulo]="'Dar de baja ' + producto.nombre" (cerrar)="cerrarPanel()">
+      <akine-confirmacion-con-motivo
+        idCampo="producto-baja-motivo"
+        [titulo]="'Dar de baja ' + producto.nombre"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        ayuda="El producto deja de venderse. Los pases ya vendidos conservan su saldo y su vigencia,
+          y las clases los siguen consumiendo."
+        textoError="El motivo es obligatorio para dar de baja un producto."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="confirmarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      />
+      <div aria-live="polite">
+        @if (errorAccion(); as fallo) {
+          <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+        }
+      </div>
+    </app-panel-lateral>
   }
-</div>
+}

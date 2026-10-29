@@ -1,5 +1,5 @@
 import { expect, ingresar, navegar, problemaDe, respuestaDe, test } from './support/agenda-real';
-import { abrirFiltros } from './support/filtros';
+import { abrirAcciones, abrirFiltros } from './support/filtros';
 import { esperarFormularioEnlazado, nonce } from './support/akine';
 import {
   crearOferta,
@@ -65,6 +65,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     expect((turno as unknown as { espacioId?: number }).espacioId).toBe(espacioId);
 
     // --- La baja la frena el servidor, y la pantalla dice por que ---
+    await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Dar de baja' }).click();
     await page.getByLabel('Motivo de la baja').fill('Se reforma el box');
     const rechazo = respuestaDe(page, 'POST', /\/espacios\/\d+\/deactivate$/);
@@ -94,6 +95,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     const historico = page.getByRole('row').filter({ hasText: nombre });
     await expect(historico).toBeVisible();
     await expect(historico.getByText('Motivo: Se reforma el box')).toBeVisible();
-    await expect(historico.getByText('Un espacio dado de baja no se edita.')).toBeVisible();
+    // UX-11: la fila de un espacio dado de baja no ofrece acciones (antes lo decia con un texto).
+    await expect(historico.getByRole('button', { name: 'Editar' })).toHaveCount(0);
   });
 });

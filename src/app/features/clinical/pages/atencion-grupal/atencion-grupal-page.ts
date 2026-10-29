@@ -10,6 +10,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -41,6 +42,7 @@ import { DerivarParticipante, ReintentoConMotivo } from './derivar-participante'
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -121,7 +123,16 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-atencion-grupal-page',
-  imports: [Ayuda, RouterLink, FocoAlMontar, PermisoDirective, DerivarParticipante, AccionesDeFila],
+  imports: [
+    Ayuda,
+    RouterLink,
+    NgTemplateOutlet,
+    FocoAlMontar,
+    PermisoDirective,
+    DerivarParticipante,
+    AccionesDeFila,
+    PanelLateral,
+  ],
   templateUrl: './atencion-grupal-page.html',
   styleUrl: '../../atencion.css',
 })
@@ -206,6 +217,16 @@ export class AtencionGrupalPage {
     const panel = this.derivaciones();
     return panel?.desdeLote === null ? panel : null;
   });
+
+  /** Si hay un panel lateral abierto (derivar o derivaciones): el motivo de acceso va adentro. */
+  protected readonly hayPanelAbierto = computed(
+    () => this.derivacionesAbajo() !== null || this.derivando() !== null,
+  );
+
+  /** La inscripcion de la fila cuyo panel lateral esta abierto, para marcarla en la tabla. */
+  protected readonly filaEnPanel = computed(
+    () => this.derivacionesAbajo()?.fila.inscripcionId ?? this.derivando()?.inscripcionId ?? null,
+  );
 
   /** Respuesta mas nueva pedida: una vieja que llega tarde no pisa a la nueva. */
   private pedido = 0;

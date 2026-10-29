@@ -18,6 +18,7 @@ import { Migas } from '../../../../shared/components/migas/migas';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PERMISO_CAJA_OPERATE, PERMISO_COBRO_REGISTER } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { ReintegrarSaldoAFavorMedioEnum } from '../../../../api/generated/model/reintegrar-saldo-a-favor';
@@ -89,6 +90,7 @@ interface OperacionAbierta {
 @Component({
   selector: 'app-cobros-page',
   imports: [
+    PanelLateral,
     Migas,
     CabeceraDeFicha,
     Ayuda,
@@ -149,6 +151,17 @@ export class CobrosPage {
 
   /** La operacion abierta, o `null`. Una sola a la vez. */
   protected readonly operacion = signal<OperacionAbierta | null>(null);
+
+  /**
+   * El cobro del panel abierto (anular o reintegrar). El panel lateral vive fuera de la tabla
+   * (refactor UX/UI del 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for`.
+   */
+  protected readonly cobroEnOperacion = computed(() => {
+    const abierta = this.operacion();
+    return abierta === null
+      ? null
+      : (this.tabla.visibles().find((cobro) => cobro.id === abierta.cobro.id) ?? null);
+  });
   protected readonly enviando = signal(false);
   protected readonly errorOperacion = signal<ErrorCobro | null>(null);
   protected readonly exito = signal<string | null>(null);

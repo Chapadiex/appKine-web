@@ -18,6 +18,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { ConvenioResponse } from '../../../../api/generated/model/convenio-response';
 import { CreateConvenioRequest } from '../../../../api/generated/model/create-convenio-request';
@@ -122,6 +123,7 @@ type TipoAccion = 'editar' | 'baja';
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    PanelLateral,
   ],
   templateUrl: './convenios-de-la-sede-page.html',
   styleUrl: '../../contracting.css',
@@ -243,6 +245,17 @@ export class ConveniosDeLaSedePage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+  /**
+   * El convenio del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly convenioEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.tabla.visibles().find((convenio) => convenio.id === panel.id) ?? null);
+  });
+
   protected readonly altaAbierta = signal(false);
   private readonly original = signal<ConvenioResponse | null>(null);
 
@@ -360,11 +373,6 @@ export class ConveniosDeLaSedePage {
     const elegido = valor === 'INACTIVO' || valor === 'TODOS' ? valor : 'ACTIVO';
     this.cerrarPanel();
     this.filtroRapido.set(elegido);
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   /**

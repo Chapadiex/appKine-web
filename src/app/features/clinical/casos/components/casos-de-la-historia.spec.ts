@@ -84,6 +84,17 @@ describe('CasosDeLaHistoria', () => {
 
   it('el posible duplicado muestra los candidatos y confirmar reenvia con la marca', async () => {
     const fixture = await montar();
+    // El alta se abre en un panel lateral desde la fila del titulo, no debajo de la lista.
+    expect((fixture.nativeElement as HTMLElement).querySelector('form')).toBeNull();
+    (
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('Abrir un caso'),
+      ) as HTMLButtonElement
+    ).click();
+    await estabilizar(fixture);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('dialog.panel-lateral form'),
+    ).not.toBeNull();
     elegir(fixture, '#caso-oferta', '14');
     httpMock.expectOne(HABILITACIONES).flush({ profesionales: [] });
     escribir(fixture, '#caso-diagnostico', 'Cervicalgia');

@@ -31,6 +31,7 @@ import {
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -98,6 +99,7 @@ const POR_PAGINA = 20;
     PermisoDirective,
     Paginacion,
     ConfirmacionConMotivo,
+    PanelLateral,
   ],
   templateUrl: './collaborators-page.html',
   styleUrl: '../../organization.css',
@@ -146,6 +148,17 @@ export class CollaboratorsPage {
     /** Rol del vinculo al abrir el panel: redacta el rechazo de la matriz al otorgar. */
     readonly rol?: string;
   } | null>(null);
+  /**
+   * El vinculo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly colaboradorEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.colaboradoresDeLaPagina().find((colaborador) => colaborador.id === panel.id) ?? null);
+  });
+
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly exito = signal<string | null>(null);

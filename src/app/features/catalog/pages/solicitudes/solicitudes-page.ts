@@ -35,6 +35,7 @@ import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato, mas "todas". */
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
@@ -69,6 +70,7 @@ type Estado =
 @Component({
   selector: 'app-solicitudes-page',
   imports: [
+    PanelLateral,
     Migas,
     Pestanas,
     ColumnaOrdenable,

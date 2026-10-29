@@ -1,4 +1,6 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
@@ -106,7 +108,9 @@ interface ConteoPorCategoria {
 @Component({
   selector: 'app-ficha-de-persona-page',
   imports: [
+    AccionesDeFila,
     Ayuda,
+    PanelLateral,
     CabeceraDeFicha,
     RouterLink,
     ConfirmacionConMotivo,

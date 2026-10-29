@@ -21,9 +21,12 @@ const PDF = Buffer.from(
   'latin1',
 );
 
-/** El panel de subida: la pantalla tiene otro selector "Categoria", el del filtro. */
+/**
+ * El panel lateral de subida: la pantalla tiene otro selector "Categoria", el del filtro. Desde el
+ * refactor UX/UI del 28/10/2026 es un `dialog` con el titulo del panel.
+ */
 function subidaDe(page: Page): Locator {
-  return page.getByRole('region', { name: 'Subir un documento' });
+  return page.getByRole('dialog', { name: 'Subir un documento' });
 }
 
 test.describe('Documentos de la persona contra el backend real', () => {

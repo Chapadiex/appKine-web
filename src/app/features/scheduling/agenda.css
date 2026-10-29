@@ -651,11 +651,6 @@ button.slot[aria-pressed='true'] {
   outline-offset: var(--foco-offset);
 }
 
-/* Celda de acciones alineada a la derecha, como la columna de acciones del canvas. */
-.celda-acciones .acciones-fila {
-  justify-content: flex-end;
-}
-
 /* Un dato secundario debajo del principal, dentro de una celda. */
 .celda-secundaria {
   display: block;
@@ -677,4 +672,16 @@ button.slot[aria-pressed='true'] {
 
 .recepcion__fecha::first-letter {
   text-transform: uppercase;
+}
+
+/*
+ * Reservar turno: la otra forma de reservar (una serie semanal), como boton secundario al pie de
+ * la ficha del paciente y no como enlace dentro de un parrafo (refactor UX/UI del 28/10/2026).
+ */
+.reserva__alternativa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+  margin-top: var(--esp-5);
 }

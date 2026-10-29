@@ -11,6 +11,7 @@ import { PlatformOrganizationResponse } from '../../../../api/generated/model/pl
 import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { formatearFecha } from '../../../../shared/utils/instantes';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -75,7 +76,7 @@ const TAMANO_DE_PAGINA = 20;
  */
 @Component({
   selector: 'app-suscripcion-de-centro-page',
-  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, Pestanas, Paginacion],
+  imports: [Ayuda, ColumnaOrdenable, Filtros, Icono, PanelLateral, Pestanas, Paginacion],
   templateUrl: './suscripcion-de-centro-page.html',
 })
 export class SuscripcionDeCentroPage {
@@ -162,6 +163,14 @@ export class SuscripcionDeCentroPage {
     this.centro.set(centro);
     this.resultado.set(null);
     this.leer();
+  }
+
+  /** Cierra el panel de la suscripcion: descarta la lectura en vuelo y el resultado. */
+  protected cerrarSuscripcion(): void {
+    this.pedido?.unsubscribe();
+    this.centro.set(null);
+    this.estado.set({ tipo: 'inicial' });
+    this.resultado.set(null);
   }
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {

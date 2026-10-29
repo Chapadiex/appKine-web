@@ -70,7 +70,7 @@
       <p class="estado estado--error">{{ fallo.mensaje }}</p>
 
       @if (fallo.motivo) {
-        <p class="ayuda">Lo que dijo el servidor: {{ fallo.motivo }}</p>
+        <p class="ayuda ayuda--fija">Lo que dijo el servidor: {{ fallo.motivo }}</p>
       }
 
       @switch (fallo.accion) {
@@ -183,7 +183,10 @@
         </thead>
         <tbody>
           @for (turno of tabla.visibles(); track turno.id) {
-            <tr [class.fila--revocada]="cancelado(turno)">
+            <tr
+              [class.fila--revocada]="cancelado(turno)"
+              [class.fila--seleccionada]="panel()?.turno?.id === turno.id"
+            >
               <td>{{ rango(turno) }}</td>
 
               <td>
@@ -206,7 +209,7 @@
                 <span class="celda-secundaria">{{ textoDeEstado(turno.estado) }}</span>
 
                 @if (cancelado(turno) && turno.motivoCancelacion) {
-                  <p class="ayuda">Motivo: {{ turno.motivoCancelacion }}</p>
+                  <p class="ayuda ayuda--fija">Motivo: {{ turno.motivoCancelacion }}</p>
                 }
               </td>
 
@@ -217,14 +220,14 @@
                   </span>
                   <span class="celda-secundaria">{{ textoDeRecepcion(recepcion.estado) }}</span>
                   @if (textoDeModalidad(recepcion.modalidad); as modalidad) {
-                    <p class="ayuda">{{ modalidad }}</p>
+                    <p class="ayuda ayuda--fija">{{ modalidad }}</p>
                   }
                   @if (retirado(turno) && recepcion.motivoCierre) {
-                    <p class="ayuda">Motivo del retiro: {{ recepcion.motivoCierre }}</p>
+                    <p class="ayuda ayuda--fija">Motivo del retiro: {{ recepcion.motivoCierre }}</p>
                   }
                   @if (recepcion.observacion) {
                     <!-- La observacion advierte y no bloquea (RN-M13-003): queda a la vista. -->
-                    <p class="ayuda">Observación: {{ recepcion.observacion }}</p>
+                    <p class="ayuda ayuda--fija">Observación: {{ recepcion.observacion }}</p>
                   }
                 } @else {
                   <span class="ayuda">Sin recepción</span>
@@ -235,7 +238,7 @@
                   llegada: sale del turno, no de la recepcion. Se dice con texto, no solo con el
                   color de la pastilla (WCAG 1.4.1).
                 -->
-                  <p class="ayuda">
+                  <p class="ayuda ayuda--fija">
                     <span
                       class="marca-estado"
                       [class.marca-estado--suspendida]="prepagoPendiente(turno)"
@@ -256,26 +259,47 @@
                 }
               </td>
 
-              <td class="celda-acciones">
+              <td class="tabla__acciones">
                 @let acciones = accionesDe(turno);
                 @let conPrepago = puedeCobrar() && admitePrepago(turno);
                 <!--
-                  Con tres o mas acciones (decidido el 22/10/2026) la transicion siguiente de la
-                  recepcion queda a la vista y el resto va detras del menu "⋯". Con menos, botones
-                  sueltos. Registrar la llegada es IDEMPOTENTE: el doble click del mostrador no es
-                  un error; el `disabled` evita mandar dos veces el mismo pedido, no castiga.
+                  Una accion a la vista y el resto en el menu "⋯" (refactor UX/UI del 28/10/2026):
+                  la transicion siguiente de la recepcion (llegada, validar, espera, llamar) es la
+                  que el mostrador busca con la vista; Particular, retiro, anular, el prepago y el
+                  ciclo del turno van detras. Registrar la llegada es IDEMPOTENTE: el doble click
+                  del mostrador no es un error; el `disabled` evita mandar dos veces el mismo
+                  pedido, no castiga.
                 -->
-                @if (acciones.length > 0 && cantidadDeAcciones(turno) >= 3) {
+                <!--
+                  El prepago se cobra en el registro de cobro (billing), como anticipo atado al
+                  turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia y la
+                  fila pasa a REGISTRADO. Sin transiciones (solo cobro) es la accion a la vista.
+                  Cada rama del `@if` de la accion principal tiene un solo elemento: asi se
+                  proyecta en el `[principal]` del menu.
+                -->
+                @if (acciones.length > 0 || conPrepago) {
                   <app-acciones-de-fila [de]="turno.personaNombre ?? 'el turno'">
-                    <button
-                      principal
-                      type="button"
-                      class="boton"
-                      [disabled]="enVuelo() === turno.id"
-                      (click)="acciones[0].ejecutar(); enfocarMenu($event)"
-                    >
-                      {{ acciones[0].texto }}
-                    </button>
+                    @if (acciones.length > 0) {
+                      <button
+                        principal
+                        type="button"
+                        class="boton boton--chico"
+                        [class.boton--secundario]="acciones[0].secundaria"
+                        [disabled]="enVuelo() === turno.id"
+                        (click)="acciones[0].ejecutar(); enfocarMenu($event)"
+                      >
+                        {{ acciones[0].texto }}
+                      </button>
+                    } @else {
+                      <a
+                        principal
+                        class="boton boton--secundario boton--chico"
+                        [routerLink]="rutaDePrepago(turno)"
+                        [queryParams]="queryDePrepago(turno)"
+                      >
+                        Registrar prepago
+                      </a>
+                    }
                     @for (accion of acciones.slice(1); track accion.clave) {
                       <button
                         type="button"
@@ -286,42 +310,8 @@
                         {{ accion.texto }}
                       </button>
                     }
-                    @if (conPrepago) {
+                    @if (conPrepago && acciones.length > 0) {
                       <a [routerLink]="rutaDePrepago(turno)" [queryParams]="queryDePrepago(turno)">
-                        Registrar prepago
-                      </a>
-                    }
-                    <a
-                      [routerLink]="['/agenda', 'turnos', turno.id]"
-                      [queryParams]="queryDelTurno(turno)"
-                    >
-                      Ver el turno
-                    </a>
-                  </app-acciones-de-fila>
-                } @else {
-                  <div class="acciones-fila">
-                    @for (accion of acciones; track accion.clave) {
-                      <button
-                        type="button"
-                        class="boton"
-                        [class.boton--secundario]="accion.secundaria"
-                        [disabled]="enVuelo() === turno.id"
-                        (click)="accion.ejecutar()"
-                      >
-                        {{ accion.texto }}
-                      </button>
-                    }
-                    @if (conPrepago) {
-                      <!--
-                        El prepago se cobra en el registro de cobro (billing), como anticipo atado
-                        al turno, tambien antes de la llegada. Al volver, esta pantalla relee el dia
-                        y la fila pasa a REGISTRADO.
-                      -->
-                      <a
-                        class="boton boton--secundario"
-                        [routerLink]="rutaDePrepago(turno)"
-                        [queryParams]="queryDePrepago(turno)"
-                      >
                         Registrar prepago
                       </a>
                     }
@@ -331,13 +321,20 @@
                       Este enlace le pasa lo que esa pantalla necesita para poder operar.
                     -->
                     <a
-                      class="enlace"
                       [routerLink]="['/agenda', 'turnos', turno.id]"
                       [queryParams]="queryDelTurno(turno)"
                     >
                       Ver el turno
                     </a>
-                  </div>
+                  </app-acciones-de-fila>
+                } @else {
+                  <a
+                    class="boton boton--secundario boton--chico"
+                    [routerLink]="['/agenda', 'turnos', turno.id]"
+                    [queryParams]="queryDelTurno(turno)"
+                  >
+                    Ver el turno
+                  </a>
                 }
               </td>
             </tr>
@@ -358,12 +355,18 @@
   }
 </section>
 
+<!--
+  Los motivos de Particular, retiro y anulacion en un panel lateral (refactor UX/UI del
+  28/10/2026). Antes iban en una tarjeta DEBAJO de la tabla: con un dia cargado, el formulario
+  quedaba fuera de la vista. El panel deja la fila marcada y el motivo a la vista; Escape cancela.
+-->
 @if (panel(); as abierto) {
-  <section class="tarjeta" aria-label="Confirmar la transicion de la recepción">
+  <app-panel-lateral [titulo]="tituloDelPanel(abierto)" (cerrar)="cerrarPanel()">
     @if (abierto.tipo === 'particular') {
       <app-confirmacion-con-motivo
         idCampo="recepcion-motivo-particular"
-        [titulo]="'Atender como Particular a ' + (abierto.turno.personaNombre ?? 'el paciente')"
+        [titulo]="tituloDelPanel(abierto)"
+        [mostrarTitulo]="false"
         etiqueta="Motivo (obligatorio)"
         ayuda="Queda escrito en la recepcion. No cambia la cobertura de la ficha del paciente."
         textoError="Escribi por que se atiende como Particular: es obligatorio."
@@ -375,7 +378,8 @@
     } @else if (abierto.tipo === 'retiro') {
       <app-confirmacion-con-motivo
         idCampo="recepcion-motivo-retiro"
-        [titulo]="(abierto.turno.personaNombre ?? 'El paciente') + ' se retiro sin ser atendido'"
+        [titulo]="tituloDelPanel(abierto)"
+        [mostrarTitulo]="false"
         etiqueta="Motivo (obligatorio)"
         ayuda="La llegada consta y el turno no cambia: ya no se puede registrar otra llegada, marcarlo ausente ni moverlo. La atencion se puede abrir igual."
         textoError="Escribi por que se retiro: es obligatorio."
@@ -387,7 +391,8 @@
     } @else {
       <app-confirmacion-con-motivo
         idCampo="recepcion-motivo-anulacion"
-        [titulo]="'Anular la llegada de ' + (abierto.turno.personaNombre ?? 'el paciente')"
+        [titulo]="tituloDelPanel(abierto)"
+        [mostrarTitulo]="false"
         etiqueta="Motivo (opcional)"
         ayuda="Anular dice que el check-in fue un error y la llegada no vale. Queda en el historial."
         textoConfirmar="Anular la llegada"
@@ -397,7 +402,7 @@
         (cancelado)="cerrarPanel()"
       />
     }
-  </section>
+  </app-panel-lateral>
 }
 
 <!--

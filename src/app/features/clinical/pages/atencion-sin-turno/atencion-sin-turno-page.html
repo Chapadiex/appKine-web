@@ -92,12 +92,14 @@
           }
         </select>
         @if (requiereCaso() && casos().length === 0 && persona()?.id; as personaId) {
-          <p class="ayuda">
-            El paciente no tiene casos activos.
-            <a class="enlace" [routerLink]="['/historia-clinica', 'personas', personaId]">
-              Abrir un caso en su historia clínica
-            </a>
-          </p>
+          <!-- Un dato y una accion: van a la vista, no detras del foco del campo. -->
+          <p class="ayuda ayuda--fija">El paciente no tiene casos activos.</p>
+          <a
+            class="boton boton--secundario boton--chico"
+            [routerLink]="['/historia-clinica', 'personas', personaId]"
+          >
+            Abrir un caso en su historia clínica
+          </a>
         }
       </div>
     }
@@ -115,11 +117,6 @@
     ></textarea>
   </div>
 
-  <p class="ayuda">
-    Se registra como atención sin turno: no ocupa un hueco de la agenda. La atiende quien la inicia:
-    vos.
-  </p>
-
   <div aria-live="polite">
     @if (aviso()) {
       <p class="estado estado--error" role="alert">{{ aviso() }}</p>
@@ -130,7 +127,7 @@
   </div>
 
   <div class="pie-tarjeta">
-    <a class="boton-texto" routerLink="/agenda/recepcion">Cancelar</a>
+    <a class="boton boton--secundario" routerLink="/agenda/recepcion">Cancelar</a>
     <button type="button" class="boton" [disabled]="enviando()" (click)="atender()">
       Iniciar atención
     </button>

@@ -24,12 +24,119 @@
   }
 </div>
 
-@if (seleccionada(); as solicitud) {
-  <section class="tarjeta" aria-labelledby="titulo-detalle-solicitud">
-    <h2 id="titulo-detalle-solicitud" tabindex="-1">
-      {{ etiquetaDeTipo(solicitud.tipo) }}: {{ solicitud.nombrePropuesto }}
-    </h2>
+<section class="tarjeta" aria-labelledby="titulo-bandeja">
+  <h2 id="titulo-bandeja">Bandeja</h2>
 
+  <!-- Regla de filtros (plan §3.4): la bandeja no tiene búsqueda por texto; solo el embudo. -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-bandeja">Mostrar</label>
+      <select
+        id="filtro-estado-bandeja"
+        [value]="filtroEstado()"
+        (change)="cambiarFiltro($any($event.target).value)"
+      >
+        <option value="PENDIENTE">Solo las pendientes</option>
+        <option value="APROBADA">Solo las aprobadas</option>
+        <option value="RECHAZADA">Solo las rechazadas</option>
+        <option value="TODAS">Todas</option>
+      </select>
+    </div>
+  </app-filtros>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando las solicitudes&hellip;</p>
+      }
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+      }
+      @case ('listo') {
+        @if (solicitudes().length === 0) {
+          <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catálogo">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Solicitudes de los centros al catálogo común, con la fecha, el centro, el tipo, el
+                pedido y su estado.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Recibida</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Pedido</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (solicitud of tabla.visibles(); track solicitud.id) {
+                  <tr
+                    [class.fila--revocada]="solicitud.estado === 'RECHAZADA'"
+                    [class.fila--seleccionada]="seleccionada()?.id === solicitud.id"
+                  >
+                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
+                    <td>{{ nombreDeCentro(solicitud) }}</td>
+                    <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
+                    <th scope="row">
+                      {{ solicitud.nombrePropuesto }}
+                      @if (solicitud.codigoPropuesto) {
+                        ({{ solicitud.codigoPropuesto }})
+                      }
+                    </th>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class]="'marca-estado ' + claseDeEstado(solicitud.estado)"
+                        >{{ etiquetaDeEstado(solicitud.estado) }}</span
+                      >
+                    </td>
+                    <td class="tabla__acciones">
+                      <button
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        (click)="revisar(solicitud)"
+                        [attr.aria-label]="'Revisar ' + solicitud.nombrePropuesto"
+                      >
+                        Revisar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} solicitudes</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Páginas de solicitudes"
+              (cambioDePagina)="tabla.irA($event)"
+            />
+          </div>
+        }
+      }
+    }
+  </div>
+</section>
+
+<!--
+  Revision de una solicitud en un panel lateral (refactor UX/UI del 28/10/2026). Antes se abria en
+  una tarjeta arriba de la bandeja y la empujaba para abajo; el panel la deja quieta con la fila
+  marcada.
+-->
+@if (seleccionada(); as solicitud) {
+  <app-panel-lateral
+    [titulo]="etiquetaDeTipo(solicitud.tipo) + ': ' + solicitud.nombrePropuesto"
+    [subtitulo]="nombreDeCentro(solicitud)"
+    (cerrar)="cerrar()"
+  >
     <dl class="detalle">
       <dt>Código propuesto</dt>
       <dd>{{ solicitud.codigoPropuesto || 'Sin código propuesto' }}</dd>
@@ -62,10 +169,9 @@
 
     @if (solicitud.estado === 'PENDIENTE') {
       @if (desenlace() === null) {
-        <p class="acciones">
-          <button type="button" class="boton" (click)="elegirDesenlace('APROBAR')">
-            Aprobar y publicar
-          </button>
+        <!-- Fuera de un formulario el pie no se invierte: la principal va ultima, en el borde. -->
+        <div class="acciones acciones--pie">
+          <button type="button" class="boton boton--secundario" (click)="cerrar()">Cerrar</button>
           <button
             type="button"
             class="boton boton--secundario"
@@ -73,8 +179,10 @@
           >
             Rechazar
           </button>
-          <button type="button" class="boton boton--secundario" (click)="cerrar()">Volver</button>
-        </p>
+          <button type="button" class="boton" (click)="elegirDesenlace('APROBAR')">
+            Aprobar y publicar
+          </button>
+        </div>
       } @else {
         <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
           <h3>
@@ -121,7 +229,7 @@
               }
             </div>
 
-            <div class="campo">
+            <div class="campo campo--ancho">
               <label for="resolucion-descripcion">Descripción (opcional)</label>
               <textarea
                 id="resolucion-descripcion"
@@ -131,7 +239,7 @@
             </div>
 
             @if (esPractica()) {
-              <div class="campo">
+              <div class="campo campo--ancho">
                 <label for="resolucion-especialidad">Especialidad del catálogo común</label>
                 @switch (especialidades().tipo) {
                   @case ('error') {
@@ -217,108 +325,9 @@
         </form>
       }
     } @else {
-      <p class="acciones">
-        <button type="button" class="boton boton--secundario" (click)="cerrar()">Volver</button>
-      </p>
+      <div class="acciones acciones--pie">
+        <button type="button" class="boton boton--secundario" (click)="cerrar()">Cerrar</button>
+      </div>
     }
-  </section>
+  </app-panel-lateral>
 }
-
-<section class="tarjeta" aria-labelledby="titulo-bandeja">
-  <h2 id="titulo-bandeja">Bandeja</h2>
-
-  <!-- Regla de filtros (plan §3.4): la bandeja no tiene búsqueda por texto; solo el embudo. -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
-    <div class="campo">
-      <label for="filtro-estado-bandeja">Mostrar</label>
-      <select
-        id="filtro-estado-bandeja"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltro($any($event.target).value)"
-      >
-        <option value="PENDIENTE">Solo las pendientes</option>
-        <option value="APROBADA">Solo las aprobadas</option>
-        <option value="RECHAZADA">Solo las rechazadas</option>
-        <option value="TODAS">Todas</option>
-      </select>
-    </div>
-  </app-filtros>
-
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('cargando') {
-        <p class="estado estado--cargando">Cargando las solicitudes&hellip;</p>
-      }
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-      }
-      @case ('listo') {
-        @if (solicitudes().length === 0) {
-          <p class="estado estado--vacio">No hay solicitudes con el filtro elegido.</p>
-        } @else {
-          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Solicitudes de catálogo">
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Solicitudes de los centros al catálogo común, con la fecha, el centro, el tipo, el
-                pedido y su estado.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Recibida</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="centro">Centro</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Pedido</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (solicitud of tabla.visibles(); track solicitud.id) {
-                  <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
-                    <td>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</td>
-                    <td>{{ nombreDeCentro(solicitud) }}</td>
-                    <td>{{ etiquetaDeTipo(solicitud.tipo) }}</td>
-                    <th scope="row">
-                      {{ solicitud.nombrePropuesto }}
-                      @if (solicitud.codigoPropuesto) {
-                        ({{ solicitud.codigoPropuesto }})
-                      }
-                    </th>
-                    <td>
-                      <span
-                        class="marca-estado"
-                        [class]="'marca-estado ' + claseDeEstado(solicitud.estado)"
-                        >{{ etiquetaDeEstado(solicitud.estado) }}</span
-                      >
-                    </td>
-                    <td class="acciones-fila">
-                      <button
-                        type="button"
-                        class="boton boton--secundario"
-                        (click)="revisar(solicitud)"
-                        [attr.aria-label]="'Revisar ' + solicitud.nombrePropuesto"
-                      >
-                        Revisar
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} solicitudes</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Páginas de solicitudes"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
-        }
-      }
-    }
-  </div>
-</section>

@@ -7,6 +7,18 @@
         casos. Un caso cerrado no se borra: se sigue leyendo entero y se puede reabrir con motivo.
       </p>
     </app-ayuda>
+    <!-- El alta, en la fila del titulo y en un panel lateral: no debajo de la lista. -->
+    <div class="encabezado__acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [attr.aria-expanded]="dandoDeAlta()"
+        (click)="dandoDeAlta.set(true)"
+      >
+        <app-icono nombre="agregar" />
+        Abrir un caso
+      </button>
+    </div>
   </div>
 
   @if (cargando()) {
@@ -31,7 +43,7 @@
                 Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
               </a>
               <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-              <p class="ayuda">
+              <p class="ayuda ayuda--fija">
                 Abierto el {{ fechaYHora(caso.abiertoEn) }} · {{ equipoDe(caso) }}
               </p>
             </div>
@@ -53,7 +65,7 @@
                 Caso {{ caso.numeroCaso }} · {{ nombreDeOferta(caso) }}
               </a>
               <p class="historia__cuerpo casos__diagnostico">{{ caso.diagnosticoPresuntivo }}</p>
-              <p class="ayuda">
+              <p class="ayuda ayuda--fija">
                 Abierto el {{ fechaYHora(caso.abiertoEn) }} · cerrado el
                 {{ fechaYHora(caso.cerradoEn) }}
               </p>
@@ -65,115 +77,124 @@
     }
   }
 
-  <details class="historia__plegable">
-    <summary>Abrir un caso</summary>
-    <form class="historia__formulario" (submit)="$event.preventDefault(); abrir(false)">
-      <div class="campo">
-        <label for="caso-oferta">Oferta que motiva el caso</label>
-        <select
-          id="caso-oferta"
-          [value]="ofertaId() ?? ''"
-          [attr.aria-invalid]="intento() && faltaOferta()"
-          [attr.aria-describedby]="intento() && faltaOferta() ? 'caso-oferta-error' : null"
-          (change)="elegirOferta($any($event.target).value)"
-        >
-          <option value="">Elegí una oferta</option>
-          @for (oferta of elegibles(); track oferta.id) {
-            <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-          }
-        </select>
-        @if (intento() && faltaOferta()) {
-          <p id="caso-oferta-error" class="campo__error">Elegí la oferta del caso.</p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="caso-diagnostico">Diagnostico presuntivo</label>
-        <textarea
-          id="caso-diagnostico"
-          rows="2"
-          [value]="diagnostico()"
-          [attr.aria-invalid]="intento() && faltaDiagnostico()"
-          [attr.aria-describedby]="
-            intento() && faltaDiagnostico() ? 'caso-diagnostico-error' : null
-          "
-          (input)="diagnostico.set($any($event.target).value)"
-        ></textarea>
-        @if (intento() && faltaDiagnostico()) {
-          <p id="caso-diagnostico-error" class="campo__error">
-            El diagnostico presuntivo es obligatorio.
-          </p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="caso-objetivo">Objetivo terapeutico (opcional)</label>
-        <textarea
-          id="caso-objetivo"
-          rows="2"
-          [value]="objetivo()"
-          (input)="objetivo.set($any($event.target).value)"
-        ></textarea>
-      </div>
-
-      <div class="campo">
-        <label for="caso-responsable">Profesional responsable (opcional)</label>
-        <select
-          id="caso-responsable"
-          aria-describedby="caso-responsable-ayuda"
-          [value]="responsableId() ?? ''"
-          [disabled]="ofertaId() === null"
-          (change)="elegirResponsable($any($event.target).value)"
-        >
-          <option value="">Sin responsable por ahora</option>
-          @for (profesional of profesionales(); track profesional.membershipId) {
-            <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
-          }
-        </select>
-        <p id="caso-responsable-ayuda" class="ayuda">
-          Solo se ofrecen los profesionales habilitados para esa oferta en esta sede. El equipo se
-          completa después, desde el caso.
-        </p>
-      </div>
-
-      @if (errorDeAlta(); as problema) {
-        <div role="alert">
-          <p class="estado estado--error">{{ problema.mensaje }}</p>
-          @if (problema.causa === 'posible-duplicado') {
-            @if (candidatos().length > 0) {
-              <ul>
-                @for (candidato of candidatos(); track candidato.id) {
-                  <li>
-                    <a class="enlace" [routerLink]="visita.rutaCaso(candidato.id!)">
-                      Ver el caso {{ candidato.numeroCaso }}
-                    </a>
-                  </li>
-                }
-              </ul>
+  <!--
+    Alta de un caso en un panel lateral (refactor UX/UI del 28/10/2026). Antes era un desplegable
+    al pie de la lista, con el formulario entero debajo de los casos. Vive dentro de la seccion para
+    que el formulario siga perteneciendo a "Casos clínicos".
+  -->
+  @if (dandoDeAlta()) {
+    <app-panel-lateral titulo="Abrir un caso clínico" (cerrar)="cerrarAlta()">
+      <form class="historia__formulario" (submit)="$event.preventDefault(); abrir(false)">
+        <div class="campo">
+          <label for="caso-oferta">Oferta que motiva el caso</label>
+          <select
+            id="caso-oferta"
+            [value]="ofertaId() ?? ''"
+            [attr.aria-invalid]="intento() && faltaOferta()"
+            [attr.aria-describedby]="intento() && faltaOferta() ? 'caso-oferta-error' : null"
+            (change)="elegirOferta($any($event.target).value)"
+          >
+            <option value="">Elegí una oferta</option>
+            @for (oferta of elegibles(); track oferta.id) {
+              <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
             }
-            <div class="acciones">
-              <button
-                type="button"
-                class="boton boton--secundario"
-                [disabled]="guardando()"
-                (click)="abrir(true)"
-              >
-                Abrir igual un caso nuevo
-              </button>
-            </div>
+          </select>
+          @if (intento() && faltaOferta()) {
+            <p id="caso-oferta-error" class="campo__error">Elegí la oferta del caso.</p>
           }
         </div>
-      }
 
-      <div class="acciones">
-        <button type="submit" class="boton" [disabled]="guardando()">
-          @if (guardando()) {
-            Abriendo…
-          } @else {
-            Abrir el caso
+        <div class="campo">
+          <label for="caso-diagnostico">Diagnostico presuntivo</label>
+          <textarea
+            id="caso-diagnostico"
+            rows="2"
+            [value]="diagnostico()"
+            [attr.aria-invalid]="intento() && faltaDiagnostico()"
+            [attr.aria-describedby]="
+              intento() && faltaDiagnostico() ? 'caso-diagnostico-error' : null
+            "
+            (input)="diagnostico.set($any($event.target).value)"
+          ></textarea>
+          @if (intento() && faltaDiagnostico()) {
+            <p id="caso-diagnostico-error" class="campo__error">
+              El diagnostico presuntivo es obligatorio.
+            </p>
           }
-        </button>
-      </div>
-    </form>
-  </details>
+        </div>
+
+        <div class="campo">
+          <label for="caso-objetivo">Objetivo terapeutico (opcional)</label>
+          <textarea
+            id="caso-objetivo"
+            rows="2"
+            [value]="objetivo()"
+            (input)="objetivo.set($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="caso-responsable">Profesional responsable (opcional)</label>
+          <select
+            id="caso-responsable"
+            aria-describedby="caso-responsable-ayuda"
+            [value]="responsableId() ?? ''"
+            [disabled]="ofertaId() === null"
+            (change)="elegirResponsable($any($event.target).value)"
+          >
+            <option value="">Sin responsable por ahora</option>
+            @for (profesional of profesionales(); track profesional.membershipId) {
+              <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
+            }
+          </select>
+          <p id="caso-responsable-ayuda" class="ayuda">
+            Solo se ofrecen los profesionales habilitados para esa oferta en esta sede. El equipo se
+            completa después, desde el caso.
+          </p>
+        </div>
+
+        @if (errorDeAlta(); as problema) {
+          <div role="alert">
+            <p class="estado estado--error">{{ problema.mensaje }}</p>
+            @if (problema.causa === 'posible-duplicado') {
+              @if (candidatos().length > 0) {
+                <ul>
+                  @for (candidato of candidatos(); track candidato.id) {
+                    <li>
+                      <a class="enlace" [routerLink]="visita.rutaCaso(candidato.id!)">
+                        Ver el caso {{ candidato.numeroCaso }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              }
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="guardando()"
+                  (click)="abrir(true)"
+                >
+                  Abrir igual un caso nuevo
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="guardando()">
+            @if (guardando()) {
+              Abriendo…
+            } @else {
+              Abrir el caso
+            }
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  }
 </section>

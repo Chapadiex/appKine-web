@@ -22,6 +22,10 @@
       <a routerLink="/organizacion/colaboradores/nuevo">darla de alta</a>: queda vinculada en el
       acto, sin esperar que responda.
     </p>
+    <p *akinePermiso="permisoManage">
+      Si un correo de invitación no salio, podés reintentarlo desde la pestaña
+      <a routerLink="/organizacion/colaboradores/notificaciones">Notificaciones</a>.
+    </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
@@ -38,77 +42,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-@if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-invitacion">
-    <h2 id="titulo-alta-invitacion">Nueva invitación</h2>
-
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo">
-        <label for="invitacion-email">Email de la persona</label>
-        <input
-          id="invitacion-email"
-          type="email"
-          formControlName="email"
-          autocomplete="off"
-          [attr.aria-invalid]="mostrarError('email') || errorEnElEmail() ? 'true' : null"
-        />
-        @if (errorEnElEmail()) {
-          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
-        } @else if (mostrarError('email')) {
-          <p class="campo__error">Escribí un correo válido.</p>
-        } @else {
-          <p class="ayuda">
-            Es la dirección a la que va el enlace, y la que va a quedar como su usuario. No hace
-            falta que ya tenga cuenta.
-          </p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="invitacion-rol">Rol con el que entraria</label>
-        <select id="invitacion-rol" formControlName="roleCode">
-          @for (rol of roles; track rol.codigo) {
-            <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
-          }
-        </select>
-        <p class="ayuda">
-          Se puede cambiar después, desde el listado de colaboradores, una vez que acepte.
-        </p>
-      </div>
-
-      <div class="campo">
-        <label for="invitacion-alcance">Donde trabajaria</label>
-        <select id="invitacion-alcance" formControlName="alcance">
-          <option value="SEDE">Solo en {{ nombreDeLaSede() }}</option>
-          <option value="ORGANIZACION">En toda la organización</option>
-        </select>
-        <p class="ayuda">
-          El alcance acota lo que va a poder ver y hacer. "Toda la organización" incluye las sedes
-          que abras mas adelante.
-        </p>
-      </div>
-
-      @if (errorAccion() && !errorEnElEmail()) {
-        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-      }
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Enviando...' : 'Enviar la invitacion' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="cerrarPaneles()"
-          [disabled]="enviando()"
-        >
-          Cancelar
-        </button>
-      </p>
-    </form>
-  </section>
-}
 
 <section class="tarjeta" aria-labelledby="titulo-listado-invitaciones">
   <h2 id="titulo-listado-invitaciones">Invitaciones enviadas</h2>
@@ -187,12 +120,15 @@
                   <th scope="col" appOrdenable [tabla]="tabla" columna="rol">Rol propuesto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="enviada">Enviada</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (invitacion of tabla.visibles(); track invitacion.id) {
-                  <tr [class.fila--revocada]="invitacion.estado === 'CANCELADA'">
+                  <tr
+                    [class.fila--revocada]="invitacion.estado === 'CANCELADA'"
+                    [class.fila--seleccionada]="invitacionEnPanel()?.id === invitacion.id"
+                  >
                     <th scope="row">
                       {{ invitacion.email }}
                       @if (invitacion.consultorioId === undefined) {
@@ -210,21 +146,25 @@
                           la misma invitación, no una nueva.
                         </p>
                       } @else if (invitacion.estado === 'PENDIENTE') {
-                        <p class="ayuda">
+                        <p class="ayuda ayuda--fija">
                           El enlace vence el {{ formatearInstante(invitacion.expiraEn) }}.
                         </p>
                       }
 
                       @if (invitacion.resolucionNota) {
-                        <p class="ayuda">{{ invitacion.resolucionNota }}</p>
+                        <p class="ayuda ayuda--fija">{{ invitacion.resolucionNota }}</p>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="tabla__acciones">
                       @if (estaPendiente(invitacion)) {
-                        <ng-container *akinePermiso="permisoManage">
+                        <app-acciones-de-fila
+                          *akinePermiso="permisoManage"
+                          [de]="invitacion.email ?? ''"
+                        >
                           <button
+                            principal
                             type="button"
-                            class="boton boton--secundario"
+                            class="boton boton--secundario boton--chico"
                             (click)="reenviar(invitacion)"
                             [disabled]="enviando()"
                           >
@@ -232,40 +172,22 @@
                           </button>
                           <button
                             type="button"
-                            class="boton boton--secundario"
+                            class="accion--peligro"
                             (click)="abrirCancelacion(invitacion)"
                           >
                             Cancelar
                           </button>
-                        </ng-container>
+                        </app-acciones-de-fila>
                       } @else if (invitacion.estado === 'ACEPTADA') {
-                        <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
+                        <a
+                          class="boton boton--secundario boton--chico"
+                          routerLink="/organizacion/colaboradores"
+                        >
                           Ver el colaborador
                         </a>
                       }
                     </td>
                   </tr>
-
-                  @if (cancelacionAbierta() === invitacion.id) {
-                    <tr class="fila-panel">
-                      <td colspan="5">
-                        <app-confirmacion-con-motivo
-                          idCampo="cancelar-invitacion-motivo"
-                          [titulo]="'Cancelar la invitación a ' + invitacion.email"
-                          etiqueta="Motivo de la cancelación"
-                          ayuda="Queda registrado junto a la invitacion. El enlace que recibió deja de servir en el acto. Podés volver a invitar a esa persona mas adelante."
-                          textoConfirmar="Cancelar la invitación"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarCancelacion($event)"
-                          (cancelado)="cerrarPaneles()"
-                        />
-
-                        @if (errorAccion()) {
-                          <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
-                        }
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -290,7 +212,108 @@
   </div>
 </section>
 
-<p class="ayuda" *akinePermiso="permisoManage">
-  Si un correo de invitación no salio, podés reintentarlo desde
-  <a class="enlace" routerLink="/organizacion/colaboradores/notificaciones">Notificaciones</a>.
-</p>
+<!--
+  Alta y cancelacion en un panel lateral (refactor UX/UI del 28/10/2026). El alta antes empujaba el
+  listado para abajo y la cancelacion partia la tabla en una fila propia.
+-->
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Nueva invitación" (cerrar)="cerrarPaneles()">
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo campo--ancho">
+        <label for="invitacion-email">Email de la persona</label>
+        <input
+          id="invitacion-email"
+          type="email"
+          formControlName="email"
+          autocomplete="off"
+          [attr.aria-describedby]="
+            errorEnElEmail() || mostrarError('email') ? null : 'invitacion-email-ayuda'
+          "
+          [attr.aria-invalid]="mostrarError('email') || errorEnElEmail() ? 'true' : null"
+        />
+        @if (errorEnElEmail()) {
+          <p class="campo__error" role="alert">{{ errorAccion() }}</p>
+        } @else if (mostrarError('email')) {
+          <p class="campo__error">Escribí un correo válido.</p>
+        } @else {
+          <p class="ayuda" id="invitacion-email-ayuda">
+            Le llega el enlace y queda como su usuario. No hace falta que ya tenga cuenta.
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="invitacion-rol">Rol con el que entraria</label>
+        <select
+          id="invitacion-rol"
+          formControlName="roleCode"
+          aria-describedby="invitacion-rol-ayuda"
+        >
+          @for (rol of roles; track rol.codigo) {
+            <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
+          }
+        </select>
+        <p class="ayuda" id="invitacion-rol-ayuda">
+          Se puede cambiar desde Colaboradores una vez que acepte.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="invitacion-alcance">Donde trabajaria</label>
+        <select
+          id="invitacion-alcance"
+          formControlName="alcance"
+          aria-describedby="invitacion-alcance-ayuda"
+        >
+          <option value="SEDE">Solo en {{ nombreDeLaSede() }}</option>
+          <option value="ORGANIZACION">En toda la organización</option>
+        </select>
+        <p class="ayuda" id="invitacion-alcance-ayuda">
+          "Toda la organización" incluye las sedes que abras mas adelante.
+        </p>
+      </div>
+
+      @if (errorAccion() && !errorEnElEmail()) {
+        <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+      }
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Enviando...' : 'Enviar la invitacion' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPaneles()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (invitacionEnPanel(); as invitacion) {
+  <app-panel-lateral
+    titulo="Cancelar la invitación"
+    [subtitulo]="invitacion.email ?? null"
+    (cerrar)="cerrarPaneles()"
+  >
+    <app-confirmacion-con-motivo
+      idCampo="cancelar-invitacion-motivo"
+      [titulo]="'Cancelar la invitación a ' + invitacion.email"
+      [mostrarTitulo]="false"
+      etiqueta="Motivo de la cancelación"
+      ayuda="Queda registrado junto a la invitacion. El enlace que recibió deja de servir en el acto. Podés volver a invitar a esa persona mas adelante."
+      textoConfirmar="Cancelar la invitación"
+      [enviando]="enviando()"
+      (confirmado)="enviarCancelacion($event)"
+      (cancelado)="cerrarPaneles()"
+    />
+
+    @if (errorAccion()) {
+      <p class="estado estado--error" role="alert">{{ errorAccion() }}</p>
+    }
+  </app-panel-lateral>
+}

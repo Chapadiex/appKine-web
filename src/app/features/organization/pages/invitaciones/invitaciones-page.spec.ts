@@ -116,6 +116,8 @@ describe('InvitacionesPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     abrir(fixture, 'Invitar a alguien');
+    // El alta se abre en el panel lateral, no arriba del listado.
+    expect(fixture.nativeElement.querySelector('.panel-lateral #invitacion-email')).not.toBeNull();
     escribir(anfitrion, '#invitacion-email', 'nueva@ejemplo.test');
     fixture.detectChanges();
     enviar(fixture);

@@ -73,6 +73,24 @@ export function clickear(fixture: ComponentFixture<unknown>, texto: string): voi
   fixture.detectChanges();
 }
 
+/**
+ * Clickea un boton del panel lateral abierto (`app-panel-lateral`, refactor UX/UI del 28/10/2026).
+ * El panel se dibuja al final de la pantalla: un `clickear` por texto encontraria antes la accion
+ * homonima de la fila que lo abrio ("Ajustar saldo" en el menu y en el pie del panel).
+ */
+export function clickearEnPanel(fixture: ComponentFixture<unknown>, texto: string): void {
+  const encontrado = (
+    Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.panel-lateral button'),
+    ) as HTMLButtonElement[]
+  ).find((b) => (b.textContent ?? '').replace(/\s+/g, ' ').includes(texto));
+  if (encontrado === undefined) {
+    throw new Error(`no se encontro el botón "${texto}" en el panel lateral`);
+  }
+  encontrado.click();
+  fixture.detectChanges();
+}
+
 export async function asentar(fixture: ComponentFixture<unknown>): Promise<void> {
   await fixture.whenStable();
   fixture.detectChanges();

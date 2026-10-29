@@ -1,6 +1,5 @@
 import {
   Component,
-  HostListener,
   ElementRef,
   Injector,
   afterNextRender,
@@ -18,6 +17,8 @@ import { catchError, forkJoin, map, of } from 'rxjs';
 import { ArancelResponse } from '../../../../api/generated/model/arancel-response';
 import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
 import { CatalogoConceptoResponse } from '../../../../api/generated/model/catalogo-concepto-response';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { ConvenioResponse } from '../../../../api/generated/model/convenio-response';
 import { ConveniosApi } from '../../services/convenios-api';
@@ -116,6 +117,8 @@ type TipoAccion = 'editar' | 'baja';
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './aranceles-del-convenio-page.html',
   styleUrl: '../../contracting.css',
@@ -372,19 +375,17 @@ export class ArancelesDelConvenioPage {
     this.cargar();
   }
 
-  /** El arancel que se esta editando en el panel lateral, o `null`. */
-  protected readonly arancelEnEdicion = computed<ArancelResponse | null>(() => {
+  /**
+   * El arancel del panel abierto (edicion o baja). El panel lateral vive fuera de la tabla
+   * (refactor UX/UI del 28/10/2026), asi que lo busca en la pagina en vez de recibirlo del `@for`.
+   */
+  protected readonly arancelEnPanel = computed<ArancelResponse | null>(() => {
     const abierto = this.panel();
-    if (abierto === null || abierto.tipo !== 'editar') {
+    if (abierto === null) {
       return null;
     }
-    return this.aranceles().find((arancel) => arancel.id === abierto.id) ?? null;
+    return this.tabla.visibles().find((arancel) => arancel.id === abierto.id) ?? null;
   });
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
-  }
 
   protected abrirAlta(): void {
     this.cerrarPanel();
@@ -431,22 +432,13 @@ export class ArancelesDelConvenioPage {
   /**
    * Cierra la edicion y le devuelve el foco al boton "Editar" de la fila, que es de donde salio.
    * Sin esto, quien navega por teclado cierra el panel lateral y el foco cae al principio de la
-   * pagina. Cancelar, Escape y guardar pasan por aca; las demas formas de cerrar no.
+   * pagina. Cancelar, Escape (el `cerrar` del panel) y guardar pasan por aca.
    */
   protected cerrarEdicion(): void {
     if (this.enviando()) {
       return;
     }
     this.cerrarEditando();
-  }
-
-  /** Escape dentro del panel lateral lo cierra. Fuera de el no hace nada. */
-  @HostListener('document:keydown.escape')
-  protected cerrarConEscape(): void {
-    const panel = this.host.nativeElement.querySelector('aside.panel-lateral');
-    if (panel !== null && panel.contains(document.activeElement)) {
-      this.cerrarEdicion();
-    }
   }
 
   private cerrarEditando(): void {

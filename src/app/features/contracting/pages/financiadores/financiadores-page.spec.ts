@@ -98,9 +98,8 @@ describe('FinanciadoresPage', () => {
     escribir(fixture, '#alta-financiador-codigo', '410');
     escribir(fixture, '#alta-financiador-nombre', 'OSDE');
     elegir(fixture, '#alta-financiador-tipo', 'PREPAGA');
-    // El panel de alta se renderiza ANTES de la seccion del listado, asi que el primer
-    // `form[novalidate]` del documento es el suyo y no el del buscador.
-    enviar(fixture, 'form[novalidate]');
+    // El alta va en el panel lateral, fuera del listado (refactor UX/UI del 28/10/2026).
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -129,7 +128,7 @@ describe('FinanciadoresPage', () => {
     expect(campoCodigo?.value).toBe('410');
 
     escribir(fixture, '#editar-financiador-nombre', 'OSDE Binario');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -149,13 +148,13 @@ describe('FinanciadoresPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de baja');
-    const panel = (fixture.nativeElement as HTMLElement).querySelector('tr.fila-panel');
+    const panel = (fixture.nativeElement as HTMLElement).querySelector('.panel-lateral');
     expect(panel?.textContent).toContain('NO cascadea');
     expect(panel?.textContent).toContain('No hay reactivación');
 
     escribir(fixture, '#baja-financiador-motivo', 'Dejamos de trabajar con ellos');
     const confirmar = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll('tr.fila-panel button'),
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('.panel-lateral button'),
     ].find((boton) => (boton.textContent ?? '').trim() === 'Dar de baja');
     (confirmar as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -198,7 +197,7 @@ describe('FinanciadoresPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-financiador-nombre', 'OSDE Binario');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(
@@ -239,7 +238,7 @@ describe('FinanciadoresPage', () => {
     escribir(fixture, '#alta-financiador-email', 'convenios@osde.test');
     escribir(fixture, '#alta-financiador-telefono', '011-5555-0000');
     escribir(fixture, '#alta-financiador-observaciones', 'Contacto: Marta');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -268,7 +267,7 @@ describe('FinanciadoresPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Dar de alta un financiador');
-    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -287,7 +286,7 @@ describe('FinanciadoresPage', () => {
     escribir(fixture, '#editar-financiador-email', 'nuevo@osde.test');
     escribir(fixture, '#editar-financiador-telefono', '011-4444-1111');
     escribir(fixture, '#editar-financiador-observaciones', 'Cambio de contacto');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
@@ -314,7 +313,7 @@ describe('FinanciadoresPage', () => {
 
     abrir(fixture, 'Editar');
     escribir(fixture, '#editar-financiador-nombre', 'OSDE Binario');
-    enviar(fixture, 'tr.fila-panel form');
+    enviar(fixture, '.panel-lateral form');
 
     httpMock
       .expectOne(

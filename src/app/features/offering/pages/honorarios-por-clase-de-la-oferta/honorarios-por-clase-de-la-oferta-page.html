@@ -38,11 +38,11 @@
 </div>
 
 @if (oferta(); as detalle) {
+  <!-- El dato (que oferta) queda a la vista; la explicacion esta en el "?". -->
   <p class="descripcion">
-    Cuanto cobran los instructores de <b>{{ detalle.nombreComercial }}</b> por cada participante
-    presente en una clase, por periodo.
+    <b>{{ detalle.nombreComercial }}</b> · por participante presente en una clase
   </p>
-} @else {}
+}
 
 <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
 
@@ -51,100 +51,6 @@
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
-
-@if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-honorario">
-    <h2 id="titulo-alta-honorario">Nueva tarifa de honorario</h2>
-
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <div class="campo">
-        <label for="alta-honorario-importe">Importe por participante presente</label>
-        <input
-          id="alta-honorario-importe"
-          type="number"
-          min="0.01"
-          step="0.01"
-          formControlName="importe"
-          [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
-          aria-describedby="alta-honorario-importe-ayuda"
-        />
-        @if (mostrarErrorAlta('importe')) {
-          <p class="campo__error" role="alert">Un importe mayor que cero.</p>
-        }
-        <p class="ayuda" id="alta-honorario-importe-ayuda">
-          Se multiplica por los presentes de cada clase.
-        </p>
-      </div>
-
-      <div class="campo">
-        <label for="alta-honorario-moneda">Moneda</label>
-        <input
-          id="alta-honorario-moneda"
-          type="text"
-          maxlength="3"
-          autocomplete="off"
-          formControlName="moneda"
-          [attr.aria-invalid]="mostrarErrorAlta('moneda') ? 'true' : null"
-          aria-describedby="alta-honorario-moneda-ayuda"
-        />
-        @if (mostrarErrorAlta('moneda')) {
-          <p class="campo__error" role="alert">
-            La moneda es obligatoria: tres letras, como ARS o USD.
-          </p>
-        }
-        <p class="ayuda" id="alta-honorario-moneda-ayuda">
-          Código de tres letras (ARS, USD). Se propone la del precio de lista de la oferta.
-        </p>
-      </div>
-
-      <div class="par-de-campos">
-        <div class="campo">
-          <label for="alta-honorario-desde">Rige desde</label>
-          <input
-            id="alta-honorario-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
-          />
-          @if (mostrarErrorAlta('vigenciaDesde')) {
-            <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="alta-honorario-hasta">Rige hasta (opcional)</label>
-          <input
-            id="alta-honorario-hasta"
-            type="date"
-            formControlName="vigenciaHasta"
-            aria-describedby="alta-honorario-hasta-ayuda"
-          />
-          <p class="ayuda" id="alta-honorario-hasta-ayuda">
-            Es el <b>último día</b> en que rige, inclusive. Vacío, no tiene fin previsto.
-          </p>
-        </div>
-      </div>
-
-      @if (errorAccion(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Guardando...' : 'Cargar tarifa' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="cerrarPanel()"
-          [disabled]="enviando()"
-        >
-          Cancelar
-        </button>
-      </p>
-    </form>
-  </section>
-}
 
 <section class="tarjeta" aria-labelledby="titulo-grilla-honorarios">
   <h2 id="titulo-grilla-honorarios">Grilla de vigencias</h2>
@@ -188,7 +94,7 @@
                   </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
                   <th scope="col">Situación</th>
-                  <th scope="col">Acciones</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -197,105 +103,38 @@
                   <tr
                     [class.fila--revocada]="tarifa.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
+                    [class.fila--seleccionada]="tarifaEnPanel()?.id === tarifa.id"
                   >
                     <th scope="row" class="importe">{{ importe(tarifa) }}</th>
                     <td>{{ ventana(tarifa) }}</td>
                     <td>
                       <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
                       @if (tarifa.estado === 'INACTIVO' && tarifa.deactivationReason) {
-                        <p class="ayuda">{{ tarifa.deactivationReason }}</p>
+                        <p class="ayuda ayuda--fija">{{ tarifa.deactivationReason }}</p>
                       }
                     </td>
-                    <td class="acciones-fila">
+                    <td class="tabla__acciones">
                       @if (tarifa.estado === 'ACTIVO') {
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirPanel(tarifa, 'fin')"
-                        >
-                          Cambiar fin
-                        </button>
-                        <button
-                          type="button"
-                          class="boton boton--secundario"
-                          (click)="abrirPanel(tarifa, 'baja')"
-                        >
-                          Dar de baja
-                        </button>
+                        <app-acciones-de-fila [de]="'la tarifa de ' + importe(tarifa)">
+                          <button
+                            principal
+                            type="button"
+                            class="boton boton--secundario boton--chico"
+                            (click)="abrirPanel(tarifa, 'fin')"
+                          >
+                            Cambiar fin
+                          </button>
+                          <button
+                            type="button"
+                            class="accion--peligro"
+                            (click)="abrirPanel(tarifa, 'baja')"
+                          >
+                            Dar de baja
+                          </button>
+                        </app-acciones-de-fila>
                       }
                     </td>
                   </tr>
-
-                  @if (panelAbierto(tarifa.id, 'fin')) {
-                    <tr class="fila-panel">
-                      <td colspan="4">
-                        <form [formGroup]="formularioFin" (ngSubmit)="enviarFin()" novalidate>
-                          <h3>Cambiar el fin de la tarifa de {{ importe(tarifa) }}</h3>
-                          <div class="campo">
-                            <label for="fin-honorario-hasta">Rige hasta</label>
-                            <input
-                              id="fin-honorario-hasta"
-                              type="date"
-                              formControlName="vigenciaHasta"
-                              aria-describedby="fin-honorario-hasta-ayuda"
-                            />
-                            <p class="ayuda" id="fin-honorario-hasta-ayuda">
-                              Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin
-                              fin previsto. Extenderla puede chocar con otra tarifa de la oferta.
-                            </p>
-                          </div>
-
-                          @if (errorAccion(); as mensaje) {
-                            <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                          }
-
-                          <p class="acciones">
-                            <button type="submit" class="boton" [disabled]="enviando()">
-                              {{ enviando() ? 'Guardando...' : 'Guardar el fin' }}
-                            </button>
-                            <button
-                              type="button"
-                              class="boton boton--secundario"
-                              (click)="cerrarPanel()"
-                              [disabled]="enviando()"
-                            >
-                              Cancelar
-                            </button>
-                            @if (hayQueRecargar()) {
-                              <button type="button" class="boton" (click)="cargar()">
-                                Recargar la grilla
-                              </button>
-                            }
-                          </p>
-                        </form>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (panelAbierto(tarifa.id, 'baja')) {
-                    <tr class="fila-panel">
-                      <td colspan="4">
-                        <app-confirmacion-con-motivo
-                          idCampo="baja-honorario-motivo"
-                          [titulo]="'Dar de baja la tarifa de ' + importe(tarifa)"
-                          etiqueta="Motivo de la baja"
-                          ayuda="Queda registrado junto a la tarifa y libera su periodo: las clases de esos dias no entran en ninguna liquidacion hasta que cargues otra. Lo ya liquidado no cambia. No hay reactivacion."
-                          textoConfirmar="Dar de baja"
-                          [enviando]="enviando()"
-                          (confirmado)="enviarBaja($event)"
-                          (cancelado)="cerrarPanel()"
-                        />
-                        @if (errorAccion(); as mensaje) {
-                          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-                        }
-                        @if (hayQueRecargar()) {
-                          <button type="button" class="boton" (click)="cargar()">
-                            Recargar la grilla
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  }
                 }
               </tbody>
             </table>
@@ -315,3 +154,179 @@
     }
   </div>
 </section>
+
+<!--
+  Alta, cambio de fin y baja en un panel lateral (refactor UX/UI del 28/10/2026): la grilla queda
+  quieta y se sigue viendo contra que periodos se carga la tarifa.
+-->
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Nueva tarifa de honorario" (cerrar)="cerrarPanel()">
+    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+      <div class="campo">
+        <label for="alta-honorario-importe">Importe por participante presente</label>
+        <input
+          id="alta-honorario-importe"
+          type="number"
+          min="0.01"
+          step="0.01"
+          formControlName="importe"
+          [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
+          aria-describedby="alta-honorario-importe-ayuda"
+        />
+        @if (mostrarErrorAlta('importe')) {
+          <p class="campo__error" role="alert">Un importe mayor que cero.</p>
+        }
+        <p class="ayuda" id="alta-honorario-importe-ayuda">
+          Se multiplica por los presentes de cada clase.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-honorario-moneda">Moneda</label>
+        <input
+          id="alta-honorario-moneda"
+          type="text"
+          maxlength="3"
+          autocomplete="off"
+          formControlName="moneda"
+          [attr.aria-invalid]="mostrarErrorAlta('moneda') ? 'true' : null"
+          aria-describedby="alta-honorario-moneda-ayuda"
+        />
+        @if (mostrarErrorAlta('moneda')) {
+          <p class="campo__error" role="alert">
+            La moneda es obligatoria: tres letras, como ARS o USD.
+          </p>
+        }
+        <p class="ayuda" id="alta-honorario-moneda-ayuda">
+          Tres letras (ARS, USD). Se propone la del precio de lista de la oferta.
+        </p>
+      </div>
+
+      <div class="campo">
+        <label for="alta-honorario-desde">Rige desde</label>
+        <input
+          id="alta-honorario-desde"
+          type="date"
+          formControlName="vigenciaDesde"
+          [attr.aria-invalid]="mostrarErrorAlta('vigenciaDesde') ? 'true' : null"
+        />
+        @if (mostrarErrorAlta('vigenciaDesde')) {
+          <p class="campo__error" role="alert">La fecha de inicio es obligatoria.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-honorario-hasta">Rige hasta (opcional)</label>
+        <input
+          id="alta-honorario-hasta"
+          type="date"
+          formControlName="vigenciaHasta"
+          aria-describedby="alta-honorario-hasta-ayuda"
+        />
+        <p class="ayuda" id="alta-honorario-hasta-ayuda">
+          Es el <b>último día</b> en que rige, inclusive. Vacío, no tiene fin previsto.
+        </p>
+      </div>
+
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando...' : 'Cargar tarifa' }}
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarPanel()"
+          [disabled]="enviando()"
+        >
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </app-panel-lateral>
+}
+
+@if (tarifaEnPanel(); as tarifa) {
+  @if (panel()?.tipo === 'fin') {
+    <app-panel-lateral
+      [titulo]="'Cambiar el fin de la tarifa de ' + importe(tarifa)"
+      [subtitulo]="ventana(tarifa)"
+      (cerrar)="cerrarPanel()"
+    >
+      <form [formGroup]="formularioFin" (ngSubmit)="enviarFin()" novalidate>
+        <div class="campo">
+          <label for="fin-honorario-hasta">Rige hasta</label>
+          <input
+            id="fin-honorario-hasta"
+            type="date"
+            formControlName="vigenciaHasta"
+            aria-describedby="fin-honorario-hasta-ayuda"
+          />
+          <p class="ayuda ayuda--fija" id="fin-honorario-hasta-ayuda">
+            Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin fin previsto.
+            Extenderla puede chocar con otra tarifa de la oferta.
+          </p>
+        </div>
+
+        @if (errorAccion(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <p class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Guardando...' : 'Guardar el fin' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarPanel()"
+            [disabled]="enviando()"
+          >
+            Cancelar
+          </button>
+          @if (hayQueRecargar()) {
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar la grilla
+            </button>
+          }
+        </p>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (panel()?.tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja la tarifa de ' + importe(tarifa)"
+      [subtitulo]="ventana(tarifa)"
+      (cerrar)="cerrarPanel()"
+    >
+      <app-confirmacion-con-motivo
+        idCampo="baja-honorario-motivo"
+        [titulo]="'Dar de baja la tarifa de ' + importe(tarifa)"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        ayuda="Queda registrado junto a la tarifa."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="enviarBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="ayuda ayuda--fija">
+          Libera su periodo: las clases de esos dias no entran en ninguna liquidacion hasta que
+          cargues otra. Lo ya liquidado no cambia. <b>No hay reactivacion.</b>
+        </p>
+      </app-confirmacion-con-motivo>
+      @if (errorAccion(); as mensaje) {
+        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+      }
+      @if (hayQueRecargar()) {
+        <button type="button" class="boton boton--secundario" (click)="cargar()">
+          Recargar la grilla
+        </button>
+      }
+    </app-panel-lateral>
+  }
+}

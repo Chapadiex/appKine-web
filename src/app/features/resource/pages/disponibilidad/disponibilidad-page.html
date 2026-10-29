@@ -39,47 +39,53 @@
     </p>
   </section>
 } @else {
-  <section class="tarjeta" aria-label="Período a consultar">
-    <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
-      <div class="ventana">
-        <div class="campo">
-          <label for="ventana-desde">Desde</label>
-          <input
-            id="ventana-desde"
-            type="datetime-local"
-            formControlName="desde"
-            [attr.aria-invalid]="mostrarError('desde')"
-            [attr.aria-describedby]="mostrarError('desde') ? 'ventana-desde-error' : null"
-          />
-          @if (mostrarError('desde')) {
-            <p class="campo__error" id="ventana-desde-error">Indica desde cuando.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="ventana-hasta">Hasta</label>
-          <input
-            id="ventana-hasta"
-            type="datetime-local"
-            formControlName="hasta"
-            [attr.aria-invalid]="mostrarError('hasta')"
-            [attr.aria-describedby]="
-              mostrarError('hasta') ? 'ventana-hasta-error' : 'ventana-hasta-ayuda'
-            "
-          />
-          @if (mostrarError('hasta')) {
-            <p class="campo__error" id="ventana-hasta-error">Indica hasta cuando.</p>
-          }
-          <p class="ayuda" id="ventana-hasta-ayuda">
-            El fin es <b>exclusivo</b>: no se incluye a sí mismo. Como máximo
-            {{ maximoDeDias }} días por consulta.
-          </p>
-        </div>
+  <!--
+    Refactor UX/UI (28/10/2026): la consulta y su resultado en una sola tarjeta. El periodo es una
+    barra arriba del resultado, con el boton al lado de las fechas, en vez de una tarjeta propia.
+  -->
+  <section class="tarjeta" aria-label="Espacios en servicio en ese período">
+    <form
+      class="formulario--libre barra-consulta"
+      [formGroup]="formulario"
+      (ngSubmit)="consultar()"
+      novalidate
+    >
+      <div class="campo barra-consulta__fecha">
+        <label for="ventana-desde">Desde</label>
+        <input
+          id="ventana-desde"
+          type="datetime-local"
+          formControlName="desde"
+          [attr.aria-invalid]="mostrarError('desde')"
+          [attr.aria-describedby]="mostrarError('desde') ? 'ventana-desde-error' : null"
+        />
+        @if (mostrarError('desde')) {
+          <p class="campo__error" id="ventana-desde-error">Indica desde cuando.</p>
+        }
       </div>
 
-      <div class="acciones">
-        <button type="submit" class="boton">Ver que espacios hay</button>
+      <div class="campo barra-consulta__fecha">
+        <label for="ventana-hasta">Hasta</label>
+        <input
+          id="ventana-hasta"
+          type="datetime-local"
+          formControlName="hasta"
+          [attr.aria-invalid]="mostrarError('hasta')"
+          [attr.aria-describedby]="
+            mostrarError('hasta') ? 'ventana-hasta-error' : 'ventana-hasta-ayuda'
+          "
+        />
+        @if (mostrarError('hasta')) {
+          <p class="campo__error" id="ventana-hasta-error">Indica hasta cuando.</p>
+        }
       </div>
+
+      <button type="submit" class="boton">Ver que espacios hay</button>
+
+      <p class="ayuda ayuda--fija barra-consulta__ancho" id="ventana-hasta-ayuda">
+        El fin es <b>exclusivo</b>: no se incluye a sí mismo. Como máximo {{ maximoDeDias }} días
+        por consulta.
+      </p>
     </form>
 
     <div aria-live="assertive">
@@ -87,9 +93,7 @@
         <p class="estado estado--error" role="alert">{{ mensaje }}</p>
       }
     </div>
-  </section>
 
-  <section class="tarjeta" aria-label="Espacios en servicio en ese período">
     <div aria-live="polite">
       @switch (estado().tipo) {
         @case ('inicial') {
@@ -119,7 +123,7 @@
 
         @case ('listo') {
           @if (ventanaConsultada(); as ventana) {
-            <p class="ayuda">
+            <p class="ayuda ayuda--fija">
               Del {{ formatearInstante(ventana.desde) }} al {{ formatearInstante(ventana.hasta) }},
               sin incluir el final.
             </p>

@@ -93,10 +93,18 @@ describe('CatalogoDeServiciosPage', () => {
 
     expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
+    // Editar a la vista y la baja, destructiva, en el menu "⋯" de cada fila.
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
-    expect(acciones).toEqual(['Editar', 'Dar de baja', 'Editar', 'Dar de baja']);
+    expect(acciones).toEqual([
+      'Editar',
+      'Más acciones de Kinesiologia respiratoria',
+      'Dar de baja',
+      'Editar',
+      'Más acciones de Pilates',
+      'Dar de baja',
+    ]);
 
     // Y hay salida hacia lo que el centro SI administra.
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();

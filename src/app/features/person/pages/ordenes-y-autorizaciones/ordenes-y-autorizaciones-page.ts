@@ -62,6 +62,7 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Panel abierto sobre una orden. Solo uno a la vez en toda la pantalla. */
@@ -161,6 +162,7 @@ interface PanelAbierto {
     ConsumoDeAutorizacion,
     SelectorDeAutorizacion,
     AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './ordenes-y-autorizaciones-page.html',
   styleUrl: '../../person.css',
@@ -250,6 +252,24 @@ export class OrdenesYAutorizacionesPage {
   protected readonly consultandoElegibilidad = signal(false);
 
   protected readonly panel = signal<PanelAbierto | null>(null);
+
+  /**
+   * La orden y la autorizacion del panel abierto. El panel lateral vive fuera de las tablas
+   * (refactor UX/UI del 28/10/2026), asi que busca la fila en la lista en vez de recibirla del
+   * `@for`.
+   */
+  protected readonly ordenEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel?.entidad === 'orden'
+      ? (this.ordenes().find((orden) => orden.id === panel.id) ?? null)
+      : null;
+  });
+  protected readonly autorizacionEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel?.entidad === 'autorizacion'
+      ? (this.autorizaciones().find((autorizacion) => autorizacion.id === panel.id) ?? null)
+      : null;
+  });
 
   /** Historial de la autorizacion del panel abierto, o `null` si no hay ninguno abierto. */
   protected readonly historial = signal<EstadoDeHistorial | null>(null);
@@ -926,17 +946,6 @@ export class OrdenesYAutorizacionesPage {
     this.originalOrden.set(null);
     this.originalAutorizacion.set(null);
     this.limpiarAvisos();
-  }
-
-  protected esPanelDeOrden(orden: OrdenResponse, tipo: PanelDeOrden): boolean {
-    const abierto = this.panel();
-    return (
-      abierto !== null &&
-      abierto.entidad === 'orden' &&
-      orden.id !== undefined &&
-      abierto.id === orden.id &&
-      abierto.tipo === tipo
-    );
   }
 
   protected esPanelDeAutorizacion(

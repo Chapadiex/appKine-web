@@ -39,26 +39,33 @@
       </p>
     </app-ayuda>
     <div class="encabezado__acciones">
-      @if (puedeGestionar() && panel().tipo === 'ninguno') {
-        <button
-          id="boton-reprogramar"
-          type="button"
-          class="boton boton--secundario"
-          (click)="abrirReprogramacion()"
-        >
-          Reprogramar
-        </button>
-        <button
-          id="boton-cancelar-clase"
-          type="button"
-          class="boton boton--secundario"
-          (click)="abrirCancelacion()"
-        >
-          Cancelar la clase
-        </button>
-      }
+      <!--
+        Jerarquia de acciones (refactor UX/UI del 28/10/2026): tomar asistencia es la principal;
+        reprogramar, secundaria; cancelar la clase, destructiva, detras del menu "⋯".
+      -->
       @if (puedeVerParticipantes() && actual.id) {
         <a class="boton" [routerLink]="['/asistencia', actual.id]">Tomar asistencia</a>
+      }
+      @if (puedeGestionar()) {
+        <app-acciones-de-fila de="la clase">
+          <button
+            principal
+            id="boton-reprogramar"
+            type="button"
+            class="boton boton--secundario"
+            (click)="abrirReprogramacion()"
+          >
+            Reprogramar
+          </button>
+          <button
+            id="boton-cancelar-clase"
+            type="button"
+            class="accion--peligro"
+            (click)="abrirCancelacion()"
+          >
+            Cancelar la clase
+          </button>
+        </app-acciones-de-fila>
       }
     </div>
   </div>
@@ -86,100 +93,26 @@
     @if (aviso()) {
       <p id="aviso-clase" class="estado estado--ok" role="status" tabindex="-1">{{ aviso() }}</p>
     }
+    <!-- Con un panel abierto, el error se muestra adentro del panel: el resto queda inerte. -->
     @if (errorDeAccion(); as fallo) {
-      <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
-        <h2 id="titulo-error-accion">No se pudo completar la operación</h2>
-        <p class="estado estado--error">{{ fallo.mensaje }}</p>
-        @if (fallo.motivo) {
-          <p class="ayuda">Detalle: {{ fallo.motivo }}</p>
-        }
-        @if (fallo.accion === 'ofrecer-espera' && persona()) {
-          <div class="acciones">
-            <button type="button" class="boton" [disabled]="enviando()" (click)="inscribir(true)">
-              Anotar en la lista de espera
-            </button>
-          </div>
-        }
-      </section>
+      @if (panel().tipo === 'ninguno') {
+        <section class="tarjeta conflicto" aria-labelledby="titulo-error-accion" role="alert">
+          <h2 id="titulo-error-accion">No se pudo completar la operación</h2>
+          <p class="estado estado--error">{{ fallo.mensaje }}</p>
+          @if (fallo.motivo) {
+            <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
+          }
+          @if (fallo.accion === 'ofrecer-espera' && persona()) {
+            <div class="acciones">
+              <button type="button" class="boton" [disabled]="enviando()" (click)="inscribir(true)">
+                Anotar en la lista de espera
+              </button>
+            </div>
+          }
+        </section>
+      }
     }
   </div>
-
-  @if (panel().tipo === 'reprogramar') {
-    <form
-      class="tarjeta"
-      [formGroup]="reprogramacion"
-      akineFocoAlMontar="campo"
-      (ngSubmit)="reprogramar()"
-      aria-labelledby="titulo-reprogramar"
-      novalidate
-    >
-      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-reprogramar">Reprogramar la clase</h2>
-        <app-ayuda titulo="Reprogramar la clase">
-          <p>
-            Es la misma clase: conserva a sus inscriptos y su historial. Si cambia el horario, cada
-            inscripto recibe un aviso. Fecha y horas en la zona de la sede.
-          </p>
-        </app-ayuda>
-      </div>
-      <div class="filtros">
-        <div class="campo">
-          <label for="reprogramar-fecha">Fecha</label>
-          <input id="reprogramar-fecha" type="date" formControlName="fecha" />
-        </div>
-        <div class="campo">
-          <label for="reprogramar-inicio">Hora de inicio</label>
-          <input id="reprogramar-inicio" type="time" formControlName="horaInicio" />
-        </div>
-        <div class="campo">
-          <label for="reprogramar-fin">Hora de fin</label>
-          <input id="reprogramar-fin" type="time" formControlName="horaFin" />
-        </div>
-        <div class="campo">
-          <label for="reprogramar-capacidad">Cupo</label>
-          <input id="reprogramar-capacidad" type="number" min="1" formControlName="capacidad" />
-        </div>
-      </div>
-      <div class="campo">
-        <label for="reprogramar-espacio">Box</label>
-        <select
-          id="reprogramar-espacio"
-          formControlName="espacioId"
-          aria-describedby="reprogramar-espacio-ayuda"
-        >
-          <option value="">Que el sistema elija uno libre</option>
-          @for (espacio of espacios(); track espacio.espacioId) {
-            <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
-          }
-        </select>
-        <p class="ayuda" id="reprogramar-espacio-ayuda">
-          Si dejas que el sistema elija, toma el primer box libre, que puede no ser el actual. Un
-          box elegido se valida tal cual: si no esta libre, la clase no se mueve.
-        </p>
-      </div>
-      <div class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">Guardar el cambio</button>
-        <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
-          Volver sin cambiar
-        </button>
-      </div>
-    </form>
-  }
-
-  @if (panel().tipo === 'cancelar') {
-    <section class="tarjeta">
-      <akine-confirmacion-con-motivo
-        idCampo="clase-cancelar-motivo"
-        titulo="Cancelar la clase"
-        etiqueta="Motivo de la cancelacion"
-        ayuda="Queda en el historial. Las inscripciones se cancelan y cada inscripto recibe un aviso."
-        textoConfirmar="Cancelar la clase"
-        [enviando]="enviando()"
-        (confirmado)="cancelarClase($event)"
-        (cancelado)="cerrarPanel()"
-      />
-    </section>
-  }
 
   <div class="dos-paneles">
     <div class="dos-paneles__principal">
@@ -255,28 +188,17 @@
         </section>
       }
 
-      @if (panel().tipo === 'baja') {
-        <section class="tarjeta">
-          <akine-confirmacion-con-motivo
-            idCampo="inscripcion-baja-motivo"
-            [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
-            etiqueta="Motivo de la baja"
-            ayuda="Libera el lugar. Si habia lista de espera, entra la primera persona de la cola."
-            textoConfirmar="Dar de baja"
-            [enviando]="enviando()"
-            (confirmado)="darDeBaja($event)"
-            (cancelado)="cerrarPanel()"
-          />
-        </section>
-      }
-
       @if (puedeVerParticipantes()) {
         <section class="tarjeta" aria-labelledby="titulo-participantes">
-          <h2 id="titulo-participantes">Participantes</h2>
+          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+            <h2 id="titulo-participantes">Participantes</h2>
+            <app-ayuda titulo="Participantes">
+              <p>
+                Desde “Tomar asistencia” se inicia la clase, se registra quién vino y se cierra.
+              </p>
+            </app-ayuda>
+          </div>
           @if (actual.id) {
-            <p class="ayuda">
-              Desde “Tomar asistencia” se inicia la clase, se registra quién vino y se cierra.
-            </p>
             @if (puedeAtender()) {
               <p>
                 <a class="enlace" [routerLink]="['/atencion/clases', actual.id]"
@@ -304,43 +226,50 @@
                     <th scope="col">Persona</th>
                     <th scope="col">Documento</th>
                     <th scope="col">Estado</th>
-                    <th scope="col">Acciones</th>
+                    <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (p of conLugar(); track p.inscripcion?.id) {
-                    <tr>
+                    <tr
+                      [class.fila--seleccionada]="
+                        participanteEnBaja()?.inscripcion?.id === p.inscripcion?.id
+                      "
+                    >
                       <th scope="row">{{ nombreDe(p) }}</th>
                       <td>{{ documentoDe(p) }}</td>
                       <td>{{ textoDeInscripcion(p.inscripcion?.estado) }}</td>
-                      <td>
+                      <td class="tabla__acciones">
                         @if (puedeOperarInscripciones() && editable()) {
-                          <div class="acciones-fila">
-                            @if (admiteConfirmacion(p.inscripcion)) {
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                [disabled]="enviando()"
-                                (click)="confirmar(p)"
-                              >
-                                Confirmar<span class="visualmente-oculto">
-                                  a {{ nombreDe(p) }}</span
+                          @if (admiteConfirmacion(p.inscripcion) || admiteBaja(p.inscripcion)) {
+                            <app-acciones-de-fila [de]="nombreDe(p)">
+                              @if (admiteConfirmacion(p.inscripcion)) {
+                                <button
+                                  principal
+                                  type="button"
+                                  class="boton boton--secundario boton--chico"
+                                  [disabled]="enviando()"
+                                  (click)="confirmar(p)"
                                 >
-                              </button>
-                            }
-                            @if (admiteBaja(p.inscripcion)) {
-                              <button
-                                type="button"
-                                class="boton boton--secundario"
-                                [disabled]="enviando()"
-                                (click)="abrirBaja(p)"
-                              >
-                                Dar de baja<span class="visualmente-oculto">
-                                  a {{ nombreDe(p) }}</span
+                                  Confirmar<span class="visualmente-oculto">
+                                    a {{ nombreDe(p) }}</span
+                                  >
+                                </button>
+                              }
+                              @if (admiteBaja(p.inscripcion)) {
+                                <button
+                                  type="button"
+                                  class="accion--peligro"
+                                  [disabled]="enviando()"
+                                  (click)="abrirBaja(p)"
                                 >
-                              </button>
-                            }
-                          </div>
+                                  Dar de baja<span class="visualmente-oculto">
+                                    a {{ nombreDe(p) }}</span
+                                  >
+                                </button>
+                              }
+                            </app-acciones-de-fila>
+                          }
                         }
                       </td>
                     </tr>
@@ -361,7 +290,7 @@
                   @if (puedeOperarInscripciones() && editable()) {
                     <button
                       type="button"
-                      class="boton boton--secundario"
+                      class="boton boton--secundario boton--chico"
                       [disabled]="enviando()"
                       (click)="abrirBaja(p)"
                     >
@@ -437,4 +366,147 @@
       }
     </div>
   </div>
+
+  <!--
+    Reprogramacion, cancelacion y baja de una inscripcion en un panel lateral (refactor UX/UI del
+    28/10/2026). Antes se abrian entre los datos de la clase y los participantes y empujaban todo
+    hacia abajo.
+  -->
+  @if (panel().tipo === 'reprogramar') {
+    <app-panel-lateral titulo="Reprogramar la clase" (cerrar)="cerrarPanel()">
+      <p class="ayuda ayuda--fija clase__nota">
+        Es la misma clase: conserva sus inscriptos y su historial. Si cambia el horario, cada
+        inscripto recibe un aviso. Fecha y horas en la zona de la sede.
+      </p>
+      <form
+        [formGroup]="reprogramacion"
+        (ngSubmit)="reprogramar()"
+        aria-label="Reprogramar la clase"
+        novalidate
+      >
+        <div class="campo campo--ancho">
+          <label for="reprogramar-fecha">Fecha</label>
+          <input id="reprogramar-fecha" type="date" formControlName="fecha" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-inicio">Hora de inicio</label>
+          <input id="reprogramar-inicio" type="time" formControlName="horaInicio" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-fin">Hora de fin</label>
+          <input id="reprogramar-fin" type="time" formControlName="horaFin" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-capacidad">Cupo</label>
+          <input id="reprogramar-capacidad" type="number" min="1" formControlName="capacidad" />
+        </div>
+        <div class="campo">
+          <label for="reprogramar-espacio">Box</label>
+          <select
+            id="reprogramar-espacio"
+            formControlName="espacioId"
+            aria-describedby="reprogramar-espacio-ayuda"
+          >
+            <option value="">Que el sistema elija uno libre</option>
+            @for (espacio of espacios(); track espacio.espacioId) {
+              <option [value]="espacio.espacioId">{{ espacio.nombre }}</option>
+            }
+          </select>
+          <p class="ayuda" id="reprogramar-espacio-ayuda">
+            Si dejas que el sistema elija, toma el primer box libre, que puede no ser el actual. Un
+            box elegido se valida tal cual: si no esta libre, la clase no se mueve.
+          </p>
+        </div>
+        <div aria-live="polite">
+          @if (errorDeAccion(); as fallo) {
+            <section
+              class="conflicto clase__error"
+              role="alert"
+              aria-label="No se pudo completar la operación"
+            >
+              <p class="estado estado--error">
+                <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
+              </p>
+              @if (fallo.motivo) {
+                <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
+              }
+            </section>
+          }
+        </div>
+        <div class="acciones">
+          <button type="submit" class="boton" [disabled]="enviando()">Guardar el cambio</button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Volver sin cambiar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  }
+
+  @if (panel().tipo === 'cancelar') {
+    <app-panel-lateral titulo="Cancelar la clase" (cerrar)="cerrarPanel()">
+      <akine-confirmacion-con-motivo
+        idCampo="clase-cancelar-motivo"
+        titulo="Cancelar la clase"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la cancelacion"
+        ayuda="Queda en el historial. Las inscripciones se cancelan y cada inscripto recibe un aviso."
+        textoConfirmar="Cancelar la clase"
+        [enviando]="enviando()"
+        (confirmado)="cancelarClase($event)"
+        (cancelado)="cerrarPanel()"
+      />
+      <div aria-live="polite">
+        @if (errorDeAccion(); as fallo) {
+          <section
+            class="conflicto clase__error"
+            role="alert"
+            aria-label="No se pudo completar la operación"
+          >
+            <p class="estado estado--error">
+              <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
+            </p>
+            @if (fallo.motivo) {
+              <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
+            }
+          </section>
+        }
+      </div>
+    </app-panel-lateral>
+  }
+
+  @if (panel().tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
+      (cerrar)="cerrarPanel()"
+    >
+      <akine-confirmacion-con-motivo
+        idCampo="inscripcion-baja-motivo"
+        [titulo]="'Dar de baja a ' + nombreDe(participanteEnBaja() ?? undefined)"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        ayuda="Libera el lugar. Si habia lista de espera, entra la primera persona de la cola."
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="darDeBaja($event)"
+        (cancelado)="cerrarPanel()"
+      />
+      <div aria-live="polite">
+        @if (errorDeAccion(); as fallo) {
+          <section
+            class="conflicto clase__error"
+            role="alert"
+            aria-label="No se pudo completar la operación"
+          >
+            <p class="estado estado--error">
+              <b>No se pudo completar la operación.</b> {{ fallo.mensaje }}
+            </p>
+            @if (fallo.motivo) {
+              <p class="ayuda ayuda--fija">Detalle: {{ fallo.motivo }}</p>
+            }
+          </section>
+        }
+      </div>
+    </app-panel-lateral>
+  }
 }

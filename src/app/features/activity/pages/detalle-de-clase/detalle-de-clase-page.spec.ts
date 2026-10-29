@@ -312,8 +312,8 @@ describe('DetalleDeClasePage', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     expect((raiz.querySelector('#reprogramar-inicio') as HTMLInputElement).value).toBe('18:00');
     // El formulario se abre con el foco en su primer campo.
-    expect(document.activeElement?.closest('form')?.getAttribute('aria-labelledby')).toBe(
-      'titulo-reprogramar',
+    expect(document.activeElement?.closest('form')?.getAttribute('aria-label')).toBe(
+      'Reprogramar la clase',
     );
     // El box actual queda elegido: reprogramar sin el dejaria que el servidor tome otro.
     const box = raiz.querySelector('#reprogramar-espacio') as HTMLSelectElement;
@@ -366,7 +366,7 @@ describe('DetalleDeClasePage', () => {
     expect(texto).not.toContain('Inscribir a una persona');
   });
 
-  it('cerrar un panel sin cambios devuelve el foco al botón que lo abrio', async () => {
+  it('cerrar un panel sin cambios devuelve el foco al control que lo abrio', async () => {
     const fixture = await montar();
     clickear(fixture, 'Reprogramar');
     httpMock.expectOne(HABILITACIONES).flush({
@@ -378,6 +378,12 @@ describe('DetalleDeClasePage', () => {
     await asentar(fixture);
     expect(document.activeElement?.id).toBe('boton-reprogramar');
 
+    // Como en el navegador: la accion del menu "⋯" deja el foco en ese boton antes de abrir el panel.
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.encabezado__acciones .acciones-de-fila__boton',
+      ) as HTMLButtonElement
+    ).focus();
     clickear(fixture, 'Cancelar la clase');
     await asentar(fixture);
     const cancelar = Array.from(
@@ -385,7 +391,8 @@ describe('DetalleDeClasePage', () => {
     ).find((b) => b.textContent?.trim() === 'Cancelar') as HTMLButtonElement;
     cancelar.click();
     await asentar(fixture);
-    expect(document.activeElement?.id).toBe('boton-cancelar-clase');
+    // "Cancelar la clase" vive en el menu "⋯" de la cabecera: el foco vuelve a ese boton.
+    expect(document.activeElement?.classList.contains('acciones-de-fila__boton')).toBe(true);
   });
 
   it('la versión vieja al reprogramar se explica y relee', async () => {

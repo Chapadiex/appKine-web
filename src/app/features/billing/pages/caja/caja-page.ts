@@ -34,6 +34,7 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -77,7 +78,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  */
 @Component({
   selector: 'app-caja-page',
-  imports: [Ayuda, RouterLink],
+  imports: [Ayuda, RouterLink, PanelLateral],
   templateUrl: './caja-page.html',
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
@@ -125,6 +126,15 @@ export class CajaPage {
   // Reversion
   protected readonly revirtiendo = signal<number | null>(null);
   protected readonly motivoReversion = signal('');
+
+  /**
+   * El movimiento que se esta revirtiendo. El panel lateral vive fuera de la tabla (refactor UX/UI
+   * del 28/10/2026), asi que lo busca en la lista en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly movimientoEnPanel = computed(() => {
+    const id = this.revirtiendo();
+    return id === null ? null : (this.movimientos().find((m) => m.id === id) ?? null);
+  });
 
   // Arqueo
   protected readonly saldoDeclarado = signal('');

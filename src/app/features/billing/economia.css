@@ -289,3 +289,29 @@
   color: var(--color-texto-suave);
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * Refactor UX/UI del 28/10/2026.
+ *
+ * Operaciones cortas de una ficha (factura, pago y cierre de un lote) lado a lado en escritorio
+ * en vez de apiladas debajo de una tabla larga.
+ */
+.grilla-de-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+.grilla-de-tarjetas > .tarjeta {
+  margin: 0;
+}
+
+/* Una accion destructiva en una barra de acciones: separada de las demas y en color de peligro. */
+.acciones__aparte {
+  margin-inline-start: auto;
+}
+
+.boton.accion--peligro {
+  color: var(--color-peligro-texto);
+}

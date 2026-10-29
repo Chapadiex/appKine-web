@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
 import { ClinicalApi } from '../../services/clinical-api';
 import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
@@ -160,7 +161,14 @@ const ESPERA_AUTOSAVE = 1_500;
  */
 @Component({
   selector: 'app-atencion-page',
-  imports: [Ayuda, RouterLink, MedicionesDeSesion, TratamientosDeSesion, ConfirmacionConMotivo],
+  imports: [
+    Ayuda,
+    RouterLink,
+    MedicionesDeSesion,
+    TratamientosDeSesion,
+    ConfirmacionConMotivo,
+    PanelLateral,
+  ],
   templateUrl: './atencion-page.html',
   styleUrl: '../../atencion.css',
 })

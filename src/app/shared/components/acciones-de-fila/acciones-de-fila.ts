@@ -33,7 +33,8 @@ const HAY_POPOVER = typeof HTMLElement.prototype.showPopover === 'function';
  * <p><b>Por que existe.</b> Filas como las de Ofertas de la sede llevaban seis botones apilados
  * (hallazgo A1 de la auditoria heuristica): la columna de acciones era la mas ancha de la tabla
  * y la accion frecuente se perdia entre las raras. Decidido el 22/10/2026: el menu se usa en filas
- * con **tres o mas** acciones; con una o dos, los botones siguen sueltos.
+ * desde **dos** acciones: una visible (la frecuente) y el resto, con las destructivas, en el menu
+ * (UX-11, 28/10/2026).
  *
  * <p><b>Uso.</b> La accion visible va con el atributo `principal`; todo lo demas que se proyecta
  * va al menu:

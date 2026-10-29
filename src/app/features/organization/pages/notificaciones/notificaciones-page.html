@@ -146,11 +146,11 @@
                     </td>
                     <td>{{ formatearInstante(fila.creadaEn) ?? '-' }}</td>
                     <td>{{ formatearInstante(fila.actualizadaEn) ?? '-' }}</td>
-                    <td>
+                    <td class="tabla__acciones">
                       @if (fila.reintentable) {
                         <button
                           type="button"
-                          class="boton boton--secundario"
+                          class="boton boton--secundario boton--chico"
                           [disabled]="reintentando() !== null"
                           [attr.aria-label]="
                             (reintentando() === fila.id ? 'Reintentando' : 'Reintentar') +

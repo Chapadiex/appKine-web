@@ -55,122 +55,131 @@
       }
     }
 
-    <section class="tarjeta" aria-labelledby="declaradas-titulo">
-      <h2 id="declaradas-titulo">Prácticas declaradas</h2>
+    <!--
+      Refactor UX/UI (28/10/2026): lo declarado y el buscador lado a lado en escritorio. Se agrega
+      mirando la lista que se esta armando, sin bajar hasta el final de la pagina y volver.
+    -->
+    <div class="columnas-de-trabajo">
+      <section class="tarjeta" aria-labelledby="declaradas-titulo">
+        <h2 id="declaradas-titulo">Prácticas declaradas</h2>
 
-      @if (seleccion().length === 0) {
-        <p class="ayuda" role="status">
-          <b>Sin prácticas, la oferta no le devenga nada a ningún financiador</b> y ninguna
-          cobertura le aplica. Una lista vacía NO significa "todas": es lo que corresponde a una
-          actividad que no se factura a obras sociales, como Pilates.
-        </p>
-      } @else {
-        <fieldset class="grupo">
-          <legend>Práctica principal</legend>
-          <ul>
-            @for (fila of seleccion(); track fila.practicaId) {
-              <li>
-                <label class="opcion-radio">
-                  <input
-                    type="radio"
-                    name="practica-principal"
-                    [checked]="principal() === fila.practicaId"
-                    [disabled]="guardando()"
-                    (change)="marcarPrincipal(fila.practicaId)"
-                  />
-                  <span class="etiqueta">{{ fila.nombre }}</span>
-                  @if (fila.codigo) {
-                    <span class="detalle">{{ fila.codigo }}</span>
-                  }
-                  @if (principal() === fila.practicaId) {
-                    <span class="detalle">(principal)</span>
-                  }
-                </label>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-                  [disabled]="guardando()"
-                  [attr.aria-label]="'Quitar ' + fila.nombre"
-                  (click)="quitar(fila.practicaId)"
-                >
-                  Quitar
-                </button>
-                @if (fila.fueraDelCatalogo) {
-                  <p class="ayuda">
-                    El catalogo dio de baja esta práctica. La oferta la conserva y sigue valiendo,
-                    pero si era la principal conviene elegir otra.
-                  </p>
-                }
-              </li>
-            }
-          </ul>
-        </fieldset>
-      }
-
-      <button
-        type="button"
-        class="boton"
-        *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-        [disabled]="guardando() || !hayCambios()"
-        (click)="guardar()"
-      >
-        {{ guardando() ? 'Guardando…' : 'Guardar las prácticas' }}
-      </button>
-    </section>
-
-    <section
-      class="tarjeta"
-      *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
-      aria-labelledby="agregar-titulo"
-    >
-      <h2 id="agregar-titulo">Agregar una práctica</h2>
-      <form novalidate (submit)="buscar($event)">
-        <label for="buscar-practica">Buscar en el catalogo por nombre o código</label>
-        <input
-          id="buscar-practica"
-          type="search"
-          [value]="textoBusqueda()"
-          (input)="escribirBusqueda($event)"
-        />
-        <button type="submit" class="boton boton--secundario" [disabled]="buscando()">
-          {{ buscando() ? 'Buscando…' : 'Buscar' }}
-        </button>
-      </form>
-
-      @if (errorBusqueda(); as mensaje) {
-        <p class="estado estado--error" role="alert">{{ mensaje }}</p>
-      }
-
-      @if (resultados(); as encontradas) {
-        @if (encontradas.length === 0) {
-          <p class="estado estado--vacio" role="status">
-            No hay prácticas vigentes con ese texto. Las prácticas propias del centro se cargan en
-            <a routerLink="/catalogo/practicas">Catalogo clínico</a>.
+        @if (seleccion().length === 0) {
+          <p class="ayuda" role="status">
+            <b>Sin prácticas, la oferta no le devenga nada a ningún financiador</b> y ninguna
+            cobertura le aplica. Una lista vacía NO significa "todas": es lo que corresponde a una
+            actividad que no se factura a obras sociales, como Pilates.
           </p>
         } @else {
-          <ul class="grupo">
-            @for (concepto of encontradas; track concepto.id) {
-              <li>
-                <span class="etiqueta">{{ concepto.name }}</span>
-                <span class="detalle">{{ concepto.codigo }}</span>
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="yaEsta(concepto.id) || guardando()"
-                  [attr.aria-label]="
-                    (yaEsta(concepto.id) ? 'Ya esta ' : 'Agregar ') + concepto.name
-                  "
-                  (click)="agregar(concepto)"
-                >
-                  {{ yaEsta(concepto.id) ? 'Ya esta' : 'Agregar' }}
-                </button>
-              </li>
-            }
-          </ul>
+          <fieldset class="grupo">
+            <legend>Práctica principal</legend>
+            <ul>
+              @for (fila of seleccion(); track fila.practicaId) {
+                <li>
+                  <label class="opcion-radio">
+                    <input
+                      type="radio"
+                      name="practica-principal"
+                      [checked]="principal() === fila.practicaId"
+                      [disabled]="guardando()"
+                      (change)="marcarPrincipal(fila.practicaId)"
+                    />
+                    <span class="etiqueta">{{ fila.nombre }}</span>
+                    @if (fila.codigo) {
+                      <span class="detalle">{{ fila.codigo }}</span>
+                    }
+                    @if (principal() === fila.practicaId) {
+                      <span class="detalle">(principal)</span>
+                    }
+                  </label>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+                    [disabled]="guardando()"
+                    [attr.aria-label]="'Quitar ' + fila.nombre"
+                    (click)="quitar(fila.practicaId)"
+                  >
+                    Quitar
+                  </button>
+                  @if (fila.fueraDelCatalogo) {
+                    <p class="ayuda ayuda--fija">
+                      El catalogo dio de baja esta práctica. La oferta la conserva y sigue valiendo,
+                      pero si era la principal conviene elegir otra.
+                    </p>
+                  }
+                </li>
+              }
+            </ul>
+          </fieldset>
         }
-      }
-    </section>
+
+        <div class="acciones acciones--derecha" *akinePermiso="PERMISO_CONSULTORIO_MANAGE">
+          <button
+            type="button"
+            class="boton"
+            [disabled]="guardando() || !hayCambios()"
+            (click)="guardar()"
+          >
+            {{ guardando() ? 'Guardando…' : 'Guardar las prácticas' }}
+          </button>
+        </div>
+      </section>
+
+      <section
+        class="tarjeta"
+        *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+        aria-labelledby="agregar-titulo"
+      >
+        <h2 id="agregar-titulo">Agregar una práctica</h2>
+        <form class="formulario--libre busqueda-en-linea" novalidate (submit)="buscar($event)">
+          <div class="campo">
+            <label for="buscar-practica">Buscar en el catalogo por nombre o código</label>
+            <input
+              id="buscar-practica"
+              type="search"
+              [value]="textoBusqueda()"
+              (input)="escribirBusqueda($event)"
+            />
+          </div>
+          <button type="submit" class="boton boton--secundario" [disabled]="buscando()">
+            {{ buscando() ? 'Buscando…' : 'Buscar' }}
+          </button>
+        </form>
+
+        @if (errorBusqueda(); as mensaje) {
+          <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+        }
+
+        @if (resultados(); as encontradas) {
+          @if (encontradas.length === 0) {
+            <p class="estado estado--vacio" role="status">
+              No hay prácticas vigentes con ese texto. Las prácticas propias del centro se cargan en
+              <a routerLink="/catalogo/practicas">Catalogo clínico</a>.
+            </p>
+          } @else {
+            <ul class="grupo">
+              @for (concepto of encontradas; track concepto.id) {
+                <li>
+                  <span class="etiqueta">{{ concepto.name }}</span>
+                  <span class="detalle">{{ concepto.codigo }}</span>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    [disabled]="yaEsta(concepto.id) || guardando()"
+                    [attr.aria-label]="
+                      (yaEsta(concepto.id) ? 'Ya esta ' : 'Agregar ') + concepto.name
+                    "
+                    (click)="agregar(concepto)"
+                  >
+                    {{ yaEsta(concepto.id) ? 'Ya esta' : 'Agregar' }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+    </div>
 
     @if (dadasDeBaja().length > 0) {
       <section class="tarjeta" aria-labelledby="baja-titulo">

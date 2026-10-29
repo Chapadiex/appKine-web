@@ -23,7 +23,6 @@ import {
   CasosParaDerivar,
   MotivoDeAcceso,
 } from '../../services/atencion-grupal-api';
-import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 
 type Carga<T> =
   | { readonly tipo: 'cargando' }
@@ -66,7 +65,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-derivar-participante',
-  imports: [Ayuda, RouterLink, FocoAlMontar],
+  imports: [RouterLink, FocoAlMontar],
   templateUrl: './derivar-participante.html',
   styleUrl: '../../atencion.css',
 })

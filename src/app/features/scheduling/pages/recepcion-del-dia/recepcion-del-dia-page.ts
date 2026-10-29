@@ -42,6 +42,7 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import {
   FiltroRapido,
@@ -170,6 +171,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     Icono,
     AccionesDeFila,
     FiltrosRapidos,
+    PanelLateral,
   ],
   templateUrl: './recepcion-del-dia-page.html',
   styleUrl: '../../agenda.css',
@@ -600,11 +602,20 @@ export class RecepcionDelDiaPage {
       ?.focus();
   }
 
-  /** Cuantas acciones tiene la fila, enlaces incluidos: con tres o mas va el menu "⋯". */
-  protected cantidadDeAcciones(turno: TurnoDelDia): number {
-    return (
-      this.accionesDe(turno).length + (this.puedeCobrar() && this.admitePrepago(turno) ? 1 : 0) + 1 // "Ver el turno"
-    );
+  /** Titulo del panel lateral de motivo: que se confirma y de quien. */
+  protected tituloDelPanel(abierto: {
+    readonly turno: TurnoDelDia;
+    readonly tipo: TipoDePanel;
+  }): string {
+    const quien = abierto.turno.personaNombre;
+    switch (abierto.tipo) {
+      case 'particular':
+        return `Atender como Particular a ${quien ?? 'el paciente'}`;
+      case 'retiro':
+        return `${quien ?? 'El paciente'} se retiro sin ser atendido`;
+      default:
+        return `Anular la llegada de ${quien ?? 'el paciente'}`;
+    }
   }
 
   /** Query del enlace al ciclo del turno: sin la version, esa pantalla no puede operar. */

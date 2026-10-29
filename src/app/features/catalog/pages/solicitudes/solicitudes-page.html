@@ -12,6 +12,17 @@
       El catalogo comun -el que ven todos los centros- lo mantiene AKINE. Si falta algo que deberia
       estar ahi, se pide desde acá.
     </p>
+    <p class="ayuda-contextual__subtitulo">Si lo necesitas hoy, no hace falta pedirlo</p>
+    <p>
+      Un concepto <b>de tu centro</b> lo das de alta vos, ahora mismo, desde el catalogo. Sirve para
+      todo: registrar sesiones, armar convenios, presentar a un financiador. Lo unico que no hace es
+      aparecerles a los demas centros.
+    </p>
+    <p>
+      Pedirlo a la plataforma tiene sentido cuando el concepto es <b>de todos</b>: una especialidad
+      reconocida, un nomenclador nacional. Eso lo revisa AKINE, y por eso tarda. Mientras un pedido
+      esta pendiente, podés darlo de alta como un concepto de tu centro.
+    </p>
   </app-ayuda>
   <div class="encabezado__acciones" *akinePermiso="permisoManage">
     <button type="button" class="boton" (click)="abrirAlta()">
@@ -23,35 +34,147 @@
 
 <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
 
-<!--
-  La aclaracion que evita el pedido innecesario. Va arriba, antes del formulario: quien necesita una
-  practica HOY no tiene por que esperar a que la plataforma resuelva nada, y si nadie se lo
-  dice, espera.
--->
-<section class="tarjeta nota-alcance" aria-labelledby="titulo-nota-solicitud">
-  <h2 id="titulo-nota-solicitud">Si lo necesitas hoy, no hace falta pedirlo</h2>
-  <p>
-    Un concepto <b>de tu centro</b> lo das de alta vos, ahora mismo, desde el catalogo. Sirve para
-    todo: registrar sesiones, armar convenios, presentar a un financiador. Lo unico que no hace es
-    aparecerles a los demas centros.
-  </p>
-  <p>
-    Pedirlo a la plataforma tiene sentido cuando el concepto es <b>de todos</b>: una especialidad
-    reconocida, un nomenclador nacional. Eso lo revisa AKINE, y por eso tarda.
-  </p>
-</section>
-
 <div aria-live="polite">
   @if (exito(); as mensaje) {
     <p class="estado estado--ok">{{ mensaje }}</p>
   }
 </div>
 
-@if (altaAbierta()) {
-  <section class="tarjeta" aria-labelledby="titulo-alta-solicitud">
-    <h2 id="titulo-alta-solicitud">Nuevo pedido</h2>
+<section class="tarjeta" aria-labelledby="titulo-listado-solicitudes">
+  <h2 id="titulo-listado-solicitudes">Pedidos de este centro</h2>
 
+  <!--
+    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que el
+    estado va detras del embudo, sin campo basico.
+  -->
+  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
+    <div class="campo">
+      <label for="filtro-estado-solicitud">Mostrar</label>
+      <select
+        id="filtro-estado-solicitud"
+        [value]="filtroEstado()"
+        (change)="cambiarFiltro($any($event.target).value)"
+      >
+        <option value="TODAS">Todos</option>
+        <option value="PENDIENTE">Solo los pendientes</option>
+        <option value="APROBADA">Solo los aprobados</option>
+        <option value="RECHAZADA">Solo los rechazados</option>
+      </select>
+    </div>
+  </app-filtros>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando los pedidos&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
+        <p class="ayuda">
+          Un pedido lo hace un centro concreto, así que hay que indicar cual. Tu sesión sigue
+          abierta.
+        </p>
+        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+      }
+
+      @case ('error') {
+        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+        @if (faltaContexto()) {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+        } @else {
+          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+      }
+
+      @case ('listo') {
+        @if (solicitudes().length === 0) {
+          <p class="estado estado--vacio">
+            Este centro todavía no hizo ningún pedido con el filtro elegido.
+          </p>
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Pedidos al catalogo de la plataforma"
+          >
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Pedidos de este centro al catalogo de la plataforma, con su tipo, su justificacion,
+                su estado y como los resolvio la plataforma.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Concepto pedido</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Pedido el</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (solicitud of tabla.visibles(); track solicitud.id) {
+                  <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
+                    <th scope="row">
+                      {{ solicitud.nombrePropuesto }}
+                      @if (solicitud.codigoPropuesto) {
+                        <p class="ayuda ayuda--fija">
+                          Código propuesto: {{ solicitud.codigoPropuesto }}
+                        </p>
+                      }
+                      <p class="ayuda ayuda--fija">{{ solicitud.justificacion }}</p>
+                    </th>
+                    <td>{{ etiquetaDeTipo(solicitud) }}</td>
+                    <td>
+                      {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
+                    </td>
+                    <td>
+                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud) }}</span>
+                      @if (solicitud.resolucionNota) {
+                        <p class="ayuda ayuda--fija">{{ solicitud.resolucionNota }}</p>
+                      }
+                      @if (solicitud.estado === 'APROBADA' && solicitud.conceptoId) {
+                        <p class="ayuda">
+                          Ya esta en el catalogo comun: buscalo con el filtro
+                          <b>Solo los de la plataforma</b>.
+                        </p>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tabla-pie">
+            <span>{{ tabla.total() }} pedidos</span>
+            <app-paginacion
+              [paginaActual]="tabla.pagina()"
+              [totalPaginas]="tabla.totalPaginas()"
+              etiqueta="Paginas de pedidos"
+              (cambioDePagina)="tabla.irA($event)"
+            />
+          </div>
+        }
+      }
+    }
+  </div>
+</section>
+
+<!-- Alta en un panel lateral (refactor UX/UI del 28/10/2026): el listado de pedidos queda quieto. -->
+@if (altaAbierta()) {
+  <app-panel-lateral titulo="Nuevo pedido" (cerrar)="cerrarAlta()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviar()" novalidate>
+      <!--
+        La aclaracion que evita el pedido innecesario, antes de los campos: quien necesita el
+        concepto HOY no tiene por que esperar a la plataforma, y si nadie se lo dice, espera.
+      -->
+      <p class="ayuda ayuda--fija">
+        <b>Si lo necesitas hoy, no hace falta pedirlo:</b> un concepto de tu centro lo das de alta
+        vos desde el catalogo. Pedí acá solo lo que es <b>de todos</b>, como un nomenclador
+        nacional.
+      </p>
       <div class="campo">
         <label for="solicitud-tipo">Que tipo de concepto</label>
         <select
@@ -140,131 +263,5 @@
         </button>
       </p>
     </form>
-  </section>
+  </app-panel-lateral>
 }
-
-<section class="tarjeta" aria-labelledby="titulo-listado-solicitudes">
-  <h2 id="titulo-listado-solicitudes">Pedidos de este centro</h2>
-
-  <!--
-    Regla de filtros (plan §3.4): el listado no tiene busqueda por texto en el backend, asi que el
-    estado va detras del embudo, sin campo basico.
-  -->
-  <app-filtros [soloAvanzados]="true" [activos]="filtrosAvanzadosActivos()">
-    <div class="campo">
-      <label for="filtro-estado-solicitud">Mostrar</label>
-      <select
-        id="filtro-estado-solicitud"
-        [value]="filtroEstado()"
-        (change)="cambiarFiltro($any($event.target).value)"
-      >
-        <option value="TODAS">Todos</option>
-        <option value="PENDIENTE">Solo los pendientes</option>
-        <option value="APROBADA">Solo los aprobados</option>
-        <option value="RECHAZADA">Solo los rechazados</option>
-      </select>
-    </div>
-  </app-filtros>
-
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('cargando') {
-        <p class="estado estado--cargando">Cargando los pedidos&hellip;</p>
-      }
-
-      @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
-        <p class="ayuda">
-          Un pedido lo hace un centro concreto, así que hay que indicar cual. Tu sesión sigue
-          abierta.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-      }
-
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
-        }
-      }
-
-      @case ('listo') {
-        @if (solicitudes().length === 0) {
-          <p class="estado estado--vacio">
-            Este centro todavía no hizo ningún pedido con el filtro elegido.
-          </p>
-        } @else {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-label="Pedidos al catalogo de la plataforma"
-          >
-            <table class="tabla">
-              <caption class="visualmente-oculto">
-                Pedidos de este centro al catalogo de la plataforma, con su tipo, su justificacion,
-                su estado y como los resolvio la plataforma.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Concepto pedido</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="fecha">Pedido el</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (solicitud of tabla.visibles(); track solicitud.id) {
-                  <tr [class.fila--revocada]="solicitud.estado === 'RECHAZADA'">
-                    <th scope="row">
-                      {{ solicitud.nombrePropuesto }}
-                      @if (solicitud.codigoPropuesto) {
-                        <p class="ayuda">Código propuesto: {{ solicitud.codigoPropuesto }}</p>
-                      }
-                      <p class="ayuda">{{ solicitud.justificacion }}</p>
-                    </th>
-                    <td>{{ etiquetaDeTipo(solicitud) }}</td>
-                    <td>
-                      {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
-                    </td>
-                    <td>
-                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud) }}</span>
-                      @if (solicitud.resolucionNota) {
-                        <p class="ayuda">{{ solicitud.resolucionNota }}</p>
-                      }
-                      @if (solicitud.estado === 'APROBADA' && solicitud.conceptoId) {
-                        <p class="ayuda">
-                          Ya esta en el catalogo comun: buscalo con el filtro
-                          <b>Solo los de la plataforma</b>.
-                        </p>
-                      }
-                      @if (solicitud.estado === 'PENDIENTE') {
-                        <p class="ayuda">
-                          Mientras tanto podés darlo de alta como un concepto de tu centro: sirve
-                          para todo, salvo para que lo vean los demas centros.
-                        </p>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="tabla-pie">
-            <span>{{ tabla.total() }} pedidos</span>
-            <app-paginacion
-              [paginaActual]="tabla.pagina()"
-              [totalPaginas]="tabla.totalPaginas()"
-              etiqueta="Paginas de pedidos"
-              (cambioDePagina)="tabla.irA($event)"
-            />
-          </div>
-        }
-      }
-    }
-  </div>
-</section>

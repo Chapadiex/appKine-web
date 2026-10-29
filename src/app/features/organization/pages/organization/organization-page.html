@@ -5,81 +5,84 @@
   </app-ayuda>
 </div>
 
-<section class="tarjeta" aria-labelledby="titulo-organizacion">
-  <h2 id="titulo-organizacion">Datos del centro</h2>
+<!-- Ficha y accesos lado a lado en escritorio (refactor UX/UI del 28/10/2026). -->
+<div class="ficha-en-columnas">
+  <section class="tarjeta" aria-labelledby="titulo-organizacion">
+    <h2 id="titulo-organizacion">Datos del centro</h2>
 
-  <div aria-live="polite">
-    @switch (estado().tipo) {
-      @case ('cargando') {
-        <p class="estado estado--cargando">Cargando los datos del centro&hellip;</p>
-      }
+    <div aria-live="polite">
+      @switch (estado().tipo) {
+        @case ('cargando') {
+          <p class="estado estado--cargando">Cargando los datos del centro&hellip;</p>
+        }
 
-      @case ('sin-contexto') {
-        <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
-        <p class="ayuda">
-          Para ver los datos de un centro hay que indicar cuál. Los datos de una organización no se
-          muestran nunca fuera de su contexto.
-        </p>
-        <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-      }
-
-      @case ('listo') {
-        <dl class="detalle">
-          <dt>Nombre</dt>
-          <dd>{{ organizacion()?.name }}</dd>
-
-          <dt>Estado operativo</dt>
-          <dd>{{ organizacion()?.operationalStatus }}</dd>
-
-          <dt>Zona horaria</dt>
-          <dd>{{ organizacion()?.timezone }}</dd>
-
-          <dt>Identificador de soporte</dt>
-          <dd>{{ organizacion()?.slug }}</dd>
-        </dl>
-
-        @if (organizacion()?.active === false) {
-          <p class="estado estado--error" role="alert">
-            Esta organización está dada de baja. Solo podés consultarla.
+        @case ('sin-contexto') {
+          <p class="estado estado--vacio">Todavía no elegiste un contexto de trabajo.</p>
+          <p class="ayuda">
+            Para ver los datos de un centro hay que indicar cuál. Los datos de una organización no
+            se muestran nunca fuera de su contexto.
           </p>
-        }
-      }
-
-      @case ('error') {
-        <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
-
-        @if (faltaContexto()) {
           <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
-        } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        }
+
+        @case ('listo') {
+          <dl class="detalle">
+            <dt>Nombre</dt>
+            <dd>{{ organizacion()?.name }}</dd>
+
+            <dt>Estado operativo</dt>
+            <dd>{{ organizacion()?.operationalStatus }}</dd>
+
+            <dt>Zona horaria</dt>
+            <dd>{{ organizacion()?.timezone }}</dd>
+
+            <dt>Identificador de soporte</dt>
+            <dd>{{ organizacion()?.slug }}</dd>
+          </dl>
+
+          @if (organizacion()?.active === false) {
+            <p class="estado estado--error" role="alert">
+              Esta organización está dada de baja. Solo podés consultarla.
+            </p>
+          }
+        }
+
+        @case ('error') {
+          <p class="estado estado--error" role="alert">{{ mensajeError() }}</p>
+
+          @if (faltaContexto()) {
+            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+          } @else {
+            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          }
         }
       }
-    }
-  </div>
-</section>
-
-@if (estado().tipo === 'listo') {
-  <!--
-    Cada fila es una configuracion con su accion a la derecha, no un enlace subrayado: se escanea
-    por el titulo y la accion se reconoce como tal (refactor de la cabecera global, 28/10/2026).
-    El nombre accesible del boton suma el titulo: "Gestionar" solo no dice que se gestiona.
-  -->
-  <section class="tarjeta" aria-labelledby="titulo-accesos-organizacion">
-    <h2 id="titulo-accesos-organizacion">Configuración</h2>
-
-    <ul class="configuracion">
-      @for (acceso of accesos; track acceso.ruta) {
-        <li class="configuracion__fila">
-          <div class="configuracion__textos">
-            <h3 class="configuracion__titulo">{{ acceso.titulo }}</h3>
-            <p class="configuracion__descripcion">{{ acceso.descripcion }}</p>
-          </div>
-          <a class="boton boton--secundario configuracion__accion" [routerLink]="acceso.ruta">
-            {{ acceso.accion }}<span class="visualmente-oculto">: {{ acceso.titulo }}</span>
-            <app-icono nombre="flecha-derecha" />
-          </a>
-        </li>
-      }
-    </ul>
+    </div>
   </section>
-}
+
+  @if (estado().tipo === 'listo') {
+    <!--
+      Cada fila es una configuracion con su accion a la derecha, no un enlace subrayado: se escanea
+      por el titulo y la accion se reconoce como tal (refactor de la cabecera global, 28/10/2026).
+      El nombre accesible del boton suma el titulo: "Gestionar" solo no dice que se gestiona.
+    -->
+    <section class="tarjeta" aria-labelledby="titulo-accesos-organizacion">
+      <h2 id="titulo-accesos-organizacion">Configuración</h2>
+
+      <ul class="configuracion">
+        @for (acceso of accesos; track acceso.ruta) {
+          <li class="configuracion__fila">
+            <div class="configuracion__textos">
+              <h3 class="configuracion__titulo">{{ acceso.titulo }}</h3>
+              <p class="configuracion__descripcion">{{ acceso.descripcion }}</p>
+            </div>
+            <a class="boton boton--secundario configuracion__accion" [routerLink]="acceso.ruta">
+              {{ acceso.accion }}<span class="visualmente-oculto">: {{ acceso.titulo }}</span>
+              <app-icono nombre="flecha-derecha" />
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>

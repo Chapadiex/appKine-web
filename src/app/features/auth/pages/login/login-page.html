@@ -76,13 +76,15 @@
         />
         Mantener la sesión iniciada
       </label>
-      <p class="ayuda" id="login-recordarme-ayuda">No la marques en una computadora compartida.</p>
+      <p class="ayuda ayuda--fija" id="login-recordarme-ayuda">
+        No la marques en una computadora compartida.
+      </p>
     </div>
 
     <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">Ingresar</button>
 
     @if (espera.activa()) {
-      <p class="ayuda">Volvé a intentar en {{ espera.segundos() }} segundos.</p>
+      <p class="ayuda ayuda--fija">Volvé a intentar en {{ espera.segundos() }} segundos.</p>
     }
   </form>
 

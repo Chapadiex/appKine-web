@@ -11,27 +11,6 @@
  */
 
 /*
- * La nota que separa el catalogo de la plataforma del del centro (ADR-0021).
- *
- * Va con borde de acento y no como un parrafo mas: es la aclaracion que evita el reporte de
- * bug mas probable del modulo -"lo veo en la lista y no lo puedo editar"- y en el medio de la
- * prosa nadie la lee. El color no es lo unico que la distingue -tiene su propio encabezado-,
- * asi que sigue comunicando en escala de grises (WCAG 1.4.1).
- */
-.nota-alcance {
-  border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
-}
-
-.nota-alcance p {
-  margin: 0 0 var(--esp-4);
-}
-
-.nota-alcance p:last-child {
-  margin-bottom: 0;
-}
-
-/*
  * La descripcion del concepto y el motivo de baja viven dentro del `<th scope="row">`.
  *
  * El `th` es negrita —es el encabezado de la fila— y el parrafo lo hereda, asi que la

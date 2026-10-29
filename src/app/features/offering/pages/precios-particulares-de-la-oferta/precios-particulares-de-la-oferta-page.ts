@@ -35,6 +35,8 @@ import { Paginacion } from '../../../../shared/components/paginacion/paginacion'
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Migas } from '../../../../shared/components/migas/migas';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -75,6 +77,8 @@ interface SituacionDelPrecio {
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
+    PanelLateral,
+    AccionesDeFila,
   ],
   templateUrl: './precios-particulares-de-la-oferta-page.html',
   styleUrl: '../../offering.css',
@@ -138,6 +142,17 @@ export class PreciosParticularesDeLaOfertaPage {
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
     null,
   );
+
+  /**
+   * Lo del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del 28/10/2026),
+   * asi que lo busca en el listado en vez de recibirlo del `@for` de la fila.
+   */
+  protected readonly precioEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.precios().find((precio) => precio.id === panel.id) ?? null);
+  });
   private readonly original = signal<PrecioParticularResponse | null>(null);
 
   protected readonly enviando = signal(false);
@@ -225,11 +240,6 @@ export class PreciosParticularesDeLaOfertaPage {
     return hasta === ''
       ? `Desde el ${desde}, sin fin previsto`
       : `Del ${desde} al ${enPalabras(hasta)}, inclusive`;
-  }
-
-  protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
-    const panel = this.panel();
-    return panel !== null && panel.id === id && panel.tipo === tipo;
   }
 
   protected abrirAlta(): void {

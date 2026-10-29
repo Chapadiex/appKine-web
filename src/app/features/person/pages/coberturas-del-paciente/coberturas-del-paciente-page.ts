@@ -37,6 +37,7 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
@@ -115,6 +116,7 @@ type EstadoDeCoberturas =
     PermisoDirective,
     CoberturaAplicable,
     AccionesDeFila,
+    PanelLateral,
   ],
   templateUrl: './coberturas-del-paciente-page.html',
   styleUrl: '../../person.css',
@@ -187,6 +189,17 @@ export class CoberturasDelPacientePage {
   protected readonly coberturas = computed<readonly CoberturaResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.coberturas : [];
+  });
+
+  /**
+   * La cobertura del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
+   * 28/10/2026), asi que la busca en la lista en vez de recibirla del `@for` de la fila.
+   */
+  protected readonly coberturaEnPanel = computed(() => {
+    const panel = this.panel();
+    return panel === null
+      ? null
+      : (this.coberturas().find((cobertura) => cobertura.id === panel.id) ?? null);
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el backend devuelve un array. */
@@ -573,16 +586,6 @@ export class CoberturasDelPacientePage {
     this.altaAbierta.set(false);
     this.original.set(null);
     this.limpiarAvisos();
-  }
-
-  protected esPanel(cobertura: CoberturaResponse, tipo: TipoAccion): boolean {
-    const abierto = this.panel();
-    return (
-      abierto !== null &&
-      cobertura.id !== undefined &&
-      abierto.id === cobertura.id &&
-      abierto.tipo === tipo
-    );
   }
 
   /** `true` cuando el backend senalo esta fila en un 409. La plantilla la resalta. */
