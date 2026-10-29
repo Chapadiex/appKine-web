@@ -19,18 +19,18 @@
 
 ## 2. Lo que cambia en todas las pantallas (sin tocar plantillas)
 
-| Regla                       | Dónde                                       | Efecto                                                                                                                                                                                                   |
-| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ancho del contenido         | `app.css` `.contenido`                      | Todo el ancho de la columna, con tope de 96rem. La prosa se queda en 90ch (`design-system.css`). Las pantallas sin barra lateral (acceso, selector) siguen en 46rem centradas.                           |
-| Formularios en grilla       | `design-system.css` `form`                  | Columnas de 18rem mínimo (tres en 1440, una en el teléfono), sin tope: un `max-width` rompe el ancho mínimo en columnas `1fr`. Lo que no es `.campo`, los `textarea` y `.campo--ancho` van a la fila entera. `.formulario--libre` lo desactiva. |
-| Ayuda de campo a demanda    | `.campo > .ayuda`                           | Aparece flotando mientras el campo tiene el foco. Sigue enlazada por `aria-describedby`. **Lo que se ve siempre lleva `.ayuda--fija`** (datos, consecuencias, ayudas con interpolación).                 |
-| Acciones de formulario      | `form > .acciones`                          | A la derecha, con la principal en el borde ("Cancelar · Guardar"). Se invierte el orden visual, no el del DOM: la principal se sigue escribiendo **primera**.                                            |
-| Barra de acciones fija      | `.tarjeta form > .acciones:last-child`      | Pegada al pie de la ventana mientras el formulario se desplaza.                                                                                                                                          |
-| Tarjeta dentro de tarjeta   | `.tarjeta .tarjeta`                         | Sin segundo borde ni sombra.                                                                                                                                                                             |
-| Búsqueda                    | `.filtros-barra__principal`                 | Tope de 36rem: el embudo queda al lado.                                                                                                                                                                  |
-| Sección opcional plegada    | `details.seccion-plegable`                  | `summary` con el nombre y un resumen de una línea (`.seccion-plegable__resumen`).                                                                                                                        |
-| Botón de fila               | `.boton--chico`                             | 32 px de alto para la acción principal de una fila de 48 px.                                                                                                                                             |
-| Fila seleccionada           | `.fila--seleccionada`                       | La fila cuyo panel lateral está abierto.                                                                                                                                                                 |
+| Regla                     | Dónde                                  | Efecto                                                                                                                                                                                                                                                                                |
+| ------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ancho del contenido       | `app.css` `.contenido`                 | Todo el ancho de la columna, con tope de 96rem. La prosa se queda en 90ch (`design-system.css`). Las pantallas sin barra lateral (acceso, selector) siguen en 46rem centradas.                                                                                                        |
+| Formularios en grilla     | `design-system.css` `form`             | Columnas de 18rem mínimo (tres en 1440, una en el teléfono), sin tope: un `max-width` rompe el ancho mínimo en columnas `1fr`. Lo que no es `.campo`, los `textarea` y `.campo--ancho` van a la fila entera. `.formulario--libre` lo desactiva.                                       |
+| Ayuda de campo a demanda  | `.campo > .ayuda`                      | Aparece flotando mientras el campo tiene el foco, sin atrapar el puntero (`pointer-events: none`: si no, se comía el clic del botón que tapa). Sigue enlazada por `aria-describedby`. **Lo que se ve siempre lleva `.ayuda--fija`** (datos, consecuencias, ayudas con interpolación). |
+| Acciones de formulario    | `form > .acciones`                     | A la derecha, con la principal en el borde ("Cancelar · Guardar"). Se invierte el orden visual, no el del DOM: la principal se sigue escribiendo **primera**.                                                                                                                         |
+| Barra de acciones fija    | `.tarjeta form > .acciones:last-child` | Pegada al pie de la ventana mientras el formulario se desplaza.                                                                                                                                                                                                                       |
+| Tarjeta dentro de tarjeta | `.tarjeta .tarjeta`                    | Sin segundo borde ni sombra.                                                                                                                                                                                                                                                          |
+| Búsqueda                  | `.filtros-barra__principal`            | Tope de 36rem: el embudo queda al lado.                                                                                                                                                                                                                                               |
+| Sección opcional plegada  | `details.seccion-plegable`             | `summary` con el nombre y un resumen de una línea (`.seccion-plegable__resumen`).                                                                                                                                                                                                     |
+| Botón de fila             | `.boton--chico`                        | 32 px de alto para la acción principal de una fila de 48 px.                                                                                                                                                                                                                          |
+| Fila seleccionada         | `.fila--seleccionada`                  | La fila cuyo panel lateral está abierto.                                                                                                                                                                                                                                              |
 
 ## 3. Shell
 
@@ -49,19 +49,19 @@
 Es el patrón de **edición y confirmación desde un listado**. Reemplaza a `tr.fila-panel`.
 
 ```html
-@if (filaEnPanel(); as sede) {
-  @if (panel()?.tipo === 'editar') {
-    <app-panel-lateral [titulo]="'Editar ' + sede.name" (cerrar)="cerrarPanel()">
-      <form ...>
-        ...campos...
-        <div class="acciones">
-          <button type="submit" class="boton">Guardar los cambios</button>
-          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">Cancelar</button>
-        </div>
-      </form>
-    </app-panel-lateral>
-  }
-}
+@if (filaEnPanel(); as sede) { @if (panel()?.tipo === 'editar') {
+<app-panel-lateral [titulo]="'Editar ' + sede.name" (cerrar)="cerrarPanel()">
+  <form ...>
+    ...campos...
+    <div class="acciones">
+      <button type="submit" class="boton">Guardar los cambios</button>
+      <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+        Cancelar
+      </button>
+    </div>
+  </form>
+</app-panel-lateral>
+} }
 ```
 
 - Es un `<dialog>` modal nativo: foco atrapado, Escape emite `cerrar`, el fondo **no** cierra
