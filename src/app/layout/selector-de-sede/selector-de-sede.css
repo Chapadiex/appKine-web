@@ -1,0 +1,109 @@
+/* Selector de sede (ver `selector-de-sede.ts`). Lo comun a los paneles esta en `../desplegable.css`. */
+
+.sede {
+  max-width: 16rem;
+}
+
+.sede--fija {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0 var(--esp-5);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+}
+
+.sede__icono {
+  color: var(--color-acento);
+  font-size: var(--tipo-base);
+}
+
+.sede__nombre {
+  overflow: hidden;
+  font-weight: var(--peso-medio);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sede__panel {
+  min-width: 17rem;
+}
+
+/* La lista se desplaza dentro del panel: con muchas sedes el panel no puede salir de la ventana. */
+.sede__lista {
+  max-height: min(20rem, 60vh);
+  overflow-y: auto;
+}
+
+/* El campo es el control (borde y anillo de foco del sistema); la lupa va encima, a la izquierda. */
+.sede__busqueda {
+  position: relative;
+  display: flex;
+  margin: 0 var(--esp-5) var(--esp-4);
+}
+
+.sede__busqueda app-icono {
+  position: absolute;
+  top: 50%;
+  left: var(--esp-5);
+  color: var(--color-texto-suave);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.sede__busqueda input {
+  flex: 1;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0 var(--esp-5) 0 calc(var(--esp-5) * 2 + 1rem);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+}
+
+.sede__tilde {
+  display: inline-flex;
+  width: 1.25rem;
+  flex-shrink: 0;
+  color: var(--color-acento);
+}
+
+.sede__tilde app-icono {
+  color: inherit;
+}
+
+.sede__textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sede__opcion-nombre,
+.sede__organizacion {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sede__opcion--actual .sede__opcion-nombre {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.sede__organizacion {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+/* Telefono: el nombre se acorta mas para que entren el titulo y el perfil. */
+@media (max-width: 39.99rem) {
+  .sede {
+    max-width: 9rem;
+  }
+}

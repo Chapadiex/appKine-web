@@ -68,7 +68,15 @@
           <span>AKINE</span>
         </a>
       }
-      <router-outlet />
+      <!--
+        Cambio de sede en curso: la pantalla sale del DOM y vuelve a crearse con la sede nueva, asi
+        no queda en pantalla nada leido con la anterior (ver `CambioDeSede`).
+      -->
+      @if (cambiandoDeSede(); as destino) {
+        <p class="estado estado--cargando" role="status">Cambiando a {{ destino }}&hellip;</p>
+      } @else {
+        <router-outlet />
+      }
       @if (esAcceso()) {
         <footer class="acceso__pie">
           <a routerLink="/estado">Estado del sistema</a>

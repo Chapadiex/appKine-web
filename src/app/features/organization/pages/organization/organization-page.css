@@ -1,0 +1,58 @@
+/*
+  Configuracion de la pantalla de organizacion: una fila por configuracion, titulo y descripcion a
+  la izquierda y la accion a la derecha. En telefono la accion baja debajo del texto.
+*/
+.configuracion {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.configuracion__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5) var(--esp-7);
+  padding: var(--esp-6) 0;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.configuracion__fila:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.configuracion__fila:last-child {
+  padding-bottom: 0;
+}
+
+.configuracion__textos {
+  flex: 1;
+  min-width: 0;
+}
+
+.configuracion__titulo {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-medio);
+}
+
+.configuracion__descripcion {
+  margin: var(--esp-2) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+/* Mismo ancho en todas las filas: las acciones forman una columna que se lee de un vistazo. */
+.configuracion__accion {
+  flex-shrink: 0;
+  min-width: 8.5rem;
+  text-decoration: none;
+}
+
+@media (max-width: 39.99rem) {
+  .configuracion__fila {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

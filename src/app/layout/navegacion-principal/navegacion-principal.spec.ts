@@ -7,8 +7,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
 import { PERMISO_COLABORADOR_READ, PERMISO_TURNO_READ } from '../../core/models/permisos';
-import { MyProfileResponse } from '../../api/generated/model/my-profile-response';
-import { PerfilPropioStore } from '../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../core/testing/rutas-api';
@@ -37,13 +35,11 @@ describe('NavegacionPrincipal', () => {
   let router: Router;
   let adminDePlataforma: WritableSignal<boolean>;
   let restaurando: WritableSignal<boolean>;
-  let perfil: WritableSignal<MyProfileResponse | null>;
 
   beforeEach(async () => {
     estado = signal<EstadoSesion>('activa');
     adminDePlataforma = signal(false);
     restaurando = signal(false);
-    perfil = signal<MyProfileResponse | null>(null);
 
     await TestBed.configureTestingModule({
       imports: [NavegacionPrincipal],
@@ -64,10 +60,6 @@ describe('NavegacionPrincipal', () => {
         {
           provide: PlatformRoleStore,
           useValue: { esAdminDePlataforma: adminDePlataforma, asegurarCargado: () => undefined },
-        },
-        {
-          provide: PerfilPropioStore,
-          useValue: { perfil, asegurarCargado: () => undefined },
         },
       ],
     }).compileComponents();
@@ -228,39 +220,20 @@ describe('NavegacionPrincipal', () => {
   });
 
   /**
-   * DP-45: el pie dice quien ingreso y con que rol. Se monta aparte, despues de la primera
-   * pintura; hasta entonces, y mientras `/me` no responde, queda el centro solo, como antes.
+   * Cabecera global (28/10/2026): la sede y la cuenta viven en la barra superior. La barra lateral
+   * es solo navegacion: ni la sede bajo la marca, ni "Cambiar de sede", ni "Cerrar sesion".
    */
-  it('muestra al pie el nombre y el rol de quien ingresó, sin perder el centro ni la salida', async () => {
+  it('no repite la sede ni la cuenta: solo navega', () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
     fixture.detectChanges();
-    const pie = (fixture.nativeElement as HTMLElement).querySelector('.nav__sesion')!;
+    const barra = fixture.nativeElement as HTMLElement;
 
-    expect(pie.textContent).toContain('Centro Kine');
-    expect(pie.querySelector('.nav__avatar')?.textContent?.trim()).toBe('CK');
-
-    // El componente llega por un `import()` dinamico: se espera a que quede montado.
-    for (let intento = 0; intento < 50 && !pie.querySelector('app-quien-ingreso'); intento++) {
-      await new Promise((listo) => setTimeout(listo));
-      fixture.detectChanges();
-    }
-    expect(pie.querySelector('app-quien-ingreso')).not.toBeNull();
-    expect(pie.textContent).toContain('Centro Kine');
-    expect(pie.textContent).not.toContain('Administración');
-
-    perfil.set({
-      firstName: 'Ana',
-      lastName: 'Prueba',
-      context: { roleCode: 'ORG_ADMIN', roleLabel: 'Administración' },
-    });
-    fixture.detectChanges();
-
-    expect(pie.textContent).toContain('Ana Prueba');
-    expect(pie.textContent).toContain('Administración · Centro Kine');
-    expect(pie.textContent).toContain('Cambiar de sede');
-    expect(pie.textContent).toContain('Cerrar sesión');
+    expect(barra.textContent).not.toContain('Centro Kine');
+    expect(barra.textContent).not.toContain('Sede Centro');
+    expect(barra.textContent).not.toContain('Cambiar de sede');
+    expect(barra.textContent).not.toContain('Cerrar sesión');
   });
 
   /** Navegar desde el panel de tablet lo cierra: el shell escucha `cerrar`. */

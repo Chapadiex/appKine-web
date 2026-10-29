@@ -1,0 +1,87 @@
+@if (cambiable()) {
+  <button
+    type="button"
+    class="disparador sede"
+    [attr.aria-expanded]="abierto()"
+    aria-controls="panel-de-sedes"
+    [title]="descripcionActiva()"
+    (click)="alternar()"
+  >
+    <app-icono class="sede__icono" nombre="sede" />
+    <span class="visualmente-oculto">Sede activa:</span>
+    <span class="sede__nombre">{{ nombreActivo() }}</span>
+    <app-icono class="disparador__flecha" nombre="flecha-abajo" />
+  </button>
+
+  @if (abierto()) {
+    <div
+      id="panel-de-sedes"
+      class="desplegable sede__panel"
+      role="group"
+      aria-labelledby="titulo-de-sedes"
+    >
+      <p id="titulo-de-sedes" class="desplegable__titulo">Cambiar de sede</p>
+
+      @if (conBuscador()) {
+        <div class="sede__busqueda">
+          <app-icono nombre="buscar" />
+          <input
+            type="search"
+            aria-label="Buscar sede"
+            placeholder="Buscar sede…"
+            autocomplete="off"
+            [value]="busqueda()"
+            (input)="alBuscar($event)"
+          />
+        </div>
+      }
+
+      <ul class="desplegable__lista sede__lista">
+        @for (sede of opciones(); track sede.organizationId + ':' + sede.consultorioId) {
+          <li>
+            <!--
+              `aria-current` y no solo la tilde: la tilde es decorativa y el lector tiene que saber
+              cual es la sede en la que ya se esta.
+            -->
+            <button
+              type="button"
+              class="desplegable__item sede__opcion"
+              [class.sede__opcion--actual]="esActual(sede)"
+              [attr.aria-current]="esActual(sede) ? 'true' : null"
+              [disabled]="cambiandoA() !== null"
+              (click)="elegir(sede)"
+            >
+              <span class="sede__tilde">
+                @if (esActual(sede)) {
+                  <app-icono nombre="tilde" />
+                }
+              </span>
+              <span class="sede__textos">
+                <span class="sede__opcion-nombre">{{ sede.consultorioName }}</span>
+                @if (variasOrganizaciones()) {
+                  <span class="sede__organizacion">{{ sede.organizationName }}</span>
+                }
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="desplegable__estado">Ninguna sede coincide con la búsqueda.</li>
+        }
+      </ul>
+
+      @if (cambiandoA(); as destino) {
+        <p class="desplegable__estado" role="status">Cambiando a {{ destino }}…</p>
+      }
+      @if (error(); as mensaje) {
+        <p class="desplegable__error" role="alert">{{ mensaje }}</p>
+      }
+    </div>
+  }
+} @else {
+  <!-- Una sola sede: se dice donde se trabaja, sin ofrecer un cambio que no existe. -->
+  <p class="sede sede--fija" [title]="descripcionActiva()">
+    <app-icono class="sede__icono" nombre="sede" />
+    <span class="visualmente-oculto">Sede activa:</span>
+    <span class="sede__nombre">{{ nombreActivo() }}</span>
+  </p>
+}

@@ -5,11 +5,87 @@
 
 :host {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--esp-2) var(--esp-6);
   width: 100%;
   min-height: var(--alto-barra-superior);
+}
+
+/* Dos zonas: donde estoy, a la izquierda; donde trabajo y quien soy, contra el borde derecho. */
+.barra__izquierda {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--esp-5);
+  min-width: 0;
+}
+
+.barra__derecha {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* Lugar de la sede y del avatar hasta que se montan los componentes de verdad. */
+.reserva-sede {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+  max-width: 16rem;
+  padding: 0 var(--esp-5);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.reserva-sede app-icono {
+  color: var(--color-acento);
+  font-size: var(--tipo-base);
+}
+
+.reserva-sede__nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reserva-avatar {
+  width: 1.875rem;
+  height: 1.875rem;
+  margin: 0 var(--esp-9) 0 var(--esp-3);
+  border-radius: 50%;
+  background: var(--color-acento-claro);
+}
+
+/* Rotulo de la pantalla: una linea, se corta antes que empujar a la sede o al perfil. */
+.titulo {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Telefono: la sede y el perfil se achican (cada uno lo resuelve en su hoja); el titulo cede. */
+@media (max-width: 39.99rem) {
+  :host {
+    gap: var(--esp-4);
+  }
+
+  .barra__derecha {
+    flex-shrink: 1;
+    gap: var(--esp-2);
+  }
+
+  .reserva-sede {
+    max-width: 9rem;
+  }
 }
 
 .marca {
@@ -49,7 +125,7 @@
   }
 }
 
-/* Indicador del contexto activo. */
+/* Sin contexto: el enlace que resuelve eso. */
 .contexto {
   display: flex;
   flex-wrap: wrap;
@@ -58,16 +134,6 @@
   margin: 0;
   font-size: var(--tipo-sm);
   color: var(--color-texto-suave);
-}
-
-.contexto__valor {
-  color: var(--color-texto-fuerte);
-  font-weight: var(--peso-medio);
-}
-
-.contexto__sede {
-  color: var(--color-texto-suave);
-  font-weight: var(--peso-normal);
 }
 
 /*

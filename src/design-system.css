@@ -173,9 +173,14 @@
  * aclara: es una superficie grande, y una barra celeste arriba de una pagina oscura es un
  * faro. Esa es la razon de que `--color-marca-fondo` y `--color-accion-fondo` sean dos
  * tokens y no uno, aunque en claro valgan lo mismo.
+ *
+ * El tema lo elige el sistema operativo, salvo que la persona lo fije en Preferencias
+ * (`PreferenciasStore` pone `data-tema` en `<html>`). Los tokens oscuros estan dos veces: una
+ * para "sistema" con el sistema en oscuro, y otra para "oscuro" elegido a mano. Un cambio en uno
+ * va en los dos.
  */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-tema='claro']) {
     --color-superficie: #0f1a26;
     --color-superficie-sutil: #17242f;
     --color-superficie-atenuada: #131e29;
@@ -217,6 +222,58 @@
     --color-peligro-fondo: #2b1416;
     --color-peligro-texto: #ffb3b3;
   }
+}
+
+:root[data-tema='oscuro'] {
+  --color-superficie: #0f1a26;
+  --color-superficie-sutil: #17242f;
+  --color-superficie-atenuada: #131e29;
+  --color-superficie-codigo: #1b2a38;
+
+  --color-texto: #e6edf3;
+  --color-texto-fuerte: #f4f8fb;
+  --color-texto-suave: #a3b3c2;
+
+  --color-borde: #2e3d4c;
+  --color-borde-sutil: #24313d;
+  --color-borde-control: #8494a3;
+  /* Mas claro que el #6a7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
+     2.84:1 contra la superficie y a 3.06:1 contra el texto del boton. */
+  --color-deshabilitado: #778593;
+
+  --color-marca-fondo: #17242f;
+  --color-marca-texto: #e6edf3;
+  --color-marca-texto-suave: #b9cde0;
+  /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
+  --color-marca-superficie-activa: #22313f;
+  --color-marca-borde: #7fb6ea;
+  --color-acento: #5aa2e5;
+  --color-acento-claro: #17304a;
+  --color-accion-fondo: #4f9ae0;
+  --color-accion-fondo-hover: #6aabe8;
+  --color-accion-texto: #06121c;
+  --color-enlace: #7fb6ea;
+  --color-foco: #7fb6ea;
+  --color-foco-sobre-marca: #7fb6ea;
+
+  --color-exito: #4cc38a;
+  --color-exito-fondo: #10291d;
+  --color-exito-texto: #7ee0ae;
+  --color-aviso: #d9a441;
+  --color-aviso-fondo: #2a1f0c;
+  --color-aviso-texto: #f0c674;
+  --color-peligro: #f2777a;
+  --color-peligro-fondo: #2b1416;
+  --color-peligro-texto: #ffb3b3;
+}
+
+/* Los controles nativos (select, scrollbar, calendario) siguen al tema elegido, no al sistema. */
+:root[data-tema='claro'] {
+  color-scheme: light;
+}
+
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
 }
 
 /* --- Foco visible --------------------------------------------------------------------- */

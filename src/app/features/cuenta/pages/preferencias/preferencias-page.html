@@ -1,0 +1,29 @@
+<div class="titulo-con-ayuda">
+  <h1>Preferencias</h1>
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Ajustes personales. Se guardan en este navegador: en otra computadora vas a ver los de esa. La
+      configuración del centro está en Configuración.
+    </p>
+  </app-ayuda>
+</div>
+
+<section class="tarjeta" aria-labelledby="titulo-apariencia">
+  <h2 id="titulo-apariencia">Apariencia</h2>
+
+  <fieldset class="grupo">
+    <legend>Tema</legend>
+    @for (opcion of temas; track opcion.valor) {
+      <label class="opcion-radio">
+        <input
+          type="radio"
+          name="tema"
+          [value]="opcion.valor"
+          [checked]="tema() === opcion.valor"
+          (change)="elegir(opcion.valor)"
+        />
+        {{ opcion.etiqueta }}
+      </label>
+    }
+  </fieldset>
+</section>

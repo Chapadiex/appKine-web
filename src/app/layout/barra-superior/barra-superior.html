@@ -1,38 +1,51 @@
 <!--
   Barra superior. El `header` lo pone el shell (`app.html`); aca va lo que lleva adentro.
-  La marca se muestra solo cuando no hay barra lateral que la lleve: sin sesion resuelta o sin
-  contexto.
+  Con contexto: a la izquierda donde se esta (el titulo de la pantalla) y a la derecha donde se
+  trabaja (la sede) y quien es (el perfil). Sin contexto, la marca y la unica salida que sirve.
 -->
-@if (sesionResuelta() && contexto(); as activo) {
-  <!--
-    Boton de menu: solo se ve en tablet (CSS). `aria-controls` apunta al `nav` de la barra
-    lateral y `aria-expanded` dice si esta abierta; el nombre es texto visible para el lector y
-    el icono es decorativo.
-  -->
-  <button
-    type="button"
-    class="menu"
-    [attr.aria-expanded]="menuAbierto()"
-    aria-controls="navegacion-principal"
-    (click)="alternar()"
-  >
-    <app-icono [nombre]="menuAbierto() ? 'cerrar' : 'menu'" />
-    <span class="visualmente-oculto">Menu</span>
-  </button>
+@if (sesionResuelta() && contexto()) {
+  <div class="barra__izquierda">
+    <!--
+      Boton de menu: solo se ve en tablet (CSS). `aria-controls` apunta al `nav` de la barra
+      lateral y `aria-expanded` dice si esta abierta; el nombre es texto visible para el lector y
+      el icono es decorativo.
+    -->
+    <button
+      type="button"
+      class="menu"
+      [attr.aria-expanded]="menuAbierto()"
+      aria-controls="navegacion-principal"
+      (click)="alternar()"
+    >
+      <app-icono [nombre]="menuAbierto() ? 'cerrar' : 'menu'" />
+      <span class="visualmente-oculto">Menu</span>
+    </button>
+
+    <!--
+      Donde se esta. `p` y no `h1`: el `h1` es de la pantalla, que lo acompana con su ayuda y su
+      alta. Este rotulo sale del `title` de la ruta, asi que existe en todas.
+    -->
+    @if (titulo()) {
+      <p class="titulo">{{ titulo() }}</p>
+    }
+  </div>
 
   <!--
-    Indicador del contexto activo. `p` y no `nav`: es un dato, no un grupo de enlaces, y el
-    unico enlace que tiene ya es el de cambiarlo.
+    Sede y perfil se montan aparte, despues de la primera pintura (ver `montarDerecha`): la carga
+    inicial esta al borde de su presupuesto. Hasta entonces, el nombre de la sede y el lugar del
+    avatar, para que la barra no salte.
   -->
-  <p class="contexto">
-    <span class="contexto__valor">
-      {{ activo.organizationName }}
-      @if (sede(); as nombreDeSede) {
-        <span class="contexto__sede">· {{ nombreDeSede }}</span>
-      }
-    </span>
-    <a class="contexto__cambiar" [routerLink]="rutaSelector">Cambiar</a>
-  </p>
+  <div class="barra__derecha">
+    @if (!derechaMontada()) {
+      <span class="reserva-sede">
+        <app-icono nombre="sede" />
+        <span class="reserva-sede__nombre">{{ nombreSede() }}</span>
+      </span>
+      <span class="reserva-avatar" aria-hidden="true"></span>
+    }
+    <ng-container #anclaSede />
+    <ng-container #anclaPerfil />
+  </div>
 } @else {
   <a class="marca" [routerLink]="rutaInicio">AKINE</a>
 
@@ -53,5 +66,13 @@
         <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
       </p>
     }
+
+    <!-- Sin sede todavia no hay selector, pero la cuenta y la salida estan en el mismo lugar. -->
+    <div class="barra__derecha">
+      @if (!derechaMontada()) {
+        <span class="reserva-avatar" aria-hidden="true"></span>
+      }
+      <ng-container #anclaPerfil />
+    </div>
   }
 }

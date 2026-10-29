@@ -1,0 +1,92 @@
+/* Menu del perfil (ver `menu-de-perfil.ts`). Lo comun a los paneles esta en `../desplegable.css`. */
+
+.perfil {
+  padding-left: var(--esp-3);
+}
+
+.perfil__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 50%;
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.02em;
+}
+
+.perfil__avatar--grande {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: var(--tipo-sm);
+}
+
+.perfil__nombre {
+  overflow: hidden;
+  max-width: 12rem;
+  font-weight: var(--peso-medio);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfil__panel {
+  min-width: 16rem;
+}
+
+.perfil__datos {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-3) var(--esp-6) var(--esp-2);
+}
+
+.perfil__textos {
+  min-width: 0;
+}
+
+.perfil__titulo,
+.perfil__rol,
+.perfil__correo {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfil__titulo {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.perfil__rol,
+.perfil__correo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.perfil__salir,
+.perfil__salir app-icono {
+  color: var(--color-peligro-texto);
+}
+
+.perfil__salir:hover:not(:disabled) {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+/* Telefono: queda el avatar; el nombre sigue en el DOM como nombre accesible del boton. */
+@media (max-width: 39.99rem) {
+  .perfil__nombre {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

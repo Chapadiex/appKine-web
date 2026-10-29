@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
+import { SEGMENTO_DE_TRANSITO, transitoGuard } from './layout/selector-de-sede/cambio-de-sede';
 import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
 import { contextGuard } from './core/guards/context.guard';
@@ -25,6 +26,8 @@ import { routes as rutasActivity } from './features/activity/activity.routes';
 import { SEGMENTO_CLASES } from './features/activity/models/rutas-de-clases';
 import { routes as rutasAsistencia } from './features/activity/asistencia.routes';
 import { rutasPasesDePersona, rutasProductos } from './features/activity/pases.routes';
+import { routes as rutasCuenta } from './features/cuenta/cuenta.routes';
+import { SEGMENTO_CUENTA } from './features/cuenta/models/rutas-de-cuenta';
 import {
   PATRON_PASES_DE_PERSONA,
   SEGMENTO_PRODUCTOS,
@@ -120,6 +123,14 @@ export const routes: Routes = [
         (m) => m.ContextSelectorPage,
       ),
     title: 'AKINE - Elegir contexto',
+  },
+
+  // Cuenta propia: Mi perfil y Preferencias, desde el menu del perfil de la barra superior
+  // (refactor de la cabecera global, 28/10/2026). `contextGuard` lo ponen las rutas hijas.
+  {
+    path: SEGMENTO_CUENTA,
+    canActivate: [authGuard],
+    children: rutasCuenta,
   },
 
   // Feature `organization` (M01). Lazy loaded segun ADR-0004.
@@ -375,6 +386,14 @@ export const routes: Routes = [
     path: SEGMENTO_PRODUCTOS,
     canActivate: [authGuard],
     children: rutasProductos,
+  },
+
+  // Paso intermedio del cambio de sede: sin componente ni titulo, para que la seccion de destino
+  // se active de nuevo con todos sus guards (ver `layout/selector-de-sede/cambio-de-sede.ts`).
+  {
+    path: SEGMENTO_DE_TRANSITO,
+    canActivate: [transitoGuard],
+    children: [],
   },
 
   {

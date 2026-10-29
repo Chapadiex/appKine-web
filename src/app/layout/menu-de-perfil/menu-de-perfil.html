@@ -1,0 +1,70 @@
+<button
+  type="button"
+  class="disparador perfil"
+  [attr.aria-expanded]="abierto()"
+  aria-controls="menu-de-perfil"
+  (click)="alternar()"
+>
+  <span class="perfil__avatar" aria-hidden="true">
+    @if (iniciales()) {
+      {{ iniciales() }}
+    } @else {
+      <app-icono nombre="perfil" />
+    }
+  </span>
+  <!-- En telefono el nombre se oculta a la vista, no al lector: sigue siendo el nombre del boton. -->
+  <span class="perfil__nombre">{{ nombre() ?? 'Mi cuenta' }}</span>
+  <app-icono class="disparador__flecha" nombre="flecha-abajo" />
+</button>
+
+@if (abierto()) {
+  <div id="menu-de-perfil" class="desplegable perfil__panel" role="group" aria-label="Tu cuenta">
+    <div class="perfil__datos">
+      <span class="perfil__avatar perfil__avatar--grande" aria-hidden="true">
+        @if (iniciales()) {
+          {{ iniciales() }}
+        } @else {
+          <app-icono nombre="perfil" />
+        }
+      </span>
+      <div class="perfil__textos">
+        <p class="perfil__titulo">{{ nombre() ?? 'Tu cuenta' }}</p>
+        @if (rol(); as rol) {
+          <p class="perfil__rol">{{ rol }}</p>
+        }
+        @if (correo(); as correo) {
+          <p class="perfil__correo">{{ correo }}</p>
+        }
+      </div>
+    </div>
+
+    <hr class="desplegable__separador" />
+
+    <ul class="desplegable__lista">
+      <li>
+        <a class="desplegable__item" [routerLink]="rutaMiPerfil" (click)="cerrar()">
+          <app-icono nombre="perfil" />
+          Mi perfil
+        </a>
+      </li>
+      <li>
+        <a class="desplegable__item" [routerLink]="rutaPreferencias" (click)="cerrar()">
+          <app-icono nombre="preferencias" />
+          Preferencias
+        </a>
+      </li>
+    </ul>
+
+    <hr class="desplegable__separador" />
+
+    <button
+      type="button"
+      class="desplegable__item perfil__salir"
+      [disabled]="saliendo()"
+      (click)="cerrarSesion()"
+    >
+      <app-icono nombre="salir" />
+      Cerrar sesión
+    </button>
+  </div>
+}

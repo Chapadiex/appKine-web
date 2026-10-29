@@ -17,6 +17,7 @@ import {
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
+import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 
 /** Una entrada de la navegacion principal. */
@@ -227,6 +228,16 @@ export const SECCIONES: readonly Seccion[] = GRUPOS.flatMap((grupo) => grupo.sec
 
 /** La consola de plataforma: no es una seccion del centro y la barra la agrega al pie para `PLATFORM_ADMIN`. */
 export const SECCION_PLATAFORMA: Seccion = { etiqueta: 'Plataforma', ruta: '/plataforma' };
+
+/**
+ * Las pantallas de la cuenta propia. No estan en la barra lateral: se llega desde el menu del
+ * perfil, en la barra superior. Se declaran como secciones para que el cambio de sede sepa a donde
+ * volver.
+ */
+export const SECCIONES_DE_CUENTA: readonly Seccion[] = [
+  { etiqueta: 'Mi perfil', ruta: RUTA_MI_PERFIL },
+  { etiqueta: 'Preferencias', ruta: RUTA_PREFERENCIAS },
+];
 
 /** A donde va quien entra por `/`: la agenda es la unica seccion que todo contexto puede abrir. */
 export const RUTA_INICIO = '/agenda';
