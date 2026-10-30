@@ -268,8 +268,8 @@ describe('RecepcionDelDiaPage', () => {
     expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
   });
 
-  it('pagina de a 10 y el vacío filtrado ofrece limpiar los filtros', async () => {
-    const muchos = Array.from({ length: 12 }, (_, i) => ({
+  it('pagina de a 25 y el vacío filtrado ofrece limpiar los filtros', async () => {
+    const muchos = Array.from({ length: 27 }, (_, i) => ({
       ...DEL_DIA[0],
       id: 400 + i,
       personaNombre: `Paciente ${String(i + 1).padStart(2, '0')}`,
@@ -277,10 +277,10 @@ describe('RecepcionDelDiaPage', () => {
     const fixture = await montar({ turnos: muchos });
     const raiz = fixture.nativeElement as HTMLElement;
 
-    expect(raiz.querySelectorAll('tbody tr').length).toBe(10);
-    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(25);
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('27 turnos');
     expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
-      'Mostrando 1–10 de 12',
+      'Mostrando 1–25 de 27',
     );
     (
       Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso')).find((b) =>
@@ -304,7 +304,7 @@ describe('RecepcionDelDiaPage', () => {
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
-    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('27 turnos');
     expect(buscador.value).toBe('');
   });
 
