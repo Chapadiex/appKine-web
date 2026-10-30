@@ -56,6 +56,24 @@ Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE
 | `artifact-design`  | Antes de publicar cualquier artifact de diseño                            |
 | `design`           | Mockups y wireframes multi-artboard antes de implementar una pantalla     |
 
+### Skill del proyecto `impeccable` (v4.8.0, desde el 29/10/2026)
+
+Skill de diseño de [impeccable.style](https://impeccable.style/), instalada en
+`.claude/skills/impeccable/` con `npx impeccable install --providers=claude --scope=project`.
+Antes de diseñar lee `PRODUCT.md` (usuarios, principios, voz) y `DESIGN.md` (tokens y reglas del
+sistema "El Mostrador Ordenado"), los dos en la raíz. Comandos: `/impeccable critique`, `audit`,
+`polish`, `distill`, `layout`, `clarify`, `harden`, `typeset`, `document`, entre otros.
+
+- **Hooks** en `.claude/settings.json`: después de cada `Edit`/`Write` sobre un archivo de UI corre
+  el detector, y al cerrar el turno una pasada completa. Solo se cargan si la sesión se abre en
+  este repo o en un worktree suyo.
+- **El escaneo estático casi no ve Angular** (el CSS de componente no queda enlazado a su
+  plantilla). La evidencia que vale es la renderizada: `live-server` e inyectar `detect.js` en una
+  página con sesión iniciada.
+- El motor (`scripts/bin/`) no se versiona: el lanzador lo baja una vez y verifica su checksum.
+- Excepciones del detector y `telemetry: false` en `.impeccable/config.json`; las críticas quedan
+  en `.impeccable/critique/`.
+
 ### Plugin `playwright` (MCP)
 
 Browser automation para QA y E2E. Herramientas `mcp__plugin_playwright_playwright__*`.

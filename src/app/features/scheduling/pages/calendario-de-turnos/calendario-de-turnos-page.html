@@ -18,7 +18,9 @@
       title="Semana anterior"
       (click)="moverSemana(-1)"
     >
-      <span aria-hidden="true">‹</span><span class="visualmente-oculto">Semana anterior</span>
+      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto"
+        >Semana anterior</span
+      >
     </button>
     <span class="navegador-fecha__etiqueta">{{ rotulo() }}</span>
     <button
@@ -27,7 +29,7 @@
       title="Semana siguiente"
       (click)="moverSemana(1)"
     >
-      <span aria-hidden="true">›</span><span class="visualmente-oculto">Semana siguiente</span>
+      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Semana siguiente</span>
     </button>
     <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
   </div>

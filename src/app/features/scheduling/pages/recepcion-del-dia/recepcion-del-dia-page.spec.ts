@@ -155,7 +155,7 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('America/Argentina/Cordoba');
     // La hora de llegada es la de la recepcion, tambien en la zona de la sede: 12:51Z -> 09:51.
     expect(texto).toContain('09:51');
-    expect(texto).toContain('Todavía no llego');
+    expect(texto).toContain('Todavía no llegó');
     // La espera se cuenta por la recepcion, no por el estado del turno.
     expect(texto).toContain('1 en espera');
     expect(texto).toContain('aguarda ser llamado');
@@ -586,7 +586,7 @@ describe('RecepcionDelDiaPage', () => {
     const texto = textoDe(fixture);
     expect(avisos()[0]?.titulo).toBe('Retiro registrado');
     expect(avisos()[0]?.descripcion).toContain('se retiro sin ser atendido');
-    expect(texto).toContain('RETIRADO');
+    expect(texto).toContain('Se retiró');
     expect(texto).toContain('Motivo del retiro: Se canso de esperar');
     expect(texto).toContain('0 en espera');
     // La llegada vale: no se ofrece otro check-in, ni anular, ni nada sobre la recepcion.

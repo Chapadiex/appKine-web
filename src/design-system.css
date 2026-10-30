@@ -158,6 +158,12 @@
   --foco-grosor: 3px;
   --foco-offset: 2px;
 
+  /* --- Elevacion ---------------------------------------------------------------------- */
+  /* Lo que flota encima del contenido (ayuda "?", menu "⋯", desplegables, avisos): una sola
+     sombra con desplazamiento y desenfoque. Negra, no del azul de la marca: en el tema oscuro un
+     tinte azul sobre fondo azul no se ve. */
+  --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.16);
+
   /* --- Shell (UX-01) ---------------------------------------------------------------- */
   --ancho-barra-lateral: 15.5rem;
   --alto-barra-superior: 3rem;
@@ -1230,6 +1236,48 @@ form > .acciones {
   width: 1%;
   text-align: right;
   white-space: nowrap;
+}
+
+/*
+ * Acciones siempre a la vista (Impeccable, 29/10/2026): en una tabla de mostrador que desborda a lo
+ * ancho -la recepcion a 1024 px perdia 105 px- la ultima columna queda pegada al borde derecho del
+ * desplazamiento, con el fondo de la fila para que el contenido que pasa por debajo no se lea.
+ */
+.tabla--acciones-fijas th:last-child,
+.tabla--acciones-fijas td.tabla__acciones {
+  position: sticky;
+  inset-inline-end: 0;
+  background: var(--color-superficie);
+}
+
+.tabla--acciones-fijas thead th:last-child {
+  z-index: 2;
+  background: var(--color-superficie-atenuada);
+}
+
+.tabla--acciones-fijas tbody tr:hover > td.tabla__acciones,
+.tabla--acciones-fijas .fila--revocada > td.tabla__acciones {
+  background: var(--color-superficie-atenuada);
+}
+
+.tabla--acciones-fijas .fila--seleccionada > td.tabla__acciones {
+  background: var(--color-acento-claro);
+}
+
+/*
+ * Texto de ejemplo de los campos: en varios buscadores es el unico rotulo visible. Sin esta regla
+ * quedaba el gris del navegador, que en el tema oscuro daba 3,8:1 (WCAG 1.4.3 pide 4,5).
+ */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-texto-suave);
+  opacity: 1;
+}
+
+/* Sin palabras sueltas en la ultima linea de un parrafo o una ayuda. */
+p,
+.ayuda {
+  text-wrap: pretty;
 }
 
 /* Una tarjeta dentro de otra no lleva un segundo borde: la separa el espacio y su titulo. */

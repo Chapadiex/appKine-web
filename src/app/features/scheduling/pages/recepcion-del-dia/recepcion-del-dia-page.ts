@@ -1,5 +1,15 @@
 import { Location } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked, input } from '@angular/core';
+import {
+  Component,
+  DOCUMENT,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+  input,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
@@ -26,16 +36,17 @@ import {
   hoyEnZona,
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
-import { textoDeEstado } from '../../models/etiquetas-de-turno';
+import { detalleDeEstado, nombreDeEstado } from '../../models/etiquetas-de-turno';
 import {
   admiteParticular,
   admiteRetiro,
+  detalleDeEstadoDeRecepcion,
   llegadaVigente,
+  nombreDeEstadoDeRecepcion,
   recepcionAbierta,
   recepcionRetirada,
   textoDeModalidad,
   textoDePrepago,
-  textoDeRecepcion,
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -57,6 +68,9 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** La ruta que monta esta pantalla. Se reescribe la fecha sobre ella sin navegar. */
 const RUTA = '/agenda/recepcion';
+
+/** Cada cuanto se relee sola la lista mientras la pestaña esta a la vista. */
+const RELECTURA_MS = 60_000;
 
 /** Los grupos del filtro rapido: el estado de la recepcion, agrupado como lo mira el mostrador. */
 const GRUPOS_DE_RECEPCION: readonly { readonly valor: string; readonly etiqueta: string }[] = [
@@ -219,8 +233,10 @@ export class RecepcionDelDiaPage {
   readonly fecha = input('', { transform: (valor: string | undefined) => valor ?? '' });
 
   protected readonly fechaEnPalabras = fechaEnPalabras;
-  protected readonly textoDeEstado = textoDeEstado;
-  protected readonly textoDeRecepcion = textoDeRecepcion;
+  protected readonly nombreDeEstado = nombreDeEstado;
+  protected readonly detalleDeEstado = detalleDeEstado;
+  protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
+  protected readonly detalleDeEstadoDeRecepcion = detalleDeEstadoDeRecepcion;
   protected readonly textoDeModalidad = textoDeModalidad;
 
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
@@ -294,11 +310,13 @@ export class RecepcionDelDiaPage {
   });
 
   /**
-   * Orden y paginado de la lista completa (UX-14 §1): el servidor no la pagina. Arranca en 10 filas
-   * como toda tabla de AKINE; el mostrador encuentra a quien llega por la busqueda o el estado, y si
-   * quiere ver el dia entero de un vistazo sube a 50 o 100 desde el pie.
+   * Orden y paginado de la lista completa (UX-14 §1): el servidor no la pagina. Arranca en 25 filas
+   * y no en las 10 de toda tabla de AKINE (Impeccable, 29/10/2026): con las filas compactas, un dia
+   * normal entra en una pagina y nadie en espera queda escondido en la segunda. Para el dia entero
+   * de un centro grande, 50 o 100 desde el pie.
    */
   protected readonly tabla = tablaLocal(this.filtrados, {
+    porPagina: 25,
     columnas: {
       hora: (turno) => (turno.inicio ? new Date(turno.inicio) : null),
       paciente: (turno) => turno.personaNombre ?? null,
@@ -306,6 +324,8 @@ export class RecepcionDelDiaPage {
     },
   });
   protected readonly cargando = signal(false);
+  /** Hora de la sede de la ultima lectura buena ("10:42"), o vacia antes de la primera. */
+  protected readonly actualizadaA = signal('');
   /** Error al LEER el dia: va en el lugar de la lista, con su salida (UX-12). */
   protected readonly errorDeCarga = signal<ErrorAgenda | null>(null);
 
@@ -356,6 +376,28 @@ export class RecepcionDelDiaPage {
         this.cargar();
       });
     });
+    this.releerSolaMientrasSeVe();
+  }
+
+  /**
+   * La recepcion es un tablero de varios puestos: otro llama al paciente y este mostrador seguiria
+   * viendo "En espera". Se relee sola al volver a la pestaña y cada {@link RELECTURA_MS} mientras
+   * se ve, sin vaciar la tabla ni mover los filtros. No relee con un panel abierto, un pedido en
+   * vuelo o un error a la vista: pisaria lo que la persona esta haciendo o leyendo.
+   */
+  private releerSolaMientrasSeVe(): void {
+    const documento = inject(DOCUMENT);
+    const alVolver = () => {
+      if (documento.visibilityState === 'visible') {
+        this.cargar(true);
+      }
+    };
+    documento.addEventListener('visibilitychange', alVolver);
+    const reloj = setInterval(alVolver, RELECTURA_MS);
+    inject(DestroyRef).onDestroy(() => {
+      documento.removeEventListener('visibilitychange', alVolver);
+      clearInterval(reloj);
+    });
   }
 
   // -------------------------------------------------------------------------------------
@@ -393,15 +435,31 @@ export class RecepcionDelDiaPage {
     this.prestacion.set('');
   }
 
-  /** Relee el dia. Es tambien la accion de `recargar-dia`. */
-  protected cargar(): void {
+  /**
+   * Relee el dia. Es tambien la accion de `recargar-dia`.
+   *
+   * <p>`enSilencio` es la relectura automatica: no reemplaza la tabla por el cartel de carga y, si
+   * falla, deja la lista que habia en vez de un error que nadie pidio.
+   */
+  protected cargar(enSilencio = false): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null) {
       return;
     }
+    if (
+      enSilencio &&
+      (this.cargando() ||
+        this.panel() !== null ||
+        this.enVuelo() !== null ||
+        this.errorDeCarga() !== null)
+    ) {
+      return;
+    }
 
-    this.cargando.set(true);
-    this.errorDeCarga.set(null);
+    if (!enSilencio) {
+      this.cargando.set(true);
+      this.errorDeCarga.set(null);
+    }
     this.api.turnosDelDia(consultorioId, this.dia()).subscribe({
       next: (agenda) => {
         if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
@@ -409,9 +467,13 @@ export class RecepcionDelDiaPage {
         }
         this.turnos.set(agenda.turnos ?? []);
         this.timezone.set(agenda.timezone ?? '');
+        this.actualizadaA.set(horaEnZona(new Date().toISOString(), agenda.timezone ?? ''));
         this.cargando.set(false);
       },
       error: (error: unknown) => {
+        if (enSilencio) {
+          return;
+        }
         this.cargando.set(false);
         this.errorDeCarga.set(traducirErrorRecepcion(error));
       },

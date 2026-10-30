@@ -33,11 +33,11 @@ import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
  * la Sesion (DP-05, regla maestra 4).
  */
 const TEXTOS_DE_ESTADO: Readonly<Record<string, string>> = {
-  [TurnoEstadoEnum.RESERVADO]: 'Reservado — el lugar esta tomado, falta confirmarlo',
+  [TurnoEstadoEnum.RESERVADO]: 'Reservado — el lugar está tomado, falta confirmarlo',
   [TurnoEstadoEnum.CONFIRMADO]:
-    'Confirmado — la reserva quedo confirmada, no el cobro ni la llegada',
-  [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se libero y volvio a la agenda',
-  [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumio igual',
+    'Confirmado — la reserva quedó confirmada, no el cobro ni la llegada',
+  [TurnoEstadoEnum.CANCELADO]: 'Cancelado — el lugar se liberó y volvió a la agenda',
+  [TurnoEstadoEnum.AUSENTE]: 'Ausente — el paciente no vino y la hora se consumió igual',
   // Solo historia: lo traen eventos anteriores a DP-16. Hoy la espera es de la Recepcion.
   EN_ESPERA: 'En espera (historico) — la llegada se registraba en el turno, antes de la recepción',
 };

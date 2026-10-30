@@ -20,18 +20,24 @@ import {
  * prestacion la registra la Sesion, que es otra pantalla y otra maquina.
  */
 const TEXTOS_DE_RECEPCION: Readonly<Record<RecepcionEstadoEnum, string>> = {
-  [RecepcionEstadoEnum.LLEGO]: 'Llego — falta validar como se atiende',
-  [RecepcionEstadoEnum.VALIDADA]: 'Validada — ya se sabe como se atiende',
+  [RecepcionEstadoEnum.LLEGO]: 'Llegó — falta validar cómo se atiende',
+  [RecepcionEstadoEnum.VALIDADA]: 'Validada — ya se sabe cómo se atiende',
   [RecepcionEstadoEnum.OBSERVADA]:
-    'Observada — la validacion encontro algo; advierte, no impide pasar a espera',
-  [RecepcionEstadoEnum.EN_ESPERA]: 'En espera — llego y aguarda ser llamado',
+    'Observada — la validación encontró algo; advierte, no impide pasar a espera',
+  [RecepcionEstadoEnum.EN_ESPERA]: 'En espera — llegó y aguarda ser llamado',
   [RecepcionEstadoEnum.LLAMADA]:
     'Llamada — lo llamaron desde la sala; la atención es otro registro',
   [RecepcionEstadoEnum.ANULADA]: 'Anulada — el check-in fue un error y la llegada no vale',
-  [RecepcionEstadoEnum.CERRADA]: 'Cerrada — el turno se cancelo con la persona presente',
+  [RecepcionEstadoEnum.CERRADA]: 'Cerrada — el turno se canceló con la persona presente',
   [RecepcionEstadoEnum.RETIRADO]:
-    'Se retiro sin ser atendido — la llegada consta; el turno ya no admite otro check-in',
+    'Se retiró — se fue sin ser atendido; la llegada consta y el turno ya no admite otro check-in',
 };
+
+/** Lo que significa el estado de la recepcion, sin el nombre; vacio si no hay explicacion. */
+export function detalleDeEstadoDeRecepcion(estado: string | undefined): string {
+  const detalle = textoDeRecepcion(estado).split(' — ')[1] ?? '';
+  return detalle.charAt(0).toUpperCase() + detalle.slice(1);
+}
 
 const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeRecepcionTipoEnum, string>> = {
   [EventoDeRecepcionTipoEnum.LLEGADA]: 'Llegada registrada',

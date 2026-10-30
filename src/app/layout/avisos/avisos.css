@@ -30,10 +30,9 @@
   gap: var(--esp-4);
   padding: var(--esp-5) var(--esp-4) var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
-  border-left: var(--borde-acento) solid var(--aviso-color);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
-  box-shadow: 0 8px 24px rgb(16 38 63 / 0.16);
+  box-shadow: var(--sombra-flotante);
   animation: aviso-entra 0.18s ease-out;
 }
 

@@ -74,24 +74,24 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(fila.getByText('Sin recepción')).toBeVisible();
 
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
-    await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
-    await expect(fila.getByText('Todavía no llego')).toHaveCount(0);
+    await expect(fila.getByText('Llegó', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Todavía no llegó')).toHaveCount(0);
 
     // La oferta no declara practica: el servidor deja la recepcion OBSERVADA, que avisa y no
     // bloquea (RN-M13-003). La decision es del servidor; la pantalla no manda el resultado.
     await fila.getByRole('button', { name: 'Validar cobertura' }).click();
-    await expect(fila.getByText('OBSERVADA', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Observada', { exact: true })).toBeVisible();
     await expect(fila.getByText(/Observaci[oó]n: OFERTA_SIN_PRACTICA/)).toBeVisible();
 
     // Desde la validacion observada la transicion siguiente (Validar) sigue a la vista y pasar a
     // espera va en el menu "⋯" de la fila.
     await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
-    await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
+    await expect(fila.getByText('En espera', { exact: true })).toBeVisible();
 
     // En la sala de espera "Llamar" es la transicion siguiente: queda a la vista.
     await fila.getByRole('button', { name: 'Llamar' }).click();
-    await expect(fila.getByText('LLAMADA', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Llamada', { exact: true })).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Llamar' })).toHaveCount(0);
 
     const guardado = await verTurno(api, centro, turno.id);
@@ -107,7 +107,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
   }) => {
     const fila = await abrirLaRecepcion(page, persona);
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
-    await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Llegó', { exact: true })).toBeVisible();
 
     await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Atender como Particular' }).click();
@@ -117,7 +117,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
 
     await expect(fila.getByRole('button', { name: 'Pasar a espera' })).toBeVisible();
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
-    await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
+    await expect(fila.getByText('En espera', { exact: true })).toBeVisible();
 
     const guardado = await verTurno(api, centro, turno.id);
     expect(guardado.recepcion?.estado).toBe('EN_ESPERA');
@@ -136,7 +136,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
   }) => {
     const fila = await abrirLaRecepcion(page, persona);
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
-    await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Llegó', { exact: true })).toBeVisible();
 
     const leido = await api.exigir<{ recepcion: { version: number } }>(
       'GET',
@@ -185,12 +185,12 @@ test.describe('Recepcion del dia contra el backend real', () => {
   }) => {
     const fila = await abrirLaRecepcion(page, persona);
     await fila.getByRole('button', { name: 'Registrar la llegada' }).click();
-    await expect(fila.getByText('LLEGO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Llegó', { exact: true })).toBeVisible();
     // Particular desde la sala (U-21): llega a EN_ESPERA y se ofrece sin anular la llegada.
     await fila.getByRole('button', { name: 'Validar cobertura' }).click();
     await abrirAcciones(fila);
     await fila.getByRole('button', { name: 'Pasar a espera' }).click();
-    await expect(fila.getByText('EN_ESPERA', { exact: true })).toBeVisible();
+    await expect(fila.getByText('En espera', { exact: true })).toBeVisible();
     await abrirAcciones(fila);
     await expect(fila.getByRole('button', { name: 'Atender como Particular' })).toBeVisible();
 
@@ -204,7 +204,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await panel.getByRole('button', { name: 'Registrar el retiro' }).click();
     expect((await retiro).status()).toBe(200);
 
-    await expect(fila.getByText('RETIRADO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Se retiró', { exact: true })).toBeVisible();
     await expect(fila.getByText('Motivo del retiro: Se canso de esperar')).toBeVisible();
     await expect(fila.getByRole('button')).toHaveCount(0);
 
@@ -241,7 +241,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     );
 
     const fila = await abrirLaRecepcion(page, persona);
-    await expect(fila.getByText('CANCELADO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Cancelado', { exact: true })).toBeVisible();
     await expect(fila.getByText('Motivo: Cancelo por telefono a la mañana')).toBeVisible();
     await expect(fila.getByRole('button', { name: 'Registrar la llegada' })).toHaveCount(0);
   });

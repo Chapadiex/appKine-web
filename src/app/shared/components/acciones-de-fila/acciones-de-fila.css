@@ -49,7 +49,7 @@
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+  box-shadow: var(--sombra-flotante);
 }
 
 .acciones-de-fila__panel[hidden] {

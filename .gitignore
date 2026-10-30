@@ -48,3 +48,12 @@ logs/
 
 # --- Copias locales del catalogo de skills (Skill Hub, MCP) ---
 .skill-hub/
+
+# --- Impeccable (skill de diseño) ---
+# El motor es un binario por plataforma: el lanzador lo baja una vez y lo verifica contra
+# .claude/skills/impeccable/scripts/engine-checksums.txt. No se versiona.
+.claude/skills/impeccable/scripts/bin/
+.impeccable/config.local.json
+# Estado del modo live (servidor, sesiones, anotaciones); su config.json sí se versiona.
+.impeccable/live/*
+!.impeccable/live/config.json

@@ -167,7 +167,8 @@ export class ReservaDeTurnoPage {
     if (id === null) {
       return '';
     }
-    return this.profesionales().find((p) => p.membershipId === id)?.nombre ?? `#${id}`;
+    // Un "#6" no le dice nada a quien reserva: si la lista no trae el nombre, se dice eso.
+    return this.profesionales().find((p) => p.membershipId === id)?.nombre || 'Sin nombre cargado';
   });
 
   protected readonly accion = computed<AccionSugerida>(() => this.error()?.accion ?? 'ninguna');
