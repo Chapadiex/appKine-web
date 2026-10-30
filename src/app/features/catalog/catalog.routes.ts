@@ -30,7 +30,7 @@ export const routes: Routes = [
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
     loadComponent: () =>
       import('./pages/solicitudes/solicitudes-page').then((m) => m.SolicitudesPage),
-    title: 'AKINE - Pedidos al catalogo de la plataforma',
+    title: 'AKINE - Pedidos al catálogo de la plataforma',
     // Sin `ancho`: la tabla tiene cuatro columnas y una de ellas es prosa larga -la
     // justificacion-. A 1216px el texto queda en renglones de 200 caracteres, que es
     // exactamente lo que el ancho de lectura existe para evitar.
@@ -48,7 +48,7 @@ export const routes: Routes = [
     path: ':tipo',
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
     loadComponent: () => import('./pages/catalogos/catalogos-page').then((m) => m.CatalogosPage),
-    title: 'AKINE - Catalogo clínico',
+    title: 'AKINE - Catálogo clínico',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

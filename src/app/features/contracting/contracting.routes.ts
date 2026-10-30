@@ -66,7 +66,7 @@ export const routes: Routes = [
       import('./pages/catalogo-de-financiadores/catalogo-de-financiadores-page').then(
         (m) => m.CatalogoDeFinanciadoresPage,
       ),
-    title: 'AKINE - Catalogo de financiadores',
+    title: 'AKINE - Catálogo de financiadores',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

@@ -33,7 +33,7 @@ export const rutasProductos: Routes = [
     canActivate: [contextGuard, permissionGuard(PERMISO_PRODUCTO_READ)],
     loadComponent: () =>
       import('./pages/productos-de-pack/productos-de-pack-page').then((m) => m.ProductosDePackPage),
-    title: 'AKINE - Productos de pack',
+    title: 'AKINE - Productos de pack y abonos',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];

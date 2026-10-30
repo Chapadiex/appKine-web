@@ -121,6 +121,14 @@ describe('BandejaDeSeriesPage', () => {
     const estado = (fixture.nativeElement as HTMLElement).querySelector(
       '#series-estado',
     ) as HTMLSelectElement;
+    // "Canceladas" pedia las vigentes: el filtro no aceptaba CANCELADA y volvia al default.
+    estado.value = 'CANCELADA';
+    estado.dispatchEvent(new Event('change'));
+    const canceladas = esperarListado();
+    expect(canceladas.request.params.get('estado')).toBe('CANCELADA');
+    canceladas.flush(pagina([]));
+    await asentar(fixture);
+
     estado.value = 'TODAS';
     estado.dispatchEvent(new Event('change'));
     const todas = esperarListado();

@@ -48,7 +48,7 @@ export const routes: Routes = [
       import('./pages/catalogo-de-servicios/catalogo-de-servicios-page').then(
         (m) => m.CatalogoDeServiciosPage,
       ),
-    title: 'AKINE - Catalogo de servicios',
+    title: 'AKINE - Catálogo de servicios',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
