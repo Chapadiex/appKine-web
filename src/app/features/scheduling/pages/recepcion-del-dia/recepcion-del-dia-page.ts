@@ -326,6 +326,12 @@ export class RecepcionDelDiaPage {
   protected readonly cargando = signal(false);
   /** Hora de la sede de la ultima lectura buena ("10:42"), o vacia antes de la primera. */
   protected readonly actualizadaA = signal('');
+  /**
+   * Numero de la ultima lectura o escritura sobre la lista. Una relectura en silencio que vuelve
+   * con un numero viejo se descarta: la mesa siguio operando mientras viajaba, y su foto pisaria
+   * la fila que una transicion ya dejo al dia (y con ella su `expectedVersion`).
+   */
+  private lectura = 0;
   /** Error al LEER el dia: va en el lugar de la lista, con su salida (UX-12). */
   protected readonly errorDeCarga = signal<ErrorAgenda | null>(null);
 
@@ -460,8 +466,12 @@ export class RecepcionDelDiaPage {
       this.cargando.set(true);
       this.errorDeCarga.set(null);
     }
+    const esta = ++this.lectura;
     this.api.turnosDelDia(consultorioId, this.dia()).subscribe({
       next: (agenda) => {
+        if (enSilencio && esta !== this.lectura) {
+          return;
+        }
         if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
           return;
         }
@@ -887,6 +897,7 @@ export class RecepcionDelDiaPage {
       return;
     }
     const desdeElPanel = this.panel() !== null;
+    this.lectura++;
     this.enVuelo.set(turnoId);
     this.errorDelPanel.set(null);
     peticion(consultorioId, turnoId).subscribe({
@@ -979,6 +990,7 @@ export class RecepcionDelDiaPage {
   }
 
   private fusionar(turnoId: number, cambios: Partial<TurnoDelDia>): void {
+    this.lectura++;
     this.turnos.update((filas) =>
       filas.map((fila) => (fila.id === turnoId ? { ...fila, ...cambios } : fila)),
     );

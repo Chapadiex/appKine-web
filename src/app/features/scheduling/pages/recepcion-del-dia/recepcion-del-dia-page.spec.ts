@@ -469,6 +469,26 @@ describe('RecepcionDelDiaPage', () => {
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
   });
 
+  it('la relectura en silencio que vuelve después de una acción no pisa la fila', async () => {
+    const fixture = await montar();
+
+    // Volver a la pestaña dispara la relectura; antes de que responda, la mesa llama.
+    document.dispatchEvent(new Event('visibilitychange'));
+    const relectura = httpMock.expectOne(esDelDia());
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Llamar');
+    httpMock
+      .expectOne(recepcion(302, 'llamado'))
+      .flush({ ...DEL_DIA[1].recepcion, estado: 'LLAMADA', version: 5 });
+    await asentar(fixture);
+
+    // La foto vieja todavía trae al paciente en espera: se descarta.
+    relectura.flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('0 en espera');
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
+  });
+
   it('el error de una acción de la fila es un aviso global con Reintentar', async () => {
     const fixture = await montar();
 
