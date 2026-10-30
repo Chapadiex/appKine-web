@@ -51,7 +51,7 @@ export const routes: Routes = [
       import('./pages/padron-de-personas/padron-de-personas-page').then(
         (m) => m.PadronDePersonasPage,
       ),
-    title: 'AKINE - Padron de personas',
+    title: 'AKINE - Padrón de personas',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 
@@ -131,7 +131,7 @@ export const routes: Routes = [
       import('./pages/ordenes-y-autorizaciones/ordenes-y-autorizaciones-page').then(
         (m) => m.OrdenesYAutorizacionesPage,
       ),
-    title: 'AKINE - Ordenes y autorizaciones',
+    title: 'AKINE - Órdenes y autorizaciones',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
 ];

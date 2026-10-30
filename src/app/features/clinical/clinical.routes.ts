@@ -69,7 +69,7 @@ export const routes: Routes = [
       import('./pages/politica-de-enmienda/politica-de-enmienda-page').then(
         (m) => m.PoliticaDeEnmiendaPage,
       ),
-    title: 'AKINE - Ventana de enmienda',
+    title: 'AKINE - Política de enmienda',
   },
   {
     path: 'turnos/:turnoId',

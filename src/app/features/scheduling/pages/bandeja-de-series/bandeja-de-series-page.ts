@@ -362,7 +362,11 @@ export class BandejaDeSeriesPage {
 }
 
 function estadoDesdeUrl(valor: string): FiltroDeEstado {
-  if (valor === TODAS || valor === SerieDeTurnosResumenEstadoEnum.FINALIZADA) {
+  if (
+    valor === TODAS ||
+    valor === SerieDeTurnosResumenEstadoEnum.FINALIZADA ||
+    valor === SerieDeTurnosResumenEstadoEnum.CANCELADA
+  ) {
     return valor;
   }
   return SerieDeTurnosResumenEstadoEnum.VIGENTE;
