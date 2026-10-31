@@ -258,7 +258,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     centro,
   }) => {
     const fila = await abrirLaRecepcion(page, persona);
-    await expect(fila.getByText('RESERVADO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Reservado', { exact: true })).toBeVisible();
     const direccion = page.url();
 
     await abrirAcciones(fila);
@@ -268,7 +268,7 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(detalle.locator('.estado-turno')).toContainText('Confirmado');
     await detalle.getByRole('button', { name: 'Cerrar el panel' }).click();
 
-    await expect(fila.getByText('CONFIRMADO', { exact: true })).toBeVisible();
+    await expect(fila.getByText('Confirmado', { exact: true })).toBeVisible();
     expect(page.url()).toBe(direccion);
     await expect(page.getByLabel('Paciente o documento')).toHaveValue(persona.apellido);
     await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 turno');
