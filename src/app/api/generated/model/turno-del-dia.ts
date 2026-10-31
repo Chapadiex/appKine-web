@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { OperativoDeTurno } from './operativo-de-turno';
 import { PrepagoDeRecepcion } from './prepago-de-recepcion';
 import { Recepcion } from './recepcion';
 
@@ -50,6 +51,10 @@ export interface TurnoDelDia {
     motivoCancelacion?: string;
     ofertaId?: number;
     ofertaNombre?: string;
+    /**
+     * Para que es el turno y en que anda, combinando reserva, recepcion y atencion.
+     */
+    operativo?: OperativoDeTurno;
     personaId?: number;
     /**
      * Apellido y nombre, ya compuestos

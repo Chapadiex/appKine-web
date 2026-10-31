@@ -8,6 +8,9 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { FILAS_POR_PAGINA_INICIAL } from '../../../../shared/components/paginacion/paginacion';
+import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { BandejaDeSeriesPage } from './bandeja-de-series-page';
 
 const CONSULTORIO = 3;
@@ -65,7 +68,11 @@ describe('BandejaDeSeriesPage', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // "Nuevo turno" lo ofrece una directiva de permisos, que los pide al dibujarse.
+    httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((r) => r.flush({ permissions: [] }));
+    httpMock.verify();
+  });
 
   it(
     'abre con las vigentes, resuelve el profesional por oferta y enlaza a la serie',
@@ -217,6 +224,21 @@ describe('BandejaDeSeriesPage', () => {
 
     clickear(fixture, 'Ver las de todos los pacientes');
     expect(esperarListado().request.params.has('personaId')).toBe(false);
+  });
+
+  it('"Nuevo turno" abre el flujo y lo que programa aparece en la lista', async () => {
+    const fixture = await montar();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_MANAGE] });
+    esperarListado().flush(pagina([]));
+    await asentar(fixture);
+
+    clickear(fixture, 'Nuevo turno');
+    const flujo = TestBed.inject(FlujoDeTurnosStore);
+    expect(flujo.solicitud()).toEqual({ tipo: 'nuevo', contexto: { origen: 'AGENDA' } });
+
+    flujo.notificarCambio();
+    fixture.detectChanges();
+    esperarListado().flush(pagina([]));
   });
 
   it('si falla la lectura lo dice y permite reintentar', async () => {

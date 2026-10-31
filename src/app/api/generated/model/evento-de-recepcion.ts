@@ -15,6 +15,10 @@
 export interface EventoDeRecepcion { 
     actorCuentaId?: number;
     /**
+     * Nombre de esa cuenta. Ausente si lo hizo el sistema o la cuenta ya no resuelve.
+     */
+    actorNombre?: string;
+    /**
      * Ausente solo en la LLEGADA.
      */
     estadoAnterior?: string;

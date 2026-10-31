@@ -10,6 +10,9 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { VisitaClinica } from '../../services/visita-clinica';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 
 const CASO = '/api/v1/casos-clinicos/9';
 const HEADER = 'X-Justificacion-Acceso';
@@ -58,7 +61,11 @@ describe('CasoDetallePage', () => {
     TestBed.inject(VisitaClinica).iniciar(12);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // "Nuevo turno" lo ofrece una directiva de permisos, que los pide al dibujarse.
+    httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((r) => r.flush({ permissions: [] }));
+    httpMock.verify();
+  });
 
   it('sin relación pide el motivo y lo manda en la relectura', async () => {
     const fixture = await montar();
@@ -142,6 +149,39 @@ describe('CasoDetallePage', () => {
     expect(botones(fixture)).toContain('Releer el caso');
   });
 
+  it('"Nuevo turno" abre el flujo con la persona, el caso y la oferta de esta sede', async () => {
+    const fixture = await cargado();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_MANAGE] });
+    await estabilizar(fixture);
+
+    clic(fixture, 'Nuevo turno');
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: { origen: 'CASO', personaId: 12, casoId: 9, ofertaId: 14 },
+    });
+  });
+
+  it('la oferta de otra sede no viaja: el caso es de la organización y la oferta, de una sede', async () => {
+    const fixture = await cargado({ ...caso(3), ofertaConsultorioId: 99 });
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_MANAGE] });
+    await estabilizar(fixture);
+
+    clic(fixture, 'Nuevo turno');
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: { origen: 'CASO', personaId: 12, casoId: 9, ofertaId: undefined },
+    });
+  });
+
+  it('un caso cerrado no ofrece dar turnos', async () => {
+    const fixture = await cargado({ ...caso(3), estado: 'CERRADO' });
+
+    httpMock.expectNone(RUTA_PERMISOS_EFECTIVOS);
+    expect(botones(fixture)).not.toContain('Nuevo turno');
+  });
+
   it(
     'cargado no tiene violaciones de accesibilidad',
     async () => {
@@ -158,9 +198,9 @@ describe('CasoDetallePage', () => {
     return fixture;
   }
 
-  async function cargado(): Promise<ComponentFixture<CasoDetallePage>> {
+  async function cargado(leido: object = caso(3)): Promise<ComponentFixture<CasoDetallePage>> {
     const fixture = await montar();
-    httpMock.expectOne(CASO).flush(caso(3));
+    httpMock.expectOne(CASO).flush(leido);
     httpMock
       .expectOne(`${CASO}/eventos`)
       .flush([{ id: 1, tipo: 'APERTURA', ocurrioEn: '2026-10-01T12:00:00Z' }]);

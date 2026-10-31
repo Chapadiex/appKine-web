@@ -7,6 +7,7 @@ import {
 } from '../../../api/generated/model/caso-administrativo-response';
 import { CerrarSesion } from '../../../api/generated/model/cerrar-sesion';
 import { ComparacionDeMediciones } from '../../../api/generated/model/comparacion-de-mediciones';
+import { ContextoDeProximaSesion } from '../../../api/generated/model/contexto-de-proxima-sesion';
 import { DefinicionesDeMedicionService } from '../../../api/generated/api/definiciones-de-medicion.service';
 import { EnmendarSesion } from '../../../api/generated/model/enmendar-sesion';
 import { EspacioResponse } from '../../../api/generated/model/espacio-response';
@@ -54,6 +55,10 @@ export interface CasosDelTurno {
   readonly ofertaId?: number;
   /** Paciente del turno: con el se enlaza a su historia para abrir un caso. */
   readonly personaId?: number;
+  /** Atencion que el turno ya tiene: no hay nada que iniciar ni que preguntar. */
+  readonly sesionId?: number;
+  /** Caso para el que se dio el turno: la atencion hereda ese y no se pregunta. */
+  readonly casoId?: number;
   /** Casos ACTIVOS de la historia del paciente. Vacio si no tiene historia o ningun caso vivo. */
   readonly casos: readonly CasoAdministrativoResponse[];
 }
@@ -125,6 +130,8 @@ export class ClinicalApi {
             map((datos) => ({
               ofertaId: turno.ofertaId,
               personaId: turno.personaId,
+              sesionId: turno.operativo?.sesionId,
+              casoId: turno.operativo?.casoId,
               casos: (datos.casos ?? []).filter(
                 (caso) => caso.estado === CasoAdministrativoResponseEstadoEnum.ACTIVO,
               ),
@@ -143,6 +150,14 @@ export class ClinicalApi {
    */
   ver(consultorioId: number, sesionId: number): Observable<Sesion> {
     return this.sesiones.verSesion({ consultorioId, sesionId });
+  }
+
+  /** Paciente, caso, plan, prestacion y profesional de la atencion. Nada clinico. */
+  contextoDeProximaSesion(
+    consultorioId: number,
+    sesionId: number,
+  ): Observable<ContextoDeProximaSesion> {
+    return this.sesiones.contextoDeProximaSesion({ consultorioId, sesionId });
   }
 
   /**

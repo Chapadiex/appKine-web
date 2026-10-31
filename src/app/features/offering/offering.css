@@ -176,6 +176,37 @@
   margin: var(--esp-2) 0 0 var(--esp-8);
 }
 
+/* El mismo control que `.campo input`, en una celda: la fila no lleva `.campo` porque su etiqueta es
+   la cabecera de la columna. */
+.duracion-propia {
+  width: 5.5rem;
+  padding: var(--esp-4) 0.625rem;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.duracion-propia:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.duracion-propia:disabled {
+  background: var(--color-superficie-atenuada);
+  cursor: not-allowed;
+}
+
+.duracion-propia[aria-invalid='true'] {
+  border-color: var(--color-peligro);
+  border-width: var(--borde-medio);
+}
+
 .pie-de-tarjeta {
   display: flex;
   flex-wrap: wrap;

@@ -1,0 +1,453 @@
+<app-panel-lateral
+  titulo="Nuevo turno"
+  [subtitulo]="persona() ? persona()!.apellido + ', ' + persona()!.nombre : null"
+  ancho="amplio"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="flujo">
+    @if (rechazo(); as fallo) {
+      <app-alerta
+        [tipo]="conflictoDeLugar() ? 'advertencia' : 'error'"
+        [titulo]="
+          fallo.causa === 'slot-no-disponible'
+            ? 'Ese horario ya no está disponible'
+            : conflictoDeLugar()
+              ? 'Este horario acaba de ser reservado'
+              : 'No pudimos crear el turno'
+        "
+      >
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.causa === 'persona-sin-perfil-paciente') {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="activarPerfil()">
+              Activar como paciente
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    <!-- Paciente: no se pregunta si ya se sabe. -->
+    @if (persona(); as elegida) {
+      <div class="flujo__persona-elegida">
+        <p class="flujo__dato">
+          <span class="flujo__dato-etiqueta">Paciente</span>
+          {{ elegida.apellido }}, {{ elegida.nombre }}
+          @if (elegida.numeroDocumento) {
+            <span class="ayuda">· {{ elegida.tipoDocumento }} {{ elegida.numeroDocumento }}</span>
+          }
+        </p>
+        @if (contexto().personaId === undefined) {
+          <button type="button" class="boton-texto" (click)="cambiarPersona()">Cambiar</button>
+        }
+      </div>
+      @if (!elegida.esPaciente) {
+        <app-alerta tipo="advertencia" titulo="Esta persona todavía no es paciente">
+          <p>Para darle un turno hay que activarla como paciente.</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="activarPerfil()">
+              Activar como paciente
+            </button>
+          </p>
+        </app-alerta>
+      }
+    } @else if (leyendoPersona()) {
+      <p class="estado estado--cargando">Leyendo el paciente…</p>
+    } @else {
+      <app-buscador-de-paciente (elegida)="elegirPersona($event)" />
+    }
+
+    <!-- Caso y plan: con una sola opcion compatible ya viene elegida. Una primera consulta no tiene. -->
+    @if (opcionesDeContexto().length > 0) {
+      <div class="campo">
+        <label for="flujo-contexto">Caso / Plan</label>
+        <select
+          id="flujo-contexto"
+          [value]="contextoClinico()"
+          (change)="elegirContextoClinico($any($event.target).value)"
+        >
+          <option value="">Sin caso ni plan (primera consulta o turno suelto)</option>
+          @for (opcion of opcionesDeContexto(); track opcion.valor) {
+            <option [value]="opcion.valor" [selected]="opcion.valor === contextoClinico()">
+              {{ opcion.etiqueta }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="flujo__campos">
+      <!-- Prestacion: si el plan define una sola, es un dato y no una pregunta. -->
+      @if (ofertaFija() && ofertaElegida(); as oferta) {
+        <p class="flujo__dato campo--mitad">
+          <span class="flujo__dato-etiqueta">Prestación</span>
+          {{ oferta.nombreComercial }} · {{ minutosDe(oferta) }} min
+        </p>
+      } @else {
+        <div class="campo campo--mitad">
+          <label for="flujo-oferta">Prestación</label>
+          <select
+            id="flujo-oferta"
+            [value]="ofertaId() ?? ''"
+            (change)="elegirOferta($any($event.target).value)"
+          >
+            <option value="">Elegí una prestación</option>
+            @for (oferta of ofertasPosibles(); track oferta.id) {
+              <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+                {{ oferta.nombreComercial }} · {{ minutosDe(oferta) }} min
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      <!-- Profesional: de la celda de agenda viene dado. -->
+      @if (ofertaId() !== null && requiereProfesional()) {
+        @if (profesionalFijo()) {
+          <p class="flujo__dato campo--mitad">
+            <span class="flujo__dato-etiqueta">Profesional</span>
+            {{ nombreDelProfesional() }}
+          </p>
+        } @else if (!conHorarioDelContexto()) {
+          <div class="campo campo--mitad">
+            <label for="flujo-profesional">Profesional</label>
+            <select
+              id="flujo-profesional"
+              [value]="profesionalId() ?? ''"
+              (change)="elegirProfesional($any($event.target).value)"
+            >
+              <option value="">Cualquier profesional</option>
+              @for (profesional of profesionales(); track profesional.id) {
+                <option [value]="profesional.id" [selected]="profesional.id === profesionalId()">
+                  {{ profesional.nombre }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+      }
+    </div>
+
+    @if (sesionesDeLaPrestacion(); as sesiones) {
+      <p class="flujo__contadores">
+        <span
+          >Planificadas: <b>{{ sesiones.planificadas }}</b></span
+        >
+        <span
+          >Realizadas: <b>{{ sesiones.realizadas }}</b></span
+        >
+        <span
+          >Programadas: <b>{{ sesiones.programadas }}</b></span
+        >
+        <span
+          >Pendientes: <b>{{ sesiones.pendientes }}</b></span
+        >
+      </p>
+    }
+    @if (planAgotado()) {
+      <app-alerta
+        tipo="advertencia"
+        titulo="No se pueden programar más turnos para esta prestación"
+      >
+        <p>
+          El plan ya tiene todas sus sesiones realizadas o programadas. Elegí otro plan o modificá
+          este.
+        </p>
+      </app-alerta>
+    }
+
+    <!-- El horario: el del contexto se valida; si no hay, se ofrecen los proximos. -->
+    @if (ofertaId() !== null && !planAgotado()) {
+      @if (conHorarioDelContexto()) {
+        @if (validando()) {
+          <p class="estado estado--cargando">Consultando disponibilidad…</p>
+        }
+        @if (validacion(); as resultado) {
+          @if (resultado.estado === 'NO_DISPONIBLE') {
+            <app-alerta
+              tipo="advertencia"
+              [titulo]="resultado.motivo || 'Ese horario no se puede reservar'"
+            >
+              @if (resultado.conflictoInicio) {
+                <p>
+                  Se cruza con un turno de {{ hora(resultado.conflictoInicio) }} a
+                  {{ hora(resultado.conflictoFin) }}.
+                </p>
+              }
+              <ng-container *ngTemplateOutlet="salidas" />
+            </app-alerta>
+          }
+          @if (
+            resultado.estado !== 'NO_DISPONIBLE' &&
+            !profesionalFijo() &&
+            requiereProfesional() &&
+            (resultado.profesionales?.length ?? 0) > 1
+          ) {
+            <div class="campo">
+              <label for="flujo-profesional-libre">Profesional</label>
+              <select
+                id="flujo-profesional-libre"
+                [value]="horario()?.profesionalId ?? ''"
+                (change)="elegirProfesionalLibre($any($event.target).value)"
+              >
+                <option value="">Elegí quién atiende</option>
+                @for (profesional of resultado.profesionales; track profesional.id) {
+                  <option [value]="profesional.id">{{ profesional.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+        }
+      } @else {
+        <section aria-labelledby="flujo-horarios-titulo" class="flujo">
+          <div class="flujo__fila flujo__fila--entre">
+            <h3 id="flujo-horarios-titulo" class="flujo__dato">Próximos horarios disponibles</h3>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="horarios().length === 0"
+              (click)="elegirPrimero()"
+            >
+              Primer disponible
+            </button>
+          </div>
+          <div class="flujo__filtros">
+            <div class="campo">
+              <label for="flujo-desde">Desde</label>
+              <input
+                id="flujo-desde"
+                type="date"
+                [min]="hoy()"
+                [value]="desde()"
+                (change)="filtrarDesde($any($event.target).value)"
+              />
+            </div>
+            <div class="campo">
+              <label for="flujo-franja">Franja</label>
+              <select
+                id="flujo-franja"
+                [value]="franja()"
+                (change)="filtrarFranja($any($event.target).value)"
+              >
+                <option value="">Todo el día</option>
+                <option value="manana">Mañana</option>
+                <option value="tarde">Tarde</option>
+              </select>
+            </div>
+          </div>
+
+          @if (buscando()) {
+            <p class="estado estado--cargando">Buscando horarios…</p>
+          } @else if (errorDeBusqueda(); as fallo) {
+            <app-alerta tipo="error" titulo="No pudimos buscar horarios">
+              <p>{{ fallo.mensaje }}</p>
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="buscarHorarios()">
+                  Reintentar
+                </button>
+              </p>
+            </app-alerta>
+          } @else if (horarios().length === 0) {
+            <div class="estado estado--vacio">
+              <p>No encontramos disponibilidad con estos criterios.</p>
+              @if (motivosDeBusqueda(); as motivo) {
+                <p class="ayuda">{{ motivo }}</p>
+              }
+              <ng-container *ngTemplateOutlet="salidas" />
+            </div>
+          } @else {
+            <app-lista-de-horarios
+              [horarios]="horarios()"
+              [timezone]="timezone()"
+              [elegido]="horario()"
+              (elegir)="elegirHorario($event)"
+            />
+            <div class="flujo__fila">
+              @if (truncado()) {
+                <button type="button" class="boton-texto" (click)="verMas()">
+                  Ver más horarios
+                </button>
+              }
+              <button type="button" class="boton-texto" (click)="verAgendaCompleta()">
+                Ver agenda completa
+              </button>
+              <button type="button" class="boton-texto" (click)="irAProgramarVarias()">
+                Programar varias sesiones
+              </button>
+            </div>
+          }
+        </section>
+      }
+    }
+
+    <!-- Lo que se va a reservar: datos, no inputs deshabilitados. -->
+    @if (horario() && ofertaId() !== null && validacion()?.estado !== 'NO_DISPONIBLE') {
+      <div class="flujo__resumen" aria-live="polite">
+        <span class="flujo__resumen-titulo">{{ rotuloDelHorario() }}</span>
+        @if (nombreDelProfesional(); as profesional) {
+          <span>{{ profesional }}</span>
+        }
+        @if (ofertaElegida()?.requiereEspacio) {
+          @if (!cambiandoEspacio()) {
+            <span class="flujo__fila">
+              {{ rotuloDelEspacio() || 'Sin box libre a la vista' }}
+              @if (espacioId() === null && rotuloDelEspacio()) {
+                <span class="ayuda">Asignado automáticamente</span>
+              }
+              @if ((validacion()?.espaciosLibres?.length ?? 0) > 1) {
+                <button type="button" class="boton-texto" (click)="cambiandoEspacio.set(true)">
+                  Cambiar
+                </button>
+              }
+            </span>
+          } @else {
+            <span class="campo">
+              <label for="flujo-box">Box</label>
+              <select
+                id="flujo-box"
+                [value]="espacioId() ?? ''"
+                (change)="elegirEspacio($any($event.target).value)"
+              >
+                <option value="">Asignar automáticamente</option>
+                @for (espacio of validacion()?.espaciosLibres; track espacio.id) {
+                  <option [value]="espacio.id" [selected]="espacio.id === espacioId()">
+                    {{ espacio.nombre }}
+                  </option>
+                }
+              </select>
+            </span>
+          }
+        }
+        @for (aviso of validacion()?.avisos; track aviso) {
+          <span class="ayuda">{{ aviso }}</span>
+        }
+      </div>
+
+      @if (coberturas().length > 0) {
+        <details>
+          <summary>Más opciones</summary>
+          <div class="campo">
+            <label for="flujo-cobertura">Cobertura con la que se piensa atender (opcional)</label>
+            <select
+              id="flujo-cobertura"
+              [value]="coberturaId() ?? ''"
+              (change)="elegirCobertura($any($event.target).value)"
+            >
+              <option value="">No elegir ahora</option>
+              @for (cobertura of coberturas(); track cobertura.id) {
+                <option [value]="cobertura.id">{{ rotuloDeCobertura(cobertura) }}</option>
+              }
+            </select>
+          </div>
+        </details>
+      }
+    }
+
+    <!-- Conflicto al confirmar: alternativas reales, y las salidas que quedan. -->
+    @if (conflictoDeLugar() && !conHorarioDelContexto()) {
+      <ng-container *ngTemplateOutlet="salidas" />
+    }
+
+    @if (sobreturnoAbierto()) {
+      <section class="flujo__resumen" aria-labelledby="flujo-sobreturno-titulo">
+        <h3 id="flujo-sobreturno-titulo" class="flujo__dato">Crear sobreturno</h3>
+        @if (ocupante(); as paciente) {
+          <p class="flujo__dato">
+            El profesional ya tiene un turno en ese horario, con {{ paciente }}.
+          </p>
+        } @else {
+          <p class="flujo__dato">Ese horario ya está ocupado.</p>
+        }
+        <div class="campo">
+          <label for="flujo-sobreturno-motivo">Motivo del sobreturno</label>
+          <textarea
+            id="flujo-sobreturno-motivo"
+            rows="2"
+            maxlength="300"
+            [value]="sobreturnoMotivo()"
+            (input)="sobreturnoMotivo.set($any($event.target).value)"
+          ></textarea>
+          <p class="ayuda ayuda--fija">Se ve en la agenda: no escribas información clínica.</p>
+          @if (faltaMotivoDeSobreturno()) {
+            <p class="estado estado--error" role="alert">
+              El motivo es obligatorio: queda registrado.
+            </p>
+          }
+        </div>
+        <div class="acciones">
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="sobreturnoAbierto.set(false)"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            class="boton"
+            [disabled]="enviando()"
+            (click)="confirmarSobreturno()"
+          >
+            Crear sobreturno
+          </button>
+        </div>
+      </section>
+    }
+
+    <div class="acciones acciones--pie">
+      @if (faltante() !== '') {
+        <p id="flujo-faltante" class="ayuda flujo__faltante">{{ faltante() }}</p>
+      }
+      <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="enviando() || faltante() !== '' || sobreturnoAbierto()"
+        [attr.aria-describedby]="faltante() !== '' ? 'flujo-faltante' : null"
+        (click)="confirmar()"
+      >
+        {{ enviando() ? 'Reservando…' : 'Confirmar turno' }}
+      </button>
+    </div>
+  </div>
+</app-panel-lateral>
+
+<ng-template #salidas>
+  @if (alternativas().length > 0) {
+    <p class="flujo__dato"><b>Opciones disponibles</b></p>
+    <app-lista-de-horarios
+      [horarios]="alternativas()"
+      [timezone]="timezone()"
+      (elegir)="elegirHorario($event)"
+    />
+  }
+  <p class="alerta__acciones flujo__fila">
+    @if (!conHorarioDelContexto() && (desde() !== '' || franja() !== '')) {
+      <button type="button" class="boton boton--secundario" (click)="ampliarBusqueda()">
+        Ampliar búsqueda
+      </button>
+    }
+    @if (!conHorarioDelContexto() && profesionalId() !== null && rechazo()?.recurso !== 'espacio') {
+      <button type="button" class="boton boton--secundario" (click)="verOtrosProfesionales()">
+        Ver otros profesionales
+      </button>
+    }
+    @if (persona()) {
+      <button type="button" class="boton boton--secundario" (click)="irALaListaDeEspera()">
+        Agregar a lista de espera
+      </button>
+    }
+    @if (horario() && persona() && !sobreturnoAbierto()) {
+      <button
+        *akinePermiso="PERMISO_TURNO_SOBRETURNO"
+        type="button"
+        class="boton boton--secundario"
+        (click)="abrirSobreturno()"
+      >
+        Crear sobreturno
+      </button>
+    }
+  </p>
+</ng-template>

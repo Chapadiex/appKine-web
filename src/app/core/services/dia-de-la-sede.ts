@@ -87,6 +87,9 @@ export class DiaDeLaSede {
   /** Zona IANA de la sede activa, o vacio mientras no se conozca. */
   readonly zona: Signal<string> = computed(() => this.vigente()?.zona ?? '');
 
+  /** `true` cuando la carga termino, con dato o sin el: desde ahi {@link zona} no va a cambiar. */
+  readonly resuelta: Signal<boolean> = computed(() => this.vigente() !== null);
+
   /** Hoy en la zona de la sede, `YYYY-MM-DD`. Sin zona conocida, el dia del navegador. */
   hoy(ahora: Date = new Date()): string {
     return hoyEnZona(this.zona(), ahora);

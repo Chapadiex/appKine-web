@@ -9,7 +9,10 @@ import {
   SerieDeTurnosResumen,
   SerieDeTurnosResumenEstadoEnum,
 } from '../../../../api/generated/model/serie-de-turnos-resumen';
+import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import {
@@ -94,6 +97,7 @@ interface PersonaFiltrada {
     Icono,
     RouterLink,
     Paginacion,
+    PermisoDirective,
     Pestanas,
     Alerta,
     EstadoVacio,
@@ -110,12 +114,14 @@ export class BandejaDeSeriesPage {
   private readonly agenda = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly location = inject(Location);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   /** De la query. Vacio es `VIGENTE`: lo que el mostrador mira casi siempre. */
   readonly estado = input<string>('');
   /** De la query. */
   readonly personaId = input<string>('');
 
+  protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly Estado = SerieDeTurnosResumenEstadoEnum;
   protected readonly TODAS = TODAS;
   protected readonly fechaEnPalabras = fechaEnPalabras;
@@ -194,6 +200,21 @@ export class BandejaDeSeriesPage {
         this.cargar();
       });
     });
+
+    // El flujo es un panel sobre esta pantalla: lo que programa tiene que aparecer en la lista.
+    let primera = true;
+    effect(() => {
+      this.flujo.cambios();
+      if (primera) {
+        primera = false;
+        return;
+      }
+      untracked(() => this.cargar());
+    });
+  }
+
+  protected nuevoTurno(): void {
+    this.flujo.nuevoTurno({ origen: 'AGENDA' });
   }
 
   // -------------------------------------------------------------------------------------

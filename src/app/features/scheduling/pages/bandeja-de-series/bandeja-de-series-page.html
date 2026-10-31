@@ -5,17 +5,17 @@
       vigente mientras le quede algún turno pendiente; cada turno sigue siendo una reserva propia.
     </p>
     <p>
-      Una serie se reserva desde la agenda: elegís un horario y, en la reserva, «Reservar una serie
-      semanal desde este horario».
+      Una serie se programa desde un plan, con «Programar sesiones restantes», o desde «Nuevo
+      turno», con «Programar varias sesiones».
     </p>
   </app-ayuda>
 
-  <!-- "Nuevo turno" solo navega: la reserva sigue naciendo de un horario libre de la agenda. -->
+  <!-- "Nuevo turno" abre el flujo unico sobre esta pantalla. -->
   <div cabeceraAcciones>
-    <a class="boton" routerLink="/agenda">
+    <button type="button" class="boton" *akinePermiso="permisoTurnos" (click)="nuevoTurno()">
       <app-icono nombre="agregar" />
       Nuevo turno
-    </a>
+    </button>
   </div>
 
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
@@ -101,9 +101,16 @@
     @if (filas().length === 0 && !hayFiltros()) {
       <app-estado-vacio
         titulo="No hay series vigentes"
-        texto="Una serie se reserva desde la agenda: elegís un horario y «Reservar una serie semanal»."
+        texto="Una serie se programa desde un plan, con «Programar sesiones restantes», o desde «Nuevo turno», con «Programar varias sesiones»."
       >
-        <a class="boton boton--secundario" routerLink="/agenda">Buscar un horario en la agenda</a>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          *akinePermiso="permisoTurnos"
+          (click)="nuevoTurno()"
+        >
+          Nuevo turno
+        </button>
       </app-estado-vacio>
     } @else if (filas().length === 0) {
       <app-estado-vacio

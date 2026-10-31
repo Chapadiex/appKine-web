@@ -1,0 +1,204 @@
+<app-panel-lateral titulo="Bloquear agenda" ancho="amplio" (cerrar)="cerrar.emit()">
+  <div class="flujo">
+    @if (rechazo(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos bloquear la agenda">
+        <p>{{ fallo.mensaje }}</p>
+      </app-alerta>
+    }
+
+    @if (impacto(); as resultado) {
+      <!-- Los turnos afectados: nada se guardo todavia, y la decision es de quien mira. -->
+      <section
+        id="bloqueo-impacto"
+        class="flujo"
+        tabindex="-1"
+        [attr.aria-label]="tituloDelImpacto()"
+      >
+        <app-alerta tipo="advertencia" [titulo]="tituloDelImpacto()">
+          <p>
+            Todavía no se guardó nada. Si lo creás igualmente, esos turnos no se cancelan: siguen
+            reservados, fuera de la disponibilidad, hasta que los reprogrames o los canceles.
+          </p>
+        </app-alerta>
+
+        <div class="flujo__resumen">
+          <span class="flujo__resumen-titulo">{{ rotuloDelAlcance() }}</span>
+          <span>{{ rotuloDelPeriodo() }} · {{ rotuloDelHorario() }}</span>
+          <span>{{ rotuloDelMotivo() }}</span>
+        </div>
+
+        @if ((resultado.turnos?.length ?? 0) > 0) {
+          <ul class="flujo__historial" aria-label="Turnos afectados">
+            @for (turno of resultado.turnos; track turno.turnoId ?? $index) {
+              <li class="flujo__fila flujo__fila--entre">
+                <span>
+                  {{ rotuloDelTurno(turno.inicio, turno.fin) }}
+                  @if (profesionalDelTurno(turno.membershipId); as profesional) {
+                    <span class="flujo__historial-cuando">{{ profesional }}</span>
+                  }
+                </span>
+                @if (turno.turnoId; as turnoId) {
+                  <button type="button" class="boton-texto" (click)="verTurno(turnoId)">
+                    Ver turno<span class="visualmente-oculto">
+                      del {{ rotuloDelTurno(turno.inicio, turno.fin) }}</span
+                    >
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (listaRecortada() && (resultado.turnos?.length ?? 0) > 0) {
+          <p class="ayuda">Se muestran los primeros {{ resultado.turnos?.length }}.</p>
+        }
+        @if (revisadoHasta(); as hasta) {
+          <p class="ayuda">
+            Se revisó hasta el {{ hasta }}: después de esa fecha no se buscaron turnos.
+          </p>
+        }
+
+        <div class="acciones acciones--pie">
+          <button
+            type="button"
+            class="boton boton--secundario"
+            [disabled]="ocupado()"
+            (click)="volverAlFormulario()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            [disabled]="ocupado()"
+            (click)="crearIgualmente()"
+          >
+            {{ guardando() ? 'Guardando…' : 'Crear bloqueo igualmente' }}
+          </button>
+          <button type="button" class="boton" [disabled]="ocupado()" (click)="reprogramarTurnos()">
+            Reprogramar turnos
+          </button>
+        </div>
+      </section>
+    } @else {
+      <div class="flujo__campos">
+        <div class="campo campo--mitad">
+          <label for="bloqueo-profesional">A quién afecta</label>
+          <select
+            id="bloqueo-profesional"
+            [value]="alcance()"
+            (change)="alcance.set($any($event.target).value)"
+          >
+            <option value="" [selected]="alcance() === ''">
+              Elegí un profesional o toda la sede
+            </option>
+            <option [value]="TODA_LA_SEDE" [selected]="alcance() === TODA_LA_SEDE">
+              Toda la sede
+            </option>
+            @for (profesional of profesionales(); track profesional.id) {
+              <option [value]="profesional.id" [selected]="'' + profesional.id === alcance()">
+                {{ profesional.nombre }}
+              </option>
+            }
+          </select>
+          @if (errorDeProfesionales(); as error) {
+            <p class="estado estado--error" role="alert">
+              {{ error }}
+              <button type="button" class="boton-texto" (click)="cargarProfesionales()">
+                Reintentar
+              </button>
+            </p>
+          }
+        </div>
+        <div class="campo campo--mitad">
+          <label for="bloqueo-tipo">Tipo</label>
+          <select
+            id="bloqueo-tipo"
+            [value]="motivo()"
+            (change)="motivo.set($any($event.target).value)"
+          >
+            <option value="" [selected]="motivo() === ''">Elegí el tipo</option>
+            @for (opcion of MOTIVOS; track opcion.valor) {
+              <option [value]="opcion.valor" [selected]="opcion.valor === motivo()">
+                {{ opcion.etiqueta }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="campo campo--cuarto">
+          <label for="bloqueo-desde">Fecha desde</label>
+          <input
+            id="bloqueo-desde"
+            type="date"
+            [value]="desde()"
+            (change)="cambiarDesde($any($event.target).value)"
+          />
+        </div>
+        <div class="campo campo--cuarto">
+          <label for="bloqueo-hasta">Fecha hasta</label>
+          <input
+            id="bloqueo-hasta"
+            type="date"
+            [min]="desde()"
+            [value]="hasta()"
+            (change)="hasta.set($any($event.target).value)"
+          />
+        </div>
+        <div class="campo campo--cuarto">
+          <label for="bloqueo-hora-desde">Hora desde</label>
+          <input
+            id="bloqueo-hora-desde"
+            type="time"
+            aria-describedby="bloqueo-horario-ayuda"
+            [value]="horaDesde()"
+            (change)="horaDesde.set($any($event.target).value)"
+          />
+        </div>
+        <div class="campo campo--cuarto">
+          <label for="bloqueo-hora-hasta">Hora hasta</label>
+          <input
+            id="bloqueo-hora-hasta"
+            type="time"
+            aria-describedby="bloqueo-horario-ayuda"
+            [value]="horaHasta()"
+            (change)="horaHasta.set($any($event.target).value)"
+          />
+        </div>
+        <div class="campo">
+          <p id="bloqueo-horario-ayuda" class="ayuda ayuda--fija">
+            Sin horario se bloquea el día completo.
+          </p>
+        </div>
+        <div class="campo">
+          <label for="bloqueo-notas">Notas</label>
+          <textarea
+            id="bloqueo-notas"
+            rows="2"
+            maxlength="280"
+            aria-describedby="bloqueo-notas-ayuda"
+            [value]="notas()"
+            (input)="notas.set($any($event.target).value)"
+          ></textarea>
+          <p id="bloqueo-notas-ayuda" class="ayuda ayuda--fija">No escribas información clínica.</p>
+        </div>
+      </div>
+
+      <div class="acciones acciones--pie">
+        @if (faltante() !== '') {
+          <p id="bloqueo-faltante" class="ayuda flujo__faltante">{{ faltante() }}</p>
+        }
+        <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="boton"
+          [disabled]="ocupado() || faltante() !== ''"
+          [attr.aria-describedby]="faltante() !== '' ? 'bloqueo-faltante' : null"
+          (click)="revisar()"
+        >
+          {{ revisando() ? 'Revisando…' : guardando() ? 'Guardando…' : 'Revisar' }}
+        </button>
+      </div>
+    }
+  </div>
+</app-panel-lateral>

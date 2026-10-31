@@ -35,7 +35,10 @@
   font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
   margin: 0 0 var(--esp-4);
-  text-transform: capitalize;
+}
+
+.dia__fecha::first-letter {
+  text-transform: uppercase;
 }
 
 /*
@@ -140,88 +143,17 @@ button.slot--libre:focus-visible {
 }
 
 /* ======================================================================================
- * Diseño del canvas (UX-01, 21/10/2026): Agenda, Reservar, Series, Serie, Recepción y Ciclo.
+ * Diseño del canvas (UX-01, 21/10/2026): Agenda, Series, Serie y Recepción.
  *
  * Mismos tokens que el resto de la hoja: ni un color literal. Las piezas son las del canvas
- * —subtítulo y estado en la fila del título, tarjetas con barra y pie, dos columnas con un
- * panel lateral, navegador de fecha ‹ Hoy ›— aplicadas a lo que cada pantalla ya hace.
+ * —subtítulo y estado en la fila del título, navegador de fecha ‹ Hoy ›— aplicadas a lo que cada
+ * pantalla ya hace.
  * ====================================================================================== */
 
 /* Subtítulo y estado al lado del h1, como en el canvas ("Oferta #4521", "Activa"). */
 .titulo-con-ayuda__sub {
   color: var(--color-texto-suave);
   font-size: var(--tipo-xs);
-}
-
-/* Dos columnas: el contenido principal y un panel lateral angosto que baja en pantallas chicas. */
-.columnas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-6);
-  align-items: flex-start;
-  margin-bottom: var(--esp-8);
-}
-
-.columnas > .tarjeta,
-.columnas > * > .tarjeta:last-child {
-  margin-bottom: 0;
-}
-
-.columnas__principal {
-  flex: 2 1 35rem;
-  min-width: 0;
-}
-
-.columnas__mitad {
-  flex: 1 1 24rem;
-  min-width: 0;
-}
-
-.columnas__lateral {
-  flex: 1 1 17.5rem;
-  min-width: 0;
-  max-width: 22.5rem;
-}
-
-/* Tarjeta sin relleno propio: la barra, el cuerpo y el pie lo ponen cada uno. */
-.tarjeta--plana {
-  padding: 0;
-  overflow: hidden;
-}
-
-.tarjeta__cuerpo {
-  padding: var(--esp-6);
-}
-
-.tarjeta__cuerpo > :last-child {
-  margin-bottom: 0;
-}
-
-.tarjeta__cuerpo + .tarjeta__cuerpo {
-  border-top: var(--borde-fino) solid var(--color-borde);
-}
-
-.tarjeta__cuerpo > h2,
-.tarjeta__cuerpo > .titulo-con-ayuda--seccion > h2 {
-  font-size: var(--tipo-md);
-  font-weight: var(--peso-fuerte);
-}
-
-/* Pie de la tarjeta: la nota a la izquierda ("* Campos obligatorios"), las acciones a la derecha. */
-.tarjeta__pie {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--esp-4);
-  padding: var(--esp-5) var(--esp-6);
-  border-top: var(--borde-fino) solid var(--color-borde);
-}
-
-.tarjeta__pie-nota {
-  margin: 0 auto 0 0;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
 }
 
 /* Navegador de fecha del canvas: ‹ Hoy › y el rango en palabras. */
@@ -388,41 +320,6 @@ button.slot[aria-pressed='true'] {
 }
 
 /* El paciente elegido en una reserva: la ficha con iniciales del canvas. */
-.ficha-persona {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-5);
-  margin-bottom: var(--esp-6);
-  padding: var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie-atenuada);
-}
-
-.ficha-persona__iniciales {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radio-pastilla);
-  background: var(--color-acento-claro);
-  color: var(--color-acento);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-medio);
-}
-
-.ficha-persona__datos {
-  flex: 1;
-  min-width: 0;
-  font-weight: var(--peso-medio);
-}
-
-.ficha-persona__vacia {
-  color: var(--color-texto-suave);
-  font-weight: var(--peso-normal);
-}
 
 /* El rótulo chico de un bloque de formulario ("Paciente *"). */
 .rotulo-bloque {
@@ -433,37 +330,6 @@ button.slot[aria-pressed='true'] {
 }
 
 /* Panel lateral de resumen (la "Oferta elegida" del canvas). */
-.resumen-lateral__encabezado {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--esp-4);
-}
-
-.resumen-lateral__encabezado > h2 {
-  margin: 0;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-}
-
-.resumen-lateral__destacado {
-  margin: var(--esp-4) 0;
-  font-size: var(--tipo-lg);
-  font-weight: var(--peso-fuerte);
-}
-
-.resumen-lateral .detalle {
-  font-size: var(--tipo-xs);
-}
-
-.resumen-lateral__pie {
-  margin: var(--esp-6) 0 0;
-  padding-top: var(--esp-5);
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  font-size: var(--tipo-xs);
-}
 
 /* Fila de indicadores (el "Avance" de la serie): celdas separadas por una línea fina. */
 .indicadores {
@@ -503,37 +369,6 @@ button.slot[aria-pressed='true'] {
   padding: 0;
   list-style: none;
   color: var(--color-marca-texto-suave);
-  font-size: var(--tipo-xs);
-}
-
-/* El historial del ciclo: fecha a la izquierda, qué pasó a la derecha, una línea entre eventos. */
-.historial {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.historial > li {
-  display: grid;
-  grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
-  gap: var(--esp-5);
-  padding: var(--esp-4) 0;
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  font-size: var(--tipo-xs);
-}
-
-.historial__cuando {
-  color: var(--color-texto-suave);
-  font-variant-numeric: tabular-nums;
-}
-
-.historial__que {
-  margin: 0;
-  font-weight: var(--peso-medio);
-}
-
-.historial .detalle {
-  margin: var(--esp-2) 0 0;
   font-size: var(--tipo-xs);
 }
 

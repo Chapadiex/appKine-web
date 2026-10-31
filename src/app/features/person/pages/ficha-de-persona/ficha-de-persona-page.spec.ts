@@ -11,7 +11,12 @@ import { of } from 'rxjs';
 import { FichaDePersonaPage } from './ficha-de-persona-page';
 import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
 import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
-import { PERMISO_HC_READ, PERMISO_PACIENTE_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_HC_READ,
+  PERMISO_PACIENTE_MANAGE,
+  PERMISO_TURNO_MANAGE,
+} from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -25,6 +30,8 @@ const PERSONA = 7;
 const RESUMEN = `/api/v1/personas/${PERSONA}/resumen`;
 const BAJA_PERSONA = `/api/v1/personas/${PERSONA}`;
 const BAJA_PERFIL = `/api/v1/personas/${PERSONA}/perfil-paciente`;
+const PROXIMOS = (p: HttpRequest<unknown>): boolean =>
+  p.url === `/api/v1/consultorios/3/turnos/personas/${PERSONA}`;
 
 const PACIENTE = {
   id: PERSONA,
@@ -151,6 +158,8 @@ describe('FichaDePersonaPage', () => {
   afterEach(() => {
     // La seccion de datos administrativos de la HC tiene su propio spec; aca solo se descarta.
     httpMock.match((p) => p.url.endsWith('/datos-administrativos'));
+    // Los proximos turnos tienen su propio bloque; el resto de la ficha no depende de ellos.
+    httpMock.match(PROXIMOS);
     httpMock.verify();
   });
 
@@ -402,6 +411,108 @@ describe('FichaDePersonaPage', () => {
     expect(texto(fixture)).toContain('Duplicada.');
     // La ficha dada de baja SE SIGUE LEYENDO: es justamente donde se consulta su historico.
     expect(texto(fixture)).toContain('se sigue consultando');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // 3b. Turnos: el punto de entrada al flujo y los proximos
+  // -------------------------------------------------------------------------------------
+
+  it('"Nuevo turno" abre el flujo con el paciente', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_TURNO_MANAGE]);
+
+    apretar(fixture, 'Nuevo turno');
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: { origen: 'PACIENTE', personaId: PERSONA },
+    });
+  });
+
+  it('sin turno:manage no ofrece "Nuevo turno"', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_PACIENTE_MANAGE]);
+
+    expect(rotulosDeBoton(fixture)).not.toContain('Nuevo turno');
+  });
+
+  it('lista los próximos turnos en la zona de la sede y cada uno abre su detalle', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO, [PERMISO_TURNO_MANAGE]);
+    const pedido = httpMock.expectOne(PROXIMOS);
+    expect(pedido.request.params.get('soloFuturos')).toBe('true');
+    expect(pedido.request.params.get('size')).toBe('5');
+    pedido.flush({
+      timezone: 'America/Argentina/Cordoba',
+      turnos: [
+        {
+          profesionalNombre: 'Lopez, Maria',
+          turno: { id: 501, inicio: '2030-03-04T12:00:00Z', ofertaNombre: 'Kinesiologia' },
+        },
+      ],
+    });
+    await estabilizar(fixture);
+
+    const fila = (fixture.nativeElement as HTMLElement).querySelector('.proximo-turno');
+    expect(fila?.textContent).toContain('Kinesiologia');
+    expect(fila?.textContent).toContain('Lopez, Maria');
+    // 12:00 UTC son las 09:00 en Cordoba, sea cual sea la zona del navegador.
+    expect(fila?.textContent).toContain('09:00');
+
+    fila?.querySelector('button')?.click();
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'detalle',
+      turnoId: 501,
+    });
+  });
+
+  it('sin próximos lo dice; sin permiso de turnos no inventa un error', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+    httpMock.expectOne(PROXIMOS).flush({ timezone: 'UTC', turnos: [] });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Sin turnos próximos.');
+
+    TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+    fixture.detectChanges();
+    httpMock.expectOne(RESUMEN).flush(RESUMEN_COMPLETO);
+    httpMock
+      .expectOne(PROXIMOS)
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'F' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).not.toContain('Próximos turnos');
+    expect(texto(fixture)).not.toContain('No pudimos leer los próximos turnos');
+  });
+
+  it('si falla la lectura de próximos no dice "sin turnos": lo dice y deja reintentar', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+    httpMock
+      .expectOne(PROXIMOS)
+      .flush({ status: 500, detail: 'Falló' }, { status: 500, statusText: 'E' });
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No pudimos leer los próximos turnos.');
+    expect(texto(fixture)).not.toContain('Sin turnos próximos.');
+
+    apretar(fixture, 'Reintentar');
+    httpMock.expectOne(PROXIMOS).flush({ timezone: 'UTC', turnos: [] });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Sin turnos próximos.');
+  });
+
+  it('lo que hace el flujo se ve en el lugar: relee resumen y próximos con la ficha a la vista', async () => {
+    const fixture = await montar(RESUMEN_COMPLETO);
+    httpMock.expectOne(PROXIMOS).flush({ timezone: 'UTC', turnos: [] });
+    await estabilizar(fixture);
+
+    TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+    fixture.detectChanges();
+    // La ficha sigue a la vista mientras llega la relectura: sin el "Cargando" de la entrada.
+    expect(texto(fixture)).toContain('Turnos futuros');
+    httpMock.expectOne(RESUMEN).flush(RESUMEN_COMPLETO);
+    httpMock.expectOne(PROXIMOS).flush({ timezone: 'UTC', turnos: [] });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Turnos futuros');
   });
 
   // -------------------------------------------------------------------------------------

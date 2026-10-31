@@ -14,6 +14,10 @@
  */
 export interface CreateExcepcionRequest { 
     /**
+     * Confirma que se quiere cargar un CIERRE aunque deje afuera turnos pendientes. Sin esto, un cierre con turnos afectados responde 409 `bloqueo-con-turnos-afectados`: no se guarda en silencio.
+     */
+    confirmaTurnosAfectados?: boolean;
+    /**
      * Primer dia cubierto por la excepcion
      */
     fechaDesde: string;
@@ -53,6 +57,7 @@ export interface CreateExcepcionRequest {
 export enum CreateExcepcionRequestMotivoEnum {
     AUSENCIA = 'AUSENCIA',
     LICENCIA = 'LICENCIA',
+    CAPACITACION = 'CAPACITACION',
     FERIADO = 'FERIADO',
     BLOQUEO = 'BLOQUEO',
     AMPLIACION = 'AMPLIACION',

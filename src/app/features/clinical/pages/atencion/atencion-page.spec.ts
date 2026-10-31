@@ -16,7 +16,12 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
-import { PERMISO_SESION_REASSIGN, PERMISO_SESION_REGISTER } from '../../../../core/models/permisos';
+import {
+  PERMISO_SESION_REASSIGN,
+  PERMISO_SESION_REGISTER,
+  PERMISO_TURNO_MANAGE,
+} from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -827,6 +832,104 @@ describe('AtencionPage', () => {
     ]);
     expect(enlaces).toContainEqual(['Ver las versiones', `/atencion/sesiones/${SESION}/versiones`]);
     expect(texto(fixture)).toContain('ya fue enmendada');
+  });
+
+  // -------------------------------------------------------------------------------------
+  // Lo que el turno ya sabe, y la proxima sesion (TURNO - Tecnico §39, §40 y §76)
+  // -------------------------------------------------------------------------------------
+
+  describe('lo que el turno ya sabe y la próxima sesión', () => {
+    const PROXIMA = `${VER}/proxima-sesion`;
+    const UN_CASO = { id: 31, numeroCaso: 1, estado: 'ACTIVO', ofertaId: 4 };
+
+    function responderTurno(operativo: object, casos: object[] = [UN_CASO]): void {
+      httpMock
+        .expectOne((p) => p.method === 'GET' && p.url === TURNO_URL)
+        .flush({ id: TURNO, personaId: PERSONA, ofertaId: 4, operativo });
+      httpMock
+        .expectOne((p) => p.method === 'GET' && p.url === DATOS_ADMIN)
+        .flush({ personaId: PERSONA, tieneHistoriaClinica: true, casos });
+    }
+
+    it('si el turno ya tiene atención abre esa: no pregunta el caso ni inicia otra', async () => {
+      const fixture = crearSinMontar();
+
+      responderTurno({ sesionId: SESION });
+      httpMock.expectOne((p) => p.method === 'GET' && p.url === VER).flush(ABIERTA);
+      await estabilizar(fixture);
+      responderBloques();
+      await estabilizar(fixture);
+
+      httpMock.expectNone(esIniciar());
+      expect(texto(fixture)).not.toContain('Antes de empezar: caso clínico');
+    });
+
+    it('si el turno se dio para un caso no lo vuelve a preguntar', async () => {
+      const fixture = crearSinMontar();
+
+      responderTurno({ casoId: 31 });
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).not.toContain('Antes de empezar: caso clínico');
+      httpMock.expectOne(esIniciar()).flush({ ...ABIERTA, casoId: 31 });
+      await estabilizar(fixture);
+      responderBloques();
+    });
+
+    it('cerrada, "Programar próxima sesión" abre el flujo con lo que dice el backend', async () => {
+      const fixture = await montar(CERRADA, [PERMISO_TURNO_MANAGE]);
+      const contexto = {
+        personaId: PERSONA,
+        casoId: 31,
+        planId: 5,
+        ofertaId: 4,
+        profesionalId: 8,
+      };
+      httpMock.expectOne(PROXIMA).flush(contexto);
+      await estabilizar(fixture);
+
+      const enlaces = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).map(
+        (a) => [a.textContent?.trim(), a.getAttribute('href')],
+      );
+      expect(enlaces).toContainEqual(['Volver al paciente', `/pacientes/${PERSONA}`]);
+
+      apretar(fixture, 'Programar próxima sesión');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'nuevo',
+        contexto: { origen: 'SESION', ...contexto },
+      });
+    });
+
+    it('si no se pudo preparar, el botón y el aviso vuelven a intentarlo y abren el flujo', async () => {
+      const fixture = await montar(CERRADA, [PERMISO_TURNO_MANAGE]);
+      const flujo = TestBed.inject(FlujoDeTurnosStore);
+      httpMock.expectOne(PROXIMA).flush('', { status: 500, statusText: 'E' });
+      await estabilizar(fixture);
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso.titulo).toBe('No pudimos preparar la próxima sesión');
+
+      aviso.accion?.ejecutar();
+      httpMock.expectOne(PROXIMA).flush('', { status: 500, statusText: 'E' });
+      await estabilizar(fixture);
+      expect(flujo.solicitud()).toBeNull();
+
+      apretar(fixture, 'Programar próxima sesión');
+      httpMock.expectOne(PROXIMA).flush({ personaId: PERSONA, ofertaId: 4 });
+      await estabilizar(fixture);
+
+      expect(flujo.solicitud()).toEqual({
+        tipo: 'nuevo',
+        contexto: { origen: 'SESION', personaId: PERSONA, ofertaId: 4 },
+      });
+    });
+
+    it('sin turno:manage ni lo pide ni lo ofrece', async () => {
+      const fixture = await montar(CERRADA, []);
+
+      httpMock.expectNone(PROXIMA);
+      expect(texto(fixture)).not.toContain('Programar próxima sesión');
+    });
   });
 
   // -------------------------------------------------------------------------------------

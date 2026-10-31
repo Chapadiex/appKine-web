@@ -104,6 +104,14 @@
   border-bottom: none;
 }
 
+/* Un proximo turno del 360: el dato a la izquierda y "Ver" a la derecha. */
+.lista-hitos .proximo-turno {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
 /*
  * Seccion del 360 que no se pudo consultar por falta de permiso.
  *

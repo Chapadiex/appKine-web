@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { Component } from '@angular/core';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from './core/models/ancho-de-contenido';
+import { FlujoDeTurnosStore } from './core/services/flujo-de-turnos.store';
 import { SessionService } from './core/services/session.service';
 import { PlatformRoleStore } from './core/services/platform-role.store';
 import { PerfilPropioStore } from './core/services/perfil-propio.store';
@@ -173,6 +174,37 @@ describe('App (layout)', () => {
 
     expect(enfocables.length).toBeGreaterThan(1);
     expect(enfocables.item(0)?.classList.contains('skip-link')).toBe(true);
+  });
+
+  it('monta el flujo de turnos recién cuando alguien lo pide, y una sola vez', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const flujo = TestBed.inject(FlujoDeTurnosStore);
+    expect(raiz.querySelector('app-flujo-de-turnos')).toBeNull();
+
+    flujo.verTurno(7);
+    fixture.detectChanges();
+    // Es el mismo modulo que importa el shell: cuando resuelve esto, resolvio el del shell.
+    await import('./features/scheduling/flujo/flujo-de-turnos');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('app-flujo-de-turnos').length).toBe(1);
+
+    flujo.cerrar();
+    flujo.nuevoTurno({ origen: 'AGENDA' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('app-flujo-de-turnos').length).toBe(1);
+  });
+
+  it('sin sesión no queda nada del flujo abierto', () => {
+    const flujo = TestBed.inject(FlujoDeTurnosStore);
+    flujo.verTurno(7);
+
+    TestBed.createComponent(App).detectChanges();
+
+    expect(flujo.solicitud()).toBeNull();
   });
 
   it('muestra el aviso de 503 en una region viva y lo cierra sin tocar nada mas', () => {

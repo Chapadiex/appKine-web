@@ -71,6 +71,11 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
                 {{ accion.etiqueta }}
               </button>
             }
+            @if (aviso.otraAccion; as accion) {
+              <button type="button" class="aviso__accion" (click)="store.ejecutarOtra(aviso.id)">
+                {{ accion.etiqueta }}
+              </button>
+            }
           </div>
           <button type="button" class="aviso__cerrar" (click)="store.cerrar(aviso.id)">
             <app-icono nombre="cerrar" />

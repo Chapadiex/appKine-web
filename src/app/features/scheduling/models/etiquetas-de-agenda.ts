@@ -2,6 +2,8 @@ import {
   DiaDeAgenda,
   DiaDeAgendaMotivoSinSlotsEnum,
 } from '../../../api/generated/model/dia-de-agenda';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
+import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
 import { SlotDisponible } from '../../../api/generated/model/slot-disponible';
 
 /**
@@ -39,8 +41,8 @@ const TEXTOS_SIN_SLOTS: Readonly<Record<DiaDeAgendaMotivoSinSlotsEnum, string>> 
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_ESPACIO]:
     'La oferta necesita un espacio y ninguno de los habilitados esta en servicio este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.FRANJA_MAS_CORTA_QUE_LA_OFERTA]:
-    'Las franjas de atención de este día son mas cortas que la duración de la oferta, así que no ' +
-    'entra ningún turno completo.',
+    'Las franjas de atención de este día son más cortas que lo que dura el turno, así que no ' +
+    'entra ninguno completo.',
   [DiaDeAgendaMotivoSinSlotsEnum.COMPLETO]:
     'Todos los turnos de este día ya estan reservados. La agenda esta bien: se lleno.',
   [DiaDeAgendaMotivoSinSlotsEnum.FUERA_DE_HORARIO_SEDE]:
@@ -125,6 +127,16 @@ export function rangoEnZona(slot: SlotDisponible, timezone: string): string {
  * instante. Interpretarla con la zona del navegador la correria un dia hacia atras en cualquier
  * huso al oeste de Greenwich, que es donde esta el pais entero.
  */
+/** Por que una busqueda salio vacia, con el mismo texto que dice la grilla para cada dia. */
+export function textoSinMotivoDeBusqueda(motivos: readonly string[]): string {
+  return motivos
+    .filter((motivo) => motivo !== 'PASADO')
+    .slice(0, 2)
+    .map((motivo) => textoSinSlots({ motivoSinSlots: motivo } as DiaDeAgenda))
+    .filter((texto) => texto !== '')
+    .join(' ');
+}
+
 export function fechaEnPalabras(fecha: string | undefined): string {
   if (fecha === undefined || fecha === '') {
     return '';
@@ -139,6 +151,25 @@ export function fechaEnPalabras(fecha: string | undefined): string {
     month: 'long',
     timeZone: 'UTC',
   }).format(dia);
+}
+
+/**
+ * Los minutos que mostrar de una prestacion: la duracion propia del profesional elegido si la tiene.
+ *
+ * <p>`profesionales` es la lista de la prestacion elegida, que es la unica de la que se sabe: las demas
+ * opciones de un selector dicen la suya. El fin real siempre lo dice el backend, en cada horario.
+ */
+export function minutosDeLaPrestacion(
+  oferta: Pick<OfertaResponse, 'id' | 'duracionMinutos'>,
+  ofertaElegidaId: number | null,
+  profesionales: readonly RecursoLibre[],
+  profesionalId: number | null,
+): number | undefined {
+  const propia =
+    oferta.id === ofertaElegidaId && profesionalId !== null
+      ? profesionales.find((profesional) => profesional.id === profesionalId)?.duracionPropiaMinutos
+      : undefined;
+  return propia ?? oferta.duracionMinutos;
 }
 
 /** Suma dias a una fecha local `YYYY-MM-DD`. Sin husos: es aritmetica de calendario. */

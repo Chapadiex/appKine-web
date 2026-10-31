@@ -6,7 +6,11 @@ import { provideHttpClient } from '@angular/common/http';
 
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
-import { PERMISO_COLABORADOR_READ, PERMISO_TURNO_READ } from '../../core/models/permisos';
+import {
+  PERMISO_COLABORADOR_READ,
+  PERMISO_PACIENTE_READ,
+  PERMISO_TURNO_READ,
+} from '../../core/models/permisos';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../core/testing/rutas-api';
@@ -134,7 +138,8 @@ describe('NavegacionPrincipal', () => {
 
   /**
    * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
-   * despliega: su enlace va directo. Sin permisos quedan Agenda (sola, directa) y los grupos con secciones sin permiso.
+   * despliega: su enlace va directo. Sin permisos quedan Atencion (Agenda y Buscar disponibilidad, que
+   * el backend responde igual) y los grupos con secciones sin permiso.
    */
   it('no dibuja un grupo vacío y no despliega uno de una sola sección', () => {
     conContexto();
@@ -143,11 +148,21 @@ describe('NavegacionPrincipal', () => {
     fixture.detectChanges();
 
     expect(rotulos(fixture)).toEqual([
+      'Atención',
       'Servicios y catálogo',
       'Espacios y horarios',
       'Configuración',
     ]);
     expect(enlaces(fixture)).toContain('Agenda');
+    expect(enlaces(fixture)).toContain('Buscar disponibilidad');
+    expect(enlaces(fixture)).not.toContain('Padrón');
+
+    // Pacientes tiene una sola seccion: su enlace va directo, sin cabecera que desplegar.
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_PACIENTE_READ] });
+    fixture.detectChanges();
+    expect(rotulos(fixture)).not.toContain('Pacientes');
+    expect(enlaces(fixture)).toContain('Padrón');
 
     TestBed.inject(PermissionsStore).cargar().subscribe();
     httpMock

@@ -21,5 +21,16 @@ export interface CancelarTurno {
      * Por que se cancela. **Obligatorio** (DP-04).
      */
     motivo: string;
+    /**
+     * A quien se le atribuye la cancelacion. Opcional: omitirlo es no decirlo.
+     */
+    origen?: CancelarTurnoOrigenEnum;
 }
+export enum CancelarTurnoOrigenEnum {
+    PACIENTE = 'PACIENTE',
+    PROFESIONAL = 'PROFESIONAL',
+    INSTITUCION = 'INSTITUCION'
+};
+
+
 

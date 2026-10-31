@@ -133,12 +133,14 @@ export const PERMISO_CATALOGO_MANAGE = 'catalogo:manage';
 export const PERMISO_TURNO_READ = 'turno:read';
 
 /**
- * Reservar y confirmar turnos (F5, etapa AKINE-05.02).
+ * Reservar, confirmar, reprogramar y cancelar turnos, y operar la lista de espera (M12).
  *
- * <p>Gobierna las MUTACIONES de la agenda. <b>No hay cancelar ni reprogramar</b>: AKINE-05.03
- * quedo fuera de alcance por DP-10 y esos endpoints no existen todavia.
+ * <p>Gobierna las MUTACIONES de la agenda. El sobreturno pide ademas {@link PERMISO_TURNO_SOBRETURNO}.
  */
 export const PERMISO_TURNO_MANAGE = 'turno:manage';
+
+/** Autorizar un turno sobre un horario ocupado (TURNO.md §21). Lo tienen los administradores. */
+export const PERMISO_TURNO_SOBRETURNO = 'turno:sobreturno';
 
 /**
  * Cuenta corriente y cobros (F7, etapa AKINE-07.01).

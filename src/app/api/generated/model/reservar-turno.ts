@@ -14,9 +14,17 @@
  */
 export interface ReservarTurno { 
     /**
+     * Caso clinico para el que se reserva. Opcional: una primera consulta no tiene caso. Tiene que ser de esta persona y estar activo.
+     */
+    casoId?: number;
+    /**
      * Cobertura del paciente con la que se piensa atender. Opcional: omitirla es no elegir, y la recepcion usa la primera que aplique. Tiene que ser una cobertura financiada, activa y vigente el dia del turno de ESA persona; si no, 404 `not-found`. Si aplica a la practica lo decide la recepcion, que la usa por defecto al validar.
      */
     coberturaId?: number;
+    /**
+     * Box elegido a mano. Omitirlo es lo normal: el sistema asigna el primero libre. Si se indica pasa por los mismos controles que el automatico.
+     */
+    espacioId?: number;
     /**
      * Clave del cliente para que un reintento no cree un segundo turno. Reusarla con **otro** contenido devuelve 409 `idempotency-key-conflict`, no el turno anterior. Omitirla desactiva la proteccion, que es legitimo en una carga manual.
      */
@@ -26,12 +34,37 @@ export interface ReservarTurno {
      */
     inicio: string;
     /**
+     * Desde donde se inicio la reserva. Solo trazabilidad: no cambia ninguna regla.
+     */
+    origen?: ReservarTurnoOrigenEnum;
+    /**
      * Persona del padron, que debe tener perfil de paciente vigente
      */
     personaId: number;
     /**
+     * Plan de tratamiento para el que se reserva. Opcional. Tiene que ser de esta persona, estar activo, incluir la oferta y tener sesiones pendientes. Si se omite el caso, sale del plan.
+     */
+    planId?: number;
+    /**
      * Membership del profesional. Obligatorio si la oferta lo requiere.
      */
     profesionalId?: number;
+    /**
+     * Por que se autoriza ocupar un horario tomado. Exige el permiso `turno:sobreturno`. Saltea el cupo y el solapamiento y nada mas: el profesional sigue teniendo que estar habilitado y atender en ese horario. Se ve en la agenda: sin informacion clinica.
+     */
+    sobreturnoMotivo?: string;
 }
+export enum ReservarTurnoOrigenEnum {
+    AGENDA = 'AGENDA',
+    DISPONIBILIDAD = 'DISPONIBILIDAD',
+    PACIENTE = 'PACIENTE',
+    CASO = 'CASO',
+    PLAN = 'PLAN',
+    PROFESIONAL = 'PROFESIONAL',
+    SESION = 'SESION',
+    LISTA_DE_ESPERA = 'LISTA_DE_ESPERA',
+    TURNO_ANTERIOR = 'TURNO_ANTERIOR'
+};
+
+
 

@@ -13,6 +13,8 @@ export interface OpcionesDeAviso {
   /** Una linea mas, solo si agrega informacion al titulo. */
   readonly descripcion?: string;
   readonly accion?: AccionDeAviso;
+  /** Otra salida, de menos peso: "Ver turno" y "Crear otro" (TURNO.md §35). */
+  readonly otraAccion?: AccionDeAviso;
   /** Milisegundos a la vista; `null` = hasta que el usuario lo cierre. */
   readonly duracion?: number | null;
 }
@@ -23,6 +25,7 @@ export interface Aviso {
   readonly titulo: string;
   readonly descripcion: string | null;
   readonly accion: AccionDeAviso | null;
+  readonly otraAccion: AccionDeAviso | null;
   readonly duracion: number | null;
 }
 
@@ -93,6 +96,13 @@ export class AvisosStore {
     aviso?.accion?.ejecutar();
   }
 
+  /** Usa la otra accion del aviso y lo cierra. */
+  ejecutarOtra(id: number): void {
+    const aviso = this.lista().find((candidato) => candidato.id === id);
+    this.cerrar(id);
+    aviso?.otraAccion?.ejecutar();
+  }
+
   /** El puntero o el foco estan sobre el aviso: no se cierra mientras se lee. */
   pausar(id: number): void {
     this.detener(id);
@@ -123,6 +133,7 @@ export class AvisosStore {
       titulo,
       descripcion: opciones.descripcion ?? null,
       accion,
+      otraAccion: opciones.otraAccion ?? null,
       duracion: opciones.duracion === undefined ? porDefecto : opciones.duracion,
     };
 

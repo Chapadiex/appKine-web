@@ -4,6 +4,12 @@
       <a class="boton boton--secundario" [routerLink]="visita.rutaPlan(c.id!)">
         Ver el plan de tratamiento
       </a>
+      @if (activo()) {
+        <button type="button" class="boton" *akinePermiso="permisoTurnos" (click)="nuevoTurno()">
+          <app-icono nombre="agregar" />
+          Nuevo turno
+        </button>
+      }
     </div>
   }
 </app-cabecera-de-pagina>

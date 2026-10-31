@@ -18,6 +18,10 @@ export interface EventoDeTurno {
      */
     actorCuentaId?: number;
     /**
+     * Nombre de esa cuenta. Ausente si lo hizo el sistema o la cuenta ya no resuelve.
+     */
+    actorNombre?: string;
+    /**
      * Ausente solo en el evento de RESERVA.
      */
     estadoAnterior?: string;
@@ -47,7 +51,8 @@ export enum EventoDeTurnoTipoEnum {
     REPROGRAMACION = 'REPROGRAMACION',
     AUSENCIA = 'AUSENCIA',
     LLEGADA = 'LLEGADA',
-    LLEGADA_DESHECHA = 'LLEGADA_DESHECHA'
+    LLEGADA_DESHECHA = 'LLEGADA_DESHECHA',
+    CAMBIO_DE_CONTEXTO = 'CAMBIO_DE_CONTEXTO'
 };
 
 

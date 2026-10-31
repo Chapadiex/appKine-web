@@ -1,0 +1,229 @@
+<app-panel-lateral
+  titulo="Programar varias sesiones"
+  [subtitulo]="persona() ? persona()!.apellido + ', ' + persona()!.nombre : null"
+  ancho="amplio"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="flujo">
+    @if (error(); as fallo) {
+      <app-alerta tipo="error" titulo="No se pudo completar">
+        <p>{{ rechazoDeOcurrencia() || fallo.mensaje }}</p>
+      </app-alerta>
+    }
+
+    @if (persona() === null) {
+      <app-buscador-de-paciente (elegida)="elegirPersona($event)" />
+    }
+
+    @if (prestacionDelPlan(); as sesiones) {
+      <p class="flujo__contadores">
+        <span
+          >Planificadas: <b>{{ sesiones.planificadas }}</b></span
+        >
+        <span
+          >Realizadas: <b>{{ sesiones.realizadas }}</b></span
+        >
+        <span
+          >Programadas: <b>{{ sesiones.programadas }}</b></span
+        >
+        <span
+          >Pendientes: <b>{{ sesiones.pendientes }}</b></span
+        >
+      </p>
+    }
+
+    <div class="flujo__campos">
+      <div class="campo campo--mitad">
+        <label for="serie-oferta">Prestación</label>
+        <select
+          id="serie-oferta"
+          [value]="ofertaId() ?? ''"
+          (change)="elegirOferta($any($event.target).value)"
+        >
+          <option value="">Elegí una prestación</option>
+          @for (oferta of ofertas(); track oferta.id) {
+            <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+              {{ oferta.nombreComercial }} · {{ minutosDe(oferta) }} min
+            </option>
+          }
+        </select>
+      </div>
+      <div class="campo campo--mitad">
+        <label for="serie-profesional">Profesional</label>
+        <select
+          id="serie-profesional"
+          [value]="profesionalId() ?? ''"
+          (change)="elegirProfesional($any($event.target).value)"
+        >
+          <option value="">Elegí un profesional</option>
+          @for (profesional of profesionales(); track profesional.id) {
+            <option [value]="profesional.id" [selected]="profesional.id === profesionalId()">
+              {{ profesional.nombre }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="campo campo--tercio">
+        <label for="serie-hora">Horario preferido</label>
+        <input
+          id="serie-hora"
+          type="time"
+          [value]="hora()"
+          (change)="cambiarHora($any($event.target).value)"
+        />
+      </div>
+      <div class="campo campo--tercio">
+        <label for="serie-desde">Fecha inicial</label>
+        <input
+          id="serie-desde"
+          type="date"
+          [value]="desde()"
+          (change)="cambiarDesde($any($event.target).value)"
+        />
+      </div>
+      <div class="campo campo--tercio">
+        <label for="serie-cantidad">Cantidad de sesiones</label>
+        <input
+          id="serie-cantidad"
+          type="number"
+          min="1"
+          max="52"
+          [value]="cantidad()"
+          (change)="cambiarCantidad(+$any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <fieldset class="dias-semana">
+      <legend>Días</legend>
+      @for (dia of DIAS; track dia.iso) {
+        <label>
+          <input type="checkbox" [checked]="dias().has(dia.iso)" (change)="alternarDia(dia.iso)" />
+          {{ dia.etiqueta }}
+        </label>
+      }
+    </fieldset>
+
+    @if (falta(); as texto) {
+      <p class="estado estado--error" role="alert">{{ texto }}</p>
+    }
+
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="previsualizando()"
+        (click)="previsualizar()"
+      >
+        {{ previsualizando() ? 'Buscando…' : 'Buscar disponibilidad' }}
+      </button>
+    </div>
+
+    @if (filas().length > 0) {
+      <div class="tabla-scroll">
+        <table class="propuesta">
+          <caption class="visualmente-oculto">
+            Sesiones propuestas
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Sesión</th>
+              <th scope="col">Horario</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filas(); track fila.ocurrencia.numero; let indice = $index) {
+              <tr [class.propuesta__excluida]="fila.excluida">
+                <td>{{ fila.ocurrencia.numero }}</td>
+                <td>{{ rotulo(fila.inicio ?? fila.ocurrencia.inicio) }}</td>
+                <td>
+                  @if (fila.excluida) {
+                    {{ fila.ocurrencia.estado === 'FERIADO' ? 'Feriado: se omite' : 'Excluida' }}
+                  } @else if (fila.inicio !== null) {
+                    {{ fila.inicio === fila.ocurrencia.inicio ? 'Disponible' : 'Horario cambiado' }}
+                  } @else {
+                    {{ fila.ocurrencia.motivo || 'No disponible' }}
+                    @if (fila.ocurrencia.sugerencia; as sugerencia) {
+                      <br /><span class="ayuda">Sugerido: {{ rotulo(sugerencia.desde) }}</span>
+                    }
+                  }
+                </td>
+                <td>
+                  <div class="propuesta__acciones">
+                    @if (fila.inicio === null && !fila.excluida && fila.ocurrencia.sugerencia) {
+                      <button type="button" class="boton-texto" (click)="aceptarSugerencia(indice)">
+                        Usar el sugerido
+                      </button>
+                    }
+                    @if (!fila.excluida) {
+                      <button type="button" class="boton-texto" (click)="buscarAlternativa(indice)">
+                        Buscar alternativa
+                      </button>
+                    }
+                    <button type="button" class="boton-texto" (click)="alternarExclusion(indice)">
+                      {{ fila.excluida ? 'Incluir' : 'Excluir' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (filaEnEdicion() !== null) {
+        <section class="flujo__resumen" aria-label="Elegir otro horario">
+          <div class="campo">
+            <label for="serie-alternativa-fecha">Desde</label>
+            <input
+              id="serie-alternativa-fecha"
+              type="date"
+              [value]="fechaAlternativa()"
+              (change)="cambiarFechaAlternativa($any($event.target).value)"
+            />
+          </div>
+          <app-lista-de-horarios
+            [horarios]="alternativas()"
+            [timezone]="timezone()"
+            (elegir)="elegirAlternativa($event)"
+          />
+          <p class="flujo__dato">
+            <button type="button" class="boton-texto" (click)="filaEnEdicion.set(null)">
+              Volver
+            </button>
+          </p>
+        </section>
+      }
+
+      @if (excedeElPlan()) {
+        <app-alerta tipo="advertencia" titulo="Hay más sesiones que las que quedan en el plan">
+          <p>
+            El plan tiene únicamente {{ pendientesDelPlan() }} sesiones pendientes. Excluí las que
+            sobran.
+          </p>
+        </app-alerta>
+      }
+      @if (sinResolver() > 0) {
+        <p class="ayuda" role="status">
+          @if (sinResolver() === 1) {
+            Queda 1 sesión sin horario: elegí uno o excluila para poder confirmar.
+          } @else {
+            Quedan {{ sinResolver() }} sesiones sin horario: elegí uno o excluilas para poder
+            confirmar.
+          }
+        </p>
+      }
+
+      <div class="acciones acciones--pie">
+        <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">
+          Cancelar
+        </button>
+        <button type="button" class="boton" [disabled]="!puedeConfirmar()" (click)="confirmar()">
+          {{ enviando() ? 'Reservando…' : 'Confirmar ' + aReservar().length + ' turnos' }}
+        </button>
+      </div>
+    }
+  </div>
+</app-panel-lateral>

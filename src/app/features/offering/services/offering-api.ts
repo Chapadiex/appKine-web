@@ -8,6 +8,7 @@ import { PracticasDeOfertaResponse } from '../../../api/generated/model/practica
 import { CreateServicioRequest } from '../../../api/generated/model/create-servicio-request';
 import { ColaboradoresService } from '../../../api/generated/api/colaboradores.service';
 import { EspaciosService } from '../../../api/generated/api/espacios.service';
+import { DuracionPropiaPedida } from '../../../api/generated/model/duracion-propia-pedida';
 import { HabilitacionesResponse } from '../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { CreateHonorarioPorClaseRequest } from '../../../api/generated/model/create-honorario-por-clase-request';
@@ -229,6 +230,24 @@ export class OfferingApi {
       consultorioId,
       ofertaId,
       reemplazarHabilitacionesRequest: { ids: [...membershipIds], expectedVersion },
+    });
+  }
+
+  /**
+   * Fija cuanto tarda cada profesional en la oferta (TURNO - Tecnico §47). Reemplaza el conjunto: quien
+   * no viene vuelve a la duracion de la oferta. No restringe nada: se puede cargar en una oferta que
+   * cualquiera puede prestar.
+   */
+  fijarDuracionesPropias(
+    consultorioId: number,
+    ofertaId: number,
+    duraciones: readonly DuracionPropiaPedida[],
+    expectedVersion: number,
+  ): Observable<HabilitacionesResponse> {
+    return this.api.reemplazarDuracionesPropias({
+      consultorioId,
+      ofertaId,
+      reemplazarDuracionesPropiasRequest: { duraciones: [...duraciones], expectedVersion },
     });
   }
 

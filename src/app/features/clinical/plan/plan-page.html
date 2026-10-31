@@ -1,4 +1,21 @@
-<app-cabecera-de-pagina titulo="Plan de tratamiento"> </app-cabecera-de-pagina>
+<app-cabecera-de-pagina titulo="Plan de tratamiento">
+  @if (estado().tipo === 'listo' && casoActivo() && plan()?.estado === 'ACTIVO') {
+    <div cabeceraAcciones>
+      <ng-container *akinePermiso="permisoTurnos">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="programarSesionesRestantes()"
+        >
+          Programar sesiones restantes
+        </button>
+        <button type="button" class="boton" (click)="programarProximaSesion()">
+          Programar próxima sesión
+        </button>
+      </ng-container>
+    </div>
+  }
+</app-cabecera-de-pagina>
 
 @switch (estado().tipo) {
   @case ('cargando') {
@@ -41,7 +58,9 @@
         <h2 id="titulo-sin-plan">Este caso todavía no tiene plan</h2>
         <p class="estado estado--vacio">
           El plan define objetivos, frecuencia y cantidades estimadas. Nace en borrador: activarlo
-          es una decision aparte. No agenda turnos.
+          es una decisión aparte. La frecuencia es sugerida y no reserva nada sola: con el plan
+          activo, los turnos se programan con «Programar próxima sesión» y «Programar sesiones
+          restantes».
         </p>
       </section>
     } @else {
@@ -174,6 +193,13 @@
                         [max]="item.planificadas || 1"
                       ></progress>
                       <p class="ayuda ayuda--fija">{{ resumenDeAvance(item) }}</p>
+                      @if (sesionesDe(item.ofertaId); as sesiones) {
+                        <p class="ayuda ayuda--fija" data-testid="plan-sesiones-de-agenda">
+                          Realizadas: {{ sesiones.realizadas ?? 0 }} · Programadas:
+                          {{ sesiones.programadas ?? 0 }} · Pendientes:
+                          {{ sesiones.pendientes ?? 0 }}
+                        </p>
+                      }
                     </li>
                   }
                 </ul>

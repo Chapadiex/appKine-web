@@ -1,5 +1,5 @@
 import {
-  abrirLaAgenda,
+  abrirLaDisponibilidad,
   expect,
   ingresar,
   navegar,
@@ -78,7 +78,7 @@ test.describe('Buscador de agenda contra el backend real', () => {
     await reservar(api, centro, oferta.id, persona.id, unico.desde);
 
     const primerDia = await slotsDelDia(api, centro, oferta.id, d);
-    await abrirLaAgenda(page, oferta, d, sumarDias(d, 5));
+    await abrirLaDisponibilidad(page, oferta, d, sumarDias(d, 5));
 
     // Los cinco dias dibujados: ninguno se salteo por venir vacio.
     await expect(page.getByRole('heading', { level: 3 })).toHaveCount(5);
@@ -117,8 +117,8 @@ test.describe('Buscador de agenda contra el backend real', () => {
   }) => {
     const oferta = await crearOferta(api, centro);
     const desde = fechaLocal(centro.timezone);
-    await navegar(page, '/agenda');
-    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
+    await navegar(page, '/agenda/disponibilidad');
+    await page.getByLabel('Prestación', { exact: true }).selectOption({ label: oferta.nombre });
     await expect(page.getByRole('heading', { name: oferta.nombre, level: 2 })).toBeVisible();
 
     const rechazo = respuestaDe(page, 'GET', /\/ofertas\/\d+\/agenda$/);
@@ -133,6 +133,35 @@ test.describe('Buscador de agenda contra el backend real', () => {
     await expect(page.getByText('Lo recortamos y volvimos a pedirla.')).toBeVisible();
     await expect(page.getByLabel('Hasta (sin incluir)')).toHaveValue(sumarDias(desde, 62));
     await expect(page.getByRole('heading', { level: 3 })).toHaveCount(62);
+  });
+
+  /** Reservar y el calendario dejaron de ser pantallas, pero hay enlaces guardados a esas direcciones. */
+  test('las direcciones viejas de la reserva y del calendario llevan a las pantallas nuevas', async ({
+    page,
+  }) => {
+    // Sin `navegar`, que exige quedar en la URL pedida: lo que se prueba es que no se queda ahi.
+    const ir = (ruta: string): Promise<void> =>
+      page.evaluate((destino) => {
+        history.pushState(null, '', destino);
+        dispatchEvent(new PopStateEvent('popstate', { state: null }));
+      }, ruta);
+
+    for (const vieja of ['/agenda/ofertas/1/reservar', '/agenda/ofertas/1/reservar-serie']) {
+      await ir(vieja);
+      await expect(page).toHaveURL(/\/agenda\/disponibilidad$/);
+      await expect(
+        page.getByRole('heading', { name: 'Buscar disponibilidad', level: 1 }),
+      ).toBeVisible();
+    }
+
+    await ir('/agenda/calendario?semana=2026-11-02');
+    await expect(page).toHaveURL(/\/agenda\?.*vista=semana/);
+    await expect(page).toHaveURL(/fecha=2026-11-02/);
+    await expect(page.getByRole('heading', { name: 'Agenda', level: 1 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Semana', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 
   /**
@@ -151,7 +180,7 @@ test.describe('Buscador de agenda contra el backend real', () => {
     } = await diaDeTrabajo(api, centro, oferta.id, DIAS.buscadorSlotCompleto);
     await reservar(api, centro, oferta.id, (await crearPersona(api)).id, primero.desde);
 
-    await abrirLaAgenda(page, oferta, d, sumarDias(d, 1));
+    await abrirLaDisponibilidad(page, oferta, d, sumarDias(d, 1));
 
     await expect(page.getByText(rango(primero, centro.timezone))).toBeVisible();
     await expect(page.getByText('Completo', { exact: true })).toBeVisible();

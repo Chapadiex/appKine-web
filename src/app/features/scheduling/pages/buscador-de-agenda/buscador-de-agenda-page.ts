@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { Agenda } from '../../../../api/generated/model/agenda';
@@ -17,6 +17,7 @@ import { recortarVentana, traducirErrorAgenda } from '../../models/agenda-errors
 import {
   diaSinSlots,
   fechaEnPalabras,
+  horaEnZona,
   hoyEnZona,
   rangoEnZona,
   slotCompleto,
@@ -25,16 +26,22 @@ import {
   textoSinSlots,
 } from '../../models/etiquetas-de-agenda';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
+
+/** Parte del dia que se mira. La filtra la pantalla: el backend trae el dia entero. */
+type Franja = 'TODO' | 'MANANA' | 'TARDE';
+
+/** Hora local de la sede en que termina la manana y empieza la tarde. */
+const INICIO_DE_LA_TARDE = '13:00';
 
 /**
  * El buscador de agenda (M12, AKINE-05.01).
@@ -68,10 +75,11 @@ const DIAS_POR_DEFECTO = 7;
  * navegador mostraria horarios corridos sin que nada falle, que es el peor tipo de bug de agenda:
  * silencioso y con consecuencias en la vida real de un paciente.
  *
- * <h2>5. Reservar es otra pantalla</h2>
+ * <h2>5. Reservar es el flujo unico</h2>
  *
- * <p>Elegir el slot navega a la reserva, que es donde se elige la persona y se confirma. No se
- * reserva desde la grilla: sin resumen previo, un click de mas crea un turno.
+ * <p>Elegir el slot abre el flujo de turnos con lo que la grilla ya sabe, y ahi se elige la persona
+ * y se confirma. No se reserva desde la grilla: sin resumen previo, un click de mas crea un turno.
+ * El flujo es un panel sobre esta pantalla, asi que lo que reserva se relee en el lugar.
  *
  * <p><b>No hay cancelar.</b> AKINE-05.03 quedo fuera de alcance por DP-10 y el endpoint no
  * existe: un boton que promete algo que termina en 404 es peor que su ausencia.
@@ -84,10 +92,9 @@ const DIAS_POR_DEFECTO = 7;
 })
 export class BuscadorDeAgendaPage {
   private readonly api = inject(SchedulingApi);
-  private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
-  private readonly router = inject(Router);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   private readonly permisos = inject(PermissionsStore);
 
@@ -116,6 +123,7 @@ export class BuscadorDeAgendaPage {
   protected readonly profesionalId = signal<number | null>(null);
   protected readonly desde = signal(this.diaDeLaSede.hoy());
   protected readonly hasta = signal(sumarDias(this.diaDeLaSede.hoy(), DIAS_POR_DEFECTO));
+  protected readonly franja = signal<Franja>('TODO');
 
   /**
    * `true` mientras el borde sigue siendo el default calculado con el dia del NAVEGADOR.
@@ -146,11 +154,41 @@ export class BuscadorDeAgendaPage {
 
   protected readonly dias = computed<readonly DiaDeAgenda[]>(() => this.agenda()?.dias ?? []);
   protected readonly timezone = computed(() => this.agenda()?.timezone ?? '');
-  protected readonly duracion = computed(() => this.agenda()?.duracionMinutos ?? 0);
+
+  /**
+   * Lo que duran los turnos de la ventana. Sin filtro por profesional, los que tienen duracion propia
+   * duran otra cosa: con mas de una no hay "la" duracion, y `0` deja cada slot diciendo su rango.
+   */
+  protected readonly duracion = computed(() => {
+    const minutos = new Set(
+      this.dias()
+        .flatMap((dia) => dia.slots ?? [])
+        .map((slot) => (Date.parse(slot.hasta ?? '') - Date.parse(slot.desde ?? '')) / 60_000),
+    );
+    if (minutos.size === 0) {
+      return this.agenda()?.duracionMinutos ?? 0;
+    }
+    return minutos.size === 1 ? [...minutos][0] : 0;
+  });
 
   /** `true` cuando toda la ventana quedo sin un solo slot: el resumen lo dice arriba. */
   protected readonly ventanaVacia = computed(
     () => this.dias().length > 0 && this.dias().every((dia) => diaSinSlots(dia)),
+  );
+
+  /** Cada dia con los slots de la franja elegida. El dia se conserva aunque se quede sin ninguno. */
+  protected readonly diasDeLaFranja = computed(() =>
+    this.dias().map((dia) => ({
+      dia,
+      slots: unoPorHorario(
+        (dia.slots ?? []).filter((slot) => enFranja(slot, this.franja(), this.timezone())),
+      ),
+    })),
+  );
+
+  /** Ningun horario libre a la vista: es cuando se ofrece la lista de espera (TURNO §20). */
+  protected readonly sinHorarioLibre = computed(
+    () => !this.diasDeLaFranja().some(({ slots }) => slots.some((slot) => !slotCompleto(slot))),
   );
 
   constructor() {
@@ -167,6 +205,12 @@ export class BuscadorDeAgendaPage {
         this.limpiarAvisos();
         this.cargarOfertas();
       });
+    });
+
+    // Sin oferta elegida `buscar` no hace nada, asi que la primera corrida no pide nada.
+    effect(() => {
+      this.flujo.cambios();
+      untracked(() => this.buscar());
     });
   }
 
@@ -229,6 +273,10 @@ export class BuscadorDeAgendaPage {
     const id = Number(valor);
     this.profesionalId.set(Number.isFinite(id) && id > 0 ? id : null);
     this.buscar();
+  }
+
+  protected elegirFranja(valor: string): void {
+    this.franja.set(valor === 'MANANA' || valor === 'TARDE' ? valor : 'TODO');
   }
 
   /**
@@ -358,30 +406,34 @@ export class BuscadorDeAgendaPage {
     return true;
   }
 
-  /** Navega a la reserva con todo lo que esa pantalla necesita para rearmar el resumen. */
+  /** Abre el flujo unico con lo que la grilla ya sabe. */
   protected reservar(dia: DiaDeAgenda, slot: SlotDisponible): void {
     const ofertaId = this.ofertaId();
     if (ofertaId === null || slot.desde === undefined) {
       return;
     }
 
-    this.router
-      .navigate(['/agenda', 'ofertas', ofertaId, 'reservar'], {
-        queryParams: {
-          fecha: dia.fecha,
-          inicio: slot.desde,
-          // El del slot y no el del filtro: sin filtro la grilla trae los de todos los
-          // profesionales, y el que atiende ese hueco es el que el slot declara.
-          profesionalId: slot.profesionalId ?? undefined,
-        },
-      })
-      .catch((error: unknown) => {
-        console.error('No se pudo abrir la pantalla de reserva', error);
-        // Una accion sin formulario: aviso global, con Reintentar (UX-12).
-        this.avisos.error('No pudimos abrir la reserva', {
-          accion: { etiqueta: 'Reintentar', ejecutar: () => this.reservar(dia, slot) },
-        });
+    this.flujo.nuevoTurno({
+      origen: 'DISPONIBILIDAD',
+      ofertaId,
+      fecha: dia.fecha,
+      inicio: slot.desde,
+      // El del slot y no el del filtro: sin filtro la grilla trae los de todos los
+      // profesionales, y el que atiende ese hueco es el que el slot declara.
+      profesionalId: slot.profesionalId,
+    });
+  }
+
+  protected agregarAListaDeEspera(): void {
+    const ofertaId = this.ofertaId();
+    if (ofertaId !== null) {
+      this.flujo.listaDeEspera({
+        origen: 'DISPONIBILIDAD',
+        ofertaId,
+        fecha: this.desde(),
+        profesionalId: this.profesionalId() ?? undefined,
       });
+    }
   }
 
   private limpiarAvisos(): void {
@@ -395,6 +447,34 @@ export class BuscadorDeAgendaPage {
     this.error.set(traducido.mensaje);
     this.faltaContexto.set(traducido.causa === 'sin-contexto');
   }
+}
+
+/** Si el slot empieza dentro de la franja, con la hora local de la sede y no la del navegador. */
+/**
+ * Una hora es un solo boton: repetirla por cada profesional, sin decir de quien es, no ayuda a elegir.
+ * Libre si alguno la atiende. Con uno solo libre el turno ya es de esa persona; con varios, quien
+ * atiende se elige en el panel, que pregunta cuales siguen libres.
+ */
+function unoPorHorario(slots: readonly SlotDisponible[]): readonly SlotDisponible[] {
+  const porInicio = new Map<string | undefined, SlotDisponible[]>();
+  for (const slot of slots) {
+    porInicio.set(slot.desde, [...(porInicio.get(slot.desde) ?? []), slot]);
+  }
+  return [...porInicio.values()].map((grupo) => {
+    const libres = grupo.filter((slot) => !slotCompleto(slot));
+    if (libres.length === 0) {
+      return grupo[0];
+    }
+    return libres.length === 1 ? libres[0] : { ...libres[0], profesionalId: undefined };
+  });
+}
+
+function enFranja(slot: SlotDisponible, franja: Franja, timezone: string): boolean {
+  if (franja === 'TODO') {
+    return true;
+  }
+  const deManana = horaEnZona(slot.desde, timezone) < INICIO_DE_LA_TARDE;
+  return franja === 'MANANA' ? deManana : !deManana;
 }
 
 /** Dias de calendario entre dos fechas locales `YYYY-MM-DD`. */

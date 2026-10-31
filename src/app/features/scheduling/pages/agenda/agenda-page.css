@@ -1,0 +1,423 @@
+/*
+ * La grilla de la agenda. Usa todo el alto util y el scroll queda adentro: la pagina no crece (TURNO -
+ * Tecnico §58 y §59). Los colores son los tokens del sistema; el estado se lee por el simbolo y el
+ * texto, el color acompana.
+ */
+
+.agenda-nav {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+}
+
+.agenda-nav__boton,
+.segmento button {
+  min-height: 2.25rem;
+  padding: 0 var(--esp-5);
+  background: var(--color-superficie);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  color: var(--color-texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.agenda-nav__boton {
+  border-radius: var(--radio-sm);
+}
+
+.agenda-nav__boton:hover,
+.segmento button:hover {
+  background: var(--color-acento-claro);
+}
+
+.agenda-nav__fecha {
+  width: auto;
+  min-height: 2.25rem;
+}
+
+.agenda-barra {
+  display: block;
+  margin-bottom: var(--esp-4);
+}
+
+.agenda-barra__fecha {
+  margin: 0;
+}
+
+.agenda-barra__fecha b::first-letter {
+  text-transform: uppercase;
+}
+
+.agenda-barra__vistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+}
+
+.agenda-barra__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4) var(--esp-6);
+}
+
+.agenda-barra__filtros .campo {
+  flex: 1 1 10rem;
+  max-width: 18rem;
+  margin: 0;
+}
+
+.segmento {
+  display: inline-flex;
+}
+
+.segmento button:first-child {
+  border-radius: var(--radio-sm) 0 0 var(--radio-sm);
+}
+
+.segmento button:last-child {
+  border-radius: 0 var(--radio-sm) var(--radio-sm) 0;
+  border-left: 0;
+}
+
+.segmento button[aria-pressed='true'] {
+  background: var(--color-accion-fondo);
+  border-color: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+.agenda-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-4);
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  padding: var(--esp-1) var(--esp-4);
+  background: var(--color-acento-claro);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  cursor: pointer;
+}
+
+.agenda-vacia {
+  margin: var(--esp-4) 0 0;
+  color: var(--color-texto-suave);
+}
+
+/* --- Grilla --- */
+
+.grilla {
+  --ancho-de-horas: 3rem;
+  --ancho-minimo-de-columna: 9rem;
+  height: var(--alto-de-grilla, 70vh);
+  overflow: auto;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+/* Siete columnas entran en un escritorio comun: el estado queda en su simbolo y en el nombre accesible. */
+.grilla--semana {
+  --ancho-minimo-de-columna: 6.5rem;
+}
+
+.grilla--semana .turno__estado-texto {
+  display: none;
+}
+
+.grilla:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+.grilla__cabecera,
+.grilla__cuerpo {
+  display: grid;
+  grid-template-columns: var(--ancho-de-horas) repeat(
+      var(--columnas),
+      minmax(var(--ancho-minimo-de-columna), 1fr)
+    );
+  min-width: fit-content;
+}
+
+.grilla__cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--color-superficie);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.grilla__esquina {
+  position: sticky;
+  left: 0;
+  background: var(--color-superficie);
+}
+
+.grilla__titulo {
+  padding: var(--esp-4);
+  border-left: var(--borde-fino) solid var(--color-borde);
+  font-weight: var(--peso-medio);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grilla__titulo--hoy {
+  background: var(--color-acento-claro);
+}
+
+.grilla__cuerpo {
+  position: relative;
+  /* Una linea por hora, sin un nodo por linea. 72 px son 60 minutos a 1,2 px por minuto. */
+  background-image: linear-gradient(to bottom, var(--color-borde) 1px, transparent 1px);
+  background-size: 100% 72px;
+}
+
+.grilla__horas {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-superficie);
+  border-right: var(--borde-fino) solid var(--color-borde);
+}
+
+.grilla__hora {
+  position: absolute;
+  right: 0.25rem;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  transform: translateY(0.0625rem);
+}
+
+.grilla__columna {
+  position: relative;
+  border-left: var(--borde-fino) solid var(--color-borde);
+}
+
+/* Lo que no es franja de atencion se ve gris y rayado, y lo dice: no se puede reservar. */
+.grilla__fuera {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-texto-suave) 24%, var(--color-superficie)) 0,
+    color-mix(in srgb, var(--color-texto-suave) 24%, var(--color-superficie)) 8px,
+    color-mix(in srgb, var(--color-texto-suave) 14%, var(--color-superficie)) 8px,
+    color-mix(in srgb, var(--color-texto-suave) 14%, var(--color-superficie)) 16px
+  );
+}
+
+.grilla__fuera-texto {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+}
+
+/* Un horario libre se ve como tal: con su hora y la invitacion a darlo. */
+.grilla__celda {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 0 var(--esp-4);
+  background: transparent;
+  border: 0;
+  border-top: var(--borde-fino) dashed var(--color-borde);
+  color: var(--color-texto-suave);
+  text-align: left;
+  font-size: var(--tipo-xs);
+  cursor: pointer;
+}
+
+.grilla__celda:hover,
+.grilla__celda:focus-visible {
+  background: var(--color-acento-claro);
+  color: var(--color-texto);
+  z-index: 1;
+}
+
+.grilla__celda:hover .grilla__celda-hora::after,
+.grilla__celda:focus-visible .grilla__celda-hora::after {
+  content: ' · Dar turno';
+}
+
+.grilla__ahora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-peligro);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* --- Tarjeta del turno --- */
+
+.turno,
+.evento {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding: var(--esp-1) var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  line-height: 1.25;
+  text-align: left;
+  z-index: 1;
+}
+
+.turno {
+  cursor: pointer;
+}
+
+/* Sin encoger: en un turno corto entra lo que entra y el resto se corta entero, no a media letra. */
+.turno > *,
+.evento > * {
+  flex: none;
+}
+
+.turno:hover,
+.turno:focus-visible {
+  box-shadow: 0 4px 12px rgb(16 38 63 / 0.12);
+  z-index: 2;
+}
+
+.turno__hora {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-2);
+  white-space: nowrap;
+}
+
+.turno__estado {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-texto-suave);
+}
+
+.turno__persona {
+  font-weight: var(--peso-medio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turno__linea {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-texto-suave);
+}
+
+.turno__marca {
+  font-weight: var(--peso-medio);
+}
+
+.turno--confirmado {
+  background: var(--color-acento-claro);
+}
+
+.turno--presente,
+.turno--en-atencion {
+  background: var(--color-exito-fondo);
+}
+
+.turno--atendido {
+  background: var(--color-superficie-sutil);
+}
+
+.turno--ausente,
+.turno--retirado {
+  background: var(--color-aviso-fondo);
+}
+
+.turno--cancelado {
+  background: var(--color-superficie-sutil);
+}
+
+.turno--cancelado .turno__persona {
+  text-decoration: line-through;
+}
+
+.turno--sobreturno {
+  border-style: dashed;
+}
+
+.evento__enlace {
+  align-self: flex-start;
+  color: var(--color-enlace);
+}
+
+.evento--clase {
+  background: var(--color-acento-claro);
+}
+
+.evento--bloqueo {
+  left: 0;
+  right: 0;
+  border-color: var(--color-peligro);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.evento--bloqueo .turno__linea {
+  color: var(--color-peligro-texto);
+}
+
+/* --- Lista en pantallas angostas --- */
+
+.agenda-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-lista__turno {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  background: var(--color-superficie);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agenda-lista__hora {
+  font-weight: var(--peso-medio);
+}
+
+.agenda-lista__persona {
+  font-weight: var(--peso-medio);
+}

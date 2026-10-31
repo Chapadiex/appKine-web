@@ -4,8 +4,14 @@ import { vi } from 'vitest';
 const entorno = (globalThis as unknown as { process: { env: Record<string, string | undefined> } })
   .process.env;
 
-/** Zona del proceso antes de que un spec la cambiara, para devolverla en {@link soltarReloj}. */
-let zonaOriginal: string | undefined | null = null;
+/**
+ * Zona del proceso antes de que un spec la cambiara, para devolverla en {@link soltarReloj}.
+ *
+ * <p>Se guarda la zona efectiva y no el valor de `TZ`: en Windows, borrar `TZ` no vuelve a la zona del
+ * sistema, se queda en la ultima que se le dio. Con los workers sin aislar eso dejaba al resto de los
+ * specs de ese worker en otro huso, y fallaba uno distinto segun el orden en que tocaran.
+ */
+let zonaOriginal: string | null = null;
 
 /**
  * Reloj fijo para los specs que dependen de "hoy".
@@ -37,7 +43,7 @@ export function fijarReloj(
   }
   if (opciones.zonaDelNavegador !== undefined) {
     if (zonaOriginal === null) {
-      zonaOriginal = entorno['TZ'];
+      zonaOriginal = Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
     entorno['TZ'] = opciones.zonaDelNavegador;
   }
@@ -47,11 +53,7 @@ export function soltarReloj(): void {
   vi.useRealTimers();
   vi.restoreAllMocks();
   if (zonaOriginal !== null) {
-    if (zonaOriginal === undefined) {
-      delete entorno['TZ'];
-    } else {
-      entorno['TZ'] = zonaOriginal;
-    }
+    entorno['TZ'] = zonaOriginal;
     zonaOriginal = null;
   }
 }

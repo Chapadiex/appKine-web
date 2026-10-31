@@ -14,6 +14,10 @@
  */
 export interface RegistrarAusencia { 
     /**
+     * Si la ausencia consume una sesion del plan del turno. Se ignora si el turno no tiene plan. Omitirlo es que no consume.
+     */
+    consumeSesionDelPlan?: boolean;
+    /**
      * Version que devolvio la ultima lectura del turno.
      */
     expectedVersion: number;

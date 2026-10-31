@@ -1,0 +1,530 @@
+<app-panel-lateral [titulo]="titulo()" [subtitulo]="subtitulo()" (cerrar)="cerrar.emit()">
+  <div class="flujo">
+    @if (error(); as fallo) {
+      <app-alerta tipo="error" [titulo]="tituloDelError()">
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.motivo) {
+          <p>Lo que dijo el servidor: {{ fallo.motivo }}</p>
+        }
+        @if (fallo.accion === 'resolver-atencion') {
+          <!--
+            La unica salida real: reintentar devuelve el mismo 409 para siempre. Lo que hay que
+            resolver es la Sesion, y vive en otra pantalla (DP-05).
+          -->
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="iniciarAtencion()">
+              Ver la atención clínica
+            </button>
+          </p>
+        }
+        @if (fallo.accion === 'elegir-contexto') {
+          <p class="alerta__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="irA(['/seleccionar-contexto'])"
+            >
+              Elegir contexto de trabajo
+            </button>
+          </p>
+        }
+        @if (lecturaReintentable()) {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="reintentarLectura()">
+              Reintentar
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    @if (cargando() && turno() === null) {
+      <p class="estado estado--cargando">Leyendo el turno…</p>
+    }
+
+    @if (turno(); as actual) {
+      <div class="flujo__resumen">
+        <span class="flujo__resumen-titulo">{{ cuando() }}</span>
+        <span>{{ actual.ofertaNombre }}</span>
+        @if (operativo()?.profesionalNombre; as profesional) {
+          <span>{{ profesional }}</span>
+        }
+        @if (operativo()?.espacioNombre; as espacio) {
+          <span>{{ espacio }}</span>
+        }
+        @if (cobertura(); as elegida) {
+          <span>{{ elegida }}</span>
+        }
+        @if (operativo()?.numeroCaso; as caso) {
+          <span>
+            Caso {{ caso }}
+            @if (operativo()?.sesionNumero; as numero) {
+              · Sesión {{ numero }}/{{ operativo()?.sesionesPlanificadas }}
+            }
+          </span>
+        }
+      </div>
+
+      @switch (vista()) {
+        @case ('resumen') {
+          <p class="flujo__dato estado-turno">
+            <span aria-hidden="true">{{ simboloDeEstadoOperativo(estado()) }}</span>
+            {{ nombreDeEstadoOperativo(estado()) }}
+          </p>
+          @if (operativo()?.sobreturno) {
+            <p class="flujo__dato"><b>Sobreturno:</b> {{ operativo()?.sobreturnoMotivo }}</p>
+          }
+          @if (actual.motivoCancelacion) {
+            <p class="flujo__dato"><b>Motivo:</b> {{ actual.motivoCancelacion }}</p>
+          }
+          @if (retirado()) {
+            @if (actual.recepcion?.motivoCierre; as motivo) {
+              <p class="flujo__dato"><b>Motivo del retiro:</b> {{ motivo }}</p>
+            }
+            <p class="ayuda">
+              Se retiró sin ser atendido: la llegada consta, así que el turno ya no se puede marcar
+              ausente ni mover.
+            </p>
+          }
+          @if (avisoDePrepago(); as prepago) {
+            <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
+            <p class="flujo__dato">{{ prepago }}</p>
+          }
+          @if (!puedeOperar() && (vivo() || enElCentro())) {
+            <p class="ayuda">
+              Mover, cancelar o confirmar este turno necesita permiso de gestión de turnos en esta
+              sede.
+            </p>
+          }
+
+          <!-- Acciones principales a la vista; el resto, en "Mas acciones" (TURNO - Tecnico §30). -->
+          <div class="flujo__fila" *akinePermiso="PERMISO_TURNO_MANAGE">
+            @if (vivo()) {
+              <button
+                type="button"
+                class="boton"
+                [disabled]="enviando()"
+                (click)="marcarPresente()"
+              >
+                Paciente presente
+              </button>
+              @if (actual.estado === 'RESERVADO') {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enviando()"
+                  (click)="confirmarTurno()"
+                >
+                  Confirmar
+                </button>
+              }
+            }
+            @if (cerrado()) {
+              <button type="button" class="boton" (click)="buscarNuevoTurno()">
+                Buscar nuevo turno
+              </button>
+            }
+            @if (atendido()) {
+              <button type="button" class="boton" (click)="programarProxima()">
+                Programar próxima sesión
+              </button>
+            }
+          </div>
+          <div class="flujo__fila" *akinePermiso="PERMISO_SESION_REGISTER">
+            @if (vivo() || enElCentro() || enAtencion() || retirado()) {
+              <button
+                type="button"
+                [class]="enElCentro() || enAtencion() ? 'boton' : 'boton boton--secundario'"
+                (click)="iniciarAtencion()"
+              >
+                {{ enAtencion() ? 'Abrir la atención' : 'Iniciar atención' }}
+              </button>
+            }
+            @if (atendido()) {
+              <button type="button" class="boton boton--secundario" (click)="iniciarAtencion()">
+                Ver la atención
+              </button>
+            }
+          </div>
+
+          <details [open]="masAcciones()">
+            <summary>Más acciones</summary>
+            <div class="flujo__fila">
+              @if (puedeReprogramar()) {
+                <button
+                  *akinePermiso="PERMISO_TURNO_MANAGE"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="abrir('reprogramar')"
+                >
+                  Reprogramar
+                </button>
+              }
+              @if (puedeCancelar()) {
+                <button
+                  *akinePermiso="PERMISO_TURNO_MANAGE"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="abrir('cancelar')"
+                >
+                  Cancelar turno
+                </button>
+              }
+              @if (puedeMarcarAusente()) {
+                <button
+                  *akinePermiso="PERMISO_TURNO_MANAGE"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="abrir('ausente')"
+                >
+                  Marcar ausente
+                </button>
+              }
+              <button type="button" class="boton boton--secundario" (click)="abrir('historial')">
+                Ver historial
+              </button>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="irA(['/pacientes', actual.personaId ?? 0])"
+              >
+                Ver paciente
+              </button>
+              @if (operativo()?.casoId) {
+                <button
+                  *akinePermiso="PERMISO_HC_READ"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="irA(rutaDelCaso())"
+                >
+                  Ver caso
+                </button>
+              }
+              @if (operativo()?.planId) {
+                <button
+                  *akinePermiso="PERMISO_HC_READ"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="
+                    irA([
+                      rutaDelCaso()[0],
+                      rutaDelCaso()[1],
+                      rutaDelCaso()[2],
+                      rutaDelCaso()[3],
+                      rutaDelCaso()[4],
+                      'plan',
+                    ])
+                  "
+                >
+                  Ver plan
+                </button>
+              }
+              @if (actual.serieId; as serie) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="irA(['/agenda', 'series', serie])"
+                >
+                  Ver la serie
+                </button>
+              }
+            </div>
+          </details>
+        }
+
+        @case ('reprogramar') {
+          <p class="ayuda">
+            Es el mismo turno: conserva paciente, caso, plan e historial. Si estaba confirmado,
+            vuelve a quedar reservado.
+          </p>
+          <div class="flujo__filtros">
+            <div class="campo">
+              <label for="flujo-reprogramar-desde">Desde</label>
+              <input
+                id="flujo-reprogramar-desde"
+                type="date"
+                [min]="hoy()"
+                [value]="desdeDestino()"
+                (change)="filtrarDesde($any($event.target).value)"
+              />
+            </div>
+            @if (actual.profesionalId) {
+              <!-- Puede ser otro: mover un turno porque el profesional falta es el caso normal. -->
+              <div class="campo">
+                <label for="flujo-reprogramar-profesional">Profesional</label>
+                <select
+                  id="flujo-reprogramar-profesional"
+                  (change)="filtrarProfesional($any($event.target).value)"
+                >
+                  <option [value]="actual.profesionalId">
+                    {{ operativo()?.profesionalNombre ?? 'El del turno' }}
+                  </option>
+                  <option value="">Cualquier profesional</option>
+                </select>
+              </div>
+            }
+          </div>
+          @if (buscando()) {
+            <p class="estado estado--cargando">Buscando horarios…</p>
+          } @else if (errorDeBusqueda(); as fallo) {
+            <app-alerta tipo="error" titulo="No pudimos buscar horarios">
+              <p>{{ fallo.mensaje }}</p>
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="buscarDestino()">
+                  Reintentar
+                </button>
+              </p>
+            </app-alerta>
+          } @else if (horarios().length === 0) {
+            <p class="estado estado--vacio">
+              {{
+                profesionalDestino() === null
+                  ? 'No hay horarios disponibles con estos criterios.'
+                  : 'No hay horarios disponibles con este profesional.'
+              }}
+            </p>
+          } @else {
+            <app-lista-de-horarios
+              [horarios]="horarios()"
+              [timezone]="timezone()"
+              [elegido]="destino()"
+              (elegir)="destino.set($event)"
+            />
+            @if (truncado()) {
+              <button type="button" class="boton-texto" (click)="verMasHorarios()">
+                Ver más horarios
+              </button>
+            }
+          }
+          <div class="campo">
+            <label for="flujo-reprogramar-motivo">Motivo</label>
+            <select
+              id="flujo-reprogramar-motivo"
+              [value]="motivoReprogramacion()"
+              (change)="motivoReprogramacion.set($any($event.target).value)"
+            >
+              @for (motivo of MOTIVOS_DE_REPROGRAMACION; track motivo) {
+                <option [value]="motivo">{{ motivo }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="flujo-reprogramar-nota">
+              Observación ({{ motivoEsOtro() ? 'obligatoria' : 'opcional' }})
+            </label>
+            <textarea
+              id="flujo-reprogramar-nota"
+              rows="2"
+              maxlength="200"
+              [attr.aria-required]="motivoEsOtro()"
+              [value]="observacion()"
+              (input)="observacion.set($any($event.target).value)"
+            ></textarea>
+          </div>
+          <div class="acciones acciones--pie">
+            <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+            <button
+              type="button"
+              class="boton"
+              [disabled]="enviando() || destino() === null || faltaDetalle()"
+              (click)="reprogramar()"
+            >
+              Reprogramar
+            </button>
+          </div>
+        }
+
+        @case ('cancelar') {
+          <p class="ayuda">
+            Cancelar libera el lugar, que vuelve a la agenda. El turno queda con su motivo y su
+            historial.
+          </p>
+          <div class="campo">
+            <label for="flujo-cancelar-origen">Quién cancela</label>
+            <select
+              id="flujo-cancelar-origen"
+              [value]="origenCancelacion()"
+              (change)="origenCancelacion.set($any($event.target).value)"
+            >
+              @for (origen of ORIGENES_DE_CANCELACION; track origen.valor) {
+                <option [value]="origen.valor">{{ origen.etiqueta }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="flujo-cancelar-motivo">Motivo</label>
+            <select
+              id="flujo-cancelar-motivo"
+              [value]="motivoCancelacion()"
+              (change)="motivoCancelacion.set($any($event.target).value)"
+            >
+              @for (motivo of MOTIVOS_DE_CANCELACION; track motivo) {
+                <option [value]="motivo">{{ motivo }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label for="flujo-cancelar-nota">
+              Observación ({{ motivoEsOtro() ? 'obligatoria' : 'opcional' }})
+            </label>
+            <textarea
+              id="flujo-cancelar-nota"
+              rows="2"
+              maxlength="200"
+              [attr.aria-required]="motivoEsOtro()"
+              [value]="observacion()"
+              (input)="observacion.set($any($event.target).value)"
+            ></textarea>
+          </div>
+          <div class="acciones acciones--pie">
+            <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+            <button
+              type="button"
+              class="boton boton--peligro"
+              [disabled]="enviando() || faltaDetalle()"
+              (click)="cancelar()"
+            >
+              Cancelar turno
+            </button>
+          </div>
+        }
+
+        @case ('ausente') {
+          <p class="ayuda">La ausencia no libera el lugar: la hora se consumió igual.</p>
+          @if (operativo()?.planId) {
+            <fieldset class="dias-semana">
+              <legend>¿Esta ausencia consume una sesión del plan?</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="flujo-ausente-consume"
+                  [checked]="consumeSesion()"
+                  (change)="consumeSesion.set(true)"
+                />
+                Sí
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="flujo-ausente-consume"
+                  [checked]="!consumeSesion()"
+                  (change)="consumeSesion.set(false)"
+                />
+                No
+              </label>
+            </fieldset>
+          }
+          <div class="campo">
+            <label for="flujo-ausente-nota">Motivo u observación (opcional)</label>
+            <textarea
+              id="flujo-ausente-nota"
+              rows="2"
+              maxlength="300"
+              [value]="observacion()"
+              (input)="observacion.set($any($event.target).value)"
+            ></textarea>
+          </div>
+          <div class="acciones acciones--pie">
+            <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+            <button type="button" class="boton" [disabled]="enviando()" (click)="marcarAusente()">
+              Registrar la ausencia
+            </button>
+          </div>
+        }
+
+        @case ('historial') {
+          <p class="ayuda">Turno #{{ turnoId() }}</p>
+          <section class="flujo" aria-labelledby="flujo-historial-reserva">
+            <div class="flujo__titulo-de-seccion">
+              <h3 id="flujo-historial-reserva" class="flujo__dato">Historial de la reserva</h3>
+              <app-ayuda titulo="Historial de la reserva">
+                <p>
+                  Todos los cambios, del más viejo al más nuevo, con quién los hizo. No se edita ni
+                  se borra: cancelar y marcar ausencia dejan su rastro. El estado de la reserva no
+                  dice que la atención haya ocurrido: eso lo registra la sesión clínica.
+                </p>
+              </app-ayuda>
+            </div>
+            @if (errorDeHistorial(); as fallo) {
+              <app-alerta tipo="error" titulo="No pudimos leer el historial del turno">
+                <p>{{ fallo.mensaje }}</p>
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="leerHistorial()">
+                    Reintentar
+                  </button>
+                </p>
+              </app-alerta>
+            } @else if (eventos().length === 0) {
+              @if (leyendoHistorial()) {
+                <p class="estado estado--cargando">Leyendo el historial…</p>
+              } @else {
+                <p class="estado estado--vacio">Todavía no hay cambios para mostrar.</p>
+              }
+            } @else {
+              <ol class="flujo__historial">
+                @for (evento of eventos(); track evento.id) {
+                  <li>
+                    <span class="flujo__historial-cuando">{{ instante(evento.ocurridoEn) }}</span>
+                    {{ textoDeEvento(evento.tipo) }}
+                    @if (evento.estadoAnterior && evento.estadoAnterior !== evento.estadoNuevo) {
+                      <br /><span class="ayuda">
+                        {{ nombreDeEstado(evento.estadoAnterior) }} →
+                        {{ nombreDeEstado(evento.estadoNuevo) }}
+                      </span>
+                    }
+                    @if (evento.inicioAnterior) {
+                      <br /><span class="ayuda">
+                        De {{ instante(evento.inicioAnterior) }} a
+                        {{ instante(evento.inicioNuevo) }}
+                      </span>
+                    }
+                    @if (evento.motivo) {
+                      <br /><span class="ayuda">{{ evento.motivo }}</span>
+                    }
+                    <br /><span class="ayuda">{{ quien(evento) }}</span>
+                  </li>
+                }
+              </ol>
+            }
+          </section>
+          @if (eventosDeRecepcion().length > 0) {
+            <section class="flujo" aria-labelledby="flujo-historial-recepcion">
+              <div class="flujo__titulo-de-seccion">
+                <h3 id="flujo-historial-recepcion" class="flujo__dato">
+                  Historial de la recepción
+                </h3>
+                <app-ayuda titulo="Historial de la recepción">
+                  <p>
+                    La llegada al mostrador es otra máquina que la reserva: estos pasos no cambian
+                    el turno.
+                  </p>
+                </app-ayuda>
+              </div>
+              <ol class="flujo__historial">
+                @for (evento of eventosDeRecepcion(); track evento.id) {
+                  <li>
+                    <span class="flujo__historial-cuando">{{ instante(evento.ocurridoEn) }}</span>
+                    {{ textoDeEventoDeRecepcion(evento.tipo) }}
+                    <br /><span class="ayuda">
+                      @if (evento.estadoAnterior) {
+                        {{ nombreDeEstadoDeRecepcion(evento.estadoAnterior) }} →
+                      }
+                      {{ nombreDeEstadoDeRecepcion(evento.estadoNuevo) }}
+                    </span>
+                    @if (evento.motivo) {
+                      <br /><span class="ayuda">{{ evento.motivo }}</span>
+                    }
+                    <br /><span class="ayuda">{{ quien(evento) }}</span>
+                  </li>
+                }
+              </ol>
+            </section>
+          }
+          <div class="acciones acciones--pie">
+            <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+          </div>
+        }
+      }
+    }
+  </div>
+</app-panel-lateral>

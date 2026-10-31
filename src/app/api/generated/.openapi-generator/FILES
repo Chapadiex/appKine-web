@@ -51,6 +51,8 @@ api/derivacion-clinica-de-participantes.service.ts
 api/derivacion-clinica-de-participantes.serviceInterface.ts
 api/disponibilidad-profesional.service.ts
 api/disponibilidad-profesional.serviceInterface.ts
+api/disponibilidad.service.ts
+api/disponibilidad.serviceInterface.ts
 api/egresos.service.ts
 api/egresos.serviceInterface.ts
 api/elegibilidad-administrativa.service.ts
@@ -71,6 +73,8 @@ api/invitaciones-recibidas.service.ts
 api/invitaciones-recibidas.serviceInterface.ts
 api/invitaciones.service.ts
 api/invitaciones.serviceInterface.ts
+api/lista-de-espera.service.ts
+api/lista-de-espera.serviceInterface.ts
 api/mediciones-de-sesion.service.ts
 api/mediciones-de-sesion.serviceInterface.ts
 api/mi-cuenta.service.ts
@@ -144,12 +148,14 @@ model/adjunto-response.ts
 model/adopcion-de-financiador-response.ts
 model/advertencia-response.ts
 model/agenda-del-dia.ts
+model/agenda-operativa.ts
 model/agenda-unificada.ts
 model/agenda.ts
 model/agregar-item-a-presentacion.ts
 model/ajuste-de-saldo-de-pase.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
+model/alta-en-lista-de-espera.ts
 model/alta-sede-franja-horaria-request.ts
 model/alta-sede-primer-box-request.ts
 model/antecedente-response.ts
@@ -161,7 +167,9 @@ model/anular-presentacion.ts
 model/anular-recepcion.ts
 model/arancel-efectivo-response.ts
 model/arancel-response.ts
+model/asignar-desde-lista-de-espera.ts
 model/asistencia.ts
+model/asociar-contexto-de-turno.ts
 model/assign-grant-request.ts
 model/atencion-de-participante.ts
 model/atencion-grupal.ts
@@ -181,7 +189,9 @@ model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/baja-de-producto.ts
 model/bloque-response.ts
+model/bloqueo-en-agenda.ts
 model/borrador-de-honorarios.ts
+model/buscar-disponibilidad-de-turnos.ts
 model/calendario-sede-response.ts
 model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-honorario-por-clase-request.ts
@@ -193,6 +203,7 @@ model/cancelar-serie-de-turnos.ts
 model/cancelar-turno.ts
 model/caso-administrativo-response.ts
 model/caso-clinico.ts
+model/caso-de-agenda.ts
 model/caso-evento.ts
 model/caso-profesional.ts
 model/catalogo-concepto-page-response.ts
@@ -205,6 +216,7 @@ model/cerrar-caso-clinico-request.ts
 model/cerrar-sesion.ts
 model/change-membership-request.ts
 model/cierre-de-sesion.ts
+model/clase-en-agenda.ts
 model/clase-excluida-de-honorarios.ts
 model/clase.ts
 model/clasificar-adjunto-request.ts
@@ -223,6 +235,8 @@ model/confirmar-liquidacion-de-honorarios-request.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
+model/contexto-de-agenda.ts
+model/contexto-de-proxima-sesion.ts
 model/convenio-aplicado.ts
 model/convenio-response.ts
 model/crear-plan-tratamiento-request.ts
@@ -271,13 +285,17 @@ model/decline-invitacion-request.ts
 model/derivacion-de-participante.ts
 model/derivaciones-de-participante.ts
 model/derivar-participante.ts
+model/descartar-de-lista-de-espera.ts
 model/desvinculacion-impacto-response.ts
 model/detalle-operativo-de-clase.ts
 model/deuda-de-venta.ts
 model/devengo-de-clase.ts
 model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
+model/disponibilidad-de-turnos.ts
 model/disponibilidad-efectiva-response.ts
+model/duracion-propia-pedida.ts
+model/duracion-propia.ts
 model/editar-caso-clinico-request.ts
 model/editar-egreso.ts
 model/editar-producto.ts
@@ -289,8 +307,10 @@ model/enmendar-entrada-clinica-request.ts
 model/enmendar-sesion.ts
 model/entrada-clinica-response.ts
 model/entrada-clinica-version-response.ts
+model/entrada-de-lista-de-espera.ts
 model/equipo-del-caso-request.ts
 model/espacio-availability-response.ts
+model/espacio-de-agenda.ts
 model/espacio-habilitado.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
@@ -310,6 +330,7 @@ model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
 model/finalizar-plan-tratamiento-request.ts
 model/financiador-response.ts
+model/franja-de-agenda.ts
 model/franja-resuelta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
@@ -320,6 +341,7 @@ model/historia-clinica-response.ts
 model/historial-de-autorizacion-response.ts
 model/hito-response.ts
 model/honorario-por-clase.ts
+model/horario-disponible.ts
 model/horario-general-franja-request.ts
 model/horario-general-franja-response.ts
 model/impacto-disponibilidad-response.ts
@@ -349,6 +371,7 @@ model/jornada-caja.ts
 model/limit-usage-response.ts
 model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts
+model/lista-de-espera-page.ts
 model/login-request.ts
 model/marcar-cobertura-principal-request.ts
 model/medicion-comparada.ts
@@ -375,8 +398,11 @@ model/my-profile-response.ts
 model/notification-page-response.ts
 model/notification-response.ts
 model/obligacion.ts
+model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
+model/ocurrencia-prevista.ts
 model/oferta-response.ts
+model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts
 model/pagina-de-movimientos-de-pase.ts
@@ -398,6 +424,7 @@ model/plan-catalogo-response.ts
 model/plan-change-request.ts
 model/plan-change-response.ts
 model/plan-cobertura-response.ts
+model/plan-de-agenda.ts
 model/plan-item-planificado.ts
 model/plan-item.ts
 model/plan-limit-response.ts
@@ -416,15 +443,19 @@ model/precio-particular-response.ts
 model/prepago-de-recepcion.ts
 model/presentacion-item.ts
 model/presentacion.ts
+model/previsualizacion-de-serie.ts
 model/problem-detail.ts
 model/problem-type.ts
 model/producto.ts
+model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
 model/reclasificar-adjunto-clinico-request.ts
+model/recurso-libre.ts
+model/reemplazar-duraciones-propias-request.ts
 model/reemplazar-habilitaciones-request.ts
 model/reemplazar-instructores-de-clase-request.ts
 model/reemplazar-practicas-request.ts
@@ -489,6 +520,7 @@ model/serie-de-turnos.ts
 model/servicio-response.ts
 model/sesion-version.ts
 model/sesion.ts
+model/sesiones-de-prestacion.ts
 model/simular-edicion-bloque-request.ts
 model/slot-disponible.ts
 model/subscription-response.ts
@@ -512,6 +544,7 @@ model/turno-de-calendario.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
 model/turno.ts
+model/turnos-de-persona.ts
 model/turnos-de-sede.ts
 model/update-arancel-request.ts
 model/update-autorizacion-request.ts
@@ -530,8 +563,10 @@ model/update-organization-request.ts
 model/update-persona-request.ts
 model/update-plan-cobertura-request.ts
 model/update-servicio-request.ts
+model/validacion-de-horario.ts
 model/validacion-de-oferta-response.ts
 model/validacion-de-presentacion.ts
+model/validar-horario-de-turno.ts
 model/validar-recepcion.ts
 model/vender-pase.ts
 model/version-response.ts

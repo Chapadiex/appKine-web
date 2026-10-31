@@ -6,7 +6,7 @@
     </p>
     <p>
       Desde cada fila se reprograma o se cancela un turno puntual, o ese turno y los siguientes.
-      «Ver o mover» abre el ciclo del turno. Cancelar no borra nada: cada turno queda con su motivo
+      «Ver o mover» abre el panel del turno. Cancelar no borra nada: cada turno queda con su motivo
       y su historial.
     </p>
   </app-ayuda>
@@ -153,21 +153,18 @@
                   queda a la vista; reprogramar y cancelar (destructiva) van detras del menu.
                 -->
                   <app-acciones-de-fila [de]="'turno del ' + fechaHora(turno.inicio)">
-                    @if (turno.id) {
-                      <a
+                    @if (turno.id; as turnoId) {
+                      <!-- El panel del turno se abre sobre esta pantalla, que no pierde su lugar. -->
+                      <button
                         principal
+                        type="button"
                         class="boton boton--secundario boton--chico"
-                        [routerLink]="['/agenda', 'turnos', turno.id]"
-                        [queryParams]="{
-                          version: turno.version,
-                          ofertaId: actual.ofertaId,
-                          fecha: fechaLocal(turno),
-                        }"
+                        (click)="flujo.verTurno(turnoId)"
                       >
                         Ver o mover<span class="visualmente-oculto">
                           el turno del {{ fechaHora(turno.inicio) }}</span
                         >
-                      </a>
+                      </button>
                     }
                     @if (puedeOperar() && esPendiente(turno)) {
                       <button type="button" (click)="reprogramarDesde(turno)">

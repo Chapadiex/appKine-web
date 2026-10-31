@@ -439,7 +439,7 @@ simulan la API y no entran). Ruta → spec que la recorre.
 | **F9** derivacion de una participante a su Caso             | Si       | `flujo-atencion-grupal`, `circuito-f9` ("Derivar a un caso" en el panel de atencion grupal)     |
 | **F9** reprogramar una clase (`/clases/:id`, "Reprogramar") | Si       | `clase-reprogramada`                                                                            |
 | **F9** renovacion automatica de abonos                      | Parcial  | `flujo-pases` enciende y apaga la marca; la renovacion la hace un job del backend               |
-| **DP-43** `/agenda/recepcion`: se retiro sin ser atendido   | Si       | `agenda-recepcion` (RETIRADO, 409 al nuevo check-in, ciclo sin ausencia ni reprogramar)         |
+| **DP-43** `/agenda/recepcion`: se retiro sin ser atendido   | Si       | `agenda-recepcion` (RETIRADO, 409 al nuevo check-in, panel sin ausencia ni reprogramar)         |
 | **DP-43** serie con un feriado omitido                      | Si       | `flujo-serie-feriado` (usa un feriado nacional cerrado por delante; se saltea si no hay)        |
 | **DP-43** `/atencion/sin-turno`                             | Si       | `flujo-atencion-sin-turno` (como la profesional; misma `idempotencyKey` = misma atencion)       |
 | **DP-43** `/plataforma/catalogo-financiadores` y adopcion   | Si       | `flujo-catalogo-financiadores` (201 la primera vez, 200 con la misma copia despues)             |

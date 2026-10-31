@@ -1,0 +1,323 @@
+/*
+ * Estilos del flujo de turnos: los paneles laterales comparten estas piezas, igual que comparten el
+ * panel, los botones y los avisos del sistema de diseno. No hay una estetica propia para turnos: esto
+ * es la distribucion de lo que el diseno general no cubre.
+ */
+
+.flujo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+}
+
+/* Los campos de un panel: filas parejas, sin depender del ancho que la grilla general le calcula. */
+.flujo__campos {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--esp-5) var(--esp-6);
+}
+
+/* El aire entre campos lo pone la fila que los contiene, no cada campo. */
+.flujo > .campo,
+.flujo__filtros > .campo {
+  margin: 0;
+}
+
+.flujo__campos > * {
+  grid-column: span 12;
+  margin: 0;
+}
+
+.flujo__campos > .campo--mitad {
+  grid-column: span 6;
+}
+
+.flujo__campos > .campo--tercio {
+  grid-column: span 4;
+}
+
+.flujo__campos > .campo--cuarto {
+  grid-column: span 3;
+}
+
+@media (max-width: 640px) {
+  .flujo__campos > .campo--mitad,
+  .flujo__campos > .campo--tercio {
+    grid-column: span 12;
+  }
+
+  .flujo__campos > .campo--cuarto {
+    grid-column: span 6;
+  }
+}
+
+/* Las acciones de un panel, siempre a la derecha, con la principal en el borde. */
+.flujo .acciones {
+  justify-content: flex-end;
+}
+
+/* Lo que falta para poder confirmar va en el pie, a la izquierda del boton que habilita. */
+.flujo__faltante {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.flujo__dato {
+  margin: 0;
+}
+
+/* 24 px de alto como minimo: "Mas opciones" y "Mas acciones" se tocan con el dedo (WCAG 2.5.8). */
+summary {
+  min-height: 1.5rem;
+  line-height: 1.5rem;
+  cursor: pointer;
+}
+
+.flujo__dato-etiqueta {
+  display: block;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.flujo__resumen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.flujo__resumen-titulo {
+  font-weight: var(--peso-medio);
+}
+
+.flujo__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.flujo__fila > .ayuda {
+  margin: 0;
+}
+
+.flujo__fila--entre {
+  justify-content: space-between;
+}
+
+.flujo__filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--esp-5);
+}
+
+.flujo__persona-elegida {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+/* --- Busqueda de paciente --- */
+
+.candidatos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.candidatos li + li {
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.candidato {
+  display: block;
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.candidato:hover,
+.candidato:focus-visible {
+  background: var(--color-acento-claro);
+}
+
+.candidato__nombre {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.candidato__datos {
+  display: block;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+/* --- Horarios --- */
+
+.horarios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+}
+
+.horarios__dia {
+  margin: 0 0 var(--esp-2);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  color: var(--color-texto-suave);
+}
+
+.horarios__dia::first-letter {
+  text-transform: uppercase;
+}
+
+.horarios__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--esp-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.horario {
+  display: block;
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  background: var(--color-superficie);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.horario:hover {
+  border-color: var(--color-acento);
+}
+
+.horario[aria-pressed='true'] {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+}
+
+.horario__hora {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.horario__detalle {
+  display: block;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+/* --- Programacion multiple --- */
+
+.dias-semana {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-5);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.dias-semana legend {
+  padding: 0;
+  margin-bottom: var(--esp-2);
+  font-size: var(--tipo-xs);
+  font-weight: 500;
+}
+
+.dias-semana label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-weight: 400;
+}
+
+.propuesta {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.propuesta th,
+.propuesta td {
+  padding: var(--esp-3) var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  text-align: left;
+  vertical-align: top;
+}
+
+.propuesta__excluida td {
+  color: var(--color-texto-suave);
+  text-decoration: line-through;
+}
+
+.propuesta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+/* --- Detalle del turno --- */
+
+.estado-turno {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  font-weight: var(--peso-medio);
+}
+
+.flujo__contadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  margin: 0;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.flujo__contadores b {
+  color: var(--color-texto);
+}
+
+/* Titulo de una seccion del historial y su "?": sin el margen de los titulos de pantalla. */
+.flujo__titulo-de-seccion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.flujo__historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.flujo__historial li {
+  padding: var(--esp-4) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.flujo__historial-cuando {
+  display: block;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}

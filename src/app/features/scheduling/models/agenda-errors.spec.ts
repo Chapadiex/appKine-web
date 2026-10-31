@@ -64,6 +64,17 @@ describe('traducirErrorAgenda', () => {
     expect(traducido.recurso).toBe('profesional');
   });
 
+  it('un box ocupado no sugiere otro profesional, que no lo resolveria', () => {
+    const conBox = traducirErrorAgenda(conflicto('recurso-ocupado', { recurso: 'espacio' }));
+    const conProfesional = traducirErrorAgenda(
+      conflicto('recurso-ocupado', { recurso: 'profesional' }),
+    );
+
+    expect(conBox.mensaje).toContain('otro box');
+    expect(conBox.mensaje).not.toContain('profesional');
+    expect(conProfesional.mensaje).toContain('otro profesional');
+  });
+
   it('persona-sin-perfil-paciente manda a activar el perfil, no a la agenda', () => {
     const traducido = traducirErrorAgenda(conflicto('persona-sin-perfil-paciente'));
 

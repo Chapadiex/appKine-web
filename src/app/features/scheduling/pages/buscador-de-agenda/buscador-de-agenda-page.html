@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Agenda de turnos">
+<app-cabecera-de-pagina titulo="Buscar disponibilidad">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Los turnos disponibles de una oferta, día por día. Un turno es una <b>reserva</b> de agenda:
@@ -8,7 +8,7 @@
       Elegí un horario libre para reservarlo. Los completos se muestran igual, marcados: a esa hora
       se atiende, pero ya no queda lugar.
     </p>
-    <p class="ayuda-contextual__subtitulo">Oferta y fechas</p>
+    <p class="ayuda-contextual__subtitulo">Prestación y fechas</p>
     <p>Solo las ofertas activas de esta sede se pueden agendar.</p>
     <p>
       «Hasta» no se incluye. La ventana se consulta de a 62 días como máximo; si pedís más, la
@@ -62,14 +62,14 @@
 <section class="tarjeta" aria-label="Turnos disponibles">
   <app-filtros sinAvanzados>
     <div class="campo" filtro-principal>
-      <label for="agenda-oferta">Oferta</label>
+      <label for="agenda-oferta">Prestación</label>
       <select
         id="agenda-oferta"
         name="agenda-oferta"
         aria-describedby="agenda-oferta-ayuda"
         (change)="elegirOferta($any($event.target).value)"
       >
-        <option value="">Elegí una oferta</option>
+        <option value="">Elegí una prestación</option>
         @for (oferta of ofertas(); track oferta.id) {
           <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
         }
@@ -120,6 +120,19 @@
         }
       </select>
     </div>
+
+    <div class="campo" filtro-frecuente>
+      <label for="agenda-franja">Franja</label>
+      <select
+        id="agenda-franja"
+        name="agenda-franja"
+        (change)="elegirFranja($any($event.target).value)"
+      >
+        <option value="TODO">Todo el día</option>
+        <option value="MANANA">Mañana</option>
+        <option value="TARDE">Tarde</option>
+      </select>
+    </div>
   </app-filtros>
 
   <div aria-live="polite">
@@ -157,18 +170,33 @@
         horarios corridos y no como un error.
       -->
       <span class="agenda__nota">
-        Turnos de {{ duracion() }} minutos · zona de la sede <b>{{ timezone() }}</b>
+        @if (duracion() > 0) {
+          Turnos de {{ duracion() }} minutos ·
+        }
+        zona de la sede <b>{{ timezone() }}</b>
       </span>
     </div>
 
-    @if (ventanaVacia()) {
+    @if (sinHorarioLibre()) {
       <p class="estado estado--vacio">
-        Ningún día de este rango tiene turnos disponibles. Abajo esta el motivo de cada día.
+        @if (ventanaVacia()) {
+          Ningún día de este rango tiene turnos disponibles. Abajo esta el motivo de cada día.
+        } @else {
+          No hay horarios libres en este rango con estos filtros.
+        }
       </p>
+      @if (puedeReservar()) {
+        <div class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="agregarAListaDeEspera()">
+            Agregar a lista de espera
+          </button>
+        </div>
+      }
     }
 
     <ol class="dias">
-      @for (dia of dias(); track dia.fecha) {
+      @for (fila of diasDeLaFranja(); track fila.dia.fecha) {
+        @let dia = fila.dia;
         <li class="dia">
           <h3 class="dia__fecha">{{ fechaEnPalabras(dia.fecha) }}</h3>
 
@@ -179,9 +207,11 @@
             dice si hay algo que configurar.
           -->
             <p class="dia__motivo">{{ textoSinSlots(dia) }}</p>
+          } @else if (fila.slots.length === 0) {
+            <p class="dia__motivo">Sin horarios en esta franja.</p>
           } @else {
             <ul class="slots">
-              @for (slot of dia.slots; track slot.desde) {
+              @for (slot of fila.slots; track slot.desde) {
                 <li>
                   @if (slotCompleto(slot)) {
                     <!--
@@ -237,7 +267,7 @@
     </ul>
   } @else if (ofertaId() === null && !error()) {
     <app-estado-vacio
-      titulo="Elegí una oferta"
+      titulo="Elegí una prestación"
       texto="La agenda muestra sus horarios libres y completos, día por día."
     />
   }
