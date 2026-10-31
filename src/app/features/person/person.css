@@ -277,6 +277,28 @@
   color: var(--color-texto-suave);
 }
 
+.panel-persona__nota[panel-subtitulo] {
+  margin: 0;
+}
+
+.panel-persona__nota[panel-subtitulo] > p {
+  font-size: var(--tipo-xs);
+}
+
+/* Alta y edicion de una persona: dos campos por fila, y lo que se escribe largo, la fila entera. */
+.formulario-persona > .campo:not(:has(textarea)) {
+  --ancho-campo: 3;
+  margin-bottom: var(--esp-5);
+}
+
+.formulario-persona > .formulario__seccion {
+  margin: 0 0 var(--esp-2);
+}
+
+.formulario-persona .campo__error {
+  margin: 0;
+}
+
 .panel-persona__aviso {
   margin: 0 0 var(--esp-6);
 }
