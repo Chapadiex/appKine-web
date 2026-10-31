@@ -1070,6 +1070,10 @@ form:not(.formulario--libre) fieldset {
  *
  * Responsive por el ancho del FORMULARIO (su propio contenedor), no de la ventana: en un panel
  * lateral o una columna angosta cada campo duplica su ancho (dos por fila); en un telefono, uno.
+ *
+ * <p>El corte a una columna esta en 26rem porque un panel de 34rem deja 31rem de formulario, y la
+ * barra de desplazamiento le saca casi 1rem mas: con el corte en 30rem, una columna traia scroll y
+ * el scroll mantenia la columna.
  */
 form:not(.formulario--libre),
 .grilla-12,
@@ -1130,7 +1134,7 @@ form:not(.formulario--libre),
   }
 }
 
-@container (max-width: 30rem) {
+@container (max-width: 26rem) {
   :is(
       form:not(.formulario--libre),
       .grilla-12,
