@@ -218,6 +218,36 @@ export function turno(inicio: string, estado: 'RESERVADO' | 'CONFIRMADO', id = 5
   };
 }
 
+/** La agenda operativa de un dia: la profesional de 08:00 a 13:00, con un turno a las 09:00. */
+function agendaOperativa(fecha: string): unknown {
+  return {
+    desde: fecha,
+    hasta: masDias(fecha, 1),
+    timezone: ZONA,
+    profesionales: [
+      {
+        membershipId: PROFESIONAL_ID,
+        nombre: NOMBRE_PROFESIONAL,
+        franjas: [{ desde: instante(fecha, '08:00'), hasta: instante(fecha, '13:00') }],
+      },
+    ],
+    espacios: [{ id: 10, nombre: 'Box 1' }],
+    clases: [],
+    bloqueos: [],
+    turnos: [
+      {
+        profesionalNombre: NOMBRE_PROFESIONAL,
+        turno: {
+          ...(turno(instante(fecha, '09:00'), 'RESERVADO') as object),
+          personaNombre: `${PERSONA_CON_PERFIL.apellido}, ${PERSONA_CON_PERFIL.nombre}`,
+          ofertaNombre: NOMBRE_OFERTA,
+          operativo: { estadoOperativo: 'RESERVADO' },
+        },
+      },
+    ],
+  };
+}
+
 // -------------------------------------------------------------------------------------------
 // El router
 // -------------------------------------------------------------------------------------------
@@ -333,6 +363,38 @@ export async function instalarApiDeTurnos(page: Page): Promise<ApiDeTurnos> {
       return responder(api.agenda(url));
     }
 
+    // --- La agenda operativa y el panel del flujo unico ---------------------------------
+    if (camino.endsWith('/agenda/operativa') && metodo === 'GET') {
+      return responder(ok(agendaOperativa(url.searchParams.get('desde') ?? FECHA)));
+    }
+    if (camino.endsWith('/disponibilidad/profesionales') && metodo === 'GET') {
+      return responder(ok([{ id: PROFESIONAL_ID, nombre: NOMBRE_PROFESIONAL }]));
+    }
+    if (camino.endsWith('/disponibilidad/busqueda') && metodo === 'POST') {
+      return responder(
+        ok({
+          timezone: ZONA,
+          truncado: false,
+          horarios: HORAS.map((hora) => ({
+            ...slot(FECHA, hora),
+            profesionalNombre: NOMBRE_PROFESIONAL,
+          })),
+        }),
+      );
+    }
+    if (camino.endsWith('/disponibilidad/validacion') && metodo === 'POST') {
+      return responder(
+        ok({
+          estado: 'DISPONIBLE',
+          profesionales: [{ id: PROFESIONAL_ID, nombre: NOMBRE_PROFESIONAL }],
+          espaciosLibres: [{ id: 10, nombre: 'Box 1' }],
+        }),
+      );
+    }
+    if (/\/personas\/\d+\/contexto-de-agenda$/.test(camino) && metodo === 'GET') {
+      return responder(ok({ casos: [] }));
+    }
+
     // --- Reserva y confirmacion --------------------------------------------------------
     if (/\/turnos\/ofertas\/\d+$/.test(camino) && metodo === 'POST') {
       const cuerpo = JSON.parse(peticion.postData() ?? '{}') as ReservaRecibida;
@@ -415,15 +477,6 @@ export async function instalarApiDeTurnos(page: Page): Promise<ApiDeTurnos> {
   });
 
   return api;
-}
-
-/** URL de la reserva para un slot, tal como la arma el buscador. */
-export function urlDeReserva(fecha: string, horaLocal: string): string {
-  return (
-    `/agenda/ofertas/${OFERTA_ID}/reservar` +
-    `?fecha=${fecha}&inicio=${encodeURIComponent(instante(fecha, horaLocal))}` +
-    `&profesionalId=${PROFESIONAL_ID}`
-  );
 }
 
 export { instante };

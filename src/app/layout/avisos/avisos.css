@@ -88,6 +88,10 @@
   cursor: pointer;
 }
 
+.aviso__accion + .aviso__accion {
+  margin-left: var(--esp-6);
+}
+
 .aviso__cerrar {
   display: inline-flex;
   align-items: center;

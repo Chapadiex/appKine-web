@@ -47,6 +47,10 @@
       menu "⋯" de la cabecera y se confirman en un panel lateral.
     -->
     @if (!personaInactiva(ficha)) {
+      <button type="button" class="boton" *akinePermiso="permisoTurnos" (click)="nuevoTurno()">
+        <app-icono nombre="agregar" />
+        Nuevo turno
+      </button>
       <ng-container *akinePermiso="permisoManage">
         <app-acciones-de-fila [de]="nombreCompleto(ficha)">
           @if (ficha.esPaciente) {
@@ -207,6 +211,48 @@
               <li>{{ hitoEnPalabras(hito) }}</li>
             }
           </ul>
+        }
+
+        @if (seccion.seccion === seccionTurnos) {
+          @if (proximos(); as lista) {
+            <h3 class="formulario__seccion">Próximos turnos</h3>
+            @if ((lista.turnos ?? []).length === 0) {
+              <p class="estado estado--vacio">Sin turnos próximos.</p>
+            } @else {
+              <ul class="lista-hitos" aria-label="Próximos turnos">
+                @for (fila of lista.turnos; track fila.turno?.id) {
+                  <li class="proximo-turno">
+                    <span>
+                      <b>{{ cuandoEs(fila.turno?.inicio) }}</b>
+                      · {{ fila.turno?.ofertaNombre }}
+                      @if (fila.profesionalNombre) {
+                        · {{ fila.profesionalNombre }}
+                      }
+                    </span>
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      (click)="verTurno(fila.turno?.id)"
+                    >
+                      Ver<span class="visualmente-oculto">
+                        el turno del {{ cuandoEs(fila.turno?.inicio) }}</span
+                      >
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          } @else if (errorDeProximos()) {
+            <h3 class="formulario__seccion">Próximos turnos</h3>
+            <p class="estado">No pudimos leer los próximos turnos.</p>
+            <button
+              type="button"
+              class="boton boton--secundario boton--chico"
+              (click)="cargarProximos()"
+            >
+              Reintentar
+            </button>
+          }
         }
       </section>
     }

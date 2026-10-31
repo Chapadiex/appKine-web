@@ -113,13 +113,14 @@ interface AvisoDeApertura {
   readonly feriados: readonly FeriadoResponse[];
 }
 
-/** Los seis motivos de la lista cerrada del contrato, con el rotulo que ve el usuario. */
+/** Los motivos de la lista cerrada del contrato, con el rotulo que ve el usuario. */
 const MOTIVOS: readonly {
   readonly valor: CreateExcepcionRequestMotivoEnum;
   readonly etiqueta: string;
 }[] = [
   { valor: CreateExcepcionRequestMotivoEnum.AUSENCIA, etiqueta: 'Ausencia' },
   { valor: CreateExcepcionRequestMotivoEnum.LICENCIA, etiqueta: 'Licencia' },
+  { valor: CreateExcepcionRequestMotivoEnum.CAPACITACION, etiqueta: 'Capacitación' },
   { valor: CreateExcepcionRequestMotivoEnum.FERIADO, etiqueta: 'Feriado' },
   { valor: CreateExcepcionRequestMotivoEnum.BLOQUEO, etiqueta: 'Bloqueo' },
   { valor: CreateExcepcionRequestMotivoEnum.AMPLIACION, etiqueta: 'Ampliacion' },
@@ -736,7 +737,9 @@ export class ExcepcionesPage {
       return;
     }
 
-    this.crear(consultorioId, confirmado);
+    // Desde el contrato 0.149.0 un cierre con turnos afectados es un 409 si no se confirma: esto es
+    // esa confirmacion, y solo sale despues de que se vio el impacto.
+    this.crear(consultorioId, { ...confirmado, confirmaTurnosAfectados: true });
   }
 
   protected descartarImpacto(): void {
@@ -832,7 +835,15 @@ export class ExcepcionesPage {
         );
         this.consultar();
       },
-      error: (error: unknown) => this.fallar(error),
+      error: (error: unknown) => {
+        this.fallar(error);
+        // La consulta dijo que no habia turnos y ya no es cierto: sin borrarla quedaria "Cargar
+        // igual" al lado de un impacto de cero, confirmando algo que nadie vio.
+        if (this.causaAccion() === 'turnos-afectados') {
+          this.impacto.set(null);
+          this.cuerpoDelImpacto.set(null);
+        }
+      },
     });
   }
 

@@ -56,6 +56,27 @@ describe('Avisos', () => {
     expect(html.querySelector('.aviso')).toBeNull();
   });
 
+  it('la otra salida también se ejecuta y lo cierra: "Ver turno" y "Crear otro"', () => {
+    const { fixture, html, store } = montar();
+    const usadas: string[] = [];
+    store.exito('Turno creado correctamente.', {
+      accion: { etiqueta: 'Ver turno', ejecutar: () => usadas.push('ver') },
+      otraAccion: { etiqueta: 'Crear otro', ejecutar: () => usadas.push('otro') },
+    });
+    fixture.detectChanges();
+
+    const acciones = html.querySelectorAll<HTMLButtonElement>('.aviso__accion');
+    expect(Array.from(acciones).map((a) => a.textContent?.trim())).toEqual([
+      'Ver turno',
+      'Crear otro',
+    ]);
+    acciones[1].click();
+    fixture.detectChanges();
+
+    expect(usadas).toEqual(['otro']);
+    expect(html.querySelector('.aviso')).toBeNull();
+  });
+
   it('el boton de cerrar lo saca', () => {
     const { fixture, html, store } = montar();
     store.info('Agenda actualizada');

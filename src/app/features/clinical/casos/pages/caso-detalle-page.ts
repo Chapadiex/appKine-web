@@ -16,7 +16,11 @@ import { CasoClinico } from '../../../../api/generated/model/caso-clinico';
 import { CasoEvento } from '../../../../api/generated/model/caso-evento';
 import { IntegranteDelEquipoRolEnum } from '../../../../api/generated/model/integrante-del-equipo';
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
+import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PedidoDeMotivo } from '../../components/pedido-de-motivo';
 import {
   ESTADOS_DE_CASO,
@@ -64,7 +68,16 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
  */
 @Component({
   selector: 'app-caso-detalle-page',
-  imports: [CabeceraDePagina, Ayuda, RouterLink, PedidoDeMotivo, Alerta, NgTemplateOutlet],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    Icono,
+    RouterLink,
+    PedidoDeMotivo,
+    PermisoDirective,
+    Alerta,
+    NgTemplateOutlet,
+  ],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',
 })
@@ -79,10 +92,12 @@ export class CasoDetallePage {
   private readonly avisos = inject(AvisosStore);
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
+  private readonly flujo = inject(FlujoDeTurnosStore);
   protected readonly visita = inject(VisitaClinica);
 
   readonly casoId = input.required<string>();
 
+  protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly fechaYHora = fechaYHora;
   protected readonly roles = Object.values(IntegranteDelEquipoRolEnum);
   protected readonly rotuloDeRol = (rol: string | undefined) => rotulo(ROLES_EN_CASO, rol);
@@ -172,6 +187,22 @@ export class CasoDetallePage {
 
   protected releer(): void {
     this.cargar();
+  }
+
+  /** La oferta va solo si es de esta sede: el caso es de la organizacion y la oferta, de una sede. */
+  protected nuevoTurno(): void {
+    const caso = this.caso();
+    const personaId = this.visita.personaId();
+    if (caso?.id === undefined || personaId === null) return;
+    const deOtraSede =
+      caso.ofertaConsultorioId !== undefined &&
+      caso.ofertaConsultorioId !== this.contexto.consultorioId();
+    this.flujo.nuevoTurno({
+      origen: 'CASO',
+      personaId,
+      casoId: caso.id,
+      ofertaId: deOtraSede ? undefined : caso.ofertaId,
+    });
   }
 
   // --- Edicion ---------------------------------------------------------------------------

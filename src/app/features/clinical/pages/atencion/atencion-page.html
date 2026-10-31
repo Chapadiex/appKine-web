@@ -457,9 +457,28 @@
               >
                 Ver las versiones
               </a>
-              <a class="boton" [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']">
+              <a
+                class="boton"
+                [class.boton--secundario]="puedeProgramar()"
+                [routerLink]="['/atencion', 'sesiones', atencion.id, 'enmienda']"
+              >
                 Enmendar esta atención
               </a>
+              @if (puedeProgramar()) {
+                @if (pacienteDeLaAtencion(); as personaId) {
+                  <a class="boton boton--secundario" [routerLink]="['/pacientes', personaId]">
+                    Volver al paciente
+                  </a>
+                }
+                <button
+                  type="button"
+                  class="boton"
+                  [disabled]="leyendoProximaSesion()"
+                  (click)="programarProximaSesion()"
+                >
+                  Programar próxima sesión
+                </button>
+              }
             </div>
           </section>
 

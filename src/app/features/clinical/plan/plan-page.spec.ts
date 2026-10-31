@@ -10,10 +10,28 @@ import { TenantContextStore } from '../../../core/services/tenant-context.store'
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
 import { VisitaClinica } from '../services/visita-clinica';
 import { AvisosStore } from '../../../core/services/avisos.store';
+import { PERMISO_TURNO_MANAGE } from '../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
+import { RUTA_PERMISOS_EFECTIVOS } from '../../../core/testing/rutas-api';
 
 const CASO = '/api/v1/casos-clinicos/9';
 const PLANES = `${CASO}/planes`;
 const PLAN = '/api/v1/planes-tratamiento/5';
+const AGENDA_DE_LA_PERSONA = '/api/v1/consultorios/3/personas/12/contexto-de-agenda';
+
+const SESIONES_DE_LA_AGENDA = {
+  casos: [
+    {
+      casoId: 9,
+      planes: [
+        {
+          planId: 5,
+          prestaciones: [{ ofertaId: 14, realizadas: 2, programadas: 3, pendientes: 5 }],
+        },
+      ],
+    },
+  ],
+};
 
 const BORRADOR = {
   id: 5,
@@ -59,6 +77,8 @@ describe('PlanPage', () => {
 
   afterEach(() => {
     httpMock.match((r) => r.url.startsWith('/api/v1/organizations')).forEach((r) => r.flush([]));
+    // La directiva de "Programar..." pide los permisos al dibujarse, con un plan activo.
+    httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((r) => r.flush({ permissions: [] }));
     httpMock.verify();
   });
 
@@ -159,13 +179,142 @@ describe('PlanPage', () => {
     expect(marcas[1].classList).not.toContain('plan__vigencia--vencida');
   });
 
+  describe('programar desde un plan activo', () => {
+    const ACTIVO = { ...BORRADOR, estado: 'ACTIVO' };
+    const conItems = (...items: object[]) => ({
+      ...ACTIVO,
+      versionVigente: { ...BORRADOR.versionVigente, items },
+    });
+
+    async function activo(
+      plan: object = ACTIVO,
+      agenda: object = { casos: [] },
+    ): Promise<ComponentFixture<PlanPage>> {
+      const fixture = await montar([plan], [BORRADOR.versionVigente], agenda);
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [PERMISO_TURNO_MANAGE] });
+      await estabilizar(fixture);
+      return fixture;
+    }
+
+    it('"Programar próxima sesión" abre el flujo sin volver a preguntar nada del plan', async () => {
+      const fixture = await activo();
+
+      clic(fixture, 'Programar próxima sesión');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'nuevo',
+        contexto: { origen: 'PLAN', personaId: 12, casoId: 9, planId: 5, ofertaId: 14 },
+      });
+    });
+
+    it('"Programar sesiones restantes" abre la programación múltiple', async () => {
+      const fixture = await activo();
+
+      clic(fixture, 'Programar sesiones restantes');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'multiple',
+        contexto: { origen: 'PLAN', personaId: 12, casoId: 9, planId: 5, ofertaId: 14 },
+      });
+    });
+
+    it('con varias prestaciones la oferta se elige en el flujo', async () => {
+      const fixture = await activo(
+        conItems(
+          { id: 1, ofertaId: 14, cantidadPlanificada: 5 },
+          { id: 2, ofertaId: 15, cantidadPlanificada: 5 },
+        ),
+      );
+
+      clic(fixture, 'Programar próxima sesión');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'nuevo',
+        contexto: { origen: 'PLAN', personaId: 12, casoId: 9, planId: 5, ofertaId: undefined },
+      });
+    });
+
+    it('la oferta de otra sede no viaja', async () => {
+      const fixture = await activo(
+        conItems({ id: 1, ofertaId: 14, ofertaConsultorioId: 99, cantidadPlanificada: 5 }),
+      );
+
+      clic(fixture, 'Programar próxima sesión');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'nuevo',
+        contexto: { origen: 'PLAN', personaId: 12, casoId: 9, planId: 5, ofertaId: undefined },
+      });
+    });
+
+    it('muestra lo que dice la agenda de cada prestación, y lo relee cuando el flujo reserva', async () => {
+      const fixture = await activo(ACTIVO, SESIONES_DE_LA_AGENDA);
+      const sesiones = () =>
+        (fixture.nativeElement as HTMLElement).querySelector(
+          '[data-testid="plan-sesiones-de-agenda"]',
+        )?.textContent ?? '';
+
+      expect(sesiones()).toContain('Realizadas: 2');
+      expect(sesiones()).toContain('Programadas: 3');
+      expect(sesiones()).toContain('Pendientes: 5');
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await estabilizar(fixture);
+      httpMock.expectOne(AGENDA_DE_LA_PERSONA).flush({
+        casos: [
+          {
+            planes: [
+              {
+                planId: 5,
+                prestaciones: [{ ofertaId: 14, realizadas: 2, programadas: 4, pendientes: 4 }],
+              },
+            ],
+          },
+        ],
+      });
+      await estabilizar(fixture);
+
+      expect(sesiones()).toContain('Programadas: 4');
+      expect(sesiones()).toContain('Pendientes: 4');
+    });
+
+    it('sin permiso de leer la agenda se sigue viendo el avance', async () => {
+      const fixture = await montar([ACTIVO], [BORRADOR.versionVigente], null);
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({ permissions: [] });
+      await estabilizar(fixture);
+
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelector('[data-testid="plan-sesiones-de-agenda"]')).toBeNull();
+      expect(raiz.querySelector('progress')).not.toBeNull();
+      expect(botones(fixture)).not.toContain('Programar próxima sesión');
+    });
+
+    it('un borrador no ofrece programar', async () => {
+      const fixture = await montar([BORRADOR]);
+
+      httpMock.expectNone(RUTA_PERMISOS_EFECTIVOS);
+      expect(botones(fixture)).not.toContain('Programar próxima sesión');
+    });
+  });
+
   async function montar(
     planes: unknown[],
     versiones: unknown[] = [BORRADOR.versionVigente],
+    agenda: object | null = { casos: [] },
   ): Promise<ComponentFixture<PlanPage>> {
     const fixture = TestBed.createComponent(PlanPage);
     fixture.componentRef.setInput('casoId', '9');
     await estabilizar(fixture);
+    // `null`: la lectura falla, que es lo que pasa sin `turno:read`.
+    const pedidoDeAgenda = httpMock.expectOne(AGENDA_DE_LA_PERSONA);
+    if (agenda === null) {
+      pedidoDeAgenda.flush(
+        { type: 'https://akine.app/problems/forbidden', status: 403 },
+        { status: 403, statusText: 'F' },
+      );
+    } else {
+      pedidoDeAgenda.flush(agenda);
+    }
     httpMock
       .match((r) => r.url === '/api/v1/consultorios/3/ofertas')
       .forEach((r) =>

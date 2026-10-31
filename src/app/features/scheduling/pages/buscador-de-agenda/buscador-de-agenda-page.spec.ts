@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 
 import { BuscadorDeAgendaPage } from './buscador-de-agenda-page';
 import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -153,6 +154,69 @@ describe('BuscadorDeAgendaPage', () => {
     // Y el motivo dice que hacer, no solo que no hay: sin eso el operador no sabe si tiene que
     // configurar algo o probar otro dia.
     expect(texto).toContain('Horarios');
+  });
+
+  it('elegir un horario abre el flujo con lo que la grilla ya sabe: no reserva nada', async () => {
+    const fixture = await montarConAgenda();
+
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'button.slot--libre',
+      ) as HTMLButtonElement
+    ).click();
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: {
+        origen: 'DISPONIBILIDAD',
+        ofertaId: OFERTA,
+        fecha: '2026-09-15',
+        inicio: '2026-09-15T12:00:00Z',
+        profesionalId: undefined,
+      },
+    });
+    httpMock.expectNone((p) => p.method === 'POST');
+  });
+
+  it('la franja filtra en la zona de la sede y, sin horarios libres, ofrece la lista de espera', async () => {
+    const fixture = await montarConAgenda();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const franja = raiz.querySelector('#agenda-franja') as HTMLSelectElement;
+
+    // 12:00 UTC son las 09:00 en la sede: es de mañana, con cualquier zona de navegador.
+    franja.value = 'MANANA';
+    franja.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('.slot').length).toBe(2);
+
+    franja.value = 'TARDE';
+    franja.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('.slot').length).toBe(0);
+    expect(raiz.textContent).toContain('Sin horarios en esta franja.');
+    expect(raiz.textContent).toContain('No hay horarios libres en este rango con estos filtros.');
+
+    Array.from(raiz.querySelectorAll('button'))
+      .find((b) => (b.textContent ?? '').trim() === 'Agregar a lista de espera')
+      ?.click();
+
+    const flujo = TestBed.inject(FlujoDeTurnosStore);
+    expect(flujo.solicitud()).toMatchObject({
+      tipo: 'espera',
+      contexto: { origen: 'DISPONIBILIDAD', ofertaId: OFERTA },
+    });
+  });
+
+  it('lo que reserva el flujo se relee en el lugar', async () => {
+    const fixture = await montarConAgenda();
+
+    TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    httpMock.expectOne(esAgenda()).flush(AGENDA_CON_TRES_DIAS);
   });
 
   it('el slot completo se muestra marcado y no como un hueco', async () => {

@@ -49,6 +49,7 @@ import {
   textoDePrepago,
 } from '../../models/etiquetas-de-recepcion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
@@ -156,8 +157,11 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
  *
  * <p>Releer el dia completo le mueve la lista bajo el dedo a quien esta atendiendo a alguien, asi
  * que la pantalla usa `verTurno` para corregir esa fila sola. Lo mismo despues de registrar una
- * llegada: el check-in avanza la `version` del <b>turno</b> aunque no cambie su estado, y el
- * enlace al ciclo del turno la necesita vigente.
+ * llegada: el check-in avanza la `version` del <b>turno</b> aunque no cambie su estado.
+ *
+ * <p><b>Y una relectura no mueve lo que se esta mirando.</b> Lo que hace el panel del turno se relee
+ * sin vaciar la tabla, sin perder la pagina ni los filtros (TURNO - Tecnico §87 y §88), y lo mismo la
+ * fila que cambia una transicion: `tablaLocal` volveria a la primera pagina.
  *
  * <h2>6. La zona horaria viene en la respuesta, y hay que usar esa</h2>
  *
@@ -216,6 +220,7 @@ export class RecepcionDelDiaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   /** La ruta ya exigio `turno:read`: las tres pestanas de la agenda estan disponibles. */
   protected readonly pestanas = pestanasDeAgenda(true);
@@ -382,7 +387,29 @@ export class RecepcionDelDiaPage {
         this.cargar();
       });
     });
+
+    // El flujo es un panel sobre esta pantalla: lo que reserva o cambia tiene que verse en la lista.
+    let primera = true;
+    effect(() => {
+      this.flujo.cambios();
+      if (primera) {
+        primera = false;
+        return;
+      }
+      untracked(() => this.releerEnElLugar());
+    });
     this.releerSolaMientrasSeVe();
+  }
+
+  protected nuevoTurno(): void {
+    this.flujo.nuevoTurno({ origen: 'AGENDA', fecha: this.dia() });
+  }
+
+  /** El turno se ve y se opera en el panel del flujo unico, sobre esta pantalla. */
+  protected verTurno(turno: TurnoDelDia): void {
+    if (turno.id !== undefined) {
+      this.flujo.verTurno(turno.id);
+    }
   }
 
   /**
@@ -475,7 +502,13 @@ export class RecepcionDelDiaPage {
         if (this.corregirAlDiaDeLaSede(agenda.timezone ?? '')) {
           return;
         }
-        this.turnos.set(agenda.turnos ?? []);
+        const filas = agenda.turnos ?? [];
+        // La relectura automatica no saca de la pagina que se esta mirando; una carga pedida, si.
+        if (enSilencio) {
+          this.tabla.conservandoPagina(() => this.turnos.set(filas));
+        } else {
+          this.turnos.set(filas);
+        }
         this.timezone.set(agenda.timezone ?? '');
         this.actualizadaA.set(horaEnZona(new Date().toISOString(), agenda.timezone ?? ''));
         this.cargando.set(false);
@@ -487,6 +520,35 @@ export class RecepcionDelDiaPage {
         this.cargando.set(false);
         this.errorDeCarga.set(traducirErrorRecepcion(error));
       },
+    });
+  }
+
+  /**
+   * Relee el dia sin que se note: la tabla no se vacia, y quien mira conserva la pagina, los filtros
+   * y el scroll. Si falla, lo que hay en pantalla sigue ahi y el aviso ofrece volver a leer.
+   */
+  private releerEnElLugar(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    const dia = this.dia();
+    this.lectura++;
+    this.api.turnosDelDia(consultorioId, dia).subscribe({
+      next: (agenda) => {
+        // Mientras viajaba se cambio de dia: esta respuesta ya no es de lo que se esta mirando.
+        if (dia !== this.dia()) {
+          return;
+        }
+        this.tabla.conservandoPagina(() => this.turnos.set(agenda.turnos ?? []));
+        this.timezone.set(agenda.timezone ?? '');
+        this.actualizadaA.set(horaEnZona(new Date().toISOString(), agenda.timezone ?? ''));
+      },
+      error: (error: unknown) =>
+        this.avisos.error('No pudimos actualizar los turnos del día', {
+          descripcion: traducirErrorRecepcion(error).mensaje,
+          accion: { etiqueta: 'Releer el día', ejecutar: () => this.releerDia() },
+        }),
     });
   }
 
@@ -800,11 +862,6 @@ export class RecepcionDelDiaPage {
     }
   }
 
-  /** Query del enlace al ciclo del turno: sin la version, esa pantalla no puede operar. */
-  protected queryDelTurno(turno: TurnoDelDia): Record<string, string | number> {
-    return { version: turno.version ?? 0, ofertaId: turno.ofertaId ?? 0, fecha: this.dia() };
-  }
-
   /**
    * `true` cuando la fila ofrece "Registrar prepago" (E-6, E-8): la oferta lo exige, no hay anticipo
    * y el turno sigue siendo una reserva viva, que es lo unico que el backend admite. <b>No hace falta
@@ -991,8 +1048,10 @@ export class RecepcionDelDiaPage {
 
   private fusionar(turnoId: number, cambios: Partial<TurnoDelDia>): void {
     this.lectura++;
-    this.turnos.update((filas) =>
-      filas.map((fila) => (fila.id === turnoId ? { ...fila, ...cambios } : fila)),
+    this.tabla.conservandoPagina(() =>
+      this.turnos.update((filas) =>
+        filas.map((fila) => (fila.id === turnoId ? { ...fila, ...cambios } : fila)),
+      ),
     );
   }
 }

@@ -89,6 +89,26 @@ describe('tablaLocal', () => {
     });
   });
 
+  it('una relectura de lo mismo conserva la página, o queda en la última si dejó de existir', () => {
+    TestBed.runInInjectionContext(() => {
+      const fila = (i: number): Fila => ({ id: i, nombre: `F${i}`, alta: null });
+      const filas = signal<readonly Fila[]>(Array.from({ length: 45 }, (_, i) => fila(i)));
+      const tabla = tablaLocal(filas, { columnas: {}, porPagina: 20 });
+      tabla.irA(2);
+
+      tabla.conservandoPagina(() => filas.set(Array.from({ length: 45 }, (_, i) => fila(i))));
+      expect(tabla.pagina()).toBe(2);
+      expect(tabla.visibles()[0].id).toBe(40);
+
+      tabla.conservandoPagina(() => filas.set(Array.from({ length: 25 }, (_, i) => fila(i))));
+      expect(tabla.pagina()).toBe(1);
+
+      // La regla general no cambia: otras filas, primera pagina.
+      filas.set(Array.from({ length: 45 }, (_, i) => fila(i)));
+      expect(tabla.pagina()).toBe(0);
+    });
+  });
+
   it('arranca con 10 filas por pagina y se puede cambiar, volviendo a la primera', () => {
     TestBed.runInInjectionContext(() => {
       const muchas = Array.from({ length: 45 }, (_, i) => ({ id: i, nombre: `F${i}`, alta: null }));

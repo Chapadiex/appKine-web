@@ -4,7 +4,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { HorarioSemanalPage } from './horario-semanal-page';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_READ,
+} from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
@@ -573,6 +578,31 @@ describe('HorarioSemanalPage', () => {
   });
 
   /** Venir desde una explicacion del horario efectivo abre la semana de esa persona. */
+  it('con un profesional elegido ofrece ver su agenda y darle un turno', async () => {
+    const fixture = await montar([PERMISO_TURNO_READ, PERMISO_TURNO_MANAGE]);
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(
+      raiz.querySelector(`a[href="/agenda?profesional=${PROFESIONAL}"]`)?.textContent,
+    ).toContain('Ver agenda');
+
+    Array.from(raiz.querySelectorAll('button'))
+      .find((b) => (b.textContent ?? '').trim() === 'Nuevo turno')
+      ?.click();
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: { origen: 'PROFESIONAL', profesionalId: PROFESIONAL },
+    });
+  });
+
+  it('sin permisos de turnos no ofrece ni la agenda ni el turno', async () => {
+    const fixture = await montar();
+
+    expect(texto(fixture)).not.toContain('Ver agenda');
+    expect(texto(fixture)).not.toContain('Nuevo turno');
+  });
+
   it('un enlace con profesional abre su horario sin volver a elegirlo en la lista', async () => {
     queryParams = { membershipId: String(PROFESIONAL) };
 
@@ -674,7 +704,9 @@ describe('HorarioSemanalPage', () => {
   );
 
   /** Monta la pantalla con contexto, permiso de gestion, el selector cargado y Ana elegida. */
-  async function montar(): Promise<ComponentFixture<HorarioSemanalPage>> {
+  async function montar(
+    otrosPermisos: readonly string[] = [],
+  ): Promise<ComponentFixture<HorarioSemanalPage>> {
     tenantContext.select({
       organizationId: ORG,
       organizationName: 'Belgrano',
@@ -685,7 +717,7 @@ describe('HorarioSemanalPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE, ...otrosPermisos] });
 
     const fixture = TestBed.createComponent(HorarioSemanalPage);
     fixture.detectChanges();

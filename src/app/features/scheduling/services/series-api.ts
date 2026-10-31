@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { AlcanceDeSerie } from '../../../api/generated/model/alcance-de-serie';
 import { CancelarSerieDeTurnosAlcanceEnum } from '../../../api/generated/model/cancelar-serie-de-turnos';
 import { CrearSerieDeTurnos } from '../../../api/generated/model/crear-serie-de-turnos';
+import { PrevisualizacionDeSerie } from '../../../api/generated/model/previsualizacion-de-serie';
 import { ReprogramarSerieDeTurnosAlcanceEnum } from '../../../api/generated/model/reprogramar-serie-de-turnos';
 import { SerieDeTurnos } from '../../../api/generated/model/serie-de-turnos';
 import { SerieDeTurnosPage } from '../../../api/generated/model/serie-de-turnos-page';
@@ -52,6 +53,14 @@ export class SeriesApi {
    */
   crear(consultorioId: number, cuerpo: CrearSerieDeTurnos): Observable<SerieDeTurnos> {
     return this.series.crearSerieDeTurnos({ consultorioId, crearSerieDeTurnos: cuerpo });
+  }
+
+  /** Lo que se reservaria, sin crear nada (TURNO - Tecnico §20). */
+  previsualizarAlta(
+    consultorioId: number,
+    cuerpo: CrearSerieDeTurnos,
+  ): Observable<PrevisualizacionDeSerie> {
+    return this.series.previsualizarSerieDeTurnos({ consultorioId, crearSerieDeTurnos: cuerpo });
   }
 
   /**

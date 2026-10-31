@@ -1,4 +1,11 @@
-import { abrirLaAgenda, expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
+import {
+  abrirLaDisponibilidad,
+  expect,
+  ingresar,
+  navegar,
+  respuestaDe,
+  test,
+} from './support/agenda-real';
 import { cerrarAvisos } from './support/avisos';
 import { agendaDe, crearPersona, rango, reservar, sumarDias } from './support/sembrado';
 import {
@@ -111,7 +118,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     expect(despues.find((d) => d.fecha === cerrado)!.motivoSinSlots).toBe('CIERRE');
     expect(despues.find((d) => d.fecha === habil)!.slots).toHaveLength(3);
 
-    await abrirLaAgenda(page, oferta, f, sumarDias(cerrado, 1));
+    await abrirLaDisponibilidad(page, oferta, f, sumarDias(cerrado, 1));
     await expect(page.getByText('Feriado: la sede no atiende este día.')).toBeVisible();
     await expect(
       page.getByText('La sede cierra este día por una excepción cargada en el calendario.'),

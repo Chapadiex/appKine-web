@@ -14,13 +14,19 @@ import { Observable, Subscription, forkJoin } from 'rxjs';
 import { AvanceDelPlan } from '../../../api/generated/model/avance-del-plan';
 import { AvanceDeItem } from '../../../api/generated/model/avance-de-item';
 import { CasoClinico } from '../../../api/generated/model/caso-clinico';
+import { ContextoDeAgenda } from '../../../api/generated/model/contexto-de-agenda';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PlanItem } from '../../../api/generated/model/plan-item';
 import { PlanItemPlanificado } from '../../../api/generated/model/plan-item-planificado';
 import { PlanTratamiento } from '../../../api/generated/model/plan-tratamiento';
 import { PlanTratamientoVersion } from '../../../api/generated/model/plan-tratamiento-version';
+import { SesionesDePrestacion } from '../../../api/generated/model/sesiones-de-prestacion';
+import { ContextoDeTurno } from '../../../core/models/contexto-de-turno';
+import { PERMISO_TURNO_MANAGE } from '../../../core/models/permisos';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
+import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
+import { PermisoDirective } from '../../../shared/directives/permiso.directive';
 import { CasosApi } from '../casos/casos-api';
 import { PedidoDeMotivo } from '../components/pedido-de-motivo';
 import { ESTADOS_DE_PLAN } from '../models/etiquetas-de-casos';
@@ -77,7 +83,15 @@ const TITULO_DEL_RECHAZO: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-plan-page',
-  imports: [CabeceraDePagina, Ayuda, NgTemplateOutlet, PedidoDeMotivo, PanelLateral, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    NgTemplateOutlet,
+    PedidoDeMotivo,
+    PanelLateral,
+    PermisoDirective,
+    Alerta,
+  ],
   templateUrl: './plan-page.html',
   styleUrl: '../pages/historia-clinica/historia-clinica.css',
 })
@@ -94,10 +108,12 @@ export class PlanPage {
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
   private readonly dia = inject(DiaDeLaSede);
+  private readonly flujo = inject(FlujoDeTurnosStore);
   protected readonly visita = inject(VisitaClinica);
 
   readonly casoId = input.required<string>();
 
+  protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly fechaYHora = fechaYHora;
   protected readonly rotuloDeEstado = (estado: string | undefined) =>
     rotulo(ESTADOS_DE_PLAN, estado);
@@ -165,13 +181,33 @@ export class PlanPage {
   );
   protected readonly faltaMotivoTransicion = computed(() => this.motivoTransicion().trim() === '');
 
+  /** Lo que dice la agenda de la persona. `null` sin `turno:read`: se ve solo el avance. */
+  private readonly contextoDeAgenda = signal<ContextoDeAgenda | null>(null);
+
+  /**
+   * Las sesiones del plan elegido, por oferta. Solo de la version vigente: lo programado es de hoy,
+   * y mezclarlo con el avance de una version vieja daria cuentas que no cierran.
+   */
+  private readonly sesionesPorOferta = computed(() => {
+    const planId = this.planId();
+    if (this.avance()?.numeroVersion !== this.plan()?.versionVigente?.numeroVersion) {
+      return new Map<number | undefined, SesionesDePrestacion>();
+    }
+    const delPlan = (this.contextoDeAgenda()?.casos ?? [])
+      .flatMap((caso) => caso.planes ?? [])
+      .find((plan) => plan.planId === planId);
+    return new Map(delPlan?.prestaciones?.map((p) => [p.ofertaId, p]));
+  });
+
   private pedido: Subscription | null = null;
   private pedidoDelPlan: Subscription | null = null;
+  private pedidoDeAgenda: Subscription | null = null;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.pedido?.unsubscribe();
       this.pedidoDelPlan?.unsubscribe();
+      this.pedidoDeAgenda?.unsubscribe();
     });
 
     effect(() => {
@@ -189,6 +225,59 @@ export class PlanPage {
           this.sede.ofertas$(consultorioId).subscribe((lista) => this.ofertas.set(lista));
         }
       });
+    });
+
+    // Lo que hace el flujo se ve en el lugar: programar una sesion mueve las cuentas de abajo.
+    effect(() => {
+      const consultorioId = this.contexto.consultorioId();
+      const personaId = this.visita.personaId();
+      this.flujo.cambios();
+      untracked(() => this.cargarContextoDeAgenda(consultorioId, personaId));
+    });
+  }
+
+  protected sesionesDe(ofertaId: number | undefined): SesionesDePrestacion | null {
+    return this.sesionesPorOferta().get(ofertaId) ?? null;
+  }
+
+  protected programarProximaSesion(): void {
+    const contexto = this.contextoParaProgramar();
+    if (contexto !== null) this.flujo.nuevoTurno(contexto);
+  }
+
+  protected programarSesionesRestantes(): void {
+    const contexto = this.contextoParaProgramar();
+    if (contexto !== null) this.flujo.programacionMultiple(contexto);
+  }
+
+  /** La oferta va si el plan tiene una sola prestacion y es de esta sede: con varias, se elige. */
+  private contextoParaProgramar(): ContextoDeTurno | null {
+    const plan = this.plan();
+    const personaId = this.visita.personaId();
+    if (plan?.id === undefined || personaId === null) return null;
+    const items = plan.versionVigente?.items ?? [];
+    const unico = items.length === 1 ? items[0] : undefined;
+    const deOtraSede =
+      unico?.ofertaConsultorioId !== undefined &&
+      unico.ofertaConsultorioId !== this.contexto.consultorioId();
+    return {
+      origen: 'PLAN',
+      personaId,
+      casoId: this.idDelCaso(),
+      planId: plan.id,
+      ofertaId: deOtraSede ? undefined : unico?.ofertaId,
+    };
+  }
+
+  private cargarContextoDeAgenda(consultorioId: number | null, personaId: number | null): void {
+    this.pedidoDeAgenda?.unsubscribe();
+    if (consultorioId === null || personaId === null) {
+      this.contextoDeAgenda.set(null);
+      return;
+    }
+    this.pedidoDeAgenda = this.api.contextoDeAgenda(consultorioId, personaId).subscribe({
+      next: (contexto) => this.contextoDeAgenda.set(contexto),
+      error: () => this.contextoDeAgenda.set(null), // Accesorio: el avance se sigue viendo.
     });
   }
 

@@ -38,7 +38,7 @@ export function sql(consulta: string): string {
       '-u',
       'akine',
       '-pakine',
-      'akine_local',
+      process.env['AKINE_E2E_MYSQL_DB'] ?? 'akine_local',
       '-e',
       consulta,
     ],

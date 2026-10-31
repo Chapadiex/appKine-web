@@ -1,5 +1,5 @@
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
-import { EventoDeTurno, EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
+import { EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
 
 /**
@@ -7,13 +7,6 @@ import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
  *
  * <p>Vive en `features/` y no en `shared/`: sabe que es un turno, que es una ausencia y por que
  * cancelar y marcar ausente no son lo mismo. O sea, sabe de dominio (AGENT.md 4.1).
- *
- * <h2>Por que hay funciones que reconstruyen el turno desde el historial</h2>
- *
- * <p>Porque el contrato 0.21.0 <b>no publica ninguna lectura de un turno</b>: no hay
- * `GET /turnos/{turnoId}` ni listado. Lo unico que se puede pedir de un turno existente es su
- * historial, asi que el estado y el horario actuales salen del <b>ultimo evento</b>. La `version`
- * no sale de ningun lado, y esa es la limitacion real de esta etapa.
  */
 
 /**
@@ -43,12 +36,13 @@ const TEXTOS_DE_ESTADO: Readonly<Record<string, string>> = {
 };
 
 const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
-  [EventoDeTurnoTipoEnum.RESERVA]: 'Se reservo el turno',
-  [EventoDeTurnoTipoEnum.CONFIRMACION]: 'Se confirmo la reserva',
-  [EventoDeTurnoTipoEnum.CANCELACION]: 'Se cancelo el turno',
-  [EventoDeTurnoTipoEnum.REPROGRAMACION]: 'Se movio a otro horario',
-  [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registro que el paciente no vino',
-  [EventoDeTurnoTipoEnum.LLEGADA]: 'Llego al centro',
+  CAMBIO_DE_CONTEXTO: 'Cambio de caso o plan',
+  [EventoDeTurnoTipoEnum.RESERVA]: 'Se reservó el turno',
+  [EventoDeTurnoTipoEnum.CONFIRMACION]: 'Se confirmó la reserva',
+  [EventoDeTurnoTipoEnum.CANCELACION]: 'Se canceló el turno',
+  [EventoDeTurnoTipoEnum.REPROGRAMACION]: 'Se movió a otro horario',
+  [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registró que el paciente no vino',
+  [EventoDeTurnoTipoEnum.LLEGADA]: 'Llegó al centro',
   [EventoDeTurnoTipoEnum.LLEGADA_DESHECHA]: 'Se deshizo el registro de llegada',
 };
 
@@ -91,43 +85,6 @@ export function textoDeEvento(tipo: string | undefined): string {
     return 'Cambio de estado';
   }
   return TEXTOS_DE_EVENTO[tipo as EventoDeTurnoTipoEnum] ?? tipo;
-}
-
-/**
- * Estado actual segun el historial: el `estadoNuevo` del ultimo evento.
- *
- * <p>El backend los devuelve <b>de la mas vieja a la mas nueva</b>, asi que el ultimo es el
- * vigente. Con historial vacio devuelve cadena vacia y no un estado inventado: un turno sin
- * eventos no existe, y suponer `RESERVADO` habilitaria botones sobre nada.
- */
-export function estadoSegunHistorial(eventos: readonly EventoDeTurno[]): string {
-  for (let i = eventos.length - 1; i >= 0; i -= 1) {
-    const estado = eventos[i].estadoNuevo;
-    if (estado !== undefined && estado !== '') {
-      return estado;
-    }
-  }
-  return '';
-}
-
-/**
- * Horario vigente segun el historial: el `inicioNuevo`/`finNuevo` del ultimo evento que lo trae.
- *
- * <p>Solo la reserva y la reprogramacion mueven el horario, y las dos lo publican. Recorrer de
- * atras para adelante es lo que hace que una reprogramacion gane sobre la reserva original sin
- * tener que saber que tipos de evento existen.
- */
-export function horarioSegunHistorial(eventos: readonly EventoDeTurno[]): {
-  readonly inicio: string;
-  readonly fin: string;
-} {
-  for (let i = eventos.length - 1; i >= 0; i -= 1) {
-    const inicio = eventos[i].inicioNuevo;
-    if (inicio !== undefined && inicio !== '') {
-      return { inicio, fin: eventos[i].finNuevo ?? '' };
-    }
-  }
-  return { inicio: '', fin: '' };
 }
 
 /** `true` cuando el turno ya cerro su ciclo y ninguna transicion es posible. */
@@ -185,3 +142,91 @@ export function coberturaParaReservar(cobertura: CoberturaResponse): string {
   const nombre = plan === undefined || plan === '' ? financiador : `${financiador} — ${plan}`;
   return cobertura.principal === true ? `${nombre} (principal)` : nombre;
 }
+
+/**
+ * El estado que muestra la agenda, con texto: el color nunca es la unica senal (TURNO.md §33). Es la
+ * foto combinada de reserva, recepcion y atencion que deriva el backend (`OperativoDeTurno`).
+ */
+const NOMBRES_OPERATIVOS: Readonly<Record<string, string>> = {
+  RESERVADO: 'Reservado',
+  CONFIRMADO: 'Confirmado',
+  PRESENTE: 'Paciente presente',
+  RETIRADO: 'Se retiró',
+  EN_ATENCION: 'En atención',
+  ATENDIDO: 'Atendido',
+  AUSENTE: 'Ausente',
+  CANCELADO: 'Cancelado',
+};
+
+export function nombreDeEstadoOperativo(estado: string | undefined): string {
+  return NOMBRES_OPERATIVOS[estado ?? ''] ?? estado ?? '';
+}
+
+/** Un simbolo por estado: junto con el texto, distingue el estado sin depender del color. */
+const SIMBOLOS_OPERATIVOS: Readonly<Record<string, string>> = {
+  RESERVADO: '○',
+  CONFIRMADO: '●',
+  PRESENTE: '◆',
+  RETIRADO: '↩',
+  EN_ATENCION: '▶',
+  ATENDIDO: '✓',
+  AUSENTE: '✕',
+  CANCELADO: '⊘',
+};
+
+export function simboloDeEstadoOperativo(estado: string | undefined): string {
+  return SIMBOLOS_OPERATIVOS[estado ?? ''] ?? '';
+}
+
+/** A quien se le atribuye una cancelacion, para el historial y los selectores. */
+export const ORIGENES_DE_CANCELACION = [
+  { valor: 'PACIENTE', etiqueta: 'Paciente' },
+  { valor: 'PROFESIONAL', etiqueta: 'Profesional' },
+  { valor: 'INSTITUCION', etiqueta: 'Institución' },
+] as const;
+
+export const MOTIVOS_DE_CANCELACION = [
+  'Solicitud del paciente',
+  'Enfermedad',
+  'Problema personal',
+  'Ausencia del profesional',
+  'Decisión de la institución',
+  'Otro',
+] as const;
+
+export const MOTIVOS_DE_REPROGRAMACION = [
+  'Solicitud del paciente',
+  'Solicitud del profesional',
+  'Decisión de la institución',
+  'Otro',
+] as const;
+
+export const MOTIVOS_DE_BLOQUEO = [
+  { valor: 'LICENCIA', etiqueta: 'Licencia' },
+  { valor: 'CAPACITACION', etiqueta: 'Capacitación' },
+  { valor: 'AUSENCIA', etiqueta: 'Personal' },
+  { valor: 'BLOQUEO', etiqueta: 'Institucional' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+] as const;
+
+/** Que tan urgente es quien espera. El backend ordena la lista por esto y, despues, por antiguedad. */
+export const PRIORIDADES_DE_ESPERA = [
+  { valor: 'NORMAL', etiqueta: 'Normal' },
+  { valor: 'ALTA', etiqueta: 'Alta' },
+  { valor: 'URGENTE', etiqueta: 'Urgente' },
+] as const;
+
+export function nombreDePrioridad(prioridad: string | undefined): string {
+  return PRIORIDADES_DE_ESPERA.find((p) => p.valor === prioridad)?.etiqueta ?? prioridad ?? '';
+}
+
+/** Los dias de la semana, ISO y abreviados: los checkboxes y las celdas de la lista de espera. */
+export const DIAS_ABREVIADOS = [
+  { iso: 1, etiqueta: 'Lun' },
+  { iso: 2, etiqueta: 'Mar' },
+  { iso: 3, etiqueta: 'Mié' },
+  { iso: 4, etiqueta: 'Jue' },
+  { iso: 5, etiqueta: 'Vie' },
+  { iso: 6, etiqueta: 'Sáb' },
+  { iso: 7, etiqueta: 'Dom' },
+] as const;

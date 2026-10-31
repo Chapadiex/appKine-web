@@ -25,6 +25,7 @@ import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { AvisosStore } from './core/services/avisos.store';
+import { FlujoDeTurnosStore } from './core/services/flujo-de-turnos.store';
 import { BarraSuperior } from './layout/barra-superior/barra-superior';
 import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
 import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
@@ -68,6 +69,7 @@ export class App {
   private readonly injector = inject(Injector);
 
   private readonly anclaAvisos = viewChild.required('avisos', { read: ViewContainerRef });
+  private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
@@ -76,6 +78,7 @@ export class App {
     // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
     // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
     // asi su region viva ya existe cuando llega el primer aviso.
+    const avisos = inject(AvisosStore);
     let destruido = false;
     inject(DestroyRef).onDestroy(() => (destruido = true));
     afterNextRender(() => {
@@ -90,11 +93,36 @@ export class App {
       );
     });
 
+    // El flujo de turnos llega en su propio chunk la primera vez que alguien lo pide, desde cualquier
+    // feature: pedirlo por el store es lo que evita importar `scheduling` desde afuera (ADR-0004).
+    const flujo = inject(FlujoDeTurnosStore);
+    let flujoMontado = false;
+    effect(() => {
+      if (flujo.solicitud() === null || flujoMontado) {
+        return;
+      }
+      flujoMontado = true;
+      import('./features/scheduling/flujo/flujo-de-turnos').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaFlujo().createComponent(m.FlujoDeTurnos);
+          }
+        },
+        () => {
+          flujoMontado = false;
+          flujo.cerrar();
+          avisos.error('No pudimos abrir el panel de turnos', {
+            descripcion: 'Revisá tu conexión y volvé a intentar.',
+          });
+        },
+      );
+    });
+
     // Al cerrar sesion nada de lo que decian los avisos sigue siendo cierto.
-    const avisos = inject(AvisosStore);
     effect(() => {
       if (this.session.estado() === 'anonimo') {
         avisos.vaciar();
+        flujo.cerrar();
       }
     });
   }

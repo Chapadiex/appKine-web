@@ -349,6 +349,10 @@ async function correr(
       regla.nodes = regla.nodes.filter((nodo) => {
         const datos = (nodo.any as { data?: { messageKey?: string } }[])[0]?.data;
         const elemento = document.querySelector(nodo.target[0] ?? '');
+        // Lo que el llamador declaro en `queAxeNoMide` ya se midio arriba: no queda "sin medir".
+        if (elemento !== null && aMano.some((aMedir) => elemento.matches(aMedir))) {
+          return false;
+        }
         const tapado = ['bgOverlap', 'elmPartiallyObscuring'].includes(datos?.messageKey ?? '');
         if (!tapado || elemento?.closest('dialog[open], [popover]:popover-open') == null) {
           return true;

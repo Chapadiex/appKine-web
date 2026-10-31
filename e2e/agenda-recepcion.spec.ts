@@ -1,6 +1,13 @@
 import { Locator, Page } from '@playwright/test';
 
-import { expect, ingresar, navegar, problemaDe, respuestaDe } from './support/agenda-real';
+import {
+  expect,
+  ingresar,
+  navegar,
+  panelDeTurno,
+  problemaDe,
+  respuestaDe,
+} from './support/agenda-real';
 import { ZONA_DEL_NAVEGADOR_DE_HOY, test } from './support/centro-de-hoy';
 import { abrirAcciones } from './support/filtros';
 import {
@@ -206,7 +213,10 @@ test.describe('Recepcion del dia contra el backend real', () => {
 
     await expect(fila.getByText('Se retiró', { exact: true })).toBeVisible();
     await expect(fila.getByText('Motivo del retiro: Se canso de esperar')).toBeVisible();
-    await expect(fila.getByRole('button')).toHaveCount(0);
+    // No queda ninguna transicion: solo se puede mirar el turno.
+    const verElTurno = fila.getByRole('button', { name: `Ver el turno de ${persona.apellido}` });
+    await expect(fila.getByRole('button')).toHaveCount(1);
+    await expect(verElTurno).toBeVisible();
 
     const guardado = await verTurno(api, centro, turno.id);
     expect(guardado.recepcion?.estado).toBe('RETIRADO');
@@ -219,14 +229,50 @@ test.describe('Recepcion del dia contra el backend real', () => {
     );
     expect(otraLlegada.status()).toBe(409);
 
-    // El ciclo del turno no ofrece la ausencia ni la reprogramacion, y muestra el RETIRO.
-    await fila.getByRole('link', { name: 'Ver el turno' }).click();
-    await expect(page.getByText('se retiro sin ser atendida')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Marcar que no vino' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Mover a otro horario' })).toHaveCount(0);
-    const historial = page.getByRole('region', { name: 'Historial de la recepción' });
-    await expect(historial.getByText('Se retiro sin ser atendido', { exact: true })).toBeVisible();
+    // El panel del turno no ofrece la ausencia ni la reprogramacion, y muestra el RETIRO. Cancelar si:
+    // el retiro no cierra la reserva, y el turno todavia no empezo.
+    await verElTurno.click();
+    const detalle = panelDeTurno(page, 'Turno');
+    await expect(detalle.getByText('Se retiró sin ser atendido')).toBeVisible();
+    await expect(detalle.getByText('Motivo del retiro: Se canso de esperar')).toBeVisible();
+    await expect(detalle.getByRole('button', { name: 'Marcar ausente' })).toHaveCount(0);
+    await expect(detalle.getByRole('button', { name: 'Reprogramar' })).toHaveCount(0);
+    await detalle.getByText('Más acciones').click();
+    await expect(detalle.getByRole('button', { name: 'Cancelar turno' })).toBeVisible();
+
+    await detalle.getByRole('button', { name: 'Ver historial' }).click();
+    const historial = panelDeTurno(page, 'Historial del turno').getByRole('region', {
+      name: 'Historial de la recepción',
+    });
+    await expect(historial.getByText(/Se retiro sin ser atendido/).first()).toBeVisible();
     await expect(historial.getByText('Se canso de esperar')).toBeVisible();
+  });
+
+  /**
+   * Lo que se hace en el panel se ve en la fila sin que nadie recargue, y quien estaba buscando sigue
+   * buscando: abrir un turno no le cambia el lugar a la recepcion (TURNO - Tecnico §87 y §88).
+   */
+  test('confirmar desde el panel actualiza la fila y conserva la busqueda', async ({
+    page,
+    api,
+    centro,
+  }) => {
+    const fila = await abrirLaRecepcion(page, persona);
+    await expect(fila.getByText('RESERVADO', { exact: true })).toBeVisible();
+    const direccion = page.url();
+
+    await abrirAcciones(fila);
+    await fila.getByRole('button', { name: `Ver el turno de ${persona.apellido}` }).click();
+    const detalle = panelDeTurno(page, 'Turno');
+    await detalle.getByRole('button', { name: 'Confirmar', exact: true }).click();
+    await expect(detalle.locator('.estado-turno')).toContainText('Confirmado');
+    await detalle.getByRole('button', { name: 'Cerrar el panel' }).click();
+
+    await expect(fila.getByText('CONFIRMADO', { exact: true })).toBeVisible();
+    expect(page.url()).toBe(direccion);
+    await expect(page.getByLabel('Paciente o documento')).toHaveValue(persona.apellido);
+    await expect(page.locator('.filtros-barra__resultados')).toHaveText('1 turno');
+    expect((await verTurno(api, centro, turno.id)).estado).toBe('CONFIRMADO');
   });
 
   test('un turno cancelado se lista con su motivo y no admite registrar la llegada', async ({

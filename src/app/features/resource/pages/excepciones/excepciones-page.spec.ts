@@ -645,6 +645,8 @@ describe('ExcepcionesPage', () => {
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'POST' && peticion.url === EXCEPCIONES,
     );
+    // Sin esto el backend responde 409: confirmar es lo que hace "Cargar igual" (contrato 0.149.0).
+    expect(alta.request.body.confirmaTurnosAfectados).toBe(true);
     alta.flush(CIERRE_DE_SEDE, { status: 201, statusText: 'Created' });
     listado().flush(VIGENTES);
     await estabilizar(fixture);
@@ -655,6 +657,41 @@ describe('ExcepcionesPage', () => {
       .find((aviso) => aviso.titulo === 'Turnos para revisar');
     expect(turnos?.tipo).toBe('advertencia');
     expect(turnos?.descripcion).toContain('Según la consulta previa, 2 turnos pendientes quedaban');
+  });
+
+  it('si entraron turnos después de la consulta no se guarda ni se confirma lo que nadie vio', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    escribir(fixture, '#alta-excepcion-desde', '2026-10-01');
+    escribir(fixture, '#alta-excepcion-hasta', '2026-10-02');
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === `${EXCEPCIONES}/impacto-de-alta`,
+      )
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2026-10-02' });
+    await estabilizar(fixture);
+
+    const alta = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+    );
+    expect(alta.request.body.confirmaTurnosAfectados).toBeUndefined();
+    alta.flush(
+      {
+        type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+        status: 409,
+        turnosAfectados: 1,
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Se reservaron turnos en ese período');
+    expect(texto(fixture)).not.toContain('Cargar igual');
   });
 
   it('las fechas incoherentes y la franja a medias no salen a la red', async () => {

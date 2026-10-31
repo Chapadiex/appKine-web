@@ -32,9 +32,8 @@ import { permissionGuard } from '../../core/guards/permission.guard';
  *
  * <p><b>Con `turno:read`</b>, que es lo que el backend exige para `GET /turnos?fecha=`: mirar quien
  * viene hoy es leer la agenda, no operarla. Las dos acciones de llegada piden `turno:manage` y se
- * esconden <b>dentro</b> de la pantalla, igual que en el ciclo del turno — un guard con el permiso
- * de gestion dejaria afuera a quien solo quiere ver la lista, que es exactamente lo que el backend
- * si le permite.
+ * esconden <b>dentro</b> de la pantalla — un guard con el permiso de gestion dejaria afuera a quien
+ * solo quiere ver la lista, que es exactamente lo que el backend si le permite.
  *
  * <p>A diferencia de la agenda, esta lleva guard: la agenda se abre sin el porque su ruta vacia no
  * pide nada al servidor hasta que se elige una oferta, y esta pide la lista del dia al abrirse.
@@ -47,57 +46,52 @@ import { permissionGuard } from '../../core/guards/permission.guard';
  * <p>La fecha viaja en la query (`?fecha=`) para que un refresh —o un enlace copiado— vuelva al
  * mismo dia.
  *
- * <h2>El ciclo del turno es una tercera ruta, y lleva `permissionGuard` (AKINE-05.03)</h2>
+ * <h2>Un turno no tiene pantalla: se ve y se opera en el panel del flujo unico</h2>
  *
- * <p><b>Con `turno:read` y no con `turno:manage`</b>, que es lo que exige el historial: leer quien
- * cancelo y por que es parte de mirar la agenda, no de operarla. Las cuatro transiciones piden
- * `turno:manage` y esas se esconden <b>dentro</b> de la pantalla, que es donde la distincion es
- * util: un guard con el permiso de gestion dejaria afuera a quien solo quiere consultar el
- * historial, que es exactamente lo que el backend si le permite.
+ * <p>Lo abre quien lo muestra, con `FlujoDeTurnosStore.verTurno`, sin salir de donde esta. Lo que
+ * queda de `turnos/:turnoId` es una direccion para los enlaces guardados: `pages/abrir-turno`.
  *
- * <p>Es la unica de las tres con guard de permiso, y no es una incoherencia: las otras dos se
- * abren sin el porque consultar la agenda es lo que hace cualquiera que atienda el mostrador.
- * Sigue siendo UX y no seguridad — la autoridad es el backend, que rechaza igual por URL directa.
- *
- * <p><b>La version del turno viaja en la query</b> (`?version=`), junto con `ofertaId` y `fecha`.
- * No es elegante y es lo unico posible: el contrato 0.21.0 no publica ninguna lectura de un turno,
- * asi que la pantalla no tiene de donde sacar la version que las transiciones exigen. Sin esos
- * datos la ruta abre igual y queda en modo lectura; el detalle esta en `pages/ciclo-de-turno`.
- *
- * <p>El slot elegido viaja en la query (`fecha`, `inicio`, `profesionalId`) y no en el estado de
- * navegacion: el estado se pierde al recargar y dejaria la pantalla sin saber que reservar.
+ * <p><b>Lleva `permissionGuard` con `turno:read` y no con `turno:manage`</b>, que es lo que exige el
+ * historial: leer quien cancelo y por que es parte de mirar la agenda, no de operarla. Las
+ * transiciones piden `turno:manage` y esas se esconden <b>dentro</b> del panel. Sigue siendo UX y no
+ * seguridad — la autoridad es el backend, que rechaza igual por URL directa.
  */
 export const routes: Routes = [
+  // La agenda operativa: dia o semana, por profesional o por box. Sin permissionGuard porque es la
+  // pantalla de inicio de todo contexto: sin `turno:read` el backend responde 403 y la pantalla lo
+  // dice. La fecha, la vista y los filtros viven en la query, asi un enlace abre lo mismo.
   {
     path: '',
+    canActivate: [contextGuard],
+    loadComponent: () => import('./pages/agenda/agenda-page').then((m) => m.AgendaPage),
+    title: 'AKINE - Agenda',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  // Buscar horarios por prestacion. Elegir uno abre el flujo unico, igual que una celda de la agenda.
+  {
+    path: 'disponibilidad',
     canActivate: [contextGuard],
     loadComponent: () =>
       import('./pages/buscador-de-agenda/buscador-de-agenda-page').then(
         (m) => m.BuscadorDeAgendaPage,
       ),
-    title: 'AKINE - Agenda de turnos',
+    title: 'AKINE - Buscar disponibilidad',
     // Ancho amplio: la grilla pone los slots de un dia en una fila y a 46rem una jornada de
     // ocho horas queda detras del scroll horizontal.
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
-    path: 'ofertas/:ofertaId/reservar',
-    canActivate: [contextGuard],
+    path: 'lista-de-espera',
+    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
     loadComponent: () =>
-      import('./pages/reserva-de-turno/reserva-de-turno-page').then((m) => m.ReservaDeTurnoPage),
-    title: 'AKINE - Reservar un turno',
+      import('./pages/lista-de-espera/lista-de-espera-page').then((m) => m.ListaDeEsperaPage),
+    title: 'AKINE - Lista de espera',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
-  // Series de turnos (AKINE E-3, DP-04). El alta llega desde la reserva con el mismo slot en la
-  // query; la serie se abre por su id o desde la bandeja de series (E-8).
-  {
-    path: 'ofertas/:ofertaId/reservar-serie',
-    canActivate: [contextGuard],
-    loadComponent: () =>
-      import('./pages/serie-de-turnos-alta/serie-de-turnos-alta-page').then(
-        (m) => m.SerieDeTurnosAltaPage,
-      ),
-    title: 'AKINE - Reservar una serie de turnos',
-  },
+  // Direcciones viejas: hay enlaces guardados. Reservar ya no es una pantalla: es un panel del flujo
+  // unico que se abre desde la agenda o desde la busqueda.
+  { path: 'ofertas/:ofertaId/reservar', redirectTo: 'disponibilidad' },
+  { path: 'ofertas/:ofertaId/reservar-serie', redirectTo: 'disponibilidad' },
   // Bandeja de series de la sede (AKINE E-8, contrato 0.68.0). `turno:read`, como ver una serie.
   {
     path: 'series',
@@ -115,18 +109,13 @@ export const routes: Routes = [
       import('./pages/serie-de-turnos/serie-de-turnos-page').then((m) => m.SerieDeTurnosPage),
     title: 'AKINE - Serie de turnos',
   },
-  // Calendario semanal de turnos reservados (DP-45, contrato 0.148.0). `turno:read`, igual que la
-  // recepcion: pide la semana al abrirse. La semana viaja en la query (`?semana=`, el lunes).
+  // El calendario semanal paso a ser la vista Semana de la agenda.
   {
     path: 'calendario',
-    canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
-    loadComponent: () =>
-      import('./pages/calendario-de-turnos/calendario-de-turnos-page').then(
-        (m) => m.CalendarioDeTurnosPage,
-      ),
-    title: 'AKINE - Calendario de turnos',
-    // Ancho amplio: siete columnas de dias mas el panel de detalle.
-    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+    redirectTo: ({ queryParams }) => {
+      const semana = queryParams['semana'];
+      return semana ? `/agenda?vista=semana&fecha=${semana}` : '/agenda?vista=semana';
+    },
   },
   {
     path: 'recepcion',
@@ -138,11 +127,13 @@ export const routes: Routes = [
     // detras del scroll horizontal el mismo dia que un nombre es largo.
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+  // Direccion de un turno: hay enlaces guardados y avisos. Un turno se ve en el panel del flujo unico,
+  // asi que esto abre la agenda en su dia con el panel encima.
   {
     path: 'turnos/:turnoId',
     canActivate: [contextGuard, permissionGuard(PERMISO_TURNO_READ)],
     loadComponent: () =>
-      import('./pages/ciclo-de-turno/ciclo-de-turno-page').then((m) => m.CicloDeTurnoPage),
-    title: 'AKINE - Ciclo del turno',
+      import('./pages/abrir-turno/abrir-turno-page').then((m) => m.AbrirTurnoPage),
+    title: 'AKINE - Turno',
   },
 ];

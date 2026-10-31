@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { DisponibilidadService } from '../../../api/generated/api/disponibilidad.service';
 import { PlanesDeTratamientoService } from '../../../api/generated/api/planes-de-tratamiento.service';
 import { AvanceDelPlan } from '../../../api/generated/model/avance-del-plan';
+import { ContextoDeAgenda } from '../../../api/generated/model/contexto-de-agenda';
 import { CrearPlanTratamientoRequest } from '../../../api/generated/model/crear-plan-tratamiento-request';
 import { ModificarPlanTratamientoRequest } from '../../../api/generated/model/modificar-plan-tratamiento-request';
 import { PlanTratamiento } from '../../../api/generated/model/plan-tratamiento';
@@ -19,6 +21,15 @@ import { Justificacion, motivoDeAcceso } from '../services/historia-clinica-api'
 @Injectable({ providedIn: 'root' })
 export class PlanApi {
   private readonly planes = inject(PlanesDeTratamientoService);
+  private readonly disponibilidad = inject(DisponibilidadService);
+
+  /**
+   * Cuantas sesiones de cada prestacion estan realizadas, programadas y pendientes, plan por plan.
+   * Es de la agenda y no de la historia: exige `turno:read` y no lleva motivo de acceso.
+   */
+  contextoDeAgenda(consultorioId: number, personaId: number): Observable<ContextoDeAgenda> {
+    return this.disponibilidad.contextoDeAgendaDePersona({ consultorioId, personaId });
+  }
 
   /** Todos los planes del caso, incluidos los finalizados: son el recorrido terapeutico. */
   listar(casoClinicoId: number, justificacion: Justificacion): Observable<PlanTratamiento[]> {

@@ -152,6 +152,16 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_RECURSO_OCUPADO = 'https://akine.app/problems/recurso-ocupado',
 
+    HTTPS___AKINE_APP_PROBLEMS_PLAN_SIN_SESIONES = 'https://akine.app/problems/plan-sin-sesiones',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONTEXTO_CLINICO_INVALIDO = 'https://akine.app/problems/contexto-clinico-invalido',
+
+    HTTPS___AKINE_APP_PROBLEMS_ESPACIO_NO_ELEGIBLE = 'https://akine.app/problems/espacio-no-elegible',
+
+    HTTPS___AKINE_APP_PROBLEMS_LISTA_DE_ESPERA_CERRADA = 'https://akine.app/problems/lista-de-espera-cerrada',
+
+    HTTPS___AKINE_APP_PROBLEMS_BLOQUEO_CON_TURNOS_AFECTADOS = 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+
     HTTPS___AKINE_APP_PROBLEMS_PERSONA_SIN_PERFIL_PACIENTE = 'https://akine.app/problems/persona-sin-perfil-paciente',
 
     HTTPS___AKINE_APP_PROBLEMS_TURNO_TRANSICION_NO_PERMITIDA = 'https://akine.app/problems/turno-transicion-no-permitida',

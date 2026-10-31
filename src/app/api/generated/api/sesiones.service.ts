@@ -21,6 +21,8 @@ import { CambiarCasoDeSesion } from '../model/cambiar-caso-de-sesion';
 // @ts-ignore
 import { CerrarSesion } from '../model/cerrar-sesion';
 // @ts-ignore
+import { ContextoDeProximaSesion } from '../model/contexto-de-proxima-sesion';
+// @ts-ignore
 import { EnmendarSesion } from '../model/enmendar-sesion';
 // @ts-ignore
 import { FijarPoliticaDeEnmienda } from '../model/fijar-politica-de-enmienda';
@@ -49,6 +51,7 @@ import {
     SesionesServiceInterface,
     CambiarCasoDeSesionRequestParams,
     CerrarSesionRequestParams,
+    ContextoDeProximaSesionRequestParams,
     EnmendarRequestParams,
     EvaluarRequestParams,
     FijarPoliticaDeEnmiendaRequestParams,
@@ -221,6 +224,72 @@ export class SesionesService extends BaseService implements SesionesServiceInter
             {
                 context: localVarHttpContext,
                 body: cerrarSesion,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Lo que se sabe para programar la proxima sesion
+     * Paciente, caso, plan, prestacion y profesional de esta atencion: lo que hace falta para programar la proxima sin volver a preguntar nada (TURNO - Tecnico §76). **Nada clinico.** Exige &#x60;sesion:register&#x60;, igual que ver la sesion.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/proxima-sesion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public contextoDeProximaSesion(requestParameters: ContextoDeProximaSesionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ContextoDeProximaSesion>;
+    public contextoDeProximaSesion(requestParameters: ContextoDeProximaSesionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ContextoDeProximaSesion>>;
+    public contextoDeProximaSesion(requestParameters: ContextoDeProximaSesionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ContextoDeProximaSesion>>;
+    public contextoDeProximaSesion(requestParameters: ContextoDeProximaSesionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling contextoDeProximaSesion.');
+        }
+        const sesionId = requestParameters?.sesionId;
+        if (sesionId === null || sesionId === undefined) {
+            throw new Error('Required parameter sesionId was null or undefined when calling contextoDeProximaSesion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/sesiones/${this.configuration.encodeParam({name: "sesionId", value: sesionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/proxima-sesion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ContextoDeProximaSesion>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

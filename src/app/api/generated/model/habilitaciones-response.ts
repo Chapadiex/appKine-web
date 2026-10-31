@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { DuracionPropia } from './duracion-propia';
 import { EspacioHabilitado } from './espacio-habilitado';
 import { ProfesionalHabilitado } from './profesional-habilitado';
 
@@ -23,6 +24,10 @@ export interface HabilitacionesResponse {
      * Minimo entre la comercial y la de los espacios habilitados que estan en servicio. Sin espacios habilitados es igual a la comercial: no hay ningun espacio concreto contra el cual acotarla todavia
      */
     capacidadEfectiva?: number;
+    /**
+     * Duraciones propias vigentes por profesional. Quien no aparece usa la duracion de la oferta. Es una lista aparte de profesionales porque una oferta sin restringir no tiene habilitaciones y sus profesionales igual pueden tener duracion propia
+     */
+    duracionesPropias?: Array<DuracionPropia>;
     /**
      * Nombre del espacio que fija la efectiva, o null si ninguno la acota. Un numero mas chico sin este dato es un defecto de la pantalla
      */

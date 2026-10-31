@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 
@@ -16,6 +17,7 @@ import { ClinicalApi } from '../../services/clinical-api';
 import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
 import { TratamientosDeSesion } from '../../components/tratamientos-de-sesion/tratamientos-de-sesion';
 import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso-administrativo-response';
+import { ContextoDeProximaSesion } from '../../../../api/generated/model/contexto-de-proxima-sesion';
 import {
   ErrorAtencion,
   traducirErrorAtencion,
@@ -36,7 +38,8 @@ import {
 import { Sesion } from '../../../../api/generated/model/sesion';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
-import { PERMISO_SESION_REASSIGN } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PERMISO_SESION_REASSIGN, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { ProfesionalElegible } from '../../services/clinical-api';
 import {
   ASISTENCIAS,
@@ -194,6 +197,7 @@ export class AtencionPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly permisos = inject(PermissionsStore);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   /**
    * De la ruta. `withComponentInputBinding` lo liga solo. Viene uno de los dos: `turnoId` en la
@@ -343,6 +347,28 @@ export class AtencionPage {
    */
   protected readonly cerrada = computed(() => this.sesion()?.numeroSesion !== undefined);
 
+  // --- Proxima sesion (TURNO - Tecnico §76) -----------------------------------------------
+  /** Ocultar el boton es UX: el backend rechaza igual. */
+  protected readonly puedeProgramar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
+
+  /** La atencion cerrada de la que se puede programar la proxima, o `null`. */
+  private readonly sesionAProgramar = computed(() =>
+    this.cerrada() && this.puedeProgramar() ? (this.sesion()?.id ?? null) : null,
+  );
+
+  /**
+   * Lo que se sabe para programar la proxima. Sale del endpoint y no de esta pantalla: entrando por
+   * `/atencion/sesiones/:id` no se conoce ni al paciente.
+   */
+  private readonly proximaSesion = signal<ContextoDeProximaSesion | null>(null);
+  protected readonly leyendoProximaSesion = signal(false);
+  private pedidoDeProximaSesion: Subscription | null = null;
+
+  /** A donde vuelve "Volver al paciente", cuando ya se sabe. */
+  protected readonly pacienteDeLaAtencion = computed(
+    () => this.proximaSesion()?.personaId ?? this.personaDelTurno(),
+  );
+
   protected readonly presente = computed(
     () => this.asistencia() === CerrarSesionAsistenciaEnum.PRESENTE,
   );
@@ -395,7 +421,22 @@ export class AtencionPage {
       untracked(() => this.abrir());
     });
 
-    this.destroyRef.onDestroy(() => this.cancelarAutosave());
+    effect(() => {
+      const sesionId = this.sesionAProgramar();
+      untracked(() => {
+        this.pedidoDeProximaSesion?.unsubscribe();
+        this.proximaSesion.set(null);
+        this.leyendoProximaSesion.set(false);
+        if (sesionId !== null) {
+          this.leerProximaSesion(sesionId, false);
+        }
+      });
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.cancelarAutosave();
+      this.pedidoDeProximaSesion?.unsubscribe();
+    });
   }
 
   // -------------------------------------------------------------------------------------
@@ -427,10 +468,17 @@ export class AtencionPage {
     }
 
     this.limpiarApertura();
-    this.api.casosDelTurno(consultorioId, turnoId).subscribe(({ ofertaId, personaId, casos }) => {
+    this.api.casosDelTurno(consultorioId, turnoId).subscribe((delTurno) => {
+      const { ofertaId, personaId, sesionId, casoId, casos } = delTurno;
       this.casos.set(casos);
       this.personaDelTurno.set(personaId ?? null);
-      if (casos.length === 0) {
+      // Lo que el turno ya sabe no se pregunta: si ya tiene atencion se abre esa, y si se dio para un
+      // caso, la atencion es de ese caso (TURNO - Tecnico §39 y §40).
+      if (sesionId !== undefined) {
+        this.abrirSesion(consultorioId, sesionId);
+        return;
+      }
+      if (casos.length === 0 || casos.some((caso) => caso.id === casoId)) {
         this.iniciar();
         return;
       }
@@ -942,6 +990,50 @@ export class AtencionPage {
         this.fallo(error);
       },
     });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Proxima sesion
+  // -------------------------------------------------------------------------------------
+
+  protected programarProximaSesion(): void {
+    const contexto = this.proximaSesion();
+    const sesionId = this.sesionAProgramar();
+    if (contexto !== null) {
+      this.flujo.nuevoTurno({ origen: 'SESION', ...contexto });
+    } else if (sesionId !== null) {
+      this.leerProximaSesion(sesionId, true);
+    }
+  }
+
+  /** Con `abrir`, lo pidio el boton: el flujo se abre apenas se sabe el contexto. */
+  private leerProximaSesion(sesionId: number, abrir: boolean): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    if (consultorioId === null) {
+      return;
+    }
+    this.pedidoDeProximaSesion?.unsubscribe();
+    this.leyendoProximaSesion.set(true);
+    this.pedidoDeProximaSesion = this.api
+      .contextoDeProximaSesion(consultorioId, sesionId)
+      .subscribe({
+        next: (contexto) => {
+          this.leyendoProximaSesion.set(false);
+          this.proximaSesion.set(contexto);
+          if (abrir) {
+            this.flujo.nuevoTurno({ origen: 'SESION', ...contexto });
+          }
+        },
+        error: () => {
+          this.leyendoProximaSesion.set(false);
+          this.avisos.error('No pudimos preparar la próxima sesión', {
+            accion: {
+              etiqueta: 'Reintentar',
+              ejecutar: () => this.leerProximaSesion(sesionId, true),
+            },
+          });
+        },
+      });
   }
 
   /**

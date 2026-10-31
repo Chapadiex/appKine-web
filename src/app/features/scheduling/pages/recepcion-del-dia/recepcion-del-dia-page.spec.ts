@@ -1,7 +1,8 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 import { RecepcionDelDiaPage } from './recepcion-del-dia-page';
 import {
@@ -17,6 +18,7 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { provideApi } from '../../../../api/generated/provide-api';
 import { fijarReloj, soltarReloj } from '../../../../core/testing/reloj';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 
 const CONSULTORIO = 3;
 const OFERTA = 42;
@@ -161,13 +163,36 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('aguarda ser llamado');
   });
 
-  it('"Nuevo turno" solo navega a la busqueda de horarios de la agenda', async () => {
+  it('"Nuevo turno" abre el flujo sobre esta pantalla, con el dia que se esta mirando', async () => {
     const fixture = await montar();
 
-    const enlace = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('a.boton'),
-    ).find((a) => (a.textContent ?? '').includes('Nuevo turno'));
-    expect(enlace?.getAttribute('href')).toBe('/agenda');
+    const boton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button.boton'),
+    ).find((b) => (b.textContent ?? '').includes('Nuevo turno'));
+    boton?.click();
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: { origen: 'AGENDA', fecha: FECHA },
+    });
+  });
+
+  it('sin turno:manage no ofrece "Nuevo turno", ni en la cabecera ni con el dia vacio', async () => {
+    const fixture = await montar({ permisos: [PERMISO_TURNO_READ], turnos: [] });
+
+    expect(textoDe(fixture)).toContain('No hay turnos este día');
+    expect(textoDe(fixture)).not.toContain('Nuevo turno');
+  });
+
+  it('lo que reserva el flujo aparece en la lista: se relee sin que nadie lo pida', async () => {
+    const fixture = await montar();
+
+    TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+    fixture.detectChanges();
+    const relectura = httpMock.expectOne(esDelDia());
+    expect(relectura.request.params.get('fecha')).toBe(FECHA);
+    relectura.flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+    await asentar(fixture);
   });
 
   it('la fila deja a la vista solo la transición siguiente y el resto va al menú', async () => {
@@ -180,11 +205,158 @@ describe('RecepcionDelDiaPage', () => {
       'Llamar',
     );
     expect((menu as HTMLElement).hidden).toBe(true);
-    // El cancelado solo tiene "Ver el turno": no lleva menu, el enlace queda a la vista.
+    // El cancelado solo tiene "Ver el turno": no lleva menu, el boton queda a la vista.
     expect(fila(fixture, 'Vega, Carla').querySelector('.acciones-de-fila__panel')).toBeNull();
-    expect(fila(fixture, 'Vega, Carla').querySelector('a.boton')?.textContent).toContain(
+    expect(fila(fixture, 'Vega, Carla').querySelector('button.boton')?.textContent).toContain(
       'Ver el turno',
     );
+  });
+
+  describe('"Ver el turno" abre el panel sobre esta pantalla', () => {
+    it('sin salir de la recepción, y el botón dice de quién es el turno', async () => {
+      const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const fixture = await montar();
+      const flujo = TestBed.inject(FlujoDeTurnosStore);
+
+      // Con menu: Sosa tiene otras acciones. Sin menu: Vega esta cancelada.
+      for (const [nombre, id] of [
+        ['Sosa, Bruno', 302],
+        ['Vega, Carla', 303],
+      ] as const) {
+        const boton = botonDeLaFila(fixture, nombre, 'Ver el turno');
+        expect(boton?.textContent?.replace(/\s+/g, ' ')).toContain(`Ver el turno de ${nombre}`);
+        boton?.click();
+        expect(flujo.solicitud()).toEqual({ tipo: 'detalle', turnoId: id });
+      }
+      expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it('el foco queda en el "⋯" de la fila, para que el panel lo devuelva a un botón visible', async () => {
+      const fixture = await montar();
+      const raiz = fixture.nativeElement as HTMLElement;
+      document.body.appendChild(raiz);
+
+      botonDeLaFila(fixture, 'Sosa, Bruno', 'Ver el turno')?.click();
+
+      expect(document.activeElement).toBe(
+        fila(fixture, 'Sosa, Bruno').querySelector('.acciones-de-fila__boton'),
+      );
+      raiz.remove();
+    });
+  });
+
+  describe('lo que hace el panel se relee en el lugar', () => {
+    const MUCHOS = Array.from({ length: 60 }, (_, i) => ({
+      ...DEL_DIA[0],
+      id: 400 + i,
+      personaNombre: `Paciente ${100 + i}`,
+    }));
+
+    /** Lleva a la segunda pagina, que es donde perderla se nota. */
+    async function enLaSegundaPagina(): Promise<ComponentFixture<RecepcionDelDiaPage>> {
+      const fixture = await montar({ turnos: MUCHOS });
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+          '.paginacion__paso',
+        ),
+      )
+        .find((b) => (b.textContent ?? '').includes('Página siguiente'))
+        ?.click();
+      await asentar(fixture);
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
+      return fixture;
+    }
+
+    it('conserva la página, y la tabla no se vacía mientras se lee', async () => {
+      const fixture = await enLaSegundaPagina();
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      expect(textoDe(fixture)).not.toContain('Leyendo los turnos');
+      expect(fila(fixture, 'Paciente 130')).toBeDefined();
+
+      httpMock
+        .expectOne(esDelDia())
+        .flush({ fecha: FECHA, timezone: ZONA, turnos: MUCHOS.map((t) => ({ ...t })) });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
+    });
+
+    it('conserva los filtros', async () => {
+      const fixture = await montar();
+      const raiz = fixture.nativeElement as HTMLElement;
+      const buscador = raiz.querySelector('input[type="search"]') as HTMLInputElement;
+      buscador.value = 'Vega';
+      buscador.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+      expect(textoDe(fixture)).not.toContain('Sosa, Bruno');
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      httpMock.expectOne(esDelDia()).flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+      await asentar(fixture);
+
+      expect(buscador.value).toBe('Vega');
+      expect(textoDe(fixture)).not.toContain('Sosa, Bruno');
+      expect(textoDe(fixture)).toContain('Vega, Carla');
+    });
+
+    it('una transición de la fila tampoco manda a la primera página', async () => {
+      const fixture = await enLaSegundaPagina();
+
+      clickearEnLaFila(fixture, 'Paciente 130', 'Registrar la llegada');
+      httpMock
+        .expectOne((p) => p.url === recepcion(430))
+        .flush({ id: 1, turnoId: 430, estado: 'LLEGO', version: 0 });
+      httpMock.expectOne(`${TURNOS}/430`).flush({ ...MUCHOS[30], version: 3 });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
+    });
+
+    it('si la respuesta es de un día que se dejó de mirar, se descarta', async () => {
+      const fixture = await montar();
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      const vieja = httpMock.expectOne(esDelDia());
+
+      const campo = (fixture.nativeElement as HTMLElement).querySelector(
+        '#recepcion-fecha',
+      ) as HTMLInputElement;
+      campo.value = '2026-09-16';
+      campo.dispatchEvent(new Event('change'));
+      await asentar(fixture);
+      httpMock
+        .expectOne((p) => p.method === 'GET' && p.params.get('fecha') === '2026-09-16')
+        .flush({ fecha: '2026-09-16', timezone: ZONA, turnos: [DEL_DIA[2]] });
+      await asentar(fixture);
+
+      vieja.flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Vega, Carla');
+      expect(textoDe(fixture)).not.toContain('Sosa, Bruno');
+    });
+
+    it('si no se puede releer, lo que había sigue ahí y el aviso ofrece volver a leer', async () => {
+      const fixture = await montar();
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      httpMock.expectOne(esDelDia()).flush(null, { status: 500, statusText: 'E' });
+      await asentar(fixture);
+
+      expect(textoDe(fixture)).toContain('Sosa, Bruno');
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso.titulo).toBe('No pudimos actualizar los turnos del día');
+      expect(aviso.accion?.etiqueta).toBe('Releer el día');
+
+      aviso.accion?.ejecutar();
+      httpMock.expectOne(esDelDia()).flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+      await asentar(fixture);
+    });
   });
 
   it('el motivo se pide en un panel lateral fuera de la tabla, con la fila marcada', async () => {
@@ -334,8 +506,7 @@ describe('RecepcionDelDiaPage', () => {
     });
     await asentar(fixture);
 
-    // El check-in avanza la version del TURNO aunque no cambie su estado: la fila se relee para
-    // que el enlace al ciclo del turno no lleve una version vieja.
+    // El check-in avanza la version del TURNO aunque no cambie su estado: la fila se relee.
     httpMock.expectOne(`${TURNOS}/301`).flush({
       ...DEL_DIA[0],
       llegadaEn: '2026-09-15T11:40:00Z',
@@ -487,6 +658,29 @@ describe('RecepcionDelDiaPage', () => {
 
     expect(textoDe(fixture)).toContain('0 en espera');
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
+  });
+
+  it('la relectura en silencio no saca de la página que se está mirando', async () => {
+    const muchos = Array.from({ length: 27 }, (_, i) => ({
+      ...DEL_DIA[0],
+      id: 400 + i,
+      personaNombre: `Paciente ${String(i + 1).padStart(2, '0')}`,
+    }));
+    const fixture = await montar({ turnos: muchos });
+    const raiz = fixture.nativeElement as HTMLElement;
+    (
+      Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso')).find((b) =>
+        (b.textContent ?? '').includes('Página siguiente'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(2);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+    httpMock.expectOne(esDelDia()).flush({ fecha: FECHA, timezone: ZONA, turnos: muchos });
+    await asentar(fixture);
+
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(2);
   });
 
   it('el error de una acción de la fila es un aviso global con Reintentar', async () => {
@@ -1016,10 +1210,10 @@ describe('RecepcionDelDiaPage', () => {
     fixture: ComponentFixture<RecepcionDelDiaPage>,
     nombre: string,
   ): string[] {
-    // El boton "⋯" del menu de la fila no es una accion: se lo deja afuera de la lista.
+    // Las transiciones de la recepcion: el "⋯" no es una accion, y "Ver el turno" esta en todas.
     return Array.from(fila(fixture, nombre).querySelectorAll('button'))
       .map((b) => (b.textContent ?? '').trim())
-      .filter((texto) => !texto.startsWith('Más acciones de'));
+      .filter((texto) => !texto.startsWith('Más acciones de') && !texto.startsWith('Ver el turno'));
   }
 
   function botonDeLaFila(

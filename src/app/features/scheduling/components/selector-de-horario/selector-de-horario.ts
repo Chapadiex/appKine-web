@@ -6,8 +6,7 @@ import { fechaEnPalabras, rangoEnZona, slotCompleto } from '../../models/etiquet
 /**
  * Dia y horario destino de un turno que se mueve: un dia de la agenda y sus slots.
  *
- * <p>Lo usan el ciclo del turno (mover uno) y la serie (mover varios desde un pivote). Es
- * presentacional a proposito: no pide la agenda ni sabe que se va a hacer con el horario. La
+ * <p>Lo usa la serie, para mover varios desde un pivote. Es presentacional a proposito: no pide la agenda ni sabe que se va a hacer con el horario. La
  * pantalla le pasa los slots del dia y escucha los dos eventos.
  *
  * <p>Se elige un slot <b>de la agenda</b> y no una hora escrita a mano: el contrato pide el

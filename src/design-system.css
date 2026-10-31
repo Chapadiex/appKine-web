@@ -441,6 +441,13 @@ h3 {
   background: var(--color-superficie-sutil);
 }
 
+/* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */
+.boton--secundario:disabled {
+  border-color: var(--color-borde);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+}
+
 /*
  * El `padding-block` lleva la caja de un enlace a 24 px de alto o mas: es el objetivo de toque
  * minimo de WCAG 2.5.8 (AA). El alto del texto depende de la fuente del sistema -20-21 px en
@@ -1236,32 +1243,6 @@ form > .acciones {
   width: 1%;
   text-align: right;
   white-space: nowrap;
-}
-
-/*
- * Acciones siempre a la vista (Impeccable, 29/10/2026): en una tabla de mostrador que desborda a lo
- * ancho -la recepcion a 1024 px perdia 105 px- la ultima columna queda pegada al borde derecho del
- * desplazamiento, con el fondo de la fila para que el contenido que pasa por debajo no se lea.
- */
-.tabla--acciones-fijas th:last-child,
-.tabla--acciones-fijas td.tabla__acciones {
-  position: sticky;
-  inset-inline-end: 0;
-  background: var(--color-superficie);
-}
-
-.tabla--acciones-fijas thead th:last-child {
-  z-index: 2;
-  background: var(--color-superficie-atenuada);
-}
-
-.tabla--acciones-fijas tbody tr:hover > td.tabla__acciones,
-.tabla--acciones-fijas .fila--revocada > td.tabla__acciones {
-  background: var(--color-superficie-atenuada);
-}
-
-.tabla--acciones-fijas .fila--seleccionada > td.tabla__acciones {
-  background: var(--color-acento-claro);
 }
 
 /*

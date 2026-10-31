@@ -26,7 +26,7 @@ export interface SlotDisponible {
      */
     desde?: string;
     /**
-     * Espacio asignado. **Siempre ausente por ahora**: el motor verifica que exista al menos un espacio habilitado y en servicio, pero no elige cual. Elegirlo es parte de la reserva y tiene que ocurrir bajo el mismo lock que la crea, o dos busquedas concurrentes prometen el mismo box.
+     * Box que tomaria el turno si se reservara ahora, cuando la oferta requiere espacio. **Es una sugerencia para mostrar**: lo clava la reserva bajo el lock de la sede, y puede ser otro si alguien tomo este mientras tanto.
      */
     espacioId?: number;
     /**

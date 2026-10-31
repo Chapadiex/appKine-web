@@ -14,6 +14,7 @@ import { Observable }                                        from 'rxjs';
 import { AlcanceDeSerie } from '../model/models';
 import { CancelarSerieDeTurnos } from '../model/models';
 import { CrearSerieDeTurnos } from '../model/models';
+import { PrevisualizacionDeSerie } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ReprogramarSerieDeTurnos } from '../model/models';
 import { SerieDeTurnos } from '../model/models';
@@ -49,6 +50,11 @@ export interface PrevisualizarAlcanceDeSerieRequestParams {
     serieId: number;
     alcance: 'ESTE' | 'ESTE_Y_SIGUIENTES' | 'TODA_LA_SERIE';
     turnoId?: number;
+}
+
+export interface PrevisualizarSerieDeTurnosRequestParams {
+    consultorioId: number;
+    crearSerieDeTurnos: CrearSerieDeTurnos;
 }
 
 export interface ReprogramarSerieDeTurnosRequestParams {
@@ -98,6 +104,14 @@ export interface SeriesDeTurnosServiceInterface {
 * @param requestParameters
      */
     previsualizarAlcanceDeSerie(requestParameters: PrevisualizarAlcanceDeSerieRequestParams, extraHttpRequestParams?: any): Observable<AlcanceDeSerie>;
+
+    /**
+     * Ver que se reservaria, sin crear nada
+     * Evalua cada ocurrencia de la regla con los mismos controles de la reserva y, si una no se puede, **sugiere el horario mas cercano**. No crea nada: lo que se confirma en el alta es lo que quede de esto despues de revisarlo. Con plan, informa cuantas sesiones le quedan.  Exige &#x60;turno:read&#x60;. Es informativo: el alta revalida todo bajo el lock de la sede.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/series-de-turnos/previsualizacion
+* @param requestParameters
+     */
+    previsualizarSerieDeTurnos(requestParameters: PrevisualizarSerieDeTurnosRequestParams, extraHttpRequestParams?: any): Observable<PrevisualizacionDeSerie>;
 
     /**
      * Mover turnos de una serie con alcance

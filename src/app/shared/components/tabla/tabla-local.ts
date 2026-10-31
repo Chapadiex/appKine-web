@@ -38,6 +38,11 @@ export interface TablaLocal<T> {
   mostrar(fila: T): boolean;
   /** Cambia las filas por pagina y vuelve a la primera. */
   cambiarPorPagina(porPagina: number): void;
+  /**
+   * Corre un cambio de las filas sin volver a la primera pagina: es para una relectura de lo mismo,
+   * no para otro filtro. Si la pagina dejo de existir, queda en la ultima.
+   */
+  conservandoPagina(cambio: () => void): void;
 }
 
 const comparador = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
@@ -63,6 +68,8 @@ function comparar(a: ValorOrdenable, b: ValorOrdenable): number {
  *
  * <p><b>Volver a la primera pagina</b> cuando cambian las filas (otro filtro, una recarga) o el
  * orden: quedarse en la pagina 4 de una lista que ahora tiene 2 es una pantalla vacia sin motivo.
+ * Una relectura de la misma lista, con la persona mirando la fila que toco, va por
+ * {@link TablaLocal.conservandoPagina}.
  *
  * <p>El orden es estable: a igual valor, se respeta el orden original del servidor.
  */
@@ -129,6 +136,11 @@ export function tablaLocal<T>(
     },
     cambiarPorPagina(cantidad: number): void {
       if (cantidad > 0) porPagina.set(cantidad);
+    },
+    conservandoPagina(cambio: () => void): void {
+      const actual = pagina();
+      cambio();
+      pagina.set(Math.max(0, Math.min(actual, totalPaginas() - 1)));
     },
   };
 }

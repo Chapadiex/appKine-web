@@ -16,6 +16,27 @@ import { RecepcionService } from '../../../api/generated/api/recepcion.service';
 import { ServiciosYOfertasService } from '../../../api/generated/api/servicios-y-ofertas.service';
 import { Turno } from '../../../api/generated/model/turno';
 import { AgendaDelDia } from '../../../api/generated/model/agenda-del-dia';
+import { CancelarTurno } from '../../../api/generated/model/cancelar-turno';
+import { AgendaOperativa } from '../../../api/generated/model/agenda-operativa';
+import { AltaEnListaDeEspera } from '../../../api/generated/model/alta-en-lista-de-espera';
+import { BuscarDisponibilidadDeTurnos } from '../../../api/generated/model/buscar-disponibilidad-de-turnos';
+import { ContextoDeAgenda } from '../../../api/generated/model/contexto-de-agenda';
+import { CreateExcepcionRequest } from '../../../api/generated/model/create-excepcion-request';
+import { CreatePersonaRequest } from '../../../api/generated/model/create-persona-request';
+import { DisponibilidadDeTurnos } from '../../../api/generated/model/disponibilidad-de-turnos';
+import { DisponibilidadService } from '../../../api/generated/api/disponibilidad.service';
+import { EntradaDeListaDeEspera } from '../../../api/generated/model/entrada-de-lista-de-espera';
+import { ExcepcionResponse } from '../../../api/generated/model/excepcion-response';
+import { ExcepcionesDeDisponibilidadService } from '../../../api/generated/api/excepciones-de-disponibilidad.service';
+import { ImpactoDisponibilidadResponse } from '../../../api/generated/model/impacto-disponibilidad-response';
+import { ListaDeEsperaPage } from '../../../api/generated/model/lista-de-espera-page';
+import { ListaDeEsperaService } from '../../../api/generated/api/lista-de-espera.service';
+import { PersonaResponse } from '../../../api/generated/model/persona-response';
+import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
+import { ReservarTurno } from '../../../api/generated/model/reservar-turno';
+import { TurnosDePersona } from '../../../api/generated/model/turnos-de-persona';
+import { ValidacionDeHorario } from '../../../api/generated/model/validacion-de-horario';
+import { ValidarHorarioDeTurno } from '../../../api/generated/model/validar-horario-de-turno';
 import { AgendaUnificadaService } from '../../../api/generated/api/agenda-unificada.service';
 import { EventoDeAgenda } from '../../../api/generated/model/evento-de-agenda';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
@@ -51,8 +72,7 @@ import { TurnosDeSede } from '../../../api/generated/model/turnos-de-sede';
  * <p>El contrato <b>0.23.0</b> agrego lo que 0.21.0 no tenia: <b>leer turnos</b>.
  * {@link turnosDelDia} lista los de una sede en un dia con el paciente ya resuelto, y
  * {@link verTurno} lee uno solo. Las dos devuelven {@link TurnoDelDia}, que <b>si trae la
- * `version`</b>: la limitacion que `pages/ciclo-de-turno` documenta dejo de existir del lado del
- * contrato, aunque esa pantalla todavia no la aproveche.
+ * `version`</b>.
  *
  * <h2>La recepcion con maquina propia (M13, AKINE E-4, DP-16)</h2>
  *
@@ -73,6 +93,9 @@ export class SchedulingApi {
   private readonly ofertas = inject(ServiciosYOfertasService);
   private readonly personas = inject(PersonasService);
   private readonly coberturas = inject(CoberturasDelPacienteService);
+  private readonly disponibilidad = inject(DisponibilidadService);
+  private readonly espera = inject(ListaDeEsperaService);
+  private readonly excepciones = inject(ExcepcionesDeDisponibilidadService);
 
   /**
    * Slots de una oferta entre dos fechas locales de la sede.
@@ -116,19 +139,198 @@ export class SchedulingApi {
       readonly profesionalId?: number;
       readonly coberturaId?: number;
       readonly idempotencyKey: string;
+    } & Partial<ReservarTurno>,
+  ): Observable<Turno> {
+    return this.turnos.reservar({ consultorioId, ofertaId, reservarTurno: cuerpo });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Flujo unico de turnos: el motor de disponibilidad y lo que necesita el formulario
+  // -------------------------------------------------------------------------------------
+
+  /** Los proximos horarios libres de una prestacion. Con `limite: 1` es el primer disponible. */
+  buscarHorarios(
+    consultorioId: number,
+    criterios: BuscarDisponibilidadDeTurnos,
+  ): Observable<DisponibilidadDeTurnos> {
+    return this.disponibilidad.buscarDisponibilidadDeTurnos({
+      consultorioId,
+      buscarDisponibilidadDeTurnos: criterios,
+    });
+  }
+
+  /** Si un horario puntual se puede reservar y, si no, por que y que hay en su lugar. */
+  validarHorario(
+    consultorioId: number,
+    pedido: ValidarHorarioDeTurno,
+  ): Observable<ValidacionDeHorario> {
+    return this.disponibilidad.validarHorarioDeTurno({
+      consultorioId,
+      validarHorarioDeTurno: pedido,
+    });
+  }
+
+  /** Quien puede atender esa prestacion en la sede. Sin oferta, todos los profesionales de la sede. */
+  profesionales(consultorioId: number, ofertaId?: number): Observable<RecursoLibre[]> {
+    return this.disponibilidad.profesionalesParaTurnos({ consultorioId, ofertaId });
+  }
+
+  /** Los casos activos de la persona con sus planes y las sesiones que les quedan. */
+  contextoDePersona(consultorioId: number, personaId: number): Observable<ContextoDeAgenda> {
+    return this.disponibilidad.contextoDeAgendaDePersona({ consultorioId, personaId });
+  }
+
+  agendaOperativa(
+    consultorioId: number,
+    filtro: {
+      readonly desde: string;
+      readonly hasta: string;
+      readonly profesionalId?: number;
+      readonly ofertaId?: number;
+      readonly espacioId?: number;
+      readonly incluirCancelados?: boolean;
+    },
+  ): Observable<AgendaOperativa> {
+    return this.disponibilidad.agendaOperativa({ consultorioId, ...filtro });
+  }
+
+  turnosDePersona(
+    consultorioId: number,
+    personaId: number,
+    filtro: { readonly soloFuturos?: boolean; readonly page?: number; readonly size?: number } = {},
+  ): Observable<TurnosDePersona> {
+    return this.turnos.listarTurnosDePersona({ consultorioId, personaId, ...filtro });
+  }
+
+  asociarContexto(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: {
+      readonly casoId?: number;
+      readonly planId?: number;
+      readonly expectedVersion: number;
     },
   ): Observable<Turno> {
-    return this.turnos.reservar({
+    return this.turnos.asociarContextoDeTurno({
       consultorioId,
-      ofertaId,
-      reservarTurno: {
-        inicio: cuerpo.inicio,
-        personaId: cuerpo.personaId,
-        profesionalId: cuerpo.profesionalId,
-        coberturaId: cuerpo.coberturaId,
-        idempotencyKey: cuerpo.idempotencyKey,
-      },
+      turnoId,
+      asociarContextoDeTurno: cuerpo,
     });
+  }
+
+  verPersona(personaId: number): Observable<PersonaResponse> {
+    return this.personas.verPersona({ personaId });
+  }
+
+  /** El alta del paciente nuevo son dos pasos en el contrato: la persona y su perfil de paciente. */
+  crearPersona(datos: CreatePersonaRequest): Observable<PersonaResponse> {
+    return this.personas.crearPersona({ createPersonaRequest: datos });
+  }
+
+  activarPerfilDePaciente(personaId: number): Observable<PersonaResponse> {
+    return this.personas.activarPerfilPaciente({
+      personaId,
+      activarPerfilPacienteRequest: { motivo: 'Alta desde la reserva de un turno' },
+    });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Lista de espera
+  // -------------------------------------------------------------------------------------
+
+  anotarEnEspera(
+    consultorioId: number,
+    alta: AltaEnListaDeEspera,
+  ): Observable<EntradaDeListaDeEspera> {
+    return this.espera.anotarEnListaDeEspera({ consultorioId, altaEnListaDeEspera: alta });
+  }
+
+  listarEspera(
+    consultorioId: number,
+    filtro: {
+      readonly estado?: 'ACTIVA' | 'ASIGNADA' | 'DESCARTADA';
+      readonly ofertaId?: number;
+      readonly personaId?: number;
+      readonly page?: number;
+      readonly size?: number;
+    },
+  ): Observable<ListaDeEsperaPage> {
+    return this.espera.listarListaDeEspera({ consultorioId, ...filtro });
+  }
+
+  coincidenciasEnEspera(
+    consultorioId: number,
+    criterio: {
+      readonly turnoId?: number;
+      readonly ofertaId?: number;
+      readonly inicio?: string;
+      readonly profesionalId?: number;
+    },
+  ): Observable<EntradaDeListaDeEspera[]> {
+    return this.espera.coincidenciasEnListaDeEspera({ consultorioId, ...criterio });
+  }
+
+  asignarDesdeEspera(
+    consultorioId: number,
+    entradaId: number,
+    cuerpo: {
+      readonly inicio: string;
+      readonly profesionalId?: number;
+      readonly espacioId?: number;
+      readonly expectedVersion: number;
+    },
+  ): Observable<EntradaDeListaDeEspera> {
+    return this.espera.asignarDesdeListaDeEspera({
+      consultorioId,
+      entradaId,
+      asignarDesdeListaDeEspera: cuerpo,
+    });
+  }
+
+  descartarDeEspera(
+    consultorioId: number,
+    entradaId: number,
+    cuerpo: { readonly motivo?: string; readonly expectedVersion: number },
+  ): Observable<EntradaDeListaDeEspera> {
+    return this.espera.descartarDeListaDeEspera({
+      consultorioId,
+      entradaId,
+      descartarDeListaDeEspera: cuerpo,
+    });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Bloqueo de agenda (TURNO.md §22): un cierre de disponibilidad visto desde los turnos
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * Que turnos dejaria afuera el cierre, sin cargarlo: no guarda, no toma locks y no audita.
+   *
+   * <p>Exige `consultorio:manage`. La cuenta es la completa aunque `turnos` venga recortada a 50, y
+   * se evalua desde hoy hasta `evaluadoHasta`, a lo sumo noventa dias.
+   */
+  simularImpactoDeBloqueo(
+    consultorioId: number,
+    cierre: CreateExcepcionRequest,
+  ): Observable<ImpactoDisponibilidadResponse> {
+    return this.excepciones.simularImpactoAltaExcepcion({
+      consultorioId,
+      createExcepcionRequest: cierre,
+    });
+  }
+
+  /**
+   * Carga el cierre. Sin `confirmaTurnosAfectados`, si deja turnos afuera responde 409
+   * `bloqueo-con-turnos-afectados` y no guarda nada.
+   *
+   * <p>`fechaHasta` es <b>exclusiva</b> y omitir `membershipId` es <b>sede entera</b>. Es idempotente
+   * sin clave: el mismo pedido responde 200 con la fila que ya existe.
+   */
+  crearBloqueo(
+    consultorioId: number,
+    cierre: CreateExcepcionRequest,
+  ): Observable<ExcepcionResponse> {
+    return this.excepciones.createExcepcion({ consultorioId, createExcepcionRequest: cierre });
   }
 
   /**
@@ -166,12 +368,20 @@ export class SchedulingApi {
   cancelar(
     consultorioId: number,
     turnoId: number,
-    cuerpo: { readonly motivo: string; readonly expectedVersion: number },
+    cuerpo: {
+      readonly motivo: string;
+      readonly expectedVersion: number;
+      readonly origen?: CancelarTurno['origen'];
+    },
   ): Observable<Turno> {
     return this.turnos.cancelarTurno({
       consultorioId,
       turnoId,
-      cancelarTurno: { motivo: cuerpo.motivo, expectedVersion: cuerpo.expectedVersion },
+      cancelarTurno: {
+        motivo: cuerpo.motivo,
+        expectedVersion: cuerpo.expectedVersion,
+        origen: cuerpo.origen,
+      },
     });
   }
 
@@ -220,7 +430,11 @@ export class SchedulingApi {
   registrarAusencia(
     consultorioId: number,
     turnoId: number,
-    cuerpo: { readonly expectedVersion: number; readonly motivo?: string },
+    cuerpo: {
+      readonly expectedVersion: number;
+      readonly motivo?: string;
+      readonly consumeSesionDelPlan?: boolean;
+    },
   ): Observable<Turno> {
     return this.turnos.registrarAusencia({
       consultorioId,
@@ -228,6 +442,7 @@ export class SchedulingApi {
       registrarAusencia: {
         expectedVersion: cuerpo.expectedVersion,
         motivo: cuerpo.motivo === '' ? undefined : cuerpo.motivo,
+        consumeSesionDelPlan: cuerpo.consumeSesionDelPlan,
       },
     });
   }
@@ -236,9 +451,7 @@ export class SchedulingApi {
    * Todas las transiciones del turno, de la mas vieja a la mas nueva (RF-M12-008).
    *
    * <p>Exige `turno:read` y no `turno:manage`: leer quien cancelo y por que es parte de mirar la
-   * agenda, no de operarla.
-   *
-   * <p><b>Es lo unico que se puede leer de un turno existente</b>, y <b>no trae la version</b>.
+   * agenda, no de operarla. <b>No trae la version</b>: esa sale de {@link verTurno}.
    */
   historial(consultorioId: number, turnoId: number): Observable<readonly EventoDeTurno[]> {
     return this.turnos.historialTurno({ consultorioId, turnoId });

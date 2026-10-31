@@ -12,6 +12,7 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { AgendaDelDia } from '../model/models';
+import { AsociarContextoDeTurno } from '../model/models';
 import { CancelarTurno } from '../model/models';
 import { EventoDeTurno } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -20,11 +21,18 @@ import { ReprogramarTurno } from '../model/models';
 import { ReservarTurno } from '../model/models';
 import { Turno } from '../model/models';
 import { TurnoDelDia } from '../model/models';
+import { TurnosDePersona } from '../model/models';
 import { TurnosDeSede } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface AsociarContextoDeTurnoRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    asociarContextoDeTurno: AsociarContextoDeTurno;
+}
 
 export interface CancelarTurnoRequestParams {
     consultorioId: number;
@@ -50,6 +58,14 @@ export interface DeshacerLlegadaRequestParams {
 export interface HistorialTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
+}
+
+export interface ListarTurnosDePersonaRequestParams {
+    consultorioId: number;
+    personaId: number;
+    soloFuturos?: boolean;
+    page?: number;
+    size?: number;
 }
 
 export interface ListarTurnosDeSedeRequestParams {
@@ -95,6 +111,14 @@ export interface TurnosServiceInterface {
     configuration: Configuration;
 
     /**
+     * Asociar un turno a un caso y un plan
+     * Cambia para que es el turno: la primera consulta que ya tiene caso, o el turno que se dio sin asociarlo al plan. Omitir los dos lo desasocia.  **No mueve nada de la agenda**, asi que no compite con ninguna reserva. El caso y el plan se validan igual que al reservar, incluidas las sesiones pendientes del plan.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/contexto
+* @param requestParameters
+     */
+    asociarContextoDeTurno(requestParameters: AsociarContextoDeTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
      * Cancelar un turno futuro
      * **Cancelar no borra** (RN-M12-002): la fila queda con su motivo, su actor y su historial. Lo que si hace es **liberar el lugar**, que vuelve a estar disponible en la agenda.  **El motivo es obligatorio** (DP-04), y la version tambien: si otro operador toco el turno entre medio, la cancelacion se rechaza en vez de pisarlo.  **Solo turnos futuros.** Un turno que ya empezo es inalterable; lo que se registra sobre el es una ausencia.  **No es idempotente**, a diferencia de confirmar: entre dos cancelaciones el lugar pudo haber sido tomado por otro paciente, y contestar 200 en silencio le haria creer al operador que su motivo quedo registrado.
      * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/cancelacion
@@ -135,6 +159,14 @@ export interface TurnosServiceInterface {
 * @param requestParameters
      */
     historialTurno(requestParameters: HistorialTurnoRequestParams, extraHttpRequestParams?: any): Observable<Array<EventoDeTurno>>;
+
+    /**
+     * Turnos de una persona en la sede
+     * Los turnos de la persona en esta sede, los mas nuevos primero, con lo mismo que trae el calendario. Con &#x60;soloFuturos&#x3D;true&#x60; deja afuera lo que ya paso y lo cancelado, y el orden es el inverso: el mas cercano primero.  Exige &#x60;turno:read&#x60;. **Nada clinico.**
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/personas/{personaId}
+* @param requestParameters
+     */
+    listarTurnosDePersona(requestParameters: ListarTurnosDePersonaRequestParams, extraHttpRequestParams?: any): Observable<TurnosDePersona>;
 
     /**
      * Turnos de la sede en un rango de fechas
