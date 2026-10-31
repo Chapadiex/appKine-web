@@ -12,11 +12,11 @@
 
   <div cabeceraContexto class="campo agenda-nav" role="group" aria-label="Fecha de la agenda">
     <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
-      <span aria-hidden="true">‹</span><span class="visualmente-oculto">Anterior</span>
+      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
     </button>
     <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
     <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
-      <span aria-hidden="true">›</span><span class="visualmente-oculto">Siguiente</span>
+      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
     </button>
     <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
     <input

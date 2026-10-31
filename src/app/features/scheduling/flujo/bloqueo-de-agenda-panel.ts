@@ -349,7 +349,10 @@ export class BloqueoDeAgendaPanel implements OnInit {
   }
 
   private nombreDe(id: number): string {
-    return this.profesionales().find((profesional) => profesional.id === id)?.nombre ?? `#${id}`;
+    return (
+      this.profesionales().find((profesional) => profesional.id === id)?.nombre ||
+      'Sin nombre cargado'
+    );
   }
 
   private armarCierre(): CreateExcepcionRequest {

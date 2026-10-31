@@ -53,14 +53,13 @@
   padding: 0;
   overflow: visible;
   border: var(--borde-fino) solid var(--color-borde);
-  border-left: var(--borde-acento) solid var(--color-acento);
   border-radius: var(--radio-lg);
   background: var(--color-superficie);
   color: var(--color-texto);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-normal);
   text-align: left;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+  box-shadow: var(--sombra-flotante);
 }
 
 .ayuda-contextual__panel--amplio {
@@ -145,9 +144,9 @@
 
 .ayuda-contextual__panel[data-lado='derecha']::before {
   top: calc(var(--flecha) - 5px);
-  left: -9px;
-  border-color: var(--color-acento);
-  background: var(--color-acento);
+  left: -6px;
+  border-top: 0;
+  border-right: 0;
 }
 
 .ayuda-contextual__panel[data-lado='izquierda']::before {

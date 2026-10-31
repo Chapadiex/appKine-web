@@ -197,7 +197,7 @@ export class AgendaPage {
     const profesional = this.profesionalId();
     if (profesional !== null) {
       const nombre =
-        this.profesionales().find((p) => p.id === profesional)?.nombre ?? `#${profesional}`;
+        this.profesionales().find((p) => p.id === profesional)?.nombre || 'Sin nombre cargado';
       chips.push({
         clave: 'profesional',
         texto: `Profesional: ${nombre}`,
@@ -206,7 +206,8 @@ export class AgendaPage {
     }
     const oferta = this.ofertaId();
     if (oferta !== null) {
-      const nombre = this.ofertas().find((o) => o.id === oferta)?.nombreComercial ?? `#${oferta}`;
+      const nombre =
+        this.ofertas().find((o) => o.id === oferta)?.nombreComercial || 'Sin nombre cargado';
       chips.push({
         clave: 'oferta',
         texto: `Prestación: ${nombre}`,

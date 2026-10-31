@@ -55,7 +55,7 @@ describe('etiquetas de recepción', () => {
     expect(llegadaVigente({ estado: RecepcionEstadoEnum.ANULADA })).toBe(false);
     expect(llegadaVigente({ estado: RecepcionEstadoEnum.EN_ESPERA })).toBe(true);
     expect(llegadaVigente(undefined)).toBe(false);
-    expect(nombreDeEstadoDeRecepcion('RETIRADO')).toBe('Se retiro sin ser atendido');
+    expect(nombreDeEstadoDeRecepcion('RETIRADO')).toBe('Se retiró');
     expect(nombreDeEstadoDeRecepcion('EN_ESPERA')).not.toContain(' — ');
     expect(nombreDeEstadoDeRecepcion('NUEVO')).toBe('NUEVO');
   });

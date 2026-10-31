@@ -23,3 +23,6 @@
 *.woff2 binary
 *.ttf   binary
 *.eot   binary
+
+# Scripts de cmd.exe: CRLF, o cmd puede leer mal las etiquetas y los saltos (lanzador de Impeccable).
+*.cmd   text eol=crlf

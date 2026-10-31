@@ -8,8 +8,8 @@ import { esTerminal, fechaHoraEnZona, textoDeEstado, textoDeEvento } from './eti
  */
 describe('etiquetas de turno', () => {
   it('cancelado y ausente dicen cosas distintas: uno libera el lugar y el otro no', () => {
-    expect(textoDeEstado('CANCELADO')).toContain('libero');
-    expect(textoDeEstado('AUSENTE')).toContain('la hora se consumio igual');
+    expect(textoDeEstado('CANCELADO')).toContain('liberó');
+    expect(textoDeEstado('AUSENTE')).toContain('la hora se consumió igual');
     expect(esTerminal('CANCELADO')).toBe(true);
     expect(esTerminal('AUSENTE')).toBe(true);
     expect(esTerminal('RESERVADO')).toBe(false);

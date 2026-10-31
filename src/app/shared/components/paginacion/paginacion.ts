@@ -6,6 +6,7 @@ import {
   output,
   ViewEncapsulation,
 } from '@angular/core';
+import { Icono } from '../icono/icono';
 
 /** Cuantas filas por pagina se pueden elegir. La primera es el valor por defecto de AKINE. */
 export const FILAS_POR_PAGINA = [10, 25, 50, 100] as const;
@@ -40,6 +41,7 @@ type Paso = { readonly tipo: 'pagina'; readonly numero: number } | { readonly ti
  */
 @Component({
   selector: 'akine-paginacion, app-paginacion',
+  imports: [Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   styleUrl: './paginacion.css',

@@ -1,0 +1,766 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-30T02:28:11.529Z",
+  "title": "Design System: AKINE",
+  "extensions": {
+    "colorMeta": {
+      "acento": {
+        "role": "primary",
+        "displayName": "Azul de Acción",
+        "canonical": "#1d5fbf",
+        "dark": "#5aa2e5",
+        "cssVar": "--color-acento",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "accion-fondo": {
+        "role": "primary",
+        "displayName": "Azul de Acción (relleno)",
+        "canonical": "#1d5fbf",
+        "dark": "#4f9ae0",
+        "cssVar": "--color-accion-fondo",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "accion-fondo-hover": {
+        "role": "primary",
+        "displayName": "Azul Profundo",
+        "canonical": "#164a96",
+        "dark": "#6aabe8",
+        "cssVar": "--color-accion-fondo-hover",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "accion-texto": {
+        "role": "primary",
+        "displayName": "Blanco de Acción",
+        "canonical": "#ffffff",
+        "dark": "#06121c",
+        "cssVar": "--color-accion-texto",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "enlace": {
+        "role": "primary",
+        "displayName": "Azul de Acción (enlace)",
+        "canonical": "#1d5fbf",
+        "dark": "#7fb6ea",
+        "cssVar": "--color-enlace",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "foco": {
+        "role": "primary",
+        "displayName": "Azul de Acción (foco)",
+        "canonical": "#1d5fbf",
+        "dark": "#7fb6ea",
+        "cssVar": "--color-foco",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "acento-claro": {
+        "role": "primary",
+        "displayName": "Celeste de Selección",
+        "canonical": "#eaf1fb",
+        "dark": "#17304a",
+        "cssVar": "--color-acento-claro",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "marca-superficie-activa": {
+        "role": "primary",
+        "displayName": "Celeste de Selección (navegación)",
+        "canonical": "#eaf1fb",
+        "dark": "#22313f",
+        "cssVar": "--color-marca-superficie-activa",
+        "tonalRamp": [
+          "#000923",
+          "#002152",
+          "#003a88",
+          "#1859b6",
+          "#467fd6",
+          "#73a5f2",
+          "#abccff",
+          "#e5efff"
+        ]
+      },
+      "superficie": {
+        "role": "neutral",
+        "displayName": "Blanco Papel",
+        "canonical": "#ffffff",
+        "dark": "#0f1a26",
+        "cssVar": "--color-superficie",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "superficie-sutil": {
+        "role": "neutral",
+        "displayName": "Gris Niebla",
+        "canonical": "#f5f6f8",
+        "dark": "#17242f",
+        "cssVar": "--color-superficie-sutil",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "superficie-atenuada": {
+        "role": "neutral",
+        "displayName": "Gris Velado",
+        "canonical": "#f8f9fb",
+        "dark": "#131e29",
+        "cssVar": "--color-superficie-atenuada",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "superficie-codigo": {
+        "role": "neutral",
+        "displayName": "Gris Pizarra Claro",
+        "canonical": "#eef1f4",
+        "dark": "#1b2a38",
+        "cssVar": "--color-superficie-codigo",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "texto": {
+        "role": "neutral",
+        "displayName": "Tinta Pizarra",
+        "canonical": "#1f2933",
+        "dark": "#e6edf3",
+        "cssVar": "--color-texto",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "texto-fuerte": {
+        "role": "neutral",
+        "displayName": "Tinta Pizarra (títulos)",
+        "canonical": "#1f2933",
+        "dark": "#f4f8fb",
+        "cssVar": "--color-texto-fuerte",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "texto-suave": {
+        "role": "neutral",
+        "displayName": "Pizarra Media",
+        "canonical": "#5f6b7a",
+        "dark": "#a3b3c2",
+        "cssVar": "--color-texto-suave",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "marca-texto-suave": {
+        "role": "neutral",
+        "displayName": "Pizarra Oscura",
+        "canonical": "#3b4754",
+        "dark": "#b9cde0",
+        "cssVar": "--color-marca-texto-suave",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "borde": {
+        "role": "neutral",
+        "displayName": "Línea Fría",
+        "canonical": "#e1e5ea",
+        "dark": "#2e3d4c",
+        "cssVar": "--color-borde",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "borde-sutil": {
+        "role": "neutral",
+        "displayName": "Línea Tenue",
+        "canonical": "#eef1f4",
+        "dark": "#24313d",
+        "cssVar": "--color-borde-sutil",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "borde-control": {
+        "role": "neutral",
+        "displayName": "Gris Control",
+        "canonical": "#808a99",
+        "dark": "#8494a3",
+        "cssVar": "--color-borde-control",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "deshabilitado": {
+        "role": "neutral",
+        "displayName": "Gris Inactivo",
+        "canonical": "#6b7684",
+        "dark": "#778593",
+        "cssVar": "--color-deshabilitado",
+        "tonalRamp": [
+          "#080b0f",
+          "#1d252e",
+          "#37414c",
+          "#545f6d",
+          "#768190",
+          "#9ba6b2",
+          "#c3cbd6",
+          "#eceff2"
+        ]
+      },
+      "exito": {
+        "role": "status",
+        "displayName": "Verde Vigente",
+        "canonical": "#1e7b45",
+        "dark": "#4cc38a",
+        "cssVar": "--color-exito",
+        "tonalRamp": [
+          "#001004",
+          "#012d14",
+          "#014d26",
+          "#15703d",
+          "#469360",
+          "#76b689",
+          "#a4dab3",
+          "#e4f3e8"
+        ]
+      },
+      "exito-fondo": {
+        "role": "status",
+        "displayName": "Verde Vigente (fondo)",
+        "canonical": "#e6f4ec",
+        "dark": "#10291d",
+        "cssVar": "--color-exito-fondo",
+        "tonalRamp": [
+          "#001004",
+          "#012d14",
+          "#014d26",
+          "#15703d",
+          "#469360",
+          "#76b689",
+          "#a4dab3",
+          "#e4f3e8"
+        ]
+      },
+      "exito-texto": {
+        "role": "status",
+        "displayName": "Verde Vigente (texto)",
+        "canonical": "#155c33",
+        "dark": "#7ee0ae",
+        "cssVar": "--color-exito-texto",
+        "tonalRamp": [
+          "#001004",
+          "#012d14",
+          "#014d26",
+          "#15703d",
+          "#469360",
+          "#76b689",
+          "#a4dab3",
+          "#e4f3e8"
+        ]
+      },
+      "aviso": {
+        "role": "status",
+        "displayName": "Ámbar Reversible",
+        "canonical": "#8a5200",
+        "dark": "#d9a441",
+        "cssVar": "--color-aviso",
+        "tonalRamp": [
+          "#140800",
+          "#361d00",
+          "#5c3502",
+          "#854f02",
+          "#a7743d",
+          "#c89b6d",
+          "#eac29c",
+          "#f8ece1"
+        ]
+      },
+      "aviso-fondo": {
+        "role": "status",
+        "displayName": "Ámbar Reversible (fondo)",
+        "canonical": "#fff3e0",
+        "dark": "#2a1f0c",
+        "cssVar": "--color-aviso-fondo",
+        "tonalRamp": [
+          "#140800",
+          "#361d00",
+          "#5c3502",
+          "#854f02",
+          "#a7743d",
+          "#c89b6d",
+          "#eac29c",
+          "#f8ece1"
+        ]
+      },
+      "aviso-texto": {
+        "role": "status",
+        "displayName": "Ámbar Reversible (texto)",
+        "canonical": "#7a4800",
+        "dark": "#f0c674",
+        "cssVar": "--color-aviso-texto",
+        "tonalRamp": [
+          "#140800",
+          "#361d00",
+          "#5c3502",
+          "#854f02",
+          "#a7743d",
+          "#c89b6d",
+          "#eac29c",
+          "#f8ece1"
+        ]
+      },
+      "peligro": {
+        "role": "status",
+        "displayName": "Rojo Terminal",
+        "canonical": "#a32820",
+        "dark": "#f2777a",
+        "cssVar": "--color-peligro",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0001",
+          "#7a0c09",
+          "#a52b22",
+          "#c55b4f",
+          "#e5877a",
+          "#ffb5aa",
+          "#ffe9e5"
+        ]
+      },
+      "peligro-fondo": {
+        "role": "status",
+        "displayName": "Rojo Terminal (fondo)",
+        "canonical": "#fcebea",
+        "dark": "#2b1416",
+        "cssVar": "--color-peligro-fondo",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0001",
+          "#7a0c09",
+          "#a52b22",
+          "#c55b4f",
+          "#e5877a",
+          "#ffb5aa",
+          "#ffe9e5"
+        ]
+      },
+      "peligro-texto": {
+        "role": "status",
+        "displayName": "Rojo Terminal (texto)",
+        "canonical": "#8e2a2a",
+        "dark": "#ffb3b3",
+        "cssVar": "--color-peligro-texto",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0001",
+          "#7a0c09",
+          "#a52b22",
+          "#c55b4f",
+          "#e5877a",
+          "#ffb5aa",
+          "#ffe9e5"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "cssVar": "--tipo-xl",
+        "purpose": "El h1 de la cabecera de pantalla, en una línea con \"…\"."
+      },
+      "title-lg": {
+        "displayName": "Title Large",
+        "cssVar": "--tipo-lg",
+        "purpose": "Título del panel lateral y de los asistentes por pasos."
+      },
+      "title": {
+        "displayName": "Title",
+        "cssVar": "--tipo-base",
+        "purpose": "El h2 de una sección o tarjeta."
+      },
+      "body-md": {
+        "displayName": "Body Medium",
+        "cssVar": "--tipo-md",
+        "purpose": "Listas de detalle, título de un panel de ayuda; en 700, el rótulo de la barra superior."
+      },
+      "body": {
+        "displayName": "Body",
+        "cssVar": "--tipo-sm",
+        "purpose": "Cuerpo de toda la aplicación, celdas de tabla y campos."
+      },
+      "label": {
+        "displayName": "Label",
+        "cssVar": "--tipo-sm",
+        "purpose": "Rótulos de campo, botones, pestañas, cabeceras de grupo de la navegación."
+      },
+      "label-sm": {
+        "displayName": "Label Small",
+        "cssVar": "--tipo-xs",
+        "purpose": "Marcas de estado, \"Más opciones\", botones dentro de una fila."
+      },
+      "label-xs": {
+        "displayName": "Label XS",
+        "cssVar": "--tipo-2xs",
+        "purpose": "Encabezados de tabla, contador del embudo, etiquetas neutras."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "cssVar": "--tipo-xs",
+        "purpose": "Ayuda de campo y acción terciaria de texto."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "cssVar": "--fuente-mono",
+        "purpose": "Código de una pantalla de error y rutas; nunca como adorno."
+      }
+    },
+    "shadows": [
+      {
+        "name": "filo-de-tarjeta",
+        "value": "0 1px 2px rgb(16 38 63 / 0.05)",
+        "purpose": "La tarjeta en reposo: apenas despega el blanco del gris de la página."
+      },
+      {
+        "name": "ayuda-de-campo",
+        "value": "0 4px 12px rgb(16 38 63 / 0.12)",
+        "purpose": "La explicación que flota bajo un campo mientras tiene el foco."
+      },
+      {
+        "name": "capa-flotante",
+        "value": "0 8px 24px rgb(0 0 0 / 0.16)",
+        "purpose": "Popovers del menú de fila y de la ayuda \"?\", desplegables de la barra superior."
+      },
+      {
+        "name": "panel-lateral",
+        "value": "-8px 0 24px rgb(16 38 63 / 0.14)",
+        "purpose": "El cajón de detalle o edición que entra desde la derecha."
+      }
+    ],
+    "motion": [
+      {
+        "name": "cambio-de-estado",
+        "value": "0.15s ease",
+        "purpose": "Relleno y borde de un botón en hover; giro de la flecha de un grupo de la navegación."
+      },
+      {
+        "name": "entrada-de-aviso",
+        "value": "0.18s ease-out",
+        "purpose": "Un aviso global que aparece: 6px hacia abajo con opacidad. Se apaga con prefers-reduced-motion."
+      },
+      {
+        "name": "cajon-de-navegacion",
+        "value": "0.2s ease",
+        "purpose": "La barra lateral que entra como cajón en tablet (transform y visibility). Se apaga con prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "telefono",
+        "value": "30rem"
+      },
+      {
+        "name": "telefono-ancho",
+        "value": "40rem"
+      },
+      {
+        "name": "cabecera-angosta",
+        "value": "48rem"
+      },
+      {
+        "name": "formulario-angosto",
+        "value": "52rem"
+      },
+      {
+        "name": "tablet",
+        "value": "64rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "boton",
+      "description": "La única acción con relleno azul de la pantalla; deshabilitado en Gris Inactivo, con el porqué escrito al lado.",
+      "html": "<div class=\"ds-fila\"><button class=\"ds-boton\" type=\"button\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Dar de alta una persona</button><button class=\"ds-boton\" type=\"button\" disabled>Guardar</button></div>",
+      "css": ".ds-boton { display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-4); min-height: 2.5rem; padding: var(--esp-4) var(--esp-7); border: var(--borde-fino) solid var(--color-accion-fondo); border-radius: var(--radio-md); background: var(--color-accion-fondo); color: var(--color-accion-texto); font-family: var(--fuente-base); font-size: var(--tipo-sm); font-weight: var(--peso-semi); line-height: 1.2; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; } .ds-boton:hover:not(:disabled) { background: var(--color-accion-fondo-hover); } .ds-boton:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-boton:disabled { border-color: var(--color-deshabilitado); background: var(--color-deshabilitado); cursor: not-allowed; } .ds-icono { width: 1.25em; height: 1.25em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-fila { display: flex; flex-wrap: wrap; gap: var(--esp-5); }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "boton-secundario",
+      "description": "Contorno y texto azul sobre blanco para toda acción que no es la principal; en chico dentro de un pie, y la acción terciaria de solo texto.",
+      "html": "<div class=\"ds-fila\"><button class=\"ds-boton-secundario\" type=\"button\">Cancelar</button><button class=\"ds-boton-secundario ds-boton-chico\" type=\"button\">Limpiar filtros</button><button class=\"ds-boton-texto\" type=\"button\">Ingresar con otra cuenta</button></div>",
+      "css": ".ds-boton-secundario { display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-4); min-height: 2.5rem; padding: var(--esp-4) var(--esp-7); border: var(--borde-fino) solid var(--color-enlace); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-enlace); font-family: var(--fuente-base); font-size: var(--tipo-sm); font-weight: var(--peso-semi); line-height: 1.2; white-space: nowrap; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; } .ds-boton-secundario:hover:not(:disabled) { background: var(--color-superficie-sutil); } .ds-boton-secundario:focus-visible, .ds-boton-texto:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-boton-chico { min-height: 2rem; padding: 0 var(--esp-5); } .ds-boton-texto { min-height: 2rem; padding: 0 var(--esp-4); border: 0; border-radius: var(--radio-sm); background: transparent; color: var(--color-texto-suave); font-family: var(--fuente-base); font-size: var(--tipo-xs); cursor: pointer; } .ds-boton-texto:hover { color: var(--color-texto); text-decoration: underline; } .ds-fila { display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-5); }"
+    },
+    {
+      "name": "Campo de formulario",
+      "kind": "input",
+      "refersTo": "campo",
+      "description": "Rótulo arriba, contorno Gris Control a 3:1 y anillo azul al enfocar; inválido con borde rojo de 2px y el mensaje en texto debajo.",
+      "html": "<div class=\"ds-campos\"><div class=\"ds-campo\"><label for=\"ds-doc\">Número de documento</label><input id=\"ds-doc\" type=\"text\" value=\"30123456\"></div><div class=\"ds-campo\"><label for=\"ds-mail\">Correo <span class=\"ds-campo-opcional\">(opcional)</span></label><input id=\"ds-mail\" type=\"email\" value=\"ana@\" aria-invalid=\"true\" aria-describedby=\"ds-mail-error\"><span id=\"ds-mail-error\" class=\"ds-campo-error\">Revisá el formato del correo.</span></div></div>",
+      "css": ".ds-campos { display: flex; flex-wrap: wrap; gap: var(--esp-6); font-family: var(--fuente-base); font-size: var(--tipo-sm); color: var(--color-texto); } .ds-campo { display: flex; flex-direction: column; gap: var(--esp-2); flex: 0 1 16rem; min-width: 0; } .ds-campo label { font-size: var(--tipo-sm); font-weight: var(--peso-semi); } .ds-campo input { min-height: 2.5rem; padding: var(--esp-4) 0.625rem; border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-texto); font: inherit; } .ds-campo input:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: 1px; } .ds-campo input[aria-invalid=\"true\"] { border-color: var(--color-peligro); border-width: var(--borde-medio); } .ds-campo-opcional { font-weight: var(--peso-normal); color: var(--color-texto-suave); } .ds-campo-error { font-size: var(--tipo-sm); color: var(--color-peligro); }"
+    },
+    {
+      "name": "Buscador y embudo",
+      "kind": "custom",
+      "refersTo": "filtros-boton",
+      "description": "Un solo campo que busca por todo y el botón \"Filtros\" con el embudo y el contador de aplicados; los filtros avanzados se despliegan debajo.",
+      "html": "<div class=\"ds-filtros\"><div class=\"ds-filtros-fila\"><div class=\"ds-filtros-principal\"><label class=\"ds-oculto\" for=\"ds-q\">Buscar personas</label><div class=\"ds-busqueda\"><span class=\"ds-busqueda-icono\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"6.5\"/><path d=\"M16 16l4.5 4.5\"/></svg></span><input id=\"ds-q\" type=\"search\" placeholder=\"Documento, nombre o teléfono\"></div></div><button class=\"ds-filtros-boton\" type=\"button\" aria-expanded=\"true\" aria-controls=\"ds-avanzados\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3.5 5h17l-6.5 8v5.5l-4 2V13z\"/></svg><span>Filtros</span><span class=\"ds-filtros-contador\">2<span class=\"ds-oculto\"> activos</span></span></button><p class=\"ds-filtros-resultados\">87 personas</p></div><div class=\"ds-filtros-avanzados\" id=\"ds-avanzados\"><div class=\"ds-filtros-campo\"><label for=\"ds-estado\">Estado</label><select id=\"ds-estado\"><option>Activas</option><option>Dadas de baja</option></select></div><div class=\"ds-filtros-campo\"><label for=\"ds-perfil\">Perfil</label><select id=\"ds-perfil\"><option>Paciente</option><option>Profesional</option></select></div></div></div>",
+      "css": ".ds-icono { width: 1.25em; height: 1.25em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-oculto { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; } .ds-filtros { font-family: var(--fuente-base); font-size: var(--tipo-sm); color: var(--color-texto); } .ds-filtros-fila { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--esp-4); } .ds-filtros-principal { flex: 1 1 18rem; min-width: min(100%, 18rem); max-width: 36rem; } .ds-busqueda { position: relative; } .ds-busqueda-icono { position: absolute; left: var(--esp-5); top: 50%; transform: translateY(-50%); display: inline-flex; color: var(--color-texto-suave); pointer-events: none; } .ds-busqueda input { width: 100%; min-height: 2.5rem; padding: var(--esp-4) 0.625rem; border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-texto); font: inherit; padding-left: 2.5rem; } .ds-busqueda input:focus-visible, .ds-filtros-campo select:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: 1px; } .ds-filtros-boton { display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-3); flex-shrink: 0; min-width: 2.75rem; height: 2.5rem; padding: 0 var(--esp-6); border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-texto); font-family: var(--fuente-base); font-size: var(--tipo-sm); font-weight: var(--peso-medio); cursor: pointer; } .ds-filtros-boton:hover, .ds-filtros-boton[aria-expanded=\"true\"] { background: var(--color-superficie-sutil); } .ds-filtros-boton:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-filtros-contador { display: inline-flex; align-items: center; justify-content: center; min-width: 1.25rem; height: 1.25rem; padding: 0 var(--esp-2); border-radius: var(--radio-pastilla); background: var(--color-accion-fondo); color: var(--color-accion-texto); font-size: var(--tipo-2xs); font-weight: var(--peso-semi); } .ds-filtros-resultados { align-self: center; margin: 0 0 0 auto; color: var(--color-texto-suave); white-space: nowrap; } .ds-filtros-avanzados { display: flex; flex-wrap: wrap; gap: var(--esp-5) var(--esp-6); margin-top: var(--esp-4); padding: var(--esp-6); border-radius: var(--radio-lg); background: var(--color-superficie-sutil); } .ds-filtros-campo { display: flex; flex-direction: column; gap: var(--esp-2); flex: 0 1 14rem; } .ds-filtros-campo label { font-weight: var(--peso-semi); } .ds-filtros-campo select { min-height: 2.5rem; padding: var(--esp-4) 0.625rem; border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-texto); font: inherit; }"
+    },
+    {
+      "name": "Marca de estado",
+      "kind": "chip",
+      "refersTo": "marca-estado-activa",
+      "description": "Tres niveles de severidad (vigente, reversible, terminal), siempre con la palabra del estado; al lado, la etiqueta neutra.",
+      "html": "<div class=\"ds-fila\"><span class=\"ds-marca ds-marca--activa\">Activa</span><span class=\"ds-marca ds-marca--suspendida\">Suspendida</span><span class=\"ds-marca ds-marca--revocada\">Revocada</span><span class=\"ds-etiqueta\">Fundador</span></div>",
+      "css": ".ds-marca { display: inline-block; padding: var(--esp-1) var(--esp-4); border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-pastilla); font-family: var(--fuente-base); font-size: var(--tipo-xs); font-weight: var(--peso-semi); line-height: 1.5; white-space: nowrap; } .ds-marca--activa { border-color: var(--color-exito); background: var(--color-exito-fondo); color: var(--color-exito-texto); } .ds-marca--suspendida { border-color: var(--color-aviso); background: var(--color-aviso-fondo); color: var(--color-aviso-texto); } .ds-marca--revocada { border-color: var(--color-peligro); background: var(--color-peligro-fondo); color: var(--color-peligro-texto); } .ds-etiqueta { display: inline-block; padding: 0.0625rem var(--esp-3); border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-pastilla); color: var(--color-texto-suave); font-family: var(--fuente-base); font-size: var(--tipo-2xs); white-space: nowrap; } .ds-fila { display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-4); }"
+    },
+    {
+      "name": "Cabecera de pantalla",
+      "kind": "custom",
+      "refersTo": "pestana",
+      "description": "Título en una línea con su \"?\" pegado, la acción principal contra el borde derecho y las pantallas hermanas en una segunda fila.",
+      "html": "<header class=\"ds-cabecera\"><div class=\"ds-cabecera-fila\"><div class=\"ds-cabecera-nombre\"><h1>Personas</h1><button class=\"ds-ayuda\" type=\"button\" aria-expanded=\"false\" aria-label=\"Sobre esta pantalla\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9.5\"/><path d=\"M9.5 9.2a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.3-2.5 3.8\"/><path d=\"M12 17.2h.01\"/></svg></button></div><div class=\"ds-cabecera-acciones\"><button class=\"ds-cabecera-accion\" type=\"button\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Dar de alta una persona</button></div></div><nav class=\"ds-pestanas\" aria-label=\"Pantallas de pacientes\"><ul class=\"ds-pestanas-lista\"><li><a class=\"ds-pestana ds-pestana--actual\" href=\"#\" aria-current=\"page\">Padrón</a></li><li><a class=\"ds-pestana\" href=\"#\">Coberturas</a></li><li><a class=\"ds-pestana\" href=\"#\">Historias clínicas</a></li></ul></nav></header>",
+      "css": ".ds-icono { width: 1.25em; height: 1.25em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-ayuda { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 1.5rem; height: 1.5rem; padding: 0; border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-pastilla); background: var(--color-superficie); color: var(--color-texto-suave); font-size: var(--tipo-base); cursor: pointer; } .ds-ayuda:hover, .ds-ayuda[aria-expanded=\"true\"] { background: var(--color-superficie-sutil); color: var(--color-texto-fuerte); } .ds-ayuda:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-cabecera-accion { display: inline-flex; align-items: center; justify-content: center; gap: var(--esp-4); min-height: 2.5rem; padding: var(--esp-4) var(--esp-7); border: var(--borde-fino) solid var(--color-accion-fondo); border-radius: var(--radio-md); background: var(--color-accion-fondo); color: var(--color-accion-texto); font-family: var(--fuente-base); font-size: var(--tipo-sm); font-weight: var(--peso-semi); line-height: 1.2; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; } .ds-cabecera-accion:hover:not(:disabled) { background: var(--color-accion-fondo-hover); } .ds-cabecera-accion:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-cabecera-accion:disabled { border-color: var(--color-deshabilitado); background: var(--color-deshabilitado); cursor: not-allowed; } .ds-pestanas { box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde); font-family: var(--fuente-base); } .ds-pestanas-lista { display: flex; flex-wrap: wrap; gap: 0 var(--esp-2); margin: 0; padding: 0; list-style: none; } .ds-pestana { display: inline-block; padding: var(--esp-3) var(--esp-5); border-bottom: var(--borde-medio) solid transparent; color: var(--color-texto-suave); font-size: var(--tipo-sm); font-weight: var(--peso-medio); text-decoration: none; white-space: nowrap; } .ds-pestana:hover { color: var(--color-texto); border-bottom-color: var(--color-borde-control); } .ds-pestana:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-pestana--actual, .ds-pestana--actual:hover { color: var(--color-texto-fuerte); font-weight: var(--peso-semi); border-bottom-color: var(--color-acento); } .ds-cabecera { display: block; margin-bottom: var(--esp-6); font-family: var(--fuente-base); } .ds-cabecera-fila { display: grid; grid-template-columns: minmax(min(12rem, 40%), max-content) minmax(0, 1fr) minmax(0, max-content); grid-template-areas: \"titulo . principal\"; align-items: center; min-height: 2.5rem; margin-bottom: var(--esp-3); } .ds-cabecera-nombre { grid-area: titulo; display: flex; align-items: center; gap: var(--esp-4); min-width: 0; } .ds-cabecera-nombre h1 { min-width: 0; margin: 0; overflow: hidden; color: var(--color-texto-fuerte); font-size: var(--tipo-xl); font-weight: var(--peso-fuerte); line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; } .ds-cabecera-acciones { grid-area: principal; display: flex; justify-content: flex-end; gap: var(--esp-4); margin-left: var(--esp-6); }"
+    },
+    {
+      "name": "Pestañas",
+      "kind": "nav",
+      "refersTo": "pestana-actual",
+      "description": "Navegación entre pantallas hermanas: lugar, no acción. La actual con subrayado azul de 2px y peso, no solo con color.",
+      "html": "<nav class=\"ds-pestanas\" aria-label=\"Pantallas de la agenda\"><ul class=\"ds-pestanas-lista\"><li><a class=\"ds-pestana ds-pestana--actual\" href=\"#\" aria-current=\"page\">Turnos</a></li><li><a class=\"ds-pestana\" href=\"#\">Recepción</a></li><li><a class=\"ds-pestana\" href=\"#\">Series</a></li></ul></nav>",
+      "css": ".ds-pestanas { box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde); font-family: var(--fuente-base); } .ds-pestanas-lista { display: flex; flex-wrap: wrap; gap: 0 var(--esp-2); margin: 0; padding: 0; list-style: none; } .ds-pestana { display: inline-block; padding: var(--esp-3) var(--esp-5); border-bottom: var(--borde-medio) solid transparent; color: var(--color-texto-suave); font-size: var(--tipo-sm); font-weight: var(--peso-medio); text-decoration: none; white-space: nowrap; } .ds-pestana:hover { color: var(--color-texto); border-bottom-color: var(--color-borde-control); } .ds-pestana:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-pestana--actual, .ds-pestana--actual:hover { color: var(--color-texto-fuerte); font-weight: var(--peso-semi); border-bottom-color: var(--color-acento); }"
+    },
+    {
+      "name": "Tabla: encabezado y filas",
+      "kind": "custom",
+      "refersTo": "tabla-encabezado",
+      "description": "Encabezado fijo en Gris Velado con rótulos de 12px y columnas ordenables, filas de 14px con hover, el menú \"⋯\" por fila y el pie con el total y la página.",
+      "html": "<div class=\"ds-tabla-scroll\" tabindex=\"0\" role=\"region\" aria-label=\"Personas del padrón\"><table class=\"ds-tabla\"><caption class=\"ds-oculto\">Personas del padrón</caption><thead><tr><th aria-sort=\"ascending\"><button class=\"ds-orden\" type=\"button\">Nombre<svg class=\"ds-icono ds-icono-orden\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 14l4-4 4 4\"/></svg></button></th><th><button class=\"ds-orden\" type=\"button\">Documento<svg class=\"ds-icono ds-icono-orden\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 9l4-4 4 4M8 15l4 4 4-4\"/></svg></button></th><th>Estado</th><th class=\"ds-tabla-acciones\"><span class=\"ds-oculto\">Acciones</span></th></tr></thead><tbody><tr><td>Ana Pérez</td><td>30.123.456</td><td><span class=\"ds-marca ds-marca--activa\">Activa</span></td><td class=\"ds-tabla-acciones\"><button class=\"ds-menu-fila\" type=\"button\" aria-label=\"Más acciones para Ana Pérez\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"19\" cy=\"12\" r=\"1.4\"/></svg></button></td></tr><tr class=\"ds-fila-seleccionada\"><td>Bruno Díaz</td><td>28.456.789</td><td><span class=\"ds-marca ds-marca--suspendida\">Suspendida</span></td><td class=\"ds-tabla-acciones\"><button class=\"ds-menu-fila\" type=\"button\" aria-label=\"Más acciones para Bruno Díaz\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"19\" cy=\"12\" r=\"1.4\"/></svg></button></td></tr><tr><td>Carla Gómez</td><td>33.987.654</td><td><span class=\"ds-marca ds-marca--revocada\">Revocada</span></td><td class=\"ds-tabla-acciones\"><button class=\"ds-menu-fila\" type=\"button\" aria-label=\"Más acciones para Carla Gómez\"><svg class=\"ds-icono\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"1.4\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/><circle cx=\"19\" cy=\"12\" r=\"1.4\"/></svg></button></td></tr></tbody></table></div><div class=\"ds-tabla-pie\"><p class=\"ds-tabla-resumen\">Mostrando 1–3 de 87</p><nav class=\"ds-paginacion\" aria-label=\"Páginas\"><button class=\"ds-paso\" type=\"button\" aria-current=\"page\">1</button><button class=\"ds-paso\" type=\"button\">2</button><button class=\"ds-paso\" type=\"button\">3</button></nav></div>",
+      "css": ".ds-icono { width: 1.25em; height: 1.25em; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .ds-oculto { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; } .ds-marca { display: inline-block; padding: var(--esp-1) var(--esp-4); border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-pastilla); font-family: var(--fuente-base); font-size: var(--tipo-xs); font-weight: var(--peso-semi); line-height: 1.5; white-space: nowrap; } .ds-marca--activa { border-color: var(--color-exito); background: var(--color-exito-fondo); color: var(--color-exito-texto); } .ds-marca--suspendida { border-color: var(--color-aviso); background: var(--color-aviso-fondo); color: var(--color-aviso-texto); } .ds-marca--revocada { border-color: var(--color-peligro); background: var(--color-peligro-fondo); color: var(--color-peligro-texto); } .ds-tabla-scroll { position: relative; overflow-x: auto; } .ds-tabla-scroll:focus-visible, .ds-orden:focus-visible, .ds-menu-fila:focus-visible, .ds-paso:focus-visible { outline: var(--foco-grosor) solid var(--color-foco); outline-offset: var(--foco-offset); } .ds-tabla { width: 100%; border-collapse: collapse; font-family: var(--fuente-base); font-size: var(--tipo-sm); font-variant-numeric: tabular-nums; color: var(--color-texto); } .ds-tabla th, .ds-tabla td { padding: var(--esp-5); border-bottom: 1px solid var(--color-borde-sutil); text-align: left; vertical-align: middle; } .ds-tabla thead th { position: sticky; top: 0; z-index: 1; background: var(--color-superficie-atenuada); color: var(--color-marca-texto-suave); font-size: var(--tipo-2xs); font-weight: var(--peso-medio); white-space: nowrap; } .ds-tabla tbody tr:hover > td { background: var(--color-superficie-atenuada); } .ds-tabla tbody tr.ds-fila-seleccionada > td { background: var(--color-acento-claro); } .ds-orden { display: inline-flex; align-items: center; gap: var(--esp-2); margin: calc(-1 * var(--esp-2)) calc(-1 * var(--esp-3)); padding: var(--esp-2) var(--esp-3); border: 0; border-radius: var(--radio-sm); background: transparent; color: inherit; font: inherit; cursor: pointer; } .ds-orden:hover { color: var(--color-texto-fuerte); background: var(--color-superficie-sutil); } .ds-icono-orden { opacity: 0.55; } .ds-tabla th[aria-sort] { color: var(--color-texto-fuerte); } .ds-tabla th[aria-sort] .ds-icono-orden { opacity: 1; } .ds-tabla-acciones { width: 1%; text-align: right; white-space: nowrap; } .ds-menu-fila { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; border: var(--borde-fino) solid var(--color-borde-control); border-radius: var(--radio-md); background: var(--color-superficie); color: var(--color-texto-suave); font-size: var(--tipo-base); cursor: pointer; } .ds-menu-fila:hover { background: var(--color-superficie-sutil); color: var(--color-texto-fuerte); } .ds-tabla-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--esp-4); margin-top: var(--esp-5); color: var(--color-texto-suave); font-family: var(--fuente-base); font-size: var(--tipo-sm); } .ds-tabla-resumen { margin: 0; } .ds-paginacion { display: flex; gap: var(--esp-2); } .ds-paso { min-width: 2rem; min-height: 2rem; padding: 0 var(--esp-4); border: var(--borde-fino) solid transparent; border-radius: var(--radio-md); background: transparent; color: var(--color-texto); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; } .ds-paso:hover { background: var(--color-superficie-sutil); } .ds-paso[aria-current=\"page\"] { border-color: var(--color-accion-fondo); background: var(--color-accion-fondo); color: var(--color-accion-texto); font-weight: var(--peso-semi); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Mostrador Ordenado",
+    "overview": "AKINE es la pantalla que la recepción de un centro tiene abierta todo el día. El sistema está hecho para no cansar: un fondo gris frío casi blanco, superficies blancas, texto pizarra y un único azul que significa \"acá se actúa\". La densidad es alta y pareja —cuerpo de 14 px, controles de 40 px, filas de tabla compactas—, porque la misma persona abre las mismas pantallas cientos de veces y necesita encontrar el dato, no leer la pantalla.\n\nLa jerarquía no sale de la decoración sino del lugar: cada pantalla repite la misma anatomía (cabecera de pantalla, avisos, buscador y embudo, resultado), el título arranca siempre en el mismo punto y la acción principal está siempre contra el borde derecho de esa fila. Lo que explica se pliega detrás de un \"?\"; lo que es dato, estado o advertencia queda a la vista. El color de estado nunca viaja solo: toda marca lleva su palabra.\n\nLa profundidad es tonal. La página se separa de sus superficies por tono y por espacio, y la sombra queda para lo que flota encima (menús, ayudas, avisos, el panel lateral). La accesibilidad es parte del material y no un retoque: los bordes de control están calibrados a 3:1, el anillo de foco es global y el contraste de los dos temas lo mide el CI en un navegador real.",
+    "keyCharacteristics": [
+      "Un solo azul de acción (#1d5fbf) sobre una base de grises fríos; verde, ámbar y rojo solo para estado.",
+      "Roboto en tres pesos (400, 500, 700) y Roboto Mono para códigos, servidas desde el bundle.",
+      "Cuerpo de 14 px, controles de 40 px, radio de 8 px en todo control y contenedor.",
+      "Plano en reposo: profundidad por tono; sombra solo en lo que flota.",
+      "Una cabecera de pantalla única, un buscador más un embudo, tablas ordenables y paginadas.",
+      "Tema claro y oscuro definidos solo con tokens, elegidos por el sistema o por la persona."
+    ],
+    "rules": [
+      {
+        "name": "La regla de la capa única",
+        "body": "Toda decisión de color vive en el bloque `:root` de `src/design-system.css` y en ningún otro lado: fuera de ese bloque no hay un solo `#rrggbb` en `src/`. El modo oscuro redefine solo tokens, nunca una regla de componente.",
+        "section": "colors"
+      },
+      {
+        "name": "La regla del azul que actúa",
+        "body": "El azul de acción marca lo que se puede hacer o dónde se está, y nada más. Una pantalla tiene un solo botón con relleno azul; el resto va en contorno o como texto.",
+        "section": "colors"
+      },
+      {
+        "name": "La regla del contorno a 3:1",
+        "body": "Lo que se opera lleva `borde-control` (3,2:1 sobre la página, WCAG 1.4.11). `borde` y `borde-sutil` son para separar, nunca para dibujar un control.",
+        "section": "colors"
+      },
+      {
+        "name": "La regla de los tres pesos",
+        "body": "El bundle carga Roboto en 400, 500 y 700 y nada más. No existe un 600: el navegador lo sintetiza. `--peso-semi` vale 500, igual que `--peso-medio`.",
+        "section": "typography"
+      },
+      {
+        "name": "La regla de las cifras alineadas",
+        "body": "Tablas, paginación y conteos de filtros rápidos usan `font-variant-numeric: tabular-nums`: un importe se compara con el de arriba sin bailar.",
+        "section": "typography"
+      },
+      {
+        "name": "La regla de los lugares fijos",
+        "body": "El título arranca siempre en el mismo punto, el \"?\" va pegado a él y la acción principal contra el borde derecho de la misma fila. Sin acción, ese lugar queda vacío y nada se corre. Las pantallas hermanas van en pestañas, en una segunda fila dentro de la cabecera.",
+        "section": "layout"
+      },
+      {
+        "name": "La regla del buscador y el embudo",
+        "body": "Arriba de un listado va un solo campo que busca por todo y, a su lado, el embudo que despliega hacia abajo los filtros avanzados, con el contador de los aplicados. Un filtro sin el que la pantalla no tiene sentido (el día en la recepción) queda a la vista.",
+        "section": "layout"
+      },
+      {
+        "name": "La regla de la grilla de 12",
+        "body": "Un campo nunca ocupa más de lo que pide su dato: un número no se estira a 1.100 px.",
+        "section": "layout"
+      },
+      {
+        "name": "La regla de lo que flota",
+        "body": "La sombra es una respuesta a estar encima de la página, no un adorno: menús, ayudas, avisos y paneles la llevan; secciones, tablas y filtros no. Una tarjeta dentro de otra pierde borde, sombra y relleno.",
+        "section": "elevation"
+      },
+      {
+        "name": "La regla del \"?\"",
+        "body": "Lo que explica —qué es la pantalla, cómo funciona el modelo, por qué existe una sección— va detrás del \"?\". Nunca van ahí los datos, el estado de la pantalla, las advertencias de una acción irreversible ni la instrucción de un paso obligatorio. Una ayuda nunca contiene acciones.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** consumí solo `var(--...)` de `src/design-system.css`; un color nuevo es un token nuevo en `:root` y en los dos bloques del tema oscuro.",
+      "**Do** abrí toda pantalla con sesión con `app-cabecera-de-pagina`: título, \"?\", marcas, contexto, una acción principal contra el borde derecho y las pestañas en la segunda fila.",
+      "**Do** poné la explicación detrás de un \"?\" (`app-ayuda`) y dejá a la vista los datos, el estado, las advertencias irreversibles y las instrucciones de un paso obligatorio.",
+      "**Do** armá los listados con un buscador que busca por todo, el embudo `app-filtros` con su contador y una tabla con `tablaLocal` + `th[appOrdenable]` y el pie con total y paginación.",
+      "**Do** declará el ancho de cada campo en la grilla de 12 según su dato (fecha, hora o número 2; texto corto 3; correo 4; texto libre 12).",
+      "**Do** decí el estado con texto además de color: la marca con su palabra, la pestaña actual con subrayado y peso, el campo inválido con borde de 2 px y mensaje.",
+      "**Do** usá los íconos de `app-icono` (SVG de 24 px, trazo 1.8, `currentColor`); uno nuevo es un `@case` más.",
+      "**Do** respetá el anillo de foco global (3 px `--color-foco`, separado 2 px) y los objetivos táctiles: 24 px para un enlace suelto, 44 px en la navegación de tablet."
+    ],
+    "donts": [
+      "**Don't** escribas un `#rrggbb` fuera del bloque de tokens ni repitas una regla de componente en el bloque del tema oscuro.",
+      "**Don't** pongas más de una acción con relleno azul en una pantalla: las demás van en contorno (`.boton--secundario`) o como texto (`.boton-texto`).",
+      "**Don't** metas botones ni enlaces que hagan algo dentro de una ayuda \"?\".",
+      "**Don't** armes una cabecera propia con `div.titulo-con-ayuda` + `h1`, ni pongas migas o un \"Volver a…\" arriba del título.",
+      "**Don't** ordenes en el cliente la página visible de una lista paginada por el servidor.",
+      "**Don't** envuelvas cada bloque en `.tarjeta`: las secciones se separan por espacio y título.",
+      "**Don't** uses un peso 600 ni otra familia: Roboto 400, 500 y 700 y Roboto Mono son lo único que carga el bundle.",
+      "**Don't** le pongas `overflow` ni `max-height` a la cabecera de pantalla ni a las pestañas: dibuja una barra de desplazamiento en cada pantalla.",
+      "**Don't** dibujes un control con `--color-borde` (#e1e5ea): un control lleva `--color-borde-control`."
+    ]
+  }
+}
