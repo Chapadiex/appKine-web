@@ -607,7 +607,7 @@ export async function altaDeCentro(
  * <p>Idempotente: el centro es nuevo en cada corrida, y el backend devuelve la excepcion ya
  * existente si se carga dos veces la misma.
  */
-async function abrirLosFeriadosCercanos(
+export async function abrirLosFeriadosCercanos(
   api: ApiAkine,
   consultorioId: number,
   membershipId: number,

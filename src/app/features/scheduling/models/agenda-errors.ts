@@ -95,6 +95,11 @@ export type CausaAgenda =
    */
   | 'recepcion-transicion-no-permitida'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
+  | 'plan-sin-sesiones'
+  | 'contexto-clinico-invalido'
+  | 'espacio-no-elegible'
+  | 'lista-de-espera-cerrada'
+  | 'bloqueo-con-turnos-afectados'
   | 'suscripcion-suspendida'
   /** Cualquier otro 409. Gana el `detail` del backend. */
   | 'conflicto'
@@ -165,6 +170,14 @@ export interface ErrorAgenda {
   readonly recurso: string;
   /** Que cambio desde que se dibujo la grilla. Vacio fuera de `slot-no-disponible`. */
   readonly motivo: string;
+  /** Con que choca un `recurso-ocupado`, si es un turno. */
+  readonly turnoEnConflictoId: number;
+  readonly conflictoInicio: string;
+  readonly conflictoFin: string;
+  /** Sesiones que le quedan al plan, en `plan-sin-sesiones`. */
+  readonly pendientes: number;
+  /** Turnos que deja afuera un bloqueo, en `bloqueo-con-turnos-afectados`. */
+  readonly turnosAfectados: number;
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
@@ -195,6 +208,9 @@ const MENSAJE_SLOT_NO_DISPONIBLE =
 const MENSAJE_SLOT_COMPLETO =
   'Ese horario se lleno mientras lo mirabas. El horario sigue existiendo, lo que se agoto es el ' +
   'cupo: probá con el turno siguiente.';
+
+const MENSAJE_BOX_OCUPADO =
+  'Ese box ya tiene otro turno que se cruza con este intervalo. Elegí otro horario u otro box.';
 
 const MENSAJE_RECURSO_OCUPADO =
   'Ya hay otro turno que se cruza con este intervalo. Elegí otro horario, o el mismo horario con ' +
@@ -227,8 +243,8 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
  * por que, que es exactamente lo que el tipo propio existe para evitar.
  */
 const MENSAJE_TRANSICION_NO_PERMITIDA =
-  'Este turno no admite esa operación en su estado actual. Volvé a leer su historial: puede que ' +
-  'otra persona lo haya cambiado, o que ya haya pasado su hora.';
+  'Este turno no admite esa operación en su estado actual: puede que otra persona lo haya ' +
+  'cambiado, o que ya haya pasado su hora.';
 
 /**
  * El turno tiene una Sesion registrada.
@@ -293,8 +309,53 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
       };
     case 'recurso-ocupado':
       return {
-        ...base(MENSAJE_RECURSO_OCUPADO, 'recurso-ocupado', 'elegir-otro'),
+        ...base(
+          textoDeExtension(error, 'recurso') === 'espacio'
+            ? MENSAJE_BOX_OCUPADO
+            : MENSAJE_RECURSO_OCUPADO,
+          'recurso-ocupado',
+          'elegir-otro',
+        ),
         recurso: textoDeExtension(error, 'recurso'),
+        turnoEnConflictoId: error.numeroDeExtension('turnoEnConflictoId') ?? 0,
+        conflictoInicio: textoDeExtension(error, 'conflictoInicio'),
+        conflictoFin: textoDeExtension(error, 'conflictoFin'),
+      };
+    case 'plan-sin-sesiones':
+      return {
+        ...base(
+          error.problem?.detail ?? 'El plan no tiene sesiones disponibles.',
+          'plan-sin-sesiones',
+          'ninguna',
+        ),
+        pendientes: error.numeroDeExtension('pendientes') ?? 0,
+      };
+    case 'contexto-clinico-invalido':
+      return base(
+        error.problem?.detail ?? 'El caso o el plan no sirven para este turno.',
+        'contexto-clinico-invalido',
+        'ninguna',
+      );
+    case 'espacio-no-elegible':
+      return base(
+        'Ese box no se puede usar para esta prestación en ese horario. Elegí otro o dejá que se asigne solo.',
+        'espacio-no-elegible',
+        'elegir-otro',
+      );
+    case 'lista-de-espera-cerrada':
+      return base(
+        'Esta persona ya no está en la lista de espera: alguien más la resolvió.',
+        'lista-de-espera-cerrada',
+        'recargar-agenda',
+      );
+    case 'bloqueo-con-turnos-afectados':
+      return {
+        ...base(
+          error.problem?.detail ?? 'Este bloqueo afecta turnos.',
+          'bloqueo-con-turnos-afectados',
+          'ninguna',
+        ),
+        turnosAfectados: error.numeroDeExtension('turnosAfectados') ?? 0,
       };
     case 'persona-sin-perfil-paciente':
       return base(MENSAJE_SIN_PERFIL_PACIENTE, 'persona-sin-perfil-paciente', 'activar-perfil');
@@ -445,6 +506,11 @@ function base(mensaje: string, causa: CausaAgenda, accion: AccionSugerida): Erro
     cupoTotal: 0,
     recurso: '',
     motivo: '',
+    turnoEnConflictoId: 0,
+    conflictoInicio: '',
+    conflictoFin: '',
+    pendientes: 0,
+    turnosAfectados: 0,
   };
 }
 

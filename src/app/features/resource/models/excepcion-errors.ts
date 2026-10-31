@@ -45,6 +45,8 @@ export type CausaExcepcion =
   | 'sede-inactiva'
   /** 409 profesional-no-vinculado: esa membership no atiende en ESTA sede. */
   | 'profesional-no-vinculado'
+  /** 409 bloqueo-con-turnos-afectados: se reservo algo despues de la consulta de impacto. */
+  | 'turnos-afectados'
   /** 400 ventana-demasiado-amplia: la ventana pedida supera el tope. Ver `maximoDias`. */
   | 'ventana-amplia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
@@ -98,6 +100,11 @@ const MENSAJE_NO_VINCULADO =
   'no se le puede cargar una excepción acá. Revisalo en Colaboradores: puede estar acotado a ' +
   'otra sede, suspendido o vencido.';
 
+/** Solo llega sin la confirmacion: la consulta previa dijo que no habia turnos, y ahora hay. */
+const MENSAJE_TURNOS_AFECTADOS =
+  'Se reservaron turnos en ese período mientras cargabas el cierre, así que no se guardó. Volvé a ' +
+  'enviarlo para ver cuáles quedan afectados y confirmar.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. ' +
   'Se resuelve desde la pantalla de suscripción.';
@@ -134,6 +141,8 @@ export function traducirErrorExcepcion(error: unknown): ErrorExcepcion {
       return base(MENSAJE_SEDE_INACTIVA, 'sede-inactiva');
     case 'profesional-no-vinculado':
       return base(MENSAJE_NO_VINCULADO, 'profesional-no-vinculado');
+    case 'bloqueo-con-turnos-afectados':
+      return base(MENSAJE_TURNOS_AFECTADOS, 'turnos-afectados');
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
     case 'ventana-demasiado-amplia': {

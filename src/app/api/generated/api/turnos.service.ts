@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { AgendaDelDia } from '../model/agenda-del-dia';
 // @ts-ignore
+import { AsociarContextoDeTurno } from '../model/asociar-contexto-de-turno';
+// @ts-ignore
 import { CancelarTurno } from '../model/cancelar-turno';
 // @ts-ignore
 import { EventoDeTurno } from '../model/evento-de-turno';
@@ -35,6 +37,8 @@ import { Turno } from '../model/turno';
 // @ts-ignore
 import { TurnoDelDia } from '../model/turno-del-dia';
 // @ts-ignore
+import { TurnosDePersona } from '../model/turnos-de-persona';
+// @ts-ignore
 import { TurnosDeSede } from '../model/turnos-de-sede';
 
 // @ts-ignore
@@ -43,11 +47,13 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     TurnosServiceInterface,
+    AsociarContextoDeTurnoRequestParams,
     CancelarTurnoRequestParams,
     ConfirmarTurnoRequestParams,
     DelDiaTurnoRequestParams,
     DeshacerLlegadaRequestParams,
     HistorialTurnoRequestParams,
+    ListarTurnosDePersonaRequestParams,
     ListarTurnosDeSedeRequestParams,
     RegistrarAusenciaRequestParams,
     RegistrarLlegadaRequestParams,
@@ -65,6 +71,86 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Asociar un turno a un caso y un plan
+     * Cambia para que es el turno: la primera consulta que ya tiene caso, o el turno que se dio sin asociarlo al plan. Omitir los dos lo desasocia.  **No mueve nada de la agenda**, asi que no compite con ninguna reserva. El caso y el plan se validan igual que al reservar, incluidas las sesiones pendientes del plan.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/contexto
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public asociarContextoDeTurno(requestParameters: AsociarContextoDeTurnoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Turno>;
+    public asociarContextoDeTurno(requestParameters: AsociarContextoDeTurnoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Turno>>;
+    public asociarContextoDeTurno(requestParameters: AsociarContextoDeTurnoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Turno>>;
+    public asociarContextoDeTurno(requestParameters: AsociarContextoDeTurnoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling asociarContextoDeTurno.');
+        }
+        const turnoId = requestParameters?.turnoId;
+        if (turnoId === null || turnoId === undefined) {
+            throw new Error('Required parameter turnoId was null or undefined when calling asociarContextoDeTurno.');
+        }
+        const asociarContextoDeTurno = requestParameters?.asociarContextoDeTurno;
+        if (asociarContextoDeTurno === null || asociarContextoDeTurno === undefined) {
+            throw new Error('Required parameter asociarContextoDeTurno was null or undefined when calling asociarContextoDeTurno.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/${this.configuration.encodeParam({name: "turnoId", value: turnoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/contexto`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Turno>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: asociarContextoDeTurno,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -414,6 +500,105 @@ export class TurnosService extends BaseService implements TurnosServiceInterface
         return this.httpClient.request<Array<EventoDeTurno>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Turnos de una persona en la sede
+     * Los turnos de la persona en esta sede, los mas nuevos primero, con lo mismo que trae el calendario. Con &#x60;soloFuturos&#x3D;true&#x60; deja afuera lo que ya paso y lo cancelado, y el orden es el inverso: el mas cercano primero.  Exige &#x60;turno:read&#x60;. **Nada clinico.**
+     * @endpoint get /api/v1/consultorios/{consultorioId}/turnos/personas/{personaId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listarTurnosDePersona(requestParameters: ListarTurnosDePersonaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TurnosDePersona>;
+    public listarTurnosDePersona(requestParameters: ListarTurnosDePersonaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TurnosDePersona>>;
+    public listarTurnosDePersona(requestParameters: ListarTurnosDePersonaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TurnosDePersona>>;
+    public listarTurnosDePersona(requestParameters: ListarTurnosDePersonaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling listarTurnosDePersona.');
+        }
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling listarTurnosDePersona.');
+        }
+        const soloFuturos = requestParameters?.soloFuturos;
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'soloFuturos',
+            <any>soloFuturos,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/turnos/personas/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<TurnosDePersona>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

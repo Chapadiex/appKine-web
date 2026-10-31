@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { CambiarCasoDeSesion } from '../model/models';
 import { CerrarSesion } from '../model/models';
+import { ContextoDeProximaSesion } from '../model/models';
 import { EnmendarSesion } from '../model/models';
 import { FijarPoliticaDeEnmienda } from '../model/models';
 import { GuardarBorrador } from '../model/models';
@@ -38,6 +39,11 @@ export interface CerrarSesionRequestParams {
     consultorioId: number;
     sesionId: number;
     cerrarSesion: CerrarSesion;
+}
+
+export interface ContextoDeProximaSesionRequestParams {
+    consultorioId: number;
+    sesionId: number;
 }
 
 export interface EnmendarRequestParams {
@@ -109,6 +115,14 @@ export interface SesionesServiceInterface {
 * @param requestParameters
      */
     cerrarSesion(requestParameters: CerrarSesionRequestParams, extraHttpRequestParams?: any): Observable<Sesion>;
+
+    /**
+     * Lo que se sabe para programar la proxima sesion
+     * Paciente, caso, plan, prestacion y profesional de esta atencion: lo que hace falta para programar la proxima sin volver a preguntar nada (TURNO - Tecnico §76). **Nada clinico.** Exige &#x60;sesion:register&#x60;, igual que ver la sesion.
+     * @endpoint get /api/v1/consultorios/{consultorioId}/sesiones/{sesionId}/proxima-sesion
+* @param requestParameters
+     */
+    contextoDeProximaSesion(requestParameters: ContextoDeProximaSesionRequestParams, extraHttpRequestParams?: any): Observable<ContextoDeProximaSesion>;
 
     /**
      * Enmendar una sesion cerrada

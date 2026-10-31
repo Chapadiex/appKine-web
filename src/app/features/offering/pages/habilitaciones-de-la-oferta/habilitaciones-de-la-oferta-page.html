@@ -112,6 +112,12 @@
                   Solo los marcados van a poder prestar esta oferta. Si desmarcás a todos, la oferta
                   vuelve a quedar disponible para cualquiera.
                 </p>
+                <p class="ayuda-contextual__subtitulo">Duración propia</p>
+                <p>
+                  Si un profesional hace esta prestación en otro tiempo, cargalo acá: sus horarios y
+                  sus turnos van a durar eso. Vacío, usa la de la prestación. Los turnos ya dados no
+                  cambian.
+                </p>
               </app-ayuda>
             </div>
             <span class="seccion-cabecera__resumen"
@@ -155,6 +161,7 @@
                     <th scope="col" appOrdenable [tabla]="tablaProfesionales" columna="nombre">
                       Profesional
                     </th>
+                    <th scope="col">Duración propia (min)</th>
                     <th scope="col" class="tabla__col--secundaria">Estado</th>
                   </tr>
                 </thead>
@@ -177,6 +184,24 @@
                         @if (candidato.advertencia) {
                           <p class="ayuda habilitable__advertencia">{{ candidato.advertencia }}</p>
                         }
+                      </td>
+                      <td>
+                        <input
+                          class="duracion-propia"
+                          type="number"
+                          inputmode="numeric"
+                          min="1"
+                          max="1440"
+                          step="1"
+                          [attr.aria-label]="
+                            'Duración propia de ' + candidato.etiqueta + ', en minutos'
+                          "
+                          [attr.aria-invalid]="duracionEsInvalida(candidato.id) ? 'true' : null"
+                          [attr.placeholder]="oferta()?.duracionMinutos"
+                          [value]="duracionEscrita(candidato.id)"
+                          [disabled]="guardando() || !duracionAplica(candidato.id)"
+                          (input)="escribirDuracion(candidato.id, $any($event.target).value)"
+                        />
                       </td>
                       <td class="tabla__col--secundaria">
                         <span

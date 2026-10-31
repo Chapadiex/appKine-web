@@ -1,0 +1,406 @@
+<app-cabecera-de-pagina titulo="Lista de espera">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Quienes esperan lugar para una prestación en esta sede: primero los más urgentes y, a igual
+      prioridad, los que hace más tiempo esperan. Estar en la lista no ocupa la agenda.
+    </p>
+    <p>
+      Asignar crea un turno común, con las mismas validaciones que cualquier reserva: si el horario
+      ya no está, la persona sigue en la lista.
+    </p>
+  </app-ayuda>
+
+  <div cabeceraAcciones>
+    <button *akinePermiso="PERMISO_TURNO_MANAGE" type="button" class="boton" (click)="agregar()">
+      <app-icono nombre="agregar" />
+      Agregar a la lista
+    </button>
+  </div>
+
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<!-- Llega de una cancelacion: solo quienes pueden aprovechar ese horario. -->
+@if (turnoLiberado() !== null) {
+  <section class="tarjeta" aria-labelledby="espera-compatibles-titulo">
+    <div class="flujo__fila flujo__fila--entre">
+      <h2 id="espera-compatibles-titulo">Compatibles con el horario que se liberó</h2>
+      <button type="button" class="boton-texto" (click)="dejarDeMostrarCompatibles()">
+        Dejar de mostrar
+      </button>
+    </div>
+    @if (horarioLiberado(); as horario) {
+      <p class="flujo__dato">{{ horario }}</p>
+    }
+
+    @if (errorDeCoincidencias(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos buscar quiénes esperan ese horario">
+        <p>{{ fallo.mensaje }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="leerCoincidencias()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
+    } @else if (coincidencias().length === 0) {
+      @if (leyendoCoincidencias()) {
+        <p class="estado estado--cargando">Buscando quiénes esperan ese horario…</p>
+      } @else {
+        <app-estado-vacio
+          titulo="Nadie en la lista espera un horario así"
+          texto="El lugar quedó libre en la agenda para cualquier reserva."
+        />
+      }
+    } @else {
+      <div class="tabla-scroll" tabindex="0" role="region" aria-label="Compatibles con el horario">
+        <table class="tabla">
+          <caption class="visualmente-oculto">
+            Pacientes en espera a los que les sirve el horario que se liberó
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tablaDeCoincidencias" columna="paciente">
+                Paciente
+              </th>
+              <th scope="col">Teléfono</th>
+              <th scope="col" appOrdenable [tabla]="tablaDeCoincidencias" columna="prestacion">
+                Prestación
+              </th>
+              <th scope="col" class="tabla__col--secundaria">Profesional preferido</th>
+              <th scope="col">Qué le sirve</th>
+              <th scope="col" appOrdenable [tabla]="tablaDeCoincidencias" columna="prioridad">
+                Prioridad
+              </th>
+              <th
+                scope="col"
+                class="tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tablaDeCoincidencias"
+                columna="antiguedad"
+              >
+                Antigüedad
+              </th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entrada of tablaDeCoincidencias.visibles(); track entrada.id) {
+              <ng-container *ngTemplateOutlet="filaDeEspera; context: { $implicit: entrada }" />
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tablaDeCoincidencias" etiqueta="Páginas de compatibles" />
+    }
+  </section>
+}
+
+<section class="tarjeta" aria-label="Lista de espera de la sede" [attr.aria-busy]="cargando()">
+  <app-filtros
+    sinAvanzados
+    [resultados]="resultado() === null ? null : total()"
+    [unidad]="['paciente', 'pacientes']"
+  >
+    <div class="campo" filtro-principal>
+      <label for="espera-filtro-oferta">Prestación</label>
+      <select
+        id="espera-filtro-oferta"
+        [value]="ofertaId() ?? ''"
+        (change)="cambiarOferta($any($event.target).value)"
+      >
+        <option value="" [selected]="ofertaId() === null">Todas las prestaciones</option>
+        @for (oferta of ofertas(); track oferta.id) {
+          <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+            {{ oferta.nombreComercial }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="campo" filtro-frecuente>
+      <label for="espera-filtro-estado">Estado</label>
+      <select
+        id="espera-filtro-estado"
+        [value]="filtroEstado()"
+        (change)="cambiarEstado($any($event.target).value)"
+      >
+        @for (estado of ESTADOS; track estado.valor) {
+          <option [value]="estado.valor" [selected]="estado.valor === filtroEstado()">
+            {{ estado.etiqueta }}
+          </option>
+        }
+      </select>
+    </div>
+  </app-filtros>
+
+  @if (error(); as fallo) {
+    <app-alerta tipo="error" titulo="No pudimos leer la lista de espera">
+      <p>{{ fallo.mensaje }}</p>
+      <p class="alerta__acciones">
+        @if (fallo.accion === 'elegir-contexto') {
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        } @else {
+          <button type="button" class="boton" (click)="leer()">Reintentar</button>
+        }
+      </p>
+    </app-alerta>
+  } @else if (resultado() === null) {
+    @if (cargando()) {
+      <p class="estado estado--cargando">Leyendo la lista de espera…</p>
+    }
+  } @else if (entradas().length === 0 && !hayFiltros()) {
+    <app-estado-vacio
+      titulo="No hay nadie en la lista de espera"
+      texto="Cuando un paciente no encuentra un horario que le sirva, anotalo acá para avisarle cuando se libere uno."
+    >
+      <button
+        *akinePermiso="PERMISO_TURNO_MANAGE"
+        type="button"
+        class="boton boton--secundario"
+        (click)="agregar()"
+      >
+        Agregar a la lista
+      </button>
+    </app-estado-vacio>
+  } @else if (entradas().length === 0) {
+    <app-estado-vacio
+      titulo="No encontramos pacientes"
+      texto="Ninguna entrada de la lista coincide con estos filtros."
+    >
+      <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+        Limpiar filtros
+      </button>
+    </app-estado-vacio>
+  } @else {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Tabla de la lista de espera">
+      <table class="tabla">
+        <caption class="visualmente-oculto">
+          Pacientes en espera de la sede, primero los más urgentes y después los más antiguos
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Paciente</th>
+            <th scope="col">Teléfono</th>
+            <th scope="col">Prestación</th>
+            <th scope="col" class="tabla__col--secundaria">Profesional preferido</th>
+            <th scope="col">Qué le sirve</th>
+            <th scope="col">Prioridad</th>
+            <th scope="col" class="tabla__col--secundaria">Antigüedad</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entrada of entradas(); track entrada.id) {
+            <ng-container *ngTemplateOutlet="filaDeEspera; context: { $implicit: entrada }" />
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      etiqueta="Páginas de la lista de espera"
+      [paginaActual]="pagina()"
+      [totalPaginas]="totalPaginas()"
+      [total]="total()"
+      [porPagina]="porPagina()"
+      (cambioDePagina)="irAPagina($event)"
+      (cambioDePorPagina)="cambiarPorPagina($event)"
+    />
+  }
+</section>
+
+<!-- Las dos tablas muestran lo mismo: una sola fila, para que no digan cosas distintas. -->
+<ng-template #filaDeEspera let-entrada>
+  <tr>
+    <th scope="row">
+      {{ entrada.personaNombre }}
+      @if (entrada.documento) {
+        <span class="celda-secundaria">{{ entrada.documento }}</span>
+      }
+    </th>
+    <td>
+      @if (entrada.telefono) {
+        <a class="enlace" [href]="enlaceDeTelefono(entrada.telefono)">
+          <span class="visualmente-oculto">Contactar a {{ entrada.personaNombre }} al </span
+          >{{ entrada.telefono }}
+        </a>
+      } @else {
+        <span class="celda-secundaria">Sin teléfono</span>
+      }
+    </td>
+    <td>{{ entrada.ofertaNombre }}</td>
+    <td class="tabla__col--secundaria">
+      {{ entrada.profesionalNombre || 'Cualquier profesional' }}
+    </td>
+    <td>
+      {{ fechasQueLeSirven(entrada) }}
+      <span class="celda-secundaria">{{ diasYFranja(entrada) }}</span>
+    </td>
+    <td>
+      <span
+        class="marca-estado"
+        [class.marca-estado--suspendida]="entrada.prioridad === Prioridad.ALTA"
+        [class.marca-estado--revocada]="entrada.prioridad === Prioridad.URGENTE"
+      >
+        {{ nombreDePrioridad(entrada.prioridad) }}
+      </span>
+    </td>
+    <td class="tabla__col--secundaria">{{ antiguedad(entrada.creadaEn) }}</td>
+    <td class="tabla__acciones">
+      @if (entrada.estado === Estado.ACTIVA) {
+        <ng-container *akinePermiso="PERMISO_TURNO_MANAGE">
+          <app-acciones-de-fila [de]="entrada.personaNombre ?? 'esta entrada'">
+            <button
+              principal
+              type="button"
+              class="boton boton--chico"
+              (click)="abrirAsignacion(entrada)"
+            >
+              Asignar<span class="visualmente-oculto"> un turno a {{ entrada.personaNombre }}</span>
+            </button>
+            <button type="button" class="accion--peligro" (click)="abrirDescarte(entrada)">
+              Descartar<span class="visualmente-oculto"> a {{ entrada.personaNombre }}</span>
+            </button>
+          </app-acciones-de-fila>
+        </ng-container>
+      } @else if (entrada.turnoId) {
+        <button
+          type="button"
+          class="boton boton--secundario boton--chico"
+          (click)="flujo.verTurno(entrada.turnoId)"
+        >
+          Ver turno<span class="visualmente-oculto"> de {{ entrada.personaNombre }}</span>
+        </button>
+      } @else if (entrada.motivoCierre) {
+        <span class="celda-secundaria">{{ entrada.motivoCierre }}</span>
+      }
+    </td>
+  </tr>
+</ng-template>
+
+@if (aAsignar(); as entrada) {
+  <app-panel-lateral
+    [titulo]="'Asignar turno a ' + (entrada.personaNombre ?? 'esta persona')"
+    [subtitulo]="entrada.ofertaNombre ?? null"
+    ancho="amplio"
+    (cerrar)="cerrarPaneles()"
+  >
+    <div class="flujo">
+      @if (rechazo(); as fallo) {
+        <app-alerta
+          [tipo]="conflictoDeLugar() ? 'advertencia' : 'error'"
+          [titulo]="
+            conflictoDeLugar()
+              ? 'Este horario acaba de ser reservado'
+              : 'No pudimos asignar el turno'
+          "
+        >
+          <p>{{ fallo.mensaje }}</p>
+        </app-alerta>
+      }
+
+      <p class="flujo__dato">
+        <span class="flujo__dato-etiqueta">Le sirve</span>
+        {{ queLeSirve(entrada) }}
+      </p>
+      @if (entrada.profesionalNombre) {
+        <p class="flujo__dato">
+          <span class="flujo__dato-etiqueta">Profesional preferido</span>
+          {{ entrada.profesionalNombre }}
+        </p>
+      }
+      @if (entrada.notas) {
+        <p class="flujo__dato">
+          <span class="flujo__dato-etiqueta">Notas</span>
+          {{ entrada.notas }}
+        </p>
+      }
+
+      @if (vencida()) {
+        <app-alerta tipo="advertencia" titulo="Ya pasó el último día que le servía">
+          <p>Para darle un turno, volvé a anotarlo con otras fechas o descartalo de la lista.</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="abrirDescarte(entrada)">
+              Descartar
+            </button>
+          </p>
+        </app-alerta>
+      } @else if (buscando()) {
+        <p class="estado estado--cargando">Buscando horarios…</p>
+      } @else if (errorDeHorarios(); as fallo) {
+        <app-alerta tipo="error" titulo="No pudimos buscar horarios">
+          <p>{{ fallo.mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="leerHorarios()">
+              Reintentar
+            </button>
+          </p>
+        </app-alerta>
+      } @else if (horarios().length === 0) {
+        <div class="estado estado--vacio">
+          <p>No hay horarios libres que le sirvan.</p>
+          @if (motivoSinHorarios(); as motivo) {
+            <p class="ayuda">{{ motivo }}</p>
+          }
+          @if (miradoHasta(); as hasta) {
+            <p class="ayuda">Se buscó hasta el {{ fechaEnPalabras(hasta) }}.</p>
+          }
+        </div>
+      } @else {
+        <h3 class="flujo__dato">Próximos horarios compatibles</h3>
+        @if (enviando()) {
+          <p class="estado estado--cargando" role="status">Asignando el turno…</p>
+        }
+        <app-lista-de-horarios
+          [horarios]="horarios()"
+          [timezone]="timezone()"
+          [elegido]="elegido()"
+          (elegir)="asignar($event)"
+        />
+        @if (truncado()) {
+          <p class="flujo__dato">
+            <button type="button" class="boton-texto" (click)="verMasHorarios()">
+              Ver más horarios
+            </button>
+          </p>
+        } @else if (miradoHasta(); as hasta) {
+          <p class="ayuda">Se buscó hasta el {{ fechaEnPalabras(hasta) }}.</p>
+        }
+      }
+
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </app-panel-lateral>
+}
+
+@if (aDescartar(); as entrada) {
+  <app-panel-lateral
+    [titulo]="'Descartar a ' + (entrada.personaNombre ?? 'esta persona')"
+    [subtitulo]="entrada.ofertaNombre ?? null"
+    (cerrar)="cerrarPaneles()"
+  >
+    @if (rechazo(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos descartarlo de la lista">
+        <p>{{ fallo.mensaje }}</p>
+      </app-alerta>
+    }
+    <app-confirmacion-con-motivo
+      idCampo="espera-descarte-motivo"
+      [titulo]="'Descartar a ' + (entrada.personaNombre ?? 'esta persona')"
+      [mostrarTitulo]="false"
+      etiqueta="Motivo (opcional)"
+      textoConfirmar="Descartar"
+      [motivoObligatorio]="false"
+      [enviando]="enviando()"
+      (confirmado)="descartar($event)"
+      (cancelado)="cerrarPaneles()"
+    >
+      <p class="ayuda ayuda--fija">
+        Sale de la lista sin darle turno. No se borra: queda en las descartadas, con su motivo.
+      </p>
+    </app-confirmacion-con-motivo>
+  </app-panel-lateral>
+}

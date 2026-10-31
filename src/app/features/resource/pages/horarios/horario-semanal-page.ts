@@ -27,7 +27,12 @@ import { CreateBloqueRequest } from '../../../../api/generated/model/create-bloq
 import { DisponibilidadProfesionalService } from '../../../../api/generated/api/disponibilidad-profesional.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_READ,
+} from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
@@ -147,6 +152,7 @@ export class HorarioSemanalPage {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   /**
    * El profesional del que hablaba el enlace que trajo hasta aca, si vino de uno.
@@ -163,6 +169,8 @@ export class HorarioSemanalPage {
   ).membershipId;
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly permisoVerTurnos = PERMISO_TURNO_READ;
+  protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly pestanas = PESTANAS_DE_HORARIOS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
@@ -453,6 +461,10 @@ export class HorarioSemanalPage {
         }
         this.estado.set({ tipo: 'listo', pagina: { content: respuesta } });
       });
+  }
+
+  protected nuevoTurno(profesionalId: number): void {
+    this.flujo.nuevoTurno({ origen: 'PROFESIONAL', profesionalId });
   }
 
   // =====================================================================================

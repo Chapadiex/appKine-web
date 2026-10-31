@@ -100,13 +100,14 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'operacion',
     secciones: [
       { etiqueta: 'Agenda', ruta: '/agenda' },
-      {
-        etiqueta: 'Calendario de turnos',
-        ruta: '/agenda/calendario',
-        permisos: [PERMISO_TURNO_READ],
-      },
+      { etiqueta: 'Buscar disponibilidad', ruta: '/agenda/disponibilidad' },
       { etiqueta: 'Recepción del día', ruta: '/agenda/recepcion', permisos: [PERMISO_TURNO_READ] },
       { etiqueta: 'Series de turnos', ruta: '/agenda/series', permisos: [PERMISO_TURNO_READ] },
+      {
+        etiqueta: 'Lista de espera',
+        ruta: '/agenda/lista-de-espera',
+        permisos: [PERMISO_TURNO_READ],
+      },
       {
         etiqueta: 'Atender sin turno',
         ruta: '/atencion/sin-turno',

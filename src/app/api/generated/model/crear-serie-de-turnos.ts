@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { OcurrenciaElegida } from './ocurrencia-elegida';
 
 
 /**
@@ -17,6 +18,10 @@ export interface CrearSerieDeTurnos {
      * Cantidad de turnos. Excluyente con `fechaHasta`. Maximo 52.
      */
     cantidad?: number;
+    /**
+     * Caso clinico para el que se programan
+     */
+    casoId?: number;
     /**
      * Dias de la semana, ISO: 1 = lunes ... 7 = domingo
      */
@@ -38,16 +43,41 @@ export interface CrearSerieDeTurnos {
      */
     idempotencyKey?: string;
     /**
+     * Lo que quedo despues de revisar la previsualizacion: se reservan EXACTAMENTE estos horarios, sin omitir feriados, y la regla queda como dato de la serie. Omitirlo reserva lo que produce la regla.
+     */
+    ocurrencias?: Array<OcurrenciaElegida>;
+    /**
      * Oferta de la sede
      */
     ofertaId: number;
+    /**
+     * Desde donde se inicio. Solo trazabilidad.
+     */
+    origen?: CrearSerieDeTurnosOrigenEnum;
     /**
      * Persona del padron, con perfil de paciente vigente
      */
     personaId: number;
     /**
+     * Plan para el que se programan. El total no puede pasar sus sesiones pendientes.
+     */
+    planId?: number;
+    /**
      * Membership del profesional de todas las ocurrencias. Obligatorio si la oferta lo requiere.
      */
     profesionalId?: number;
 }
+export enum CrearSerieDeTurnosOrigenEnum {
+    AGENDA = 'AGENDA',
+    DISPONIBILIDAD = 'DISPONIBILIDAD',
+    PACIENTE = 'PACIENTE',
+    CASO = 'CASO',
+    PLAN = 'PLAN',
+    PROFESIONAL = 'PROFESIONAL',
+    SESION = 'SESION',
+    LISTA_DE_ESPERA = 'LISTA_DE_ESPERA',
+    TURNO_ANTERIOR = 'TURNO_ANTERIOR'
+};
+
+
 

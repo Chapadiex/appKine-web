@@ -42,6 +42,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 
 /** Estados en los que un turno todavia se puede cancelar. El resto lo omite el backend. */
 const PENDIENTES: ReadonlySet<string> = new Set<string>([
@@ -87,14 +88,18 @@ type Pedido =
  * <h2>Reprogramar es lo mismo, mas el horario nuevo del pivote</h2>
  *
  * <p>Se parte de un turno —el pivote— y se elige su horario nuevo en la agenda de la oferta, con el
- * mismo selector que usa el ciclo del turno. El backend calcula el desplazamiento en hora local y
- * lo aplica igual a todos los afectados; la pantalla muestra donde quedaria cada uno como
- * estimacion. Los afectados y omitidos son los mismos que en la cancelacion, y la confirmacion
+ * selector de horario. El backend calcula el desplazamiento en hora local y lo aplica igual a todos
+ * los afectados; la pantalla muestra donde quedaria cada uno como estimacion. Los afectados y omitidos son los mismos que en la cancelacion, y la confirmacion
  * tambien: `cantidadConfirmada`, y si cambio, 409 y volver a previsualizar.
  *
  * <p>Por omision cada turno <b>conserva su profesional</b> (appKine-api #66): la agenda se pide
  * filtrada por el del pivote y `profesionalId` no viaja. Pasar la serie a otro profesional es una
  * decision explicita: se marca, la agenda se pide sin filtro y viaja el del horario elegido.
+ *
+ * <h2>Un turno de la serie se ve y se opera en el panel del flujo unico</h2>
+ *
+ * <p>Se abre sobre esta pantalla, y lo que el panel cambia se relee sin vaciar la tabla ni perder la
+ * pagina (TURNO - Tecnico §87 y §88).
  */
 @Component({
   selector: 'app-serie-de-turnos-page',
@@ -121,6 +126,7 @@ export class SerieDeTurnosPage {
   private readonly agenda = inject(SchedulingApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
+  protected readonly flujo = inject(FlujoDeTurnosStore);
 
   /** De la ruta. */
   readonly serieId = input.required<string>();
@@ -229,6 +235,37 @@ export class SerieDeTurnosPage {
         this.cargar();
       });
     });
+
+    // El panel del turno se abre sobre esta pantalla: lo que cambia tiene que verse en la tabla.
+    let primera = true;
+    effect(() => {
+      this.flujo.cambios();
+      if (primera) {
+        primera = false;
+        return;
+      }
+      untracked(() => this.releerEnElLugar());
+    });
+  }
+
+  /**
+   * Relee la serie sin que se note: quien mira conserva la pagina y el orden, y no aparece el cartel
+   * de carga. Si falla, lo que hay en pantalla sigue ahi y el aviso ofrece volver a leer.
+   */
+  private releerEnElLugar(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const serieId = this.numeroDeSerie();
+    if (consultorioId === null || serieId === null) {
+      return;
+    }
+    this.api.ver(consultorioId, serieId).subscribe({
+      next: (serie) => this.tabla.conservandoPagina(() => this.serie.set(serie)),
+      error: (error: unknown) =>
+        this.avisos.error('No pudimos actualizar la serie', {
+          descripcion: traducirErrorSerie(error).mensaje,
+          accion: { etiqueta: 'Volver a leer', ejecutar: () => this.cargar() },
+        }),
+    });
   }
 
   protected cargar(): void {
@@ -259,7 +296,7 @@ export class SerieDeTurnosPage {
     return fechaHoraEnZona(instante, this.timezone());
   }
 
-  /** Fecha local del turno, para que el ciclo del turno sepa que dia de agenda releer. */
+  /** Fecha local del turno: el dia en que arranca el selector de horario al moverlo. */
   protected fechaLocal(turno: Turno): string {
     return fechaEnZona(turno.inicio, this.timezone());
   }

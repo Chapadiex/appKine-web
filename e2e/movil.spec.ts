@@ -61,9 +61,27 @@ const PANTALLAS: readonly Pantalla[] = [
   },
   {
     nombre: 'agenda',
-    ruta: '/agenda',
+    ruta: `/agenda?fecha=${FECHA_MOVIL}`,
+    // En un telefono no se comprime la grilla: es la lista del dia.
+    listo: texto('Gomez Iriarte'),
+  },
+  {
+    nombre: 'panel de nuevo turno',
+    ruta: `/agenda?fecha=${FECHA_MOVIL}`,
     listo: async (page) => {
-      await page.getByLabel('Oferta', { exact: true }).selectOption({ index: 1 });
+      await page.getByRole('button', { name: 'Nuevo turno', exact: true }).click();
+      const panel = page.getByRole('dialog', { name: 'Nuevo turno' });
+      await panel.getByLabel('Buscar paciente').fill('Gomez');
+      await panel.locator('.candidato').first().click();
+      await panel.getByRole('button', { name: 'Primer disponible' }).click();
+      await expect(panel.getByRole('button', { name: 'Confirmar turno' })).toBeEnabled();
+    },
+  },
+  {
+    nombre: 'busqueda de disponibilidad',
+    ruta: '/agenda/disponibilidad',
+    listo: async (page) => {
+      await page.getByLabel('Prestación', { exact: true }).selectOption({ index: 1 });
       await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
     },
   },

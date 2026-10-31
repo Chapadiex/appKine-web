@@ -39,6 +39,9 @@ const NOMBRES_DE_SECCION: Record<string, string> = {
   documentos: 'Documentacion administrativa',
 };
 
+/** La seccion del 360 que aporta `scheduling`: la que suma la lista de proximos turnos. */
+export const SECCION_TURNOS = 'turnos';
+
 export function nombreDeSeccion(seccion: string | undefined): string {
   if (seccion === undefined || seccion === '') {
     return 'Seccion';

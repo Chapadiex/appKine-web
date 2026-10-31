@@ -1,8 +1,10 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PERMISO_TURNO_MANAGE, PERMISO_TURNO_READ } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTA_PERMISOS_EFECTIVOS } from '../../../../core/testing/rutas-api';
@@ -274,6 +276,71 @@ describe('SerieDeTurnosPage', () => {
     expect(texto(fixture)).toContain('Lunes');
     expect(boton(fixture, 'Cancelar')).toBeNull();
     expect(boton(fixture, 'Reprogramar')).toBeNull();
+  });
+
+  describe('el panel del turno se abre sobre esta pantalla', () => {
+    const MUCHOS = Array.from({ length: 12 }, (_, i) => ({
+      ...T3,
+      id: 400 + i,
+      inicio: `2026-11-${String(i + 1).padStart(2, '0')}T12:00:00Z`,
+    }));
+
+    it('"Ver o mover" lo abre sin salir, con el turno de la fila y el dato en el nombre', async () => {
+      const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const fixture = await montar([PERMISO_TURNO_READ]);
+
+      const elegido = boton(fixture, 'Ver o mover');
+      expect(elegido?.textContent?.replace(/\s+/g, ' ')).toContain('el turno del 12/10/2026');
+      elegido?.click();
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'detalle',
+        turnoId: T1.id,
+      });
+      expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it('lo que cambia se relee sin perder la página ni mostrar el cartel de carga', async () => {
+      const fixture = await montar(undefined, { ...LA_SERIE, turnos: MUCHOS });
+      const raiz = fixture.nativeElement as HTMLElement;
+      Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso'))
+        .find((b) => (b.textContent ?? '').includes('Página siguiente'))
+        ?.click();
+      await asentar(fixture);
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+        'Mostrando 11–12 de 12',
+      );
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      expect(texto(fixture)).not.toContain('Leyendo la serie');
+      httpMock
+        .expectOne(URL_SERIE)
+        .flush({ ...LA_SERIE, turnos: MUCHOS.map((t) => ({ ...t, estado: 'CONFIRMADO' })) });
+      await asentar(fixture);
+
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
+        'Mostrando 11–12 de 12',
+      );
+      expect(raiz.querySelector('tbody tr')?.textContent).toContain('Confirmado');
+    });
+
+    it('si no se puede releer, lo que había sigue ahí y el aviso ofrece volver a leer', async () => {
+      const fixture = await montar();
+
+      TestBed.inject(FlujoDeTurnosStore).notificarCambio();
+      await asentar(fixture);
+      httpMock.expectOne(URL_SERIE).flush(null, { status: 500, statusText: 'E' });
+      await asentar(fixture);
+
+      expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr').length).toBe(3);
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso.titulo).toBe('No pudimos actualizar la serie');
+
+      aviso.accion?.ejecutar();
+      httpMock.expectOne(URL_SERIE).flush(LA_SERIE);
+      await asentar(fixture);
+    });
   });
 
   // ---------------------------------------------------------------------------------------

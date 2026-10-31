@@ -2,6 +2,7 @@ import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ETIQUETA_PESTANAS_DE_OFERTA, pestanasDeOferta } from '../../models/pestanas-de-offering';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { catchError, EMPTY, of, switchMap } from 'rxjs';
 
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
 import { HabilitacionesResponse } from '../../../../api/generated/model/habilitaciones-response';
@@ -111,6 +112,17 @@ export class HabilitacionesDeLaOfertaPage {
   /** Ids marcados AHORA en la pantalla, que puede diferir de lo guardado. */
   protected readonly profesionalesMarcados = signal<ReadonlySet<number>>(new Set());
   protected readonly espaciosMarcados = signal<ReadonlySet<number>>(new Set());
+
+  /**
+   * Lo escrito en "Duración propia", por membership, tal cual: un numero a medio tipear no se puede
+   * reescribir debajo del cursor. Vacio o ausente es la duracion de la prestacion.
+   */
+  protected readonly duracionesEscritas = signal<ReadonlyMap<number, string>>(new Map());
+  private duracionesGuardadas: ReadonlyMap<number, number> = new Map();
+
+  protected readonly hayDuracionInvalida = computed(() =>
+    [...this.duracionesEscritas().values()].some((escrita) => !duracionValida(escrita)),
+  );
 
   protected readonly candidatosProfesional = signal<readonly Candidato[]>([]);
 
@@ -230,6 +242,8 @@ export class HabilitacionesDeLaOfertaPage {
           this.colaboradoresDeLaOrg.set(
             (pagina.content ?? [])
               .filter((fila) => fila.estado === 'ACTIVA')
+              // Alguien acotado a otra sede no atiende aca, y el backend lo rechaza.
+              .filter((fila) => (fila.consultorioId ?? consultorioId) === consultorioId)
               .map((fila) => ({
                 id: fila.id ?? 0,
                 nombre: fila.accountName ?? fila.accountEmail ?? `Colaborador #${fila.id}`,
@@ -273,26 +287,119 @@ export class HabilitacionesDeLaOfertaPage {
     return this.espaciosMarcados().has(id);
   }
 
+  protected duracionEscrita(id: number): string {
+    return this.duracionesEscritas().get(id) ?? '';
+  }
+
+  protected escribirDuracion(id: number, valor: string): void {
+    this.duracionesEscritas.update((actuales) => {
+      const siguientes = new Map(actuales);
+      if (valor.trim() === '') {
+        siguientes.delete(id);
+      } else {
+        siguientes.set(id, valor);
+      }
+      return siguientes;
+    });
+  }
+
+  protected duracionEsInvalida(id: number): boolean {
+    return !duracionValida(this.duracionEscrita(id));
+  }
+
+  /**
+   * Una duracion propia le importa a quien puede prestar la oferta. En una oferta sin restringir son
+   * todos, por eso no alcanza con mirar la casilla de la fila.
+   */
+  protected duracionAplica(id: number): boolean {
+    return this.quedaraSinRestringirProfesional() || this.estaMarcadoProfesional(id);
+  }
+
+  /**
+   * Una sola accion para toda la tarjeta: primero quien presta y, si cambio, cuanto tarda. Son dos
+   * recursos del contrato pero para quien la usa es la misma lista. La segunda lleva la version que
+   * devolvio la primera, y se anota en la oferta para que un fallo ahi no deje la pantalla con una
+   * version vieja y el reintento en un 409 que no le corresponde.
+   */
   protected guardarProfesionales(): void {
+    if (this.hayDuracionInvalida()) {
+      this.causaAccion.set(null);
+      this.errorAccion.set(MENSAJE_DURACION_INVALIDA);
+      return;
+    }
+    const pedidas = [...this.duracionesEscritas()].map(([membershipId, escrita]) => ({
+      membershipId,
+      duracionMinutos: Number(escrita),
+    }));
+    const cambiaron =
+      pedidas.length !== this.duracionesGuardadas.size ||
+      pedidas.some((d) => this.duracionesGuardadas.get(d.membershipId) !== d.duracionMinutos);
+
     this.guardar('Profesionales habilitados guardados', (consultorioId, version) =>
-      this.api.fijarProfesionalesHabilitados(
-        consultorioId,
-        this.ofertaId,
-        [...this.profesionalesMarcados()],
-        version,
-      ),
+      this.api
+        .fijarProfesionalesHabilitados(
+          consultorioId,
+          this.ofertaId,
+          [...this.profesionalesMarcados()],
+          version,
+        )
+        .pipe(
+          switchMap((respuesta) => {
+            if (!cambiaron) {
+              return of(respuesta);
+            }
+            const siguiente = respuesta.ofertaVersion ?? version + 1;
+            this.oferta.update((oferta) =>
+              oferta === null ? oferta : { ...oferta, version: siguiente },
+            );
+            return this.api
+              .fijarDuracionesPropias(consultorioId, this.ofertaId, pedidas, siguiente)
+              .pipe(catchError((error) => this.duracionesSinGuardar(respuesta, error)));
+          }),
+        ),
     );
   }
 
   protected guardarEspacios(): void {
-    this.guardar('Espacios habilitados guardados', (consultorioId, version) =>
-      this.api.fijarEspaciosHabilitados(
-        consultorioId,
-        this.ofertaId,
-        [...this.espaciosMarcados()],
-        version,
-      ),
+    // Son dos tarjetas con su boton: guardar los espacios no descarta lo que se esta editando en la otra.
+    const profesionales = this.profesionalesMarcados();
+    const duraciones = this.duracionesEscritas();
+    this.guardar(
+      'Espacios habilitados guardados',
+      (consultorioId, version) =>
+        this.api.fijarEspaciosHabilitados(
+          consultorioId,
+          this.ofertaId,
+          [...this.espaciosMarcados()],
+          version,
+        ),
+      () => {
+        this.profesionalesMarcados.set(profesionales);
+        this.duracionesEscritas.set(duraciones);
+      },
     );
+  }
+
+  /**
+   * Quien presta ya quedo guardado y cuanto tarda no: son dos pedidos. Se dice tal cual, porque un
+   * "no pudimos guardar" hace creer que nada cambio, y restringir la oferta deja sin agenda a los demas.
+   * Lo escrito se conserva para reintentar, ya con la version nueva.
+   */
+  private duracionesSinGuardar(respuesta: HabilitacionesResponse, error: unknown) {
+    const escritas = this.duracionesEscritas();
+    this.guardando.set(false);
+    this.estado.set({ tipo: 'listo', pagina: respuesta });
+    this.sincronizarCasillas(respuesta);
+    this.duracionesEscritas.set(escritas);
+    this.causaAccion.set(null);
+    this.errorAccion.set(
+      `Los profesionales se guardaron, pero las duraciones no. ${traducirErrorOffering(error, 'oferta').mensaje}`,
+    );
+    const consultorioId = this.contexto.consultorioId();
+    if (consultorioId !== null) {
+      this.refrescarOferta(consultorioId);
+    }
+    return EMPTY;
   }
 
   /**
@@ -308,6 +415,7 @@ export class HabilitacionesDeLaOfertaPage {
       consultorioId: number,
       version: number,
     ) => ReturnType<OfferingApi['fijarProfesionalesHabilitados']>,
+    alRepintar?: () => void,
   ): void {
     const consultorioId = this.contexto.consultorioId();
     const oferta = this.oferta();
@@ -329,6 +437,7 @@ export class HabilitacionesDeLaOfertaPage {
         this.guardando.set(false);
         this.estado.set({ tipo: 'listo', pagina: respuesta });
         this.sincronizarCasillas(respuesta);
+        alRepintar?.();
         this.avisos.exito(tituloDeExito);
 
         // Guardar HACE AVANZAR la version de la oferta: el backend la carga con incremento
@@ -341,13 +450,14 @@ export class HabilitacionesDeLaOfertaPage {
       error: (error: unknown) => {
         this.guardando.set(false);
         const traducido = traducirErrorOffering(error, 'oferta');
-        this.errorAccion.set(traducido.mensaje);
-        this.causaAccion.set(traducido.causa);
         if (traducido.causa === 'concurrencia') {
           // El 409 no piso nada. Se relee para que el usuario decida sobre los datos actuales, y
-          // se recarga tambien la oferta porque lo que quedo viejo es SU version.
+          // se recarga tambien la oferta porque lo que quedo viejo es SU version. Antes del mensaje:
+          // releer lo limpia.
           this.cargar();
         }
+        this.errorAccion.set(traducido.mensaje);
+        this.causaAccion.set(traducido.causa);
       },
     });
   }
@@ -407,6 +517,14 @@ export class HabilitacionesDeLaOfertaPage {
     );
     this.espaciosMarcados.set(
       new Set(espacios.filter((f) => f.estado === 'ACTIVO').map((f) => f.espacioId ?? 0)),
+    );
+
+    const duraciones = respuesta.duracionesPropias ?? [];
+    this.duracionesGuardadas = new Map(
+      duraciones.map((d) => [d.membershipId ?? 0, d.duracionMinutos ?? 0]),
+    );
+    this.duracionesEscritas.set(
+      new Map(duraciones.map((d) => [d.membershipId ?? 0, String(d.duracionMinutos ?? '')])),
     );
 
     this.refusionar();
@@ -485,6 +603,19 @@ const MENSAJE_SIN_OFERTA =
   'No pudimos leer la oferta, y sin su versión no se puede guardar: mandar una versión inventada ' +
   'pisaria la edicion de otra persona. Las casillas que marcaste NO se guardaron. Recarga la ' +
   'configuración y volvé a marcarlas.';
+
+const MENSAJE_DURACION_INVALIDA =
+  'La duración propia tiene que ser un número entero de minutos, entre 1 y 1440. Para usar la de la ' +
+  'prestación, dejá el campo vacío. No se guardó nada.';
+
+/** Vacio es valido: es la duracion de la prestacion. El techo es el mismo que el de la oferta. */
+function duracionValida(escrita: string): boolean {
+  if (escrita.trim() === '') {
+    return true;
+  }
+  const minutos = Number(escrita);
+  return Number.isInteger(minutos) && minutos >= 1 && minutos <= 1440;
+}
 
 /** Sin sede elegida no hay oferta: el problema es el contexto, no la oferta. */
 const MENSAJE_SIN_SEDE =

@@ -26,6 +26,7 @@ const OFERTA_CARGADA = {
   id: OFERTA,
   nombreComercial: 'Kinesiologia deportiva',
   estado: 'ACTIVO',
+  duracionMinutos: 45,
   version: 4,
 };
 
@@ -126,6 +127,119 @@ describe('HabilitacionesDeLaOfertaPage', () => {
         .avisos()
         .map((aviso) => aviso.titulo),
     ).toEqual(['Profesionales habilitados guardados']);
+  });
+
+  it('la duración propia se muestra, y al cambiarla viaja con la versión que devolvió el primer guardado', async () => {
+    const fixture = await montar({
+      ...SIN_RESTRINGIR,
+      duracionesPropias: [{ membershipId: 77, duracionMinutos: 30 }],
+    });
+    const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[aria-label="Duración propia de Ana Gomez, en minutos"]',
+    );
+    // Una oferta sin restringir tambien la admite: no hay que habilitar a nadie para cargarla.
+    expect(campo?.disabled).toBe(false);
+    expect(campo?.value).toBe('30');
+    expect(campo?.getAttribute('placeholder')).toBe('45');
+
+    escribir(fixture, campo, '20');
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/profesionales`,
+      )
+      .flush({ ...SIN_RESTRINGIR, ofertaVersion: 5 });
+    const duraciones = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${HABILITACIONES}/duraciones`,
+    );
+    expect(duraciones.request.body).toEqual({
+      duraciones: [{ membershipId: 77, duracionMinutos: 20 }],
+      expectedVersion: 5,
+    });
+    duraciones.flush({
+      ...SIN_RESTRINGIR,
+      ofertaVersion: 6,
+      duracionesPropias: [{ membershipId: 77, duracionMinutos: 20 }],
+    });
+    httpMock.expectOne(esListadoDeOfertas()).flush([{ ...OFERTA_CARGADA, version: 6 }]);
+    await fixture.whenStable();
+  });
+
+  it('vaciar la duración propia la quita, y una inválida no manda nada y lo dice', async () => {
+    const fixture = await montar({
+      ...SIN_RESTRINGIR,
+      duracionesPropias: [{ membershipId: 77, duracionMinutos: 30 }],
+    });
+    const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[aria-label="Duración propia de Ana Gomez, en minutos"]',
+    );
+
+    escribir(fixture, campo, '0');
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('entre 1 y 1440');
+
+    escribir(fixture, campo, '');
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.url === `${HABILITACIONES}/profesionales`,
+      )
+      .flush({ ...SIN_RESTRINGIR, ofertaVersion: 5 });
+    const duraciones = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.url === `${HABILITACIONES}/duraciones`,
+    );
+    expect((duraciones.request.body as { duraciones: unknown[] }).duraciones).toEqual([]);
+    duraciones.flush({ ...SIN_RESTRINGIR, ofertaVersion: 6 });
+    httpMock.expectOne(esListadoDeOfertas()).flush([{ ...OFERTA_CARGADA, version: 6 }]);
+    await fixture.whenStable();
+  });
+
+  it('si se guardó quién presta y no cuánto tarda, lo dice y conserva lo escrito', async () => {
+    const fixture = await montar({
+      ...SIN_RESTRINGIR,
+      duracionesPropias: [{ membershipId: 77, duracionMinutos: 30 }],
+    });
+    const selector = 'input[aria-label="Duración propia de Ana Gomez, en minutos"]';
+    const campo = (): HTMLInputElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(selector);
+
+    escribir(fixture, campo(), '20');
+    botonPorTexto(fixture, 'Guardar los profesionales')?.click();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.url === `${HABILITACIONES}/profesionales`,
+      )
+      .flush({
+        ...SIN_RESTRINGIR,
+        ofertaVersion: 5,
+        duracionesPropias: [{ membershipId: 77, duracionMinutos: 30 }],
+      });
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.url === `${HABILITACIONES}/duraciones`,
+      )
+      .flush(
+        { type: 'https://akine.app/problems/internal-error', title: 'Error' },
+        { status: 500, statusText: 'Server Error' },
+      );
+    httpMock.expectOne(esListadoDeOfertas()).flush([{ ...OFERTA_CARGADA, version: 5 }]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Los profesionales se guardaron, pero las duraciones no',
+    );
+    expect(campo()?.value).toBe('20');
   });
 
   it('una habilitación cuyo vinculo ya no esta vigente se muestra con su advertencia', async () => {
@@ -233,6 +347,11 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     httpMock.expectOne(esListado(ESPACIOS)).flush({ content: [] });
     await fixture.whenStable();
     fixture.detectChanges();
+
+    // Releer limpia el mensaje de la accion anterior: este tiene que sobrevivir a la relectura.
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Alguien mas modifico esto',
+    );
   });
 
   it('sin sede elegida no pide nada y ofrece elegir contexto', async () => {
@@ -649,6 +768,18 @@ describe('HabilitacionesDeLaOfertaPage', () => {
 
   function marcar(fixture: ComponentFixture<HabilitacionesDeLaOfertaPage>, indice: number): void {
     casillas(fixture)[indice].click();
+    fixture.detectChanges();
+  }
+
+  function escribir(
+    fixture: ComponentFixture<HabilitacionesDeLaOfertaPage>,
+    campo: HTMLInputElement | null,
+    valor: string,
+  ): void {
+    if (campo !== null) {
+      campo.value = valor;
+      campo.dispatchEvent(new Event('input'));
+    }
     fixture.detectChanges();
   }
 

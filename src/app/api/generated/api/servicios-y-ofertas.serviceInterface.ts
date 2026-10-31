@@ -25,6 +25,7 @@ import { PoliticaDePrepagoRequest } from '../model/models';
 import { PracticasDeOfertaResponse } from '../model/models';
 import { PrecioParticularResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { ReemplazarDuracionesPropiasRequest } from '../model/models';
 import { ReemplazarHabilitacionesRequest } from '../model/models';
 import { ReemplazarPracticasRequest } from '../model/models';
 import { ServicioResponse } from '../model/models';
@@ -125,6 +126,12 @@ export interface ListPreciosParticularesDeOfertaRequestParams {
 export interface ListServiciosRequestParams {
     q?: string;
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
+}
+
+export interface ReemplazarDuracionesPropiasRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    reemplazarDuracionesPropiasRequest: ReemplazarDuracionesPropiasRequest;
 }
 
 export interface ReemplazarEspaciosHabilitadosRequestParams {
@@ -256,7 +263,7 @@ export interface ServiciosYOfertasServiceInterface {
 
     /**
      * Ver quien puede prestar la oferta y donde
-     * Devuelve las habilitaciones de profesional y de espacio, ACTIVAS E INACTIVAS, mas la capacidad efectiva.  LEER ESTO ANTES DE ESCRIBIR LA PANTALLA. Una lista vacia significa que la oferta NO esta restringida: cualquier profesional con vinculo vigente puede prestarla y puede prestarse en cualquier espacio de la sede. NO significa que no pueda nadie. Para eso estan restringidaPorProfesional y restringidaPorEspacio, que lo dicen explicito.  Las habilitaciones dadas de baja vienen igual, con su motivo. No se esconden: esconderlas dejaria al administrador sin entender por que la capacidad efectiva cambio sola.  Lo mismo con las que apuntan a un recurso que ya no sirve. vinculoVigente en false es un colaborador que se desvinculo; enServicio en false es un espacio que se dio de baja en su propio modulo. La habilitacion sigue existiendo y la fila lo dice.  capacidadEfectiva es el minimo entre la capacidad de la oferta y la de los espacios habilitados que estan en servicio. Sin espacios habilitados es igual a la comercial: no hay ningun espacio concreto contra el cual acotarla. espacioQueLimita nombra cual la acota, y mostrar un numero mas chico sin ese nombre es un defecto de la pantalla.
+     * Devuelve las habilitaciones de profesional y de espacio, ACTIVAS E INACTIVAS, mas la capacidad efectiva.  LEER ESTO ANTES DE ESCRIBIR LA PANTALLA. Una lista vacia significa que la oferta NO esta restringida: cualquier profesional con vinculo vigente puede prestarla y puede prestarse en cualquier espacio de la sede. NO significa que no pueda nadie. Para eso estan restringidaPorProfesional y restringidaPorEspacio, que lo dicen explicito.  Las habilitaciones dadas de baja vienen igual, con su motivo. No se esconden: esconderlas dejaria al administrador sin entender por que la capacidad efectiva cambio sola.  Lo mismo con las que apuntan a un recurso que ya no sirve. vinculoVigente en false es un colaborador que se desvinculo; enServicio en false es un espacio que se dio de baja en su propio modulo. La habilitacion sigue existiendo y la fila lo dice.  capacidadEfectiva es el minimo entre la capacidad de la oferta y la de los espacios habilitados que estan en servicio. Sin espacios habilitados es igual a la comercial: no hay ningun espacio concreto contra el cual acotarla. espacioQueLimita nombra cual la acota, y mostrar un numero mas chico sin ese nombre es un defecto de la pantalla.  duracionesPropias dice cuanto tarda cada profesional que no tarda lo que dura la oferta. Quien no aparece usa la de la oferta.
      * @endpoint get /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/habilitaciones
 * @param requestParameters
      */
@@ -301,6 +308,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     listServicios(requestParameters: ListServiciosRequestParams, extraHttpRequestParams?: any): Observable<Array<ServicioResponse>>;
+
+    /**
+     * Fijar cuanto tarda cada profesional en la oferta
+     * REEMPLAZA EL CONJUNTO COMPLETO. Quien no viene vuelve a la duracion de la oferta. Se leen en duracionesPropias de getHabilitaciones.  NO RESTRINGE NADA: que un profesional tenga duracion propia no lo habilita ni deja afuera a los demas. Por eso se puede cargar en una oferta sin restringir.  Vale para lo que se ofrece y se reserva de ahi en mas. Los turnos ya dados conservan su fin.  expectedVersion es la de la OFERTA, la misma de los otros dos reemplazos.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/ofertas/{ofertaId}/habilitaciones/duraciones
+* @param requestParameters
+     */
+    reemplazarDuracionesPropias(requestParameters: ReemplazarDuracionesPropiasRequestParams, extraHttpRequestParams?: any): Observable<HabilitacionesResponse>;
 
     /**
      * Fijar en que espacios puede prestarse la oferta

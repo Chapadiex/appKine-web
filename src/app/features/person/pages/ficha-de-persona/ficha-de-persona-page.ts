@@ -4,22 +4,30 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { DatosAdministrativosDeHistoria } from '../../components/datos-administrativos-de-historia/datos-administrativos-de-historia';
 import { HitoResponse } from '../../../../api/generated/model/hito-response';
+import { esSinPermiso } from '../../../../core/interceptors/error.interceptor';
 import {
   PERMISO_COBRO_REGISTER,
   PERMISO_PASE_READ,
   PERMISO_HC_READ,
   PERMISO_PACIENTE_MANAGE,
+  PERMISO_TURNO_MANAGE,
 } from '../../../../core/models/permisos';
+import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { formatearInstante } from '../../../../shared/utils/instantes';
 import { PersonApi } from '../../services/person-api';
+import { TurnosDePersonaApi } from '../../services/turnos-de-persona-api';
 import { PrecargaDeFicha } from '../../services/precarga-de-ficha';
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { ResumenDePersonaResponse } from '../../../../api/generated/model/resumen-de-persona-response';
 import { SeccionResponse } from '../../../../api/generated/model/seccion-response';
+import { TurnosDePersona } from '../../../../api/generated/model/turnos-de-persona';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models/person-errors';
 import {
@@ -29,6 +37,7 @@ import {
   personaInactiva,
 } from '../../models/etiquetas-de-person';
 import {
+  SECCION_TURNOS,
   etiquetaDeIndicador,
   fechaEnPalabras,
   hitoEnPalabras,
@@ -113,6 +122,7 @@ interface ConteoPorCategoria {
     AccionesDeFila,
     Alerta,
     Ayuda,
+    Icono,
     PanelLateral,
     CabeceraDeFicha,
     RouterLink,
@@ -126,9 +136,11 @@ interface ConteoPorCategoria {
 export class FichaDePersonaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(PersonApi);
+  private readonly turnosDePersona = inject(TurnosDePersonaApi);
   private readonly avisos = inject(AvisosStore);
   private readonly precarga = inject(PrecargaDeFicha);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly flujo = inject(FlujoDeTurnosStore);
 
   /** De la ruta. `withComponentInputBinding` lo liga solo. */
   readonly personaId = input.required<string>();
@@ -137,6 +149,7 @@ export class FichaDePersonaPage {
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
   protected readonly permisoPase = PERMISO_PASE_READ;
   protected readonly permisoHistoria = PERMISO_HC_READ;
+  protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
 
   protected readonly documentoEnUnaLinea = documentoEnUnaLinea;
   protected readonly nombreCompleto = nombreCompleto;
@@ -154,6 +167,16 @@ export class FichaDePersonaPage {
   /** La seccion de coberturas (B-5) se pinta con forma propia; las demas, con la generica. */
   protected readonly seccionCoberturas = SECCION_COBERTURAS;
   protected readonly coberturaDelResumen = coberturaDelResumen;
+  protected readonly seccionTurnos = SECCION_TURNOS;
+
+  /**
+   * Los proximos turnos, que no vienen en el resumen. `null` mientras no hay nada que mostrar: sin
+   * sede elegida, sin leer todavia o sin `turno:read`, y en ese caso la seccion ya figura omitida.
+   */
+  protected readonly proximos = signal<TurnosDePersona | null>(null);
+  /** La lectura fallo por otra cosa que el permiso: "sin turnos" mentiria, y se dice. */
+  protected readonly errorDeProximos = signal(false);
+  private pedidoDeProximos: Subscription | null = null;
 
   protected readonly resumen = signal<ResumenDePersonaResponse | null>(null);
   protected readonly cargando = signal(true);
@@ -229,6 +252,23 @@ export class FichaDePersonaPage {
       untracked(() => {
         this.cerrarPaneles();
         this.cargar();
+        this.proximos.set(null);
+        this.cargarProximos();
+      });
+    });
+
+    // Lo que hace el flujo se ve en el lugar: la lista y los indicadores de la seccion, sin el
+    // "Cargando" de la ficha entera ni mover el scroll.
+    let primera = true;
+    effect(() => {
+      this.flujo.cambios();
+      if (primera) {
+        primera = false;
+        return;
+      }
+      untracked(() => {
+        this.releerResumen();
+        this.cargarProximos();
       });
     });
   }
@@ -261,6 +301,57 @@ export class FichaDePersonaPage {
         this.faltaContexto.set(traducido.causa === 'sin-contexto');
       },
     });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Turnos
+  // -------------------------------------------------------------------------------------
+
+  protected nuevoTurno(): void {
+    const id = this.identificador();
+    if (id !== null) {
+      this.flujo.nuevoTurno({ origen: 'PACIENTE', personaId: id });
+    }
+  }
+
+  protected verTurno(turnoId: number | undefined): void {
+    if (turnoId !== undefined) {
+      this.flujo.verTurno(turnoId);
+    }
+  }
+
+  /** Fecha y hora en la zona de la respuesta: la de la sede, no la del navegador. */
+  protected cuandoEs(inicio: string | undefined): string {
+    return formatearInstante(inicio, this.proximos()?.timezone) ?? 'Sin fecha';
+  }
+
+  protected cargarProximos(): void {
+    const id = this.identificador();
+    const consultorioId = this.tenantContext.consultorioId();
+    this.pedidoDeProximos?.unsubscribe();
+    this.errorDeProximos.set(false);
+    if (id === null || consultorioId === null) {
+      this.proximos.set(null);
+      return;
+    }
+
+    this.pedidoDeProximos = this.turnosDePersona.proximos(consultorioId, id).subscribe({
+      next: (proximos) => this.proximos.set(proximos),
+      error: (error: unknown) => {
+        this.proximos.set(null);
+        this.errorDeProximos.set(!esSinPermiso(error));
+      },
+    });
+  }
+
+  private releerResumen(): void {
+    const id = this.identificador();
+    if (id !== null) {
+      this.api.resumen(id).subscribe({
+        next: (resumen) => this.resumen.set(resumen),
+        error: () => undefined, // La ficha ya esta en pantalla: un indicador viejo no la tira.
+      });
+    }
   }
 
   // -------------------------------------------------------------------------------------

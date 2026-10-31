@@ -10,6 +10,7 @@ import {
 import {
   FECHA,
   NOMBRE_OFERTA,
+  PERSONA_CON_PERFIL,
   agendaDe,
   diaConSlots,
   diaVacio,
@@ -491,11 +492,43 @@ test.describe('Contraste de color', () => {
           ]),
         );
 
-      await page.goto('/agenda');
-      await page.getByLabel('Oferta', { exact: true }).selectOption({ label: NOMBRE_OFERTA });
+      await page.goto('/agenda/disponibilidad');
+      await page.getByLabel('Prestación', { exact: true }).selectOption({ label: NOMBRE_OFERTA });
       await expect(page.getByRole('heading', { name: NOMBRE_OFERTA, level: 2 })).toBeVisible();
 
       await auditarContraste(page, 'grilla de agenda con un slot completo y un dia sin turnos');
+    });
+
+    test('la agenda operativa del dia, con un turno', async ({ page }) => {
+      await instalarApiDeTurnos(page);
+
+      await page.goto(`/agenda?fecha=${FECHA}`);
+      await expect(page.getByRole('button', { name: /^09:00 a 09:45/ })).toBeVisible();
+
+      await auditarContraste(page, 'agenda operativa del dia', {
+        queAxeNoMide: [
+          {
+            selector: '.turno__estado > span[aria-hidden="true"]',
+            porque:
+              'el simbolo del estado es un solo caracter, y axe no decide sobre un texto tan ' +
+              'corto (`shortTextContent`): lo devuelve como `incomplete`.',
+          },
+        ],
+      });
+    });
+
+    test('el panel de nuevo turno, con paciente y horario elegidos', async ({ page }) => {
+      await instalarApiDeTurnos(page);
+
+      await page.goto(`/agenda?fecha=${FECHA}`);
+      await page.getByRole('button', { name: 'Nuevo turno', exact: true }).click();
+      const panel = page.getByRole('dialog', { name: 'Nuevo turno' });
+      await panel.getByLabel('Buscar paciente').fill(PERSONA_CON_PERFIL.apellido);
+      await panel.locator('.candidato').click();
+      await panel.getByRole('button', { name: 'Primer disponible' }).click();
+      await expect(panel.getByRole('button', { name: 'Confirmar turno' })).toBeEnabled();
+
+      await auditarContraste(page, 'panel de nuevo turno');
     });
   });
 });

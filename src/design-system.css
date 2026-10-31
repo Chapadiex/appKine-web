@@ -435,6 +435,13 @@ h3 {
   background: var(--color-superficie-sutil);
 }
 
+/* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */
+.boton--secundario:disabled {
+  border-color: var(--color-borde);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+}
+
 /*
  * El `padding-block` lleva la caja de un enlace a 24 px de alto o mas: es el objetivo de toque
  * minimo de WCAG 2.5.8 (AA). El alto del texto depende de la fuente del sistema -20-21 px en

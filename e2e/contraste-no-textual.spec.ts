@@ -66,15 +66,25 @@ test.describe('Contraste no textual, foco y teclado', () => {
     await auditarPantalla(page, 'selector de contexto');
   });
 
-  test('agenda con una oferta elegida', async ({ page }) => {
+  test('busqueda de disponibilidad con una prestacion elegida', async ({ page }) => {
     await instalarApiDeTurnos(page);
-    await page.goto('/agenda');
-    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: NOMBRE_OFERTA });
+    await page.goto('/agenda/disponibilidad');
+    await page.getByLabel('Prestación', { exact: true }).selectOption({ label: NOMBRE_OFERTA });
     await expect(page.getByRole('heading', { name: NOMBRE_OFERTA, level: 2 })).toBeVisible({
       timeout: LLEGADA,
     });
 
-    await auditarPantalla(page, 'agenda');
+    await auditarPantalla(page, 'busqueda de disponibilidad');
+  });
+
+  test('agenda operativa del dia', async ({ page }) => {
+    await instalarApiDeTurnos(page);
+    await page.goto(`/agenda?fecha=${FECHA}`);
+    await expect(page.getByRole('button', { name: /^09:00 a 09:45/ })).toBeVisible({
+      timeout: LLEGADA,
+    });
+
+    await auditarPantalla(page, 'agenda operativa');
   });
 
   test('recepcion del dia', async ({ page }) => {

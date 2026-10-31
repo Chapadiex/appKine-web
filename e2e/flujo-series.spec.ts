@@ -1,5 +1,16 @@
+import { cerrarAvisos } from './support/avisos';
 import { abrirAcciones } from './support/filtros';
-import { expect, abrirReserva, ingresar, navegar, test } from './support/agenda-real';
+import {
+  abrirProgramacion,
+  avisos,
+  expect,
+  ingresar,
+  navegar,
+  panelDeTurno,
+  previsualizarSerie,
+  respuestaDe,
+  test,
+} from './support/agenda-real';
 import {
   ApiAkine,
   Centro,
@@ -11,14 +22,15 @@ import {
   crearOferta,
   crearPersona,
   fechaLocal,
+  hora,
   sumarDias,
   uriDeProblema,
 } from './support/sembrado';
 
 /**
  * E2E de las series de turnos (E-3 alta y detalle, E-8 bandeja) contra el backend REAL:
- * previsualizar → reservar la serie → encontrarla en `/agenda/series` → abrirla → cancelar
- * "este y los siguientes".
+ * "Programar varias sesiones" en el panel → previsualizar → confirmar → encontrarla en
+ * `/agenda/series` → abrirla → cancelar "este y los siguientes".
  *
  * <p>Una serie ocupa al profesional del centro el MISMO dia de la semana durante tres semanas, asi
  * que trabaja en su propio bloque ({@link DIAS}.serie) y elige un inicio cuyas tres ocurrencias
@@ -79,32 +91,22 @@ test.describe('Series de turnos contra el backend real', () => {
   }) => {
     const { fecha, slot } = await inicioDeLaSerie(api, centro, oferta);
 
-    // Se llega como llega el mostrador: desde la reserva de un slot, por su enlace de serie.
-    await abrirReserva(page, oferta, fecha, slot, persona);
-    await page.getByRole('link', { name: 'Reservar una serie semanal desde este horario' }).click();
+    // Se llega como llega el mostrador: desde "Nuevo turno", con persona y prestacion ya elegidas.
+    const panel = await abrirProgramacion(page, oferta, persona);
+    await previsualizarSerie(panel, fecha, hora(slot.desde, centro.timezone), OCURRENCIAS);
+    await expect(panel.getByRole('cell', { name: 'Disponible', exact: true })).toHaveCount(
+      OCURRENCIAS,
+    );
+
+    const alta = respuestaDe(page, 'POST', /\/series-de-turnos$/);
+    await panel.getByRole('button', { name: `Confirmar ${OCURRENCIAS} turnos` }).click();
+    const respuesta = await alta;
+    expect(respuesta.status(), await respuesta.text()).toBe(201);
     await expect(
-      page.getByRole('heading', { name: 'Reservar una serie de turnos', level: 1 }),
+      avisos(page).getByText(`${OCURRENCIAS} turnos creados correctamente.`),
     ).toBeVisible();
-    await expect(page.getByText(oferta.nombre)).toBeVisible();
-
-    // La pantalla de la serie es otra: la persona se vuelve a elegir.
-    await page.getByLabel('Documento, apellido, nombre o teléfono').fill(persona.apellido);
-    await page.getByRole('button', { name: `${persona.apellido}, ${persona.nombre}` }).click();
-
-    const cantidad = page.getByLabel(/Cantidad de turnos/);
-    await cantidad.fill(String(OCURRENCIAS));
-    await cantidad.blur();
-
-    await page.getByRole('button', { name: 'Previsualizar los turnos' }).click();
-    const prevista = page.getByRole('region', { name: 'Turnos de la serie' });
-    await expect(prevista.getByText('Libre', { exact: true })).toHaveCount(OCURRENCIAS);
-    await expect(
-      page.getByRole('heading', { name: new RegExp(`^${OCURRENCIAS} turnos`) }),
-    ).toBeVisible();
-
-    await page.getByRole('button', { name: `Reservar los ${OCURRENCIAS} turnos` }).click();
-    await expect(page.getByRole('heading', { name: 'Serie reservada' })).toBeVisible();
-    await expect(page.getByText(`Se reservaron ${OCURRENCIAS} turnos.`)).toBeVisible();
+    await expect(panel).toBeHidden();
+    await cerrarAvisos(page);
 
     // La bandeja de la sede (E-8) la lista, buscada por el paciente en el servidor (DP-45, `q`).
     await navegar(page, '/agenda/series');
@@ -129,6 +131,20 @@ test.describe('Series de turnos contra el backend real', () => {
     await expect(turnos).toHaveCount(OCURRENCIAS);
     const serieId = Number(new URL(page.url()).pathname.split('/').at(-1));
 
+    // "Ver o mover" abre el panel del turno sobre la serie, y lo que hace se ve en la tabla.
+    const direccion = page.url();
+    await turnos
+      .nth(0)
+      .getByRole('button', { name: /Ver o mover el turno del/ })
+      .click();
+    const detalle = panelDeTurno(page, 'Turno');
+    await detalle.getByRole('button', { name: 'Confirmar', exact: true }).click();
+    await expect(detalle.locator('.estado-turno')).toContainText('Confirmado');
+    await expect(turnos.nth(0)).toContainText('Confirmado');
+    await detalle.getByRole('button', { name: 'Cerrar el panel' }).click();
+    await cerrarAvisos(page);
+    expect(page.url()).toBe(direccion);
+
     // Cancelar va en el menu "⋯" de la fila (cuatro acciones por turno).
     await abrirAcciones(turnos.nth(1));
     await turnos
@@ -143,7 +159,7 @@ test.describe('Series de turnos contra el backend real', () => {
       page.getByRole('region', { name: 'Notificaciones' }).getByText('Se cancelaron 2 turnos'),
     ).toBeVisible();
 
-    await expect(turnos.nth(0)).toContainText('Reservado');
+    await expect(turnos.nth(0)).toContainText('Confirmado');
     await expect(turnos.nth(1)).toContainText('Cancelado');
     await expect(turnos.nth(2)).toContainText('Cancelado');
 
@@ -151,7 +167,7 @@ test.describe('Series de turnos contra el backend real', () => {
       'GET',
       `/api/v1/consultorios/${centro.consultorioId}/series-de-turnos/${serieId}`,
     );
-    expect(guardada.turnos.map((t) => t.estado)).toEqual(['RESERVADO', 'CANCELADO', 'CANCELADO']);
+    expect(guardada.turnos.map((t) => t.estado)).toEqual(['CONFIRMADO', 'CANCELADO', 'CANCELADO']);
 
     // Repetir la misma cancelacion ya no encuentra nada pendiente en ese alcance.
     const repetida = await api.pedir(

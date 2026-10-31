@@ -19,6 +19,10 @@ export interface Turno {
     ausenteEn?: string;
     canceladoEn?: string;
     /**
+     * Caso clinico para el que se reservo. Ausente en una primera consulta.
+     */
+    casoId?: number;
+    /**
      * Cobertura del paciente elegida al reservar. Ausente si no se eligio: la recepcion usa entonces la primera que aplique. Es una preferencia, no un veredicto: si el dia del turno ya no aplica, la recepcion queda OBSERVADA.
      */
     coberturaId?: number;
@@ -59,6 +63,10 @@ export interface Turno {
      */
     personaId?: number;
     /**
+     * Plan de tratamiento para el que se reservo
+     */
+    planId?: number;
+    /**
      * Membership del profesional. Ausente si la oferta no lo requiere.
      */
     profesionalId?: number;
@@ -71,6 +79,10 @@ export interface Turno {
      * Serie que genero este turno (AKINE E-3). Ausente en un turno suelto. Un turno de una serie conserva identidad, estado e historial propios: se cancela o se mueve solo, o junto con otros por `/series-de-turnos/{serieId}`.
      */
     serieId?: number;
+    /**
+     * `true` si se reservo sobre un horario ocupado, con autorizacion
+     */
+    sobreturno?: boolean;
     /**
      * Version para el control optimista. Se envia al cancelar, mover o marcar ausencia.
      */

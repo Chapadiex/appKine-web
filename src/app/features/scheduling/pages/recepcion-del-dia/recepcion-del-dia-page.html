@@ -46,17 +46,19 @@
   </div>
 
   <!--
-    "Nuevo turno" solo navega a la busqueda de horarios de la agenda: la reserva sigue naciendo de
-    un horario libre. DP-43 (U-24): la atencion sin turno es otra pantalla, la clinica.
+    "Nuevo turno" abre el flujo unico sobre esta pantalla, con el dia que se esta mirando. DP-43
+    (U-24): la atencion sin turno es otra pantalla, la clinica.
   -->
   <div cabeceraAcciones>
     @if (puedeAtender()) {
       <a class="boton boton--secundario" routerLink="/atencion/sin-turno">Atender sin turno</a>
     }
-    <a class="boton" routerLink="/agenda">
-      <app-icono nombre="agregar" />
-      Nuevo turno
-    </a>
+    @if (puedeOperar()) {
+      <button type="button" class="boton" (click)="nuevoTurno()">
+        <app-icono nombre="agregar" />
+        Nuevo turno
+      </button>
+    }
   </div>
 
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
@@ -169,7 +171,11 @@
         titulo="No hay turnos este día"
         texto="Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha."
       >
-        <a class="boton boton--secundario" routerLink="/agenda">Buscar un horario en la agenda</a>
+        @if (puedeOperar()) {
+          <button type="button" class="boton boton--secundario" (click)="nuevoTurno()">
+            Nuevo turno
+          </button>
+        }
       </app-estado-vacio>
     } @else if (tabla.total() === 0) {
       <app-estado-vacio
@@ -289,7 +295,7 @@
                   Una accion a la vista y el resto en el menu "⋯" (refactor UX/UI del 28/10/2026):
                   la transicion siguiente de la recepcion (llegada, validar, espera, llamar) es la
                   que el mostrador busca con la vista; Particular, retiro, anular, el prepago y el
-                  ciclo del turno van detras. Registrar la llegada es IDEMPOTENTE: el doble click
+                  panel del turno van detras. Registrar la llegada es IDEMPOTENTE: el doble click
                   del mostrador no es un error; el `disabled` evita mandar dos veces el mismo
                   pedido, no castiga.
                 -->
@@ -342,25 +348,26 @@
                         </a>
                       }
                       <!--
-                      Cancelar, reprogramar y el historial NO se duplican aca: viven en la pantalla
-                      del ciclo del turno, que es la que sabe manejar la version y los conflictos.
-                      Este enlace le pasa lo que esa pantalla necesita para poder operar.
+                      Cancelar, reprogramar y el historial NO se duplican aca: viven en el panel del
+                      turno, que es el que sabe manejar la version y los conflictos. Se abre sobre
+                      esta pantalla, que conserva el dia, los filtros y la pagina.
                     -->
-                      <a
-                        [routerLink]="['/agenda', 'turnos', turno.id]"
-                        [queryParams]="queryDelTurno(turno)"
-                      >
-                        Ver el turno
-                      </a>
+                      <button type="button" (click)="verTurno(turno); enfocarMenu($event)">
+                        Ver el turno<span class="visualmente-oculto">
+                          de {{ turno.personaNombre }}</span
+                        >
+                      </button>
                     </app-acciones-de-fila>
                   } @else {
-                    <a
+                    <button
+                      type="button"
                       class="boton boton--secundario boton--chico"
-                      [routerLink]="['/agenda', 'turnos', turno.id]"
-                      [queryParams]="queryDelTurno(turno)"
+                      (click)="verTurno(turno)"
                     >
-                      Ver el turno
-                    </a>
+                      Ver el turno<span class="visualmente-oculto">
+                        de {{ turno.personaNombre }}</span
+                      >
+                    </button>
                   }
                 </td>
               </tr>

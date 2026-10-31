@@ -1,0 +1,230 @@
+<app-panel-lateral
+  titulo="Agregar a la lista de espera"
+  [subtitulo]="persona() ? persona()!.apellido + ', ' + persona()!.nombre : null"
+  ancho="amplio"
+  (cerrar)="cerrar.emit()"
+>
+  <div class="flujo">
+    @if (rechazo(); as fallo) {
+      <app-alerta tipo="error" titulo="No pudimos agregarlo a la lista">
+        <p>{{ fallo.mensaje }}</p>
+        @if (fallo.causa === 'persona-sin-perfil-paciente') {
+          <p class="alerta__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="enviando()"
+              (click)="activarPerfil()"
+            >
+              Activar como paciente
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    <!-- Paciente: no se pregunta si ya se sabe. -->
+    @if (persona(); as elegida) {
+      <div class="flujo__persona-elegida">
+        <p class="flujo__dato">
+          <span class="flujo__dato-etiqueta">Paciente</span>
+          {{ elegida.apellido }}, {{ elegida.nombre }}
+          @if (elegida.numeroDocumento) {
+            <span class="ayuda">· {{ elegida.tipoDocumento }} {{ elegida.numeroDocumento }}</span>
+          }
+        </p>
+        @if (contexto().personaId === undefined) {
+          <button type="button" class="boton-texto" (click)="cambiarPersona()">Cambiar</button>
+        }
+      </div>
+      @if (!elegida.esPaciente) {
+        <app-alerta tipo="advertencia" titulo="Esta persona todavía no es paciente">
+          <p>Para anotarla en la lista de espera hay que activarla como paciente.</p>
+          <p class="alerta__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="enviando()"
+              (click)="activarPerfil()"
+            >
+              Activar como paciente
+            </button>
+          </p>
+        </app-alerta>
+      }
+    } @else if (leyendoPersona()) {
+      <p class="estado estado--cargando">Leyendo el paciente…</p>
+    } @else {
+      <app-buscador-de-paciente (elegida)="elegirPersona($event)" />
+    }
+
+    <!-- Lo que el contexto ya dice: datos, no inputs deshabilitados. -->
+    @if (rotuloDeContexto(); as rotulo) {
+      <p class="flujo__dato">
+        <span class="flujo__dato-etiqueta">Caso / Plan</span>
+        {{ rotulo }}
+      </p>
+    }
+    @if (contexto().ofertaId !== undefined) {
+      <p class="flujo__dato">
+        <span class="flujo__dato-etiqueta">Prestación</span>
+        {{ ofertaElegida()?.nombreComercial ?? '#' + contexto().ofertaId }}
+      </p>
+    }
+    @if (contexto().profesionalId !== undefined && requiereProfesional()) {
+      <p class="flujo__dato">
+        <span class="flujo__dato-etiqueta">Profesional preferido</span>
+        {{ nombreDelProfesional() }}
+      </p>
+    }
+    @if (desdeDelContexto()) {
+      <div class="flujo__persona-elegida">
+        <p class="flujo__dato">
+          <span class="flujo__dato-etiqueta">Fecha desde</span>
+          {{ fechaEnPalabras(desde()) }}
+        </p>
+        <button type="button" class="boton-texto" (click)="desdeDelContexto.set(false)">
+          Cambiar
+        </button>
+      </div>
+    }
+
+    <div class="flujo__campos">
+      @if (contexto().ofertaId === undefined) {
+        <div class="campo campo--mitad">
+          <label for="espera-oferta">Prestación</label>
+          <select
+            id="espera-oferta"
+            [value]="ofertaId() ?? ''"
+            (change)="elegirOferta($any($event.target).value)"
+          >
+            <option value="">Elegí una prestación</option>
+            @for (oferta of ofertas(); track oferta.id) {
+              <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+                {{ oferta.nombreComercial }} · {{ minutosDe(oferta) }} min
+              </option>
+            }
+          </select>
+        </div>
+      }
+      @if (contexto().profesionalId === undefined && requiereProfesional()) {
+        <div class="campo campo--mitad">
+          <label for="espera-profesional">Profesional preferido</label>
+          <select
+            id="espera-profesional"
+            [value]="profesionalId() ?? ''"
+            (change)="elegirProfesional($any($event.target).value)"
+          >
+            <option value="">Cualquier profesional</option>
+            @for (profesional of profesionales(); track profesional.id) {
+              <option [value]="profesional.id" [selected]="profesional.id === profesionalId()">
+                {{ profesional.nombre }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+      @if (!desdeDelContexto()) {
+        <div class="campo campo--cuarto">
+          <label for="espera-desde">Fecha desde</label>
+          <input
+            id="espera-desde"
+            type="date"
+            [min]="hoy()"
+            [value]="desde()"
+            (change)="cambiarDesde($any($event.target).value)"
+          />
+        </div>
+      }
+      <div class="campo campo--cuarto">
+        <label for="espera-hasta">Fecha hasta</label>
+        <input
+          id="espera-hasta"
+          type="date"
+          [min]="desde()"
+          [value]="hasta()"
+          (change)="hasta.set($any($event.target).value)"
+        />
+      </div>
+      <div class="campo campo--cuarto">
+        <label for="espera-hora-desde">Hora desde</label>
+        <input
+          id="espera-hora-desde"
+          type="time"
+          [value]="horaDesde()"
+          (change)="horaDesde.set($any($event.target).value)"
+        />
+      </div>
+      <div class="campo campo--cuarto">
+        <label for="espera-hora-hasta">Hora hasta</label>
+        <input
+          id="espera-hora-hasta"
+          type="time"
+          [value]="horaHasta()"
+          (change)="horaHasta.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <fieldset class="dias-semana">
+      <legend>Días posibles (sin marcar, cualquiera)</legend>
+      @for (opcion of DIAS; track opcion.iso) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="dias().has(opcion.iso)"
+            (change)="alternarDia(opcion.iso)"
+          />
+          {{ opcion.etiqueta }}
+        </label>
+      }
+    </fieldset>
+
+    <div class="flujo__campos">
+      <div class="campo campo--tercio">
+        <label for="espera-prioridad">Prioridad</label>
+        <select
+          id="espera-prioridad"
+          [value]="prioridad()"
+          (change)="prioridad.set($any($event.target).value)"
+        >
+          @for (opcion of PRIORIDADES; track opcion.valor) {
+            <option [value]="opcion.valor" [selected]="opcion.valor === prioridad()">
+              {{ opcion.etiqueta }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="espera-notas">Notas</label>
+        <textarea
+          id="espera-notas"
+          rows="2"
+          maxlength="300"
+          aria-describedby="espera-notas-ayuda"
+          [value]="notas()"
+          (input)="notas.set($any($event.target).value)"
+        ></textarea>
+        <p id="espera-notas-ayuda" class="ayuda ayuda--fija">No escribas información clínica.</p>
+      </div>
+    </div>
+
+    <div class="acciones acciones--pie">
+      @if (faltante() !== '') {
+        <p id="espera-faltante" class="ayuda flujo__faltante">{{ faltante() }}</p>
+      }
+      <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="enviando() || faltante() !== ''"
+        [attr.aria-describedby]="faltante() !== '' ? 'espera-faltante' : null"
+        (click)="guardar()"
+      >
+        {{ enviando() ? 'Guardando…' : 'Agregar a la lista' }}
+      </button>
+    </div>
+  </div>
+</app-panel-lateral>

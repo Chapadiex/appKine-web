@@ -23,7 +23,7 @@ export interface Agenda {
      */
     dias?: Array<DiaDeAgenda>;
     /**
-     * Duracion de cada turno, en minutos
+     * Duracion de cada turno, en minutos: la del profesional si se pidio uno, y si no la de la oferta. Un profesional con duracion propia tiene otra: cada slot trae su fin.
      */
     duracionMinutos?: number;
     /**

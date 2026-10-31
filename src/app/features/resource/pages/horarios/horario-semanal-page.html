@@ -24,6 +24,24 @@
   </app-ayuda>
   @if (estado().tipo === 'listo') {
     <div cabeceraAcciones>
+      @if (membershipElegido(); as profesionalId) {
+        <a
+          class="boton boton--secundario"
+          *akinePermiso="permisoVerTurnos"
+          routerLink="/agenda"
+          [queryParams]="{ profesional: profesionalId }"
+        >
+          Ver agenda
+        </a>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          *akinePermiso="permisoTurnos"
+          (click)="nuevoTurno(profesionalId)"
+        >
+          Nuevo turno
+        </button>
+      }
       <button
         type="button"
         class="boton"
