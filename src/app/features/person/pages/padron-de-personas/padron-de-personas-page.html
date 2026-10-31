@@ -247,7 +247,7 @@
 -->
 @if (altaAbierta()) {
   <app-panel-lateral titulo="Nueva persona" (cerrar)="cerrarAlta()">
-    <div class="panel-persona__nota">
+    <div class="panel-persona__nota" panel-subtitulo>
       <p>Registra una persona, no un paciente.</p>
       <app-ayuda titulo="Nueva persona">
         <p>
@@ -262,7 +262,12 @@
       </app-ayuda>
     </div>
 
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
+    <form
+      class="formulario-persona"
+      [formGroup]="formularioAlta"
+      (ngSubmit)="enviarAlta()"
+      novalidate
+    >
       <!--
         Error general del alta (no de un campo): arriba del formulario, a la vista mientras se
         corrige. Al pie lo tapaba la barra de acciones.
@@ -276,8 +281,6 @@
           <p>{{ errorAccion() }}</p>
         </app-alerta>
       }
-
-      <h3 class="formulario__seccion">Identidad</h3>
 
       <div class="campo campo--3">
         <label for="alta-persona-apellido">Apellido</label>
@@ -370,7 +373,16 @@
         <label for="alta-persona-fecha-nacimiento"
           >Fecha de nacimiento <span class="campo__opcional">(opcional)</span></label
         >
-        <input id="alta-persona-fecha-nacimiento" type="date" formControlName="fechaNacimiento" />
+        <input
+          id="alta-persona-fecha-nacimiento"
+          type="date"
+          min="1900-01-01"
+          formControlName="fechaNacimiento"
+          [attr.aria-invalid]="mostrarErrorAlta('fechaNacimiento') ? 'true' : null"
+        />
+        @if (mostrarErrorAlta('fechaNacimiento')) {
+          <p class="campo__error">Revisá la fecha: tiene que ser desde 1900 y anterior a hoy.</p>
+        }
       </div>
 
       <!--
@@ -422,13 +434,15 @@
           type="email"
           formControlName="email"
           aria-describedby="alta-persona-email-ayuda"
+          [attr.aria-invalid]="mostrarErrorAlta('email') ? 'true' : null"
         />
         <p class="ayuda" id="alta-persona-email-ayuda">
           Dato de contacto, no una clave de acceso al portal.
         </p>
+        @if (mostrarErrorAlta('email')) {
+          <p class="campo__error">El correo no tiene un formato válido.</p>
+        }
       </div>
-
-      <h3 class="formulario__seccion">Datos administrativos</h3>
 
       <details class="mas-opciones">
         <summary>Observaciones: cómo llega, quién la acompaña, preferencias</summary>
@@ -465,7 +479,12 @@
       [subtitulo]="perfilEnPalabras(persona)"
       (cerrar)="cerrarPaneles()"
     >
-      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+      <form
+        class="formulario-persona"
+        [formGroup]="formularioEdicion"
+        (ngSubmit)="enviarEdicion()"
+        novalidate
+      >
         @if (errorAccion()) {
           <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
             <p>{{ errorAccion() }}</p>
@@ -478,8 +497,6 @@
             }
           </app-alerta>
         }
-
-        <h3 class="formulario__seccion">Identidad</h3>
 
         <div class="campo campo--3">
           <label for="edicion-apellido-{{ persona.id }}">Apellido</label>
@@ -515,8 +532,13 @@
           <input
             id="edicion-nacimiento-{{ persona.id }}"
             type="date"
+            min="1900-01-01"
             formControlName="fechaNacimiento"
+            [attr.aria-invalid]="mostrarErrorEdicion('fechaNacimiento') ? 'true' : null"
           />
+          @if (mostrarErrorEdicion('fechaNacimiento')) {
+            <p class="campo__error">Revisá la fecha: tiene que ser desde 1900 y anterior a hoy.</p>
+          }
         </div>
 
         <h3 class="formulario__seccion">Contacto</h3>
@@ -528,10 +550,16 @@
 
         <div class="campo">
           <label for="edicion-email-{{ persona.id }}">Correo de contacto</label>
-          <input id="edicion-email-{{ persona.id }}" type="email" formControlName="email" />
+          <input
+            id="edicion-email-{{ persona.id }}"
+            type="email"
+            formControlName="email"
+            [attr.aria-invalid]="mostrarErrorEdicion('email') ? 'true' : null"
+          />
+          @if (mostrarErrorEdicion('email')) {
+            <p class="campo__error">El correo no tiene un formato válido.</p>
+          }
         </div>
-
-        <h3 class="formulario__seccion">Datos administrativos</h3>
 
         <div class="campo">
           <label for="edicion-notas-{{ persona.id }}">Observaciones administrativas</label>

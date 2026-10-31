@@ -37,10 +37,10 @@
 
 .panel-lateral__cabecera {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--esp-6);
-  padding: var(--esp-6) var(--esp-8);
+  padding: var(--esp-4) var(--esp-8);
   border-bottom: var(--borde-fino) solid var(--color-borde);
 }
 
@@ -50,7 +50,7 @@
 
 .panel-lateral__titulo {
   margin: 0;
-  font-size: var(--tipo-lg);
+  font-size: var(--tipo-base);
   font-weight: var(--peso-fuerte);
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -67,8 +67,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
   padding: 0;
   border: 0;
   border-radius: var(--radio-md);
@@ -87,7 +87,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--esp-7) var(--esp-8) 0;
+  padding: var(--esp-6) var(--esp-8) 0;
 }
 
 /* El ultimo bloque no queda pegado al borde inferior cuando no hay pie de acciones. */
