@@ -321,6 +321,23 @@ describe('CajaPage', () => {
     ).not.toBeNull();
   });
 
+  it('una relectura en vuelo no pisa un cierre que ya salio bien', async () => {
+    const fixture = await montarAbierta([]);
+
+    apretar(fixture, 'Actualizar');
+    apretar(fixture, 'Arquear y cerrar');
+    tipear(fixture, '#cierre-declarado', '1500,50');
+    apretar(fixture, 'Cerrar la caja');
+    httpMock
+      .expectOne((p) => p.method === 'POST' && p.url === `${BASE}/jornadas/${JORNADA_ID}/cierre`)
+      .flush({ ...JORNADA, estado: 'CERRADA', saldoDeclarado: 1500.5, diferencia: 0 });
+    await estabilizar(fixture);
+
+    await recargarAbierta(fixture, []);
+    expect(texto(fixture)).toContain('Arqueo registrado');
+    expect(texto(fixture)).toContain('La caja está cerrada');
+  });
+
   it('sin sede en el contexto no pide nada y manda al selector', async () => {
     const fixture = TestBed.createComponent(CajaPage);
     fixture.detectChanges();

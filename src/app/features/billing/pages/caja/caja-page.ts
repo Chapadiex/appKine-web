@@ -530,6 +530,9 @@ export class CajaPage {
       )
       .subscribe({
         next: (cerrada) => {
+          // Una relectura todavia en vuelo traeria la jornada abierta y pisaria este cierre.
+          this.generacion++;
+          this.actualizando.set(false);
           this.enviando.set(false);
           this.limpiarFormularios();
           this.cierre.set(cerrada);
