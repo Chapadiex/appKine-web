@@ -2,8 +2,8 @@
 
 ## Que corre en el CI
 
-Job `e2e-parte` de `.github/workflows/ci.yml`, tres runners con `--shard`, cada uno con su pila entera y
-su cupo del limite de login. El job `e2e` junta las tres partes bajo el nombre del check obligatorio.
+Job `e2e-parte` de `.github/workflows/ci.yml`, cinco runners con `--shard`, cada uno con su pila entera y
+su cupo del limite de login. El job `e2e` junta las cinco partes bajo el nombre del check obligatorio.
 Cada parte:
 
 1. Clona `Chapadiex/appKine-api` en la **misma rama** que el PR, o `main` si no existe.
