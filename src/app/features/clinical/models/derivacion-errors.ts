@@ -14,12 +14,12 @@ import { ErrorAtencionGrupal, traducirErrorAtencionGrupal } from './atencion-gru
  * </ul>
  */
 export function traducirErrorDeDerivacion(error: unknown): ErrorAtencionGrupal {
-  const traducido = traducirErrorAtencionGrupal(error);
+  const traducido = traducirErrorAtencionGrupal(error, MENSAJE_DATOS_INVALIDOS);
   switch (traducido.causa) {
     case 'sin-permiso':
       return { ...traducido, mensaje: MENSAJE_SIN_PERMISO };
     case 'motivo-obligatorio':
-      return { causa: 'otro', mensaje: MENSAJE_DATOS_INVALIDOS };
+      return { ...traducido, causa: 'otro' };
     case 'sin-perfil-paciente':
       return { ...traducido, mensaje: MENSAJE_SIN_PERFIL };
     default:

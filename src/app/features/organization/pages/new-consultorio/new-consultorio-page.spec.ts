@@ -248,6 +248,9 @@ describe('NewConsultorioPage', () => {
       const error = fixture.nativeElement.querySelector('#sede-horario-error-1');
       expect(error?.textContent).toContain('La hora de cierre tiene que ser HH:mm');
       expect(fixture.nativeElement.querySelector('#sede-horario-error-0')).toBeNull();
+      // El cartel no repite lo que ya se marca junto a la franja.
+      expect(texto(fixture)).toContain('Revisá los campos marcados.');
+      expect(texto(fixture).split('La hora de cierre tiene que ser HH:mm')).toHaveLength(2);
     });
   });
 

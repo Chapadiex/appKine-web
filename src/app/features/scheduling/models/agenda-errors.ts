@@ -324,7 +324,7 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
     case 'plan-sin-sesiones':
       return {
         ...base(
-          error.problem?.detail ?? 'El plan no tiene sesiones disponibles.',
+          error.detalle ?? 'El plan no tiene sesiones disponibles.',
           'plan-sin-sesiones',
           'ninguna',
         ),
@@ -332,7 +332,7 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
       };
     case 'contexto-clinico-invalido':
       return base(
-        error.problem?.detail ?? 'El caso o el plan no sirven para este turno.',
+        error.detalle ?? 'El caso o el plan no sirven para este turno.',
         'contexto-clinico-invalido',
         'ninguna',
       );
@@ -351,7 +351,7 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
     case 'bloqueo-con-turnos-afectados':
       return {
         ...base(
-          error.problem?.detail ?? 'Este bloqueo afecta turnos.',
+          error.detalle ?? 'Este bloqueo afecta turnos.',
           'bloqueo-con-turnos-afectados',
           'ninguna',
         ),

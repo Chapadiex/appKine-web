@@ -470,6 +470,8 @@ export class NewConsultorioPage {
       this.espera.iniciar(traducido.segundosDeEspera);
     }
 
+    let mensaje = traducido.mensaje;
+
     if (traducido.causa === 'validacion' && error instanceof AkineHttpError) {
       // El alta es atomica: un box o una franja invalidos rechazan todo con 400 y no queda
       // nada creado. Lo que falla se marca junto al campo, en el paso 2, que es donde se
@@ -482,9 +484,13 @@ export class NewConsultorioPage {
       if (franjas.size > 0 || box !== undefined) {
         this.paso.set(2);
       }
+      mensaje =
+        error.mensajeSinCampos(
+          (campo) => campo.startsWith('horarioGeneral[') || campo.startsWith('primerBox'),
+        ) ?? mensaje;
     }
 
-    this.estado.set({ tipo: 'error', mensaje: traducido.mensaje, causa: traducido.causa });
+    this.estado.set({ tipo: 'error', mensaje, causa: traducido.causa });
   }
 
   private enfocar(selector: string): void {

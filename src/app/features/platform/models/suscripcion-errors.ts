@@ -46,7 +46,7 @@ const MENSAJES: Readonly<Record<CausaSuscripcion, string>> = {
 export function traducirErrorSuscripcion(error: unknown): ErrorSuscripcion {
   const causa = causaDe(error);
   const detalle =
-    causa === 'validacion' && error instanceof AkineHttpError ? error.problem?.detail : undefined;
+    causa === 'validacion' && error instanceof AkineHttpError ? error.detalle : undefined;
   return { causa, mensaje: detalle ?? MENSAJES[causa] };
 }
 

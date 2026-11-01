@@ -17,6 +17,7 @@ import { catchError, of } from 'rxjs';
 
 import { HabilitacionesResponse } from '../../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
@@ -41,6 +42,9 @@ export interface OpcionDeProfesional {
 
 const HORA_POR_DEFECTO = '09:00';
 const DURACION_POR_DEFECTO = 60;
+
+/** Los campos cuyo error del servidor la plantilla muestra junto al control. */
+const CAMPOS_MARCADOS: ReadonlySet<string> = new Set(['capacidad', 'espacioId']);
 
 /**
  * Programar una clase (M28, RF-M28-001, CA-M28-001-06, AKINE-08.01).
@@ -261,7 +265,11 @@ export class AltaDeClasePage {
           if (traducido.accion === 'reintentar-con-clave-nueva') {
             this.clave = nuevaClaveDeIntento();
           }
-          this.error.set(traducido);
+          const cartel =
+            error instanceof AkineHttpError
+              ? error.mensajeSinCampos((campo) => CAMPOS_MARCADOS.has(campo))
+              : null;
+          this.error.set(cartel === null ? traducido : { ...traducido, mensaje: cartel });
         },
       });
   }

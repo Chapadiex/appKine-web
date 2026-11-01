@@ -87,7 +87,7 @@ export class AkineHttpError extends Error {
     /** Segundos de `Retry-After` (429 o 503), o `null` si el backend no lo dijo. */
     readonly reintentarEnSegundos: number | null = null,
   ) {
-    super(problem?.detail ?? problem?.title ?? 'Error de comunicacion con el servidor');
+    super(detalleDelProblema(problem) ?? problem?.title ?? 'Error de comunicacion con el servidor');
     this.name = 'AkineHttpError';
   }
 
@@ -102,9 +102,38 @@ export class AkineHttpError extends Error {
     return this.message;
   }
 
+  /**
+   * Lo que el backend redacto para esta falla, o `undefined` si no redacto nada.
+   *
+   * <p>Es lo que una pantalla con su propio respaldo tiene que leer, y no `problem.detail`: un 400
+   * de validacion trae ahi la misma frase para cualquier formulario ("La solicitud contiene campos
+   * invalidos") y lo que hay que corregir viaja en `errors`. Ver {@link mensajeDeCampos}.
+   */
+  get detalle(): string | undefined {
+    return detalleDelProblema(this.problem);
+  }
+
   /** Errores de validacion por campo, para pintar el formulario. */
   get erroresPorCampo(): Readonly<Record<string, string>> {
     return leerErrores(this.problem);
+  }
+
+  /** {@link erroresPorCampo} en una frase para mostrar, o `null` si no vino ningun campo. */
+  get mensajeDeCampos(): string | null {
+    return mensajeDeCampos(this.problem);
+  }
+
+  /**
+   * El cartel de un formulario que ya muestra `marcado` junto a cada campo, para no repetirlo: los
+   * campos restantes, o un aviso si no queda ninguno. `null` si no marca ninguno de los que vinieron.
+   */
+  mensajeSinCampos(marcado: (campo: string) => boolean): string | null {
+    if (!Object.keys(this.erroresPorCampo).some(marcado)) {
+      return null;
+    }
+    return (
+      mensajeDeCampos(this.problem, (campo) => !marcado(campo)) ?? 'Revisá los campos marcados.'
+    );
   }
 
   /**
@@ -339,4 +368,42 @@ function leerErrores(problem: ProblemDetail | null): Readonly<Record<string, str
 
 function esMapaDeStrings(valor: unknown): valor is Readonly<Record<string, string>> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
+}
+
+/** Los mensajes por campo si vinieron, y si no el `detail`. Ver {@link AkineHttpError.detalle}. */
+function detalleDelProblema(problem: ProblemDetail | null): string | undefined {
+  return mensajeDeCampos(problem) ?? problem?.detail;
+}
+
+function mensajeDeCampos(
+  problem: ProblemDetail | null,
+  incluir: (campo: string) => boolean = () => true,
+): string | null {
+  // `esMapaDeStrings` no mira los valores, y esto corre en el constructor: no puede lanzar.
+  const frases = Object.entries(leerErrores(problem))
+    .filter(([, mensaje]) => typeof mensaje === 'string' && mensaje.trim() !== '')
+    .filter(([campo]) => incluir(campo))
+    .map(([campo, mensaje]) => fraseDelCampo(campo, mensaje));
+  // Dos filas con el mismo error dan la misma frase: el indice no llega a la persona.
+  return frases.length === 0 ? null : `${[...new Set(frases)].join('. ')}.`;
+}
+
+/**
+ * Un mensaje de `errors`, listo para unirlo a los demas.
+ *
+ * <p>Los `message` que redacta el backend empiezan en mayuscula y ya nombran lo que falla ("El
+ * apellido es obligatorio"). Los de Bean Validation por defecto, los de toda anotacion sin
+ * `message`, empiezan en minuscula y no: "no debe estar vacio" no le dice a nadie que corregir. A
+ * esos se les antepone el campo.
+ */
+function fraseDelCampo(campo: string, mensaje: string): string {
+  const texto = mensaje.trim().replace(/\.+$/, '');
+  return /^\p{Ll}/u.test(texto) ? `${nombreDelCampo(campo)}: ${texto}` : texto;
+}
+
+/** `items[0].fechaDesde` -&gt; `Fecha desde`. La ruta y el sufijo `Id` no le dicen nada a la persona. */
+function nombreDelCampo(campo: string): string {
+  const hoja = (campo.split('.').pop() ?? '').replace(/\[\d+\]/g, '').replace(/Id$/, '');
+  const palabras = hoja.replace(/\p{Lu}/gu, (letra) => ` ${letra.toLowerCase()}`);
+  return palabras.charAt(0).toUpperCase() + palabras.slice(1);
 }

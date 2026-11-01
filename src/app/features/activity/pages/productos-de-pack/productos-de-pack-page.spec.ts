@@ -243,6 +243,31 @@ describe('ProductosDePackPage', () => {
     expect(textoDe(fixture)).toContain('Ya hay un producto vigente con ese nombre');
   });
 
+  it('un 400 del nombre se marca junto al campo y el cartel no lo repite', async () => {
+    const fixture = await montar([]);
+    clickear(fixture, 'Nuevo producto');
+    escribir(fixture, '#producto-oferta', '42');
+    escribir(fixture, '#producto-nombre', 'Pack Pilates 8');
+    escribir(fixture, '#producto-creditos', '8');
+    escribir(fixture, '#producto-precio', '1');
+    escribir(fixture, '#producto-vigencia-dias', '60');
+    clickear(fixture, 'Crear producto');
+    httpMock
+      .expectOne((r) => r.method === 'POST')
+      .flush(
+        {
+          type: 'https://akine.app/problems/validation-error',
+          status: 400,
+          detail: 'La solicitud contiene campos invalidos',
+          errors: { nombre: 'El nombre es demasiado largo' },
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Revisá los campos marcados.');
+    expect(textoDe(fixture).split('El nombre es demasiado largo')).toHaveLength(2);
+  });
+
   it('edita con la versión leida y limpia la fecha de fin vaciada', async () => {
     const fixture = await montar([{ ...PACK, vigenciaHasta: '2026-12-31' }]);
     clickear(fixture, 'Editar');

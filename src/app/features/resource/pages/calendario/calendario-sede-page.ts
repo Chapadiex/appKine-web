@@ -482,10 +482,13 @@ export class CalendarioSedePage {
         },
         error: (error: unknown) => {
           this.guardandoHorario.set(false);
-          this.errorHorario.set(traducirErrorExcepcion(error).mensaje);
+          let mensaje = traducirErrorExcepcion(error).mensaje;
           if (error instanceof AkineHttpError) {
             this.erroresFranja.set(erroresDeFranjasDelServidor(error.erroresPorCampo));
+            mensaje =
+              error.mensajeSinCampos((campo) => campo.startsWith('horarioGeneral[')) ?? mensaje;
           }
+          this.errorHorario.set(mensaje);
         },
       });
   }

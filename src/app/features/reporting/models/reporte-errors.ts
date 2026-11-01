@@ -41,7 +41,7 @@ export function traducirErrorReporte(error: unknown): ErrorReporte {
   }
   if (error.problemType === 'rango-de-reporte-invalido') {
     const maximo = error.numeroDeExtension('maximoDias');
-    const base = error.problem?.detail || MENSAJE_RANGO;
+    const base = error.detalle || MENSAJE_RANGO;
     const conMaximo =
       maximo !== null && !base.includes(String(maximo))
         ? `${base}. Un reporte abarca como máximo ${maximo} días.`
@@ -54,5 +54,5 @@ export function traducirErrorReporte(error: unknown): ErrorReporte {
   if (error.status === 404) {
     return { mensaje: MENSAJE_NO_ENCONTRADO, causa: 'no-encontrado' };
   }
-  return { mensaje: error.problem?.detail || MENSAJE_GENERICO, causa: 'otro' };
+  return { mensaje: error.detalle || MENSAJE_GENERICO, causa: 'otro' };
 }

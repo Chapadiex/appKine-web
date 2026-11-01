@@ -133,7 +133,7 @@ export function traducirErrorActividad(error: unknown): ErrorActividad {
     return errorSinContextoDeActividad();
   }
   const motivo = textoDeExtension(error, 'motivo');
-  const detalle = error.problem?.detail ?? '';
+  const detalle = error.detalle ?? '';
 
   switch (error.problemType) {
     case 'validation-error':
