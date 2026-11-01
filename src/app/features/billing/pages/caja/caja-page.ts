@@ -35,6 +35,7 @@ import {
 import { fechaEnPalabras, importeEnPalabras } from '../../models/etiquetas-de-obligacion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -49,6 +50,9 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 type OperacionDeCaja = 'abrir' | 'movimiento' | 'reversion' | 'cierre';
 
 type FalloDeCaja = ErrorCaja & { readonly en: OperacionDeCaja };
+
+/** Lo que se abre a pedido desde la cabecera (UX-15). La reversion lleva su propio estado. */
+type PanelDeCaja = 'movimiento' | 'arqueo' | 'medios';
 
 type EstadoCaja =
   | { readonly tipo: 'cargando' }
@@ -69,6 +73,8 @@ const PAGINA_DE_MOVIMIENTOS = 50;
  * <p>Una sola pantalla para el turno de caja entero: ver si esta abierta, abrirla, cargar
  * movimientos manuales, revertirlos y arquear. Son pasos de una misma persona parada frente al
  * mismo cajon, y partirlos en rutas obligaria a navegar en medio de un conteo.
+ * Mide lo que la ventana (UX-15): la banda y los movimientos a la vista; cargar, arquear y el
+ * detalle en paneles a pedido.
  *
  * <h2>Lo que la pantalla NO calcula</h2>
  *
@@ -95,6 +101,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
   imports: [
     CabeceraDePagina,
     Ayuda,
+    Icono,
     RouterLink,
     PanelLateral,
     Alerta,
@@ -104,7 +111,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
     PieDeTabla,
   ],
   templateUrl: './caja-page.html',
-  styleUrls: ['../../billing.css', '../../economia.css'],
+  styleUrls: ['../../billing.css', '../../economia.css', './caja-page.css'],
 })
 export class CajaPage {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -121,10 +128,8 @@ export class CajaPage {
   protected readonly fechaEnPalabras = (valor: string | undefined): string =>
     fechaEnPalabras(valor, this.diaDeLaSede.zona());
   protected readonly mediosDisponibles = MEDIOS_DE_COBRO;
-  protected readonly tiposManuales = [
-    RegistrarMovimientoDeCajaTipoEnum.INGRESO,
-    RegistrarMovimientoDeCajaTipoEnum.EGRESO,
-  ] as const;
+  protected readonly tipoIngreso = RegistrarMovimientoDeCajaTipoEnum.INGRESO;
+  protected readonly tipoEgreso = RegistrarMovimientoDeCajaTipoEnum.EGRESO;
 
   protected readonly estado = signal<EstadoCaja>({ tipo: 'cargando' });
   /** El arqueo recien registrado, para que el operador vea la diferencia que quedo asentada. */
@@ -132,6 +137,9 @@ export class CajaPage {
   /** El rechazo de la ultima operacion y en que seccion se hizo: se muestra ahi (UX-12). */
   protected readonly error = signal<FalloDeCaja | null>(null);
   protected readonly enviando = signal(false);
+  protected readonly panel = signal<PanelDeCaja | null>(null);
+  /** Relectura con la caja a la vista: la pantalla no se desmonta, solo lo dice el boton. */
+  protected readonly actualizando = signal(false);
 
   // Apertura
   protected readonly moneda = signal('ARS');
@@ -259,7 +267,15 @@ export class CajaPage {
   // Carga
   // -------------------------------------------------------------------------------------
 
-  protected cargar(): void {
+  /**
+   * Relee sin desmontar la pantalla: sin parpadeo, con los paneles abiertos y el foco en su lugar.
+   * Cambiar de sede no pasa por aca: ahi {@link cargar} descarta lo que se estaba mostrando.
+   */
+  protected recargar(): void {
+    this.cargar(true);
+  }
+
+  protected cargar(conservarPantalla = false): void {
     const consultorioId = this.tenantContext.consultorioId();
     const generacion = ++this.generacion;
     this.error.set(null);
@@ -275,7 +291,11 @@ export class CajaPage {
       return;
     }
 
-    this.estado.set({ tipo: 'cargando' });
+    if (conservarPantalla && this.estado().tipo === 'abierta') {
+      this.actualizando.set(true);
+    } else {
+      this.estado.set({ tipo: 'cargando' });
+    }
     this.api
       .jornadaAbierta(consultorioId)
       .pipe(
@@ -295,6 +315,7 @@ export class CajaPage {
           if (generacion !== this.generacion) {
             return;
           }
+          this.actualizando.set(false);
           this.estado.set(
             resultado === null
               ? { tipo: 'cerrada' }
@@ -305,6 +326,7 @@ export class CajaPage {
           if (generacion !== this.generacion) {
             return;
           }
+          this.actualizando.set(false);
           const traducido = traducirErrorCaja(error);
           this.estado.set({
             tipo: 'error',
@@ -394,10 +416,11 @@ export class CajaPage {
           this.importeMovimiento.set('');
           this.conceptoMovimiento.set('');
           this.claveDeMovimiento = '';
+          this.panel.set(null);
           this.avisos.exito('Movimiento registrado', {
             descripcion: `${concepto} · ${importeEnPalabras(deCentavos(centavos), this.jornada()?.moneda)}`,
           });
-          this.cargar();
+          this.recargar();
         },
         error: (error: unknown) => {
           // Reintentar el MISMO contenido reusa la clave; un conflicto de clave pide una nueva.
@@ -470,7 +493,7 @@ export class CajaPage {
         this.avisos.exito('Movimiento revertido', {
           descripcion: 'El original queda en el listado, compensado.',
         });
-        this.cargar();
+        this.recargar();
       },
       error: (error: unknown) => this.fallar(error, 'reversion'),
     });
@@ -530,9 +553,21 @@ export class CajaPage {
     return restaDelSaldo(movimiento.tipo) ? `− ${texto}` : `+ ${texto}`;
   }
 
+  /**
+   * La hora sola si fue el dia de la jornada; si no, con la fecha: una jornada puede seguir abierta
+   * al dia siguiente, y una hora suelta ahi mentiria.
+   */
+  protected horaDeLaJornada(instante: string | undefined): string {
+    const texto = this.instanteEnPalabras(instante);
+    const prefijo = `${this.fechaEnPalabras(this.jornada()?.fechaNegocio)}, `;
+    return texto.startsWith(prefijo) ? texto.slice(prefijo.length) : texto;
+  }
+
   protected diferenciaEnPalabras(): string {
     const diferencia = this.diferenciaCentavos();
-    return diferencia === null ? '' : this.importe(deCentavos(diferencia));
+    return diferencia === null
+      ? ''
+      : this.faltanteOSobrante(deCentavos(diferencia), this.jornada()?.moneda);
   }
 
   protected diferenciaDelCierre(jornada: JornadaCaja): string {
@@ -540,13 +575,28 @@ export class CajaPage {
     if (diferencia === 0) {
       return 'Sin diferencia: el arqueo cuadro.';
     }
-    const texto = importeEnPalabras(Math.abs(diferencia), jornada.moneda);
+    return this.faltanteOSobrante(diferencia, jornada.moneda);
+  }
+
+  private faltanteOSobrante(diferencia: number, moneda: string | undefined): string {
+    const texto = importeEnPalabras(Math.abs(diferencia), moneda);
     return diferencia > 0 ? `Sobrante de ${texto}` : `Faltante de ${texto}`;
   }
 
   // -------------------------------------------------------------------------------------
   // Apoyo
   // -------------------------------------------------------------------------------------
+
+  protected abrirPanel(cual: PanelDeCaja): void {
+    this.error.set(null);
+    this.panel.set(cual);
+  }
+
+  /** Lo tipeado queda: quien cerro el panel para mirar la tabla no tiene que volver a contar. */
+  protected cerrarPanel(): void {
+    this.error.set(null);
+    this.panel.set(null);
+  }
 
   private iniciarEnvio(): void {
     this.enviando.set(true);
@@ -566,6 +616,7 @@ export class CajaPage {
 
   private limpiarFormularios(): void {
     this.error.set(null);
+    this.panel.set(null);
     this.saldoInicial.set('');
     this.importeMovimiento.set('');
     this.conceptoMovimiento.set('');

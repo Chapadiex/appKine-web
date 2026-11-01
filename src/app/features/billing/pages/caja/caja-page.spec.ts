@@ -124,10 +124,8 @@ describe('CajaPage', () => {
     // La tira de la jornada (DP-45): los totales del servidor, sin sumar nada aca.
     const tira = contenido.replace(/\s+/g, '');
     expect(tira).toContain('Ingresosdelajornada$2.700,50');
-    expect(tira).toContain('efectivo$700,50·otrosmedios$2.000,00');
-    expect(tira).toContain('Movimientos4');
-    expect(tira).toContain('entró$700,50·salió$200,00');
-    // UX-14: la jornada es una banda de indicadores, no una tarjeta; los movimientos se ordenan
+    expect(tira).toContain('Egresosdelajornada$200,00');
+    // UX-15: la jornada es una banda de indicadores, no una tarjeta; los movimientos se ordenan
     // y tienen el pie estandar.
     const raiz = fixture.nativeElement as HTMLElement;
     expect(raiz.querySelector('.banda-de-caja')?.classList.contains('tarjeta')).toBe(false);
@@ -143,12 +141,35 @@ describe('CajaPage', () => {
       .click();
     fixture.detectChanges();
     expect(raiz.querySelector('tbody tr')?.textContent).toContain('Cobro N.º 14');
+
+    // Lo que entro y salio por medio se abre a pedido.
+    apretar(fixture, 'Ver detalle');
+    const detalle = (raiz.querySelector('app-panel-lateral')?.textContent ?? '').replace(
+      /\s+/g,
+      '',
+    );
+    expect(detalle).toContain('$700,50$200,00$500,50');
+    expect(detalle).toContain('efectivo$700,50·otrosmedios$2.000,00');
+  });
+
+  it('muestra la hora sola el dia de la jornada y con fecha si fue otro dia', async () => {
+    const fixture = await montarAbierta([
+      MANUAL,
+      { ...DE_COBRO, registradoEn: '2026-10-08T15:00:00Z' },
+    ]);
+
+    const horas = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('td.celda-fecha'),
+    ).map((celda) => celda.textContent ?? '');
+    expect(horas[0]).not.toContain('2026');
+    expect(horas[1]).toContain('08/10/2026');
   });
 
   it('registra un movimiento manual con clave de idempotencia y relee la caja', async () => {
     const fixture = await montarAbierta([]);
 
-    elegir(fixture, '#movimiento-tipo', 'EGRESO');
+    apretar(fixture, 'Registrar movimiento');
+    apretar(fixture, '− Egreso');
     tipear(fixture, '#movimiento-importe', '100');
     tipear(fixture, '#movimiento-concepto', 'Articulos de limpieza');
     apretar(fixture, 'Registrar el movimiento');
@@ -165,6 +186,7 @@ describe('CajaPage', () => {
     pedido.flush({ ...MANUAL, id: 600, tipo: 'EGRESO' });
 
     await recargarAbierta(fixture, []);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.titulo).toBe('Movimiento registrado');
     expect(aviso?.descripcion).toContain('Articulos de limpieza');
@@ -173,6 +195,7 @@ describe('CajaPage', () => {
   it('un egreso que deja el cajon en negativo muestra el rechazo y no relee', async () => {
     const fixture = await montarAbierta([]);
 
+    apretar(fixture, 'Registrar movimiento');
     tipear(fixture, '#movimiento-importe', '99999');
     tipear(fixture, '#movimiento-concepto', 'Retiro');
     apretar(fixture, 'Registrar el movimiento');
@@ -185,9 +208,9 @@ describe('CajaPage', () => {
       );
     await estabilizar(fixture);
 
-    // En la seccion del movimiento, arriba de sus campos: es donde se corrige el importe.
+    // En el panel del movimiento, arriba de sus campos: es donde se corrige el importe.
     const alerta = (fixture.nativeElement as HTMLElement).querySelector(
-      '[aria-labelledby="titulo-movimiento"] app-alerta',
+      'app-panel-lateral app-alerta',
     );
     expect(alerta?.textContent).toContain('No pudimos registrar el movimiento');
     expect(alerta?.textContent).toContain('deja el cajon en negativo');
@@ -234,8 +257,9 @@ describe('CajaPage', () => {
   it('un arqueo que no cuadra pide motivo y manda el teorico que se mostraba', async () => {
     const fixture = await montarAbierta([]);
 
+    apretar(fixture, 'Arquear y cerrar');
     tipear(fixture, '#cierre-declarado', '1400');
-    expect(texto(fixture)).toContain('Diferencia contra el teórico');
+    expect(texto(fixture)).toContain('Faltante de');
     expect(boton(fixture, 'Cerrar la caja').disabled).toBe(true);
 
     tipear(fixture, '#cierre-motivo', 'Vuelto mal dado');
@@ -269,8 +293,9 @@ describe('CajaPage', () => {
   it('si el teorico cambio mientras se contaba, no cierra y ofrece recargar', async () => {
     const fixture = await montarAbierta([]);
 
+    apretar(fixture, 'Arquear y cerrar');
     tipear(fixture, '#cierre-declarado', '1500,50');
-    expect(texto(fixture)).toContain('coincide con el teórico');
+    expect(texto(fixture)).toContain('coincide con lo que debería haber');
     apretar(fixture, 'Cerrar la caja');
 
     const pedido = httpMock.expectOne(
@@ -284,12 +309,16 @@ describe('CajaPage', () => {
     await estabilizar(fixture);
 
     const alerta = (fixture.nativeElement as HTMLElement).querySelector(
-      '[aria-labelledby="titulo-cierre"] app-alerta',
+      'app-panel-lateral app-alerta',
     );
     expect(alerta?.className).toContain('alerta--advertencia');
     expect(alerta?.textContent).toContain('el saldo teorico cambio');
     apretar(fixture, 'Recargar la caja');
     await recargarAbierta(fixture, []);
+    // La relectura no desmonta nada: el panel y lo contado siguen ahi.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#cierre-declarado'),
+    ).not.toBeNull();
   });
 
   it('sin sede en el contexto no pide nada y manda al selector', async () => {
@@ -320,6 +349,7 @@ describe('CajaPage', () => {
     async () => {
       const fixture = await montarAbierta([MANUAL, DE_COBRO]);
       apretar(fixture, 'Revertir');
+      apretar(fixture, 'Arquear y cerrar');
       tipear(fixture, '#cierre-declarado', '10');
       await estabilizar(fixture);
 
@@ -417,13 +447,6 @@ describe('CajaPage', () => {
     const campo = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-  }
-
-  function elegir(fixture: ComponentFixture<CajaPage>, selector: string, valor: string): void {
-    const campo = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
-    campo.value = valor;
-    campo.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 
