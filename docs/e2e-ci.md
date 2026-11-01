@@ -2,7 +2,9 @@
 
 ## Que corre en el CI
 
-Job `e2e` de `.github/workflows/ci.yml`:
+Job `e2e-parte` de `.github/workflows/ci.yml`, tres runners con `--shard`, cada uno con su pila entera y
+su cupo del limite de login. El job `e2e` junta las tres partes bajo el nombre del check obligatorio.
+Cada parte:
 
 1. Clona `Chapadiex/appKine-api` en la **misma rama** que el PR, o `main` si no existe.
 2. Levanta MySQL y Mailpit con el `compose.yaml` del backend (`-p akine`, red `akine_default`,
@@ -10,8 +12,8 @@ Job `e2e` de `.github/workflows/ci.yml`:
 3. Construye la imagen del backend con su `Dockerfile` (cache de capas de Actions) y la arranca
    con el perfil `local` y `AKINE_BOOTSTRAP_ADMIN_EMAIL=plataforma.e2e@ejemplo.test`.
 4. Corre `--project=agenda --project=chromium`, sin el smoke de version de contrato (lo cubre
-   el job `contrato`). Al fallar publica `e2e-report`: reporte HTML, trazas, capturas, videos y el
-   log del backend.
+   el job `contrato`). Al fallar publica `e2e-report-<parte>`: reporte HTML, trazas, capturas, videos
+   y el log del backend.
 
 ## El navegador corre en otra zona que la sede, a proposito
 
