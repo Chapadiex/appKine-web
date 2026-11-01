@@ -38,7 +38,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           codigo=true
-          if [ -n "$PR" ] && archivos=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[].filename'); then
+          if [ -n "$PR" ] && archivos=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)'); then
             if [ -n "$archivos" ] && ! echo "$archivos" | grep -qvE '^(docs/|\.claude/)|\.md$'; then
               codigo=false
             fi
