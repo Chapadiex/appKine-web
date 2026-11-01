@@ -41,7 +41,8 @@ const PRIMER_CAMPO =
  * elemento enfocado al abrir y se le devuelve el foco al destruir, si sigue en la pagina.
  *
  * <p><b>No sabe de dominio.</b> Recibe un titulo y proyecta el contenido. Un formulario proyectado
- * deja su `.acciones` final pegada al pie del panel (CSS).
+ * deja su `.acciones` final pegada al pie del panel (CSS). Lo que lleve `panel-subtitulo` va en la
+ * cabecera, bajo el titulo: para el subtitulo que no es solo texto.
  */
 @Component({
   selector: 'app-panel-lateral',
@@ -63,6 +64,7 @@ const PRIMER_CAMPO =
           @if (subtitulo(); as texto) {
             <p class="panel-lateral__subtitulo">{{ texto }}</p>
           }
+          <ng-content select="[panel-subtitulo]" />
         </div>
         <button type="button" class="panel-lateral__cerrar" (click)="cerrar.emit()">
           <app-icono nombre="cerrar" />

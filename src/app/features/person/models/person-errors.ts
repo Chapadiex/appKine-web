@@ -463,7 +463,12 @@ export function traducirErrorPersona(error: unknown): ErrorPersona {
   }
 
   if (error.status === 400) {
-    return base(conDetalle(error, MENSAJE_GENERICO), 'validacion');
+    // El backend nombra cada campo: el `detail` sólo dice que algo está mal.
+    const porCampo = Object.values(error.erroresPorCampo);
+    return base(
+      porCampo.length > 0 ? `${porCampo.join('. ')}.` : conDetalle(error, MENSAJE_GENERICO),
+      'validacion',
+    );
   }
 
   return base(conDetalle(error, MENSAJE_GENERICO), 'otro');
