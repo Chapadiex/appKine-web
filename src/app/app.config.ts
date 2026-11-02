@@ -5,7 +5,7 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { provideApi } from './api/generated/provide-api';
@@ -28,13 +28,13 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
 
-    // Angular 21 es zoneless por defecto; se declara explicito para que quede a la vista
+    // Angular es zoneless por defecto desde la 21; se declara explicito para que quede a la vista
     // que el change detection depende de signals y no de zone.js.
     provideZonelessChangeDetection(),
 
     provideRouter(routes, withComponentInputBinding()),
 
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, errorInterceptor])),
 
     // Base del cliente generado. Vacia en dev: el proxy resuelve /api contra el backend
     // local, asi que nunca hay una URL de localhost horneada en el bundle.

@@ -49,13 +49,13 @@ con el mismo nombre en los dos repos** que usa el job `contrato` del CI.
 
 | Capa | Tecnología |
 |---|---|
-| Framework | Angular 21 |
+| Framework | Angular 22 |
 | Package manager | npm con `package-lock.json` |
 | Change detection | **Zoneless** — sin `zone.js`, signals |
-| Componentes | Standalone, `OnPush` por defecto |
-| HTTP | `HttpClient` (incluido de fábrica en v21) |
+| Componentes | Standalone, `OnPush` por defecto (default real del framework desde v22; prohibido `ChangeDetectionStrategy.Eager`, lo marca el lint) |
+| HTTP | `HttpClient` con `withXhr()` (v22 pasó el default a `fetch`; se mantuvo XHR) |
 | Cliente API | **Generado** desde `akine-api.yaml` → `src/app/api/generated/` |
-| Tests unit | Vitest (default de v21) |
+| Tests unit | Vitest 5 |
 | Tests E2E | Playwright — `e2e/` |
 | Accesibilidad | WCAG 2.1 AA |
 | CI/CD | GitHub Actions + SonarQube |
@@ -63,7 +63,7 @@ con el mismo nombre en los dos repos** que usa el job `contrato` del CI.
 
 Cobertura exigida: **≥80 % en código nuevo.**
 
-### Consecuencias de Angular 21 que rompen hábitos de v17/v18
+### Consecuencias de Angular 21 y 22 que rompen hábitos de v17/v18
 
 1. **Zoneless por defecto.** El change detection lo manejan los signals. Código que dependía
    del CD implícito de Zone.js deja de actualizarse.
