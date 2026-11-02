@@ -1,0 +1,237 @@
+/*
+ * Caja diaria sin scroll de pagina (UX-15). Cero colores literales: todo sale de los tokens.
+ *
+ * Con alto y ancho suficientes la pantalla mide lo que la ventana. Lo que no entra lo desplaza la
+ * tabla, con el pie a la vista. En un telefono o una ventana muy baja vuelve a fluir: ahi no entra.
+ */
+
+/* Marca de la jornada en la cabecera. */
+.caja-contexto {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Banda de indicadores ---------------------------------------------------------------- */
+
+.banda-de-caja {
+  margin-bottom: var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.banda-de-caja .cifras {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cifras__heroe dd {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-2xl);
+  line-height: 1.2;
+}
+
+.cifras__heroe .cifras__nota {
+  display: inline;
+  font-weight: var(--peso-normal);
+}
+
+.banda-de-caja__medios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--esp-5);
+  padding: 0 var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.banda-de-caja__medios ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--esp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.banda-de-caja__medios b {
+  color: var(--color-texto);
+  font-weight: var(--peso-medio);
+}
+
+.banda-de-caja__medios .boton-texto {
+  min-height: 1.5rem;
+  margin-left: auto;
+  color: var(--color-enlace);
+}
+
+/* --- Movimientos -------------------------------------------------------------------------- */
+
+.caja-movimientos {
+  margin-bottom: 0;
+  padding: var(--esp-4) var(--esp-5);
+}
+
+/* El motivo de una reversion en la misma linea: una fila densa no se parte en dos. */
+.celda-nota {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+/* --- Formularios de los paneles ----------------------------------------------------------- */
+
+.panel-ayuda {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--esp-4);
+}
+
+.campo__rotulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+/* Ingreso o Egreso a la vista: dos opciones no piden un select. */
+.segmento {
+  display: flex;
+  min-height: 2.5rem;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+}
+
+.segmento button {
+  flex: 1;
+  padding: 0 var(--esp-5);
+  border: 0;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+}
+
+.segmento button + button {
+  border-left: var(--borde-fino) solid var(--color-borde-control);
+}
+
+/* La elegida: fondo, peso y subrayado, no solo color (WCAG 1.4.1). */
+.segmento button[aria-pressed='true'] {
+  background: var(--color-acento-claro);
+  box-shadow: inset 0 calc(-1 * var(--borde-medio)) 0 var(--color-acento);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-fuerte);
+}
+
+.segmento button:focus-visible {
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+/* La cuenta que lleva al teorico, arriba del conteo. */
+.cuenta-del-cajon {
+  margin-bottom: var(--esp-6);
+}
+
+.cuenta-del-cajon__rotulo {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.cuenta-del-cajon__valor {
+  margin: 0 0 var(--esp-3);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-2xl);
+  font-weight: var(--peso-fuerte);
+  font-variant-numeric: tabular-nums;
+}
+
+.cuenta-del-cajon dl {
+  margin: 0;
+  font-size: var(--tipo-sm);
+}
+
+.cuenta-del-cajon dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-5);
+}
+
+.cuenta-del-cajon dt {
+  color: var(--color-texto-suave);
+}
+
+.cuenta-del-cajon dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Una sola pantalla --------------------------------------------------------------------- */
+
+@media (min-width: 48rem) and (min-height: 36rem) {
+  /*
+   * Ventana menos barra superior (con su borde) y padding de arriba de `.contenido`. El margen
+   * negativo achica los 32 px de abajo de `.contenido` a 12.
+   */
+  :host {
+    display: flex;
+    flex-direction: column;
+    height: calc(
+      100dvh - var(--alto-barra-superior) - var(--borde-fino) - var(--esp-6) - var(--esp-5)
+    );
+    margin-bottom: calc(var(--esp-5) - var(--esp-9));
+  }
+
+  app-cabecera-de-pagina {
+    flex: none;
+    margin-bottom: var(--esp-4);
+  }
+
+  .banda-de-caja {
+    flex: none;
+  }
+
+  .banda-de-caja .cifras {
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  }
+
+  .caja-movimientos {
+    display: flex;
+    flex: 0 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0 var(--esp-5) var(--esp-2);
+  }
+
+  .caja-movimientos .tabla-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .tabla--densa th,
+  .tabla--densa td {
+    padding-block: 0;
+  }
+
+  .tabla--densa thead th {
+    height: 1.875rem;
+  }
+
+  .tabla--densa td {
+    height: 2.125rem;
+  }
+
+  /* 26 px: sobre el minimo de 24 de WCAG 2.5.8, y no agranda la fila. */
+  .tabla--densa .boton--chico {
+    min-height: 1.625rem;
+    padding: 0 var(--esp-4);
+    font-size: var(--tipo-xs);
+  }
+}

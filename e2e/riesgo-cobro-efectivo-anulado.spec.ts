@@ -138,8 +138,9 @@ test.describe('Cobro en efectivo anulado contra el backend real', () => {
     // Arqueo contando solo el saldo inicial: cierra sin diferencia.
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
+    await page.getByRole('button', { name: 'Arquear y cerrar' }).click();
     await page.getByLabel('Efectivo contado').fill(String(INICIAL));
-    await expect(page.getByText('El contado coincide con el teórico.')).toBeVisible();
+    await expect(page.getByText('El contado coincide con lo que debería haber.')).toBeVisible();
     await page.getByRole('button', { name: 'Cerrar la caja' }).click();
     await expect(page.getByRole('heading', { name: 'Arqueo registrado' })).toBeVisible();
     expect(await cajaAbierta(api, centro)).toBeNull();

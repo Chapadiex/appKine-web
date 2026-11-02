@@ -1,16 +1,49 @@
 <app-cabecera-de-pagina titulo="Caja diaria">
-  @if (jornada()) {
-    <span class="marca-estado marca-estado--activa">Abierta</span>
-  } @else if (cerrada()) {
-    <span class="marca-estado">Cerrada</span>
-  }
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       El cajón de <b>esta sede</b>: abrirlo, registrar lo que entra y sale a mano y arquearlo al
       cerrar. <b>No es la deuda ni los cobros</b>: un cobro en efectivo aparece acá como movimiento,
       pero se registra y se anula desde la cuenta corriente del paciente.
     </p>
+    <p>
+      El saldo del cajón cuenta solo efectivo: tarjetas y transferencias se totalizan aparte pero
+      nunca estuvieron en el cajón.
+    </p>
   </app-ayuda>
+  @if (jornada()) {
+    <span class="marca-estado marca-estado--activa">Abierta</span>
+  } @else if (cerrada()) {
+    <span class="marca-estado">Cerrada</span>
+  }
+  @if (jornada(); as abierta) {
+    <span cabeceraContexto class="caja-contexto">
+      Jornada {{ fechaEnPalabras(abierta.fechaNegocio) }} · abrió
+      {{ horaDeLaJornada(abierta.abiertaEn) }}
+    </span>
+  }
+  @if (jornada()) {
+    <div cabeceraAcciones>
+      <button
+        type="button"
+        class="boton boton--secundario boton--chico"
+        [disabled]="actualizando()"
+        (click)="recargar()"
+      >
+        {{ actualizando() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario boton--chico"
+        (click)="abrirPanel('arqueo')"
+      >
+        Arquear y cerrar
+      </button>
+      <button type="button" class="boton boton--chico" (click)="abrirPanel('movimiento')">
+        <app-icono nombre="agregar" />
+        Registrar movimiento
+      </button>
+    </div>
+  }
 </app-cabecera-de-pagina>
 
 @if (cargando()) {
@@ -40,7 +73,7 @@
     <p>{{ fallo.mensaje }}</p>
     @if (fallo.accion === 'recargar') {
       <p class="alerta__acciones">
-        <button type="button" class="boton boton--secundario" (click)="cargar()">
+        <button type="button" class="boton boton--secundario" (click)="recargar()">
           Recargar la caja
         </button>
       </p>
@@ -56,427 +89,401 @@
 <!-- ================================ Caja cerrada ================================ -->
 
 @if (cerrada()) {
-  @if (cierre(); as cerradaRecien) {
-    <section class="tarjeta" aria-labelledby="titulo-arqueo">
-      <h2 id="titulo-arqueo">Arqueo registrado</h2>
-      <dl class="cifras">
-        <div>
-          <dt>Fecha de negocio</dt>
-          <dd class="cifras__texto">{{ fechaEnPalabras(cerradaRecien.fechaNegocio) }}</dd>
-        </div>
-        <div>
-          <dt>Cerrada</dt>
-          <dd class="cifras__texto">{{ instanteEnPalabras(cerradaRecien.cerradaEn) }}</dd>
-        </div>
-        <div>
-          <dt>Teórico en efectivo</dt>
-          <dd class="importe">
-            {{ importe(cerradaRecien.saldoTeoricoCierre, cerradaRecien.moneda) }}
-          </dd>
-        </div>
-        <div>
-          <dt>Contado</dt>
-          <dd class="importe">
-            {{ importe(cerradaRecien.saldoDeclarado, cerradaRecien.moneda) }}
-          </dd>
-        </div>
-        <div>
-          <dt>Diferencia</dt>
-          <dd class="cifras__texto">{{ diferenciaDelCierre(cerradaRecien) }}</dd>
-        </div>
-        @if (cerradaRecien.motivoDiferencia) {
+  <div class="dos-columnas">
+    @if (cierre(); as cerradaRecien) {
+      <section class="tarjeta dos-columnas__principal" aria-labelledby="titulo-arqueo">
+        <h2 id="titulo-arqueo">Arqueo registrado</h2>
+        <dl class="cifras">
           <div>
-            <dt>Motivo</dt>
-            <dd class="cifras__texto">{{ cerradaRecien.motivoDiferencia }}</dd>
+            <dt>Fecha de negocio</dt>
+            <dd class="cifras__texto">{{ fechaEnPalabras(cerradaRecien.fechaNegocio) }}</dd>
           </div>
-        }
-      </dl>
-      <p class="ayuda">
-        Un cierre no se revierte y una caja cerrada no se reabre. Un error se compensa con
-        movimientos en la próxima jornada.
-      </p>
-    </section>
-  }
-
-  <section class="tarjeta" aria-labelledby="titulo-apertura">
-    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-apertura">La caja está cerrada</h2>
-      <app-ayuda titulo="La caja está cerrada">
-        <p>
-          Abrila con lo que hay en el cajón ahora. Cero es válido: una caja puede arrancar vacía. La
-          fecha de negocio la pone el servidor con la zona horaria de la sede.
+          <div>
+            <dt>Cerrada</dt>
+            <dd class="cifras__texto">{{ instanteEnPalabras(cerradaRecien.cerradaEn) }}</dd>
+          </div>
+          <div>
+            <dt>Teórico en efectivo</dt>
+            <dd class="importe">
+              {{ importe(cerradaRecien.saldoTeoricoCierre, cerradaRecien.moneda) }}
+            </dd>
+          </div>
+          <div>
+            <dt>Contado</dt>
+            <dd class="importe">
+              {{ importe(cerradaRecien.saldoDeclarado, cerradaRecien.moneda) }}
+            </dd>
+          </div>
+          <div>
+            <dt>Diferencia</dt>
+            <dd class="cifras__texto">{{ diferenciaDelCierre(cerradaRecien) }}</dd>
+          </div>
+          @if (cerradaRecien.motivoDiferencia) {
+            <div>
+              <dt>Motivo</dt>
+              <dd class="cifras__texto">{{ cerradaRecien.motivoDiferencia }}</dd>
+            </div>
+          }
+        </dl>
+        <p class="ayuda">
+          Un cierre no se revierte y una caja cerrada no se reabre. Un error se compensa con
+          movimientos en la próxima jornada.
         </p>
-      </app-ayuda>
-    </div>
-
-    @if (falloEn('abrir'); as fallo) {
-      <ng-container
-        [ngTemplateOutlet]="alertaDeOperacion"
-        [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos abrir la caja' }"
-      />
+      </section>
     }
 
-    <div class="grilla-12">
-      <div class="campo campo--2">
-        <label for="apertura-saldo">Saldo inicial contado</label>
-        <input
-          id="apertura-saldo"
-          type="text"
-          inputmode="decimal"
-          autocomplete="off"
-          [value]="saldoInicial()"
-          [attr.aria-invalid]="saldoInicial() !== '' && !saldoInicialValido()"
-          (input)="saldoInicial.set($any($event.target).value)"
-        />
+    <section class="tarjeta dos-columnas__lateral" aria-labelledby="titulo-apertura">
+      <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+        <h2 id="titulo-apertura">La caja está cerrada</h2>
+        <app-ayuda titulo="La caja está cerrada">
+          <p>
+            Abrila con lo que hay en el cajón ahora. Cero es válido: una caja puede arrancar vacía.
+            La fecha de negocio la pone el servidor con la zona horaria de la sede.
+          </p>
+        </app-ayuda>
       </div>
 
-      <div class="campo campo--2">
-        <label for="apertura-moneda">Moneda</label>
-        <input
-          id="apertura-moneda"
-          type="text"
-          autocomplete="off"
-          maxlength="3"
-          [value]="moneda()"
-          (input)="moneda.set($any($event.target).value)"
+      @if (falloEn('abrir'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos abrir la caja' }"
         />
-      </div>
-    </div>
-
-    <div class="acciones">
-      <button
-        type="button"
-        class="boton"
-        [disabled]="!saldoInicialValido() || enviando()"
-        [attr.aria-describedby]="!saldoInicialValido() || enviando() ? 'apertura-falta' : null"
-        (click)="abrir()"
-      >
-        Abrir la caja
-      </button>
-      @if (enviando()) {
-        <p class="motivo-deshabilitado" id="apertura-falta">Abriendo la caja…</p>
-      } @else if (saldoInicial() === '') {
-        <p class="motivo-deshabilitado" id="apertura-falta">
-          Falta el saldo inicial contado (puede ser 0).
-        </p>
-      } @else if (!saldoInicialValido()) {
-        <p class="motivo-deshabilitado" id="apertura-falta">
-          El saldo inicial tiene que ser un importe, por ejemplo 1500 o 1500,50.
-        </p>
       }
-    </div>
-  </section>
+
+      <div class="grilla-12">
+        <div class="campo campo--2">
+          <label for="apertura-saldo">Saldo inicial contado</label>
+          <input
+            id="apertura-saldo"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [value]="saldoInicial()"
+            [attr.aria-invalid]="saldoInicial() !== '' && !saldoInicialValido()"
+            (input)="saldoInicial.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="campo campo--2">
+          <label for="apertura-moneda">Moneda</label>
+          <input
+            id="apertura-moneda"
+            type="text"
+            autocomplete="off"
+            maxlength="3"
+            [value]="moneda()"
+            (input)="moneda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton"
+          [disabled]="!saldoInicialValido() || enviando()"
+          [attr.aria-describedby]="!saldoInicialValido() || enviando() ? 'apertura-falta' : null"
+          (click)="abrir()"
+        >
+          Abrir la caja
+        </button>
+        @if (enviando()) {
+          <p class="motivo-deshabilitado" id="apertura-falta">Abriendo la caja…</p>
+        } @else if (saldoInicial() === '') {
+          <p class="motivo-deshabilitado" id="apertura-falta">
+            Falta el saldo inicial contado (puede ser 0).
+          </p>
+        } @else if (!saldoInicialValido()) {
+          <p class="motivo-deshabilitado" id="apertura-falta">
+            El saldo inicial tiene que ser un importe, por ejemplo 1500 o 1500,50.
+          </p>
+        }
+      </div>
+    </section>
+  </div>
 }
 
 <!-- ================================ Caja abierta ================================ -->
 
 @if (jornada(); as abierta) {
-  <!-- Banda de indicadores (UX-14 §3): compacta y sin tarjeta, para que los movimientos ocupen la pantalla. -->
+  <!-- Banda de indicadores (UX-15): la cifra que importa pesa mas; el detalle se abre a pedido. -->
   <section class="banda-de-caja" aria-labelledby="titulo-jornada">
-    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-jornada">Caja abierta</h2>
-      <app-ayuda titulo="Caja abierta">
-        <p>
-          El saldo del cajón cuenta solo efectivo: tarjetas y transferencias se totalizan aparte
-          pero nunca estuvieron en el cajón.
-        </p>
-      </app-ayuda>
-      <div cabeceraAcciones>
-        <button type="button" class="boton boton--secundario" (click)="cargar()">Actualizar</button>
-      </div>
-    </div>
+    <h2 id="titulo-jornada" class="visualmente-oculto">Caja abierta</h2>
     <dl class="cifras">
-      <div>
-        <dt>Fecha de negocio</dt>
-        <dd class="cifras__texto">{{ fechaEnPalabras(abierta.fechaNegocio) }}</dd>
-      </div>
-      <div>
-        <dt>Abierta</dt>
-        <dd class="cifras__texto">{{ instanteEnPalabras(abierta.abiertaEn) }}</dd>
-      </div>
-      <div>
-        <dt>Saldo inicial</dt>
-        <dd class="importe">{{ importe(abierta.saldoInicial) }}</dd>
-      </div>
-      <div>
+      <div class="cifras__heroe">
         <dt>Debería haber en el cajón</dt>
-        <dd class="importe">
+        <dd>
           {{ importe(abierta.saldoTeorico) }}
           <span class="cifras__nota">solo efectivo</span>
         </dd>
+      </div>
+      <div>
+        <dt>Saldo inicial</dt>
+        <dd>{{ importe(abierta.saldoInicial) }}</dd>
       </div>
       @if (abierta.resumen; as r) {
         <!-- DP-45: lo que entro y salio en la jornada, neto de reversiones, como lo calcula el servidor. -->
         <div>
           <dt>Ingresos de la jornada</dt>
-          <dd class="importe">
-            {{ importe(r.ingresos) }}
-            <span class="cifras__nota"
-              >efectivo {{ importe(r.efectivoIngresos) }} · otros medios
-              {{ importe(r.otrosMediosIngresos) }}</span
-            >
-          </dd>
+          <dd>{{ importe(r.ingresos) }}</dd>
         </div>
         <div>
           <dt>Egresos de la jornada</dt>
-          <dd class="importe">
-            {{ importe(r.egresos) }}
-            <span class="cifras__nota"
-              >efectivo {{ importe(r.efectivoEgresos) }} · otros medios
-              {{ importe(r.otrosMediosEgresos) }}</span
-            >
-          </dd>
-        </div>
-        <div>
-          <dt>Movimientos</dt>
-          <dd>{{ r.cantidadMovimientos ?? 0 }}</dd>
+          <dd>{{ importe(r.egresos) }}</dd>
         </div>
       }
     </dl>
+    @if (abierta.totalesPorMedio?.length) {
+      <div class="banda-de-caja__medios">
+        <span>Por medio de pago:</span>
+        <ul>
+          @for (total of abierta.totalesPorMedio; track total.medio) {
+            <li>
+              {{ medioEnPalabras(total.medio) }} <b>{{ importe(total.total) }}</b>
+            </li>
+          }
+        </ul>
+        <button type="button" class="boton-texto" (click)="abrirPanel('medios')">
+          Ver detalle
+        </button>
+      </div>
+    }
   </section>
 
-  <div class="dos-columnas">
-    <div class="dos-columnas__principal">
-      <!-- ------------------------------ Movimientos ------------------------------ -->
-      <section class="tarjeta">
-        <h2 id="titulo-tabla-movimientos">Movimientos de esta jornada</h2>
+  <!-- ------------------------------ Movimientos ------------------------------ -->
+  <section class="tarjeta caja-movimientos">
+    <h2 id="titulo-tabla-movimientos" class="visualmente-oculto">Movimientos de esta jornada</h2>
 
-        @if (movimientos().length === 0) {
-          <app-estado-vacio
-            titulo="Todavía no hay movimientos en esta jornada"
-            texto="Los cobros en efectivo y los movimientos manuales aparecen acá."
-          />
-        } @else {
-          <div
-            class="tabla-scroll"
-            tabindex="0"
-            role="region"
-            aria-labelledby="titulo-tabla-movimientos"
-          >
-            <table class="tabla">
-              <thead>
-                <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
-                  <th
-                    scope="col"
-                    class="tabla__col--secundaria"
-                    appOrdenable
-                    [tabla]="tabla"
-                    columna="medio"
-                  >
-                    Medio
-                  </th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
-                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="importe">
-                    Importe
-                  </th>
-                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (movimiento of tabla.visibles(); track movimiento.id) {
-                  <tr
-                    [class.fila--revocada]="yaRevertido(movimiento)"
-                    [class.fila--seleccionada]="revirtiendo() === movimiento.id"
-                  >
-                    <td class="celda-fecha">{{ instanteEnPalabras(movimiento.registradoEn) }}</td>
-                    <td>{{ tipoEnPalabras(movimiento.tipo) }}</td>
-                    <td class="tabla__col--secundaria">{{ medioEnPalabras(movimiento.medio) }}</td>
-                    <td>
-                      {{ movimiento.concepto }}
-                      @if (movimiento.motivo) {
-                        <span class="celda-secundaria">({{ movimiento.motivo }})</span>
-                      }
-                    </td>
-                    <td class="importe">{{ importeConSigno(movimiento) }}</td>
-                    <td class="tabla__acciones">
-                      @if (yaRevertido(movimiento)) {
-                        <span class="ayuda">Revertido</span>
-                      } @else if (sePuedeRevertir(movimiento)) {
-                        <button
-                          type="button"
-                          class="boton boton--secundario boton--chico"
-                          [id]="'revertir-' + movimiento.id"
-                          (click)="pedirReversion(movimiento)"
-                        >
-                          Revertir
-                        </button>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de movimientos" />
-          @if (listadoRecortado()) {
-            <p class="ayuda">Se muestran los primeros 50 movimientos de la jornada.</p>
-          }
-        }
-      </section>
-    </div>
-
-    <aside class="dos-columnas__lateral">
-      @if (abierta.totalesPorMedio?.length) {
-        <section class="caja-por-medio" aria-labelledby="titulo-por-medio">
-          <h2 class="titulo-lateral" id="titulo-por-medio">Por medio de pago</h2>
-          <ul class="lista-montos">
-            @for (total of abierta.totalesPorMedio; track total.medio) {
-              <li>
-                <span>
-                  {{ medioEnPalabras(total.medio) }}
-                  @if (total.afectaArqueo) {
-                    <span class="celda-secundaria">(entra en el arqueo)</span>
+    @if (movimientos().length === 0) {
+      <app-estado-vacio
+        titulo="Todavía no hay movimientos en esta jornada"
+        texto="Los cobros en efectivo y los movimientos manuales aparecen acá."
+      />
+    } @else {
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        aria-labelledby="titulo-tabla-movimientos"
+      >
+        <table class="tabla tabla--densa">
+          <thead>
+            <tr>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="hora">Hora</th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+              <th
+                scope="col"
+                class="tabla__col--secundaria"
+                appOrdenable
+                [tabla]="tabla"
+                columna="medio"
+              >
+                Medio
+              </th>
+              <th scope="col" appOrdenable [tabla]="tabla" columna="concepto">Concepto</th>
+              <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="importe">
+                Importe
+              </th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (movimiento of tabla.visibles(); track movimiento.id) {
+              <tr
+                [class.fila--revocada]="yaRevertido(movimiento)"
+                [class.fila--seleccionada]="revirtiendo() === movimiento.id"
+              >
+                <td class="celda-fecha">{{ horaDeLaJornada(movimiento.registradoEn) }}</td>
+                <td>{{ tipoEnPalabras(movimiento.tipo) }}</td>
+                <td class="tabla__col--secundaria">{{ medioEnPalabras(movimiento.medio) }}</td>
+                <td>
+                  {{ movimiento.concepto }}
+                  @if (movimiento.motivo) {
+                    <span class="celda-nota">({{ movimiento.motivo }})</span>
                   }
-                  @if (total.ingresos !== undefined && total.egresos !== undefined) {
-                    <span class="celda-secundaria"
-                      >entró {{ importe(total.ingresos) }} · salió
-                      {{ importe(total.egresos) }}</span
+                </td>
+                <td class="importe">{{ importeConSigno(movimiento) }}</td>
+                <td class="tabla__acciones">
+                  @if (yaRevertido(movimiento)) {
+                    <span class="ayuda">Revertido</span>
+                  } @else if (sePuedeRevertir(movimiento)) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [id]="'revertir-' + movimiento.id"
+                      (click)="pedirReversion(movimiento)"
                     >
+                      Revertir
+                    </button>
                   }
-                </span>
-                <span class="importe">{{ importe(total.total) }}</span>
-              </li>
+                </td>
+              </tr>
             }
-          </ul>
-        </section>
+          </tbody>
+        </table>
+      </div>
+      <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de movimientos" />
+      @if (listadoRecortado()) {
+        <p class="ayuda">Se muestran los primeros 50 movimientos de la jornada.</p>
       }
+    }
+  </section>
 
-      <!-- --------------------------- Movimiento manual --------------------------- -->
-
-      <section class="tarjeta" aria-labelledby="titulo-movimiento">
-        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-movimiento">Registrar un movimiento manual</h2>
-          <app-ayuda titulo="Registrar un movimiento manual">
-            <p>
-              Plata que entra o sale del cajón sin ser un cobro: cambio, un gasto menor, un retiro.
-              El concepto es obligatorio. Un egreso no puede dejar el cajón en negativo.
-            </p>
-          </app-ayuda>
+  <!-- --------------------------- Movimiento manual --------------------------- -->
+  @if (panel() === 'movimiento') {
+    <app-panel-lateral titulo="Registrar un movimiento manual" (cerrar)="cerrarPanel()">
+      <div class="panel-ayuda">
+        <app-ayuda titulo="Registrar un movimiento manual">
+          <p>
+            Plata que entra o sale del cajón sin ser un cobro: cambio, un gasto menor, un retiro. El
+            concepto es obligatorio. Un egreso no puede dejar el cajón en negativo.
+          </p>
+        </app-ayuda>
+      </div>
+      @if (falloEn('movimiento'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{
+            $implicit: fallo,
+            titulo: 'No pudimos registrar el movimiento',
+          }"
+        />
+      }
+      <form (submit)="$event.preventDefault(); registrarMovimiento()">
+        <div class="campo campo--ancho">
+          <span class="campo__rotulo" id="movimiento-tipo-rotulo">Tipo</span>
+          <div class="segmento" role="group" aria-labelledby="movimiento-tipo-rotulo">
+            <button
+              type="button"
+              [attr.aria-pressed]="tipoMovimiento() === tipoIngreso"
+              (click)="cambiarTipo(tipoIngreso)"
+            >
+              <span aria-hidden="true">+</span> Ingreso
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="tipoMovimiento() === tipoEgreso"
+              (click)="cambiarTipo(tipoEgreso)"
+            >
+              <span aria-hidden="true">−</span> Egreso
+            </button>
+          </div>
         </div>
 
-        @if (falloEn('movimiento'); as fallo) {
-          <ng-container
-            [ngTemplateOutlet]="alertaDeOperacion"
-            [ngTemplateOutletContext]="{
-              $implicit: fallo,
-              titulo: 'No pudimos registrar el movimiento',
-            }"
+        <div class="campo campo--3">
+          <label for="movimiento-importe">Importe</label>
+          <input
+            id="movimiento-importe"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [value]="importeMovimiento()"
+            (input)="cambiarImporte($any($event.target).value)"
           />
-        }
+        </div>
 
-        <div class="grilla-12">
-          <div class="campo">
-            <label for="movimiento-tipo">Tipo</label>
-            <select
-              id="movimiento-tipo"
-              [value]="tipoMovimiento()"
-              (change)="cambiarTipo($any($event.target).value)"
-            >
-              @for (opcion of tiposManuales; track opcion) {
-                <option [value]="opcion">{{ tipoEnPalabras(opcion) }}</option>
-              }
-            </select>
-          </div>
+        <div class="campo campo--3">
+          <label for="movimiento-medio">Medio</label>
+          <select
+            id="movimiento-medio"
+            [value]="medioMovimiento()"
+            (change)="cambiarMedio($any($event.target).value)"
+          >
+            @for (opcion of mediosDisponibles; track opcion) {
+              <option [value]="opcion" [selected]="$any(opcion) === medioMovimiento()">
+                {{ medioEnPalabras(opcion) }}
+              </option>
+            }
+          </select>
+        </div>
 
-          <div class="campo">
-            <label for="movimiento-medio">Medio</label>
-            <select
-              id="movimiento-medio"
-              [value]="medioMovimiento()"
-              (change)="cambiarMedio($any($event.target).value)"
-            >
-              @for (opcion of mediosDisponibles; track opcion) {
-                <option [value]="opcion">{{ medioEnPalabras(opcion) }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="campo campo--2">
-            <label for="movimiento-importe">Importe</label>
-            <input
-              id="movimiento-importe"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              [value]="importeMovimiento()"
-              (input)="cambiarImporte($any($event.target).value)"
-            />
-          </div>
-
-          <div class="campo campo--12">
-            <label for="movimiento-concepto">Concepto</label>
-            <input
-              id="movimiento-concepto"
-              type="text"
-              autocomplete="off"
-              maxlength="200"
-              [value]="conceptoMovimiento()"
-              (input)="cambiarConcepto($any($event.target).value)"
-            />
-          </div>
+        <div class="campo campo--ancho">
+          <label for="movimiento-concepto">Concepto</label>
+          <input
+            id="movimiento-concepto"
+            type="text"
+            autocomplete="off"
+            maxlength="200"
+            [value]="conceptoMovimiento()"
+            (input)="cambiarConcepto($any($event.target).value)"
+          />
         </div>
 
         <div class="acciones">
-          <button
-            type="button"
-            class="boton"
-            [disabled]="!movimientoValido() || enviando()"
-            (click)="registrarMovimiento()"
-          >
+          <button type="submit" class="boton" [disabled]="!movimientoValido() || enviando()">
             Registrar el movimiento
           </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Cancelar
+          </button>
         </div>
-      </section>
+      </form>
+    </app-panel-lateral>
+  }
 
-      <!-- ------------------------------ Arqueo ------------------------------ -->
-
-      <section class="tarjeta tarjeta--destacada" aria-labelledby="titulo-cierre">
-        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-cierre">Arquear y cerrar</h2>
-          <app-ayuda titulo="Arquear y cerrar">
-            <p>
-              Contá el efectivo del cajón y anotá lo que contaste. Si entra un movimiento mientras
-              contás, el cierre se rechaza para que no registres una diferencia que no existe.
-            </p>
-          </app-ayuda>
-        </div>
-
-        @if (falloEn('cierre'); as fallo) {
-          <ng-container
-            [ngTemplateOutlet]="alertaDeOperacion"
-            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar la caja' }"
-          />
-        }
-
-        <div class="grilla-12">
-          <div class="campo campo--4">
-            <label for="cierre-declarado">Efectivo contado</label>
-            <input
-              id="cierre-declarado"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              [value]="saldoDeclarado()"
-              (input)="saldoDeclarado.set($any($event.target).value)"
-            />
-          </div>
-        </div>
-
-        @if (diferenciaCentavos() !== null) {
-          <p class="ayuda ayuda--fija" role="status">
-            @if (requiereMotivo()) {
-              Diferencia contra el teórico: <b>{{ diferenciaEnPalabras() }}</b
-              >. Se registra tal cual, pero hay que explicarla.
-            } @else {
-              El contado coincide con el teórico.
-            }
+  <!-- ------------------------------ Arqueo ------------------------------ -->
+  @if (panel() === 'arqueo') {
+    <app-panel-lateral titulo="Arquear y cerrar" (cerrar)="cerrarPanel()">
+      <div class="panel-ayuda">
+        <app-ayuda titulo="Arquear y cerrar">
+          <p>
+            Contá el efectivo del cajón y anotá lo que contaste. Si entra un movimiento mientras
+            contás, el cierre se rechaza para que no registres una diferencia que no existe.
           </p>
+        </app-ayuda>
+      </div>
+      @if (falloEn('cierre'); as fallo) {
+        <ng-container
+          [ngTemplateOutlet]="alertaDeOperacion"
+          [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar la caja' }"
+        />
+      }
+      <div class="cuenta-del-cajon">
+        <p class="cuenta-del-cajon__rotulo">Debería haber en el cajón · solo efectivo</p>
+        <p class="cuenta-del-cajon__valor">{{ importe(abierta.saldoTeorico) }}</p>
+        @if (abierta.resumen; as r) {
+          <dl>
+            <div>
+              <dt>Saldo inicial</dt>
+              <dd>{{ importe(abierta.saldoInicial) }}</dd>
+            </div>
+            <div>
+              <dt>+ Entró en efectivo</dt>
+              <dd>{{ importe(r.efectivoIngresos) }}</dd>
+            </div>
+            <div>
+              <dt>− Salió en efectivo</dt>
+              <dd>{{ importe(r.efectivoEgresos) }}</dd>
+            </div>
+          </dl>
         }
+      </div>
+      <form (submit)="$event.preventDefault(); cerrar()">
+        <div class="campo campo--ancho">
+          <label for="cierre-declarado">Efectivo contado</label>
+          <input
+            id="cierre-declarado"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            [value]="saldoDeclarado()"
+            (input)="saldoDeclarado.set($any($event.target).value)"
+          />
+        </div>
+
+        <p class="ayuda ayuda--fija" role="status">
+          @if (diferenciaCentavos() === null) {
+            Contá el cajón y anotá el total.
+          } @else if (requiereMotivo()) {
+            <b>{{ diferenciaEnPalabras() }}</b
+            >. Se registra tal cual, pero hay que explicarla.
+          } @else {
+            El contado coincide con lo que debería haber.
+          }
+        </p>
 
         @if (requiereMotivo()) {
-          <div class="campo campo--12">
+          <div class="campo campo--ancho">
             <label for="cierre-motivo">Motivo de la diferencia</label>
             <input
               id="cierre-motivo"
@@ -489,19 +496,60 @@
           </div>
         }
 
+        <p class="ayuda ayuda--fija">Un cierre no se revierte y una caja cerrada no se reabre.</p>
+
         <div class="acciones">
-          <button
-            type="button"
-            class="boton"
-            [disabled]="!arqueoValido() || enviando()"
-            (click)="cerrar()"
-          >
+          <button type="submit" class="boton" [disabled]="!arqueoValido() || enviando()">
             Cerrar la caja
           </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Seguir con la caja abierta
+          </button>
         </div>
-      </section>
-    </aside>
-  </div>
+      </form>
+    </app-panel-lateral>
+  }
+
+  <!-- ------------------------------ Detalle por medio ------------------------------ -->
+  @if (panel() === 'medios') {
+    <app-panel-lateral titulo="Detalle por medio de pago" (cerrar)="cerrarPanel()">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th scope="col">Medio</th>
+            <th scope="col" class="importe">Entró</th>
+            <th scope="col" class="importe">Salió</th>
+            <th scope="col" class="importe">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (total of abierta.totalesPorMedio; track total.medio) {
+            <tr>
+              <td>
+                {{ medioEnPalabras(total.medio) }}
+                @if (total.afectaArqueo) {
+                  <span class="celda-secundaria">entra en el arqueo</span>
+                }
+              </td>
+              <td class="importe">{{ importe(total.ingresos) }}</td>
+              <td class="importe">{{ importe(total.egresos) }}</td>
+              <td class="importe">{{ importe(total.total) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (abierta.resumen; as r) {
+        <p class="ayuda ayuda--fija">
+          Ingresos: efectivo {{ importe(r.efectivoIngresos) }} · otros medios
+          {{ importe(r.otrosMediosIngresos) }}
+        </p>
+        <p class="ayuda ayuda--fija">
+          Egresos: efectivo {{ importe(r.efectivoEgresos) }} · otros medios
+          {{ importe(r.otrosMediosEgresos) }}
+        </p>
+      }
+    </app-panel-lateral>
+  }
 }
 
 <!--

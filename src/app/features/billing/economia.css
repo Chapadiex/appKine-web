@@ -107,28 +107,6 @@
   margin-bottom: var(--esp-6);
 }
 
-/*
- * Caja diaria (UX-14 §3): la jornada abierta es una banda de indicadores, sin tarjeta, para que los
- * movimientos ocupen la pantalla. El titulo y "Actualizar" van en una sola linea con la banda.
- */
-.banda-de-caja {
-  margin-bottom: var(--esp-6);
-}
-
-.banda-de-caja > .titulo-con-ayuda {
-  margin-bottom: var(--esp-4);
-}
-
-.banda-de-caja .cifras {
-  margin: 0;
-}
-
-/* Totales por medio: lista liviana arriba de las operaciones laterales, no otra tarjeta. */
-.caja-por-medio {
-  margin-bottom: var(--esp-6);
-  padding: 0 var(--esp-2);
-}
-
 /* La tarjeta de la accion que se esta por confirmar (el arqueo): borde de accion. */
 .tarjeta--destacada {
   border-color: var(--color-accion-fondo);
