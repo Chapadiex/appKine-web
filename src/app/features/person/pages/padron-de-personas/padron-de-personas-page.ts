@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -25,6 +25,7 @@ import { PersonaResponse } from '../../../../api/generated/model/persona-respons
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdatePersonaRequest } from '../../../../api/generated/model/update-persona-request';
 import { FiltroEstadoPersona, FiltroPerfil, PersonApi } from '../../services/person-api';
+import { fechaDeNacimientoPosible } from '../../models/fecha-de-nacimiento';
 import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models/person-errors';
 import {
   TIPOS_DE_DOCUMENTO,
@@ -268,8 +269,8 @@ export class PadronDePersonasPage {
     nombre: ['', [textoRequerido]],
     tipoDocumento: [''],
     numeroDocumento: [''],
-    fechaNacimiento: [''],
-    email: [''],
+    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+    email: ['', [Validators.email]],
     telefono: [''],
     notas: [''],
   });
@@ -279,8 +280,8 @@ export class PadronDePersonasPage {
     nombre: [''],
     tipoDocumento: [''],
     numeroDocumento: [''],
-    fechaNacimiento: [''],
-    email: [''],
+    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+    email: ['', [Validators.email]],
     telefono: [''],
     notas: [''],
   });
@@ -458,6 +459,10 @@ export class PadronDePersonasPage {
     if (original === null || original.id === undefined) {
       return;
     }
+    if (this.formularioEdicion.invalid) {
+      this.formularioEdicion.markAllAsTouched();
+      return;
+    }
 
     const valores = this.formularioEdicion.getRawValue();
     const cuerpo: UpdatePersonaRequest = {
@@ -550,6 +555,11 @@ export class PadronDePersonasPage {
   /** `true` cuando el campo del alta ya fue tocado y sigue invalido. */
   protected mostrarErrorAlta(campo: string): boolean {
     const control = this.formularioAlta.get(campo);
+    return control !== null && control.invalid && (control.touched || control.dirty);
+  }
+
+  protected mostrarErrorEdicion(campo: string): boolean {
+    const control = this.formularioEdicion.get(campo);
     return control !== null && control.invalid && (control.touched || control.dirty);
   }
 

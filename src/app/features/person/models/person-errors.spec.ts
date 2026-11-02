@@ -102,6 +102,18 @@ describe('traducirErrorPersona', () => {
     expect(sinPlazo.mensaje).toContain('Espera un momento');
   });
 
+  it('un 400 de validacion dice qué campo falla, no sólo que algo está mal', () => {
+    const rechazo = traducirErrorPersona(
+      problema('validation-error', 400, {
+        detail: 'La solicitud contiene campos invalidos',
+        errors: { email: 'El correo no tiene un formato valido' },
+      }),
+    );
+
+    expect(rechazo.mensaje).toBe('El correo no tiene un formato valido.');
+    expect(rechazo.causa).toBe('validacion');
+  });
+
   it('un 400 y un 409 sin tipo propio muestran el detalle del backend', () => {
     // Donde el frontend no sabe nada mejor que decir, gana el mensaje del servidor: en un 400
     // nombra el campo, y en un 409 sin tipo nombra el conflicto concreto.

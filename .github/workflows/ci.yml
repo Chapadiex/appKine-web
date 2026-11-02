@@ -17,8 +17,39 @@ env:
   NODE_VERSION: '24'
 
 jobs:
+  # Un PR que sólo toca documentación no compila ni corre nada: los jobs quedan "skipped", que para
+  # los checks obligatorios cuenta como éxito. En un push a main corre siempre todo. Si no se puede
+  # leer la lista de archivos, también: ante la duda se prueba.
+  cambios:
+    name: Detectar si el PR toca código
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      codigo: ${{ steps.filtro.outputs.codigo }}
+
+    steps:
+      - name: Mirar los archivos del PR
+        id: filtro
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          codigo=true
+          if [ -n "$PR" ] && archivos=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)'); then
+            if [ -n "$archivos" ] && ! echo "$archivos" | grep -qvE '^(docs/|\.claude/)|\.md$'; then
+              codigo=false
+            fi
+          fi
+          echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+          echo "Toca código: $codigo"
+
   build:
     name: Lint, build y tests
+    needs: cambios
+    if: needs.cambios.outputs.codigo == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -152,6 +183,8 @@ jobs:
 
   contrato:
     name: Cliente API alineado con el contrato
+    needs: cambios
+    if: needs.cambios.outputs.codigo == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -226,6 +259,8 @@ jobs:
   # no espera a que se construya y arranque el backend.
   contraste:
     name: Contraste de color (WCAG AA, navegador real)
+    needs: cambios
+    if: needs.cambios.outputs.codigo == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -273,6 +308,8 @@ jobs:
   # inventario que viaja con el bundle construido, no uno de un build paralelo.
   imagen:
     name: Imagen Docker y SBOM
+    needs: cambios
+    if: needs.cambios.outputs.codigo == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -405,10 +442,21 @@ jobs:
   # La base es NUEVA en cada corrida: el catalogo global esta vacio y crear un servicio exige rol
   # de plataforma. Por eso el backend arranca con AKINE_BOOTSTRAP_ADMIN_EMAIL (DP-14) y el
   # sembrado de `agenda-setup` activa esa cuenta por Mailpit y da de alta el servicio.
-  e2e:
-    name: E2E Playwright contra el backend real
+  #
+  # Son cinco partes (`--shard`), cada una con su runner y su pila entera. Con un solo backend no se
+  # puede paralelizar: login y refresh comparten un limite por minuto y por IP. Cada parte tiene su
+  # backend, asi que cada una tiene su cupo y el limite sigue prendido. Tampoco comparten datos:
+  # Playwright no parte el proyecto `agenda-setup`, que siembra su base en cada una.
+  e2e-parte:
+    name: E2E parte ${{ matrix.parte }} de 5
+    needs: cambios
+    if: needs.cambios.outputs.codigo == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [1, 2, 3, 4, 5]
 
     env:
       # La misma casilla en el backend (bootstrap) y en el sembrado (e2e/support/sembrado.ts).
@@ -518,6 +566,7 @@ jobs:
         run: >-
           npx playwright test --project=agenda --project=chromium
           --grep-invert "misma version de contrato"
+          --shard=${{ matrix.parte }}/5
 
       - name: Logs del backend
         if: failure()
@@ -527,7 +576,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-report
+          name: e2e-report-${{ matrix.parte }}
           path: |
             appKine-web/playwright-report/
             appKine-web/test-results/
@@ -540,3 +589,20 @@ jobs:
         run: |
           docker rm -f akine-api || true
           docker compose -p akine -f appKine-api/compose.yaml down -v || true
+
+  # El check obligatorio de la protección de main. Junta las cinco partes bajo el nombre de siempre,
+  # para no depender de los nombres de la matriz. "skipped" vale: es un PR de sólo documentación.
+  e2e:
+    name: E2E Playwright contra el backend real
+    needs: e2e-parte
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Verificar las cinco partes
+        env:
+          RESULTADO: ${{ needs.e2e-parte.result }}
+        run: |
+          echo "Resultado de las partes: $RESULTADO"
+          test "$RESULTADO" = success || test "$RESULTADO" = skipped

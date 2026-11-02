@@ -18,6 +18,7 @@ import {
   reservar,
   uriDeProblema,
 } from './support/sembrado';
+import { cerrarAvisos } from './support/avisos';
 
 /**
  * E2E de la caja diaria (F-6, M20) y del cobro en efectivo que entra en ella (M19), contra el
@@ -73,8 +74,11 @@ test.describe('Caja diaria contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'Caja abierta' })).toBeVisible();
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.000,00');
 
-    // Ingreso manual en efectivo: suma al teorico.
-    await page.getByLabel('Tipo').selectOption({ label: 'Ingreso' });
+    // Ingreso manual en efectivo: suma al teorico. El formulario vive en un panel (UX-15).
+    const panel = page.getByRole('dialog');
+    await cerrarAvisos(page);
+    await page.getByRole('button', { name: 'Registrar movimiento' }).click();
+    await panel.getByRole('button', { name: 'Ingreso' }).click();
     await page.getByLabel('Medio').selectOption({ label: 'Efectivo' });
     await page.getByLabel('Importe').fill('250');
     await page.getByLabel('Concepto').fill(concepto);
@@ -84,7 +88,9 @@ test.describe('Caja diaria contra el backend real', () => {
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.250,00');
 
     // Un egreso que deja el cajon en negativo lo rechaza el servidor, con su tipo.
-    await page.getByLabel('Tipo').selectOption({ label: 'Egreso' });
+    await cerrarAvisos(page);
+    await page.getByRole('button', { name: 'Registrar movimiento' }).click();
+    await panel.getByRole('button', { name: 'Egreso' }).click();
     await page.getByLabel('Importe').fill('5000');
     await page.getByLabel('Concepto').fill(`Retiro imposible ${sufijo}`);
     const rechazoEgreso = respuestaDe(page, 'POST', /\/caja\/movimientos$/);
@@ -94,6 +100,8 @@ test.describe('Caja diaria contra el backend real', () => {
     expect((await problemaDe(egreso)).type).toBe(uriDeProblema('caja-saldo-insuficiente'));
     await expect(page.getByText(/deja el cajon en negativo/)).toBeVisible();
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.250,00');
+
+    await panel.getByRole('button', { name: 'Cancelar' }).click();
 
     // Revertir no borra: asienta el opuesto y deja el original marcado.
     await movimiento(page, concepto).getByRole('button', { name: 'Revertir' }).click();
@@ -106,8 +114,10 @@ test.describe('Caja diaria contra el backend real', () => {
 
     // Mientras se cuenta, otra computadora mete efectivo: el cierre se rechaza, no se registra
     // una diferencia que no existe.
+    await cerrarAvisos(page);
+    await page.getByRole('button', { name: 'Arquear y cerrar' }).click();
     await page.getByLabel('Efectivo contado').fill('1000');
-    await expect(page.getByText('El contado coincide con el teórico.')).toBeVisible();
+    await expect(page.getByText('El contado coincide con lo que debería haber.')).toBeVisible();
     await moverLaCaja(api, centro, {
       tipo: 'INGRESO',
       importe: 100,
@@ -124,11 +134,13 @@ test.describe('Caja diaria contra el backend real', () => {
 
     await page.getByRole('button', { name: 'Recargar la caja' }).click();
     await expect(dato(page, 'Debería haber en el cajón')).toContainText('1.100,00');
+    await panel.getByRole('button', { name: 'Seguir con la caja abierta' }).click();
     await expect(movimiento(page, `Ingreso desde otro puesto ${sufijo}`)).toHaveCount(1);
 
     // Arqueo con faltante: la diferencia se registra tal cual, pero exige motivo.
+    await page.getByRole('button', { name: 'Arquear y cerrar' }).click();
     await page.getByLabel('Efectivo contado').fill('1090');
-    await expect(page.getByText(/Diferencia contra el teórico/)).toBeVisible();
+    await expect(page.getByText(/Faltante de/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cerrar la caja' })).toBeDisabled();
     await page.getByLabel('Motivo de la diferencia').fill('Faltan 10 de cambio');
     await page.getByRole('button', { name: 'Cerrar la caja' }).click();

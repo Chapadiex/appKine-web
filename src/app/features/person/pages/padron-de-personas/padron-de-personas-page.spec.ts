@@ -166,6 +166,35 @@ describe('PadronDePersonasPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
+  it('un correo o una fecha imposibles no salen al backend y dicen qué corregir', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de alta una persona');
+    escribir(fixture, '#alta-persona-apellido', 'Suarez');
+    escribir(fixture, '#alta-persona-nombre', 'Carla');
+    escribir(fixture, '#alta-persona-email', 'sin-arroba');
+    escribir(fixture, '#alta-persona-fecha-nacimiento', '0052-12-15');
+    enviar(fixture);
+
+    httpMock.expectNone(esAlta());
+    const texto = (fixture.nativeElement as HTMLElement).textContent;
+    expect(texto).toContain('El correo no tiene un formato válido.');
+    expect(texto).toContain('Revisá la fecha');
+
+    escribir(fixture, '#alta-persona-email', 'carla@ejemplo.test');
+    escribir(fixture, '#alta-persona-fecha-nacimiento', '1985-03-14');
+    enviar(fixture);
+
+    const alta = httpMock.expectOne(esAlta());
+    expect(alta.request.body).toMatchObject({
+      email: 'carla@ejemplo.test',
+      fechaNacimiento: '1985-03-14',
+    });
+    alta.flush({ ...SIN_PERFIL, id: 20, apellido: 'Suarez', nombre: 'Carla' });
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+  });
+
   it('el 409 de posible duplicado muestra las fichas y ofrece confirmar', async () => {
     const fixture = await montar();
 

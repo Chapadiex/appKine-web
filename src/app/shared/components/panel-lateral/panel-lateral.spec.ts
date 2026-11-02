@@ -14,6 +14,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
         subtitulo="Sede"
         (cerrar)="cerrados = cerrados + 1"
       >
+        <p panel-subtitulo id="contexto">Con ayuda</p>
         <form>
           <div class="campo">
             <label for="nombre">Nombre</label>
@@ -68,6 +69,7 @@ describe('PanelLateral', () => {
     const titulo = html.querySelector(`#${panel.getAttribute('aria-labelledby')}`);
     expect(titulo?.textContent).toBe('Editar Centro Norte');
     expect(panel.textContent).toContain('Sede');
+    expect(panel.querySelector('.panel-lateral__titulos #contexto')).not.toBeNull();
     expect(document.activeElement?.id).toBe('nombre');
   });
 
