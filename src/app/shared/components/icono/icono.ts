@@ -13,6 +13,8 @@ export type NombreDeIcono =
   | 'orden-asc'
   | 'orden-desc'
   | 'flecha-abajo'
+  | 'chevron-izquierda'
+  | 'chevron-derecha'
   | 'operacion'
   | 'pacientes'
   | 'actividades'
@@ -84,6 +86,12 @@ export type NombreDeIcono =
         }
         @case ('flecha-abajo') {
           <path d="M6 9l6 6 6-6" />
+        }
+        @case ('chevron-izquierda') {
+          <path d="M15 6l-6 6 6 6" />
+        }
+        @case ('chevron-derecha') {
+          <path d="M9 6l6 6-6 6" />
         }
         @case ('operacion') {
           <path

@@ -50,14 +50,14 @@ describe('Paginacion', () => {
     const opciones = Array.from(html.querySelectorAll('select option')).map((o) => o.textContent);
     expect(opciones).toEqual(['10', '25', '50', '100']);
     expect(pasos()).toEqual([
-      '‹Página anterior',
+      'Página anterior',
       'Página 1',
       'Página 2',
       'Página 3',
       'Página 4',
       '…',
       'Página 9',
-      '›Página siguiente',
+      'Página siguiente',
     ]);
     expect(html.querySelector('[aria-current="page"]')?.textContent?.trim()).toBe('Página 1');
   });

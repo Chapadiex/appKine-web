@@ -17,7 +17,9 @@
       title="Semana anterior"
       (click)="moverSemana(-1)"
     >
-      <span aria-hidden="true">‹</span><span class="visualmente-oculto">Semana anterior</span>
+      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto"
+        >Semana anterior</span
+      >
     </button>
     <span class="navegador-semana__rango">
       Semana del {{ diaEnPalabras(lunes()) }} al {{ diaEnPalabras(domingo()) }}
@@ -28,7 +30,7 @@
       title="Semana siguiente"
       (click)="moverSemana(1)"
     >
-      <span aria-hidden="true">›</span><span class="visualmente-oculto">Semana siguiente</span>
+      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Semana siguiente</span>
     </button>
     <button type="button" class="navegador-semana__boton" (click)="irAHoy()">Esta semana</button>
   </div>

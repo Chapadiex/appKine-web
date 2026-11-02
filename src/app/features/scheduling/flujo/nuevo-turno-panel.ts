@@ -283,7 +283,9 @@ export class NuevoTurnoPanel implements OnInit {
   protected readonly rotuloDelEspacio = computed(() => {
     const id = this.espacioId();
     if (id !== null) {
-      return this.validacion()?.espaciosLibres?.find((e) => e.id === id)?.nombre ?? `#${id}`;
+      return (
+        this.validacion()?.espaciosLibres?.find((e) => e.id === id)?.nombre || 'Sin nombre cargado'
+      );
     }
     return this.horario()?.espacioNombre ?? this.validacion()?.espaciosLibres?.[0]?.nombre ?? '';
   });
