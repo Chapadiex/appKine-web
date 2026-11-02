@@ -87,7 +87,7 @@ export function traducirErrorAsistencia(error: unknown): ErrorAsistencia {
   if (error.faltaContexto) {
     return errorSinContexto();
   }
-  const conocido = porTipo(error.problemType, error.problem?.detail);
+  const conocido = porTipo(error.problemType, error.detalle);
   if (conocido !== null) {
     return conocido;
   }
@@ -97,7 +97,7 @@ export function traducirErrorAsistencia(error: unknown): ErrorAsistencia {
   if (error.status === 404) {
     return { mensaje: MENSAJE_NO_ENCONTRADO, causa: 'no-encontrado' };
   }
-  return { mensaje: error.problem?.detail || MENSAJE_GENERICO, causa: 'otro' };
+  return { mensaje: error.detalle || MENSAJE_GENERICO, causa: 'otro' };
 }
 
 /**

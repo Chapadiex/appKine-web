@@ -33,6 +33,7 @@ import {
   etiquetaDeTipoDePase,
   importeDePase,
 } from '../../models/etiquetas-de-pases';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { ErrorPase, errorSinContextoDePase, traducirErrorPase } from '../../models/pase-errors';
 import { ESQUEMA_POR_ABONO, ESQUEMA_POR_PACK, PasesApi } from '../../services/pases-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -430,7 +431,13 @@ export class ProductosDePackPage {
       },
       error: (error: unknown) => {
         this.enviando.set(false);
-        this.errorAccion.set(traducirErrorPase(error));
+        const traducido = traducirErrorPase(error);
+        // El error de `nombre` ya se muestra junto al control: el cartel no lo repite.
+        const cartel =
+          error instanceof AkineHttpError
+            ? error.mensajeSinCampos((campo) => campo === 'nombre')
+            : null;
+        this.errorAccion.set(cartel === null ? traducido : { ...traducido, mensaje: cartel });
       },
     });
   }

@@ -150,8 +150,15 @@ export function errorSinContextoGrupal(): ErrorAtencionGrupal {
   return { mensaje: MENSAJE_SIN_CONTEXTO, causa: 'sin-contexto' };
 }
 
-/** Traduce el error de una operacion del panel (individual, lote, derivaciones o reversion). */
-export function traducirErrorAtencionGrupal(error: unknown): ErrorAtencionGrupal {
+/**
+ * Traduce el error de una operacion del panel (individual, lote, derivaciones o reversion).
+ *
+ * <p>`respaldoDeValidacion` es lo que se dice ante un 400 que no nombra ningun campo.
+ */
+export function traducirErrorAtencionGrupal(
+  error: unknown,
+  respaldoDeValidacion = MENSAJE_MOTIVO,
+): ErrorAtencionGrupal {
   if (!(error instanceof AkineHttpError)) {
     return { mensaje: MENSAJE_GENERICO, causa: 'otro' };
   }
@@ -163,9 +170,14 @@ export function traducirErrorAtencionGrupal(error: unknown): ErrorAtencionGrupal
   }
   const conocido = porTipo(error.problemType);
   if (conocido !== null) {
-    return conocido.causa === 'derivacion-ambigua'
-      ? { ...conocido, derivacionIds: idsDeExtension(error.extension('derivacionIds')) }
-      : conocido;
+    switch (conocido.causa) {
+      case 'motivo-obligatorio':
+        return { ...conocido, mensaje: error.mensajeDeCampos ?? respaldoDeValidacion };
+      case 'derivacion-ambigua':
+        return { ...conocido, derivacionIds: idsDeExtension(error.extension('derivacionIds')) };
+      default:
+        return conocido;
+    }
   }
   if (error.status === 403) {
     return { mensaje: MENSAJE_SIN_PERMISO, causa: 'sin-permiso' };
@@ -173,7 +185,7 @@ export function traducirErrorAtencionGrupal(error: unknown): ErrorAtencionGrupal
   if (error.status === 404) {
     return { mensaje: MENSAJE_NO_ENCONTRADO, causa: 'no-encontrado' };
   }
-  return { mensaje: error.problem?.detail || MENSAJE_GENERICO, causa: 'otro' };
+  return { mensaje: error.detalle || MENSAJE_GENERICO, causa: 'otro' };
 }
 
 /**

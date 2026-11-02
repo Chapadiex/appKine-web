@@ -46,7 +46,7 @@ const MENSAJES: Readonly<Record<CausaCatalogo, string>> = {
 export function traducirErrorCatalogo(error: unknown): ErrorCatalogo {
   const causa = causaDe(error);
   const detalle =
-    causa === 'validacion' && error instanceof AkineHttpError ? error.problem?.detail : undefined;
+    causa === 'validacion' && error instanceof AkineHttpError ? error.detalle : undefined;
   return { causa, mensaje: detalle ?? MENSAJES[causa] };
 }
 

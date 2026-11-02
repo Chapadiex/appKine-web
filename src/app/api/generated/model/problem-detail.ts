@@ -11,6 +11,10 @@
 
 export interface ProblemDetail { 
     detail?: string;
+    /**
+     * Solo en un 400 validation-error: el primer mensaje de cada campo rechazado, por ruta del campo (motivo, items[0].importe). Cada mensaje nombra su campo y se puede mostrar tal cual.
+     */
+    errors?: { [key: string]: string; };
     instance?: string;
     properties?: { [key: string]: any | null; };
     status?: number;

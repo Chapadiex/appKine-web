@@ -173,6 +173,34 @@ describe('AltaDeClasePage', () => {
     expect(textoDe(fixture)).not.toContain('Box fuera de servicio');
   });
 
+  it('un 400 del cupo se marca junto al campo y el cartel sólo dice lo que no se marca', async () => {
+    const fixture = await montar([
+      { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },
+    ]);
+    escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
+    await asentar(fixture);
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement
+    ).click();
+
+    httpMock.expectOne(PROGRAMAR).flush(
+      {
+        type: 'https://akine.app/problems/validation-error',
+        status: 400,
+        detail: 'La solicitud contiene campos invalidos',
+        errors: { capacidad: 'El cupo es demasiado alto', titulo: 'El titulo es muy largo' },
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await asentar(fixture);
+
+    expect(textoDe(fixture).split('El cupo es demasiado alto')).toHaveLength(2);
+    expect(textoDe(fixture)).toContain('El titulo es muy largo.');
+  });
+
   it('el rechazo del servidor se muestra con su causa y la clave se conserva', async () => {
     const fixture = await montar([
       { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },

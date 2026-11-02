@@ -453,6 +453,9 @@ describe('CalendarioSedePage', () => {
       expect(
         fixture.nativeElement.querySelector('#calendario-horario-error-0')?.textContent,
       ).toContain('La hora de apertura tiene que ser HH:mm');
+      // El cartel no repite lo que ya se marca junto a la franja.
+      expect(texto(fixture)).toContain('Revisá los campos marcados.');
+      expect(texto(fixture).split('La hora de apertura tiene que ser HH:mm')).toHaveLength(2);
     });
 
     it('sin consultorio:manage se lee el horario pero no hay editor', async () => {

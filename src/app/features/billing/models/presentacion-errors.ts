@@ -155,5 +155,5 @@ export function traducirErrorPresentacion(error: unknown): ErrorPresentacion {
 }
 
 function conDetalle(error: AkineHttpError, respaldo: string): string {
-  return error.problem?.detail ? error.problem.detail : respaldo;
+  return error.detalle || respaldo;
 }

@@ -228,7 +228,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
       break;
   }
 
-  const detalle = error.problem?.detail;
+  const detalle = error.detalle;
   if (error.status === 403) {
     return {
       mensaje:

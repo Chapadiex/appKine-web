@@ -49,9 +49,85 @@ describe('errorInterceptor', () => {
     const error = await capturado;
     expect(error).toBeInstanceOf(AkineHttpError);
     expect(error.status).toBe(400);
-    expect(error.message).toBe('La solicitud contiene campos invalidos');
+    expect(error.message).toBe('Email: debe ser una dirección valida.');
     expect(error.erroresPorCampo['email']).toBe('debe ser una dirección valida');
     expect(error.esDeRed).toBe(false);
+  });
+
+  describe('un 400 dice qué campo falla, no "La solicitud contiene campos invalidos"', () => {
+    const DETAIL = 'La solicitud contiene campos invalidos';
+
+    function validacion(errors: Record<string, string>): AkineHttpError {
+      return new AkineHttpError(
+        400,
+        { detail: DETAIL, title: 'Error de validacion', errors },
+        false,
+      );
+    }
+
+    it('une los mensajes que el backend redactó, sin repetir el punto final', () => {
+      const error = validacion({
+        apellido: 'El apellido es obligatorio',
+        email: 'El correo no tiene un formato valido.',
+      });
+
+      expect(error.mensaje).toBe(
+        'El apellido es obligatorio. El correo no tiene un formato valido.',
+      );
+      expect(error.detalle).toBe(error.mensaje);
+    });
+
+    it('nombra el campo si el mensaje es el de Bean Validation, sin repetir dos filas', () => {
+      const error = validacion({
+        motivo: 'no debe estar vacío',
+        fechaDesde: 'no debe ser nulo',
+        profesionalId: 'debe ser mayor que 0',
+        'items[0].precioUnitario': 'debe ser mayor que o igual a 0.01',
+        'items[1].precioUnitario': 'debe ser mayor que o igual a 0.01',
+      });
+
+      expect(error.mensaje).toBe(
+        'Motivo: no debe estar vacío. Fecha desde: no debe ser nulo. Profesional: debe ser mayor ' +
+          'que 0. Precio unitario: debe ser mayor que o igual a 0.01.',
+      );
+    });
+
+    it('sin mensajes por campo queda el `detail`, que en esos casos sí dice qué pasó', () => {
+      const sinMapa = new AkineHttpError(
+        400,
+        { detail: "El parametro 'orgId' no tiene el formato esperado" },
+        false,
+      );
+
+      expect(sinMapa.mensaje).toBe("El parametro 'orgId' no tiene el formato esperado");
+      expect(validacion({}).mensaje).toBe(DETAIL);
+      expect(
+        validacion({ campo: 3, otro: '  ' } as unknown as Record<string, string>).mensaje,
+      ).toBe(DETAIL);
+    });
+
+    it('`detalle` no cae al título, para que la pantalla use su respaldo; `mensaje` sí', () => {
+      const soloTitulo = new AkineHttpError(400, { title: 'Error' }, false);
+
+      expect(soloTitulo.detalle).toBeUndefined();
+      expect(soloTitulo.mensaje).toBe('Error');
+    });
+
+    it('`mensajeSinCampos` saca del cartel lo que el formulario ya marca', () => {
+      const error = validacion({
+        nombre: 'El nombre es obligatorio',
+        precio: 'El precio es obligatorio',
+      });
+      const marcaNombre = (campo: string) => campo === 'nombre';
+
+      expect(error.mensajeSinCampos(marcaNombre)).toBe('El precio es obligatorio.');
+      expect(error.mensajeSinCampos(() => true)).toBe('Revisá los campos marcados.');
+      expect(error.mensajeSinCampos(() => false)).toBeNull();
+    });
+
+    it('`mensajeDeCampos` no cae al `detail`', () => {
+      expect(validacion({}).mensajeDeCampos).toBeNull();
+    });
   });
 
   it('un 401 NO toca el token: el ciclo de vida de la sesión es del authInterceptor', async () => {

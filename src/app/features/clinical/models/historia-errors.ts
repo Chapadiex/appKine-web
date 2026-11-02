@@ -68,7 +68,7 @@ export function traducirErrorHistoria(
 ): ErrorHistoria {
   const causa = causaDe(error, contexto);
   const detalle =
-    causa === 'validacion' && error instanceof AkineHttpError ? error.problem?.detail : undefined;
+    causa === 'validacion' && error instanceof AkineHttpError ? error.detalle : undefined;
   return { causa, mensaje: detalle ?? MENSAJES[causa] };
 }
 

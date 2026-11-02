@@ -113,7 +113,7 @@ export function traducirErrorPase(error: unknown): ErrorPase {
   if (error.faltaContexto) {
     return errorSinContextoDePase();
   }
-  const detalle = error.problem?.detail ?? '';
+  const detalle = error.detalle ?? '';
   switch (error.problemType) {
     case 'validation-error':
     case 'parametro-invalido':
