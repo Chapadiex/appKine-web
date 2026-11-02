@@ -37,6 +37,7 @@
   margin: 0 0 var(--esp-4);
 }
 
+/* "Jueves, 29 de octubre": solo la inicial en mayúscula (`capitalize` daba "29 De Octubre"). */
 .dia__fecha::first-letter {
   text-transform: uppercase;
 }
@@ -44,13 +45,15 @@
 /*
  * El motivo del dia sin turnos.
  *
- * Con barra lateral y no en gris claro: es informacion, no un descarte. El dia vacio es
- * justamente el que necesita leerse, porque dice si hay algo que configurar.
+ * Con fondo y borde propios y no en gris claro: es informacion, no un descarte. El dia vacio es
+ * justamente el que necesita leerse, porque dice si hay algo que configurar. Sin franja lateral de
+ * color (Impeccable, 29/10/2026): el borde es parejo, como el de cualquier superficie.
  */
 .dia__motivo {
   margin: 0;
   padding: var(--esp-4) var(--esp-5);
-  border-left: var(--borde-acento) solid var(--color-acento);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
   background: var(--color-superficie-sutil);
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
@@ -193,6 +196,13 @@ button.slot--libre:focus-visible {
 .navegador-fecha__boton:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
+}
+
+/* Hora de la ultima lectura de la recepcion: dato chico al lado de los controles, no un boton. */
+.navegador-fecha__lectura {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .navegador-fecha__etiqueta {
@@ -428,6 +438,31 @@ button.slot[aria-pressed='true'] {
   font-weight: var(--peso-normal);
 }
 
+/* El paciente de la fila lleva a su ficha: nombre como enlace, sin cambiar el peso de la celda. */
+.recepcion__paciente {
+  color: inherit;
+  font-weight: var(--peso-medio);
+  text-decoration-color: var(--color-borde-control);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+.recepcion__paciente:hover {
+  color: var(--color-enlace);
+  text-decoration-color: currentColor;
+}
+
+/* La observacion de la validacion: a la vista, en dos lineas como mucho (el resto, en el title). */
+.recepcion__observacion {
+  display: -webkit-box;
+  max-width: 32ch;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
 /*
  * Debajo de la toolbar de la recepcion: el dia en palabras, cuantos esperan y la zona de las horas.
  * Una linea chica: no compite con la tabla.
@@ -463,4 +498,30 @@ button.slot[aria-pressed='true'] {
   align-items: center;
   gap: var(--esp-3) var(--esp-4);
   margin-top: var(--esp-5);
+}
+
+/*
+ * Acciones siempre a la vista (Impeccable, 29/10/2026): en una tabla de mostrador que desborda a lo
+ * ancho -la recepcion a 1024 px perdia 105 px- la ultima columna queda pegada al borde derecho del
+ * desplazamiento, con el fondo de la fila para que el contenido que pasa por debajo no se lea.
+ */
+.tabla--acciones-fijas th:last-child,
+.tabla--acciones-fijas td.tabla__acciones {
+  position: sticky;
+  inset-inline-end: 0;
+  background: var(--color-superficie);
+}
+
+.tabla--acciones-fijas thead th:last-child {
+  z-index: 2;
+  background: var(--color-superficie-atenuada);
+}
+
+.tabla--acciones-fijas tbody tr:hover > td.tabla__acciones,
+.tabla--acciones-fijas .fila--revocada > td.tabla__acciones {
+  background: var(--color-superficie-atenuada);
+}
+
+.tabla--acciones-fijas .fila--seleccionada > td.tabla__acciones {
+  background: var(--color-acento-claro);
 }

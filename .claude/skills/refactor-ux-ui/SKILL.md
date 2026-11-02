@@ -236,8 +236,10 @@ En los E2E, un filtro avanzado se usa después de `abrirFiltros(page)` (`e2e/sup
 4. **Tablas con paginado y orden** (`tablaLocal` + `th[appOrdenable]`, `shared/components/tabla`) en
    listas completas; en listas paginadas por el servidor, solo el paginado del servidor.
 5. **Botón de alta en la fila del título, a la derecha** (`.encabezado__acciones`).
-6. **Tipografía Inter** (`@fontsource-variable/inter`, en el bundle), títulos con peso 700 y
-   encabezados de tabla en mayúsculas chicas.
+6. **Tipografía Roboto** (`@fontsource/roboto`, en el bundle, desde el canvas de #125; antes era
+   Inter), títulos con peso 700 y encabezados de tabla en letra chica (12 px, peso 500). El
+   sistema visual completo está en `DESIGN.md` y el contexto de producto en `PRODUCT.md`, los dos
+   en la raíz del repo; la skill `impeccable` los lee antes de diseñar.
 
 ## Auditoría heurística
 

@@ -7,7 +7,6 @@
   margin: 0 0 var(--esp-6);
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--alerta-borde);
-  border-left: var(--borde-acento) solid var(--alerta-color);
   border-radius: var(--radio-md);
   background: var(--alerta-fondo);
   color: var(--alerta-texto);

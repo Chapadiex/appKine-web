@@ -12,7 +12,7 @@ Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE
 1. `/caveman` — activar modo de ahorro de tokens.
 2. `mem_search` con keywords del tema (Engram) — recuperar contexto de sesiones anteriores.
 3. Leer `AGENT.md` completo (o confirmarlo en memoria).
-4. Verificar estado del repo — correr tests antes de tocar código.
+4. Verificar estado del repo con `git status` y `git log`. **No correr tests al arrancar** (ver §4).
 5. **Verificar que la rama coincide con la del backend** si vas a probar contra la API.
 6. Identificar el próximo paso — ver §7 "Estado actual".
 
@@ -25,7 +25,7 @@ Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE
 | `superpowers:brainstorming`                  | **Obligatorio** antes de cualquier trabajo creativo: pantalla nueva, componente, cambio de comportamiento |
 | `superpowers:writing-plans`                  | Ya hay spec/requisitos y falta el plan, antes de tocar código                                             |
 | `superpowers:executing-plans`                | Ejecutar un plan escrito con checkpoints de revisión                                                      |
-| `superpowers:test-driven-development`        | **Obligatorio** al implementar feature o bugfix — tests primero                                           |
+| `superpowers:test-driven-development`        | Opcional, sólo si se pide: por defecto, código primero (ver §4)                                           |
 | `superpowers:systematic-debugging`           | **Obligatorio** ante cualquier bug o comportamiento inesperado, antes de proponer un fix                  |
 | `superpowers:subagent-driven-development`    | Tareas independientes dentro de la misma sesión                                                           |
 | `superpowers:dispatching-parallel-agents`    | 2+ tareas sin estado compartido                                                                           |
@@ -56,6 +56,24 @@ Workflow de trabajo y comportamiento esperado del agente en el frontend de AKINE
 | `artifact-design`  | Antes de publicar cualquier artifact de diseño                            |
 | `design`           | Mockups y wireframes multi-artboard antes de implementar una pantalla     |
 
+### Skill del proyecto `impeccable` (v4.8.0, desde el 29/10/2026)
+
+Skill de diseño de [impeccable.style](https://impeccable.style/), instalada en
+`.claude/skills/impeccable/` con `npx impeccable install --providers=claude --scope=project`.
+Antes de diseñar lee `PRODUCT.md` (usuarios, principios, voz) y `DESIGN.md` (tokens y reglas del
+sistema "El Mostrador Ordenado"), los dos en la raíz. Comandos: `/impeccable critique`, `audit`,
+`polish`, `distill`, `layout`, `clarify`, `harden`, `typeset`, `document`, entre otros.
+
+- **Hooks** en `.claude/settings.json`: después de cada `Edit`/`Write` sobre un archivo de UI corre
+  el detector, y al cerrar el turno una pasada completa. Solo se cargan si la sesión se abre en
+  este repo o en un worktree suyo.
+- **El escaneo estático casi no ve Angular** (el CSS de componente no queda enlazado a su
+  plantilla). La evidencia que vale es la renderizada: `live-server` e inyectar `detect.js` en una
+  página con sesión iniciada.
+- El motor (`scripts/bin/`) no se versiona: el lanzador lo baja una vez y verifica su checksum.
+- Excepciones del detector y `telemetry: false` en `.impeccable/config.json`; las críticas quedan
+  en `.impeccable/critique/`.
+
 ### Plugin `playwright` (MCP)
 
 Browser automation para QA y E2E. Herramientas `mcp__plugin_playwright_playwright__*`.
@@ -76,7 +94,7 @@ Todo cambio no trivial pasa por exploración y especificación antes de tocar c�
 
 ```
 brainstorming → explore → propose → spec → design → DESIGN CHALLENGE
-              → tasks → apply (TDD) → /simplify → verify
+              → tasks → apply → /simplify → verify
               → verification-before-completion → archive
 ```
 
@@ -89,9 +107,9 @@ brainstorming → explore → propose → spec → design → DESIGN CHALLENGE
 | design                         | Estructura de componentes, estado, rutas, contrato consumido       | `engram-sdd-flow` + `AGENT.md`                                 |
 | **design challenge**           | Revisión adversarial del diseño — ver abajo                        | **obligatorio**, paso manual                                   |
 | tasks                          | Checklist implementable y ordenada                                 | `superpowers:writing-plans`                                    |
-| apply                          | Código real, tests primero                                         | `superpowers:test-driven-development`                          |
+| apply                          | Código real, con los tests que la regla exige (ver §4)             | —                                                              |
 | simplify                       | Reuso, simplificación, eficiencia, deuda                           | `/simplify` — **obligatorio**                                  |
-| verify                         | Tests + E2E + verificación en la app real                          | `/run`, Playwright, `/code-review`                             |
+| verify                         | Tests de lo tocado + verificación en la app real; E2E en el CI     | `/run`, Playwright, `/code-review`                             |
 | verification-before-completion | Evidencia de completitud antes de cerrar                           | `superpowers:verification-before-completion` — **obligatorio** |
 | archive                        | Cierre y persistencia del estado                                   | `mem_save` + `mem_session_summary`                             |
 
@@ -123,7 +141,7 @@ Si alguna respuesta es insatisfactoria, se vuelve a `design`. No se avanza a `ta
 ```
 /caveman → brainstorming → (design skill para mockup si aplica)
 → engram-sdd-flow (explore/propose/spec/design) → DESIGN CHALLENGE
-→ writing-plans → TDD → /simplify → tests + E2E + /run → /code-review
+→ writing-plans → código → /simplify → tests de lo tocado + /run → /code-review
 → verification-before-completion → mem_save
 ```
 
@@ -137,7 +155,7 @@ Si alguna respuesta es insatisfactoria, se vuelve a `design`. No se avanza a `ta
 
 ```
 /caveman → brainstorming → using-git-worktrees → writing-plans → DESIGN CHALLENGE
-→ executing-plans → /simplify → tests + E2E → /code-review
+→ executing-plans → /simplify → tests de lo tocado → /code-review
 → verification-before-completion → finishing-a-development-branch → mem_save
 ```
 
@@ -160,7 +178,7 @@ Nunca editar el cliente generado a mano. Nunca asumir commit atómico con el bac
 ## 4. Protocolo de cambios
 
 - **Nada de código sin un RF/CA que lo respalde.** Si no existe, se pregunta.
-- **Tests primero.** TDD no es opcional.
+- **Tests después y pocos.** Ver "Qué correr y cuándo", abajo.
 - **El cliente generado no se edita.** Si falta un campo, se pide al backend.
 - **Nada de DTO manuales duplicados.**
 - **Signals para el estado.** Zoneless + OnPush: mutar no re-renderiza.
@@ -170,6 +188,34 @@ Nunca editar el cliente generado a mano. Nunca asumir commit atómico con el bac
 - Sin secretos en el bundle.
 - `main` siempre desplegable. Trabajo incompleto detrás de feature flag.
 - Commits y PRs en prosa normal, no en caveman.
+
+### Qué correr y cuándo
+
+La suite completa es del CI, no de la sesión. **No se corre al arrancar ni antes de cada commit.**
+
+| Momento | Qué se corre |
+|---|---|
+| Al arrancar | Nada. `git status` y `git log`; el estado de `main` lo dice su CI |
+| Mientras se trabaja | Sólo lo que toca el cambio, con los comandos de abajo |
+| Al abrir el PR | Nada más: el CI corre todo. Se lee su resultado en vez de repetirlo en local |
+| Antes del deploy | La suite completa y el QA manual del §6 |
+
+Unitarios de una carpeta:
+
+```bash
+npx ng test --watch=false --no-coverage --include "src/app/features/billing/pages/caja/**/*.spec.ts"
+```
+
+Un E2E (necesita la pila levantada):
+
+```bash
+npx playwright test e2e/flujo-caja.spec.ts --project=agenda
+```
+
+**Sin TDD obligatorio:** código primero, tests después y pocos. Van tests para reglas de negocio,
+concurrencia y lo que reproduce un defecto; no para comportamiento del framework ni para subir un
+número. Los que corren contra el motor real —integración, concurrencia, E2E— son los que encuentran
+defectos: ésos no se recortan.
 
 ## 5. Memoria — Engram
 
@@ -782,8 +828,8 @@ Pendientes que arrastra el frontend:
 
 ## 8. Checklist de cierre de tarea
 
-- [ ] Tests en verde (unit + componente)
-- [ ] E2E en verde si el cambio toca un flujo completo
+- [ ] Tests de lo tocado en verde en local
+- [ ] **El CI del PR** en verde, con los E2E
 - [ ] Verificado en la app real (`/run` o Playwright), no solo en tests
 - [ ] `/simplify` corrido
 - [ ] `/code-review` sin hallazgos abiertos

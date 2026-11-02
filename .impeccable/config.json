@@ -1,0 +1,24 @@
+{
+  "telemetry": false,
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/app/features/clinical/pages/historia-clinica/components/visor-de-adjunto.html"
+        ],
+        "createdAt": "2026-10-30T02:16:51.803Z",
+        "reason": "Falso positivo: Angular enlaza [src] en tiempo de ejecución"
+      },
+      {
+        "rule": "overused-font",
+        "value": "roboto",
+        "createdAt": "2026-10-30T02:28:02.341Z",
+        "reason": "Tipografia del sistema desde el canvas AKINE Pantallas (web #125), servida con @fontsource"
+      }
+    ]
+  }
+}

@@ -33,6 +33,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** Ventana por defecto: una semana. `hasta` es exclusivo. */
 const DIAS_POR_DEFECTO = 7;
@@ -86,7 +87,7 @@ const INICIO_DE_LA_TARDE = '13:00';
  */
 @Component({
   selector: 'app-buscador-de-agenda-page',
-  imports: [Ayuda, CabeceraDePagina, EstadoVacio, Filtros, RouterLink, Pestanas, Alerta],
+  imports: [Ayuda, CabeceraDePagina, EstadoVacio, Filtros, RouterLink, Pestanas, Alerta, Icono],
   templateUrl: './buscador-de-agenda-page.html',
   styleUrl: '../../agenda.css',
 })

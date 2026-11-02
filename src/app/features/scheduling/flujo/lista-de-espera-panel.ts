@@ -112,7 +112,7 @@ export class ListaDeEsperaPanel implements OnInit {
 
   protected readonly nombreDelProfesional = computed(() => {
     const id = this.profesionalId();
-    return this.profesionales().find((p) => p.id === id)?.nombre ?? `#${id}`;
+    return this.profesionales().find((p) => p.id === id)?.nombre || 'Sin nombre cargado';
   });
 
   /** El caso y el plan del contexto, con su numero. Si no se pudieron leer, igual se dice que van. */

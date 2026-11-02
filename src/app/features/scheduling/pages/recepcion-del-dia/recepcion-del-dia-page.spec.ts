@@ -157,7 +157,7 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('America/Argentina/Cordoba');
     // La hora de llegada es la de la recepcion, tambien en la zona de la sede: 12:51Z -> 09:51.
     expect(texto).toContain('09:51');
-    expect(texto).toContain('Todavía no llego');
+    expect(texto).toContain('Todavía no llegó');
     // La espera se cuenta por la recepcion, no por el estado del turno.
     expect(texto).toContain('1 en espera');
     expect(texto).toContain('aguarda ser llamado');
@@ -246,7 +246,7 @@ describe('RecepcionDelDiaPage', () => {
   });
 
   describe('lo que hace el panel se relee en el lugar', () => {
-    const MUCHOS = Array.from({ length: 25 }, (_, i) => ({
+    const MUCHOS = Array.from({ length: 60 }, (_, i) => ({
       ...DEL_DIA[0],
       id: 400 + i,
       personaNombre: `Paciente ${100 + i}`,
@@ -263,7 +263,7 @@ describe('RecepcionDelDiaPage', () => {
         .find((b) => (b.textContent ?? '').includes('Página siguiente'))
         ?.click();
       await asentar(fixture);
-      expect(textoDe(fixture)).toContain('Mostrando 11–20 de 25');
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
       return fixture;
     }
 
@@ -273,14 +273,14 @@ describe('RecepcionDelDiaPage', () => {
       TestBed.inject(FlujoDeTurnosStore).notificarCambio();
       await asentar(fixture);
       expect(textoDe(fixture)).not.toContain('Leyendo los turnos');
-      expect(fila(fixture, 'Paciente 110')).toBeDefined();
+      expect(fila(fixture, 'Paciente 130')).toBeDefined();
 
       httpMock
         .expectOne(esDelDia())
         .flush({ fecha: FECHA, timezone: ZONA, turnos: MUCHOS.map((t) => ({ ...t })) });
       await asentar(fixture);
 
-      expect(textoDe(fixture)).toContain('Mostrando 11–20 de 25');
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
     });
 
     it('conserva los filtros', async () => {
@@ -305,14 +305,14 @@ describe('RecepcionDelDiaPage', () => {
     it('una transición de la fila tampoco manda a la primera página', async () => {
       const fixture = await enLaSegundaPagina();
 
-      clickearEnLaFila(fixture, 'Paciente 110', 'Registrar la llegada');
+      clickearEnLaFila(fixture, 'Paciente 130', 'Registrar la llegada');
       httpMock
-        .expectOne((p) => p.url === recepcion(410))
-        .flush({ id: 1, turnoId: 410, estado: 'LLEGO', version: 0 });
-      httpMock.expectOne(`${TURNOS}/410`).flush({ ...MUCHOS[10], version: 3 });
+        .expectOne((p) => p.url === recepcion(430))
+        .flush({ id: 1, turnoId: 430, estado: 'LLEGO', version: 0 });
+      httpMock.expectOne(`${TURNOS}/430`).flush({ ...MUCHOS[30], version: 3 });
       await asentar(fixture);
 
-      expect(textoDe(fixture)).toContain('Mostrando 11–20 de 25');
+      expect(textoDe(fixture)).toContain('Mostrando 26–50 de 60');
     });
 
     it('si la respuesta es de un día que se dejó de mirar, se descarta', async () => {
@@ -440,8 +440,8 @@ describe('RecepcionDelDiaPage', () => {
     expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
   });
 
-  it('pagina de a 10 y el vacío filtrado ofrece limpiar los filtros', async () => {
-    const muchos = Array.from({ length: 12 }, (_, i) => ({
+  it('pagina de a 25 y el vacío filtrado ofrece limpiar los filtros', async () => {
+    const muchos = Array.from({ length: 27 }, (_, i) => ({
       ...DEL_DIA[0],
       id: 400 + i,
       personaNombre: `Paciente ${String(i + 1).padStart(2, '0')}`,
@@ -449,10 +449,10 @@ describe('RecepcionDelDiaPage', () => {
     const fixture = await montar({ turnos: muchos });
     const raiz = fixture.nativeElement as HTMLElement;
 
-    expect(raiz.querySelectorAll('tbody tr').length).toBe(10);
-    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(25);
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('27 turnos');
     expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe(
-      'Mostrando 1–10 de 12',
+      'Mostrando 1–25 de 27',
     );
     (
       Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso')).find((b) =>
@@ -476,7 +476,7 @@ describe('RecepcionDelDiaPage', () => {
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
-    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('12 turnos');
+    expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toBe('27 turnos');
     expect(buscador.value).toBe('');
   });
 
@@ -640,6 +640,49 @@ describe('RecepcionDelDiaPage', () => {
     expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
   });
 
+  it('la relectura en silencio que vuelve después de una acción no pisa la fila', async () => {
+    const fixture = await montar();
+
+    // Volver a la pestaña dispara la relectura; antes de que responda, la mesa llama.
+    document.dispatchEvent(new Event('visibilitychange'));
+    const relectura = httpMock.expectOne(esDelDia());
+    clickearEnLaFila(fixture, 'Sosa, Bruno', 'Llamar');
+    httpMock
+      .expectOne(recepcion(302, 'llamado'))
+      .flush({ ...DEL_DIA[1].recepcion, estado: 'LLAMADA', version: 5 });
+    await asentar(fixture);
+
+    // La foto vieja todavía trae al paciente en espera: se descarta.
+    relectura.flush({ fecha: FECHA, timezone: ZONA, turnos: DEL_DIA });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('0 en espera');
+    expect(botonesDeLaFila(fixture, 'Sosa, Bruno')).toEqual(['Anular la llegada']);
+  });
+
+  it('la relectura en silencio no saca de la página que se está mirando', async () => {
+    const muchos = Array.from({ length: 27 }, (_, i) => ({
+      ...DEL_DIA[0],
+      id: 400 + i,
+      personaNombre: `Paciente ${String(i + 1).padStart(2, '0')}`,
+    }));
+    const fixture = await montar({ turnos: muchos });
+    const raiz = fixture.nativeElement as HTMLElement;
+    (
+      Array.from(raiz.querySelectorAll<HTMLButtonElement>('.paginacion__paso')).find((b) =>
+        (b.textContent ?? '').includes('Página siguiente'),
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(2);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+    httpMock.expectOne(esDelDia()).flush({ fecha: FECHA, timezone: ZONA, turnos: muchos });
+    await asentar(fixture);
+
+    expect(raiz.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
   it('el error de una acción de la fila es un aviso global con Reintentar', async () => {
     const fixture = await montar();
 
@@ -757,7 +800,7 @@ describe('RecepcionDelDiaPage', () => {
     const texto = textoDe(fixture);
     expect(avisos()[0]?.titulo).toBe('Retiro registrado');
     expect(avisos()[0]?.descripcion).toContain('se retiro sin ser atendido');
-    expect(texto).toContain('RETIRADO');
+    expect(texto).toContain('Se retiró');
     expect(texto).toContain('Motivo del retiro: Se canso de esperar');
     expect(texto).toContain('0 en espera');
     // La llegada vale: no se ofrece otro check-in, ni anular, ni nada sobre la recepcion.

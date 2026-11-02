@@ -1225,7 +1225,7 @@ describe('DetalleDeTurnoPanel', () => {
       expect(seccion?.textContent).toContain('Se retiro sin ser atendido');
       expect(seccion?.textContent).toContain('Se cansó de esperar');
       // "Antes → despues": sin el enum crudo.
-      expect(seccion?.textContent?.replace(/\s+/g, ' ')).toContain('Llego → Se retiro');
+      expect(seccion?.textContent?.replace(/\s+/g, ' ')).toContain('Llegó → Se retiró');
       expect(seccion?.textContent).not.toContain('RETIRADO');
     });
 
