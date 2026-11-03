@@ -10,6 +10,7 @@ import {
   PERMISO_HC_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_SOBRETURNO,
 } from '../../../core/models/permisos';
 import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
@@ -25,6 +26,7 @@ const SEDE = '/api/v1/consultorios/3';
 const TURNO = `${SEDE}/turnos/7`;
 const BUSQUEDA = `${SEDE}/disponibilidad/busqueda`;
 const COINCIDENCIAS = `${SEDE}/lista-de-espera/coincidencias`;
+const VALIDACION = `${SEDE}/disponibilidad/validacion`;
 
 const FUTURO = '2030-03-04T12:00:00Z';
 const PASADO = '2020-03-04T12:00:00Z';
@@ -780,6 +782,53 @@ describe('DetalleDeTurnoPanel', () => {
   });
 
   describe('reprogramar', () => {
+    it('"¿Quién está libre a esta hora?" ofrece otros profesionales para el mismo horario', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(BUSQUEDA).flush({ horarios: [] });
+      await asentar(fixture);
+
+      clic(fixture, 'Consultar');
+      const validacion = httpMock.expectOne(VALIDACION);
+      expect(validacion.request.body).toEqual({
+        ofertaId: 14,
+        inicio: FUTURO,
+        turnoExcluidoId: 7,
+        personaId: 12,
+      });
+      validacion.flush({
+        estado: 'DISPONIBLE',
+        profesionales: [
+          { id: 31, nombre: 'Lopez, Maria' },
+          { id: 32, nombre: 'Gomez, Juan' },
+        ],
+      });
+      await asentar(fixture);
+
+      // El del turno no se ofrece: moverlo a si mismo no es mover.
+      expect(texto(fixture)).not.toContain('Lopez, Maria Mismo horario');
+      Array.from(raiz(fixture).querySelectorAll<HTMLButtonElement>('.horario'))
+        .find((b) => b.textContent?.includes('Gomez'))
+        ?.click();
+      await asentar(fixture);
+      clic(fixture, 'Reprogramar');
+      const pedido = httpMock.expectOne(`${TURNO}/reprogramacion`);
+      expect(pedido.request.body).toMatchObject({ inicio: FUTURO, profesionalId: 32 });
+      pedido.flush({ id: 7 });
+      httpMock.expectOne(TURNO).flush(turno('RESERVADO', { profesionalId: 32, version: 5 }));
+      await asentar(fixture);
+    });
+
+    it('con vistaInicial "reprogramar" abre directo en reprogramar', async () => {
+      const fixture = await montar([PERMISO_TURNO_MANAGE], 'reprogramar');
+      httpMock.expectOne(TURNO).flush(turno('RESERVADO'));
+      await asentar(fixture);
+
+      httpMock.expectOne(BUSQUEDA).flush({ horarios: [] });
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#flujo-reprogramar-motivo')).not.toBeNull();
+    });
+
     it('es el mismo turno: elige un horario, manda motivo y versión, y vuelve al resumen', async () => {
       const fixture = await abierto(turno('RESERVADO'));
 
@@ -1352,10 +1401,30 @@ describe('DetalleDeTurnoPanel', () => {
     TIMEOUT_AXE,
   );
 
+  it('"Agregar sobreturno" abre el nuevo turno en el mismo horario, con el paso del sobreturno', async () => {
+    const fixture = await abierto(turno('RESERVADO'), [
+      PERMISO_TURNO_MANAGE,
+      PERMISO_TURNO_SOBRETURNO,
+    ]);
+
+    clic(fixture, 'Agregar sobreturno');
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: expect.objectContaining({
+        inicio: FUTURO,
+        profesionalId: 31,
+        ofertaId: 14,
+        sobreturnoDe: 7,
+      }),
+    });
+  });
+
   // -------------------------------------------------------------------------------------
 
   async function montar(
     permisos: readonly string[] = [PERMISO_TURNO_MANAGE, PERMISO_SESION_REGISTER, PERMISO_HC_READ],
+    vistaInicial?: 'reprogramar' | 'cancelar',
   ): Promise<ComponentFixture<DetalleDeTurnoPanel>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
@@ -1368,6 +1437,9 @@ describe('DetalleDeTurnoPanel', () => {
 
     const fixture = TestBed.createComponent(DetalleDeTurnoPanel);
     fixture.componentRef.setInput('turnoId', 7);
+    if (vistaInicial !== undefined) {
+      fixture.componentRef.setInput('vistaInicial', vistaInicial);
+    }
     fixture.componentInstance.cerrar.subscribe(() => cerrado++);
     fixture.detectChanges();
     return fixture;

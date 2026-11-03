@@ -385,12 +385,16 @@
           <button
             type="button"
             class="boton"
-            [disabled]="enviando()"
+            [disabled]="enviando() || persona() === null"
+            [attr.aria-describedby]="persona() === null ? 'flujo-sobreturno-falta' : null"
             (click)="confirmarSobreturno()"
           >
             Crear sobreturno
           </button>
         </div>
+        @if (persona() === null) {
+          <p id="flujo-sobreturno-falta" class="ayuda">Falta elegir el paciente.</p>
+        }
       </section>
     }
 

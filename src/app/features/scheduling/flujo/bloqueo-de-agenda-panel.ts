@@ -25,6 +25,7 @@ import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
+import { AccionesDeFila } from '../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
@@ -65,7 +66,7 @@ const MENSAJE_SIN_PERMISO =
 @Component({
   selector: 'app-bloqueo-de-agenda-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Alerta, PanelLateral],
+  imports: [AccionesDeFila, Alerta, PanelLateral],
   templateUrl: './bloqueo-de-agenda-panel.html',
   styleUrl: './flujo.css',
 })
@@ -92,6 +93,8 @@ export class BloqueoDeAgendaPanel implements OnInit {
   protected readonly desde = signal('');
   /** Inclusiva en pantalla: al enviar se le suma un dia, porque el contrato la quiere exclusiva. */
   protected readonly hasta = signal('');
+  /** Como en Excepciones: explicito, y con la casilla marcada las horas ni se ven. */
+  protected readonly todoElDia = signal(true);
   protected readonly horaDesde = signal('');
   protected readonly horaHasta = signal('');
   protected readonly motivo = signal('');
@@ -119,19 +122,30 @@ export class BloqueoDeAgendaPanel implements OnInit {
     if (this.hasta() < this.desde()) {
       return 'La fecha hasta no puede ser anterior a la fecha desde.';
     }
-    const horaDesde = this.horaDesde();
-    const horaHasta = this.horaHasta();
-    if ((horaDesde === '') !== (horaHasta === '')) {
-      return 'El horario lleva hora desde y hora hasta, o ninguna de las dos para el día completo.';
-    }
-    if (horaDesde !== '' && horaHasta <= horaDesde) {
-      return 'La hora hasta tiene que ser posterior a la hora desde.';
+    if (!this.todoElDia()) {
+      const horaDesde = this.horaDesde();
+      const horaHasta = this.horaHasta();
+      if (horaDesde === '' || horaHasta === '') {
+        return 'Faltan la hora desde y la hora hasta, o marcá "Todo el día".';
+      }
+      if (horaHasta <= horaDesde) {
+        return 'La hora hasta tiene que ser posterior a la hora desde.';
+      }
     }
     if (this.motivo() === '') {
       return 'Falta elegir el tipo.';
     }
+    if (this.faltaDescripcion()) {
+      return 'Con el tipo "Otro" escribí cuál es en las notas.';
+    }
     return '';
   });
+
+  /** "Otro" solo no dice nada: con ese tipo, las notas dejan de ser opcionales. */
+  protected readonly motivoEsOtro = computed(() => this.motivo() === 'OTRO');
+  protected readonly faltaDescripcion = computed(
+    () => this.motivoEsOtro() && this.notas().trim() === '',
+  );
 
   protected readonly tituloDelImpacto = computed(() => {
     const cantidad = this.impacto()?.turnosAfectados ?? 0;
@@ -152,7 +166,7 @@ export class BloqueoDeAgendaPanel implements OnInit {
   );
 
   protected readonly rotuloDelHorario = computed(() =>
-    this.horaDesde() === '' ? 'Día completo' : `${this.horaDesde()} a ${this.horaHasta()}`,
+    this.todoElDia() ? 'Día completo' : `${this.horaDesde()} a ${this.horaHasta()}`,
   );
 
   protected readonly rotuloDelMotivo = computed(
@@ -332,8 +346,9 @@ export class BloqueoDeAgendaPanel implements OnInit {
     this.cerrar.emit();
   }
 
-  protected verTurno(turnoId: number): void {
-    this.flujo.verTurno(turnoId);
+  /** Abre el turno ya en la operacion elegida: reprogramar o cancelar sin pasar por el resumen. */
+  protected verTurno(turnoId: number, vista?: 'reprogramar' | 'cancelar'): void {
+    this.flujo.verTurno(turnoId, vista);
   }
 
   protected rotuloDelTurno(inicio: string | undefined, fin: string | undefined): string {
@@ -365,8 +380,8 @@ export class BloqueoDeAgendaPanel implements OnInit {
       fechaHasta: sumarDias(this.hasta(), 1),
       // Omitirlo es sede entera, y es una decision: por eso no se manda vacio ni cero.
       membershipId: alcance === TODA_LA_SEDE ? undefined : Number(alcance),
-      horaDesde: this.horaDesde() === '' ? undefined : this.horaDesde(),
-      horaHasta: this.horaHasta() === '' ? undefined : this.horaHasta(),
+      horaDesde: this.todoElDia() ? undefined : this.horaDesde(),
+      horaHasta: this.todoElDia() ? undefined : this.horaHasta(),
       notes: notas === '' ? undefined : notas,
     };
   }

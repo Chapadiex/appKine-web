@@ -15,7 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, map } from 'rxjs';
 
 import { AgendaOperativa } from '../../../../api/generated/model/agenda-operativa';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
@@ -54,6 +54,15 @@ import {
   pasoDeCelda,
   rangoDeHoras,
 } from '../../models/grilla-de-agenda';
+import {
+  DiaDelMes,
+  primerDiaDelMes,
+  rotuloDeMes,
+  semanasDelMes,
+  sumarMeses,
+  unirAgendas,
+  ventanasDePedido,
+} from '../../models/mes-de-agenda';
 import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { diaCorto, diaEnZona, esFecha, lunesDe, rotuloDeSemana } from '../../models/semana';
 import { SchedulingApi } from '../../services/scheduling-api';
@@ -69,6 +78,7 @@ const ESTADOS = [
   'RESERVADO',
   'CONFIRMADO',
   'PRESENTE',
+  'RETIRADO',
   'EN_ATENCION',
   'ATENDIDO',
   'AUSENTE',
@@ -153,6 +163,11 @@ export class AgendaPage {
   protected readonly profesionalId = signal<number | null>(null);
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly estadoElegido = signal('');
+  /**
+   * Busca en los turnos ya leidos, por nombre o documento. No va a la URL: es un dato del paciente, y
+   * una direccion copiada o guardada en el historial no tiene por que llevarlo.
+   */
+  protected readonly paciente = signal('');
 
   protected readonly agenda = signal<AgendaOperativa | null>(null);
   protected readonly cargando = signal(false);
@@ -174,19 +189,42 @@ export class AgendaPage {
   private fechaProvisoria = false;
 
   protected readonly timezone = computed(() => this.agenda()?.timezone ?? this.dia.zona());
-  /** Primer dia de lo que se pide: el dia, o el lunes de su semana. */
-  protected readonly primerDia = computed(() =>
-    this.vistaEfectiva() === 'semana' ? lunesDe(this.fechaVisible()) : this.fechaVisible(),
-  );
+  /** Primer dia de lo que se pide: el dia, el lunes de su semana o el primero de su mes. */
+  protected readonly primerDia = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return lunesDe(this.fechaVisible());
+      case 'mes':
+        return primerDiaDelMes(this.fechaVisible());
+      default:
+        return this.fechaVisible();
+    }
+  });
+  /** Fin exclusivo de lo que se pide. */
+  private readonly finDeVentana = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return sumarDias(this.primerDia(), 7);
+      case 'mes':
+        return sumarMeses(this.primerDia(), 1);
+      default:
+        return sumarDias(this.primerDia(), 1);
+    }
+  });
   protected readonly vistaEfectiva = computed<VistaDeAgenda>(() =>
     this.angosta() ? 'dia' : this.vistaElegida(),
   );
 
-  protected readonly rotuloDeFecha = computed(() =>
-    this.vistaEfectiva() === 'semana'
-      ? rotuloDeSemana(this.primerDia())
-      : fechaEnPalabras(this.fechaVisible()),
-  );
+  protected readonly rotuloDeFecha = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return rotuloDeSemana(this.primerDia());
+      case 'mes':
+        return rotuloDeMes(this.primerDia());
+      default:
+        return fechaEnPalabras(this.fechaVisible());
+    }
+  });
 
   protected readonly hoy = computed(() =>
     this.timezone() === '' ? this.dia.hoy() : hoyEnZona(this.timezone()),
@@ -221,20 +259,45 @@ export class AgendaPage {
         quitar: () => this.filtrarEstado(''),
       });
     }
+    if (this.paciente().trim() !== '') {
+      chips.push({
+        clave: 'paciente',
+        texto: `Paciente: ${this.paciente().trim()}`,
+        quitar: () => this.paciente.set(''),
+      });
+    }
     return chips;
   });
 
   private readonly filtroDeTurno = computed(() => {
     const estado = this.estadoElegido();
     const oferta = this.ofertaId();
+    const paciente = normalizar(this.paciente());
     return (turno: TurnoDeCalendario) =>
       (estado === '' || turno.turno?.operativo?.estadoOperativo === estado) &&
-      (oferta === null || turno.turno?.ofertaId === oferta);
+      (oferta === null || turno.turno?.ofertaId === oferta) &&
+      (paciente === '' ||
+        normalizar(`${turno.turno?.personaNombre ?? ''} ${turno.turno?.documento ?? ''}`).includes(
+          paciente,
+        ));
   });
+
+  /** La grilla del mes: conteos por dia y por estado, con los mismos filtros que el resto. */
+  protected readonly semanasDelMes = computed<readonly (readonly DiaDelMes[])[]>(() =>
+    this.vistaEfectiva() === 'mes'
+      ? semanasDelMes({
+          primero: this.primerDia(),
+          agenda: this.agenda(),
+          filtroDeTurno: this.filtroDeTurno(),
+          profesionalId: this.profesionalId(),
+          estados: ESTADOS,
+        })
+      : [],
+  );
 
   protected readonly columnas = computed<readonly ColumnaDeAgenda[]>(() => {
     const agenda = this.agenda();
-    if (agenda === null) {
+    if (agenda === null || this.vistaEfectiva() === 'mes') {
       return [];
     }
     return armarColumnas({
@@ -273,9 +336,7 @@ export class AgendaPage {
     const fecha = this.fechaVisible();
     return (this.agenda()?.turnos ?? [])
       .filter(this.filtroDeTurno())
-      .filter(
-        (t) => this.vistaEfectiva() === 'semana' || diaEnZona(t.turno?.inicio, zona) === fecha,
-      )
+      .filter((t) => this.vistaEfectiva() !== 'dia' || diaEnZona(t.turno?.inicio, zona) === fecha)
       .sort((a, b) => (a.turno?.inicio ?? '').localeCompare(b.turno?.inicio ?? ''));
   });
 
@@ -367,7 +428,7 @@ export class AgendaPage {
       this.angosta.set(consulta.matches);
       const aplicar = (): void => {
         this.angosta.set(consulta.matches);
-        if (this.vistaElegida() === 'semana') {
+        if (this.vistaElegida() !== 'dia') {
           this.cargar();
         }
       };
@@ -390,7 +451,8 @@ export class AgendaPage {
   private leerUrl(): void {
     this.fechaProvisoria = !esFecha(this.fecha());
     this.fechaVisible.set(esFecha(this.fecha()) ? this.fecha() : this.dia.hoy());
-    this.vistaElegida.set(this.vista() === 'semana' ? 'semana' : 'dia');
+    const vista = this.vista();
+    this.vistaElegida.set(vista === 'semana' || vista === 'mes' ? vista : 'dia');
     this.agrupacion.set(this.por() === 'box' ? 'box' : 'profesional');
     this.profesionalId.set(numeroOVacio(this.profesional()));
     this.ofertaId.set(numeroOVacio(this.oferta()));
@@ -447,31 +509,38 @@ export class AgendaPage {
       return;
     }
     const desde = this.primerDia();
-    const hasta = sumarDias(desde, this.vistaEfectiva() === 'semana' ? 7 : 1);
+    const hasta = this.finDeVentana();
     this.pedido?.unsubscribe();
     this.cargando.set(true);
     this.error.set(null);
     this.ahora.set(new Date());
-    this.pedido = this.api
-      .agendaOperativa(consultorioId, {
-        desde,
-        hasta,
-        profesionalId: this.profesionalId() ?? undefined,
-        incluirCancelados: this.estadoElegido() === 'CANCELADO',
-      })
-      .subscribe({
-        next: (agenda) => {
-          this.cargando.set(false);
-          this.agenda.set(agenda);
-          if (!this.alinearConLaSede(agenda.timezone)) {
-            this.alLlegarLaAgenda();
-          }
-        },
-        error: (error: unknown) => {
-          this.cargando.set(false);
-          this.error.set(traducirErrorAgenda(error));
-        },
-      });
+    const filtro = {
+      profesionalId: this.profesionalId() ?? undefined,
+      incluirCancelados: this.estadoElegido() === 'CANCELADO',
+    };
+    // El mes no entra en un pedido (la agenda operativa admite catorce dias): va en tramos, en
+    // paralelo, y se une. Es la unica lectura que trae bloqueos y estado operativo a la vez.
+    const lectura =
+      this.vistaEfectiva() === 'mes'
+        ? forkJoin(
+            ventanasDePedido(desde, hasta).map((ventana) =>
+              this.api.agendaOperativa(consultorioId, { ...ventana, ...filtro }),
+            ),
+          ).pipe(map((partes) => unirAgendas(partes, desde, hasta)))
+        : this.api.agendaOperativa(consultorioId, { desde, hasta, ...filtro });
+    this.pedido = lectura.subscribe({
+      next: (agenda) => {
+        this.cargando.set(false);
+        this.agenda.set(agenda);
+        if (!this.alinearConLaSede(agenda.timezone)) {
+          this.alLlegarLaAgenda();
+        }
+      },
+      error: (error: unknown) => {
+        this.cargando.set(false);
+        this.error.set(traducirErrorAgenda(error));
+      },
+    });
   }
 
   /**
@@ -553,10 +622,37 @@ export class AgendaPage {
 
   protected mover(sentido: -1 | 1): void {
     this.fechaProvisoria = false;
+    const vista = this.vistaEfectiva();
     this.fechaVisible.set(
-      sumarDias(this.fechaVisible(), this.vistaEfectiva() === 'semana' ? 7 * sentido : sentido),
+      vista === 'mes'
+        ? sumarMeses(this.fechaVisible(), sentido)
+        : sumarDias(this.fechaVisible(), vista === 'semana' ? 7 * sentido : sentido),
     );
     this.alCambiarVentana();
+  }
+
+  /** Del mes al dia: el clic en un dia abre ese dia, con los mismos filtros. */
+  protected abrirDia(fecha: string): void {
+    this.fechaProvisoria = false;
+    this.fechaVisible.set(fecha);
+    this.vistaElegida.set('dia');
+    this.alCambiarVentana();
+  }
+
+  protected descripcionDelDia(dia: DiaDelMes): string {
+    const partes = [
+      fechaEnPalabras(dia.fecha),
+      dia.total === 1 ? '1 turno' : `${dia.total} turnos`,
+      ...dia.porEstado.map((e) => `${e.cantidad} ${nombreDeEstadoOperativo(e.estado)}`),
+    ];
+    if (dia.bloqueos > 0) {
+      partes.push(dia.bloqueos === 1 ? '1 bloqueo' : `${dia.bloqueos} bloqueos`);
+    }
+    return partes.join(', ');
+  }
+
+  protected numeroDeDia(fecha: string): number {
+    return Number(fecha.slice(8, 10));
   }
 
   protected irAHoy(): void {
@@ -601,6 +697,7 @@ export class AgendaPage {
     this.profesionalId.set(null);
     this.ofertaId.set(null);
     this.estadoElegido.set('');
+    this.paciente.set('');
     this.escribirUrl();
     if (leiaCancelados || habiaProfesional) {
       this.cargar();
@@ -766,6 +863,15 @@ export class AgendaPage {
       profesionalId: this.profesionalId() ?? undefined,
     });
   }
+}
+
+/** Para buscar sin que importen mayusculas ni tildes. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 function numeroOVacio(valor: string): number | null {

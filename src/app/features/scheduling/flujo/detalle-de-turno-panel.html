@@ -52,6 +52,9 @@
         @if (operativo()?.espacioNombre; as espacio) {
           <span>{{ espacio }}</span>
         }
+        @if (sede(); as nombreDeSede) {
+          <span>Sede {{ nombreDeSede }}</span>
+        }
         @if (cobertura(); as elegida) {
           <span>{{ elegida }}</span>
         }
@@ -170,6 +173,16 @@
                   Cancelar turno
                 </button>
               }
+              @if (vivo() && !empezo()) {
+                <button
+                  *akinePermiso="PERMISO_TURNO_SOBRETURNO"
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="agregarSobreturno()"
+                >
+                  Agregar sobreturno
+                </button>
+              }
               @if (puedeMarcarAusente()) {
                 <button
                   *akinePermiso="PERMISO_TURNO_MANAGE"
@@ -264,6 +277,48 @@
               </div>
             }
           </div>
+          <!-- Mismo horario, otro profesional: el caso del profesional que falta ese dia. -->
+          <section class="flujo" aria-labelledby="flujo-libres-titulo">
+            <div class="flujo__fila flujo__fila--entre">
+              <h3 id="flujo-libres-titulo" class="flujo__dato">¿Quién está libre a esta hora?</h3>
+              <button
+                type="button"
+                class="boton-texto"
+                [disabled]="buscandoLibres()"
+                (click)="buscarLibresALaHora()"
+              >
+                {{ libresALaHora() === null ? 'Consultar' : 'Volver a consultar' }}
+              </button>
+            </div>
+            @if (buscandoLibres()) {
+              <p class="estado estado--cargando">Consultando profesionales…</p>
+            } @else if (errorDeLibres(); as fallo) {
+              <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+            } @else if (libresALaHora(); as libres) {
+              @if (libres.length === 0) {
+                <p class="estado estado--vacio">
+                  Nadie más puede atender esta prestación a esa hora.
+                </p>
+              } @else {
+                <ul class="horarios__lista">
+                  @for (profesional of libres; track profesional.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="horario"
+                        [attr.aria-pressed]="esLibreElegido(profesional)"
+                        (click)="elegirLibre(profesional)"
+                      >
+                        <span class="horario__hora">{{ profesional.nombre }}</span>
+                        <span class="horario__detalle">Mismo horario</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </section>
+
           @if (buscando()) {
             <p class="estado estado--cargando">Buscando horarios…</p>
           } @else if (errorDeBusqueda(); as fallo) {

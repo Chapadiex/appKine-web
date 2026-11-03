@@ -311,6 +311,11 @@ export class NuevoTurnoPanel implements OnInit {
     if (contexto.inicio !== undefined) {
       this.horario.set({ desde: contexto.inicio, profesionalId: contexto.profesionalId });
     }
+    // Pedido a conciencia desde un turno: el paso del sobreturno ya abierto, con quien ocupa el lugar.
+    if (contexto.sobreturnoDe !== undefined) {
+      this.sobreturnoAbierto.set(true);
+      this.leerOcupante(contexto.sobreturnoDe);
+    }
 
     this.api.ofertasAgendables(consultorioId).subscribe({
       next: (ofertas) => {

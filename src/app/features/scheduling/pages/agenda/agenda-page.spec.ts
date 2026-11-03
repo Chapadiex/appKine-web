@@ -596,6 +596,45 @@ describe('AgendaPage', () => {
       leida().flush(AGENDA);
     });
 
+    it('el mes se pide en tramos de catorce días, cuenta por día y el clic abre ese día', async () => {
+      const fixture = await montar();
+      leida().flush(AGENDA);
+      await asentar(fixture);
+
+      clic(fixture, 'Mes');
+      const tramos = httpMock.match((r) => r.url === OPERATIVA);
+      expect(
+        tramos.map((t) => [t.request.params.get('desde'), t.request.params.get('hasta')]),
+      ).toEqual([
+        ['2030-03-01', '2030-03-15'],
+        ['2030-03-15', '2030-03-29'],
+        ['2030-03-29', '2030-04-01'],
+      ]);
+      tramos[0].flush(AGENDA);
+      tramos[1].flush({ timezone: ZONA, turnos: [] });
+      tramos[2].flush({ timezone: ZONA, turnos: [] });
+      await asentar(fixture);
+
+      const dia = raiz(fixture).querySelector<HTMLButtonElement>(
+        `.mes__dia[aria-label^="${'miércoles, 6 de marzo'}"]`,
+      );
+      expect(dia?.getAttribute('aria-label')).toContain('1 turno, 1 Confirmado');
+
+      // El paciente filtra lo leido, sin volver a pedir.
+      const paciente = raiz(fixture).querySelector('#agenda-paciente') as HTMLInputElement;
+      paciente.value = 'gomez';
+      paciente.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+      expect(dia?.getAttribute('aria-label')).toContain('0 turnos');
+      httpMock.expectNone((r) => r.url === OPERATIVA);
+
+      dia?.click();
+      fixture.detectChanges();
+      const delDia = leida();
+      expect(delDia.request.params.get('desde')).toBe(FECHA);
+      delDia.flush(AGENDA);
+    });
+
     it('viendo hoy dibuja la línea de la hora', async () => {
       soltarReloj();
       fijarReloj(`${FECHA}T13:00:00Z`);

@@ -10,7 +10,7 @@ import { diaEnZona } from './semana';
  * <p>Una columna es un profesional, un box o un dia, segun la vista. Lo que cambia entre vistas es como
  * se reparten las mismas cosas; por eso todo sale de {@link armarColumnas}.
  */
-export type VistaDeAgenda = 'dia' | 'semana';
+export type VistaDeAgenda = 'dia' | 'semana' | 'mes';
 export type AgrupacionDeAgenda = 'profesional' | 'box';
 
 /** Cada cuantos minutos se ofrece un horario libre si no hay prestaciones de donde sacarlo. */
@@ -172,7 +172,7 @@ interface Entrada {
   readonly duracionesPropias?: ReadonlyMap<number, number>;
 }
 
-function tramoEnElDia(
+export function tramoEnElDia(
   desde: string | undefined,
   hasta: string | undefined,
   fecha: string,
