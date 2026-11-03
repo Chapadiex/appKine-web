@@ -81,7 +81,7 @@ describe('NewConsultorioPage', () => {
 
     // Ahora el usuario corrige el nombre: es otra alta, no un reintento. Reusar la clave
     // daria 409 idempotency-key-conflict y dejaria el formulario trabado para siempre.
-    volverAlPaso(fixture, 'Configuración inicial');
+    volverAlPaso(fixture, 'Horario y box');
     escribir(fixture, '#sede-contactEmail', 'sede.norte@ejemplo.test');
     enviar(fixture);
     enviar(fixture);
@@ -116,6 +116,7 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
+    marcar(fixture, 'input[name="sede-duracion"][value="otra"]');
     escribir(fixture, '#sede-slotMinutes', '30');
     escribir(fixture, '#sede-slotMinutes', '');
     enviar(fixture);
@@ -171,17 +172,15 @@ describe('NewConsultorioPage', () => {
       enviar(fixture);
       escribir(fixture, '#sede-boxNombre', 'Box 1');
       escribir(fixture, '#sede-boxCapacidad', '2');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-1', '14:00');
+      // Abrir el lunes propone 09:00 a 18:00; el corte lo parte en 09-13 y 14-18.
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
       escribir(fixture, '#sede-horario-hasta-1', '24:00');
       enviar(fixture);
 
       // La confirmacion dice lo que se va a crear, medianoche incluida.
       expect(texto(fixture)).toContain('Box 1 (capacidad 2)');
-      expect(texto(fixture)).toContain('Lunes: 14:00 a medianoche (24:00)');
+      expect(texto(fixture)).toContain('Lunes: 09:00 a 13:00 y 14:00 a medianoche (24:00)');
 
       enviar(fixture);
       const alta = httpMock.expectOne(RUTA_ALTA);
@@ -207,12 +206,9 @@ describe('NewConsultorioPage', () => {
 
       escribir(fixture, '#sede-name', 'Sede Norte');
       enviar(fixture);
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
       escribir(fixture, '#sede-horario-desde-1', '12:00');
-      escribir(fixture, '#sede-horario-hasta-1', '18:00');
       enviar(fixture);
 
       expect(texto(fixture)).toContain('Paso 2 de 3');
@@ -224,12 +220,8 @@ describe('NewConsultorioPage', () => {
 
       escribir(fixture, '#sede-name', 'Sede Norte');
       enviar(fixture);
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-1', '14:00');
-      escribir(fixture, '#sede-horario-hasta-1', '18:00');
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
       enviar(fixture);
       enviar(fixture);
 
@@ -279,12 +271,21 @@ function escribir(
   fixture.detectChanges();
 }
 
-function agregarFranja(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
-  const boton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((candidato) =>
-    candidato.textContent?.includes('Agregar una franja'),
-  );
+function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el campo ${selector}`);
+  }
+  campo.click();
+  fixture.detectChanges();
+}
+
+function pulsar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, rotulo: string) {
+  const boton = Array.from(
+    fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((candidato) => candidato.textContent?.includes(rotulo));
   if (boton === undefined) {
-    throw new Error('No existe el botón para agregar una franja');
+    throw new Error(`No existe el botón ${rotulo}`);
   }
   boton.click();
   fixture.detectChanges();

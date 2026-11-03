@@ -579,6 +579,208 @@
   padding-left: var(--esp-7);
 }
 
+/*
+  Pasos 1 y 3 del alta de sede (03/11/2026): una columna angosta. Tres campos estirados a todo el
+  ancho dejaban un nombre de 800 px al lado de una duracion de 230.
+*/
+.asistente__contenido--angosto > * {
+  max-width: 40rem;
+}
+
+.pila-de-campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.campo__grande {
+  min-height: 3rem;
+  font-size: var(--tipo-lg);
+}
+
+/* Duracion del turno: radios reales con aspecto de pastilla. */
+.duraciones {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.duraciones legend {
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.duraciones__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-4);
+}
+
+.duracion {
+  position: relative;
+}
+
+.duracion input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.duracion span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  font-size: var(--tipo-md);
+}
+
+.duracion input:checked + span {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+  font-weight: var(--peso-medio);
+}
+
+.duracion input:focus-visible + span {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.duraciones__otra {
+  max-width: 10rem;
+}
+
+/* Paso 2: el horario se lleva el ancho; el box, una columna al costado. */
+.asistente__grilla--horario {
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: var(--esp-7);
+}
+
+@media (max-width: 64rem) {
+  .asistente__grilla--horario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Capacidad del box: - [n] + */
+.contador {
+  display: flex;
+  align-items: stretch;
+  width: fit-content;
+}
+
+.contador__boton {
+  width: 2.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-lg);
+  cursor: pointer;
+}
+
+.contador__boton:first-child {
+  border-radius: var(--radio-md) 0 0 var(--radio-md);
+}
+
+.contador__boton:last-child {
+  border-radius: 0 var(--radio-md) var(--radio-md) 0;
+}
+
+.contador__boton:focus-visible {
+  position: relative;
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.campo .contador__valor {
+  width: 4rem;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  text-align: center;
+  appearance: textfield;
+}
+
+.contador__valor::-webkit-inner-spin-button,
+.contador__valor::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Paso 3: una fila por cosa que se crea, con su "Cambiar" a la derecha. */
+.confirmacion {
+  margin: 0;
+}
+
+.confirmacion__fila {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr) auto;
+  gap: var(--esp-3) var(--esp-6);
+  align-items: start;
+  padding: var(--esp-6) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.confirmacion__fila dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.confirmacion__fila dd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin: 0;
+}
+
+.confirmacion__principal {
+  font-weight: var(--peso-medio);
+}
+
+.confirmacion__secundario {
+  color: var(--color-texto-suave);
+}
+
+.confirmacion__lista {
+  padding-left: 0;
+  font-weight: var(--peso-normal);
+  list-style: none;
+}
+
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 40rem) {
+  .confirmacion__fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .confirmacion__fila dd {
+    grid-column: 1 / -1;
+  }
+}
+
 .asistente__acciones {
   margin-top: var(--esp-8);
   padding-top: var(--esp-6);

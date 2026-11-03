@@ -8,6 +8,7 @@ import {
   FranjasForm,
   MAXIMO_FRANJAS,
   crearFranjaForm,
+  mensajeDeFranja,
 } from '../../utils/franjas-semanales';
 
 /**
@@ -98,31 +99,13 @@ export class EditorDeFranjas {
     this.franjas().removeAt(indice);
   }
 
-  protected errorDeHora(franja: FranjaForm, campo: 'horaDesde' | 'horaHasta'): boolean {
-    const control = franja.controls[campo];
-    return control.invalid && (control.touched || this.mostrarErrores());
-  }
-
-  protected errorDeRango(franja: FranjaForm): boolean {
-    return franja.hasError('rango') && (franja.touched || this.mostrarErrores());
-  }
-
-  protected seSolapa(indice: number): boolean {
-    const solapados = this.franjas().getError('solapamiento') as number[] | null;
-    return solapados !== null && solapados.includes(indice);
-  }
-
-  /** El primer mensaje que corresponde a la fila, o `null`. Uno solo: varios a la vez abruman. */
-  protected mensajeDeFila(franja: FranjaForm, indice: number): string | null {
-    if (this.errorDeHora(franja, 'horaDesde') || this.errorDeHora(franja, 'horaHasta')) {
-      return 'Escribi las dos horas como HH:MM, por ejemplo 09:00. Para cerrar a la medianoche, 24:00.';
-    }
-    if (this.errorDeRango(franja)) {
-      return 'La hora de cierre tiene que ser posterior a la de apertura: una franja no cruza al día siguiente.';
-    }
-    if (this.seSolapa(indice)) {
-      return 'Se pisa con otra franja del mismo día. Pueden tocarse en un extremo, pero no superponerse.';
-    }
-    return this.erroresDelServidor().get(indice) ?? null;
+  /** El primer mensaje que corresponde a la fila, o `null`. */
+  protected mensajeDeFila(indice: number): string | null {
+    return mensajeDeFranja(
+      this.franjas(),
+      indice,
+      this.mostrarErrores(),
+      this.erroresDelServidor(),
+    );
   }
 }

@@ -27,9 +27,11 @@ import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
-import { EditorDeFranjas } from '../../../../shared/components/editor-de-franjas/editor-de-franjas';
-import { etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
-import { rangoHorario } from '../../../../shared/utils/horas-de-pared';
+import { HorarioSemanal } from '../../../../shared/components/horario-semanal/horario-semanal';
+import {
+  SemanaDibujada,
+  horarioRedactado,
+} from '../../../../shared/components/horario-semanal/semana-dibujada';
 import {
   crearFranjasForm,
   erroresDeFranjasDelServidor,
@@ -53,10 +55,17 @@ type Paso = 1 | 2 | 3;
 
 /** Los tres pasos del alta, con lo que se carga en cada uno. */
 const PASOS: readonly { readonly numero: Paso; readonly titulo: string; readonly sub: string }[] = [
-  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, zona horaria y agenda' },
-  { numero: 2, titulo: 'Configuración inicial', sub: 'Opcional: box, horario y datos' },
+  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre y agenda' },
+  { numero: 2, titulo: 'Horario y box', sub: 'Opcional' },
   { numero: 3, titulo: 'Confirmación', sub: 'Revisar y crear' },
 ];
+
+/**
+ * Duraciones de turno que se eligen de un clic. 30 es la que rige si no se declara ninguna:
+ * elegirla omite el campo del alta, como cuando el campo quedaba vacio.
+ */
+const DURACIONES = ['15', '20', '30', '45', '60'] as const;
+const DURACION_POR_DEFECTO = '30';
 
 /** Datos institucionales, con el rotulo que lleva cada uno en el resumen. */
 const INSTITUCIONALES = [
@@ -105,7 +114,15 @@ const INSTITUCIONALES = [
  */
 @Component({
   selector: 'app-new-consultorio-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, EditorDeFranjas, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    HorarioSemanal,
+    SemanaDibujada,
+    Alerta,
+  ],
   templateUrl: './new-consultorio-page.html',
   styleUrl: '../../organization.css',
 })
@@ -154,6 +171,11 @@ export class NewConsultorioPage {
   protected readonly errorPrimerBox = signal<string | null>(null);
 
   protected readonly paso = signal<Paso>(1);
+
+  protected readonly duraciones = DURACIONES;
+
+  /** Boton de duracion elegido; `otra` muestra el campo para escribir los minutos. */
+  protected readonly duracion = signal<string>(DURACION_POR_DEFECTO);
 
   /** "Datos institucionales" plegado: se abre solo si hay algo cargado o algo que corregir. */
   protected readonly institucionalAbierto = signal(false);
@@ -204,15 +226,10 @@ export class NewConsultorioPage {
     return {
       nombre: valores.name.trim(),
       zona: valores.timezone === '' ? 'La misma que la organización' : valores.timezone,
-      turno:
-        numeroDeclarado(valores.slotMinutes) === null
-          ? '30 minutos (el valor por defecto)'
-          : `${valores.slotMinutes} minutos`,
-      box: box === '' ? 'Sin box por ahora' : `${box} (capacidad ${capacidad ?? 1})`,
-      horario: franjasDelFormulario(this.horario).map(
-        (franja) =>
-          `${etiquetaDeDia(franja.diaSemana)}: ${rangoHorario(franja.horaDesde, franja.horaHasta)}`,
-      ),
+      turno: `Turnos de ${numeroDeclarado(valores.slotMinutes) ?? DURACION_POR_DEFECTO} min`,
+      box: box === '' ? null : `${box} (capacidad ${capacidad ?? 1})`,
+      franjas: franjasDelFormulario(this.horario),
+      horario: horarioRedactado(franjasDelFormulario(this.horario)),
       institucional: INSTITUCIONALES.filter(([campo]) => valores[campo].trim() !== '').map(
         ([campo, rotulo]) => `${rotulo}: ${valores[campo].trim()}`,
       ),
@@ -248,6 +265,7 @@ export class NewConsultorioPage {
         this.erroresHorario.set(new Map());
         this.errorPrimerBox.set(null);
         this.paso.set(1);
+        this.duracion.set(DURACION_POR_DEFECTO);
         this.institucionalAbierto.set(false);
         this.estado.set({ tipo: 'editando' });
         this.intentos.set(0);
@@ -270,6 +288,28 @@ export class NewConsultorioPage {
   ): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.intentos() > 0);
+  }
+
+  /**
+   * Elige la duracion del turno. La de por defecto se omite del alta; `otra` abre el campo
+   * para escribirla y lo enfoca.
+   */
+  protected elegirDuracion(valor: string): void {
+    this.duracion.set(valor);
+    const control = this.formulario.controls.slotMinutes;
+    if (valor === 'otra') {
+      control.setValue('');
+      afterNextRender(() => this.enfocar('#sede-slotMinutes'), { injector: this.injector });
+      return;
+    }
+    control.setValue(valor === DURACION_POR_DEFECTO ? '' : valor);
+  }
+
+  /** Los botones - y + de la capacidad del box: nunca baja de 1. */
+  protected cambiarCapacidad(delta: number): void {
+    const control = this.formulario.controls.boxCapacidad;
+    const actual = numeroDeclarado(control.value) ?? 1;
+    control.setValue(String(Math.max(1, actual + delta)));
   }
 
   /** Valida el paso actual y pasa al siguiente. */

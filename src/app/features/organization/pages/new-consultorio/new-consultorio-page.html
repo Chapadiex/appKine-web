@@ -5,17 +5,16 @@
       agenda y sus propios turnos. Lo unico obligatorio es el nombre.
     </p>
     <p>
-      La configuración inicial (primer box, horario general y datos institucionales) es opcional:
-      podés saltearla y completarla después desde Espacios, el calendario de la sede o la edición de
-      la sede.
+      El horario, el primer box y los datos institucionales son opcionales: podés saltearlos y
+      completarlos después desde Espacios, el calendario de la sede o la edición de la sede.
     </p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
 <!--
   Proceso guiado en tres pasos, con el indicador ARRIBA y a todo el ancho (refactor UX/UI del
-  28/10/2026). La columna lateral de pasos ocupaba 200 px permanentes para mostrar dos rotulos y
-  empujaba el formulario a una franja angosta en el centro.
+  28/10/2026). El 03/11/2026 el paso 1 pasó a una sola columna angosta y el horario, de una lista
+  de "franjas" a una semana con un interruptor por día.
 -->
 <section class="asistente" aria-labelledby="titulo-alta-sede">
   <ol class="asistente__pasos" aria-label="Pasos para abrir la sede">
@@ -48,13 +47,23 @@
     }
   </ol>
 
-  <div class="asistente__contenido">
+  <div class="asistente__contenido" [class.asistente__contenido--angosto]="paso() !== 2">
     <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
       @if (hecho()) {
         Sede creada
       } @else {
         <span class="asistente__numero">Paso {{ paso() }} de 3</span>
-        {{ pasos[paso() - 1].titulo }}
+        @switch (paso()) {
+          @case (1) {
+            ¿Cómo se llama la nueva sede?
+          }
+          @case (2) {
+            ¿Qué días abre y con qué box arranca?
+          }
+          @case (3) {
+            Revisá y creá {{ resumen().nombre }}
+          }
+        }
       }
     </h2>
 
@@ -83,16 +92,21 @@
 
         @switch (paso()) {
           @case (1) {
-            <!-- Lo minimo para que la sede exista y funcione. -->
-            <div class="grilla-12">
-              <div class="campo campo--6">
+            <!-- Lo minimo para que la sede exista, en una columna: se lee de arriba abajo. -->
+            <p class="asistente__nota">
+              Con el nombre alcanza. Lo demás ya viene con un valor razonable.
+            </p>
+
+            <div class="pila-de-campos">
+              <div class="campo">
                 <label for="sede-name">Nombre de la sede</label>
                 <input
                   id="sede-name"
+                  class="campo__grande"
                   type="text"
                   formControlName="name"
                   autocomplete="off"
-                  placeholder="Sede Norte"
+                  placeholder="Ej.: Sede Norte"
                   aria-describedby="sede-name-ayuda"
                   [attr.aria-invalid]="mostrarError('name')"
                 />
@@ -105,7 +119,56 @@
                 }
               </div>
 
-              <div class="campo campo--4">
+              <fieldset class="duraciones" aria-describedby="sede-duracion-ayuda">
+                <legend>Duración habitual del turno</legend>
+                <div class="duraciones__lista">
+                  @for (minutos of duraciones; track minutos) {
+                    <label class="duracion">
+                      <input
+                        type="radio"
+                        name="sede-duracion"
+                        [value]="minutos"
+                        [checked]="duracion() === minutos"
+                        (change)="elegirDuracion(minutos)"
+                      />
+                      <span>{{ minutos }} min</span>
+                    </label>
+                  }
+                  <label class="duracion">
+                    <input
+                      type="radio"
+                      name="sede-duracion"
+                      value="otra"
+                      [checked]="duracion() === 'otra'"
+                      (change)="elegirDuracion('otra')"
+                    />
+                    <span>Otra</span>
+                  </label>
+                </div>
+                @if (duracion() === 'otra') {
+                  <div class="campo duraciones__otra">
+                    <label for="sede-slotMinutes">Minutos</label>
+                    <input
+                      id="sede-slotMinutes"
+                      type="number"
+                      min="1"
+                      placeholder="30"
+                      formControlName="slotMinutes"
+                      [attr.aria-invalid]="mostrarError('slotMinutes')"
+                    />
+                  </div>
+                }
+                <p class="ayuda" id="sede-duracion-ayuda">
+                  El intervalo por defecto de la agenda. Cada servicio puede tener el suyo.
+                </p>
+                @if (mostrarError('slotMinutes')) {
+                  <p class="campo__error" id="sede-slotMinutes-error">
+                    Tiene que ser un número de minutos mayor que cero.
+                  </p>
+                }
+              </fieldset>
+
+              <div class="campo">
                 <label for="sede-timezone">Zona horaria</label>
                 <!--
                   Es un selector y no un campo de texto a proposito: el backend solo acepta
@@ -132,32 +195,8 @@
                   }
                 </select>
                 <p class="ayuda" id="sede-timezone-ayuda">
-                  Rige el día operativo y la agenda de esta sede. Cambiala solo si la sede está en
-                  otra provincia con horario distinto.
+                  Cambiala solo si la sede está en otra provincia con horario distinto.
                 </p>
-              </div>
-
-              <div class="campo">
-                <label for="sede-slotMinutes">
-                  Duración del turno (min) <span class="campo__opcional">(opcional)</span>
-                </label>
-                <input
-                  id="sede-slotMinutes"
-                  type="number"
-                  min="1"
-                  placeholder="30"
-                  formControlName="slotMinutes"
-                  aria-describedby="sede-slotMinutes-ayuda"
-                  [attr.aria-invalid]="mostrarError('slotMinutes')"
-                />
-                <p class="ayuda" id="sede-slotMinutes-ayuda">
-                  El intervalo por defecto de la agenda. Si lo dejás vacío, 30 minutos.
-                </p>
-                @if (mostrarError('slotMinutes')) {
-                  <p class="campo__error" id="sede-slotMinutes-error">
-                    Tiene que ser un número de minutos mayor que cero.
-                  </p>
-                }
               </div>
             </div>
 
@@ -173,15 +212,32 @@
               Todo es opcional: podés seguir sin cargar nada y completarlo después.
             </p>
 
-            <div class="asistente__grilla asistente__grilla--dos">
+            <div class="asistente__grilla asistente__grilla--horario">
+              <section class="bloque" aria-labelledby="titulo-horario-general">
+                <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
+                  Horario de atención
+                </h3>
+                <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
+                <p class="bloque__ayuda">
+                  <b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.
+                </p>
+                <app-horario-semanal
+                  idBase="sede-horario"
+                  [franjas]="horario"
+                  [mostrarErrores]="intentos() > 0"
+                  [erroresDelServidor]="erroresHorario()"
+                />
+              </section>
+
               <fieldset class="bloque" aria-describedby="sede-box-ayuda">
                 <legend class="bloque__titulo">Primer box</legend>
                 <p class="bloque__ayuda" id="sede-box-ayuda">
-                  Si lo cargás, la sede y el box se crean juntos. Si no, los agregás desde Espacios.
+                  Si le ponés nombre, la sede y el box se crean juntos. Si no, lo agregás desde
+                  Espacios.
                 </p>
 
-                <div class="grilla-12">
-                  <div class="campo campo--4">
+                <div class="pila-de-campos">
+                  <div class="campo">
                     <label for="sede-boxNombre">Nombre del box</label>
                     <input
                       id="sede-boxNombre"
@@ -195,19 +251,36 @@
                   </div>
 
                   <div class="campo">
-                    <label for="sede-boxCapacidad">Capacidad</label>
-                    <input
-                      id="sede-boxCapacidad"
-                      type="number"
-                      min="1"
-                      placeholder="1"
-                      formControlName="boxCapacidad"
-                      aria-describedby="sede-boxCapacidad-ayuda"
-                      [attr.aria-invalid]="mostrarError('boxCapacidad')"
-                    />
-                    <p class="ayuda" id="sede-boxCapacidad-ayuda">
-                      Cuántas personas atiende a la vez. Sin nombre no se crea el box.
-                    </p>
+                    <label for="sede-boxCapacidad">Pacientes a la vez</label>
+                    <div class="contador">
+                      <button
+                        type="button"
+                        class="contador__boton"
+                        aria-label="Uno menos"
+                        aria-controls="sede-boxCapacidad"
+                        (click)="cambiarCapacidad(-1)"
+                      >
+                        −
+                      </button>
+                      <input
+                        id="sede-boxCapacidad"
+                        class="contador__valor"
+                        type="number"
+                        min="1"
+                        placeholder="1"
+                        formControlName="boxCapacidad"
+                        [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                      />
+                      <button
+                        type="button"
+                        class="contador__boton"
+                        aria-label="Uno más"
+                        aria-controls="sede-boxCapacidad"
+                        (click)="cambiarCapacidad(1)"
+                      >
+                        +
+                      </button>
+                    </div>
                     @if (mostrarError('boxCapacidad')) {
                       <p class="campo__error" id="sede-boxCapacidad-error">
                         Tiene que ser un número mayor que cero.
@@ -220,23 +293,6 @@
                   <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
                 }
               </fieldset>
-
-              <section class="bloque" aria-labelledby="titulo-horario-general">
-                <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
-                  Horario general
-                </h3>
-                <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
-                <p class="bloque__ayuda">
-                  Los días y horas en que la sede abre. <b>Limita la agenda</b>: ningún turno se
-                  ofrece fuera de este horario.
-                </p>
-                <app-editor-de-franjas
-                  idBase="sede-horario"
-                  [franjas]="horario"
-                  [mostrarErrores]="intentos() > 0"
-                  [erroresDelServidor]="erroresHorario()"
-                />
-              </section>
             </div>
 
             <details
@@ -299,52 +355,76 @@
           }
 
           @case (3) {
-            <!-- Todo lo que se va a crear, de un vistazo y agrupado como se cargo. -->
-            <div class="asistente__grilla asistente__grilla--dos">
-              <section class="resumen" aria-labelledby="resumen-principal">
-                <h3 class="resumen__titulo" id="resumen-principal">Datos de la sede</h3>
-                <dl class="detalle">
-                  <dt>Nombre</dt>
-                  <dd>{{ resumen().nombre }}</dd>
-                  <dt>Zona horaria</dt>
-                  <dd>{{ resumen().zona }}</dd>
-                  <dt>Duración del turno</dt>
-                  <dd>{{ resumen().turno }}</dd>
-                </dl>
-              </section>
+            <!-- Todo lo que se va a crear, en una lista con su "Cambiar" al lado. -->
+            <p class="asistente__nota">Todo se puede cambiar después desde la ficha de la sede.</p>
 
-              <section class="resumen" aria-labelledby="resumen-configuracion">
-                <h3 class="resumen__titulo" id="resumen-configuracion">Configuración inicial</h3>
-                <dl class="detalle">
-                  <dt>Primer box</dt>
-                  <dd>{{ resumen().box }}</dd>
-                  <dt>Horario general</dt>
-                  <dd>
-                    @if (resumen().horario.length === 0) {
-                      Sin horario general por ahora
-                    } @else {
-                      <ul class="resumen__lista">
-                        @for (linea of resumen().horario; track $index) {
-                          <li>{{ linea }}</li>
-                        }
-                      </ul>
-                    }
-                  </dd>
-                  <dt>Datos institucionales</dt>
-                  <dd>
-                    @if (resumen().institucional.length === 0) {
-                      Sin cargar por ahora
-                    } @else {
-                      <ul class="resumen__lista">
-                        @for (dato of resumen().institucional; track $index) {
-                          <li>{{ dato }}</li>
-                        }
-                      </ul>
-                    }
-                  </dd>
-                </dl>
-              </section>
-            </div>
+            <dl class="confirmacion">
+              <div class="confirmacion__fila">
+                <dt>Sede</dt>
+                <dd>
+                  <span class="confirmacion__principal">{{ resumen().nombre }}</span>
+                  <span class="confirmacion__secundario"
+                    >{{ resumen().turno }} · {{ resumen().zona }}</span
+                  >
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(1)">
+                  Cambiar<span class="visualmente-oculto"> los datos de la sede</span>
+                </button>
+              </div>
+
+              <div class="confirmacion__fila">
+                <dt>Horario</dt>
+                <dd>
+                  @if (resumen().horario.length === 0) {
+                    <span class="confirmacion__secundario">
+                      Sin horario por ahora: la agenda no se limita.
+                    </span>
+                  } @else {
+                    <ul class="resumen__lista confirmacion__lista">
+                      @for (linea of resumen().horario; track $index) {
+                        <li>{{ linea }}</li>
+                      }
+                    </ul>
+                    <app-semana-dibujada [franjas]="resumen().franjas" />
+                  }
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(2)">
+                  Cambiar<span class="visualmente-oculto"> el horario</span>
+                </button>
+              </div>
+
+              <div class="confirmacion__fila">
+                <dt>Primer box</dt>
+                <dd>
+                  @if (resumen().box; as box) {
+                    {{ box }}
+                  } @else {
+                    <span class="confirmacion__secundario">Sin box por ahora</span>
+                  }
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(2)">
+                  Cambiar<span class="visualmente-oculto"> el primer box</span>
+                </button>
+              </div>
+
+              <div class="confirmacion__fila">
+                <dt>Datos institucionales</dt>
+                <dd>
+                  @if (resumen().institucional.length === 0) {
+                    <span class="confirmacion__secundario">Sin cargar por ahora</span>
+                  } @else {
+                    <ul class="resumen__lista confirmacion__lista">
+                      @for (dato of resumen().institucional; track $index) {
+                        <li>{{ dato }}</li>
+                      }
+                    </ul>
+                  }
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(2)">
+                  Cambiar<span class="visualmente-oculto"> los datos institucionales</span>
+                </button>
+              </div>
+            </dl>
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton" [disabled]="bloqueado()">

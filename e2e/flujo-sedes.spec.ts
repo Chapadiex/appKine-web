@@ -72,8 +72,8 @@ test.describe('Sedes contra el backend real', () => {
     // Paso 1 -> 2: el box y el horario son la configuracion inicial opcional.
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByLabel('Nombre del box').fill('Box 1');
-    await page.getByRole('button', { name: 'Agregar una franja' }).click();
-    await page.locator('#sede-horario-dia-0').selectOption({ label: 'Lunes' });
+    // El horario es una semana con un interruptor por dia: abrir el lunes propone 09 a 18.
+    await page.getByRole('switch', { name: 'Lunes' }).check();
     await page.locator('#sede-horario-desde-0').fill('08:00');
     await page.locator('#sede-horario-hasta-0').fill('20:00');
     await page.getByRole('button', { name: 'Continuar' }).click();
