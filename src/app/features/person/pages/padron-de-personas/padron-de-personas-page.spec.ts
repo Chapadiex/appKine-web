@@ -302,6 +302,23 @@ describe('PadronDePersonasPage', () => {
     expect(botonPorTexto(fixture, 'Es otra persona: darla de alta igual')).toBeNull();
   });
 
+  it('un número sin tipo de documento no sale al backend y pide el tipo', async () => {
+    // Antes el tipo se omitia, el numero viajaba solo y el backend lo informaba como "documento
+    // ya registrado": el operador buscaba en el padron una ficha que no existia.
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de alta una persona');
+    escribir(fixture, '#alta-persona-apellido', 'Perez');
+    escribir(fixture, '#alta-persona-nombre', 'Ana');
+    escribir(fixture, '#alta-persona-numero-documento', '30111222');
+    enviar(fixture);
+
+    httpMock.expectNone(esAlta());
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Elegí el tipo del documento que cargaste.');
+    expect(texto).not.toContain('Este documento ya está registrado');
+  });
+
   it('los filtros recargan con su parametro y vuelven a la primera página', async () => {
     const fixture = await montar();
 
