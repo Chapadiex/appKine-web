@@ -20,6 +20,11 @@ jobs:
   # Un PR que sólo toca documentación no compila ni corre nada: los jobs quedan "skipped", que para
   # los checks obligatorios cuenta como éxito. En un push a main corre siempre todo. Si no se puede
   # leer la lista de archivos, también: ante la duda se prueba.
+  #
+  # Un PR que sólo toca estilos, imágenes o documentación compila y corre lint, unitarios y
+  # contraste, pero no los E2E: una hoja de estilos no cambia ningún flujo, y los E2E cuestan
+  # ~12 minutos. Las plantillas (.html) sí los corren, porque los selectores viven ahí. El push a
+  # main corre los E2E siempre, así que un estilo que rompa un flujo se ve igual, después del merge.
   cambios:
     name: Detectar si el PR toca código
     runs-on: ubuntu-latest
@@ -29,6 +34,7 @@ jobs:
       pull-requests: read
     outputs:
       codigo: ${{ steps.filtro.outputs.codigo }}
+      e2e: ${{ steps.filtro.outputs.e2e }}
 
     steps:
       - name: Mirar los archivos del PR
@@ -38,13 +44,19 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           codigo=true
+          e2e=true
           if [ -n "$PR" ] && archivos=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)'); then
             if [ -n "$archivos" ] && ! echo "$archivos" | grep -qvE '^(docs/|\.claude/)|\.md$'; then
               codigo=false
             fi
+            if [ -n "$archivos" ] && ! echo "$archivos" | grep -qvE '^(docs/|\.claude/)|\.(md|css|scss|svg|png|jpe?g|webp|ico|woff2?)$'; then
+              e2e=false
+            fi
           fi
           echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+          echo "e2e=$e2e" >> "$GITHUB_OUTPUT"
           echo "Toca código: $codigo"
+          echo "Corre E2E: $e2e"
 
   build:
     name: Lint, build y tests
@@ -450,7 +462,7 @@ jobs:
   e2e-parte:
     name: E2E parte ${{ matrix.parte }} de 5
     needs: cambios
-    if: needs.cambios.outputs.codigo == 'true'
+    if: needs.cambios.outputs.codigo == 'true' && needs.cambios.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -591,7 +603,7 @@ jobs:
           docker compose -p akine -f appKine-api/compose.yaml down -v || true
 
   # El check obligatorio de la protección de main. Junta las cinco partes bajo el nombre de siempre,
-  # para no depender de los nombres de la matriz. "skipped" vale: es un PR de sólo documentación.
+  # para no depender de los nombres de la matriz. "skipped" vale: es un PR de sólo documentación o estilos.
   e2e:
     name: E2E Playwright contra el backend real
     needs: e2e-parte
