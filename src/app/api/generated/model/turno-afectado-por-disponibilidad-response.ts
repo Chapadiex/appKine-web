@@ -14,6 +14,10 @@
  */
 export interface TurnoAfectadoPorDisponibilidadResponse { 
     /**
+     * Estado del turno
+     */
+    estado?: TurnoAfectadoPorDisponibilidadResponseEstadoEnum;
+    /**
      * Fin del turno, exclusivo
      */
     fin?: string;
@@ -26,8 +30,26 @@ export interface TurnoAfectadoPorDisponibilidadResponse {
      */
     membershipId?: number;
     /**
+     * Paciente del turno
+     */
+    personaId?: number;
+    /**
+     * Apellido y nombre del paciente. Ausente si la ficha no se resuelve
+     */
+    personaNombre?: string;
+    /**
+     * Nombre del profesional. Ausente si su cuenta no se resuelve
+     */
+    profesionalNombre?: string;
+    /**
      * Id del turno
      */
     turnoId?: number;
 }
+export enum TurnoAfectadoPorDisponibilidadResponseEstadoEnum {
+    RESERVADO = 'RESERVADO',
+    CONFIRMADO = 'CONFIRMADO'
+};
+
+
 

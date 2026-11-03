@@ -34,6 +34,10 @@ export interface OperativoDeTurno {
      */
     numeroCaso?: number;
     /**
+     * Observaciones administrativas del turno. **Nunca informacion clinica.**
+     */
+    observaciones?: string;
+    /**
      * A quien se le atribuye la cancelacion
      */
     origenCancelacion?: OperativoDeTurnoOrigenCancelacionEnum;
@@ -65,6 +69,10 @@ export interface OperativoDeTurno {
      * Por que se autorizo el sobreturno
      */
     sobreturnoMotivo?: string;
+    /**
+     * Turno original cuando este nace de un cambio de sede.
+     */
+    turnoOrigenId?: number;
 }
 export enum OperativoDeTurnoEstadoOperativoEnum {
     RESERVADO = 'RESERVADO',

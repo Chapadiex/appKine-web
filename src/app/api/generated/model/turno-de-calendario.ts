@@ -15,6 +15,10 @@ import { TurnoDelDia } from './turno-del-dia';
  */
 export interface TurnoDeCalendario { 
     /**
+     * Solo en la agenda operativa: `true` si el turno sigue reservado o confirmado y ya no cae dentro de la disponibilidad efectiva de su profesional (un bloqueo o un cambio de horario lo dejo afuera): **pendiente de reubicacion**. Se calcula al leer y no se guarda. Ausente si no se evaluo (fuera de la agenda operativa, o un turno sin profesional).
+     */
+    fueraDeDisponibilidad?: boolean;
+    /**
      * Nombre del profesional (`turno.profesionalId` es su membership). Ausente si el turno no tiene profesional o su cuenta no se resuelve.
      */
     profesionalNombre?: string;

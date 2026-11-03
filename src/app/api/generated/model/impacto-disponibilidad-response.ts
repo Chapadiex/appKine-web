@@ -23,7 +23,7 @@ export interface ImpactoDisponibilidadResponse {
      */
     primerTurnoAfectado?: string | null;
     /**
-     * Los primeros 50 turnos afectados, por inicio. Sin datos del paciente: el detalle se abre en la agenda
+     * Los primeros 50 turnos afectados, por inicio, con paciente, profesional y estado para reubicarlos. Nada clinico
      */
     turnos?: Array<TurnoAfectadoPorDisponibilidadResponse>;
     /**
