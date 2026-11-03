@@ -479,14 +479,24 @@
 
           <div class="campo">
             <label for="alta-excepcion-notas">
-              Nota operativa <span class="campo__opcional">(opcional)</span>
+              Nota operativa
+              <span class="campo__opcional">{{
+                motivoEsOtro() ? '(obligatoria con el motivo Otro)' : '(opcional)'
+              }}</span>
             </label>
             <textarea
               id="alta-excepcion-notas"
               rows="2"
               formControlName="notes"
               aria-describedby="alta-excepcion-notas-ayuda"
+              [attr.aria-required]="motivoEsOtro()"
+              [attr.aria-invalid]="errorDeGrupo('notaObligatoria')"
             ></textarea>
+            @if (errorDeGrupo('notaObligatoria')) {
+              <p class="campo__error" role="alert">
+                Con el motivo "Otro" escribí cuál es: queda registrado junto a la excepción.
+              </p>
+            }
             <p class="ayuda" id="alta-excepcion-notas-ayuda">
               Texto libre operativo. <b>Nunca información clínica</b>: esto no es una historia
               clínica y lo lee cualquiera con acceso a la agenda.

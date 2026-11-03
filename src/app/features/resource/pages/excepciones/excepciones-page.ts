@@ -623,8 +623,15 @@ export class ExcepcionesPage {
   }
 
   /** Si el formulario tiene un error de grupo ya mostrable. */
-  protected errorDeGrupo(clave: 'rangoFechas' | 'rangoHoras' | 'franjaIncompleta'): boolean {
+  protected errorDeGrupo(
+    clave: 'rangoFechas' | 'rangoHoras' | 'franjaIncompleta' | 'notaObligatoria',
+  ): boolean {
     return this.formularioAlta.errors?.[clave] === true && this.intentos() > 0;
+  }
+
+  /** "Otro" solo no dice nada: con ese motivo la nota deja de ser opcional. */
+  protected motivoEsOtro(): boolean {
+    return this.formularioAlta.controls.motivo.value === CreateExcepcionRequestMotivoEnum.OTRO;
   }
 
   protected esApertura(): boolean {
@@ -1059,7 +1066,8 @@ function validadorDeHora(control: AbstractControl): ValidationErrors | null {
 }
 
 /**
- * Las tres reglas del formulario que el backend rechazaria con un `400`.
+ * Las reglas del formulario que el backend rechazaria con un `400`, mas una del producto: el
+ * motivo "Otro" pide la nota que dice cual es.
  *
  * <p>No valida solapamientos: dos excepciones que se pisan son legitimas y el backend las
  * acepta a proposito.
@@ -1071,9 +1079,18 @@ function validadorDeExcepcion(grupo: AbstractControl): ValidationErrors | null {
     diaCompleto?: boolean;
     horaDesde?: string;
     horaHasta?: string;
+    motivo?: string;
+    notes?: string;
   };
 
   const errores: ValidationErrors = {};
+
+  if (
+    valores.motivo === CreateExcepcionRequestMotivoEnum.OTRO &&
+    (valores.notes ?? '').trim() === ''
+  ) {
+    errores['notaObligatoria'] = true;
+  }
 
   const dias = diasEntre(valores.fechaDesde ?? '', valores.fechaHasta ?? '');
   if (dias !== null && dias <= 0) {

@@ -728,6 +728,22 @@ describe('ExcepcionesPage', () => {
     expect(texto(fixture)).toContain('Escribi la hora de fin como HH:MM');
   });
 
+  it('con el motivo "Otro" la nota es obligatoria', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    const motivo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#alta-excepcion-motivo',
+    ) as HTMLSelectElement;
+    motivo.value = 'OTRO';
+    motivo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(texto(fixture)).toContain('Con el motivo "Otro" escribí cuál es');
+  });
+
   it('la baja pide motivo, y dar de baja dos veces dice que ya estaba dada de baja', async () => {
     const fixture = await montar();
 
