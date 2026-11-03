@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 
 import { HorarioSemanalPage } from './horario-semanal-page';
 import {
-  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_AGENDA_HORARIO,
   PERMISO_TURNO_MANAGE,
   PERMISO_TURNO_READ,
 } from '../../../../core/models/permisos';
@@ -319,7 +319,11 @@ describe('HorarioSemanalPage', () => {
       (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
     );
     expect(baja.request.url).toBe(`${BLOQUES}/${LUNES_MANANA.id}`);
-    expect(baja.request.body).toEqual({ reason: 'Dejo de atender los lunes a la mañana' });
+    // Ya se vio que deja turnos afuera: la baja los confirma (contrato 0.154.0).
+    expect(baja.request.body).toEqual({
+      reason: 'Dejo de atender los lunes a la mañana',
+      confirmaTurnosAfectados: true,
+    });
 
     baja.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 3 });
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
@@ -370,6 +374,55 @@ describe('HorarioSemanalPage', () => {
 
     // Sin turnos afectados no hay aviso de turnos que hacer.
     expect(titulosDeAvisos()).toEqual(['Cambios del bloque guardados']);
+  });
+
+  it('un 409 con turnos afectados muestra la lista y el reenvío confirma (contrato 0.154.0)', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    seleccionar(fixture, '#editar-bloque-dia', '4');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`)
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2027-01-06' });
+    // Entre la consulta y el guardado entro un turno: el backend lo rechaza con la lista.
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(
+        {
+          type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+          status: 409,
+          turnosAfectados: 1,
+          turnos: [
+            {
+              turnoId: 900,
+              membershipId: PROFESIONAL,
+              personaNombre: 'Perez, Ana',
+              inicio: '2026-10-12T14:00:00Z',
+              fin: '2026-10-12T14:30:00Z',
+            },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Turnos afectados: 1.');
+    expect(texto(fixture)).toContain('Perez, Ana');
+    abrir(fixture, 'Guardar igual');
+
+    const confirmada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
+    );
+    expect(confirmada.request.body).toEqual({
+      version: 1,
+      diaSemana: 4,
+      confirmaTurnosAfectados: true,
+    });
+    confirmada.flush({ ...LUNES_MANANA, diaSemana: 4, version: 2 });
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
   });
 
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {
@@ -450,7 +503,11 @@ describe('HorarioSemanalPage', () => {
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
-    expect(edicion.request.body).toEqual({ version: 1, horaHasta: '11:00' });
+    expect(edicion.request.body).toEqual({
+      version: 1,
+      horaHasta: '11:00',
+      confirmaTurnosAfectados: true,
+    });
     edicion.flush({ ...LUNES_MANANA, horaHasta: '11:00', version: 2, turnosAfectados: 1 });
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
@@ -717,7 +774,7 @@ describe('HorarioSemanalPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE, ...otrosPermisos] });
+      .flush({ permissions: [PERMISO_AGENDA_HORARIO, ...otrosPermisos] });
 
     const fixture = TestBed.createComponent(HorarioSemanalPage);
     fixture.detectChanges();

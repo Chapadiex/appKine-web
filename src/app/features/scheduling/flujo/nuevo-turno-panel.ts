@@ -140,6 +140,8 @@ export class NuevoTurnoPanel implements OnInit {
   protected readonly alternativas = signal<readonly HorarioDisponible[]>([]);
   protected readonly sobreturnoAbierto = signal(false);
   protected readonly sobreturnoMotivo = signal('');
+  /** Notas administrativas del turno (contrato 0.154.0). No entran en la huella de idempotencia. */
+  protected readonly observaciones = signal('');
   protected readonly faltaMotivoDeSobreturno = signal(false);
   protected readonly ocupante = signal('');
 
@@ -687,6 +689,7 @@ export class NuevoTurnoPanel implements OnInit {
         planId: opcion?.planId,
         origen: this.contexto().origen as string as ReservarTurnoOrigenEnum,
         sobreturnoMotivo,
+        observaciones: this.observaciones().trim() || undefined,
         idempotencyKey: this.clave,
       })
       .subscribe({

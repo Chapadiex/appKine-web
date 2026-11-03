@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin, map, switchMap } from 'rxjs';
 
 import {
   CreateExcepcionRequest,
@@ -19,18 +20,30 @@ import {
   CreateExcepcionRequestTipoEnum,
 } from '../../../api/generated/model/create-excepcion-request';
 import { ImpactoDisponibilidadResponse } from '../../../api/generated/model/impacto-disponibilidad-response';
+import { CancelarTurnosEnLoteOrigenEnum } from '../../../api/generated/model/cancelar-turnos-en-lote';
 import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
+import { ResultadoDeCancelacionEnLote } from '../../../api/generated/model/resultado-de-cancelacion-en-lote';
+import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
 import { ContextoDeTurno } from '../../../core/models/contexto-de-turno';
+import { PERMISO_AGENDA_EXCEPCIONES } from '../../../core/models/permisos';
 import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../core/services/perfil-propio.store';
+import { PermissionsStore } from '../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { AccionesDeFila } from '../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
-import { ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
+import { ErrorAgenda, traducirErrorAgenda, turnosDelRechazo } from '../models/agenda-errors';
 import { fechaEnPalabras, horaEnZona, hoyEnZona, sumarDias } from '../models/etiquetas-de-agenda';
-import { MOTIVOS_DE_BLOQUEO, fechaHoraEnZona } from '../models/etiquetas-de-turno';
+import {
+  MOTIVOS_DE_BLOQUEO,
+  MOTIVOS_DE_CANCELACION,
+  ORIGENES_DE_CANCELACION,
+  fechaHoraEnZona,
+  nombreDeEstado,
+} from '../models/etiquetas-de-turno';
 import { diaEnZona } from '../models/semana';
 import { SchedulingApi } from '../services/scheduling-api';
 
@@ -38,15 +51,22 @@ import { SchedulingApi } from '../services/scheduling-api';
 const TODA_LA_SEDE = 'SEDE';
 
 const MENSAJE_SIN_PERMISO =
-  'No tenés permiso para bloquear la agenda de esta sede: hace falta poder administrar la sede. ' +
-  'Pedíselo a quien administra el centro.';
+  'No tenés permiso para bloquear esta agenda: hace falta el permiso de bloqueos y excepciones ' +
+  'sobre ese profesional. Pedíselo a quien administra el centro.';
+
+/** Lo que dijo el lote de un turno: se muestra en su fila. */
+const RESULTADOS_DEL_LOTE: Readonly<Record<string, string>> = {
+  CANCELADO: 'Cancelado',
+  YA_CANCELADO: 'Ya estaba cancelado',
+  RECHAZADO: 'No se canceló',
+};
 
 /**
  * Bloquear la agenda sin dejar turnos en conflicto en silencio (TURNO.md §22, TURNO - Tecnico §34 y
  * §35).
  *
  * <p>Es un <b>cierre de disponibilidad</b>: la misma excepcion que se carga desde Horarios, vista desde
- * los turnos. No hay una entidad aparte, y el servidor es el que decide: exige `consultorio:manage`
+ * los turnos. No hay una entidad aparte, y el servidor es el que decide: exige `agenda:excepciones`
  * (aca solo se traduce el 403) y sin confirmar rechaza con 409 el cierre que deja turnos afuera.
  *
  * <h2>"Toda la sede" es una decision, no un default</h2>
@@ -76,6 +96,8 @@ export class BloqueoDeAgendaPanel implements OnInit {
   private readonly dia = inject(DiaDeLaSede);
   private readonly avisos = inject(AvisosStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
   private readonly router = inject(Router);
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -85,8 +107,23 @@ export class BloqueoDeAgendaPanel implements OnInit {
 
   protected readonly TODA_LA_SEDE = TODA_LA_SEDE;
   protected readonly MOTIVOS = MOTIVOS_DE_BLOQUEO;
+  protected readonly MOTIVOS_DE_CANCELACION = MOTIVOS_DE_CANCELACION;
+  protected readonly ORIGENES_DE_CANCELACION = ORIGENES_DE_CANCELACION;
+  protected readonly nombreDeEstado = nombreDeEstado;
 
-  protected readonly profesionales = signal<readonly RecursoLibre[]>([]);
+  /**
+   * Con `agenda:excepciones` recortado a lo propio, el profesional bloquea solo su agenda: ni la sede
+   * entera ni la de otro se ofrecen. El backend responde 403 igual.
+   */
+  protected readonly soloPropio = computed(() =>
+    this.permisos.soloPropio(PERMISO_AGENDA_EXCEPCIONES),
+  );
+  private readonly todosLosProfesionales = signal<readonly RecursoLibre[]>([]);
+  protected readonly profesionales = computed(() => {
+    const lista = this.todosLosProfesionales();
+    const propio = this.perfil.membershipId();
+    return this.soloPropio() && propio !== null ? lista.filter((p) => p.id === propio) : lista;
+  });
   protected readonly errorDeProfesionales = signal('');
   /** Vacio mientras no se eligio; {@link TODA_LA_SEDE}, o el id del profesional. */
   protected readonly alcance = signal('');
@@ -106,6 +143,20 @@ export class BloqueoDeAgendaPanel implements OnInit {
 
   /** Con esto se muestra la pantalla de turnos afectados en lugar del formulario. */
   protected readonly impacto = signal<ImpactoDisponibilidadResponse | null>(null);
+
+  // Gestion de los afectados en lote: se eligen filas y se cancelan con un motivo comun.
+  protected readonly seleccion = signal<ReadonlySet<number>>(new Set());
+  protected readonly cancelandoEnLote = signal(false);
+  protected readonly motivoDeLote = signal<string>(MOTIVOS_DE_CANCELACION[0]);
+  protected readonly notaDeLote = signal('');
+  protected readonly origenDeLote = signal<string>('INSTITUCION');
+  protected readonly resultadosDelLote = signal<ReadonlyMap<number, ResultadoDeCancelacionEnLote>>(
+    new Map(),
+  );
+  protected readonly resumenDelLote = signal('');
+  protected readonly faltaNotaDeLote = computed(
+    () => this.motivoDeLote() === 'Otro' && this.notaDeLote().trim() === '',
+  );
   /** Lo que se reviso: es lo que se guarda, aunque el formulario ya no este a la vista. */
   private cierreRevisado: CreateExcepcionRequest | null = null;
 
@@ -188,6 +239,7 @@ export class BloqueoDeAgendaPanel implements OnInit {
   });
 
   ngOnInit(): void {
+    this.perfil.asegurarCargado();
     const contexto = this.contexto();
     const consultorioId = this.tenant.consultorioId();
     if (consultorioId === null) {
@@ -208,19 +260,23 @@ export class BloqueoDeAgendaPanel implements OnInit {
     this.errorDeProfesionales.set('');
     this.api.profesionales(consultorioId).subscribe({
       next: (lista) => {
-        this.profesionales.set(lista);
-        // Un profesional que ya no esta en la sede no se puede dejar elegido sin que se vea.
+        this.todosLosProfesionales.set(lista);
+        // Un profesional que no se puede elegir no se puede dejar elegido sin que se vea.
         const alcance = this.alcance();
+        const visibles = this.profesionales();
         if (
           alcance !== '' &&
           alcance !== TODA_LA_SEDE &&
-          !lista.some((profesional) => String(profesional.id) === alcance)
+          !visibles.some((profesional) => String(profesional.id) === alcance)
         ) {
           this.alcance.set('');
         }
+        if (this.soloPropio() && visibles.length === 1 && this.alcance() === '') {
+          this.alcance.set(String(visibles[0].id));
+        }
       },
       error: (error: unknown) => {
-        this.profesionales.set([]);
+        this.todosLosProfesionales.set([]);
         this.errorDeProfesionales.set(this.traducir(error).mensaje);
         // El selector no puede mostrarlo: mandar un id que no se ve seria un bloqueo a ciegas.
         if (this.alcance() !== TODA_LA_SEDE) {
@@ -284,7 +340,14 @@ export class BloqueoDeAgendaPanel implements OnInit {
       error: (error: unknown) => {
         this.guardando.set(false);
         const fallo = this.traducir(error);
-        if (fallo.causa === 'bloqueo-con-turnos-afectados') {
+        const turnos = turnosDelRechazo(error);
+        if (fallo.causa === 'bloqueo-con-turnos-afectados' && turnos.length > 0) {
+          // Desde 0.154.0 el 409 trae la lista: no hace falta volver a preguntar.
+          this.mostrarImpacto(cierre, {
+            turnosAfectados: fallo.turnosAfectados,
+            turnos: [...turnos],
+          });
+        } else if (fallo.causa === 'bloqueo-con-turnos-afectados') {
           this.releerImpacto(consultorioId, cierre, fallo.turnosAfectados);
         } else {
           this.rechazo.set(fallo);
@@ -322,12 +385,114 @@ export class BloqueoDeAgendaPanel implements OnInit {
   ): void {
     this.cierreRevisado = cierre;
     this.impacto.set(impacto);
+    this.seleccion.set(new Set());
     this.enfocar('#bloqueo-impacto');
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Turnos afectados en lote
+  // -------------------------------------------------------------------------------------
+
+  /** Los que todavia se pueden cancelar: los que el lote ya resolvio no se vuelven a ofrecer. */
+  protected readonly seleccionables = computed(() =>
+    (this.impacto()?.turnos ?? [])
+      .map((t) => t.turnoId)
+      .filter((id): id is number => id !== undefined && !this.resultadosDelLote().has(id)),
+  );
+
+  protected readonly todosSeleccionados = computed(
+    () =>
+      this.seleccionables().length > 0 &&
+      this.seleccionables().every((id) => this.seleccion().has(id)),
+  );
+
+  protected alternar(turnoId: number, marcado: boolean): void {
+    const nueva = new Set(this.seleccion());
+    if (marcado) {
+      nueva.add(turnoId);
+    } else {
+      nueva.delete(turnoId);
+    }
+    this.seleccion.set(nueva);
+  }
+
+  protected alternarTodos(marcado: boolean): void {
+    this.seleccion.set(new Set(marcado ? this.seleccionables() : []));
+  }
+
+  /**
+   * Cancela los elegidos con un solo motivo. El impacto no trae la version de cada turno, asi que se
+   * leen antes: el lote la exige y un turno que alguien toco en el medio vuelve rechazado, no pisado.
+   */
+  protected cancelarSeleccionados(): void {
+    const consultorioId = this.tenant.consultorioId();
+    const ids = [...this.seleccion()];
+    if (consultorioId === null || ids.length === 0 || this.faltaNotaDeLote()) {
+      return;
+    }
+    const nota = this.notaDeLote().trim();
+    const motivo = nota === '' ? this.motivoDeLote() : `${this.motivoDeLote()}: ${nota}`;
+    this.cancelandoEnLote.set(true);
+    this.rechazo.set(null);
+    forkJoin(ids.map((id) => this.api.verTurno(consultorioId, id)))
+      .pipe(
+        map((turnos) =>
+          turnos.map((turno) => ({ turnoId: turno.id ?? 0, expectedVersion: turno.version ?? 0 })),
+        ),
+        switchMap((items) =>
+          this.api.cancelarEnLote(consultorioId, {
+            items,
+            motivo,
+            origen: this.origenDeLote() as CancelarTurnosEnLoteOrigenEnum,
+          }),
+        ),
+      )
+      .subscribe({
+        next: (lote) => {
+          this.cancelandoEnLote.set(false);
+          const resultados = new Map(this.resultadosDelLote());
+          for (const r of lote.resultados ?? []) {
+            if (r.turnoId !== undefined) {
+              resultados.set(r.turnoId, r);
+            }
+          }
+          this.resultadosDelLote.set(resultados);
+          this.seleccion.set(new Set());
+          const cancelados = lote.cancelados ?? 0;
+          const rechazados = lote.rechazados ?? 0;
+          this.resumenDelLote.set(
+            `${cancelados === 1 ? '1 turno cancelado' : `${cancelados} turnos cancelados`}` +
+              (rechazados > 0 ? `; ${rechazados} no se pudieron cancelar.` : '.'),
+          );
+          if (cancelados > 0) {
+            this.flujo.notificarCambio();
+          }
+        },
+        error: (error: unknown) => {
+          this.cancelandoEnLote.set(false);
+          this.rechazo.set(this.traducir(error));
+        },
+      });
+  }
+
+  protected resultadoDe(turnoId: number | undefined): string {
+    const resultado = turnoId === undefined ? undefined : this.resultadosDelLote().get(turnoId);
+    if (resultado === undefined) {
+      return '';
+    }
+    const texto = RESULTADOS_DEL_LOTE[resultado.resultado ?? ''] ?? resultado.resultado ?? '';
+    return resultado.resultado === 'RECHAZADO' && resultado.problemType === 'forbidden'
+      ? `${texto}: es de otro profesional`
+      : resultado.resultado === 'RECHAZADO' && resultado.detalle
+        ? `${texto}: ${resultado.detalle}`
+        : texto;
   }
 
   /** "Cancelar": no se guardo nada y lo cargado sigue ahi, para corregirlo o cerrar el panel. */
   protected volverAlFormulario(): void {
     this.impacto.set(null);
+    this.resultadosDelLote.set(new Map());
+    this.resumenDelLote.set('');
     this.cierreRevisado = null;
     this.rechazo.set(null);
     this.enfocar('#bloqueo-profesional');
@@ -344,6 +509,11 @@ export class BloqueoDeAgendaPanel implements OnInit {
       })
       .catch(() => undefined);
     this.cerrar.emit();
+  }
+
+  /** Con la sede entera los turnos son de varios profesionales: sin el nombre no se distinguen. */
+  protected profesionalDeLaFila(turno: TurnoAfectadoPorDisponibilidadResponse): string {
+    return turno.profesionalNombre || this.profesionalDelTurno(turno.membershipId);
   }
 
   /** Abre el turno ya en la operacion elegida: reprogramar o cancelar sin pasar por el resumen. */
@@ -365,7 +535,7 @@ export class BloqueoDeAgendaPanel implements OnInit {
 
   private nombreDe(id: number): string {
     return (
-      this.profesionales().find((profesional) => profesional.id === id)?.nombre ||
+      this.todosLosProfesionales().find((profesional) => profesional.id === id)?.nombre ||
       'Sin nombre cargado'
     );
   }

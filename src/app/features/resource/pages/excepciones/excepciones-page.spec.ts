@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ExcepcionesPage } from './excepciones-page';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_AGENDA_EXCEPCIONES } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
@@ -954,7 +954,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();
@@ -993,7 +993,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();
@@ -1030,7 +1030,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();

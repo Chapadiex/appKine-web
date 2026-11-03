@@ -30,10 +30,15 @@ import { PermissionsStore } from '../../../core/services/permissions.store';
  * <b>mismo</b> permiso: quien lee esto tiene que poder pedirselo a alguien, y un texto que
  * nombre el permiso equivocado hace que se otorgue el permiso equivocado.
  */
-export const TEXTO_MODO_LECTURA =
-  'Modo lectura: podés consultar todo lo que se muestra, pero no cambiarlo. ' +
-  'Cargar, editar o dar de baja necesita el permiso consultorio:manage; pediselo a quien ' +
-  'administre el centro.';
+export function textoDeModoLectura(permiso: string): string {
+  return (
+    'Modo lectura: podés consultar todo lo que se muestra, pero no cambiarlo. ' +
+    `Cargar, editar o dar de baja necesita el permiso ${permiso}; pediselo a quien ` +
+    'administre el centro.'
+  );
+}
+
+export const TEXTO_MODO_LECTURA = textoDeModoLectura(PERMISO_CONSULTORIO_MANAGE);
 
 /**
  * `true` solo cuando se sabe que el permiso de gestion <b>falta</b>.
@@ -42,8 +47,11 @@ export const TEXTO_MODO_LECTURA =
  * que si ni que no, igual que la directiva. Afirmar "no tenes permiso" antes de saberlo seria
  * mentirle a un administrador durante el primer tick de la pantalla.
  */
-export function modoLectura(permisos: PermissionsStore): Signal<boolean> {
-  return computed(() => permisos.cargados() && !permisos.tiene(PERMISO_CONSULTORIO_MANAGE));
+export function modoLectura(
+  permisos: PermissionsStore,
+  permiso: string = PERMISO_CONSULTORIO_MANAGE,
+): Signal<boolean> {
+  return computed(() => permisos.cargados() && !permisos.tiene(permiso));
 }
 
 /**

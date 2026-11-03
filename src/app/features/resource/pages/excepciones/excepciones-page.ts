@@ -36,7 +36,10 @@ import {
 import { ExcepcionesDeDisponibilidadService } from '../../../../api/generated/api/excepciones-de-disponibilidad.service';
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_AGENDA_EXCEPCIONES } from '../../../../core/models/permisos';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
+import { UpdateExcepcionRequestMotivoEnum } from '../../../../api/generated/model/update-excepcion-request';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -46,13 +49,18 @@ import {
   SIN_PARAMETROS,
   leerParametrosDeHorarios,
 } from '../../models/parametros-de-horarios';
-import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
+import { modoLectura, textoDeModoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaExcepcion, traducirErrorExcepcion } from '../../models/excepcion-errors';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
-import { ImpactoPrevio, avisoDeExcepcion, turnosPrevistos } from '../../models/turnos-afectados';
+import {
+  ImpactoPrevio,
+  avisoDeExcepcion,
+  impactoDelRechazo,
+  turnosPrevistos,
+} from '../../models/turnos-afectados';
 import {
   PATRON_HORA,
   esHoraDePared,
@@ -120,6 +128,7 @@ const MOTIVOS: readonly {
 }[] = [
   { valor: CreateExcepcionRequestMotivoEnum.AUSENCIA, etiqueta: 'Ausencia' },
   { valor: CreateExcepcionRequestMotivoEnum.LICENCIA, etiqueta: 'Licencia' },
+  { valor: CreateExcepcionRequestMotivoEnum.VACACIONES, etiqueta: 'Vacaciones' },
   { valor: CreateExcepcionRequestMotivoEnum.CAPACITACION, etiqueta: 'Capacitación' },
   { valor: CreateExcepcionRequestMotivoEnum.FERIADO, etiqueta: 'Feriado' },
   { valor: CreateExcepcionRequestMotivoEnum.BLOQUEO, etiqueta: 'Bloqueo' },
@@ -207,11 +216,30 @@ export class ExcepcionesPage {
     inject(ActivatedRoute).snapshot.queryParamMap,
   );
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  /** Bloqueos y excepciones se gestionan con `agenda:excepciones` desde el contrato 0.154.0. */
+  protected readonly permisoManage = PERMISO_AGENDA_EXCEPCIONES;
   protected readonly rutas = RUTAS_HORARIOS;
-  protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  protected readonly textoModoLectura = textoDeModoLectura(PERMISO_AGENDA_EXCEPCIONES);
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
-  protected readonly modoLectura = modoLectura(inject(PermissionsStore));
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
+  protected readonly modoLectura = modoLectura(this.permisos, PERMISO_AGENDA_EXCEPCIONES);
+
+  /**
+   * Con `agenda:excepciones` recortado a lo propio, el profesional carga y edita solo las suyas: ni
+   * la sede entera ni las de otro. Las ve igual; el backend responde 403 a lo ajeno.
+   */
+  protected readonly soloPropio = computed(() =>
+    this.permisos.soloPropio(PERMISO_AGENDA_EXCEPCIONES),
+  );
+  protected puedeOperarSobre(excepcion: ExcepcionResponse): boolean {
+    return !this.soloPropio() || excepcion.membershipId === this.perfil.membershipId();
+  }
+
+  /** La excepcion que se esta editando en el panel del alta, o `null` si es un alta. */
+  protected readonly edicion = signal<ExcepcionResponse | null>(null);
+  /** El 400 del backend sobre las notas (`errors.notes`), junto al campo. */
+  protected readonly errorDeNotas = signal<string | null>(null);
   protected readonly patronHora = PATRON_HORA;
   protected readonly motivos = MOTIVOS;
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
@@ -226,6 +254,12 @@ export class ExcepcionesPage {
 
   protected readonly profesionales = signal<readonly MembershipResponse[]>([]);
   protected readonly errorProfesionales = signal<string | null>(null);
+  /** Los que se pueden elegir en el alta: con alcance propio, solo uno mismo. */
+  protected readonly profesionalesDelAlta = computed(() =>
+    this.soloPropio()
+      ? this.profesionales().filter((p) => p.id === this.perfil.membershipId())
+      : this.profesionales(),
+  );
 
   /**
    * Si la lista de profesionales de la sede es <b>conocida</b>.
@@ -397,6 +431,7 @@ export class ExcepcionesPage {
   );
 
   constructor() {
+    this.perfil.asegurarCargado();
     effect(() => {
       // Cambiar de sede invalida todo: las excepciones, los profesionales y cualquier panel
       // abierto apuntando a una fila que en la sede nueva no existe.
@@ -594,11 +629,15 @@ export class ExcepcionesPage {
 
   protected abrirAlta(): void {
     this.bajaAbierta.set(null);
+    this.edicion.set(null);
+    this.formularioAlta.controls.tipo.enable();
+    this.formularioAlta.controls.alcance.enable();
     const desde = this.formularioVentana.getRawValue().desde || this.diaDeLaSede.hoy();
+    const propio = this.soloPropio() ? this.perfil.membershipId() : null;
     this.formularioAlta.reset({
       tipo: String(CreateExcepcionRequestTipoEnum.CIERRE),
       motivo: String(CreateExcepcionRequestMotivoEnum.AUSENCIA),
-      alcance: '',
+      alcance: propio === null ? '' : String(propio),
       fechaDesde: desde,
       // Un solo dia, que es el caso frecuente, ya escrito con el fin exclusivo.
       fechaHasta: sumarDias(desde, 1),
@@ -614,7 +653,97 @@ export class ExcepcionesPage {
 
   protected cerrarAlta(): void {
     this.altaAbierta.set(false);
+    this.edicion.set(null);
     this.limpiarEnvio();
+  }
+
+  /**
+   * Editar una excepcion (`updateExcepcion`, contrato 0.154.0): motivo, fechas, franja y notas. Tipo y
+   * alcance no se editan —es otra excepcion—, asi que quedan a la vista y deshabilitados.
+   */
+  protected abrirEdicion(excepcion: ExcepcionResponse): void {
+    if (excepcion.id === undefined) {
+      return;
+    }
+    this.bajaAbierta.set(null);
+    this.limpiarEnvio();
+    const diaCompleto = !excepcion.horaDesde && !excepcion.horaHasta;
+    this.formularioAlta.reset({
+      tipo: String(excepcion.tipo ?? CreateExcepcionRequestTipoEnum.CIERRE),
+      motivo: String(excepcion.motivo ?? CreateExcepcionRequestMotivoEnum.AUSENCIA),
+      alcance: excepcion.membershipId === undefined ? '' : String(excepcion.membershipId),
+      fechaDesde: excepcion.fechaDesde ?? '',
+      fechaHasta: excepcion.fechaHasta ?? '',
+      diaCompleto,
+      horaDesde: diaCompleto ? '' : (excepcion.horaDesde ?? '').slice(0, 5),
+      horaHasta: diaCompleto ? '' : (excepcion.horaHasta ?? '').slice(0, 5),
+      notes: excepcion.notes ?? '',
+    });
+    this.formularioAlta.controls.tipo.disable();
+    this.formularioAlta.controls.alcance.disable();
+    this.edicion.set(excepcion);
+    this.altaAbierta.set(true);
+    afterNextRender(() => this.enfocar('#alta-excepcion-motivo'), { injector: this.injector });
+  }
+
+  private guardarEdicion(
+    consultorioId: number,
+    cuerpo: CreateExcepcionRequest,
+    confirma: boolean,
+  ): void {
+    const editada = this.edicion();
+    if (editada?.id === undefined || editada.version === undefined) {
+      return;
+    }
+    const previsto = turnosPrevistos(this.impacto());
+    this.enviando.set(true);
+    this.errorAccion.set(null);
+    this.causaAccion.set(null);
+    this.errorDeNotas.set(null);
+    this.excepciones
+      .updateExcepcion({
+        consultorioId,
+        excepcionId: editada.id,
+        updateExcepcionRequest: {
+          motivo: cuerpo.motivo as string as UpdateExcepcionRequestMotivoEnum,
+          fechaDesde: cuerpo.fechaDesde,
+          fechaHasta: cuerpo.fechaHasta,
+          horaDesde: cuerpo.horaDesde,
+          horaHasta: cuerpo.horaHasta,
+          notes: cuerpo.notes,
+          version: editada.version,
+          confirmaTurnosAfectados: confirma ? true : undefined,
+        },
+      })
+      .subscribe({
+        next: () => {
+          this.cerrarAlta();
+          this.publicarResultado('Excepción actualizada', avisoDeExcepcion(previsto));
+          this.consultar();
+        },
+        error: (error: unknown) => {
+          if (this.mostrarTurnosDelRechazo(error, cuerpo)) {
+            return;
+          }
+          this.fallar(error);
+        },
+      });
+  }
+
+  /**
+   * El 409 `bloqueo-con-turnos-afectados` trae la lista desde 0.154.0: se muestra como el impacto
+   * previo y "Cargar igual" reenvia confirmando. Devuelve si era eso.
+   */
+  private mostrarTurnosDelRechazo(error: unknown, cuerpo: CreateExcepcionRequest): boolean {
+    const impacto = impactoDelRechazo(error);
+    if (impacto === null) {
+      return false;
+    }
+    this.enviando.set(false);
+    this.impacto.set({ tipo: 'listo', impacto });
+    this.cuerpoDelImpacto.set(cuerpo);
+    this.enfocarImpacto();
+    return true;
   }
 
   protected mostrarError(campo: 'fechaDesde' | 'fechaHasta' | 'horaDesde' | 'horaHasta'): boolean {
@@ -653,6 +782,18 @@ export class ExcepcionesPage {
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null || this.enviando()) {
+      return;
+    }
+
+    if (this.edicion() !== null) {
+      this.intentos.update((valor) => valor + 1);
+      if (this.formularioAlta.invalid) {
+        this.formularioAlta.markAllAsTouched();
+        this.enfocar('#alta-excepcion-desde');
+        return;
+      }
+      this.impacto.set(null);
+      this.guardarEdicion(consultorioId, this.armarCuerpo(), false);
       return;
     }
 
@@ -741,6 +882,11 @@ export class ExcepcionesPage {
       this.impacto.set(null);
       this.cuerpoDelImpacto.set(null);
       this.enviarAlta();
+      return;
+    }
+
+    if (this.edicion() !== null) {
+      this.guardarEdicion(consultorioId, confirmado, true);
       return;
     }
 
@@ -843,6 +989,10 @@ export class ExcepcionesPage {
         this.consultar();
       },
       error: (error: unknown) => {
+        // Desde 0.154.0 el 409 trae la lista: se muestra y se puede confirmar sin volver a consultar.
+        if (!cuerpo.confirmaTurnosAfectados && this.mostrarTurnosDelRechazo(error, cuerpo)) {
+          return;
+        }
         this.fallar(error);
         // La consulta dijo que no habia turnos y ya no es cierto: sin borrarla quedaria "Cargar
         // igual" al lado de un impacto de cero, confirmando algo que nadie vio.
@@ -988,6 +1138,9 @@ export class ExcepcionesPage {
     this.enviando.set(false);
     this.errorAccion.set(traducido.mensaje);
     this.causaAccion.set(traducido.causa);
+    // "Otro" sin notas: el 400 nombra el campo, y el mensaje va al lado del campo.
+    const deNotas = error instanceof AkineHttpError ? error.erroresPorCampo['notes'] : undefined;
+    this.errorDeNotas.set(deNotas ?? null);
   }
 
   /**
@@ -1011,6 +1164,7 @@ export class ExcepcionesPage {
 
   private limpiarEnvio(): void {
     this.enviando.set(false);
+    this.errorDeNotas.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
     this.avisoDeApertura.set(null);

@@ -44,6 +44,7 @@ const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
   [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registró que el paciente no vino',
   [EventoDeTurnoTipoEnum.LLEGADA]: 'Llegó al centro',
   [EventoDeTurnoTipoEnum.LLEGADA_DESHECHA]: 'Se deshizo el registro de llegada',
+  [EventoDeTurnoTipoEnum.OBSERVACIONES]: 'Se cambiaron las observaciones',
 };
 
 /** Estados desde los que ya no hay ninguna transicion posible. */
@@ -203,6 +204,7 @@ export const MOTIVOS_DE_REPROGRAMACION = [
 
 export const MOTIVOS_DE_BLOQUEO = [
   { valor: 'LICENCIA', etiqueta: 'Licencia' },
+  { valor: 'VACACIONES', etiqueta: 'Vacaciones' },
   { valor: 'CAPACITACION', etiqueta: 'Capacitación' },
   { valor: 'AUSENCIA', etiqueta: 'Personal' },
   { valor: 'BLOQUEO', etiqueta: 'Institucional' },

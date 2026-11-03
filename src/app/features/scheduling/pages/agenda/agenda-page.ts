@@ -21,10 +21,12 @@ import { AgendaOperativa } from '../../../../api/generated/model/agenda-operativ
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { RecursoLibre } from '../../../../api/generated/model/recurso-libre';
 import { TurnoDeCalendario } from '../../../../api/generated/model/turno-de-calendario';
-import { PERMISO_CONSULTORIO_MANAGE, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_AGENDA_EXCEPCIONES, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -86,6 +88,12 @@ const ESTADOS = [
 ] as const;
 
 /**
+ * Opcion del filtro de estado que no es un estado: los turnos que un bloqueo o un cambio de horario
+ * dejaron fuera de la disponibilidad (`fueraDeDisponibilidad`, contrato 0.154.0).
+ */
+const A_REUBICAR = 'A_REUBICAR';
+
+/**
  * La agenda operativa de la sede: dia o semana, por profesional o por box (TURNO - Tecnico §14, §52 a
  * §59).
  *
@@ -124,6 +132,8 @@ export class AgendaPage {
   private readonly injector = inject(Injector);
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly flujo = inject(FlujoDeTurnosStore);
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
 
   /** De la query. El `transform` cubre el parametro ausente, que llega como `undefined`. */
   readonly fecha = input('', {
@@ -146,8 +156,9 @@ export class AgendaPage {
   });
 
   protected readonly PERMISO_TURNO_MANAGE = PERMISO_TURNO_MANAGE;
-  protected readonly PERMISO_CONSULTORIO_MANAGE = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly PERMISO_AGENDA_EXCEPCIONES = PERMISO_AGENDA_EXCEPCIONES;
   protected readonly ESTADOS = ESTADOS;
+  protected readonly A_REUBICAR = A_REUBICAR;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
@@ -187,6 +198,21 @@ export class AgendaPage {
   private ultimaUrl = '';
   /** La fecha sigue siendo el "hoy" que se supuso al abrir: sin `?fecha=` y sin que nadie la toque. */
   private fechaProvisoria = false;
+  /** La agenda propia se preselecciona una sola vez: despues manda lo que elija el usuario. */
+  private propiaPreseleccionada = false;
+
+  /**
+   * Con `turno:manage` recortado a lo propio, el profesional opera solo sus turnos: las celdas libres
+   * de otra columna no se ofrecen. Sin profesional (vista por box) se ofrecen: decide el backend.
+   */
+  protected readonly turnosPropios = computed(() => this.permisos.soloPropio(PERMISO_TURNO_MANAGE));
+  protected puedeOperarEn(profesionalId: number | undefined): boolean {
+    return (
+      !this.turnosPropios() ||
+      profesionalId === undefined ||
+      profesionalId === this.perfil.membershipId()
+    );
+  }
 
   protected readonly timezone = computed(() => this.agenda()?.timezone ?? this.dia.zona());
   /** Primer dia de lo que se pide: el dia, el lunes de su semana o el primero de su mes. */
@@ -255,7 +281,7 @@ export class AgendaPage {
     if (this.estadoElegido() !== '') {
       chips.push({
         clave: 'estado',
-        texto: `Estado: ${nombreDeEstadoOperativo(this.estadoElegido())}`,
+        texto: `Estado: ${this.nombreDeFiltroDeEstado(this.estadoElegido())}`,
         quitar: () => this.filtrarEstado(''),
       });
     }
@@ -274,7 +300,10 @@ export class AgendaPage {
     const oferta = this.ofertaId();
     const paciente = normalizar(this.paciente());
     return (turno: TurnoDeCalendario) =>
-      (estado === '' || turno.turno?.operativo?.estadoOperativo === estado) &&
+      (estado === '' ||
+        (estado === A_REUBICAR
+          ? turno.fueraDeDisponibilidad === true
+          : turno.turno?.operativo?.estadoOperativo === estado)) &&
       (oferta === null || turno.turno?.ofertaId === oferta) &&
       (paciente === '' ||
         normalizar(`${turno.turno?.personaNombre ?? ''} ${turno.turno?.documento ?? ''}`).includes(
@@ -412,6 +441,27 @@ export class AgendaPage {
       });
     });
 
+    // Un profesional con turnos propios arranca en su agenda; puede mirar las demas igual.
+    effect(() => {
+      const membershipId = this.perfil.membershipId();
+      const propios = this.turnosPropios();
+      untracked(() => {
+        if (
+          this.propiaPreseleccionada ||
+          !propios ||
+          membershipId === null ||
+          this.profesional() !== ''
+        ) {
+          return;
+        }
+        this.propiaPreseleccionada = true;
+        if (this.profesionalId() === null) {
+          this.filtrarProfesional(String(membershipId));
+        }
+      });
+    });
+    this.perfil.asegurarCargado();
+
     // Lo que hace el flujo se ve en el lugar: sin vaciar la grilla ni mover el scroll.
     let primera = true;
     effect(() => {
@@ -456,9 +506,7 @@ export class AgendaPage {
     this.agrupacion.set(this.por() === 'box' ? 'box' : 'profesional');
     this.profesionalId.set(numeroOVacio(this.profesional()));
     this.ofertaId.set(numeroOVacio(this.oferta()));
-    this.estadoElegido.set(
-      (ESTADOS as readonly string[]).includes(this.estado()) ? this.estado() : '',
-    );
+    this.estadoElegido.set([...ESTADOS, A_REUBICAR].includes(this.estado()) ? this.estado() : '');
   }
 
   private escribirUrl(): void {
@@ -814,9 +862,14 @@ export class AgendaPage {
       turno.turno?.operativo?.espacioNombre,
       estado,
       turno.turno?.operativo?.sobreturno ? 'Sobreturno' : '',
+      turno.fueraDeDisponibilidad ? 'A reubicar: quedó fuera de la disponibilidad' : '',
     ]
       .filter(Boolean)
       .join(' · ');
+  }
+
+  protected nombreDeFiltroDeEstado(valor: string): string {
+    return valor === A_REUBICAR ? 'A reubicar' : nombreDeEstadoOperativo(valor);
   }
 
   protected claseDeEstado(evento: EventoDeGrilla): string {

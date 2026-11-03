@@ -28,17 +28,18 @@ import { DisponibilidadProfesionalService } from '../../../../api/generated/api/
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import {
-  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_AGENDA_HORARIO,
   PERMISO_TURNO_MANAGE,
   PERMISO_TURNO_READ,
 } from '../../../../core/models/permisos';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { leerParametrosDeHorarios } from '../../models/parametros-de-horarios';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
-import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
+import { modoLectura, textoDeModoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
 import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
@@ -48,6 +49,7 @@ import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-
 import {
   ImpactoPrevio,
   avisoDeTurnosAfectados,
+  impactoDelRechazo,
   turnosPrevistos,
 } from '../../models/turnos-afectados';
 import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
@@ -168,15 +170,33 @@ export class HorarioSemanalPage {
     inject(ActivatedRoute).snapshot.queryParamMap,
   ).membershipId;
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  /** El horario habitual se gestiona con `agenda:horario` desde el contrato 0.154.0. */
+  protected readonly permisoManage = PERMISO_AGENDA_HORARIO;
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
   protected readonly permisoVerTurnos = PERMISO_TURNO_READ;
   protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
   protected readonly pestanas = PESTANAS_DE_HORARIOS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
-  protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  /**
+   * Con `agenda:horario` recortado a lo propio, el horario de otro profesional se mira y no se toca.
+   * Un profesional sin elegir todavia no es ajeno.
+   */
+  protected readonly ajeno = computed(
+    () =>
+      this.permisos.soloPropio(PERMISO_AGENDA_HORARIO) &&
+      this.membershipElegido() !== null &&
+      this.membershipElegido() !== this.perfil.membershipId(),
+  );
+  protected readonly textoModoLectura = computed(() =>
+    this.ajeno()
+      ? 'Modo lectura: podés consultar el horario de otros profesionales, pero cambiar solo el tuyo.'
+      : textoDeModoLectura(PERMISO_AGENDA_HORARIO),
+  );
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
-  protected readonly modoLectura = modoLectura(inject(PermissionsStore));
+  private readonly sinPermisoDeHorario = modoLectura(this.permisos, PERMISO_AGENDA_HORARIO);
+  protected readonly modoLectura = computed(() => this.sinPermisoDeHorario() || this.ajeno());
   protected readonly patronHora = PATRON_HORA;
   protected readonly horaMedianoche = HORA_MEDIANOCHE;
   protected readonly dias = DIAS_DE_LA_SEMANA;
@@ -691,6 +711,7 @@ export class HorarioSemanalPage {
     cambios: UpdateBloqueRequest,
   ): void {
     const previsto = turnosPrevistos(this.impacto());
+    const clave = this.claveDelImpacto;
     this.empezarEnvio();
 
     this.disponibilidad
@@ -698,7 +719,9 @@ export class HorarioSemanalPage {
         consultorioId,
         membershipId,
         bloqueId,
-        updateBloqueRequest: cambios,
+        // Ya se mostro que deja turnos afuera y se volvio a enviar: eso es la confirmacion.
+        updateBloqueRequest:
+          (previsto ?? 0) > 0 ? { ...cambios, confirmaTurnosAfectados: true } : cambios,
       })
       .subscribe({
         next: (bloque) => {
@@ -709,8 +732,31 @@ export class HorarioSemanalPage {
           );
           this.cargar();
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          if (this.mostrarTurnosDelRechazo(error)) {
+            this.claveDelImpacto = clave;
+            return;
+          }
+          this.fallar(error);
+        },
       });
+  }
+
+  /**
+   * Un 409 `bloqueo-con-turnos-afectados`: entro un turno despues de la consulta, o la consulta no se
+   * pudo hacer. Se muestra la lista que trae y el proximo envio confirma. Devuelve si era eso.
+   */
+  private mostrarTurnosDelRechazo(error: unknown): boolean {
+    const impacto = impactoDelRechazo(error);
+    if (impacto === null) {
+      return false;
+    }
+    this.enviando.set(false);
+    this.impacto.set({ tipo: 'listo', impacto });
+    this.errorAccion.set(
+      'Este cambio deja turnos fuera del horario. Revisalos abajo y confirmá de nuevo para guardarlo igual: los turnos no se cancelan.',
+    );
+    return true;
   }
 
   /**
@@ -739,7 +785,10 @@ export class HorarioSemanalPage {
         consultorioId,
         membershipId,
         bloqueId: panel.id,
-        deactivateBloqueRequest: { reason: motivo },
+        deactivateBloqueRequest: {
+          reason: motivo,
+          confirmaTurnosAfectados: (previsto ?? 0) > 0 ? true : undefined,
+        },
       })
       .subscribe({
         next: (bloque) => {
@@ -751,7 +800,11 @@ export class HorarioSemanalPage {
           );
           this.cargar();
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          if (!this.mostrarTurnosDelRechazo(error)) {
+            this.fallar(error);
+          }
+        },
       });
   }
 

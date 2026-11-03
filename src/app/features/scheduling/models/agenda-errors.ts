@@ -1,4 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
 
 /**
  * Motivo por el que fallo una operacion de agenda o de reserva (M12, AKINE-05.01 y 05.02).
@@ -537,4 +538,23 @@ function segundosDeEspera(error: AkineHttpError): number {
     return 0;
   }
   return Math.ceil(segundos);
+}
+
+/**
+ * La lista de turnos que trae el 409 `bloqueo-con-turnos-afectados` desde el contrato 0.154.0 (la
+ * misma forma que el impacto previo), o vacia si no vino. Se verifica la forma: la extension no esta
+ * tipada en el contrato.
+ */
+export function turnosDelRechazo(
+  error: unknown,
+): readonly TurnoAfectadoPorDisponibilidadResponse[] {
+  if (!(error instanceof AkineHttpError)) {
+    return [];
+  }
+  const turnos = error.extension('turnos');
+  return Array.isArray(turnos)
+    ? turnos.filter(
+        (t): t is TurnoAfectadoPorDisponibilidadResponse => typeof t === 'object' && t !== null,
+      )
+    : [];
 }

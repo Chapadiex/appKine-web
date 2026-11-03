@@ -368,6 +368,11 @@
   border-style: dashed;
 }
 
+/* Fuera de la disponibilidad: simbolo y texto, el borde solo refuerza (WCAG 1.4.1). */
+.turno__reubicar {
+  font-weight: var(--peso-medio);
+}
+
 .evento__enlace {
   align-self: flex-start;
   color: var(--color-enlace);

@@ -1,4 +1,6 @@
 import { ImpactoDisponibilidadResponse } from '../../../api/generated/model/impacto-disponibilidad-response';
+import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
+import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
 
 /**
  * Estado de la consulta previa de impacto de un cambio de disponibilidad (A-11, RN-M05-004).
@@ -121,4 +123,29 @@ export function avisoDeHorarioDeSede(
   return cantidad === 1
     ? '1 turno queda fuera del horario; revisalo en la agenda. No se cancelo.'
     : `${cantidad} turnos quedan fuera del horario; revisalos en la agenda. Ninguno se cancelo.`;
+}
+
+/**
+ * El impacto que trae el 409 `bloqueo-con-turnos-afectados` (contrato 0.154.0): la cuenta y la lista
+ * `turnos`, con la misma forma que la consulta previa. `null` si el error es otro.
+ *
+ * <p>Desde 0.154.0 editar o dar de baja un bloque, y editar una excepcion, que dejan turnos afuera
+ * responden asi si no viene `confirmaTurnosAfectados`: la pantalla muestra la lista y reenvia
+ * confirmando.
+ */
+export function impactoDelRechazo(error: unknown): ImpactoDisponibilidadResponse | null {
+  if (!(error instanceof AkineHttpError) || error.problemType !== 'bloqueo-con-turnos-afectados') {
+    return null;
+  }
+  // Sin la lista (un backend anterior a 0.154.0) no hay nada que mostrar: lo resuelve el mensaje.
+  const turnos = error.extension('turnos');
+  if (!Array.isArray(turnos)) {
+    return null;
+  }
+  return {
+    turnosAfectados: error.numeroDeExtension('turnosAfectados') ?? turnos.length,
+    turnos: turnos.filter(
+      (t): t is TurnoAfectadoPorDisponibilidadResponse => typeof t === 'object' && t !== null,
+    ),
+  };
 }

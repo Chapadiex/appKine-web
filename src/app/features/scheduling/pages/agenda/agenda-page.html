@@ -30,7 +30,7 @@
 
   <div cabeceraAcciones>
     <button
-      *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+      *akinePermiso="PERMISO_AGENDA_EXCEPCIONES"
       type="button"
       class="boton boton--secundario"
       (click)="bloquearAgenda()"
@@ -162,6 +162,7 @@
             {{ nombreDeEstadoOperativo(valor) }}
           </option>
         }
+        <option [value]="A_REUBICAR" [selected]="estadoElegido() === A_REUBICAR">A reubicar</option>
       </select>
     </div>
   </div>
@@ -232,6 +233,9 @@
                 }}</span>
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
+              @if (turno.fueraDeDisponibilidad) {
+                <span class="turno__reubicar"><span aria-hidden="true">⚠</span> A reubicar</span>
+              }
             </button>
           </li>
         }
@@ -357,7 +361,10 @@
             }
 
             <ng-container *akinePermiso="PERMISO_TURNO_MANAGE">
-              @for (celda of columna.celdas; track celda.inicio) {
+              @for (
+                celda of puedeOperarEn(columna.profesionalId) ? columna.celdas : [];
+                track celda.inicio
+              ) {
                 <button
                   type="button"
                   class="grilla__celda"
@@ -409,6 +416,11 @@
                     @if (evento.turno?.turno?.operativo?.sobreturno) {
                       <span class="turno__marca">Sobreturno</span>
                     }
+                    @if (evento.turno?.fueraDeDisponibilidad) {
+                      <span class="turno__reubicar"
+                        ><span aria-hidden="true">⚠</span> A reubicar</span
+                      >
+                    }
                   </button>
                 }
                 @case ('clase') {
@@ -434,7 +446,7 @@
                     <span class="turno__persona">{{ evento.titulo }}</span>
                     <span class="turno__linea">{{ evento.detalle }}</span>
                     <a
-                      *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
+                      *akinePermiso="PERMISO_AGENDA_EXCEPCIONES"
                       class="evento__enlace"
                       [routerLink]="rutaDeBloqueos"
                       [queryParams]="{

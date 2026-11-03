@@ -11,7 +11,7 @@ import { vi } from 'vitest';
 
 import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
-import { PERMISO_CONSULTORIO_MANAGE, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_AGENDA_EXCEPCIONES, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -714,7 +714,7 @@ describe('AgendaPage', () => {
   /** Monta la pantalla con la query dada y deja respondidos los catálogos. */
   async function montar(
     query: Readonly<Record<string, string>> = {},
-    permisos: readonly string[] = [PERMISO_TURNO_MANAGE, PERMISO_CONSULTORIO_MANAGE],
+    permisos: readonly string[] = [PERMISO_TURNO_MANAGE, PERMISO_AGENDA_EXCEPCIONES],
   ): Promise<ComponentFixture<AgendaPage>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,

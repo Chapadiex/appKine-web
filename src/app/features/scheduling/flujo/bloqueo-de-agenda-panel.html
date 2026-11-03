@@ -32,21 +32,53 @@
             <table class="tabla">
               <thead>
                 <tr>
+                  <th scope="col">
+                    <input
+                      type="checkbox"
+                      aria-label="Elegir todos los turnos afectados"
+                      [checked]="todosSeleccionados()"
+                      [disabled]="seleccionables().length === 0"
+                      (change)="alternarTodos($any($event.target).checked)"
+                    />
+                  </th>
                   <th scope="col">Turno</th>
-                  <!-- Fase 2: columna "Paciente" cuando el impacto traiga personaNombre. -->
+                  <th scope="col">Paciente</th>
                   @if (alcance() === TODA_LA_SEDE) {
                     <th scope="col">Profesional</th>
                   }
+                  <th scope="col">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (turno of resultado.turnos; track turno.turnoId ?? $index) {
                   <tr>
+                    <td>
+                      @if (turno.turnoId; as turnoId) {
+                        @if (resultadoDe(turnoId) === '') {
+                          <input
+                            type="checkbox"
+                            [attr.aria-label]="
+                              'Elegir el turno del ' + rotuloDelTurno(turno.inicio, turno.fin)
+                            "
+                            [checked]="seleccion().has(turnoId)"
+                            (change)="alternar(turnoId, $any($event.target).checked)"
+                          />
+                        }
+                      }
+                    </td>
                     <td>{{ rotuloDelTurno(turno.inicio, turno.fin) }}</td>
+                    <td>{{ turno.personaNombre || 'Sin nombre cargado' }}</td>
                     @if (alcance() === TODA_LA_SEDE) {
-                      <td>{{ profesionalDelTurno(turno.membershipId) }}</td>
+                      <td>{{ profesionalDeLaFila(turno) }}</td>
                     }
+                    <td>
+                      @if (resultadoDe(turno.turnoId); as resultadoDelLote) {
+                        <b>{{ resultadoDelLote }}</b>
+                      } @else {
+                        {{ nombreDeEstado(turno.estado) }}
+                      }
+                    </td>
                     <td class="tabla__acciones">
                       @if (turno.turnoId; as turnoId) {
                         <app-acciones-de-fila
@@ -65,6 +97,9 @@
                           <button type="button" (click)="verTurno(turnoId, 'reprogramar')">
                             Reprogramar
                           </button>
+                          <button type="button" (click)="verTurno(turnoId, 'reprogramar')">
+                            Cambiar profesional
+                          </button>
                           <button type="button" (click)="verTurno(turnoId, 'cancelar')">
                             Cancelar turno
                           </button>
@@ -76,6 +111,72 @@
               </tbody>
             </table>
           </div>
+        }
+        @if (seleccion().size > 0) {
+          <fieldset class="flujo" aria-labelledby="bloqueo-lote-titulo">
+            <legend id="bloqueo-lote-titulo" class="flujo__dato">
+              Cancelar
+              {{
+                seleccion().size === 1 ? '1 turno elegido' : seleccion().size + ' turnos elegidos'
+              }}
+            </legend>
+            <div class="flujo__campos">
+              <div class="campo campo--mitad">
+                <label for="bloqueo-lote-origen">Quién cancela</label>
+                <select
+                  id="bloqueo-lote-origen"
+                  [value]="origenDeLote()"
+                  (change)="origenDeLote.set($any($event.target).value)"
+                >
+                  @for (origen of ORIGENES_DE_CANCELACION; track origen.valor) {
+                    <option [value]="origen.valor" [selected]="origen.valor === origenDeLote()">
+                      {{ origen.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo campo--mitad">
+                <label for="bloqueo-lote-motivo">Motivo</label>
+                <select
+                  id="bloqueo-lote-motivo"
+                  [value]="motivoDeLote()"
+                  (change)="motivoDeLote.set($any($event.target).value)"
+                >
+                  @for (motivo of MOTIVOS_DE_CANCELACION; track motivo) {
+                    <option [value]="motivo" [selected]="motivo === motivoDeLote()">
+                      {{ motivo }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo">
+                <label for="bloqueo-lote-nota">
+                  Observación ({{ motivoDeLote() === 'Otro' ? 'obligatoria' : 'opcional' }})
+                </label>
+                <textarea
+                  id="bloqueo-lote-nota"
+                  rows="2"
+                  maxlength="200"
+                  [attr.aria-required]="motivoDeLote() === 'Otro'"
+                  [value]="notaDeLote()"
+                  (input)="notaDeLote.set($any($event.target).value)"
+                ></textarea>
+              </div>
+            </div>
+            <div class="flujo__fila">
+              <button
+                type="button"
+                class="boton boton--peligro"
+                [disabled]="cancelandoEnLote() || faltaNotaDeLote()"
+                (click)="cancelarSeleccionados()"
+              >
+                {{ cancelandoEnLote() ? 'Cancelando…' : 'Cancelar en lote' }}
+              </button>
+            </div>
+          </fieldset>
+        }
+        @if (resumenDelLote(); as resumen) {
+          <p class="flujo__dato" role="status">{{ resumen }}</p>
         }
         @if (listaRecortada() && (resultado.turnos?.length ?? 0) > 0) {
           <p class="ayuda">Se muestran los primeros {{ resultado.turnos?.length }}.</p>
@@ -120,9 +221,11 @@
             <option value="" [selected]="alcance() === ''">
               Elegí un profesional o toda la sede
             </option>
-            <option [value]="TODA_LA_SEDE" [selected]="alcance() === TODA_LA_SEDE">
-              Toda la sede
-            </option>
+            @if (!soloPropio()) {
+              <option [value]="TODA_LA_SEDE" [selected]="alcance() === TODA_LA_SEDE">
+                Toda la sede
+              </option>
+            }
             @for (profesional of profesionales(); track profesional.id) {
               <option [value]="profesional.id" [selected]="'' + profesional.id === alcance()">
                 {{ profesional.nombre }}

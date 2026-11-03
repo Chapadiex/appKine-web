@@ -17,8 +17,8 @@ import {
  * distintos pero reciben la misma `ImpactoDisponibilidadResponse`, y el cartel tiene que decir
  * lo mismo en las dos.
  *
- * <p><b>La lista no trae datos del paciente</b>: el contrato los omite a proposito. Cada fila
- * es una fecha y una franja, y el detalle se abre en la agenda.
+ * <p>Desde el contrato 0.154.0 cada fila trae el nombre del paciente (solo en los primeros 50); el
+ * detalle se abre en la agenda.
  */
 @Component({
   selector: 'app-impacto-previo',
@@ -47,6 +47,9 @@ import {
                 @for (turno of turnos(); track turno.turnoId) {
                   <li>
                     {{ franja(turno) }}
+                    @if (turno.personaNombre) {
+                      · {{ turno.personaNombre }}
+                    }
                     @if (nombreDe(); as nombre) {
                       · {{ nombre(turno.membershipId) }}
                     }

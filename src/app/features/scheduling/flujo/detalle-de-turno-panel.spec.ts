@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
@@ -15,6 +16,7 @@ import {
 import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
@@ -1417,6 +1419,50 @@ describe('DetalleDeTurnoPanel', () => {
         ofertaId: 14,
         sobreturnoDe: 7,
       }),
+    });
+  });
+
+  describe('turno:manage solo propio (contrato 0.154.0)', () => {
+    async function comoProfesional(leido: object): Promise<ComponentFixture<DetalleDeTurnoPanel>> {
+      // La membership del contexto es la 31; el backend recorta turno:manage a sus turnos.
+      (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+        signal(31);
+      TestBed.inject(TenantContextStore).select({
+        organizationId: 1,
+        organizationName: 'Centro',
+        consultorioId: 3,
+        consultorioName: 'Sede',
+      });
+      TestBed.inject(PermissionsStore).cargar().subscribe();
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+        permissions: [PERMISO_TURNO_MANAGE, PERMISO_SESION_REGISTER],
+        ownScopedPermissions: [PERMISO_TURNO_MANAGE],
+      });
+      const fixture = TestBed.createComponent(DetalleDeTurnoPanel);
+      fixture.componentRef.setInput('turnoId', 7);
+      fixture.detectChanges();
+      httpMock.expectOne(TURNO).flush(leido);
+      await asentar(fixture);
+      return fixture;
+    }
+
+    it('el turno de otro profesional se mira y no se opera', async () => {
+      const fixture = await comoProfesional(turno('RESERVADO', { profesionalId: 44 }));
+
+      for (const rotulo of ['Paciente presente', 'Confirmar', 'Reprogramar', 'Cancelar turno']) {
+        expect(botones(fixture)).not.toContain(rotulo);
+      }
+      expect(texto(fixture)).toContain('Este turno es de otro profesional');
+      expect(botones(fixture)).toContain('Ver historial');
+    });
+
+    it('el propio se opera como siempre, y ofrece cambiar de sede', async () => {
+      const fixture = await comoProfesional(turno('RESERVADO'));
+
+      expect(botones(fixture)).toEqual(
+        expect.arrayContaining(['Paciente presente', 'Reprogramar', 'Cambiar de sede']),
+      );
+      expect(texto(fixture)).not.toContain('otro profesional');
     });
   });
 

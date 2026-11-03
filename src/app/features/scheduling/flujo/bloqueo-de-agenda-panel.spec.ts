@@ -209,6 +209,58 @@ describe('BloqueoDeAgendaPanel', () => {
       expect(cerrado).toBe(1);
     });
 
+    it('cancela los elegidos en lote, con la versión de cada uno, y muestra el resultado por fila', async () => {
+      const fixture = await revisado({
+        ...IMPACTO_CON_TURNOS,
+        turnos: IMPACTO_CON_TURNOS.turnos.map((t, i) => ({
+          ...t,
+          personaNombre: i === 0 ? 'Perez, Ana' : 'Gomez, Luis',
+          estado: 'RESERVADO',
+        })),
+      });
+      expect(texto(fixture)).toContain('Perez, Ana');
+      expect(texto(fixture)).toContain('Gomez, Luis');
+
+      const casillas = raiz(fixture).querySelectorAll<HTMLInputElement>(
+        'tbody input[type="checkbox"]',
+      );
+      for (const casilla of Array.from(casillas)) {
+        casilla.checked = true;
+        casilla.dispatchEvent(new Event('change'));
+      }
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('Cancelar 2 turnos elegidos');
+
+      clic(fixture, 'Cancelar en lote');
+      httpMock.expectOne(`${SEDE}/turnos/700`).flush({ id: 700, version: 3 });
+      httpMock.expectOne(`${SEDE}/turnos/701`).flush({ id: 701, version: 5 });
+      const lote = httpMock.expectOne(`${SEDE}/turnos/cancelacion-en-lote`);
+      expect(lote.request.body).toEqual({
+        items: [
+          { turnoId: 700, expectedVersion: 3 },
+          { turnoId: 701, expectedVersion: 5 },
+        ],
+        motivo: 'Solicitud del paciente',
+        origen: 'INSTITUCION',
+      });
+      lote.flush({
+        cancelados: 1,
+        rechazados: 1,
+        resultados: [
+          { turnoId: 700, resultado: 'CANCELADO' },
+          { turnoId: 701, resultado: 'RECHAZADO', problemType: 'forbidden' },
+        ],
+      });
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('1 turno cancelado; 1 no se pudieron cancelar.');
+      expect(texto(fixture)).toContain('Cancelado');
+      expect(texto(fixture)).toContain('No se canceló: es de otro profesional');
+      // Lo resuelto no se vuelve a ofrecer.
+      expect(raiz(fixture).querySelectorAll('tbody input[type="checkbox"]').length).toBe(0);
+      httpMock.expectNone((r) => r.url === EXCEPCIONES && r.method === 'POST');
+    });
+
     it('en singular cuando es uno, y avisa si la lista está recortada o la revisión no llegó', async () => {
       const fixture = await revisado({
         turnosAfectados: 60,
@@ -351,7 +403,7 @@ describe('BloqueoDeAgendaPanel', () => {
   });
 
   describe('errores', () => {
-    it('sin permiso lo dice en términos de administrar la sede', async () => {
+    it('sin permiso lo dice en términos del permiso de bloqueos', async () => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
       fijar(fixture, '#bloqueo-tipo', 'LICENCIA');
@@ -367,7 +419,7 @@ describe('BloqueoDeAgendaPanel', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('No pudimos bloquear la agenda');
-      expect(texto(fixture)).toContain('hace falta poder administrar la sede');
+      expect(texto(fixture)).toContain('hace falta el permiso de bloqueos y excepciones');
     });
 
     it('otro rechazo del alta se muestra y no cierra', async () => {
