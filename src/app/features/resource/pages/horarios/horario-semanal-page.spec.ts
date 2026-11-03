@@ -1,5 +1,6 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
@@ -10,6 +11,7 @@ import {
   PERMISO_TURNO_READ,
 } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
@@ -423,6 +425,99 @@ describe('HorarioSemanalPage', () => {
     confirmada.flush({ ...LUNES_MANANA, diaSemana: 4, version: 2 });
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
+  });
+
+  it('una baja sin turnos previstos que el backend rechaza con la lista la muestra y confirma al reenviar', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`)
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2027-01-06' });
+    await estabilizar(fixture);
+
+    escribir(fixture, '#baja-bloque-reason', 'Cambia de horario');
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+
+    const baja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
+    );
+    // La consulta dijo cero: no hay nada que confirmar todavia.
+    expect(baja.request.body).toEqual({ reason: 'Cambia de horario' });
+    baja.flush(
+      {
+        type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+        status: 409,
+        turnosAfectados: 1,
+        turnos: [
+          {
+            turnoId: 905,
+            membershipId: PROFESIONAL,
+            personaNombre: 'Gomez, Juan',
+            inicio: '2026-10-12T12:00:00Z',
+            fin: '2026-10-12T12:30:00Z',
+          },
+        ],
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Gomez, Juan');
+    expect(texto(fixture)).toContain('Este cambio deja turnos fuera del horario');
+    expect(titulosDeAvisos()).toEqual([]);
+
+    // Ya se vio la lista: el reenvio confirma.
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+    const confirmada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
+    );
+    expect(confirmada.request.body).toEqual({
+      reason: 'Cambia de horario',
+      confirmaTurnosAfectados: true,
+    });
+    confirmada.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 1 });
+    httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
+    await estabilizar(fixture);
+    expect(titulosDeAvisos()).toContain('Bloque dado de baja');
+  });
+
+  it('con agenda:horario propio, el horario de otro profesional se mira y no se toca', async () => {
+    (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+      signal(7);
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [PERMISO_AGENDA_HORARIO],
+      ownScopedPermissions: [PERMISO_AGENDA_HORARIO],
+    });
+    const fixture = TestBed.createComponent(HorarioSemanalPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ content: [ANA], page: 0, size: 100, totalElements: 1, totalPages: 1 });
+    await estabilizar(fixture);
+
+    // Sin profesional elegido todavia no hay nada ajeno.
+    expect(texto(fixture)).not.toContain('cambiar solo el tuyo');
+
+    seleccionar(fixture, '#selector-profesional', String(PROFESIONAL));
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain(
+      'podés consultar el horario de otros profesionales, pero cambiar solo el tuyo',
+    );
+    const rotulos = [...fixture.nativeElement.querySelectorAll('button')].map((b) =>
+      (b.textContent ?? '').trim(),
+    );
+    expect(rotulos).not.toContain('Agregar un bloque');
+    expect(rotulos).not.toContain('Editar');
   });
 
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {

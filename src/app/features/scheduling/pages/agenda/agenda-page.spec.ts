@@ -5,6 +5,7 @@ import {
   TestRequest,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
@@ -13,6 +14,7 @@ import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { PERMISO_AGENDA_EXCEPCIONES, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
@@ -539,7 +541,183 @@ describe('AgendaPage', () => {
     });
   });
 
+  describe('filtros del contrato 0.154.0', () => {
+    const A_REUBICAR = {
+      ...TURNO,
+      fueraDeDisponibilidad: true,
+      turno: { ...TURNO.turno, id: 701, inicio: local('10:00'), fin: local('10:30') },
+    };
+
+    it('"A reubicar" deja solo lo que un bloqueo dejó fuera, sin volver a pedir', async () => {
+      const fixture = await montar();
+      leida().flush({ ...AGENDA, turnos: [TURNO, A_REUBICAR] });
+      await asentar(fixture);
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(2);
+
+      elegir(fixture, '#agenda-estado', 'A_REUBICAR');
+      await asentar(fixture);
+      httpMock.expectNone((r) => r.url === OPERATIVA);
+
+      const turnos = raiz(fixture).querySelectorAll<HTMLButtonElement>('button.turno');
+      expect(turnos).toHaveLength(1);
+      expect(turnos[0].textContent).toContain('A reubicar');
+      expect(turnos[0].getAttribute('title')).toContain(
+        'A reubicar: quedó fuera de la disponibilidad',
+      );
+      expect(
+        Array.from(raiz(fixture).querySelectorAll('.agenda-chip')).map((c) =>
+          (c.textContent ?? '').trim(),
+        ),
+      ).toEqual([expect.stringContaining('Estado: A reubicar')]);
+    });
+
+    it('un enlace con estado A reubicar lo respeta; uno inventado cae en todos', async () => {
+      const fixture = await montar({ estado: 'A_REUBICAR' });
+      leida().flush({ ...AGENDA, turnos: [TURNO, A_REUBICAR] });
+      await asentar(fixture);
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(1);
+      expect((raiz(fixture).querySelector('#agenda-estado') as HTMLSelectElement).value).toBe(
+        'A_REUBICAR',
+      );
+    });
+
+    it('un estado inventado en el enlace cae en todos', async () => {
+      const fixture = await montar({ estado: 'INVENTADO' });
+      leida().flush({ ...AGENDA, turnos: [TURNO, A_REUBICAR] });
+      await asentar(fixture);
+
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(2);
+      expect((raiz(fixture).querySelector('#agenda-estado') as HTMLSelectElement).value).toBe('');
+    });
+
+    it('el paciente filtra por nombre o documento, sin tildes, y se quita desde su chip', async () => {
+      const fixture = await montar();
+      const conDocumento = {
+        ...A_REUBICAR,
+        fueraDeDisponibilidad: false,
+        turno: { ...A_REUBICAR.turno, personaNombre: 'Gómez, Juan', documento: 'DNI 30111222' },
+      };
+      leida().flush({ ...AGENDA, turnos: [TURNO, conDocumento] });
+      await asentar(fixture);
+
+      const paciente = raiz(fixture).querySelector('#agenda-paciente') as HTMLInputElement;
+      paciente.value = ' GOMEZ ';
+      paciente.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(1);
+
+      paciente.value = '30111';
+      paciente.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(1);
+      httpMock.expectNone((r) => r.url === OPERATIVA);
+
+      const chip = raiz(fixture).querySelector<HTMLButtonElement>('.agenda-chip');
+      expect(chip?.textContent).toContain('Paciente: 30111');
+      chip?.click();
+      await asentar(fixture);
+      expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(2);
+    });
+  });
+
+  describe('turno:manage solo propio (contrato 0.154.0)', () => {
+    async function comoProfesional(
+      query: Readonly<Record<string, string>> = {},
+    ): Promise<ComponentFixture<AgendaPage>> {
+      (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+        signal(31);
+      TestBed.inject(TenantContextStore).select({
+        organizationId: 1,
+        organizationName: 'Centro',
+        consultorioId: 3,
+        consultorioName: 'Sede',
+      });
+      TestBed.inject(PermissionsStore).cargar().subscribe();
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+        permissions: [PERMISO_TURNO_MANAGE],
+        ownScopedPermissions: [PERMISO_TURNO_MANAGE],
+      });
+      const fixture = TestBed.createComponent(AgendaPage);
+      fixture.componentRef.setInput('fecha', FECHA);
+      for (const [clave, valor] of Object.entries(query)) {
+        fixture.componentRef.setInput(clave, valor);
+      }
+      fixture.detectChanges();
+      httpMock
+        .expectOne((r) => r.url === PROFESIONALES)
+        .flush([
+          { id: 31, nombre: 'Lopez, Maria' },
+          { id: 32, nombre: 'Gomez, Juan' },
+        ]);
+      httpMock.expectOne((r) => r.url === OFERTAS).flush([]);
+      await asentar(fixture);
+      return fixture;
+    }
+
+    const DOS_COLUMNAS = {
+      ...AGENDA,
+      profesionales: [ANA, { ...ANA, membershipId: 32, nombre: 'Gomez, Juan' }],
+    };
+
+    it('arranca en su propia agenda, y las celdas ajenas no se ofrecen', async () => {
+      const fixture = await comoProfesional();
+      const pedidas = httpMock.match((r) => r.url === OPERATIVA);
+      const vigente = pedidas.filter((p) => !p.cancelled).at(-1)!;
+      expect(vigente.request.params.get('profesionalId')).toBe('31');
+      vigente.flush(DOS_COLUMNAS);
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('Profesional: Lopez, Maria');
+      // Las dos columnas se dibujan; solo la propia tiene celdas para dar un turno.
+      const columnas = new Set(celdas(fixture).map((c) => c.textContent ?? ''));
+      expect([...columnas].some((rotulo) => rotulo.includes('Gomez, Juan'))).toBe(false);
+      expect([...columnas].some((rotulo) => rotulo.includes('Lopez, Maria'))).toBe(true);
+    });
+
+    it('si el enlace ya trae un profesional, manda el enlace', async () => {
+      const fixture = await comoProfesional({ profesional: '32' });
+      const pedidas = httpMock.match((r) => r.url === OPERATIVA);
+      expect(
+        pedidas
+          .filter((p) => !p.cancelled)
+          .at(-1)!
+          .request.params.get('profesionalId'),
+      ).toBe('32');
+      pedidas.filter((p) => !p.cancelled).forEach((p) => p.flush(DOS_COLUMNAS));
+      await asentar(fixture);
+    });
+  });
+
   describe('moverse', () => {
+    it('el mes se mueve de a un mes y muestra los bloqueos del día', async () => {
+      const fixture = await montar({ vista: 'mes' });
+      const tramos = () => httpMock.match((r) => r.url === OPERATIVA);
+      const primeros = tramos();
+      expect(primeros[0].request.params.get('desde')).toBe('2030-03-01');
+      primeros[0].flush({
+        ...AGENDA,
+        bloqueos: [
+          {
+            excepcionId: 5,
+            membershipId: 31,
+            desde: local('00:00'),
+            hasta: local('00:00', '2030-03-07'),
+            motivo: 'LICENCIA',
+          },
+        ],
+      });
+      primeros.slice(1).forEach((t) => t.flush({ timezone: ZONA, turnos: [] }));
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('marzo de 2030');
+
+      clic(fixture, 'Siguiente');
+      const abril = tramos();
+      expect(abril[0].request.params.get('desde')).toBe('2030-04-01');
+      abril.forEach((t) => t.flush({ timezone: ZONA, turnos: [] }));
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('abril de 2030');
+    });
+
     it('anterior, siguiente, hoy y una fecha elegida piden ese día', async () => {
       const fixture = await montar();
       leida().flush(AGENDA);

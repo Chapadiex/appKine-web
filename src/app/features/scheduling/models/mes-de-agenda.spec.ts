@@ -1,4 +1,10 @@
-import { semanasDelMes, sumarMeses, unirAgendas, ventanasDePedido } from './mes-de-agenda';
+import {
+  rotuloDeMes,
+  semanasDelMes,
+  sumarMeses,
+  unirAgendas,
+  ventanasDePedido,
+} from './mes-de-agenda';
 
 describe('mes-de-agenda', () => {
   it('pide el mes en tramos de catorce días, sin pasarse del fin', () => {
@@ -58,5 +64,72 @@ describe('mes-de-agenda', () => {
     });
     expect(dia('2026-11-05')?.bloqueos).toBe(1);
     expect(dia('2026-11-06')?.bloqueos).toBe(0);
+  });
+
+  it('con un profesional filtrado cuenta sus bloqueos y los de la sede, no los de otros', () => {
+    const agenda = unirAgendas(
+      [
+        {
+          timezone: 'UTC',
+          // Sin id el turno se identifica por su tramo y su posición: no se pierde.
+          turnos: [{ turno: { inicio: '2026-11-10T10:00:00Z' } }],
+          bloqueos: [
+            {
+              excepcionId: 1,
+              membershipId: 31,
+              desde: '2026-11-10T00:00:00Z',
+              hasta: '2026-11-11T00:00:00Z',
+            },
+            {
+              excepcionId: 2,
+              membershipId: 32,
+              desde: '2026-11-10T00:00:00Z',
+              hasta: '2026-11-11T00:00:00Z',
+            },
+            {
+              excepcionId: 3,
+              membershipId: null as never,
+              desde: '2026-11-10T00:00:00Z',
+              hasta: '2026-11-11T00:00:00Z',
+            },
+            { excepcionId: 4, desde: '2026-11-10T00:00:00Z', hasta: '2026-11-11T00:00:00Z' },
+          ],
+        },
+        // Una parte sin zona ni turnos no pisa lo que ya se sabe.
+        {},
+      ],
+      '2026-11-01',
+      '2026-12-01',
+    );
+    expect(agenda.timezone).toBe('UTC');
+    expect(agenda.turnos).toHaveLength(1);
+
+    const dias = semanasDelMes({
+      primero: '2026-11-01',
+      agenda,
+      filtroDeTurno: () => true,
+      profesionalId: 31,
+      estados: ['RESERVADO'],
+    }).flat();
+    const dia = dias.find((d) => d.fecha === '2026-11-10');
+    // Un turno sin estado operativo cuenta en el total y en ningún estado.
+    expect(dia).toMatchObject({ total: 1, porEstado: [], bloqueos: 3 });
+  });
+
+  it('sin agenda leída dibuja el mes vacío', () => {
+    const dias = semanasDelMes({
+      primero: '2026-02-01',
+      agenda: null,
+      filtroDeTurno: () => true,
+      profesionalId: null,
+      estados: [],
+    }).flat();
+    expect(dias.filter((d) => d.delMes)).toHaveLength(28);
+    expect(dias.every((d) => d.total === 0 && d.bloqueos === 0)).toBe(true);
+  });
+
+  it('rotula el mes en castellano y no inventa uno con una fecha inválida', () => {
+    expect(rotuloDeMes('2026-11-17')).toBe('noviembre de 2026');
+    expect(rotuloDeMes('cualquiera')).toBe('');
   });
 });

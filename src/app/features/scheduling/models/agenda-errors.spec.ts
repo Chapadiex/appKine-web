@@ -1,6 +1,11 @@
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 
-import { recortarVentana, traducirErrorAgenda, traducirErrorRecepcion } from './agenda-errors';
+import {
+  recortarVentana,
+  traducirErrorAgenda,
+  traducirErrorRecepcion,
+  turnosDelRechazo,
+} from './agenda-errors';
 
 /**
  * Arma un cuerpo de Problem Details con extensiones.
@@ -397,5 +402,50 @@ describe('recortarVentana', () => {
     expect(recortarVentana('2026-09-15', 0)).toBeNull();
     expect(recortarVentana('2026-09-15', -1)).toBeNull();
     expect(recortarVentana('no es una fecha', 62)).toBeNull();
+  });
+});
+
+describe('conflictos del flujo de turnos (contrato 0.154.0)', () => {
+  function rechazo(tipo: string, extras: Record<string, unknown> = {}): AkineHttpError {
+    return new AkineHttpError(
+      409,
+      cuerpo({ type: `https://akine.app/problems/${tipo}`, status: 409, ...extras }),
+      false,
+    );
+  }
+
+  it('sin detalle del servidor, cada conflicto dice lo suyo y no ofrece una acción que no sirve', () => {
+    expect(traducirErrorAgenda(rechazo('plan-sin-sesiones'))).toMatchObject({
+      mensaje: 'El plan no tiene sesiones disponibles.',
+      accion: 'ninguna',
+      pendientes: 0,
+    });
+    expect(traducirErrorAgenda(rechazo('contexto-clinico-invalido'))).toMatchObject({
+      mensaje: 'El caso o el plan no sirven para este turno.',
+      accion: 'ninguna',
+    });
+    expect(traducirErrorAgenda(rechazo('espacio-no-elegible')).accion).toBe('elegir-otro');
+    expect(traducirErrorAgenda(rechazo('lista-de-espera-cerrada')).accion).toBe('recargar-agenda');
+  });
+
+  it('el bloqueo con turnos afectados trae la cuenta y la lista', () => {
+    const error = rechazo('bloqueo-con-turnos-afectados', {
+      detail: 'El bloqueo deja 2 turnos afuera.',
+      turnosAfectados: 2,
+      turnos: [{ turnoId: 1 }, null, { turnoId: 2 }],
+    });
+
+    expect(traducirErrorAgenda(error)).toMatchObject({
+      mensaje: 'El bloqueo deja 2 turnos afuera.',
+      turnosAfectados: 2,
+    });
+    expect(turnosDelRechazo(error)).toEqual([{ turnoId: 1 }, { turnoId: 2 }]);
+    // Sin lista (un backend anterior) o sin un error del servidor no hay filas que mostrar.
+    expect(turnosDelRechazo(rechazo('bloqueo-con-turnos-afectados'))).toEqual([]);
+    expect(turnosDelRechazo(new Error('red'))).toEqual([]);
+    expect(traducirErrorAgenda(rechazo('bloqueo-con-turnos-afectados'))).toMatchObject({
+      mensaje: 'Este bloqueo afecta turnos.',
+      turnosAfectados: 0,
+    });
   });
 });

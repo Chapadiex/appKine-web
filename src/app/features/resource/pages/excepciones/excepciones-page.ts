@@ -671,7 +671,8 @@ export class ExcepcionesPage {
     this.formularioAlta.reset({
       tipo: String(excepcion.tipo ?? CreateExcepcionRequestTipoEnum.CIERRE),
       motivo: String(excepcion.motivo ?? CreateExcepcionRequestMotivoEnum.AUSENCIA),
-      alcance: excepcion.membershipId === undefined ? '' : String(excepcion.membershipId),
+      // La de sede entera llega con `membershipId` ausente o en null: las dos son "toda la sede".
+      alcance: excepcion.membershipId == null ? '' : String(excepcion.membershipId),
       fechaDesde: excepcion.fechaDesde ?? '',
       fechaHasta: excepcion.fechaHasta ?? '',
       diaCompleto,
