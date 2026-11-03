@@ -1073,6 +1073,8 @@ form:not(.formulario--libre) fieldset {
  * (cuatro por fila), 2 para fecha, hora o numero, 4 para un email, la fila entera para texto
  * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--corto` = 2,
  * `--medio` = 3, `--largo` = 6, `--ancho` = 12). Lo que no es un campo ocupa la fila entera.
+ * Los anchos por tipo de dato van en `:where()` (especificidad cero): la clase explicita siempre
+ * gana. Sin eso `.campo--4` sobre un numero quedaba en 2 y su etiqueta partia en dos renglones.
  *
  * Responsive por el ancho del FORMULARIO (su propio contenedor), no de la ventana: en un panel
  * lateral o una columna angosta cada campo duplica su ancho (dos por fila); en un telefono, uno.
@@ -1097,7 +1099,7 @@ form:not(.formulario--libre),
   grid-column: span var(--ancho-campo, 3);
 }
 
-.campo:has(> input:is([type='date'], [type='time'], [type='number'], [type='month'])),
+:where(.campo:has(> input:is([type='date'], [type='time'], [type='number'], [type='month']))),
 .campo--2,
 .campo--corto {
   --ancho-campo: 2;
@@ -1108,7 +1110,7 @@ form:not(.formulario--libre),
   --ancho-campo: 3;
 }
 
-.campo:has(> input[type='email']),
+:where(.campo:has(> input[type='email'])),
 .campo--4 {
   --ancho-campo: 4;
 }
@@ -1122,7 +1124,7 @@ form:not(.formulario--libre),
   --ancho-campo: 8;
 }
 
-.campo:has(textarea),
+:where(.campo:has(textarea)),
 .campo--12,
 .campo--ancho {
   --ancho-campo: 12;

@@ -36,7 +36,7 @@ test.describe('Espacios y boxes contra el backend real', () => {
     // El alta la monta el router: ver `esperarFormularioEnlazado`.
     await esperarFormularioEnlazado(page.getByLabel('Nombre del espacio'));
     await page.getByLabel('Nombre del espacio').fill(nombre);
-    await page.getByLabel('Personas simultaneas que admite').fill('1');
+    await page.getByLabel('Personas simultáneas que admite').fill('1');
     const alta = respuestaDe(page, 'POST', /\/espacios$/);
     await page.getByRole('button', { name: 'Dar de alta el espacio' }).click();
     const creado = await alta;
