@@ -90,7 +90,8 @@
         </app-alerta>
       }
 
-      <div class="campo">
+      <!-- Los tres campos de la fila a 4 columnas: con el número a 2, su etiqueta partía en dos renglones y bajaba el control. -->
+      <div class="campo campo--4">
         <label for="espacio-tipo">Tipo de espacio</label>
         <select id="espacio-tipo" formControlName="tipo" aria-describedby="espacio-tipo-ayuda">
           @for (opcion of tipos; track opcion.valor) {
@@ -102,8 +103,8 @@
         </p>
       </div>
 
-      <div class="campo">
-        <label for="espacio-capacidad">Personas simultaneas que admite</label>
+      <div class="campo campo--4">
+        <label for="espacio-capacidad">Personas simultáneas que admite</label>
         <input
           id="espacio-capacidad"
           type="number"
