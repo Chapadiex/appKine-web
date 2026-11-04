@@ -234,7 +234,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     await expect(
       panel.getByText('Ya hay otro turno que se cruza con este intervalo.'),
     ).toBeVisible();
-    await expect(panel.getByText(/Se cruza con un turno de /)).toBeVisible();
+    await expect(panel.getByText(/Se cruza con otra actividad del profesional de /)).toBeVisible();
     await ofreceSalidasDeConflicto(panel);
     await expect(panel.getByRole('button', { name: 'Crear sobreturno' })).toBeVisible();
   });

@@ -34,6 +34,7 @@ export { RUTA_HORARIOS, SEGMENTO_HORARIOS };
 export const SEGMENTO_EXCEPCIONES = 'excepciones';
 export const SEGMENTO_CALENDARIO = 'calendario';
 export const SEGMENTO_EFECTIVO = 'efectivo';
+export const SEGMENTO_CAMBIOS = 'cambios';
 
 /** Cierres y aperturas. */
 export const RUTA_HORARIOS_EXCEPCIONES = `${RUTA_HORARIOS}/${SEGMENTO_EXCEPCIONES}`;
@@ -43,6 +44,9 @@ export const RUTA_HORARIOS_CALENDARIO = `${RUTA_HORARIOS}/${SEGMENTO_CALENDARIO}
 
 /** Horario efectivo ya resuelto, dia por dia. */
 export const RUTA_HORARIOS_EFECTIVO = `${RUTA_HORARIOS}/${SEGMENTO_EFECTIVO}`;
+
+/** Historial de cambios de la agenda de un profesional: horarios, excepciones y turnos. */
+export const RUTA_HORARIOS_CAMBIOS = `${RUTA_HORARIOS}/${SEGMENTO_CAMBIOS}`;
 
 /**
  * Las cuatro URLs juntas, para que una plantilla las use sin declarar cuatro campos.
@@ -56,4 +60,5 @@ export const RUTAS_HORARIOS = {
   excepciones: RUTA_HORARIOS_EXCEPCIONES,
   calendario: RUTA_HORARIOS_CALENDARIO,
   efectivo: RUTA_HORARIOS_EFECTIVO,
+  cambios: RUTA_HORARIOS_CAMBIOS,
 } as const;

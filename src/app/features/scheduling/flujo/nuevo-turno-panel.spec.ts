@@ -468,7 +468,7 @@ describe('NuevoTurnoPanel', () => {
     it('el aviso dice con qué choca y Volver cierra el sobreturno', async () => {
       const fixture = await horarioOcupado();
 
-      expect(texto(fixture)).toContain('Se cruza con un turno de');
+      expect(texto(fixture)).toContain('Se cruza con otra actividad del profesional de');
       boton(fixture, 'Crear sobreturno')?.click();
       httpMock.expectOne(`${SEDE}/turnos/99`).flush('', { status: 404, statusText: 'N' });
       await asentar(fixture);
