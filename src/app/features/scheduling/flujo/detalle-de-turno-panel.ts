@@ -15,17 +15,23 @@ import { CancelarTurnoOrigenEnum } from '../../../api/generated/model/cancelar-t
 import { EventoDeRecepcion } from '../../../api/generated/model/evento-de-recepcion';
 import { EventoDeTurno } from '../../../api/generated/model/evento-de-turno';
 import { HorarioDisponible } from '../../../api/generated/model/horario-disponible';
+import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PrepagoDeRecepcionEstadoEnum } from '../../../api/generated/model/prepago-de-recepcion';
+import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import {
   PERMISO_HC_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_SOBRETURNO,
 } from '../../../core/models/permisos';
+import { VistaInicialDeTurno } from '../../../core/models/contexto-de-turno';
 import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
+import { SessionService } from '../../../core/services/session.service';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
@@ -55,7 +61,7 @@ import { diaEnZona } from '../models/semana';
 import { SchedulingApi } from '../services/scheduling-api';
 import { ListaDeHorarios } from './lista-de-horarios';
 
-type Vista = 'resumen' | 'reprogramar' | 'cancelar' | 'ausente' | 'historial';
+type Vista = 'resumen' | 'reprogramar' | 'cancelar' | 'ausente' | 'historial' | 'trasladar';
 
 /** El motivo que solo no dice nada: con este, la observacion deja de ser opcional (DP-04). */
 const MOTIVO_OTRO = 'Otro';
@@ -99,14 +105,19 @@ export class DetalleDeTurnoPanel implements OnInit {
   private readonly avisos = inject(AvisosStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
   private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
+  private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
   readonly turnoId = input.required<number>();
+  /** Con que operacion abre: la tabla de turnos afectados por un bloqueo entra directo a mover o cancelar. */
+  readonly vistaInicial = input<VistaInicialDeTurno>('resumen');
   readonly cerrar = output<void>();
 
   protected readonly PERMISO_TURNO_MANAGE = PERMISO_TURNO_MANAGE;
   protected readonly PERMISO_SESION_REGISTER = PERMISO_SESION_REGISTER;
   protected readonly PERMISO_HC_READ = PERMISO_HC_READ;
+  protected readonly PERMISO_TURNO_SOBRETURNO = PERMISO_TURNO_SOBRETURNO;
   protected readonly ORIGENES_DE_CANCELACION = ORIGENES_DE_CANCELACION;
   protected readonly MOTIVOS_DE_CANCELACION = MOTIVOS_DE_CANCELACION;
   protected readonly MOTIVOS_DE_REPROGRAMACION = MOTIVOS_DE_REPROGRAMACION;
@@ -124,6 +135,10 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
   private pedidoDeLectura: Subscription | null = null;
+  private vistaInicialAplicada = false;
+
+  /** La sede del contexto: el turno es de la sede en la que se esta trabajando. */
+  protected readonly sede = computed(() => this.tenant.context()?.consultorioName ?? '');
 
   protected readonly eventos = signal<readonly EventoDeTurno[]>([]);
   protected readonly leyendoHistorial = signal(false);
@@ -158,6 +173,11 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly profesionalDestino = signal<number | null>(null);
   protected readonly desdeDestino = signal('');
   protected readonly motivoReprogramacion = signal<string>(MOTIVOS_DE_REPROGRAMACION[0]);
+  /** "¿Quien esta libre a esta hora?": otros profesionales para el mismo horario. Null: no se pregunto. */
+  protected readonly libresALaHora = signal<readonly RecursoLibre[] | null>(null);
+  protected readonly buscandoLibres = signal(false);
+  protected readonly errorDeLibres = signal<ErrorAgenda | null>(null);
+  private pedidoDeLibres: Subscription | null = null;
 
   protected readonly origenCancelacion = signal<string>('PACIENTE');
   protected readonly motivoCancelacion = signal<string>(MOTIVOS_DE_CANCELACION[0]);
@@ -195,7 +215,63 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly puedeMarcarAusente = computed(
     () => this.conVersion() && this.vivo() && this.empezo(),
   );
-  protected readonly puedeOperar = computed(() => this.permisos.tiene(PERMISO_TURNO_MANAGE));
+  /**
+   * Con `turno:manage` recortado a la actividad propia (contrato 0.154.0), el turno de otro
+   * profesional se mira y no se toca: el backend responde 403 igual, esto evita ofrecerlo.
+   */
+  protected readonly esAjeno = computed(
+    () =>
+      this.permisos.soloPropio(PERMISO_TURNO_MANAGE) &&
+      this.turno() !== null &&
+      this.turno()?.profesionalId !== this.perfil.membershipId(),
+  );
+  protected readonly puedeOperar = computed(
+    () => this.permisos.tiene(PERMISO_TURNO_MANAGE) && !this.esAjeno(),
+  );
+
+  // Observaciones del turno: administrativas, nunca clinicas.
+  protected readonly editandoObservaciones = signal(false);
+  protected readonly textoDeObservaciones = signal('');
+
+  // Cambio de sede: cancela el original y reserva otro en la sede de destino, en una transaccion.
+  protected readonly sedesDestino = computed(() => {
+    const actual = this.tenant.context();
+    return this.session
+      .contextos()
+      .filter(
+        (c) =>
+          c.organizationId === actual?.organizationId &&
+          c.consultorioId !== undefined &&
+          c.consultorioId !== actual?.consultorioId,
+      );
+  });
+  protected readonly sedeDestino = signal<number | null>(null);
+  protected readonly ofertasDestino = signal<readonly OfertaResponse[]>([]);
+  protected readonly ofertaDestino = signal<number | null>(null);
+  protected readonly motivoTraslado = signal('');
+
+  /** Los boxes que la busqueda ofrece para el horario elegido, si hay mas de uno. */
+  protected readonly boxesDelDestino = computed(() => {
+    const destino = this.destino();
+    if (destino === null) {
+      return [];
+    }
+    const vistos = new Map<number, string>();
+    for (const h of this.horarios()) {
+      if (
+        h.desde === destino.desde &&
+        h.profesionalId === destino.profesionalId &&
+        h.espacioId !== undefined
+      ) {
+        vistos.set(h.espacioId, h.espacioNombre ?? `Box ${h.espacioId}`);
+      }
+    }
+    return [...vistos].map(([id, nombre]) => ({ id, nombre }));
+  });
+  protected readonly boxElegido = signal<number | null>(null);
+
+  /** Nombres de profesionales para el historial: el evento trae ids. */
+  private readonly nombresDeProfesionales = signal<ReadonlyMap<number, string>>(new Map());
 
   /** El documento desambigua homonimos, que en un mostrador son el caso normal. */
   protected readonly subtitulo = computed(() => {
@@ -251,6 +327,8 @@ export class DetalleDeTurnoPanel implements OnInit {
         return 'Marcar ausente';
       case 'historial':
         return 'Historial del turno';
+      case 'trasladar':
+        return 'Cambiar de sede';
       default:
         return 'Turno';
     }
@@ -271,6 +349,7 @@ export class DetalleDeTurnoPanel implements OnInit {
   });
 
   ngOnInit(): void {
+    this.perfil.asegurarCargado();
     this.leer();
   }
 
@@ -287,6 +366,7 @@ export class DetalleDeTurnoPanel implements OnInit {
         this.cargando.set(false);
         this.turno.set(turno);
         this.leerCobertura(turno);
+        this.aplicarVistaInicial();
         this.volverSiYaNoSePuede();
       },
       error: (error: unknown) => {
@@ -307,13 +387,28 @@ export class DetalleDeTurnoPanel implements OnInit {
       : traducido;
   }
 
+  /** Una sola vez, con el turno leido: si la operacion pedida no se puede, queda el resumen. */
+  private aplicarVistaInicial(): void {
+    if (this.vistaInicialAplicada) {
+      return;
+    }
+    this.vistaInicialAplicada = true;
+    const vista = this.vistaInicial();
+    if (
+      (vista === 'reprogramar' && this.puedeReprogramar()) ||
+      (vista === 'cancelar' && this.puedeCancelar())
+    ) {
+      this.abrir(vista);
+    }
+  }
+
   /** Si la relectura dice que la operacion abierta ya no vale, no se deja el formulario a la vista. */
   private volverSiYaNoSePuede(): void {
     const vista = this.vista();
     const sigue =
       vista === 'cancelar'
         ? this.puedeCancelar()
-        : vista === 'reprogramar'
+        : vista === 'reprogramar' || vista === 'trasladar'
           ? this.puedeReprogramar()
           : vista === 'ausente'
             ? this.puedeMarcarAusente()
@@ -352,9 +447,14 @@ export class DetalleDeTurnoPanel implements OnInit {
     if (vista === 'historial') {
       this.leerHistorial();
     }
+    if (vista === 'trasladar') {
+      this.prepararTraslado();
+    }
     if (vista === 'reprogramar') {
+      this.libresALaHora.set(null);
+      this.errorDeLibres.set(null);
       this.limite.set(12);
-      this.destino.set(null);
+      this.elegirDestino(null);
       this.desdeDestino.set('');
       this.profesionalDestino.set(this.turno()?.profesionalId ?? null);
       this.buscarDestino();
@@ -381,6 +481,7 @@ export class DetalleDeTurnoPanel implements OnInit {
       next: (eventos) => {
         this.leyendoHistorial.set(false);
         this.eventos.set(eventos);
+        this.leerNombresSiHacenFalta(consultorioId, eventos);
       },
       error: (error: unknown) => {
         this.leyendoHistorial.set(false);
@@ -391,6 +492,47 @@ export class DetalleDeTurnoPanel implements OnInit {
       next: (eventos) => this.eventosDeRecepcion.set(eventos),
       error: () => this.eventosDeRecepcion.set([]),
     });
+  }
+
+  /** Solo si algun evento cambio de profesional: el resto del historial no necesita nombres. */
+  private leerNombresSiHacenFalta(consultorioId: number, eventos: readonly EventoDeTurno[]): void {
+    const hacenFalta = eventos.some(
+      (e) =>
+        e.profesionalAnteriorId !== undefined &&
+        e.profesionalNuevoId !== undefined &&
+        e.profesionalAnteriorId !== e.profesionalNuevoId,
+    );
+    if (!hacenFalta || this.nombresDeProfesionales().size > 0) {
+      return;
+    }
+    this.api.profesionales(consultorioId).subscribe({
+      next: (lista) =>
+        this.nombresDeProfesionales.set(new Map(lista.map((p) => [p.id ?? 0, p.nombre ?? '']))),
+      error: () => undefined,
+    });
+  }
+
+  /** "Ana -> Juan" si el evento cambio de profesional; vacio si no. */
+  protected cambioDeProfesional(evento: EventoDeTurno): string {
+    const antes = evento.profesionalAnteriorId;
+    const despues = evento.profesionalNuevoId;
+    if (antes === undefined || despues === undefined || antes === despues) {
+      return '';
+    }
+    const nombre = (id: number): string =>
+      this.nombresDeProfesionales().get(id) || `Profesional #${id}`;
+    return `Profesional: ${nombre(antes)} → ${nombre(despues)}`;
+  }
+
+  /** El evento trae ids de box y no nombres: se muestran como tales. */
+  protected cambioDeBox(evento: EventoDeTurno): string {
+    const antes = evento.espacioAnteriorId;
+    const despues = evento.espacioNuevoId;
+    if (antes === despues) {
+      return '';
+    }
+    const box = (id: number | undefined): string => (id === undefined ? 'sin box' : `Box #${id}`);
+    return `Box: ${box(antes)} → ${box(despues)}`;
   }
 
   protected instante(valor: string | undefined): string {
@@ -414,6 +556,40 @@ export class DetalleDeTurnoPanel implements OnInit {
       (consultorioId, turnoId) => this.api.registrarLlegada(consultorioId, turnoId),
       'Paciente marcado como presente.',
     );
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Observaciones
+  // -------------------------------------------------------------------------------------
+
+  protected editarObservaciones(): void {
+    this.textoDeObservaciones.set(this.operativo()?.observaciones ?? '');
+    this.editandoObservaciones.set(true);
+  }
+
+  protected guardarObservaciones(): void {
+    const consultorioId = this.tenant.consultorioId();
+    const expectedVersion = this.turno()?.version;
+    if (consultorioId === null || expectedVersion === undefined) {
+      return;
+    }
+    this.enviando.set(true);
+    this.error.set(null);
+    this.api
+      .actualizarObservaciones(consultorioId, this.turnoId(), {
+        observaciones: this.textoDeObservaciones(),
+        expectedVersion,
+      })
+      .subscribe({
+        next: () => {
+          this.enviando.set(false);
+          this.editandoObservaciones.set(false);
+          this.avisos.exito('Observaciones guardadas.');
+          this.flujo.notificarCambio();
+          this.leer();
+        },
+        error: (error: unknown) => this.rechazado(error),
+      });
   }
 
   protected confirmarTurno(): void {
@@ -506,6 +682,26 @@ export class DetalleDeTurnoPanel implements OnInit {
     this.buscarNuevoTurno();
   }
 
+  /**
+   * Otro turno en el mismo horario, a conciencia (TURNO.md §11): el formulario abre con el horario, el
+   * profesional y la prestacion de este, y directo en el paso del sobreturno, que avisa que el lugar
+   * esta ocupado y pide motivo. El paciente es otro: no se arrastra.
+   */
+  protected agregarSobreturno(): void {
+    const turno = this.turno();
+    if (turno?.inicio === undefined) {
+      return;
+    }
+    this.flujo.nuevoTurno({
+      origen: 'AGENDA',
+      fecha: diaEnZona(turno.inicio, this.timezone()),
+      inicio: turno.inicio,
+      profesionalId: turno.profesionalId,
+      ofertaId: turno.ofertaId,
+      sobreturnoDe: this.turnoId(),
+    });
+  }
+
   // -------------------------------------------------------------------------------------
   // Reprogramar
   // -------------------------------------------------------------------------------------
@@ -555,10 +751,74 @@ export class DetalleDeTurnoPanel implements OnInit {
     this.volverABuscar();
   }
 
+  /**
+   * Quien puede atender a la misma hora: el motor valida el horario del turno sin profesional, sin
+   * contar este turno, y devuelve los libres. El del turno se saca: moverlo a si mismo no es mover.
+   */
+  protected buscarLibresALaHora(): void {
+    const consultorioId = this.tenant.consultorioId();
+    const turno = this.turno();
+    if (consultorioId === null || turno?.ofertaId === undefined || turno.inicio === undefined) {
+      return;
+    }
+    this.buscandoLibres.set(true);
+    this.errorDeLibres.set(null);
+    this.pedidoDeLibres?.unsubscribe();
+    this.pedidoDeLibres = this.api
+      .validarHorario(consultorioId, {
+        ofertaId: turno.ofertaId,
+        inicio: turno.inicio,
+        turnoExcluidoId: this.turnoId(),
+        personaId: turno.personaId,
+      })
+      .subscribe({
+        next: (validacion) => {
+          this.buscandoLibres.set(false);
+          this.libresALaHora.set(
+            (validacion.profesionales ?? []).filter((p) => p.id !== turno.profesionalId),
+          );
+        },
+        error: (error: unknown) => {
+          this.buscandoLibres.set(false);
+          this.errorDeLibres.set(traducirErrorAgenda(error));
+        },
+      });
+  }
+
+  /** Elegir otro horario descarta el box que se habia elegido para el anterior. */
+  protected elegirDestino(horario: HorarioDisponible | null): void {
+    this.destino.set(horario);
+    this.boxElegido.set(horario?.espacioId ?? null);
+  }
+
+  protected elegirBox(valor: string): void {
+    this.boxElegido.set(valor === '' ? null : Number(valor));
+  }
+
+  /** Mismo horario, otro profesional: es un destino como cualquiera de la lista. */
+  protected elegirLibre(profesional: RecursoLibre): void {
+    const turno = this.turno();
+    this.elegirDestino({
+      desde: turno?.inicio,
+      hasta: turno?.fin,
+      profesionalId: profesional.id,
+      profesionalNombre: profesional.nombre,
+    });
+  }
+
+  protected esLibreElegido(profesional: RecursoLibre): boolean {
+    const destino = this.destino();
+    return (
+      destino !== null &&
+      destino.desde === this.turno()?.inicio &&
+      destino.profesionalId === profesional.id
+    );
+  }
+
   /** Con otros criterios la lista es otra: lo elegido de la anterior ya no vale. */
   private volverABuscar(): void {
     this.limite.set(12);
-    this.destino.set(null);
+    this.elegirDestino(null);
     this.buscarDestino();
   }
 
@@ -575,6 +835,7 @@ export class DetalleDeTurnoPanel implements OnInit {
       .reprogramar(consultorioId, this.turnoId(), {
         inicio: destino.desde,
         profesionalId: destino.profesionalId,
+        espacioId: this.boxElegido() ?? undefined,
         motivo: this.motivoConObservacion(this.motivoReprogramacion()),
         expectedVersion,
       })
@@ -588,8 +849,155 @@ export class DetalleDeTurnoPanel implements OnInit {
         },
         error: (error: unknown) => {
           this.rechazado(error);
-          this.destino.set(null);
+          this.elegirDestino(null);
           this.buscarDestino();
+        },
+      });
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Cambiar de sede
+  // -------------------------------------------------------------------------------------
+
+  private prepararTraslado(): void {
+    this.sedeDestino.set(null);
+    this.ofertasDestino.set([]);
+    this.ofertaDestino.set(null);
+    this.horarios.set([]);
+    this.elegirDestino(null);
+    this.desdeDestino.set('');
+    this.motivoTraslado.set('');
+    this.errorDeBusqueda.set(null);
+    if (this.session.contextos().length === 0) {
+      this.session.cargarContextos().subscribe({ error: () => undefined });
+    }
+  }
+
+  protected elegirSedeDestino(valor: string): void {
+    const id = valor === '' ? null : Number(valor);
+    this.sedeDestino.set(id);
+    this.ofertasDestino.set([]);
+    this.ofertaDestino.set(null);
+    this.horarios.set([]);
+    this.elegirDestino(null);
+    this.errorDeBusqueda.set(null);
+    if (id === null) {
+      return;
+    }
+    this.api.ofertasAgendables(id).subscribe({
+      next: (lista) => {
+        this.ofertasDestino.set(lista);
+        // La misma prestacion, si la sede de destino la ofrece con ese nombre.
+        const igual = lista.find((o) => o.nombreComercial === this.turno()?.ofertaNombre);
+        if (igual?.id !== undefined) {
+          this.elegirOfertaDestino(String(igual.id));
+        }
+      },
+      error: (error: unknown) => this.errorDeBusqueda.set(traducirErrorAgenda(error)),
+    });
+  }
+
+  protected elegirOfertaDestino(valor: string): void {
+    this.ofertaDestino.set(valor === '' ? null : Number(valor));
+    this.limite.set(12);
+    this.buscarEnDestino();
+  }
+
+  protected filtrarDesdeEnDestino(valor: string): void {
+    this.desdeDestino.set(valor);
+    this.limite.set(12);
+    this.buscarEnDestino();
+  }
+
+  protected verMasHorariosEnDestino(): void {
+    this.limite.update((actual) => actual + 12);
+    this.buscarEnDestino();
+  }
+
+  /** La misma busqueda de horarios de reprogramar, contra la sede de destino. */
+  protected buscarEnDestino(): void {
+    const sede = this.sedeDestino();
+    const ofertaId = this.ofertaDestino();
+    this.elegirDestino(null);
+    this.pedidoDeDestinos?.unsubscribe();
+    if (sede === null || ofertaId === null) {
+      this.horarios.set([]);
+      return;
+    }
+    this.buscando.set(true);
+    this.errorDeBusqueda.set(null);
+    this.pedidoDeDestinos = this.api
+      .buscarHorarios(sede, {
+        ofertaId,
+        desde: this.desdeDestino() === '' ? undefined : this.desdeDestino(),
+        limite: this.limite(),
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.buscando.set(false);
+          this.zonaDeLaBusqueda.set(respuesta.timezone ?? '');
+          this.horarios.set(respuesta.horarios ?? []);
+          this.truncado.set(respuesta.truncado === true);
+        },
+        error: (error: unknown) => {
+          this.buscando.set(false);
+          this.errorDeBusqueda.set(traducirErrorAgenda(error));
+        },
+      });
+  }
+
+  protected readonly puedeTrasladar = computed(
+    () =>
+      !this.enviando() &&
+      this.destino() !== null &&
+      this.sedeDestino() !== null &&
+      this.ofertaDestino() !== null &&
+      this.motivoTraslado().trim() !== '',
+  );
+
+  protected trasladar(): void {
+    const consultorioId = this.tenant.consultorioId();
+    const expectedVersion = this.turno()?.version;
+    const destino = this.destino();
+    const sede = this.sedeDestino();
+    const ofertaId = this.ofertaDestino();
+    const motivo = this.motivoTraslado().trim();
+    if (
+      consultorioId === null ||
+      expectedVersion === undefined ||
+      destino?.desde === undefined ||
+      sede === null ||
+      ofertaId === null ||
+      motivo === ''
+    ) {
+      return;
+    }
+    this.enviando.set(true);
+    this.error.set(null);
+    this.api
+      .trasladar(consultorioId, this.turnoId(), {
+        consultorioDestinoId: sede,
+        ofertaId,
+        inicio: destino.desde,
+        profesionalId: destino.profesionalId,
+        espacioId: this.boxElegido() ?? undefined,
+        motivo,
+        expectedVersion,
+      })
+      .subscribe({
+        next: () => {
+          this.enviando.set(false);
+          const nombre = this.sedesDestino().find((s) => s.consultorioId === sede)?.consultorioName;
+          this.avisos.exito(
+            `Turno trasladado${nombre ? ` a ${nombre}` : ''}. El de esta sede quedó cancelado.`,
+          );
+          this.flujo.notificarCambio();
+          this.vista.set('resumen');
+          this.leer();
+        },
+        error: (error: unknown) => {
+          this.rechazado(error);
+          this.buscarEnDestino();
         },
       });
   }

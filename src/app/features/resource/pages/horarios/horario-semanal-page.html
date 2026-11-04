@@ -42,16 +42,18 @@
           Nuevo turno
         </button>
       }
-      <button
-        type="button"
-        class="boton"
-        *akinePermiso="permisoManage"
-        (click)="abrirAlta()"
-        [disabled]="altaAbierta()"
-      >
-        <app-icono nombre="agregar" />
-        Agregar un bloque
-      </button>
+      @if (!ajeno()) {
+        <button
+          type="button"
+          class="boton"
+          *akinePermiso="permisoManage"
+          (click)="abrirAlta()"
+          [disabled]="altaAbierta()"
+        >
+          <app-icono nombre="agregar" />
+          Agregar un bloque
+        </button>
+      }
     </div>
   }
 
@@ -189,7 +191,7 @@
           sin un solo boton, sin explicacion, se lee como una pantalla que no termino de cargar.
         -->
         @if (modoLectura()) {
-          <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
+          <p class="ayuda ayuda--fija">{{ textoModoLectura() }}</p>
         }
 
         <div class="semana">
@@ -233,26 +235,28 @@
                               </p>
                             }
                           </div>
-                          <app-acciones-de-fila
-                            *akinePermiso="permisoManage"
-                            [de]="'el bloque número ' + bloque.id"
-                          >
-                            <button
-                              principal
-                              type="button"
-                              class="boton boton--secundario boton--chico"
-                              (click)="abrirPanel(bloque, 'editar')"
+                          @if (!ajeno()) {
+                            <app-acciones-de-fila
+                              *akinePermiso="permisoManage"
+                              [de]="'el bloque número ' + bloque.id"
                             >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              class="accion--peligro"
-                              (click)="abrirPanel(bloque, 'baja')"
-                            >
-                              Dar de baja
-                            </button>
-                          </app-acciones-de-fila>
+                              <button
+                                principal
+                                type="button"
+                                class="boton boton--secundario boton--chico"
+                                (click)="abrirPanel(bloque, 'editar')"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                class="accion--peligro"
+                                (click)="abrirPanel(bloque, 'baja')"
+                              >
+                                Dar de baja
+                              </button>
+                            </app-acciones-de-fila>
+                          }
                         </div>
 
                         <!--

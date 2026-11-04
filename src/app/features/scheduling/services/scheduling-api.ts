@@ -42,6 +42,10 @@ import { EventoDeAgenda } from '../../../api/generated/model/evento-de-agenda';
 import { TurnoDelDia } from '../../../api/generated/model/turno-del-dia';
 import { TurnosService } from '../../../api/generated/api/turnos.service';
 import { TurnosDeSede } from '../../../api/generated/model/turnos-de-sede';
+import { TrasladarTurno } from '../../../api/generated/model/trasladar-turno';
+import { TrasladoDeTurno } from '../../../api/generated/model/traslado-de-turno';
+import { CancelarTurnosEnLote } from '../../../api/generated/model/cancelar-turnos-en-lote';
+import { CancelacionEnLote } from '../../../api/generated/model/cancelacion-en-lote';
 
 /**
  * Unico punto de la feature `scheduling` que toca el cliente generado (M12/M13, AKINE-05.01 a E-4).
@@ -189,6 +193,8 @@ export class SchedulingApi {
       readonly ofertaId?: number;
       readonly espacioId?: number;
       readonly incluirCancelados?: boolean;
+      readonly estado?: string[];
+      readonly personaId?: number;
     },
   ): Observable<AgendaOperativa> {
     return this.disponibilidad.agendaOperativa({ consultorioId, ...filtro });
@@ -306,7 +312,7 @@ export class SchedulingApi {
   /**
    * Que turnos dejaria afuera el cierre, sin cargarlo: no guarda, no toma locks y no audita.
    *
-   * <p>Exige `consultorio:manage`. La cuenta es la completa aunque `turnos` venga recortada a 50, y
+   * <p>Exige `agenda:excepciones`. La cuenta es la completa aunque `turnos` venga recortada a 50, y
    * se evalua desde hoy hasta `evaluadoHasta`, a lo sumo noventa dias.
    */
   simularImpactoDeBloqueo(
@@ -403,6 +409,7 @@ export class SchedulingApi {
       readonly motivo: string;
       readonly expectedVersion: number;
       readonly profesionalId?: number;
+      readonly espacioId?: number;
     },
   ): Observable<Turno> {
     return this.turnos.reprogramarTurno({
@@ -413,8 +420,50 @@ export class SchedulingApi {
         motivo: cuerpo.motivo,
         expectedVersion: cuerpo.expectedVersion,
         profesionalId: cuerpo.profesionalId,
+        espacioId: cuerpo.espacioId,
       },
     });
+  }
+
+  /**
+   * Lleva el turno a otra sede (contrato 0.154.0). <b>No es reprogramar</b>: `consultorio_id` no se
+   * actualiza, asi que el servidor cancela el original y reserva uno nuevo con `turnoOrigenId`, en
+   * una sola transaccion. Exige `turno:manage` en las dos sedes.
+   */
+  trasladar(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: TrasladarTurno,
+  ): Observable<TrasladoDeTurno> {
+    return this.turnos.trasladarTurno({ consultorioId, turnoId, trasladarTurno: cuerpo });
+  }
+
+  /** Notas administrativas del turno, nunca clinicas. Vacio las borra. */
+  actualizarObservaciones(
+    consultorioId: number,
+    turnoId: number,
+    cuerpo: { readonly observaciones: string; readonly expectedVersion: number },
+  ): Observable<Turno> {
+    const texto = cuerpo.observaciones.trim();
+    return this.turnos.actualizarObservacionesDeTurno({
+      consultorioId,
+      turnoId,
+      actualizarObservacionesDeTurno: {
+        observaciones: texto === '' ? undefined : texto,
+        expectedVersion: cuerpo.expectedVersion,
+      },
+    });
+  }
+
+  /**
+   * Cancela varios turnos con el mismo motivo. Cada item corre en su propia transaccion: un rechazo
+   * no deshace los demas y vuelve con el `problemType` que habria recibido solo.
+   */
+  cancelarEnLote(
+    consultorioId: number,
+    cuerpo: CancelarTurnosEnLote,
+  ): Observable<CancelacionEnLote> {
+    return this.turnos.cancelarTurnosEnLote({ consultorioId, cancelarTurnosEnLote: cuerpo });
   }
 
   /**

@@ -18,6 +18,14 @@ export interface ExcepcionResponse {
      */
     consultorioId?: number;
     /**
+     * Cuenta que cargo la excepcion. Ausente en las anteriores a la migracion V132
+     */
+    createdByCuentaId?: number;
+    /**
+     * Nombre de esa cuenta. Ausente si no se resuelve
+     */
+    createdByNombre?: string;
+    /**
      * Motivo declarado en la baja. null si la excepcion esta vigente
      */
     deactivationReason?: string;
@@ -81,6 +89,8 @@ export interface ExcepcionResponse {
 export enum ExcepcionResponseMotivoEnum {
     AUSENCIA = 'AUSENCIA',
     LICENCIA = 'LICENCIA',
+    VACACIONES = 'VACACIONES',
+    CAPACITACION = 'CAPACITACION',
     FERIADO = 'FERIADO',
     BLOQUEO = 'BLOQUEO',
     AMPLIACION = 'AMPLIACION',

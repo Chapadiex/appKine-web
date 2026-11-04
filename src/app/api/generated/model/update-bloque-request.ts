@@ -14,6 +14,10 @@
  */
 export interface UpdateBloqueRequest { 
     /**
+     * Confirma el cambio aunque deje turnos pendientes fuera de la disponibilidad. Sin esto, un cambio con turnos afectados responde 409 `bloqueo-con-turnos-afectados` con la lista: no se guarda en silencio. Los turnos nunca se tocan
+     */
+    confirmaTurnosAfectados?: boolean;
+    /**
      * Nuevo dia de la semana, ISO-8601: lunes = 1 .. domingo = 7. Omitirlo lo deja como estaba
      */
     diaSemana?: number;

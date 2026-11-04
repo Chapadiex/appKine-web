@@ -22,6 +22,14 @@ export interface EventoDeTurno {
      */
     actorNombre?: string;
     /**
+     * Solo en una reprogramacion: box antes del cambio.
+     */
+    espacioAnteriorId?: number;
+    /**
+     * Solo en una reprogramacion: box despues del cambio.
+     */
+    espacioNuevoId?: number;
+    /**
      * Ausente solo en el evento de RESERVA.
      */
     estadoAnterior?: string;
@@ -40,6 +48,14 @@ export interface EventoDeTurno {
     motivo?: string;
     ocurridoEn?: string;
     /**
+     * Solo en una reprogramacion: membership del profesional antes del cambio. Ausente en las reprogramaciones anteriores a la migracion V131.
+     */
+    profesionalAnteriorId?: number;
+    /**
+     * Solo en una reprogramacion: membership del profesional despues del cambio.
+     */
+    profesionalNuevoId?: number;
+    /**
      * RESERVA y REPROGRAMACION terminan las dos en RESERVADO; el tipo es lo que las distingue.
      */
     tipo?: EventoDeTurnoTipoEnum;
@@ -52,7 +68,8 @@ export enum EventoDeTurnoTipoEnum {
     AUSENCIA = 'AUSENCIA',
     LLEGADA = 'LLEGADA',
     LLEGADA_DESHECHA = 'LLEGADA_DESHECHA',
-    CAMBIO_DE_CONTEXTO = 'CAMBIO_DE_CONTEXTO'
+    CAMBIO_DE_CONTEXTO = 'CAMBIO_DE_CONTEXTO',
+    OBSERVACIONES = 'OBSERVACIONES'
 };
 
 

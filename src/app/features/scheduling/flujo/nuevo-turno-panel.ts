@@ -140,6 +140,8 @@ export class NuevoTurnoPanel implements OnInit {
   protected readonly alternativas = signal<readonly HorarioDisponible[]>([]);
   protected readonly sobreturnoAbierto = signal(false);
   protected readonly sobreturnoMotivo = signal('');
+  /** Notas administrativas del turno (contrato 0.154.0). No entran en la huella de idempotencia. */
+  protected readonly observaciones = signal('');
   protected readonly faltaMotivoDeSobreturno = signal(false);
   protected readonly ocupante = signal('');
 
@@ -310,6 +312,11 @@ export class NuevoTurnoPanel implements OnInit {
     this.espacioId.set(contexto.espacioId ?? null);
     if (contexto.inicio !== undefined) {
       this.horario.set({ desde: contexto.inicio, profesionalId: contexto.profesionalId });
+    }
+    // Pedido a conciencia desde un turno: el paso del sobreturno ya abierto, con quien ocupa el lugar.
+    if (contexto.sobreturnoDe !== undefined) {
+      this.sobreturnoAbierto.set(true);
+      this.leerOcupante(contexto.sobreturnoDe);
     }
 
     this.api.ofertasAgendables(consultorioId).subscribe({
@@ -682,6 +689,7 @@ export class NuevoTurnoPanel implements OnInit {
         planId: opcion?.planId,
         origen: this.contexto().origen as string as ReservarTurnoOrigenEnum,
         sobreturnoMotivo,
+        observaciones: this.observaciones().trim() || undefined,
         idempotencyKey: this.clave,
       })
       .subscribe({

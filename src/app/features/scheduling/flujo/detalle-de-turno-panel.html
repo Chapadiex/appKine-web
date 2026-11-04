@@ -52,6 +52,9 @@
         @if (operativo()?.espacioNombre; as espacio) {
           <span>{{ espacio }}</span>
         }
+        @if (sede(); as nombreDeSede) {
+          <span>Sede {{ nombreDeSede }}</span>
+        }
         @if (cobertura(); as elegida) {
           <span>{{ elegida }}</span>
         }
@@ -86,11 +89,59 @@
               ausente ni mover.
             </p>
           }
+          @if (operativo()?.turnoOrigenId; as origen) {
+            <p class="flujo__dato"><b>Trasladado desde</b> el turno #{{ origen }}</p>
+          }
+          <div class="flujo__observaciones">
+            @if (editandoObservaciones()) {
+              <div class="campo">
+                <label for="flujo-observaciones">Observaciones</label>
+                <textarea
+                  id="flujo-observaciones"
+                  rows="2"
+                  maxlength="500"
+                  [value]="textoDeObservaciones()"
+                  (input)="textoDeObservaciones.set($any($event.target).value)"
+                ></textarea>
+              </div>
+              <div class="flujo__fila">
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="editandoObservaciones.set(false)"
+                >
+                  Descartar
+                </button>
+                <button
+                  type="button"
+                  class="boton"
+                  [disabled]="enviando()"
+                  (click)="guardarObservaciones()"
+                >
+                  Guardar observaciones
+                </button>
+              </div>
+            } @else {
+              <p class="flujo__dato">
+                <b>Observaciones:</b>
+                {{ operativo()?.observaciones || 'Sin observaciones' }}
+                @if (puedeOperar() && actual.version !== undefined) {
+                  <button type="button" class="boton-texto" (click)="editarObservaciones()">
+                    Editar<span class="visualmente-oculto"> observaciones</span>
+                  </button>
+                }
+              </p>
+            }
+          </div>
           @if (avisoDePrepago(); as prepago) {
             <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
             <p class="flujo__dato">{{ prepago }}</p>
           }
-          @if (!puedeOperar() && (vivo() || enElCentro())) {
+          @if (esAjeno()) {
+            <p class="ayuda">
+              Este turno es de otro profesional: podés verlo, y operar solo los turnos que atendés.
+            </p>
+          } @else if (!puedeOperar() && (vivo() || enElCentro())) {
             <p class="ayuda">
               Mover, cancelar o confirmar este turno necesita permiso de gestión de turnos en esta
               sede.
@@ -98,38 +149,40 @@
           }
 
           <!-- Acciones principales a la vista; el resto, en "Mas acciones" (TURNO - Tecnico §30). -->
-          <div class="flujo__fila" *akinePermiso="PERMISO_TURNO_MANAGE">
-            @if (vivo()) {
-              <button
-                type="button"
-                class="boton"
-                [disabled]="enviando()"
-                (click)="marcarPresente()"
-              >
-                Paciente presente
-              </button>
-              @if (actual.estado === 'RESERVADO') {
+          @if (puedeOperar()) {
+            <div class="flujo__fila">
+              @if (vivo()) {
                 <button
                   type="button"
-                  class="boton boton--secundario"
+                  class="boton"
                   [disabled]="enviando()"
-                  (click)="confirmarTurno()"
+                  (click)="marcarPresente()"
                 >
-                  Confirmar
+                  Paciente presente
+                </button>
+                @if (actual.estado === 'RESERVADO') {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="enviando()"
+                    (click)="confirmarTurno()"
+                  >
+                    Confirmar
+                  </button>
+                }
+              }
+              @if (cerrado()) {
+                <button type="button" class="boton" (click)="buscarNuevoTurno()">
+                  Buscar nuevo turno
                 </button>
               }
-            }
-            @if (cerrado()) {
-              <button type="button" class="boton" (click)="buscarNuevoTurno()">
-                Buscar nuevo turno
-              </button>
-            }
-            @if (atendido()) {
-              <button type="button" class="boton" (click)="programarProxima()">
-                Programar próxima sesión
-              </button>
-            }
-          </div>
+              @if (atendido()) {
+                <button type="button" class="boton" (click)="programarProxima()">
+                  Programar próxima sesión
+                </button>
+              }
+            </div>
+          }
           <div class="flujo__fila" *akinePermiso="PERMISO_SESION_REGISTER">
             @if (vivo() || enElCentro() || enAtencion() || retirado()) {
               <button
@@ -150,33 +203,35 @@
           <details [open]="masAcciones()">
             <summary>Más acciones</summary>
             <div class="flujo__fila">
-              @if (puedeReprogramar()) {
+              @if (puedeReprogramar() && puedeOperar()) {
                 <button
-                  *akinePermiso="PERMISO_TURNO_MANAGE"
                   type="button"
                   class="boton boton--secundario"
                   (click)="abrir('reprogramar')"
                 >
                   Reprogramar
                 </button>
+                <button type="button" class="boton boton--secundario" (click)="abrir('trasladar')">
+                  Cambiar de sede
+                </button>
               }
-              @if (puedeCancelar()) {
-                <button
-                  *akinePermiso="PERMISO_TURNO_MANAGE"
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="abrir('cancelar')"
-                >
+              @if (puedeCancelar() && puedeOperar()) {
+                <button type="button" class="boton boton--secundario" (click)="abrir('cancelar')">
                   Cancelar turno
                 </button>
               }
-              @if (puedeMarcarAusente()) {
+              @if (vivo() && !empezo()) {
                 <button
-                  *akinePermiso="PERMISO_TURNO_MANAGE"
+                  *akinePermiso="PERMISO_TURNO_SOBRETURNO"
                   type="button"
                   class="boton boton--secundario"
-                  (click)="abrir('ausente')"
+                  (click)="agregarSobreturno()"
                 >
+                  Agregar sobreturno
+                </button>
+              }
+              @if (puedeMarcarAusente() && puedeOperar()) {
+                <button type="button" class="boton boton--secundario" (click)="abrir('ausente')">
                   Marcar ausente
                 </button>
               }
@@ -264,6 +319,48 @@
               </div>
             }
           </div>
+          <!-- Mismo horario, otro profesional: el caso del profesional que falta ese dia. -->
+          <section class="flujo" aria-labelledby="flujo-libres-titulo">
+            <div class="flujo__fila flujo__fila--entre">
+              <h3 id="flujo-libres-titulo" class="flujo__dato">¿Quién está libre a esta hora?</h3>
+              <button
+                type="button"
+                class="boton-texto"
+                [disabled]="buscandoLibres()"
+                (click)="buscarLibresALaHora()"
+              >
+                {{ libresALaHora() === null ? 'Consultar' : 'Volver a consultar' }}
+              </button>
+            </div>
+            @if (buscandoLibres()) {
+              <p class="estado estado--cargando">Consultando profesionales…</p>
+            } @else if (errorDeLibres(); as fallo) {
+              <p class="estado estado--error" role="alert">{{ fallo.mensaje }}</p>
+            } @else if (libresALaHora(); as libres) {
+              @if (libres.length === 0) {
+                <p class="estado estado--vacio">
+                  Nadie más puede atender esta prestación a esa hora.
+                </p>
+              } @else {
+                <ul class="horarios__lista">
+                  @for (profesional of libres; track profesional.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="horario"
+                        [attr.aria-pressed]="esLibreElegido(profesional)"
+                        (click)="elegirLibre(profesional)"
+                      >
+                        <span class="horario__hora">{{ profesional.nombre }}</span>
+                        <span class="horario__detalle">Mismo horario</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </section>
+
           @if (buscando()) {
             <p class="estado estado--cargando">Buscando horarios…</p>
           } @else if (errorDeBusqueda(); as fallo) {
@@ -288,13 +385,25 @@
               [horarios]="horarios()"
               [timezone]="timezone()"
               [elegido]="destino()"
-              (elegir)="destino.set($event)"
+              (elegir)="elegirDestino($event)"
             />
             @if (truncado()) {
               <button type="button" class="boton-texto" (click)="verMasHorarios()">
                 Ver más horarios
               </button>
             }
+          }
+          @if (boxesDelDestino().length > 1) {
+            <div class="campo">
+              <label for="flujo-reprogramar-box">Box</label>
+              <select id="flujo-reprogramar-box" (change)="elegirBox($any($event.target).value)">
+                @for (box of boxesDelDestino(); track box.id) {
+                  <option [value]="box.id" [selected]="box.id === boxElegido()">
+                    {{ box.nombre }}
+                  </option>
+                }
+              </select>
+            </div>
           }
           <div class="campo">
             <label for="flujo-reprogramar-motivo">Motivo</label>
@@ -330,6 +439,118 @@
               (click)="reprogramar()"
             >
               Reprogramar
+            </button>
+          </div>
+        }
+
+        @case ('trasladar') {
+          <p class="ayuda">
+            El turno de esta sede se cancela y se reserva uno nuevo en la sede elegida, con el mismo
+            paciente, caso, plan y observaciones. Los dos quedan vinculados en el historial.
+          </p>
+          @if (sedesDestino().length === 0) {
+            <p class="estado estado--vacio">
+              No tenés otra sede de esta organización donde operar.
+            </p>
+          } @else {
+            <div class="flujo__filtros">
+              <div class="campo">
+                <label for="flujo-trasladar-sede">Sede de destino</label>
+                <select
+                  id="flujo-trasladar-sede"
+                  (change)="elegirSedeDestino($any($event.target).value)"
+                >
+                  <option value="" [selected]="sedeDestino() === null">Elegí una sede</option>
+                  @for (sede of sedesDestino(); track sede.consultorioId) {
+                    <option [value]="sede.consultorioId">{{ sede.consultorioName }}</option>
+                  }
+                </select>
+              </div>
+              @if (sedeDestino() !== null) {
+                <div class="campo">
+                  <label for="flujo-trasladar-oferta">Prestación</label>
+                  <select
+                    id="flujo-trasladar-oferta"
+                    (change)="elegirOfertaDestino($any($event.target).value)"
+                  >
+                    <option value="" [selected]="ofertaDestino() === null">
+                      Elegí la prestación
+                    </option>
+                    @for (oferta of ofertasDestino(); track oferta.id) {
+                      <option [value]="oferta.id" [selected]="oferta.id === ofertaDestino()">
+                        {{ oferta.nombreComercial }}
+                      </option>
+                    }
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="flujo-trasladar-desde">Desde</label>
+                  <input
+                    id="flujo-trasladar-desde"
+                    type="date"
+                    [min]="hoy()"
+                    [value]="desdeDestino()"
+                    (change)="filtrarDesdeEnDestino($any($event.target).value)"
+                  />
+                </div>
+              }
+            </div>
+            @if (buscando()) {
+              <p class="estado estado--cargando">Buscando horarios…</p>
+            } @else if (errorDeBusqueda(); as fallo) {
+              <app-alerta tipo="error" titulo="No pudimos buscar horarios en esa sede">
+                <p>{{ fallo.mensaje }}</p>
+              </app-alerta>
+            } @else if (ofertaDestino() !== null) {
+              @if (horarios().length === 0) {
+                <p class="estado estado--vacio">No hay horarios disponibles en esa sede.</p>
+              } @else {
+                <app-lista-de-horarios
+                  [horarios]="horarios()"
+                  [timezone]="timezone()"
+                  [elegido]="destino()"
+                  (elegir)="elegirDestino($event)"
+                />
+                @if (truncado()) {
+                  <button type="button" class="boton-texto" (click)="verMasHorariosEnDestino()">
+                    Ver más horarios
+                  </button>
+                }
+              }
+            }
+            @if (boxesDelDestino().length > 1) {
+              <div class="campo">
+                <label for="flujo-trasladar-box">Box</label>
+                <select id="flujo-trasladar-box" (change)="elegirBox($any($event.target).value)">
+                  @for (box of boxesDelDestino(); track box.id) {
+                    <option [value]="box.id" [selected]="box.id === boxElegido()">
+                      {{ box.nombre }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="campo">
+              <label for="flujo-trasladar-motivo">Motivo (obligatorio)</label>
+              <textarea
+                id="flujo-trasladar-motivo"
+                rows="2"
+                maxlength="200"
+                aria-required="true"
+                [value]="motivoTraslado()"
+                (input)="motivoTraslado.set($any($event.target).value)"
+              ></textarea>
+            </div>
+          }
+          <div class="acciones acciones--pie">
+            <button type="button" class="boton boton--secundario" (click)="volver()">Volver</button>
+            <button
+              type="button"
+              class="boton"
+              [disabled]="!puedeTrasladar()"
+              (click)="trasladar()"
+            >
+              Cambiar de sede
             </button>
           </div>
         }
@@ -477,6 +698,12 @@
                         De {{ instante(evento.inicioAnterior) }} a
                         {{ instante(evento.inicioNuevo) }}
                       </span>
+                    }
+                    @if (cambioDeProfesional(evento); as cambio) {
+                      <br /><span class="ayuda">{{ cambio }}</span>
+                    }
+                    @if (cambioDeBox(evento); as cambio) {
+                      <br /><span class="ayuda">{{ cambio }}</span>
                     }
                     @if (evento.motivo) {
                       <br /><span class="ayuda">{{ evento.motivo }}</span>

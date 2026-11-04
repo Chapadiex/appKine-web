@@ -140,6 +140,7 @@ model/account-state-change-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
 model/active-work-context.ts
+model/actualizar-observaciones-de-turno.ts
 model/actualizar-resumen-request.ts
 model/adjunto-clinico-page-response.ts
 model/adjunto-clinico-response.ts
@@ -197,10 +198,12 @@ model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-honorario-por-clase-request.ts
 model/cambiar-fin-precio-particular-request.ts
 model/cancel-invitacion-request.ts
+model/cancelacion-en-lote.ts
 model/cancelar-clase.ts
 model/cancelar-inscripcion.ts
 model/cancelar-serie-de-turnos.ts
 model/cancelar-turno.ts
+model/cancelar-turnos-en-lote.ts
 model/caso-administrativo-response.ts
 model/caso-clinico.ts
 model/caso-de-agenda.ts
@@ -491,6 +494,7 @@ model/resolver-autorizacion-request.ts
 model/resultado-de-anulacion-de-pase.ts
 model/resultado-de-asistencia.ts
 model/resultado-de-atencion-grupal.ts
+model/resultado-de-cancelacion-en-lote.ts
 model/resultado-de-cancelacion.ts
 model/resultado-de-cierre-de-clase.ts
 model/resultado-de-inscripcion.ts
@@ -536,9 +540,12 @@ model/totales-de-egresos-por-categoria.ts
 model/totales-de-egresos.ts
 model/transicion-de-plan.ts
 model/transicion-de-recepcion.ts
+model/trasladar-turno.ts
+model/traslado-de-turno.ts
 model/tratamiento-en-version.ts
 model/tratamiento-enmendado.ts
 model/tratamiento.ts
+model/turno-a-cancelar-en-lote.ts
 model/turno-afectado-por-disponibilidad-response.ts
 model/turno-de-calendario.ts
 model/turno-del-dia.ts
@@ -555,6 +562,7 @@ model/update-cobertura-request.ts
 model/update-consultorio-request.ts
 model/update-convenio-request.ts
 model/update-espacio-request.ts
+model/update-excepcion-request.ts
 model/update-financiador-request.ts
 model/update-medicion-definicion-request.ts
 model/update-oferta-request.ts

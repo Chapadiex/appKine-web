@@ -32,6 +32,8 @@ export interface AgendaOperativaRequestParams {
     ofertaId?: number;
     espacioId?: number;
     incluirCancelados?: boolean;
+    estado?: Array<string>;
+    personaId?: number;
 }
 
 export interface BuscarDisponibilidadDeTurnosRequestParams {
@@ -61,7 +63,7 @@ export interface DisponibilidadServiceInterface {
 
     /**
      * La agenda de la sede para operar
-     * Todo lo que dibuja la agenda en una ventana de hasta 14 dias: quien atiende y cuando, en que boxes, los turnos con su estado, las clases y los bloqueos. &#x60;hasta&#x60; es **exclusivo**. Los cancelados no vienen salvo &#x60;incluirCancelados&#x3D;true&#x60;. Exige &#x60;turno:read&#x60;.
+     * Todo lo que dibuja la agenda en una ventana de hasta 14 dias: quien atiende y cuando, en que boxes, los turnos con su estado, las clases y los bloqueos. &#x60;hasta&#x60; es **exclusivo**. Los cancelados no vienen salvo &#x60;incluirCancelados&#x3D;true&#x60; o &#x60;estado&#x3D;CANCELADO&#x60;. Exige &#x60;turno:read&#x60;.  &#x60;estado&#x60; (repetible) filtra por el **estado operativo** que la agenda muestra (&#x60;RESERVADO&#x60;, &#x60;CONFIRMADO&#x60;, &#x60;PRESENTE&#x60;, &#x60;RETIRADO&#x60;, &#x60;EN_ATENCION&#x60;, &#x60;ATENDIDO&#x60;, &#x60;AUSENTE&#x60;, &#x60;CANCELADO&#x60;) y &#x60;personaId&#x60; por paciente.  Cada turno reservado o confirmado con profesional trae &#x60;fueraDeDisponibilidad&#x60;: &#x60;true&#x60; si un bloqueo o un cambio de horario lo dejo fuera de las franjas del profesional (**pendiente de reubicacion**). Se calcula al leer; el turno nunca se pierde ni cambia de estado.
      * @endpoint get /api/v1/consultorios/{consultorioId}/agenda/operativa
 * @param requestParameters
      */

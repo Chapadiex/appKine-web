@@ -831,6 +831,8 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
         permissions: [
           'tenant:read',
           'consultorio:manage',
+          'agenda:horario',
+          'agenda:excepciones',
           'paciente:manage',
           'paciente:read',
           'turno:read',

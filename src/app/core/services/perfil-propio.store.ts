@@ -47,6 +47,11 @@ export class PerfilPropioStore {
     return cache !== null && cache.sello === this.sello() ? cache.perfil : null;
   });
 
+  /** La membership que gobierna el contexto (contrato 0.154.0): la de sede si la hay. */
+  readonly membershipId: Signal<number | null> = computed(
+    () => this.perfil()?.context?.membershipId ?? null,
+  );
+
   /** Pide el perfil si hace falta. Idempotente: con uno vigente o en vuelo no sale a la red. */
   asegurarCargado(): void {
     const sello = this.sello();

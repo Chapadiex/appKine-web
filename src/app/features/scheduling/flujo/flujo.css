@@ -321,3 +321,16 @@ summary {
   font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
 }
+
+/* Casilla con su texto en una sola linea, como en Excepciones (resource.css). */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}

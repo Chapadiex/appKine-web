@@ -14,6 +14,10 @@
  */
 export interface DeactivateBloqueRequest { 
     /**
+     * Confirma la baja aunque deje turnos pendientes fuera de la disponibilidad. Sin esto, una baja con turnos afectados responde 409 `bloqueo-con-turnos-afectados` con la lista. Los turnos nunca se tocan
+     */
+    confirmaTurnosAfectados?: boolean;
+    /**
      * Por que se da de baja. Queda en la auditoria y en la fila del bloque
      */
     reason: string;

@@ -11,14 +11,19 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { ActualizarObservacionesDeTurno } from '../model/models';
 import { AgendaDelDia } from '../model/models';
 import { AsociarContextoDeTurno } from '../model/models';
+import { CancelacionEnLote } from '../model/models';
 import { CancelarTurno } from '../model/models';
+import { CancelarTurnosEnLote } from '../model/models';
 import { EventoDeTurno } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarAusencia } from '../model/models';
 import { ReprogramarTurno } from '../model/models';
 import { ReservarTurno } from '../model/models';
+import { TrasladarTurno } from '../model/models';
+import { TrasladoDeTurno } from '../model/models';
 import { Turno } from '../model/models';
 import { TurnoDelDia } from '../model/models';
 import { TurnosDePersona } from '../model/models';
@@ -27,6 +32,12 @@ import { TurnosDeSede } from '../model/models';
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface ActualizarObservacionesDeTurnoRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    actualizarObservacionesDeTurno: ActualizarObservacionesDeTurno;
+}
 
 export interface AsociarContextoDeTurnoRequestParams {
     consultorioId: number;
@@ -38,6 +49,11 @@ export interface CancelarTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
     cancelarTurno: CancelarTurno;
+}
+
+export interface CancelarTurnosEnLoteRequestParams {
+    consultorioId: number;
+    cancelarTurnosEnLote: CancelarTurnosEnLote;
 }
 
 export interface ConfirmarTurnoRequestParams {
@@ -75,6 +91,8 @@ export interface ListarTurnosDeSedeRequestParams {
     profesionalId?: number;
     ofertaId?: number;
     incluirCancelados?: boolean;
+    estado?: Array<string>;
+    personaId?: number;
 }
 
 export interface RegistrarAusenciaRequestParams {
@@ -100,6 +118,12 @@ export interface ReservarRequestParams {
     reservarTurno: ReservarTurno;
 }
 
+export interface TrasladarTurnoRequestParams {
+    consultorioId: number;
+    turnoId: number;
+    trasladarTurno: TrasladarTurno;
+}
+
 export interface VerTurnoRequestParams {
     consultorioId: number;
     turnoId: number;
@@ -109,6 +133,14 @@ export interface VerTurnoRequestParams {
 export interface TurnosServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Cambiar las observaciones de un turno
+     * Observaciones administrativas (\&quot;trae estudios\&quot;). **Nunca informacion clinica.** Vacias o ausentes las borran. No mueve nada de la agenda. Queda en el historial del turno (&#x60;OBSERVACIONES&#x60;) y en la auditoria con el texto de antes y el de despues.  Exige &#x60;turno:manage&#x60; y la version leida. Con alcance propio (el &#x60;PROFESIONAL&#x60;), solo en los turnos que atiende: los ajenos responden 403.
+     * @endpoint put /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/observaciones
+* @param requestParameters
+     */
+    actualizarObservacionesDeTurno(requestParameters: ActualizarObservacionesDeTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
 
     /**
      * Asociar un turno a un caso y un plan
@@ -125,6 +157,14 @@ export interface TurnosServiceInterface {
 * @param requestParameters
      */
     cancelarTurno(requestParameters: CancelarTurnoRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
+     * Cancelar varios turnos con un mismo motivo
+     * Para los turnos que un bloqueo dejo afuera. Cada turno se cancela **por separado**, con los mismos controles, evento, auditoria y aviso que &#x60;cancelarTurno&#x60;: un rechazo no deshace los demas y vuelve con el &#x60;problemType&#x60; que habria recibido solo.  **Reintento seguro:** un turno que ya estaba cancelado vuelve &#x60;YA_CANCELADO&#x60;, no como error. Hasta 200 turnos por pedido. Exige &#x60;turno:manage&#x60;; con alcance propio, los turnos de otro profesional vuelven &#x60;RECHAZADO&#x60; con &#x60;forbidden&#x60;, cada uno por separado.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/cancelacion-en-lote
+* @param requestParameters
+     */
+    cancelarTurnosEnLote(requestParameters: CancelarTurnosEnLoteRequestParams, extraHttpRequestParams?: any): Observable<CancelacionEnLote>;
 
     /**
      * Confirmar un turno reservado
@@ -209,6 +249,14 @@ export interface TurnosServiceInterface {
 * @param requestParameters
      */
     reservar(requestParameters: ReservarRequestParams, extraHttpRequestParams?: any): Observable<Turno>;
+
+    /**
+     * Pasar un turno a otra sede
+     * Reprogramar mueve el **mismo** turno, pero la sede no se puede mover. Esta operacion **cancela el original** (atribuido a &#x60;INSTITUCION&#x60;, con el motivo) y **reserva uno nuevo** en la sede de destino con &#x60;origen &#x3D; TURNO_ANTERIOR&#x60; y &#x60;turnoOrigenId&#x60; apuntando al original. Las dos cosas ocurren en una sola transaccion: si el destino no tiene lugar, el original queda como estaba.  El destino se revalida entero, igual que una reserva. La oferta es la de la sede de destino. La cobertura elegida, el caso, el plan y las observaciones viajan con el turno.  Rechaza un original con Sesion (&#x60;turno-con-atencion&#x60;) o con recepcion registrada (&#x60;turno-transicion-no-permitida&#x60;). Exige &#x60;turno:manage&#x60; en las dos sedes. Con alcance propio (el &#x60;PROFESIONAL&#x60;), el turno tiene que ser suyo y el &#x60;profesionalId&#x60; de destino tambien: su membership en la otra sede. Si no, 403.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/turnos/{turnoId}/traslado
+* @param requestParameters
+     */
+    trasladarTurno(requestParameters: TrasladarTurnoRequestParams, extraHttpRequestParams?: any): Observable<TrasladoDeTurno>;
 
     /**
      * Ver un turno

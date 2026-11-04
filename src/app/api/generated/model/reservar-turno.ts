@@ -34,6 +34,10 @@ export interface ReservarTurno {
      */
     inicio: string;
     /**
+     * Observaciones administrativas del turno (\"trae estudios\"). **Nunca informacion clinica.** No forma parte de la huella de idempotencia.
+     */
+    observaciones?: string;
+    /**
      * Desde donde se inicio la reserva. Solo trazabilidad: no cambia ninguna regla.
      */
     origen?: ReservarTurnoOrigenEnum;
