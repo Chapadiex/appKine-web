@@ -1,59 +1,65 @@
+import { CambioDeAgendaTipoEnum } from '../../../api/generated/model/cambio-de-agenda';
+import { ListarHistorialDeAgendaRequestParams } from '../../../api/generated/api/agenda.serviceInterface';
 import { MembershipResponseRoleCodeEnum } from '../../../api/generated/model/membership-response';
+import { aInstanteUtc } from '../../../shared/utils/instantes';
+import { textoDeBusqueda } from '../../../shared/utils/texto-de-busqueda';
+import { esFechaDeCalendario, sumarDias } from './ventana-de-fechas';
 
 /**
- * Lecturas del historial de cambios de la agenda de un profesional (M05 y M12): que se cambio,
- * agrupado como lo piensa quien mira, y quien lo hizo.
+ * Lecturas del historial de cambios de la agenda de un profesional (M05 y M12, contrato 0.155.0):
+ * que se cambio, agrupado como lo piensa quien mira, quien lo hizo y los parametros de la consulta.
  *
- * <p>Los codigos de tipo se escriben aca como strings porque el cliente que los trae todavia no
- * esta generado; cuando llegue, {@link GRUPOS_DE_TIPO} se ata a su enum y un tipo nuevo del
- * contrato deja de compilar en vez de quedar sin grupo. Mientras tanto un tipo desconocido se
- * muestra con su codigo crudo, nunca en blanco.
+ * <p>Los tipos salen del enum generado: {@link TEXTOS_DE_TIPO} es un `Record` sobre el enum, asi
+ * que un tipo nuevo del contrato deja de compilar en vez de quedar sin texto. Un tipo que llegue
+ * igual sin conocerse (el servidor adelantado al cliente) se muestra con su codigo crudo.
  */
 
 /** Un grupo del filtro de tipo: un rotulo y los codigos que abarca. */
 export interface GrupoDeTipo {
   readonly etiqueta: string;
-  readonly tipos: readonly string[];
+  readonly tipos: readonly CambioDeAgendaTipoEnum[];
 }
 
-const TEXTOS_DE_TIPO: Readonly<Record<string, string>> = {
-  HORARIO_ALTA: 'Se agregó un horario',
-  HORARIO_EDICION: 'Se cambió un horario',
-  HORARIO_BAJA: 'Se quitó un horario',
-  EXCEPCION_ALTA: 'Se cargó un cierre o apertura',
-  EXCEPCION_EDICION: 'Se cambió un cierre o apertura',
-  EXCEPCION_BAJA: 'Se quitó un cierre o apertura',
-  TURNO_RESERVA: 'Se reservó un turno',
-  TURNO_SOBRETURNO: 'Se dio un sobreturno',
-  TURNO_CONFIRMACION: 'Se confirmó un turno',
-  TURNO_CANCELACION: 'Se canceló un turno',
-  TURNO_AUSENCIA: 'El paciente no vino',
-  TURNO_REPROGRAMACION: 'Se movió un turno de horario',
-  TURNO_TRASLADO: 'Se trasladó un turno',
-  TURNO_OBSERVACIONES: 'Se cambiaron las observaciones de un turno',
+const T = CambioDeAgendaTipoEnum;
+
+const TEXTOS_DE_TIPO: Readonly<Record<CambioDeAgendaTipoEnum, string>> = {
+  [T.HORARIO_ALTA]: 'Se agregó un horario',
+  [T.HORARIO_EDICION]: 'Se cambió un horario',
+  [T.HORARIO_BAJA]: 'Se quitó un horario',
+  [T.EXCEPCION_ALTA]: 'Se cargó un cierre o apertura',
+  [T.EXCEPCION_EDICION]: 'Se cambió un cierre o apertura',
+  [T.EXCEPCION_BAJA]: 'Se quitó un cierre o apertura',
+  [T.TURNO_RESERVA]: 'Se reservó un turno',
+  [T.TURNO_SOBRETURNO]: 'Se dio un sobreturno',
+  [T.TURNO_CONFIRMACION]: 'Se confirmó un turno',
+  [T.TURNO_CANCELACION]: 'Se canceló un turno',
+  [T.TURNO_AUSENCIA]: 'El paciente no vino',
+  [T.TURNO_REPROGRAMACION]: 'Se movió un turno de horario',
+  [T.TURNO_TRASLADO]: 'Se trasladó un turno de sede',
+  [T.TURNO_OBSERVACIONES]: 'Se cambiaron las observaciones de un turno',
 };
 
-/** Los tres grupos del filtro, en el orden en que se ofrecen. */
+/** Los tres grupos del filtro, en el orden en que se ofrecen. Juntos cubren todo el enum. */
 export const GRUPOS_DE_TIPO: readonly GrupoDeTipo[] = [
   {
     etiqueta: 'Horario habitual',
-    tipos: ['HORARIO_ALTA', 'HORARIO_EDICION', 'HORARIO_BAJA'],
+    tipos: [T.HORARIO_ALTA, T.HORARIO_EDICION, T.HORARIO_BAJA],
   },
   {
     etiqueta: 'Cierres y aperturas',
-    tipos: ['EXCEPCION_ALTA', 'EXCEPCION_EDICION', 'EXCEPCION_BAJA'],
+    tipos: [T.EXCEPCION_ALTA, T.EXCEPCION_EDICION, T.EXCEPCION_BAJA],
   },
   {
     etiqueta: 'Turnos',
     tipos: [
-      'TURNO_RESERVA',
-      'TURNO_SOBRETURNO',
-      'TURNO_CONFIRMACION',
-      'TURNO_CANCELACION',
-      'TURNO_AUSENCIA',
-      'TURNO_REPROGRAMACION',
-      'TURNO_TRASLADO',
-      'TURNO_OBSERVACIONES',
+      T.TURNO_RESERVA,
+      T.TURNO_SOBRETURNO,
+      T.TURNO_CONFIRMACION,
+      T.TURNO_CANCELACION,
+      T.TURNO_AUSENCIA,
+      T.TURNO_REPROGRAMACION,
+      T.TURNO_TRASLADO,
+      T.TURNO_OBSERVACIONES,
     ],
   },
 ];
@@ -63,19 +69,19 @@ export function textoDeTipo(tipo: string | undefined): string {
   if (tipo === undefined || tipo === '') {
     return 'Cambio';
   }
-  return TEXTOS_DE_TIPO[tipo] ?? tipo;
+  return TEXTOS_DE_TIPO[tipo as CambioDeAgendaTipoEnum] ?? tipo;
 }
 
 /** El grupo al que pertenece un tipo, o `undefined` si no es de ninguno. */
 export function grupoDeTipo(tipo: string | undefined): GrupoDeTipo | undefined {
-  return GRUPOS_DE_TIPO.find((grupo) => grupo.tipos.includes(tipo ?? ''));
+  return GRUPOS_DE_TIPO.find((grupo) => grupo.tipos.includes(tipo as CambioDeAgendaTipoEnum));
 }
 
 /**
- * Los codigos de tipo de los grupos elegidos, para el parametro `tipo[]`. Sin grupos elegidos
+ * Los codigos de tipo de los grupos elegidos, para el parametro `tipo`. Sin grupos elegidos
  * devuelve vacio, que para el backend es "todos".
  */
-export function tiposDeGrupos(etiquetas: readonly string[]): string[] {
+export function tiposDeGrupos(etiquetas: readonly string[]): CambioDeAgendaTipoEnum[] {
   return GRUPOS_DE_TIPO.filter((grupo) => etiquetas.includes(grupo.etiqueta)).flatMap((grupo) => [
     ...grupo.tipos,
   ]);
@@ -90,13 +96,60 @@ const NOMBRES_DE_ROL: Readonly<Record<string, string>> = {
   [MembershipResponseRoleCodeEnum.CONSULTORIO_ADMIN]: 'Administrador de sede',
   [MembershipResponseRoleCodeEnum.PROFESIONAL]: 'Profesional',
   [MembershipResponseRoleCodeEnum.ADMINISTRATIVO]: 'Administrativo',
-  PLATFORM_ADMIN: 'Soporte de la plataforma',
 };
 
-/** Rol legible; vacio si no vino, el codigo crudo si es uno que no conocemos. */
+/** Rol legible; vacio si no vino (eventos viejos), el codigo crudo si no lo conocemos. */
 export function nombreDeRol(codigo: string | undefined): string {
   if (codigo === undefined || codigo === '') {
     return '';
   }
   return NOMBRES_DE_ROL[codigo] ?? codigo;
+}
+
+/** Lo que el formulario de la pantalla junta para consultar. */
+export interface ConsultaDeCambios {
+  readonly orgId: number;
+  readonly profesionalId: number;
+  /** Sede a la que se acota, o `null` para todas las que el lector puede ver. */
+  readonly consultorioId: number | null;
+  readonly grupos: readonly string[];
+  /** Primer dia (`AAAA-MM-DD`) en la zona de la sede, incluido; vacio para "sin limite". */
+  readonly desde: string;
+  /** Ultimo dia (`AAAA-MM-DD`) en la zona de la sede, INCLUIDO; vacio para "sin limite". */
+  readonly hasta: string;
+  readonly q: string;
+  readonly page: number;
+  readonly size: number;
+  readonly sort: ListarHistorialDeAgendaRequestParams['sort'];
+  /** Zona IANA de la sede; vacia cae a la del navegador. */
+  readonly zona: string;
+}
+
+/**
+ * Los parametros de `listarHistorialDeAgenda`.
+ *
+ * <p><b>Las fechas son de cuando ocurrio el cambio, no del turno</b>, y el backend las recibe como
+ * instantes UTC con `hasta` exclusivo. Quien elige "hasta el 30" espera ver lo que paso ese dia: se
+ * manda la medianoche del 31 en la zona de la sede. Una fecha que no es de calendario se omite.
+ */
+export function armarParametros(consulta: ConsultaDeCambios): ListarHistorialDeAgendaRequestParams {
+  const tipos = tiposDeGrupos(consulta.grupos);
+  const desde = esFechaDeCalendario(consulta.desde)
+    ? aInstanteUtc(`${consulta.desde}T00:00`, consulta.zona)
+    : null;
+  const hasta = esFechaDeCalendario(consulta.hasta)
+    ? aInstanteUtc(`${sumarDias(consulta.hasta, 1)}T00:00`, consulta.zona)
+    : null;
+  return {
+    orgId: consulta.orgId,
+    profesionalId: consulta.profesionalId,
+    consultorioId: consulta.consultorioId ?? undefined,
+    tipo: tipos.length > 0 ? tipos : undefined,
+    desde: desde ?? undefined,
+    hasta: hasta ?? undefined,
+    q: textoDeBusqueda(consulta.q),
+    page: consulta.page,
+    size: consulta.size,
+    sort: consulta.sort,
+  };
 }

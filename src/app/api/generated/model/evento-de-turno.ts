@@ -22,6 +22,10 @@ export interface EventoDeTurno {
      */
     actorNombre?: string;
     /**
+     * Sede de ese turno
+     */
+    consultorioId?: number;
+    /**
      * Solo en una reprogramacion: box antes del cambio.
      */
     espacioAnteriorId?: number;
@@ -59,6 +63,10 @@ export interface EventoDeTurno {
      * RESERVA y REPROGRAMACION terminan las dos en RESERVADO; el tipo es lo que las distingue.
      */
     tipo?: EventoDeTurnoTipoEnum;
+    /**
+     * Turno al que pertenece el evento. Distinto del pedido cuando el turno nacio de un cambio de sede: el historial incluye los eventos de sus turnos de origen, de las sedes que el lector puede ver.
+     */
+    turnoId?: number;
 }
 export enum EventoDeTurnoTipoEnum {
     RESERVA = 'RESERVA',

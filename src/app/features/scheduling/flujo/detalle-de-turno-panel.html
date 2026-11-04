@@ -74,6 +74,17 @@
             <span aria-hidden="true">{{ simboloDeEstadoOperativo(estado()) }}</span>
             {{ nombreDeEstadoOperativo(estado()) }}
           </p>
+          @if (textoDeReprogramado(operativo()?.reprogramaciones); as marca) {
+            <p class="flujo__dato">
+              <b>{{ marca }}</b>
+              @if (operativo()?.reprogramacion?.inicioOriginal; as original) {
+                · Original: {{ instante(original) }} → Ahora: {{ instante(actual.inicio) }}
+              }
+            </p>
+            @if (textoDeUltimoMovimiento(operativo()?.reprogramacion); as ultimo) {
+              <p class="ayuda">{{ ultimo }}</p>
+            }
+          }
           @if (operativo()?.sobreturno) {
             <p class="flujo__dato"><b>Sobreturno:</b> {{ operativo()?.sobreturnoMotivo }}</p>
           }
@@ -685,6 +696,10 @@
               <ol class="flujo__historial">
                 @for (evento of eventos(); track evento.id) {
                   <li>
+                    @if (deOtroTurno(evento); as origen) {
+                      <span class="ayuda">{{ origen }}</span
+                      ><br />
+                    }
                     <span class="flujo__historial-cuando">{{ instante(evento.ocurridoEn) }}</span>
                     {{ textoDeEvento(evento.tipo) }}
                     @if (evento.estadoAnterior && evento.estadoAnterior !== evento.estadoNuevo) {

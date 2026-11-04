@@ -43,7 +43,13 @@ import {
   hoyEnZona,
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
-import { nombreDeEstadoOperativo, simboloDeEstadoOperativo } from '../../models/etiquetas-de-turno';
+import {
+  eraA,
+  nombreDeEstadoOperativo,
+  simboloDeEstadoOperativo,
+  textoDeReprogramado,
+} from '../../models/etiquetas-de-turno';
+import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import {
   AgrupacionDeAgenda,
   CeldaLibre,
@@ -163,6 +169,7 @@ export class AgendaPage {
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
   protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly diaCorto = diaCorto;
   protected readonly PX_POR_MINUTO = PX_POR_MINUTO;
   /** Quitar un bloqueo pide motivo y muestra su impacto: lo resuelve Excepciones, no se repite aca. */
@@ -862,10 +869,24 @@ export class AgendaPage {
       turno.turno?.operativo?.espacioNombre,
       estado,
       turno.turno?.operativo?.sobreturno ? 'Sobreturno' : '',
+      this.reprogramado(turno.turno),
       turno.fueraDeDisponibilidad ? 'A reubicar: quedó fuera de la disponibilidad' : '',
     ]
       .filter(Boolean)
       .join(' · ');
+  }
+
+  /**
+   * "Reprogramado, era 10:00": la marca de un turno que se movio, con la hora que tenia. Es un
+   * indicador y no un estado (contrato 0.155.0). Vacio si nunca se movio.
+   */
+  protected reprogramado(turno: TurnoDelDia | undefined): string {
+    const operativo = turno?.operativo;
+    if (textoDeReprogramado(operativo?.reprogramaciones) === '') {
+      return '';
+    }
+    const era = eraA(this.hora(operativo?.reprogramacion?.inicioOriginal));
+    return era === '' ? 'Reprogramado' : `Reprogramado, ${era}`;
   }
 
   protected nombreDeFiltroDeEstado(valor: string): string {

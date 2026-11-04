@@ -70,6 +70,18 @@ const AGENDA = {
   turnos: [TURNO],
 };
 
+const MOVIDO = {
+  ...TURNO,
+  turno: {
+    ...TURNO.turno,
+    operativo: {
+      ...TURNO.turno.operativo,
+      reprogramaciones: 1,
+      reprogramacion: { cantidad: 1, inicioOriginal: local('08:00') },
+    },
+  },
+};
+
 /**
  * La agenda operativa. El cálculo de la grilla tiene su spec: acá va lo que hace la pantalla con él,
  * sobre todo que después de tocar un turno relea en el lugar, sin perder fecha ni filtros.
@@ -829,6 +841,31 @@ describe('AgendaPage', () => {
       await asentar(fixture);
 
       expect(raiz(fixture).querySelector('.grilla__ahora')).toBeNull();
+    });
+  });
+
+  describe('reprogramado (contrato 0.155.0)', () => {
+    it('la tarjeta lleva la marca y el título dice a qué hora era', async () => {
+      const fixture = await montar();
+      leida().flush({ ...AGENDA, turnos: [MOVIDO] });
+      await asentar(fixture);
+
+      const turno = raiz(fixture).querySelector<HTMLButtonElement>('button.turno');
+      expect(turno?.textContent).toContain('↻ Reprogramado');
+      expect(turno?.title).toContain('Reprogramado, era 08:00');
+      // Es un indicador, no un estado: la clase sigue siendo la del estado operativo.
+      expect(turno?.classList).toContain('turno--confirmado');
+    });
+
+    it('en un celular la lista también la muestra', async () => {
+      angosta = true;
+      const fixture = await montar();
+      leida().flush({ ...AGENDA, turnos: [MOVIDO] });
+      await asentar(fixture);
+
+      expect(raiz(fixture).querySelector('.agenda-lista__turno')?.textContent).toContain(
+        'Reprogramado, era 08:00',
+      );
     });
   });
 

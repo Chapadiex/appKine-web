@@ -483,3 +483,20 @@ textarea:disabled {
   gap: var(--esp-2);
   margin: 0 0 var(--esp-2);
 }
+
+/* Cambios de la agenda: los grupos del filtro en una fila y el dato secundario de cada celda. */
+.cambios__grupos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-8);
+}
+
+.cambios__fila-completa {
+  grid-column: 1 / -1;
+}
+
+.cambios__secundario {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}

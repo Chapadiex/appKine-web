@@ -197,6 +197,7 @@ model/calendario-sede-response.ts
 model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-honorario-por-clase-request.ts
 model/cambiar-fin-precio-particular-request.ts
+model/cambio-de-agenda.ts
 model/cancel-invitacion-request.ts
 model/cancelacion-en-lote.ts
 model/cancelar-clase.ts
@@ -341,6 +342,7 @@ model/guardar-borrador.ts
 model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
 model/historia-clinica-response.ts
+model/historial-de-agenda-page.ts
 model/historial-de-autorizacion-response.ts
 model/hito-response.ts
 model/honorario-por-clase.ts
@@ -483,6 +485,7 @@ model/reintegro-de-cobro.ts
 model/reparo-de-presentacion.ts
 model/reporte-disponible.ts
 model/reporte-response.ts
+model/reprogramacion-de-turno.ts
 model/reprogramar-clase.ts
 model/reprogramar-serie-de-turnos.ts
 model/reprogramar-turno.ts

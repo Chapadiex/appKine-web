@@ -1735,6 +1735,71 @@ describe('DetalleDeTurnoPanel', () => {
     });
   });
 
+  describe('reprogramado (contrato 0.155.0)', () => {
+    it('el resumen marca el turno movido con el horario original y el último movimiento', async () => {
+      const fixture = await abierto(
+        turno('CONFIRMADO', {
+          operativo: {
+            estadoOperativo: 'CONFIRMADO',
+            reprogramaciones: 2,
+            reprogramacion: {
+              cantidad: 2,
+              inicioOriginal: '2030-03-01T13:00:00Z',
+              ultimoTipo: 'REPROGRAMACION',
+              ultimoActorNombre: 'Rita Recepción',
+              ultimoMotivo: 'Pedido del paciente',
+            },
+          },
+        }),
+      );
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('↻ Reprogramado 2 veces');
+      expect(contenido).toContain('Original: 01/03/2030');
+      expect(contenido).toContain('Ahora: 04/03/2030');
+      expect(contenido).toContain(
+        'Último: cambio de horario por Rita Recepción — Pedido del paciente',
+      );
+      // Es un indicador: el estado sigue siendo el de siempre.
+      expect(contenido).toContain('Confirmado');
+    });
+
+    it('un turno que nunca se movió no lleva la marca', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+      expect(texto(fixture)).not.toContain('Reprogramado');
+    });
+
+    it('el historial rotula los eventos del turno de origen de un cambio de sede', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Ver historial');
+      httpMock.expectOne(`${TURNO}/historial`).flush([
+        {
+          id: 1,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-01T12:00:00Z',
+          turnoId: 5,
+          consultorioId: 8,
+        },
+        {
+          id: 2,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-02T12:00:00Z',
+          turnoId: 7,
+          consultorioId: 3,
+        },
+      ]);
+      httpMock.expectOne(`${TURNO}/recepcion/historial`).flush([]);
+      await asentar(fixture);
+
+      const items = Array.from(raiz(fixture).querySelectorAll('.flujo__historial li')).map(
+        (li) => li.textContent ?? '',
+      );
+      expect(items[0]).toContain('Turno anterior #5');
+      expect(items[1]).not.toContain('Turno anterior');
+    });
+  });
+
   // -------------------------------------------------------------------------------------
 
   async function montar(

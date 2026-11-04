@@ -56,6 +56,8 @@ import {
   nombreDeEstadoOperativo,
   simboloDeEstadoOperativo,
   textoDeEvento,
+  textoDeReprogramado,
+  textoDeUltimoMovimiento,
 } from '../models/etiquetas-de-turno';
 import { diaEnZona } from '../models/semana';
 import { SchedulingApi } from '../services/scheduling-api';
@@ -124,6 +126,8 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
   protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
   protected readonly textoDeEvento = textoDeEvento;
+  protected readonly textoDeReprogramado = textoDeReprogramado;
+  protected readonly textoDeUltimoMovimiento = textoDeUltimoMovimiento;
   protected readonly nombreDeEstado = nombreDeEstado;
   protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;
   protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
@@ -533,6 +537,21 @@ export class DetalleDeTurnoPanel implements OnInit {
     }
     const box = (id: number | undefined): string => (id === undefined ? 'sin box' : `Box #${id}`);
     return `Box: ${box(antes)} → ${box(despues)}`;
+  }
+
+  /**
+   * El historial trae inline los eventos de los turnos de origen de un cambio de sede (contrato
+   * 0.155.0): esos llevan otro `turnoId`, y se rotulan para que no se lean como de este turno.
+   */
+  protected deOtroTurno(evento: EventoDeTurno): string {
+    const id = evento.turnoId;
+    if (id === undefined || id === this.turnoId()) {
+      return '';
+    }
+    const sede = this.session
+      .contextos()
+      .find((c) => c.consultorioId === evento.consultorioId)?.consultorioName;
+    return sede ? `Turno anterior #${id} · Sede ${sede}` : `Turno anterior #${id}`;
   }
 
   protected instante(valor: string | undefined): string {

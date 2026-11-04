@@ -1,3 +1,4 @@
+import { ReprogramacionDeTurnoUltimoTipoEnum } from '../../../api/generated/model/reprogramacion-de-turno';
 import {
   eraA,
   esTerminal,
@@ -5,6 +6,7 @@ import {
   textoDeEstado,
   textoDeEvento,
   textoDeReprogramado,
+  textoDeUltimoMovimiento,
 } from './etiquetas-de-turno';
 
 /**
@@ -53,5 +55,19 @@ describe('etiquetas de turno', () => {
     expect(eraA('10:00')).toBe('era 10:00');
     expect(eraA('')).toBe('');
     expect(eraA(undefined)).toBe('');
+  });
+
+  it('el ultimo movimiento dice si fue de horario o de sede, quien y por que', () => {
+    expect(textoDeUltimoMovimiento(undefined)).toBe('');
+    expect(textoDeUltimoMovimiento({ cantidad: 0 })).toBe('');
+    expect(
+      textoDeUltimoMovimiento({
+        cantidad: 2,
+        ultimoTipo: ReprogramacionDeTurnoUltimoTipoEnum.TRASLADO,
+        ultimoActorNombre: 'Rita',
+        ultimoMotivo: 'Obra',
+      }),
+    ).toBe('Último: cambio de sede por Rita — Obra');
+    expect(textoDeUltimoMovimiento({ cantidad: 1 })).toBe('Último: cambio de horario');
   });
 });

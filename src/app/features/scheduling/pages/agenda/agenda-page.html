@@ -233,6 +233,9 @@
                 }}</span>
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
+              @if (reprogramado(turno.turno); as marca) {
+                <span class="turno__marca"><span aria-hidden="true">↻</span> {{ marca }}</span>
+              }
               @if (turno.fueraDeDisponibilidad) {
                 <span class="turno__reubicar"><span aria-hidden="true">⚠</span> A reubicar</span>
               }
@@ -415,6 +418,12 @@
                     }
                     @if (evento.turno?.turno?.operativo?.sobreturno) {
                       <span class="turno__marca">Sobreturno</span>
+                    }
+                    @if (
+                      textoDeReprogramado(evento.turno?.turno?.operativo?.reprogramaciones);
+                      as marca
+                    ) {
+                      <span class="turno__marca">{{ marca }}</span>
                     }
                     @if (evento.turno?.fueraDeDisponibilidad) {
                       <span class="turno__reubicar"

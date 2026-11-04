@@ -1,4 +1,8 @@
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import {
+  ReprogramacionDeTurno,
+  ReprogramacionDeTurnoUltimoTipoEnum,
+} from '../../../api/generated/model/reprogramacion-de-turno';
 import { EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
 
@@ -254,4 +258,21 @@ export function textoDeReprogramado(cantidad: number | undefined): string {
 /** "era 10:00": a que hora estaba el turno antes de moverse. Vacio si no hay hora original. */
 export function eraA(horaOriginal: string | undefined): string {
   return horaOriginal === undefined || horaOriginal === '' ? '' : `era ${horaOriginal}`;
+}
+
+/**
+ * El ultimo movimiento en una linea: "Último: cambio de sede por Ana Gomez — Pedido del paciente".
+ * Sin actor ni motivo dice solo que tipo de movimiento fue. Vacio si nunca se movio.
+ */
+export function textoDeUltimoMovimiento(reprogramacion: ReprogramacionDeTurno | undefined): string {
+  if (reprogramacion === undefined || (reprogramacion.cantidad ?? 0) <= 0) {
+    return '';
+  }
+  const tipo =
+    reprogramacion.ultimoTipo === ReprogramacionDeTurnoUltimoTipoEnum.TRASLADO
+      ? 'cambio de sede'
+      : 'cambio de horario';
+  const actor = reprogramacion.ultimoActorNombre ? ` por ${reprogramacion.ultimoActorNombre}` : '';
+  const motivo = reprogramacion.ultimoMotivo ? ` — ${reprogramacion.ultimoMotivo}` : '';
+  return `Último: ${tipo}${actor}${motivo}`;
 }
