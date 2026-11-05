@@ -310,11 +310,12 @@ export class NuevoTurnoPanel implements OnInit {
   });
 
   /**
-   * El horario choca con una clase del profesional, en la sede que sea (contrato 0.156.0). Una clase
-   * no admite sobreturno: el backend responde 409 igual, asi que no se ofrece.
+   * El sobreturno se ofrece solo si la validacion previa dice que entraria (`admiteSobreturno`,
+   * 0.158.0): una clase, un turno de la misma persona en otra sede, un cierre o un horario libre no lo
+   * admiten, y el backend responderia 409 igual. Sin validacion no se ofrece.
    */
-  protected readonly chocaConClase = computed(
-    () => this.rechazo()?.conflictoTipo === 'CLASE' || this.validacion()?.conflictoTipo === 'CLASE',
+  protected readonly admiteSobreturno = computed(
+    () => this.validacion()?.admiteSobreturno === true,
   );
 
   /** La validacion previa choca con algo de otra sede: se nombra la sede, no se lee el turno. */

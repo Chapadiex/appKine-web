@@ -464,7 +464,7 @@
         Agregar a lista de espera
       </button>
     }
-    @if (horario() && persona() && !sobreturnoAbierto() && !chocaConClase()) {
+    @if (horario() && persona() && !sobreturnoAbierto() && admiteSobreturno()) {
       <button
         *akinePermiso="PERMISO_TURNO_SOBRETURNO"
         type="button"

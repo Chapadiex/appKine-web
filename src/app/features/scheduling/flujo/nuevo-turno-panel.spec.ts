@@ -498,6 +498,31 @@ describe('NuevoTurnoPanel', () => {
       expect(cerrado).toBe(1);
     });
 
+    it('un turno de la misma persona en otra sede no admite sobreturno (0.158.0)', async () => {
+      const fixture = await horarioOcupado([PERMISO_TURNO_SOBRETURNO], {
+        motivo: 'La persona ya tiene un turno en otra sede',
+        conflictoConsultorioId: 8,
+        admiteSobreturno: false,
+      });
+
+      expect(boton(fixture, 'Crear sobreturno')).toBeUndefined();
+      expect(boton(fixture, 'Agregar a lista de espera')).toBeDefined();
+    });
+
+    it('un turno ocupado en la misma sede admite sobreturno', async () => {
+      const fixture = await horarioOcupado([PERMISO_TURNO_SOBRETURNO], {
+        conflictoConsultorioId: 3,
+      });
+
+      expect(boton(fixture, 'Crear sobreturno')).toBeDefined();
+    });
+
+    it('un horario libre no ofrece sobreturno', async () => {
+      const fixture = await listoParaConfirmar();
+
+      expect(boton(fixture, 'Crear sobreturno')).toBeUndefined();
+    });
+
     it('sin el permiso de sobreturno no lo ofrece', async () => {
       const fixture = await horarioOcupado([]);
 
@@ -825,6 +850,7 @@ describe('NuevoTurnoPanel', () => {
   /** Una celda de la agenda que ya se ocupó: el motor lo dice antes de confirmar. */
   async function horarioOcupado(
     permisos: readonly string[] = [PERMISO_TURNO_SOBRETURNO],
+    validacion: object = {},
   ): Promise<ComponentFixture<NuevoTurnoPanel>> {
     const fixture = await montar(
       { origen: 'AGENDA', personaId: 12, ofertaId: 14, profesionalId: 31, inicio: LAS_9 },
@@ -836,6 +862,8 @@ describe('NuevoTurnoPanel', () => {
       conflictoInicio: LAS_9,
       conflictoFin: '2030-03-04T12:45:00Z',
       turnoEnConflictoId: 99,
+      admiteSobreturno: true,
+      ...validacion,
     };
     responderOfertas();
     httpMock.expectOne(VALIDACION).flush(ocupado);

@@ -59,7 +59,7 @@ export interface ProblemDetail {
      */
     conflictoOrigen?: ProblemDetailConflictoOrigenEnum;
     /**
-     * Causa del conflicto de agenda: TURNO, CLASE (principal o adicional), BLOQUEO o AUSENCIA del profesional, CIERRE_DE_SEDE, o DISPONIBILIDAD (su horario en otra sede).
+     * Causa del conflicto de agenda: TURNO, CLASE (principal o adicional), BLOQUEO o AUSENCIA del profesional, CIERRE_DE_SEDE, o DISPONIBILIDAD (su horario en otra sede; con conflictoMismaSede true, un instructor fuera de su horario en esta sede).
      */
     conflictoTipo?: ProblemDetailConflictoTipoEnum;
     detail?: string;
