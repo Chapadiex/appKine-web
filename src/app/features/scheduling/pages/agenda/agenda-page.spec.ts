@@ -844,6 +844,52 @@ describe('AgendaPage', () => {
     });
   });
 
+  describe('entre sedes (contrato 0.156.0)', () => {
+    it('lo ocupado en otra sede se ve sin datos de paciente y no se puede tocar', async () => {
+      const fixture = await montar();
+      leida().flush({
+        ...AGENDA,
+        turnos: [],
+        ocupacionesEnOtrasSedes: [
+          {
+            membershipId: 31,
+            tipo: 'CLASE',
+            consultorioId: 8,
+            inicio: local('10:00'),
+            fin: local('11:00'),
+          },
+        ],
+      });
+      await asentar(fixture);
+
+      const fuera = raiz(fixture).querySelector<HTMLElement>('.evento--fuera');
+      expect(fuera?.textContent).toContain('Ocupado en otra sede');
+      expect(fuera?.textContent).toContain('Clase');
+      expect(fuera?.tagName).toBe('DIV');
+      // De 10 a 11 no se ofrece ninguna celda libre.
+      const horas = celdas(fixture).map((c) => c.textContent ?? '');
+      expect(horas.some((h) => h.includes('10:00') || h.includes('10:30'))).toBe(false);
+      expect(horas.some((h) => h.includes('09:00'))).toBe(true);
+    });
+
+    it('un turno que ya choca con una clase lo dice y entra en "A reubicar"', async () => {
+      const fixture = await montar();
+      leida().flush({
+        ...AGENDA,
+        turnos: [TURNO],
+        conflictos: [{ membershipId: 31, turnoId: 700, claseConsultorioId: 8 }],
+      });
+      await asentar(fixture);
+
+      elegir(fixture, '#agenda-estado', 'A_REUBICAR');
+      await asentar(fixture);
+      const turnos = raiz(fixture).querySelectorAll<HTMLButtonElement>('button.turno');
+      expect(turnos).toHaveLength(1);
+      expect(turnos[0].textContent).toContain('Choca con una clase');
+      expect(turnos[0].getAttribute('title')).toContain('A reubicar: choca con una clase');
+    });
+  });
+
   describe('reprogramado (contrato 0.155.0)', () => {
     it('la tarjeta lleva la marca y el título dice a qué hora era', async () => {
       const fixture = await montar();

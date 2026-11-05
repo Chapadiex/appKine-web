@@ -37,7 +37,13 @@ import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
-import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
+import {
+  AccionSugerida,
+  ErrorAgenda,
+  detalleDelConflicto,
+  nombreDeSede,
+  traducirErrorAgenda,
+} from '../models/agenda-errors';
 import { fechaEnPalabras, horaEnZona } from '../models/etiquetas-de-agenda';
 import {
   llegadaVigente,
@@ -281,6 +287,24 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly subtitulo = computed(() => {
     const turno = this.turno();
     return [turno?.personaNombre, turno?.documento].filter(Boolean).join(' · ') || null;
+  });
+
+  /**
+   * Con que choco una reprogramacion o un traslado rechazados con `recurso-ocupado`: "Clase en Sede
+   * Norte, 10:00 a 11:00" (contrato 0.156.0). La carrera entre leer los horarios y confirmar es real:
+   * otra sede puede haber puesto una clase en el medio.
+   */
+  protected readonly conflictoDelError = computed(() => {
+    const fallo = this.error();
+    if (fallo?.causa !== 'recurso-ocupado') {
+      return '';
+    }
+    return detalleDelConflicto(
+      fallo,
+      this.tenant.consultorioId(),
+      (id) => nombreDeSede(this.session.contextos(), id),
+      (instante) => horaEnZona(instante, this.timezone()),
+    );
   });
 
   protected readonly tituloDelError = computed(() =>

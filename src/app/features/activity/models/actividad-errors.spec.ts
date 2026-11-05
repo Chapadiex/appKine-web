@@ -120,4 +120,22 @@ describe('traducirErrorActividad', () => {
     expect(traducirErrorActividad(new AkineHttpError(0, null, true)).causa).toBe('red');
     expect(traducirErrorActividad(new Error('x')).causa).toBe('otro');
   });
+
+  it('recurso-ocupado dice si choca con una clase o un turno, y si es de otra sede (0.156.0)', () => {
+    const clase = error(409, 'recurso-ocupado', {
+      recurso: 'profesional',
+      conflictoTipo: 'CLASE',
+      conflictoConsultorioId: 8,
+    });
+    expect(traducirErrorActividad(clase, 3).mensaje).toContain('otra clase en otra sede');
+    expect(traducirErrorActividad(clase, 8).mensaje).not.toContain('otra sede');
+    expect(traducirErrorActividad(clase).mensaje).not.toContain('otra sede');
+
+    const turno = error(409, 'recurso-ocupado', {
+      recurso: 'profesional',
+      conflictoTipo: 'TURNO',
+      conflictoConsultorioId: 8,
+    });
+    expect(traducirErrorActividad(turno, 3).mensaje).toContain('un turno en otra sede');
+  });
 });

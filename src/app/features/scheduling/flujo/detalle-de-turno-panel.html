@@ -3,6 +3,9 @@
     @if (error(); as fallo) {
       <app-alerta tipo="error" [titulo]="tituloDelError()">
         <p>{{ fallo.mensaje }}</p>
+        @if (conflictoDelError(); as conflicto) {
+          <p class="ayuda">{{ conflicto }}</p>
+        }
         @if (fallo.motivo) {
           <p>Lo que dijo el servidor: {{ fallo.motivo }}</p>
         }

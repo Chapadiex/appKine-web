@@ -61,6 +61,7 @@ import {
   minutosEnZona,
   pasoDeCelda,
   rangoDeHoras,
+  turnosQueChocanConClase,
 } from '../../models/grilla-de-agenda';
 import {
   DiaDelMes,
@@ -302,14 +303,23 @@ export class AgendaPage {
     return chips;
   });
 
+  /** Turnos que ya se pisan con una clase de la misma persona (contrato 0.156.0, `conflictos`). */
+  private readonly chocanConClase = computed(() => turnosQueChocanConClase(this.agenda()));
+
+  protected chocaConClase(turno: TurnoDeCalendario | undefined): boolean {
+    const id = turno?.turno?.id;
+    return id !== undefined && this.chocanConClase().has(id);
+  }
+
   private readonly filtroDeTurno = computed(() => {
     const estado = this.estadoElegido();
+    const chocan = this.chocanConClase();
     const oferta = this.ofertaId();
     const paciente = normalizar(this.paciente());
     return (turno: TurnoDeCalendario) =>
       (estado === '' ||
         (estado === A_REUBICAR
-          ? turno.fueraDeDisponibilidad === true
+          ? turno.fueraDeDisponibilidad === true || chocan.has(turno.turno?.id ?? -1)
           : turno.turno?.operativo?.estadoOperativo === estado)) &&
       (oferta === null || turno.turno?.ofertaId === oferta) &&
       (paciente === '' ||
@@ -871,6 +881,7 @@ export class AgendaPage {
       turno.turno?.operativo?.sobreturno ? 'Sobreturno' : '',
       this.reprogramado(turno.turno),
       turno.fueraDeDisponibilidad ? 'A reubicar: quedó fuera de la disponibilidad' : '',
+      this.chocaConClase(turno) ? 'A reubicar: choca con una clase' : '',
     ]
       .filter(Boolean)
       .join(' · ');

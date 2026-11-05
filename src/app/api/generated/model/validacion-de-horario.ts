@@ -27,8 +27,20 @@ export interface ValidacionDeHorario {
      * Por que no se puede. Ausente si se puede.
      */
     causa?: ValidacionDeHorarioCausaEnum;
+    /**
+     * Clase con la que choca, si es una clase
+     */
+    claseEnConflictoId?: number;
+    /**
+     * Sede del evento con el que choca (puede ser otra)
+     */
+    conflictoConsultorioId?: number;
     conflictoFin?: string;
     conflictoInicio?: string;
+    /**
+     * Con que choca un PROFESIONAL_OCUPADO: un turno o una clase, de esta sede o de otra de la organizacion (la misma persona). Ausente si no se sabe.
+     */
+    conflictoTipo?: ValidacionDeHorarioConflictoTipoEnum;
     /**
      * Boxes libres a esa hora, para ofrecer cambiar el asignado
      */
@@ -60,6 +72,10 @@ export enum ValidacionDeHorarioCausaEnum {
     SLOT_COMPLETO = 'SLOT_COMPLETO',
     PROFESIONAL_OCUPADO = 'PROFESIONAL_OCUPADO',
     ESPACIO_OCUPADO = 'ESPACIO_OCUPADO'
+};
+export enum ValidacionDeHorarioConflictoTipoEnum {
+    TURNO = 'TURNO',
+    CLASE = 'CLASE'
 };
 export enum ValidacionDeHorarioEstadoEnum {
     DISPONIBLE = 'DISPONIBLE',

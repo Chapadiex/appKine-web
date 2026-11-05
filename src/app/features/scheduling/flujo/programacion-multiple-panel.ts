@@ -549,8 +549,15 @@ export class ProgramacionMultiplePanel implements OnInit {
             traducido.causa === 'recurso-ocupado'
           ) {
             this.rechazoDeOcurrencia.set(
-              'No se creó ningún turno: un horario dejó de estar libre mientras revisabas. ' +
-                'Volvé a revisar la propuesta.',
+              traducido.conflictoTipo === 'CLASE'
+                ? 'No se creó ningún turno: un horario choca con una clase del profesional' +
+                    (traducido.conflictoConsultorioId !== 0 &&
+                    traducido.conflictoConsultorioId !== this.tenant.consultorioId()
+                      ? ' en otra sede'
+                      : '') +
+                    '. Volvé a revisar la propuesta.'
+                : 'No se creó ningún turno: un horario dejó de estar libre mientras revisabas. ' +
+                    'Volvé a revisar la propuesta.',
             );
             this.pedirPropuesta();
           }

@@ -875,6 +875,43 @@ describe('DetalleDeTurnoPanel', () => {
       expect(raiz(fixture).querySelector('#flujo-reprogramar-motivo')).toBeNull();
     });
 
+    it('si en el medio otra sede puso una clase, dice con qué choca (carrera, 0.156.0)', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Reprogramar');
+      httpMock
+        .expectOne(BUSQUEDA)
+        .flush({ timezone: 'America/Argentina/Cordoba', horarios: [DESTINO] });
+      await asentar(fixture);
+      (raiz(fixture).querySelector('.horario') as HTMLButtonElement).click();
+      await asentar(fixture);
+
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(`${TURNO}/reprogramacion`).flush(
+        {
+          type: 'https://akine.app/problems/recurso-ocupado',
+          status: 409,
+          recurso: 'profesional',
+          conflictoTipo: 'CLASE',
+          claseEnConflictoId: 55,
+          conflictoConsultorioId: 8,
+          conflictoInicio: DESTINO.desde,
+          conflictoFin: '2030-03-05T14:00:00Z',
+        },
+        { status: 409, statusText: 'C' },
+      );
+      httpMock.match(TURNO).forEach((r) => r.flush(turno('RESERVADO')));
+      httpMock
+        .match(BUSQUEDA)
+        .forEach((r) => r.flush({ timezone: 'America/Argentina/Cordoba', horarios: [] }));
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('El profesional tiene una clase que se cruza');
+      expect(texto(fixture)).toContain('Clase en otra sede, 10:00 a 11:00');
+      // Del turno o la clase de otra sede no se lee nada: no hay pedido a /turnos/{otro}.
+      httpMock.expectNone((r) => /\/turnos\/(?!7$)\d+$/.test(r.url));
+    });
+
     it('si el horario se fue lo dice, suelta la elección y vuelve a buscar', async () => {
       const fixture = await abierto(turno('RESERVADO'));
 

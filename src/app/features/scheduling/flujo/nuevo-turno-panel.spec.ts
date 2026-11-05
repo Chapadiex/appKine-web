@@ -323,6 +323,42 @@ describe('NuevoTurnoPanel', () => {
       segunda.flush({ id: 501 });
     });
 
+    it('un 409 por una clase en otra sede no lee el turno ajeno ni ofrece sobreturno (0.156.0)', async () => {
+      const fixture = await listoParaConfirmar();
+
+      confirmar(fixture).click();
+      httpMock.expectOne(RESERVA).flush(
+        {
+          type: 'https://akine.app/problems/recurso-ocupado',
+          status: 409,
+          recurso: 'profesional',
+          conflictoTipo: 'CLASE',
+          claseEnConflictoId: 55,
+          conflictoConsultorioId: 8,
+          conflictoInicio: LAS_9,
+          conflictoFin: '2030-03-04T13:00:00Z',
+        },
+        { status: 409, statusText: 'C' },
+      );
+      httpMock.expectOne(VALIDACION).flush({
+        estado: 'NO_DISPONIBLE',
+        motivo: 'El profesional da una clase en otra sede',
+        conflictoTipo: 'CLASE',
+        claseEnConflictoId: 55,
+        conflictoConsultorioId: 8,
+        conflictoInicio: LAS_9,
+        conflictoFin: '2030-03-04T13:00:00Z',
+      });
+      responderHorarios([HORARIO_10]);
+      await asentar(fixture);
+
+      httpMock.expectNone((r) => r.url.startsWith(`${SEDE}/turnos/`));
+      expect(texto(fixture)).toContain('El profesional tiene una clase en ese horario');
+      expect(texto(fixture)).toContain('Clase en otra sede, 09:00 a 10:00');
+      expect(boton(fixture, 'Crear sobreturno')).toBeUndefined();
+      expect(boton(fixture, 'Agregar a lista de espera')).toBeDefined();
+    });
+
     it('un 500 no dice si el turno se creó: el reintento lleva la MISMA clave', async () => {
       const fixture = await listoParaConfirmar();
 
