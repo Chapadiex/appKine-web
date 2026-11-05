@@ -325,7 +325,9 @@ test.describe('Historial de agenda: traslado de sede en una fila', () => {
       )
     ).name;
 
-    // La misma profesional en Norte, con una apertura puntual (no choca con su horario de Centro).
+    // La misma profesional en Norte, con una apertura puntual. Desde 0.158.0 la disponibilidad es
+    // central por persona: como en Centro atiende todo el dia, la franja de Norte pide la sustitucion
+    // (cierra esa franja en Centro). El turno de las 10:00 en Centro queda afuera de esa franja.
     const { membershipId } = await admin.exigir<{ membershipId: number }>(
       'POST',
       '/api/v1/memberships',
@@ -353,9 +355,10 @@ test.describe('Historial de agenda: traslado de sede en una fila', () => {
         motivo: 'AMPLIACION',
         fechaDesde: dia,
         fechaHasta: fechaLocal(centro.timezone, 6),
-        horaDesde: '00:00',
-        horaHasta: '23:45',
+        horaDesde: '14:00',
+        horaHasta: '16:00',
         notes: 'Apertura en Norte (E2E historial)',
+        sustituirDisponibilidadSuperpuesta: true,
       });
       const ofertaNorte = await crearOferta(apiNorte, enNorte);
       const ofertaCentro = await crearOferta(admin, centro);

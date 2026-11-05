@@ -369,7 +369,10 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     // En Centro quedo el cierre de esa franja, a nombre de la misma profesional.
     const cierres = await api.exigir<{ tipo?: string; membershipId?: number }[]>(
       'GET',
-      enCentro(`/excepciones?desde=${otroDia}&hasta=${sumarDias(otroDia, 1)}`),
+      // Sin `membershipId` el listado trae solo las excepciones de la sede, no las de cada persona.
+      enCentro(
+        `/excepciones?desde=${otroDia}&hasta=${sumarDias(otroDia, 1)}&membershipId=${centro.profesional.membershipId}`,
+      ),
     );
     expect(cierres).toContainEqual(
       expect.objectContaining({ tipo: 'CIERRE', membershipId: centro.profesional.membershipId }),

@@ -512,3 +512,12 @@ textarea:disabled {
   margin: var(--esp-2) 0 0;
   padding-left: var(--esp-6);
 }
+
+/*
+ * "Cerrar esa franja en <sede> y abrir acá" lleva el nombre de la sede: con nombres largos no entra
+ * en una linea del panel angosto y, con el `nowrap` de `.boton`, se salia de la alerta.
+ */
+#alta-excepcion-sustituir {
+  white-space: normal;
+  text-align: start;
+}

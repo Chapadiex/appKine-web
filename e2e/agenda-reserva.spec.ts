@@ -193,7 +193,13 @@ test.describe('Reserva de turno contra el backend real', () => {
     expect(problema.type).toBe(uriDeProblema('slot-no-disponible'));
     expect(typeof problema['motivo']).toBe('string');
 
-    await expect(panel.getByText('Ese horario dejo de estar disponible')).toBeVisible();
+    // Desde 0.158.0 el mensaje dice la causa (el cierre por ausencia), no "se fue mientras mirabas".
+    await expect(panel.getByText('Ese horario ya no está disponible')).toBeVisible();
+    await expect(
+      panel.getByText('El profesional tiene una ausencia registrada en ese horario.', {
+        exact: false,
+      }),
+    ).toBeVisible();
     // Lo que cambio lo dice el motor, en la relectura que el panel hace despues del rechazo.
     const validacion = (await (await revalidacion).json()) as { estado: string; motivo: string };
     expect(validacion.estado).toBe('NO_DISPONIBLE');
@@ -234,7 +240,13 @@ test.describe('Reserva de turno contra el backend real', () => {
     await expect(
       panel.getByText('Ya hay otro turno que se cruza con este intervalo.'),
     ).toBeVisible();
-    await expect(panel.getByText(/Se cruza con otra actividad del profesional de /)).toBeVisible();
+    // Desde 0.158.0 la linea del conflicto nombra la causa y la sede (la que manda el servidor).
+    const sede = String(problema['conflictoConsultorioNombre']);
+    await expect(
+      panel.getByText(`Se cruza con otra actividad del profesional: Turno en la sede ${sede}`, {
+        exact: false,
+      }),
+    ).toBeVisible();
     await ofreceSalidasDeConflicto(panel);
     await expect(panel.getByRole('button', { name: 'Crear sobreturno' })).toBeVisible();
   });
