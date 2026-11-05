@@ -36,9 +36,15 @@ import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import {
   GRUPOS_DE_TIPO,
+  RUTA_AGENDA,
   armarParametros,
+  consultaDeReubicacion,
+  motivoDeCierre,
   nombreDeRol,
+  periodoDeCierre,
+  textoDeEventoRelacionado,
   textoDeTipo,
+  turnosDelCierre,
 } from '../../models/cambios-de-agenda';
 import { traducirErrorCambiosDeAgenda } from '../../models/cambios-de-agenda-errors';
 import { leerParametrosDeHorarios } from '../../models/parametros-de-horarios';
@@ -57,7 +63,10 @@ import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 
 /**
  * Cambios de la agenda de un profesional: horario habitual, cierres y aperturas y turnos, con
- * quien hizo cada cambio, cuando y por que (contrato 0.155.0, `listarHistorialDeAgenda`).
+ * quien hizo cada cambio, cuando y por que (contrato 0.157.0, `listarHistorialDeAgenda`).
+ *
+ * <p><b>Desde 0.157.0</b> los cierres generales de la sede aparecen en la agenda de cada profesional
+ * que tocaron, con los turnos que le dejaron, y un traslado de sede es una sola fila.
  *
  * <p><b>Por que no es la auditoria de la organizacion.</b> Aquella exige `auditoria:read` (solo
  * administradores) y un unico filtro excluyente; esta responde la pregunta de la recepcion y del
@@ -116,6 +125,11 @@ export class CambiosDeAgendaPage {
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly textoDeTipo = textoDeTipo;
   protected readonly nombreDeRol = nombreDeRol;
+  protected readonly periodoDeCierre = periodoDeCierre;
+  protected readonly turnosDelCierre = turnosDelCierre;
+  protected readonly motivoDeCierre = motivoDeCierre;
+  protected readonly textoDeEventoRelacionado = textoDeEventoRelacionado;
+  protected readonly rutaAgenda = RUTA_AGENDA;
 
   /** `agenda:excepciones` recortado a la agenda propia: sin selector. */
   protected readonly soloPropio = computed(() =>
@@ -349,6 +363,17 @@ export class CambiosDeAgendaPage {
     return (
       cambio.turnoId !== undefined && cambio.consultorioId === this.tenantContext.consultorioId()
     );
+  }
+
+  /**
+   * La agenda filtrada en "a reubicar" para lo que dejo un cierre de sede. Solo si el cierre es de la
+   * sede activa: la agenda lee la sede del contexto, y en otra los turnos no estarian.
+   */
+  protected reubicacion(cambio: CambioDeAgenda): Readonly<Record<string, string>> | null {
+    if (cambio.consultorioId !== this.tenantContext.consultorioId()) {
+      return null;
+    }
+    return consultaDeReubicacion(cambio);
   }
 
   protected quien(cambio: CambioDeAgenda): string {

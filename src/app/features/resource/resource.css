@@ -500,3 +500,15 @@ textarea:disabled {
   color: var(--color-texto-suave);
   font-size: var(--tipo-2xs);
 }
+
+/* Detalle tecnico de una fila que resume varios hechos (un traslado: cancelacion + reserva). */
+.cambios__relacionados {
+  margin-top: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.cambios__relacionados ul {
+  margin: var(--esp-2) 0 0;
+  padding-left: var(--esp-6);
+}
