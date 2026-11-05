@@ -373,7 +373,15 @@ test.describe('Flujo unico de turnos', () => {
     );
     expect(['RESERVADO', 'CONFIRMADO']).toContain(movido.operativo?.estadoOperativo);
 
-    await navegar(page, `/agenda?fecha=${dia}`);
+    // El primer horario ofrecido puede caer en otro dia que `dia`: la tarjeta se busca en el dia
+    // al que se movio el turno, con el panel cerrado (un dialogo modal deja la grilla inerte).
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const diaNuevo = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ZONA,
+      dateStyle: 'short',
+    }).format(new Date(movido.inicio));
+    await navegar(page, `/agenda?fecha=${diaNuevo}`);
     const tarjeta = page
       .getByRole('button', { name: new RegExp(apellido()) })
       .filter({ hasText: 'Reprogramado' });

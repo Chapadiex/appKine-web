@@ -43,6 +43,8 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
   let norte: Centro;
   let nombreDeCentro: string;
   let api: ApiAkine;
+  /** La administradora con el contexto en Norte: las rutas de una sede exigen esa sede. */
+  let apiNorte: ApiAkine;
   let dia: string;
   let ofertaCentro: number;
   let ofertaGrupalNorte: number;
@@ -62,7 +64,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
   }
 
   function claseEnNorte(inicio: string, fin: string): Promise<{ id: number }> {
-    return api.exigir('POST', enNorte(`/clases/ofertas/${ofertaGrupalNorte}`), {
+    return apiNorte.exigir('POST', enNorte(`/clases/ofertas/${ofertaGrupalNorte}`), {
       titulo: `Pilates entre sedes ${nonce()}`,
       capacidad: 4,
       profesionalId: norte.profesional.membershipId,
@@ -133,17 +135,28 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
       consultorioId: sedeNorte.id,
       profesional: { ...centro.profesional, membershipId },
     };
-    for (let diaSemana = 1; diaSemana <= 7; diaSemana++) {
-      await api.exigir('POST', enNorte(`/profesionales/${membershipId}/disponibilidad`), {
-        diaSemana,
-        horaDesde: '00:00',
-        horaHasta: '23:45',
-      });
-    }
+    apiNorte = await ApiAkine.como(centro.emailAdmin, {
+      organizationId: centro.organizationId,
+      consultorioId: sedeNorte.id,
+    });
+    // El horario habitual de una persona no puede pisarse entre sedes (api #189, `bloque-solapado`),
+    // y en Centro atiende todo el dia. Para que dicte clases en Norte a cualquier hora se le abre
+    // una APERTURA puntual, que no valida el cruce entre sedes. Cubre de hoy a 30 dias: la carrera
+    // pone la clase en el primer horario que ofrece la reprogramacion, que puede no caer en `dia`.
+    await apiNorte.exigir('POST', enNorte('/excepciones'), {
+      membershipId,
+      tipo: 'APERTURA',
+      motivo: 'AMPLIACION',
+      fechaDesde: fechaLocal(centro.timezone),
+      fechaHasta: fechaLocal(centro.timezone, 30),
+      horaDesde: '00:00',
+      horaHasta: '23:45',
+      notes: 'Clases en Norte de la profesional de Centro (E2E entre sedes)',
+    });
 
     ofertaCentro = (await crearOferta(api, centro)).id;
     ofertaGrupalNorte = (
-      await crearOferta(api, norte, {
+      await crearOferta(apiNorte, norte, {
         nombre: `Pilates Norte ${nonce()}`,
         extra: { modalidad: 'GRUPAL', capacidad: 8 },
       })
@@ -156,12 +169,14 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
 
   test.afterAll(async () => {
     await api?.cerrar();
+    await apiNorte?.cerrar();
   });
 
   test('Centro no ofrece la hora de la clase de Norte, ni con sobreturno', async () => {
+    // `hasta` es exclusivo: la ventana del dia es [dia, dia + 1).
     const agenda = await api.exigir<{
       ocupacionesEnOtrasSedes?: { membershipId: number; tipo: string; consultorioId: number }[];
-    }>('GET', enCentro(`/agenda/operativa?desde=${dia}&hasta=${dia}`));
+    }>('GET', enCentro(`/agenda/operativa?desde=${dia}&hasta=${fechaLocal(centro.timezone, 6)}`));
     expect(agenda.ocupacionesEnOtrasSedes).toContainEqual(
       expect.objectContaining({
         membershipId: centro.profesional.membershipId,
@@ -251,11 +266,14 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     expect(new Date(leido.inicio).getTime()).toBe(new Date(instante(dia, '15:00')).getTime());
   });
 
-  /** Con dos sedes el selector pregunta: se elige Centro por su nombre. */
+  /**
+   * Con dos sedes el selector pregunta: se elige Centro por su nombre, anclado al principio porque
+   * la opcion de Norte tambien lo nombra (la organizacion se llama como la sede del alta).
+   */
   async function entrarEnCentro(page: Page): Promise<void> {
     await ingresarPorPantalla(page, centro.emailAdmin);
     await expect(page).toHaveURL(/\/seleccionar-contexto/, { timeout: 45_000 });
-    await page.getByRole('button', { name: new RegExp(escapar(nombreDeCentro)) }).click();
+    await page.getByRole('button', { name: new RegExp(`^${escapar(nombreDeCentro)}`) }).click();
     await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 45_000 });
   }
 });

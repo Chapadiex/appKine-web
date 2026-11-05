@@ -233,6 +233,11 @@ export interface OpcionesDeSesion {
   readonly password?: string;
   readonly organizationId?: number;
   /**
+   * Sede del contexto. Sin ella se toma la primera de la organizacion: las rutas de OTRA sede
+   * (`/consultorios/{id}/...`) responden 404 con ese token, porque el contexto fija la sede.
+   */
+  readonly consultorioId?: number;
+  /**
    * Reusa el access token que otro worker —o el intento anterior del mismo test— ya obtuvo para
    * esta cuenta y este centro, en vez de ingresar de nuevo (ver {@link ARCHIVO_DE_SESIONES}). Solo
    * para las cuentas del centro compartido, cuyos permisos no cambian durante la corrida: el token
@@ -314,7 +319,7 @@ export class ApiAkine {
    * lo fuercen por huerfano— y reintenta, hasta tres intentos.
    */
   private async ingresar(renovar = false): Promise<void> {
-    const clave = `${this.email}|${this.opciones.organizationId ?? ''}`;
+    const clave = `${this.email}|${this.opciones.organizationId ?? ''}|${this.opciones.consultorioId ?? ''}`;
     for (let intento = 1; ; intento++) {
       const espera = await deAUnLogin(async () => {
         if (this.opciones.reusarSesion && !renovar) {
@@ -359,10 +364,12 @@ export class ApiAkine {
       consultorioId: number;
     }[];
     const buscado = this.opciones.organizationId;
-    const contexto =
-      buscado === undefined
-        ? disponibles[0]
-        : disponibles.find((c) => c.organizationId === buscado);
+    const sede = this.opciones.consultorioId;
+    const contexto = disponibles.find(
+      (c) =>
+        (buscado === undefined || c.organizationId === buscado) &&
+        (sede === undefined || c.consultorioId === sede),
+    );
     if (contexto === undefined) {
       throw new Error(
         `${this.email} no tiene un contexto de trabajo${buscado === undefined ? '' : ` en ${buscado}`}`,

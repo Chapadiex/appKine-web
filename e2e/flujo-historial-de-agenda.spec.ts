@@ -103,10 +103,10 @@ test.describe('Historial de cambios de la agenda', () => {
     await navegar(page, '/horarios/cambios');
 
     await expect(page.getByRole('heading', { name: 'Cambios de la agenda' })).toBeVisible();
-    await expect(page.getByLabel('Profesional')).toHaveCount(0);
+    await expect(page.getByLabel('Profesional', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Tu agenda')).toBeVisible();
     const tabla = page.getByRole('region', { name: 'Cambios de la agenda' });
-    await expect(tabla.getByText('Se movió un turno de horario')).toBeVisible();
+    await expect(tabla.getByRole('cell', { name: /^Se movió un turno de horario/ })).toBeVisible();
     await expect(tabla.getByText(MOTIVO)).toBeVisible();
 
     const ajena = await profesional.pedir(
@@ -125,7 +125,9 @@ test.describe('Historial de cambios de la agenda', () => {
       page.getByText('Elegí un profesional para ver los cambios de su agenda.'),
     ).toBeVisible();
     const pedido = esperarHistorial(page);
-    await page.getByLabel('Profesional').selectOption(String(sembrada.membershipId));
+    await page
+      .getByLabel('Profesional', { exact: true })
+      .selectOption(String(sembrada.membershipId));
     const primera = await pedido;
     expect(new URL(primera.url()).searchParams.get('size')).toBe('10');
     const total = ((await primera.json()) as { totalElements: number }).totalElements;
