@@ -16,6 +16,10 @@ import { RecursoLibre } from './recurso-libre';
  */
 export interface ValidacionDeHorario { 
     /**
+     * Si un sobreturno a esa hora entraria: lo unico que lo impide es ocupacion de ESTA sede (otro turno, el cupo o el box). false si choca con algo que el sobreturno no salva (un turno de la misma persona en otra sede, una clase, un cierre, fuera de horario) y en un horario libre. Informativo: no mira el permiso turno:sobreturno y la reserva revalida todo.
+     */
+    admiteSobreturno?: boolean;
+    /**
      * Los horarios mas cercanos, si este no se puede
      */
     alternativas?: Array<HorarioDisponible>;

@@ -57,8 +57,47 @@ const DE_OTRA_SEDE = {
   actorRol: undefined,
 };
 
+const CIERRE = {
+  id: 910,
+  ocurridoEn: '2026-11-01T12:00:00Z',
+  tipo: 'CIERRE_DE_SEDE_ALTA',
+  entidad: 'CIERRE_DE_SEDE',
+  entidadId: 55,
+  consultorioId: SEDE,
+  consultorioNombre: 'Sede Centro',
+  profesionalId: 43,
+  actorNombre: 'Olga Admin',
+  actorRol: 'ORG_ADMIN',
+  cierreDeSede: {
+    excepcionId: 55,
+    motivo: 'FERIADO',
+    fechaDesde: '2026-11-20',
+    ultimoDia: '2026-11-21',
+    vigente: true,
+    conHorarioHabitual: true,
+    turnosEnElPeriodo: 3,
+    turnosPendientes: 2,
+    turnosCancelados: 1,
+  },
+};
+
+const TRASLADO = {
+  ...MOVIDO,
+  id: 920,
+  tipo: 'TURNO_TRASLADO',
+  antes: 'lun 09/11 10:00 · Sede Centro · Ana Kine',
+  despues: 'lun 09/11 11:00 · Sede Norte · Beto Fisio',
+  cambioDeProfesional: true,
+  turnoNuevoId: 78,
+  operacionId: 'op-1',
+  eventosRelacionados: [
+    { id: 921, ocurridoEn: '2026-11-02T13:00:00Z', eventType: 'TURNO_CANCELADO', turnoId: 77 },
+    { id: 922, ocurridoEn: '2026-11-02T13:00:00Z', eventType: 'TURNO_RESERVADO', turnoId: 78 },
+  ],
+};
+
 /**
- * Historial de cambios de la agenda (contrato 0.155.0): quien ve que, que parametros salen y como
+ * Historial de cambios de la agenda (contrato 0.157.0): quien ve que, que parametros salen y como
  * se lee el 403 de alcance propio.
  */
 describe('CambiosDeAgendaPage', () => {
@@ -203,11 +242,65 @@ describe('CambiosDeAgendaPage', () => {
     expect(texto(fixture)).toContain('Solo podés ver los cambios de tu propia agenda.');
   });
 
+  it('un cierre de sede muestra período, estado, turnos y la reubicación en la agenda', async () => {
+    queryParams = { membershipId: '43' };
+    const fixture = await montar({ propio: false });
+    profesionales().flush({ content: [ANA, BETO], totalElements: 2 });
+    historial().flush({
+      content: [CIERRE, { ...CIERRE, id: 911, consultorioId: 8 }],
+      totalElements: 2,
+      totalPages: 1,
+    });
+    await estabilizar(fixture);
+
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Cierre general de sede');
+    expect(contenido).toContain(
+      'Del 20 de noviembre de 2026 al 21 de noviembre de 2026 · día completo',
+    );
+    expect(contenido).toContain('Vigente');
+    expect(contenido).toContain('Feriado');
+    expect(contenido).toContain('3 turnos en el período · 2 a reubicar · 1 cancelado');
+
+    // Solo el de la sede activa lleva a la agenda: la otra sede no esta en este contexto.
+    const enlaces = [...fixture.nativeElement.querySelectorAll('a')].filter(
+      (a) => (a as HTMLElement).textContent?.trim() === 'Reubicar turnos',
+    ) as HTMLAnchorElement[];
+    expect(enlaces).toHaveLength(1);
+    const destino = new URL(enlaces[0].href);
+    expect(destino.pathname).toBe('/agenda');
+    expect(destino.searchParams.get('estado')).toBe('A_REUBICAR');
+    expect(destino.searchParams.get('fecha')).toBe('2026-11-20');
+    expect(destino.searchParams.get('profesional')).toBe('43');
+    expect(destino.searchParams.get('vista')).toBe('semana');
+  });
+
+  it('un traslado es una sola fila, con antes → después y el detalle técnico', async () => {
+    const fixture = await montar({ propio: true });
+    historial().flush({ content: [TRASLADO], totalElements: 1, totalPages: 1 });
+    await estabilizar(fixture);
+
+    const filas = fixture.nativeElement.querySelectorAll('tbody tr');
+    expect(filas).toHaveLength(1);
+    const contenido = texto(fixture);
+    expect(contenido).toContain('Turno trasladado');
+    expect(contenido).toContain(
+      'Sede Centro · Ana Kine → lun 09/11 11:00 · Sede Norte · Beto Fisio',
+    );
+    expect(contenido).toContain('Cambió de profesional');
+    expect(contenido).toContain('Cancelación del turno original');
+    expect(contenido).toContain('Reserva del turno en la sede de destino');
+  });
+
   it(
     'la tabla con resultados no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await montar({ propio: true });
-      historial().flush({ content: [MOVIDO, DE_OTRA_SEDE], totalElements: 2, totalPages: 1 });
+      historial().flush({
+        content: [MOVIDO, DE_OTRA_SEDE, CIERRE, TRASLADO],
+        totalElements: 4,
+        totalPages: 1,
+      });
       await estabilizar(fixture);
       await esperarSinViolaciones(fixture.nativeElement);
     },

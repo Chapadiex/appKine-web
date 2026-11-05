@@ -10,14 +10,25 @@
 
 
 /**
- * Un turno y una clase de la misma persona que se pisan. El id viaja solo del lado que es de esta sede.
+ * Un conflicto que ya esta guardado, calculado al leer (nada se modifica). TURNO_CLASE: un turno y una clase de la misma persona que se pisan; el id viaja solo del lado que es de esta sede. CLASE_EN_CIERRE: una clase de esta sede cuyo instructor (principal o adicional) tiene un cierre que la alcanza. DISPONIBILIDAD_DOBLE: la persona atiende a la vez en esta sede y en otra (doble oferta, p. ej. una apertura anterior a 0.158.0).
  */
 export interface ConflictoDeAgenda { 
+    /**
+     * CLASE_EN_CIERRE: BLOQUEO, AUSENCIA o CIERRE_DE_SEDE
+     */
+    causa?: ConflictoDeAgendaCausaEnum;
+    /**
+     * En TURNO_CLASE y CLASE_EN_CIERRE
+     */
     claseConsultorioId?: number;
     /**
      * Ausente si la clase es de otra sede
      */
     claseId?: number;
+    /**
+     * CLASE_EN_CIERRE: el cierre
+     */
+    excepcionId?: number;
     /**
      * Fin del tramo en que se pisan
      */
@@ -30,10 +41,30 @@ export interface ConflictoDeAgenda {
      * La columna: membership de esta sede
      */
     membershipId?: number;
+    /**
+     * DISPONIBILIDAD_DOBLE: la otra sede
+     */
+    otraSedeConsultorioId?: number;
+    tipo?: ConflictoDeAgendaTipoEnum;
+    /**
+     * Solo en TURNO_CLASE
+     */
     turnoConsultorioId?: number;
     /**
      * Ausente si el turno es de otra sede
      */
     turnoId?: number;
 }
+export enum ConflictoDeAgendaCausaEnum {
+    BLOQUEO = 'BLOQUEO',
+    AUSENCIA = 'AUSENCIA',
+    CIERRE_DE_SEDE = 'CIERRE_DE_SEDE'
+};
+export enum ConflictoDeAgendaTipoEnum {
+    TURNO_CLASE = 'TURNO_CLASE',
+    CLASE_EN_CIERRE = 'CLASE_EN_CIERRE',
+    DISPONIBILIDAD_DOBLE = 'DISPONIBILIDAD_DOBLE'
+};
+
+
 

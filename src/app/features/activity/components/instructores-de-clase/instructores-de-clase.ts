@@ -13,6 +13,7 @@ import {
 
 import { Clase } from '../../../../api/generated/model/clase';
 import { InstructoresDeClase } from '../../../../api/generated/model/instructores-de-clase';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ErrorActividad, traducirErrorActividad } from '../../models/actividad-errors';
 import { ActivityApi } from '../../services/activity-api';
@@ -45,6 +46,7 @@ export class InstructoresDeClaseComponent {
   private readonly api = inject(ActivityApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);
+  private readonly dia = inject(DiaDeLaSede);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
@@ -195,7 +197,10 @@ export class InstructoresDeClaseComponent {
       },
       error: (error: unknown) => {
         this.enviando.set(false);
-        this.errorDeAccion.set(traducirErrorActividad(error));
+        // Un adicional que choca (0.158.0) se nombra con su causa, sede y franja.
+        this.errorDeAccion.set(
+          traducirErrorActividad(error, this.tenant.consultorioId(), this.dia.zona()),
+        );
       },
     });
   }

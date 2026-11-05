@@ -895,6 +895,8 @@ describe('DetalleDeTurnoPanel', () => {
           conflictoTipo: 'CLASE',
           claseEnConflictoId: 55,
           conflictoConsultorioId: 8,
+          conflictoConsultorioNombre: 'Norte',
+          conflictoMismaSede: false,
           conflictoInicio: DESTINO.desde,
           conflictoFin: '2030-03-05T14:00:00Z',
         },
@@ -907,7 +909,8 @@ describe('DetalleDeTurnoPanel', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('El profesional tiene una clase que se cruza');
-      expect(texto(fixture)).toContain('Clase en otra sede, 10:00 a 11:00');
+      expect(texto(fixture)).toContain('Clase en la sede Norte, 10:00 a 11:00');
+      expect(texto(fixture)).not.toContain('otra sede');
       // Del turno o la clase de otra sede no se lee nada: no hay pedido a /turnos/{otro}.
       httpMock.expectNone((r) => /\/turnos\/(?!7$)\d+$/.test(r.url));
     });

@@ -1,12 +1,18 @@
-import { CambioDeAgendaTipoEnum } from '../../../api/generated/model/cambio-de-agenda';
+import {
+  CambioDeAgenda,
+  CambioDeAgendaTipoEnum,
+} from '../../../api/generated/model/cambio-de-agenda';
 import { ListarHistorialDeAgendaRequestParams } from '../../../api/generated/api/agenda.serviceInterface';
+import { CierreDeSedeEnHistorial } from '../../../api/generated/model/cierre-de-sede-en-historial';
+import { CreateExcepcionRequestMotivoEnum } from '../../../api/generated/model/create-excepcion-request';
 import { MembershipResponseRoleCodeEnum } from '../../../api/generated/model/membership-response';
+import { rangoHorario } from '../../../shared/utils/horas-de-pared';
 import { aInstanteUtc } from '../../../shared/utils/instantes';
 import { textoDeBusqueda } from '../../../shared/utils/texto-de-busqueda';
-import { esFechaDeCalendario, sumarDias } from './ventana-de-fechas';
+import { esFechaDeCalendario, etiquetaDeFecha, sumarDias } from './ventana-de-fechas';
 
 /**
- * Lecturas del historial de cambios de la agenda de un profesional (M05 y M12, contrato 0.155.0):
+ * Lecturas del historial de cambios de la agenda de un profesional (M05 y M12, contrato 0.157.0):
  * que se cambio, agrupado como lo piensa quien mira, quien lo hizo y los parametros de la consulta.
  *
  * <p>Los tipos salen del enum generado: {@link TEXTOS_DE_TIPO} es un `Record` sobre el enum, asi
@@ -29,17 +35,20 @@ const TEXTOS_DE_TIPO: Readonly<Record<CambioDeAgendaTipoEnum, string>> = {
   [T.EXCEPCION_ALTA]: 'Se cargó un cierre o apertura',
   [T.EXCEPCION_EDICION]: 'Se cambió un cierre o apertura',
   [T.EXCEPCION_BAJA]: 'Se quitó un cierre o apertura',
+  [T.CIERRE_DE_SEDE_ALTA]: 'Cierre general de sede',
+  [T.CIERRE_DE_SEDE_EDICION]: 'Cierre general de sede modificado',
+  [T.CIERRE_DE_SEDE_BAJA]: 'Cierre general de sede revocado',
   [T.TURNO_RESERVA]: 'Se reservó un turno',
   [T.TURNO_SOBRETURNO]: 'Se dio un sobreturno',
   [T.TURNO_CONFIRMACION]: 'Se confirmó un turno',
   [T.TURNO_CANCELACION]: 'Se canceló un turno',
   [T.TURNO_AUSENCIA]: 'El paciente no vino',
   [T.TURNO_REPROGRAMACION]: 'Se movió un turno de horario',
-  [T.TURNO_TRASLADO]: 'Se trasladó un turno de sede',
+  [T.TURNO_TRASLADO]: 'Turno trasladado',
   [T.TURNO_OBSERVACIONES]: 'Se cambiaron las observaciones de un turno',
 };
 
-/** Los tres grupos del filtro, en el orden en que se ofrecen. Juntos cubren todo el enum. */
+/** Los grupos del filtro, en el orden en que se ofrecen. Juntos cubren todo el enum. */
 export const GRUPOS_DE_TIPO: readonly GrupoDeTipo[] = [
   {
     etiqueta: 'Horario habitual',
@@ -48,6 +57,10 @@ export const GRUPOS_DE_TIPO: readonly GrupoDeTipo[] = [
   {
     etiqueta: 'Cierres y aperturas',
     tipos: [T.EXCEPCION_ALTA, T.EXCEPCION_EDICION, T.EXCEPCION_BAJA],
+  },
+  {
+    etiqueta: 'Cierres generales de sede',
+    tipos: [T.CIERRE_DE_SEDE_ALTA, T.CIERRE_DE_SEDE_EDICION, T.CIERRE_DE_SEDE_BAJA],
   },
   {
     etiqueta: 'Turnos',
@@ -152,4 +165,122 @@ export function armarParametros(consulta: ConsultaDeCambios): ListarHistorialDeA
     size: consulta.size,
     sort: consulta.sort,
   };
+}
+
+// --- Cierres generales de sede (contrato 0.157.0) ------------------------------------------
+
+const M = CreateExcepcionRequestMotivoEnum;
+
+/** Rotulo del motivo de una excepcion; el contrato lo publica como texto con estos valores. */
+const MOTIVOS_DE_CIERRE: Readonly<Record<string, string>> = {
+  [M.AUSENCIA]: 'Ausencia',
+  [M.LICENCIA]: 'Licencia',
+  [M.CAPACITACION]: 'Capacitación',
+  [M.VACACIONES]: 'Vacaciones',
+  [M.FERIADO]: 'Feriado',
+  [M.BLOQUEO]: 'Bloqueo',
+  [M.AMPLIACION]: 'Ampliación',
+  [M.OTRO]: 'Otro',
+};
+
+/** Motivo legible del cierre; vacio si no vino, el codigo crudo si no lo conocemos. */
+export function motivoDeCierre(motivo: string | undefined): string {
+  if (motivo === undefined || motivo === '') {
+    return '';
+  }
+  return MOTIVOS_DE_CIERRE[motivo] ?? motivo;
+}
+
+/**
+ * El periodo del cierre redactado. `ultimoDia` es INCLUSIVO (no el fin exclusivo de la excepcion):
+ * un cierre de un dia trae `fechaDesde === ultimoDia`. Sin horas es el dia completo.
+ */
+export function periodoDeCierre(cierre: CierreDeSedeEnHistorial): string {
+  const desde = etiquetaDeFecha(cierre.fechaDesde);
+  const dias =
+    cierre.ultimoDia === undefined || cierre.ultimoDia === cierre.fechaDesde
+      ? desde
+      : `Del ${desde} al ${etiquetaDeFecha(cierre.ultimoDia)}`;
+  const horas =
+    cierre.horaDesde && cierre.horaHasta
+      ? rangoHorario(cierre.horaDesde, cierre.horaHasta)
+      : 'día completo';
+  return `${dias} · ${horas}`;
+}
+
+/** "3 turnos en el período · 1 a reubicar", o `null` si el cierre no tocaba ningun turno. */
+export function turnosDelCierre(cierre: CierreDeSedeEnHistorial): string | null {
+  const total = cierre.turnosEnElPeriodo ?? 0;
+  if (total === 0) {
+    return null;
+  }
+  const partes = [`${total} ${total === 1 ? 'turno' : 'turnos'} en el período`];
+  // Un cierre revocado ya no deja turnos fuera de disponibilidad: no hay nada que reubicar por él.
+  if (cierre.vigente !== false) {
+    partes.push(`${cierre.turnosPendientes ?? 0} a reubicar`);
+  }
+  const cancelados = cierre.turnosCancelados ?? 0;
+  if (cancelados > 0) {
+    partes.push(`${cancelados} ${cancelados === 1 ? 'cancelado' : 'cancelados'}`);
+  }
+  return partes.join(' · ');
+}
+
+/**
+ * La agenda operativa. Literal y no importada: `resource` no importa de `scheduling` (ADR-0004).
+ * `A_REUBICAR` es el filtro de estado de la agenda (`agenda-page.ts`): los turnos que quedaron
+ * `fueraDeDisponibilidad`, que son los que el backend cuenta como pendientes del cierre.
+ */
+export const RUTA_AGENDA = '/agenda';
+const ESTADO_A_REUBICAR = 'A_REUBICAR';
+
+/**
+ * La query de la agenda para reubicar lo que dejo un cierre: su primer dia, el profesional
+ * consultado (su membership en esa sede) y el filtro "a reubicar". Un cierre de varios dias abre
+ * la semana. `null` si no queda nada pendiente o falta la fecha.
+ */
+export function consultaDeReubicacion(
+  cambio: CambioDeAgenda,
+): Readonly<Record<string, string>> | null {
+  const cierre = cambio.cierreDeSede;
+  if (
+    cierre === undefined ||
+    cierre.vigente === false ||
+    (cierre.turnosPendientes ?? 0) === 0 ||
+    cierre.fechaDesde === undefined ||
+    !esFechaDeCalendario(cierre.fechaDesde)
+  ) {
+    return null;
+  }
+  const consulta: Record<string, string> = {
+    fecha: cierre.fechaDesde,
+    estado: ESTADO_A_REUBICAR,
+  };
+  if (cambio.profesionalId !== undefined) {
+    consulta['profesional'] = String(cambio.profesionalId);
+  }
+  if (cierre.ultimoDia !== undefined && cierre.ultimoDia !== cierre.fechaDesde) {
+    consulta['vista'] = 'semana';
+  }
+  return consulta;
+}
+
+// --- Traslados -----------------------------------------------------------------------------
+
+/**
+ * Los hechos de auditoria que una fila de traslado absorbe: desde 0.157.0 un traslado es UNA fila
+ * y la cancelacion del original y la reserva del nuevo viajan como detalle tecnico.
+ */
+const EVENTOS_RELACIONADOS: Readonly<Record<string, string>> = {
+  TURNO_CANCELADO: 'Cancelación del turno original',
+  TURNO_RESERVADO: 'Reserva del turno en la sede de destino',
+  TURNO_TRASLADADO: 'Traslado',
+};
+
+/** Texto de un evento relacionado; el codigo crudo si no lo conocemos. */
+export function textoDeEventoRelacionado(eventType: string | undefined): string {
+  if (eventType === undefined || eventType === '') {
+    return 'Evento';
+  }
+  return EVENTOS_RELACIONADOS[eventType] ?? eventType;
 }

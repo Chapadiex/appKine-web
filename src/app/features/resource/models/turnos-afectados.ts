@@ -1,4 +1,5 @@
 import { ImpactoDisponibilidadResponse } from '../../../api/generated/model/impacto-disponibilidad-response';
+import { ClaseAfectadaPorCierre } from '../../../core/models/conflicto-de-agenda';
 import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
 
@@ -16,7 +17,12 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  */
 export type ImpactoPrevio =
   | { readonly tipo: 'consultando' }
-  | { readonly tipo: 'listo'; readonly impacto: ImpactoDisponibilidadResponse }
+  | {
+      readonly tipo: 'listo';
+      readonly impacto: ImpactoDisponibilidadResponse;
+      /** Clases que el cierre deja sin instructor (0.158.0): solo las trae el 409 del alta. */
+      readonly clases?: readonly ClaseAfectadaPorCierre[];
+    }
   | { readonly tipo: 'error' };
 
 /** Cuantos turnos dice la consulta previa, o `null` si todavia no hay respuesta valida. */

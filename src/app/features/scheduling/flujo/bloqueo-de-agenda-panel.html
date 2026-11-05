@@ -112,6 +112,26 @@
             </table>
           </div>
         }
+        @if (clasesAfectadas().length > 0) {
+          <!-- Clases sin instructor (0.158.0): sin participantes, solo cuando y de quien. -->
+          <section class="flujo" aria-labelledby="bloqueo-clases-titulo">
+            <h3 id="bloqueo-clases-titulo" class="flujo__dato">Clases que quedan sin instructor</h3>
+            <p class="ayuda">
+              No se cancelan: revisalas en la grilla de clases y asigná otro instructor si hace
+              falta.
+            </p>
+            <ul>
+              @for (clase of clasesAfectadas(); track clase.claseId) {
+                <li>
+                  Clase {{ rotuloDelTurno(clase.inicio, clase.fin) }}
+                  @if (clase.instructorMembershipId !== undefined && alcance() === TODA_LA_SEDE) {
+                    · {{ profesionalDelTurno(clase.instructorMembershipId) }}
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
         @if (seleccion().size > 0) {
           <fieldset class="flujo" aria-labelledby="bloqueo-lote-titulo">
             <legend id="bloqueo-lote-titulo" class="flujo__dato">

@@ -219,6 +219,7 @@ model/cerrar-caja.ts
 model/cerrar-caso-clinico-request.ts
 model/cerrar-sesion.ts
 model/change-membership-request.ts
+model/cierre-de-sede-en-historial.ts
 model/cierre-de-sesion.ts
 model/clase-en-agenda.ts
 model/clase-excluida-de-honorarios.ts
@@ -328,6 +329,7 @@ model/evento-de-autorizacion-response.ts
 model/evento-de-clase.ts
 model/evento-de-recepcion.ts
 model/evento-de-turno.ts
+model/evento-relacionado-de-agenda.ts
 model/excepcion-response.ts
 model/feriado-response.ts
 model/fijar-politica-de-enmienda.ts

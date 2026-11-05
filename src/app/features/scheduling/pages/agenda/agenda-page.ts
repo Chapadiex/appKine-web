@@ -36,7 +36,8 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
-import { ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
+import { SessionService } from '../../../../core/services/session.service';
+import { ErrorAgenda, nombreDeSede, traducirErrorAgenda } from '../../models/agenda-errors';
 import {
   fechaEnPalabras,
   horaEnZona,
@@ -52,6 +53,7 @@ import {
 import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import {
   AgrupacionDeAgenda,
+  AvisoDeColumna,
   CeldaLibre,
   ColumnaDeAgenda,
   EventoDeGrilla,
@@ -135,6 +137,7 @@ export class AgendaPage {
   private readonly api = inject(SchedulingApi);
   private readonly dia = inject(DiaDeLaSede);
   private readonly tenant = inject(TenantContextStore);
+  private readonly session = inject(SessionService);
   private readonly location = inject(Location);
   private readonly injector = inject(Injector);
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -305,6 +308,14 @@ export class AgendaPage {
 
   /** Turnos que ya se pisan con una clase de la misma persona (contrato 0.156.0, `conflictos`). */
   private readonly chocanConClase = computed(() => turnosQueChocanConClase(this.agenda()));
+
+  /** "Tambien disponible en la sede Norte en este horario": la marca de doble disponibilidad. */
+  protected tituloDeAviso(aviso: AvisoDeColumna): string {
+    const sede = nombreDeSede(this.session.contextos(), aviso.otraSedeConsultorioId);
+    return sede === ''
+      ? 'La persona tiene horario de atención en dos sedes a la vez en este tramo.'
+      : `También tiene horario de atención en la sede ${sede} en este tramo.`;
+  }
 
   protected chocaConClase(turno: TurnoDeCalendario | undefined): boolean {
     const id = turno?.turno?.id;

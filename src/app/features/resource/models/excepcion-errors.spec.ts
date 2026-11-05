@@ -130,4 +130,44 @@ describe('traducirErrorExcepcion', () => {
       'prosa del backend',
     );
   });
+
+  it('la apertura superpuesta con otra sede trae cada franja; lo reservado no se sustituye (0.158.0)', () => {
+    const superpuesta = traducirErrorExcepcion(
+      problema(409, 'bloque-solapado', {
+        conflictoTipo: 'DISPONIBILIDAD',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Centro',
+        superposiciones: [
+          {
+            conflictoTipo: 'DISPONIBILIDAD',
+            conflictoMismaSede: false,
+            conflictoConsultorioNombre: 'Centro',
+          },
+          {
+            conflictoTipo: 'DISPONIBILIDAD',
+            conflictoMismaSede: false,
+            conflictoConsultorioNombre: 'Sur',
+          },
+        ],
+      }),
+    );
+    expect(superpuesta.causa).toBe('superpuesta');
+    expect(superpuesta.mensaje).toBe('prosa del backend');
+    expect(superpuesta.conflictos.map((c) => c.conflictoConsultorioNombre)).toEqual([
+      'Centro',
+      'Sur',
+    ]);
+
+    // Sin la lista, la superposicion plana.
+    const plana = traducirErrorExcepcion(
+      problema(409, 'bloque-solapado', { conflictoMismaSede: false, conflictoConsultorioId: 8 }),
+    );
+    expect(plana.conflictos).toEqual([{ conflictoMismaSede: false, conflictoConsultorioId: 8 }]);
+
+    const ocupada = traducirErrorExcepcion(
+      problema(409, 'recurso-ocupado', { conflictoTipo: 'TURNO', conflictoMismaSede: false }),
+    );
+    expect(ocupada.causa).toBe('actividad-reservada');
+    expect(ocupada.conflictos).toHaveLength(1);
+  });
 });
