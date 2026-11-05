@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
@@ -10,10 +11,12 @@ import {
   PERMISO_HC_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_MANAGE,
+  PERMISO_TURNO_SOBRETURNO,
 } from '../../../core/models/permisos';
 import { AvisosStore } from '../../../core/services/avisos.store';
 import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../core/testing/axe';
@@ -25,6 +28,7 @@ const SEDE = '/api/v1/consultorios/3';
 const TURNO = `${SEDE}/turnos/7`;
 const BUSQUEDA = `${SEDE}/disponibilidad/busqueda`;
 const COINCIDENCIAS = `${SEDE}/lista-de-espera/coincidencias`;
+const VALIDACION = `${SEDE}/disponibilidad/validacion`;
 
 const FUTURO = '2030-03-04T12:00:00Z';
 const PASADO = '2020-03-04T12:00:00Z';
@@ -780,6 +784,53 @@ describe('DetalleDeTurnoPanel', () => {
   });
 
   describe('reprogramar', () => {
+    it('"¿Quién está libre a esta hora?" ofrece otros profesionales para el mismo horario', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(BUSQUEDA).flush({ horarios: [] });
+      await asentar(fixture);
+
+      clic(fixture, 'Consultar');
+      const validacion = httpMock.expectOne(VALIDACION);
+      expect(validacion.request.body).toEqual({
+        ofertaId: 14,
+        inicio: FUTURO,
+        turnoExcluidoId: 7,
+        personaId: 12,
+      });
+      validacion.flush({
+        estado: 'DISPONIBLE',
+        profesionales: [
+          { id: 31, nombre: 'Lopez, Maria' },
+          { id: 32, nombre: 'Gomez, Juan' },
+        ],
+      });
+      await asentar(fixture);
+
+      // El del turno no se ofrece: moverlo a si mismo no es mover.
+      expect(texto(fixture)).not.toContain('Lopez, Maria Mismo horario');
+      Array.from(raiz(fixture).querySelectorAll<HTMLButtonElement>('.horario'))
+        .find((b) => b.textContent?.includes('Gomez'))
+        ?.click();
+      await asentar(fixture);
+      clic(fixture, 'Reprogramar');
+      const pedido = httpMock.expectOne(`${TURNO}/reprogramacion`);
+      expect(pedido.request.body).toMatchObject({ inicio: FUTURO, profesionalId: 32 });
+      pedido.flush({ id: 7 });
+      httpMock.expectOne(TURNO).flush(turno('RESERVADO', { profesionalId: 32, version: 5 }));
+      await asentar(fixture);
+    });
+
+    it('con vistaInicial "reprogramar" abre directo en reprogramar', async () => {
+      const fixture = await montar([PERMISO_TURNO_MANAGE], 'reprogramar');
+      httpMock.expectOne(TURNO).flush(turno('RESERVADO'));
+      await asentar(fixture);
+
+      httpMock.expectOne(BUSQUEDA).flush({ horarios: [] });
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#flujo-reprogramar-motivo')).not.toBeNull();
+    });
+
     it('es el mismo turno: elige un horario, manda motivo y versión, y vuelve al resumen', async () => {
       const fixture = await abierto(turno('RESERVADO'));
 
@@ -822,6 +873,43 @@ describe('DetalleDeTurnoPanel', () => {
 
       expect(avisos()).toEqual(['Turno reprogramado correctamente.']);
       expect(raiz(fixture).querySelector('#flujo-reprogramar-motivo')).toBeNull();
+    });
+
+    it('si en el medio otra sede puso una clase, dice con qué choca (carrera, 0.156.0)', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Reprogramar');
+      httpMock
+        .expectOne(BUSQUEDA)
+        .flush({ timezone: 'America/Argentina/Cordoba', horarios: [DESTINO] });
+      await asentar(fixture);
+      (raiz(fixture).querySelector('.horario') as HTMLButtonElement).click();
+      await asentar(fixture);
+
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(`${TURNO}/reprogramacion`).flush(
+        {
+          type: 'https://akine.app/problems/recurso-ocupado',
+          status: 409,
+          recurso: 'profesional',
+          conflictoTipo: 'CLASE',
+          claseEnConflictoId: 55,
+          conflictoConsultorioId: 8,
+          conflictoInicio: DESTINO.desde,
+          conflictoFin: '2030-03-05T14:00:00Z',
+        },
+        { status: 409, statusText: 'C' },
+      );
+      httpMock.match(TURNO).forEach((r) => r.flush(turno('RESERVADO')));
+      httpMock
+        .match(BUSQUEDA)
+        .forEach((r) => r.flush({ timezone: 'America/Argentina/Cordoba', horarios: [] }));
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('El profesional tiene una clase que se cruza');
+      expect(texto(fixture)).toContain('Clase en otra sede, 10:00 a 11:00');
+      // Del turno o la clase de otra sede no se lee nada: no hay pedido a /turnos/{otro}.
+      httpMock.expectNone((r) => /\/turnos\/(?!7$)\d+$/.test(r.url));
     });
 
     it('si el horario se fue lo dice, suelta la elección y vuelve a buscar', async () => {
@@ -1352,10 +1440,408 @@ describe('DetalleDeTurnoPanel', () => {
     TIMEOUT_AXE,
   );
 
+  it('"Agregar sobreturno" abre el nuevo turno en el mismo horario, con el paso del sobreturno', async () => {
+    const fixture = await abierto(turno('RESERVADO'), [
+      PERMISO_TURNO_MANAGE,
+      PERMISO_TURNO_SOBRETURNO,
+    ]);
+
+    clic(fixture, 'Agregar sobreturno');
+
+    expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+      tipo: 'nuevo',
+      contexto: expect.objectContaining({
+        inicio: FUTURO,
+        profesionalId: 31,
+        ofertaId: 14,
+        sobreturnoDe: 7,
+      }),
+    });
+  });
+
+  describe('turno:manage solo propio (contrato 0.154.0)', () => {
+    async function comoProfesional(leido: object): Promise<ComponentFixture<DetalleDeTurnoPanel>> {
+      // La membership del contexto es la 31; el backend recorta turno:manage a sus turnos.
+      (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+        signal(31);
+      TestBed.inject(TenantContextStore).select({
+        organizationId: 1,
+        organizationName: 'Centro',
+        consultorioId: 3,
+        consultorioName: 'Sede',
+      });
+      TestBed.inject(PermissionsStore).cargar().subscribe();
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+        permissions: [PERMISO_TURNO_MANAGE, PERMISO_SESION_REGISTER],
+        ownScopedPermissions: [PERMISO_TURNO_MANAGE],
+      });
+      const fixture = TestBed.createComponent(DetalleDeTurnoPanel);
+      fixture.componentRef.setInput('turnoId', 7);
+      fixture.detectChanges();
+      httpMock.expectOne(TURNO).flush(leido);
+      await asentar(fixture);
+      return fixture;
+    }
+
+    it('el turno de otro profesional se mira y no se opera', async () => {
+      const fixture = await comoProfesional(turno('RESERVADO', { profesionalId: 44 }));
+
+      for (const rotulo of ['Paciente presente', 'Confirmar', 'Reprogramar', 'Cancelar turno']) {
+        expect(botones(fixture)).not.toContain(rotulo);
+      }
+      expect(texto(fixture)).toContain('Este turno es de otro profesional');
+      expect(botones(fixture)).toContain('Ver historial');
+    });
+
+    it('el propio se opera como siempre, y ofrece cambiar de sede', async () => {
+      const fixture = await comoProfesional(turno('RESERVADO'));
+
+      expect(botones(fixture)).toEqual(
+        expect.arrayContaining(['Paciente presente', 'Reprogramar', 'Cambiar de sede']),
+      );
+      expect(texto(fixture)).not.toContain('otro profesional');
+    });
+  });
+
+  describe('observaciones del turno (contrato 0.154.0)', () => {
+    const conObservaciones = (texto?: string): object =>
+      turno('RESERVADO', {
+        operativo: { estadoOperativo: 'RESERVADO', observaciones: texto },
+      });
+
+    it('se editan con la versión leída, avisan y releen', async () => {
+      const fixture = await abierto(conObservaciones('Trae estudios'));
+      expect(texto(fixture)).toContain('Observaciones: Trae estudios');
+
+      clic(fixture, 'Editar observaciones');
+      const campo = raiz(fixture).querySelector('#flujo-observaciones') as HTMLTextAreaElement;
+      // Arranca con lo que ya tenia: editar no es escribir desde cero.
+      expect(campo.value).toBe('Trae estudios');
+      campo.value = 'Trae estudios y la orden';
+      campo.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+
+      clic(fixture, 'Guardar observaciones');
+      const pedido = httpMock.expectOne(`${TURNO}/observaciones`);
+      expect(pedido.request.body).toEqual({
+        observaciones: 'Trae estudios y la orden',
+        expectedVersion: 4,
+      });
+      pedido.flush({ id: 7 });
+      httpMock.expectOne(TURNO).flush(conObservaciones('Trae estudios y la orden'));
+      await asentar(fixture);
+
+      expect(avisos()).toEqual(['Observaciones guardadas.']);
+      expect(raiz(fixture).querySelector('#flujo-observaciones')).toBeNull();
+      expect(texto(fixture)).toContain('Observaciones: Trae estudios y la orden');
+    });
+
+    it('sin observaciones lo dice, y "Descartar" no manda nada', async () => {
+      const fixture = await abierto(conObservaciones());
+      expect(texto(fixture)).toContain('Sin observaciones');
+
+      clic(fixture, 'Editar observaciones');
+      clic(fixture, 'Descartar');
+      await asentar(fixture);
+
+      httpMock.expectNone(`${TURNO}/observaciones`);
+      expect(raiz(fixture).querySelector('#flujo-observaciones')).toBeNull();
+    });
+
+    it('sin permiso de operar no se ofrece editarlas', async () => {
+      const fixture = await abierto(conObservaciones('Trae estudios'), []);
+      expect(botones(fixture)).not.toContain('Editar observaciones');
+    });
+  });
+
+  describe('reprogramar con box (contrato 0.154.0)', () => {
+    it('si el horario tiene más de un box se elige, y el elegido viaja', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(BUSQUEDA).flush({
+        horarios: [
+          { ...DESTINO, espacioId: 5, espacioNombre: 'Box 1' },
+          { ...DESTINO, espacioId: 6 },
+        ],
+      });
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#flujo-reprogramar-box')).toBeNull();
+
+      (raiz(fixture).querySelector('.horario') as HTMLButtonElement).click();
+      await asentar(fixture);
+      const box = raiz(fixture).querySelector('#flujo-reprogramar-box') as HTMLSelectElement;
+      // Sin nombre se rotula con el id, que es lo que hay.
+      expect(Array.from(box.options).map((o) => o.textContent?.trim())).toEqual(['Box 1', 'Box 6']);
+      box.value = '6';
+      box.dispatchEvent(new Event('change'));
+      await asentar(fixture);
+
+      clic(fixture, 'Reprogramar');
+      const pedido = httpMock.expectOne(`${TURNO}/reprogramacion`);
+      expect(pedido.request.body).toMatchObject({ inicio: DESTINO.desde, espacioId: 6 });
+      pedido.flush({ id: 7 });
+      httpMock.expectOne(TURNO).flush(turno('RESERVADO', { version: 5 }));
+      await asentar(fixture);
+    });
+  });
+
+  describe('cambiar de sede (contrato 0.154.0)', () => {
+    const CONTEXTOS = '/api/v1/me/contexts';
+    const NORTE = '/api/v1/consultorios/8';
+
+    async function enTraslado(
+      contextos: readonly object[],
+    ): Promise<ComponentFixture<DetalleDeTurnoPanel>> {
+      const fixture = await abierto(turno('RESERVADO'));
+      clic(fixture, 'Cambiar de sede');
+      httpMock.expectOne(CONTEXTOS).flush(contextos);
+      await asentar(fixture);
+      return fixture;
+    }
+
+    function elegir(fixture: ComponentFixture<DetalleDeTurnoPanel>, id: string, valor: string) {
+      const campo = raiz(fixture).querySelector(`#${id}`) as HTMLSelectElement;
+      campo.value = valor;
+      campo.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    }
+
+    it('sin otra sede de la organización lo dice y no deja confirmar', async () => {
+      const fixture = await enTraslado([
+        { organizationId: 1, consultorioId: 3, consultorioName: 'Sede' },
+        // Otra organizacion no es un destino: el traslado es dentro de la misma.
+        { organizationId: 2, consultorioId: 9, consultorioName: 'Ajena' },
+      ]);
+
+      expect(texto(fixture)).toContain('No tenés otra sede de esta organización');
+      expect(boton(fixture, 'Cambiar de sede')?.disabled).toBe(true);
+    });
+
+    it('elige sede, la misma prestación, horario, box y motivo, y traslada', async () => {
+      const fixture = await enTraslado([
+        { organizationId: 1, consultorioId: 3, consultorioName: 'Sede' },
+        { organizationId: 1, consultorioId: 8, consultorioName: 'Norte' },
+      ]);
+      const sedes = raiz(fixture).querySelector('#flujo-trasladar-sede') as HTMLSelectElement;
+      expect(Array.from(sedes.options).map((o) => o.textContent?.trim())).toEqual([
+        'Elegí una sede',
+        'Norte',
+      ]);
+
+      elegir(fixture, 'flujo-trasladar-sede', '8');
+      httpMock
+        .expectOne((r) => r.url === `${NORTE}/ofertas`)
+        .flush([
+          { id: 20, nombreComercial: 'Pilates' },
+          { id: 21, nombreComercial: 'Kinesiologia' },
+        ]);
+      // La misma prestacion por nombre queda elegida y ya busca horarios en la sede de destino.
+      const busqueda = httpMock.expectOne(`${NORTE}/disponibilidad/busqueda`);
+      expect(busqueda.request.body).toEqual({ ofertaId: 21, limite: 12 });
+      busqueda.flush({
+        horarios: [
+          { ...DESTINO, espacioId: 5, espacioNombre: 'Box A' },
+          { ...DESTINO, espacioId: 6, espacioNombre: 'Box B' },
+        ],
+        truncado: true,
+      });
+      await asentar(fixture);
+
+      clic(fixture, 'Ver más horarios');
+      const mas = httpMock.expectOne(`${NORTE}/disponibilidad/busqueda`);
+      expect(mas.request.body.limite).toBe(24);
+      mas.flush({
+        horarios: [
+          { ...DESTINO, espacioId: 5, espacioNombre: 'Box A' },
+          { ...DESTINO, espacioId: 6, espacioNombre: 'Box B' },
+        ],
+      });
+      await asentar(fixture);
+
+      (raiz(fixture).querySelector('.horario') as HTMLButtonElement).click();
+      await asentar(fixture);
+      elegir(fixture, 'flujo-trasladar-box', '6');
+      // Sin motivo no se confirma: es obligatorio.
+      expect(boton(fixture, 'Cambiar de sede')?.disabled).toBe(true);
+      const motivo = raiz(fixture).querySelector('#flujo-trasladar-motivo') as HTMLTextAreaElement;
+      motivo.value = 'Se mudó al norte';
+      motivo.dispatchEvent(new Event('input'));
+      await asentar(fixture);
+
+      clic(fixture, 'Cambiar de sede');
+      const pedido = httpMock.expectOne(`${TURNO}/traslado`);
+      expect(pedido.request.body).toEqual({
+        consultorioDestinoId: 8,
+        ofertaId: 21,
+        inicio: DESTINO.desde,
+        profesionalId: 31,
+        espacioId: 6,
+        motivo: 'Se mudó al norte',
+        expectedVersion: 4,
+      });
+      pedido.flush({});
+      httpMock.expectOne(TURNO).flush(turno('CANCELADO', { estado: 'CANCELADO', version: 5 }));
+      await asentar(fixture);
+
+      expect(avisos()).toEqual(['Turno trasladado a Norte. El de esta sede quedó cancelado.']);
+      expect(raiz(fixture).querySelector('#flujo-trasladar-sede')).toBeNull();
+    });
+
+    it('si no se pueden leer las prestaciones de la sede de destino lo dice', async () => {
+      const fixture = await enTraslado([
+        { organizationId: 1, consultorioId: 3, consultorioName: 'Sede' },
+        { organizationId: 1, consultorioId: 8, consultorioName: 'Norte' },
+      ]);
+
+      elegir(fixture, 'flujo-trasladar-sede', '8');
+      httpMock
+        .expectOne((r) => r.url === `${NORTE}/ofertas`)
+        .flush({ status: 500 }, { status: 500, statusText: 'X' });
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('No pudimos buscar horarios en esa sede');
+
+      // Volver a "Elegí una sede" limpia la prestación y no sale a la red.
+      elegir(fixture, 'flujo-trasladar-sede', '');
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#flujo-trasladar-oferta')).toBeNull();
+    });
+  });
+
+  describe('historial con cambios de profesional y de box', () => {
+    it('nombra a los profesionales y muestra los boxes por id', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Ver historial');
+      httpMock.expectOne(`${TURNO}/historial`).flush([
+        {
+          id: 1,
+          tipo: 'REPROGRAMACION',
+          ocurridoEn: '2030-03-02T12:00:00Z',
+          profesionalAnteriorId: 31,
+          profesionalNuevoId: 32,
+          espacioNuevoId: 5,
+        },
+        {
+          id: 2,
+          tipo: 'REPROGRAMACION',
+          ocurridoEn: '2030-03-02T13:00:00Z',
+          profesionalAnteriorId: 32,
+          profesionalNuevoId: 99,
+          espacioAnteriorId: 5,
+          espacioNuevoId: 5,
+        },
+      ]);
+      httpMock.expectOne(`${TURNO}/recepcion/historial`).flush([]);
+      // Los eventos traen ids: los nombres se leen una vez, solo porque hubo cambio de profesional.
+      httpMock
+        .expectOne((r) => r.url === `${SEDE}/disponibilidad/profesionales`)
+        .flush([
+          { id: 31, nombre: 'Lopez, Maria' },
+          { id: 32, nombre: 'Gomez, Juan' },
+        ]);
+      await asentar(fixture);
+
+      const lista = raiz(fixture).querySelector('.flujo__historial')?.textContent ?? '';
+      expect(lista).toContain('Profesional: Lopez, Maria → Gomez, Juan');
+      expect(lista).toContain('Box: sin box → Box #5');
+      // Sin nombre conocido se dice el id; el mismo box no es un cambio.
+      expect(lista).toContain('Profesional: Gomez, Juan → Profesional #99');
+      expect(lista.match(/Box:/g)).toHaveLength(1);
+    });
+
+    it('sin cambios de profesional no pide nombres', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Ver historial');
+      httpMock.expectOne(`${TURNO}/historial`).flush([
+        {
+          id: 1,
+          tipo: 'REPROGRAMACION',
+          ocurridoEn: '2030-03-02T12:00:00Z',
+          profesionalAnteriorId: 31,
+          profesionalNuevoId: 31,
+        },
+      ]);
+      httpMock.expectOne(`${TURNO}/recepcion/historial`).flush([]);
+      await asentar(fixture);
+
+      httpMock.expectNone((r) => r.url === `${SEDE}/disponibilidad/profesionales`);
+      expect(texto(fixture)).not.toContain('Profesional:');
+    });
+  });
+
+  describe('reprogramado (contrato 0.155.0)', () => {
+    it('el resumen marca el turno movido con el horario original y el último movimiento', async () => {
+      const fixture = await abierto(
+        turno('CONFIRMADO', {
+          operativo: {
+            estadoOperativo: 'CONFIRMADO',
+            reprogramaciones: 2,
+            reprogramacion: {
+              cantidad: 2,
+              inicioOriginal: '2030-03-01T13:00:00Z',
+              ultimoTipo: 'REPROGRAMACION',
+              ultimoActorNombre: 'Rita Recepción',
+              ultimoMotivo: 'Pedido del paciente',
+            },
+          },
+        }),
+      );
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('↻ Reprogramado 2 veces');
+      expect(contenido).toContain('Original: 01/03/2030');
+      expect(contenido).toContain('Ahora: 04/03/2030');
+      expect(contenido).toContain(
+        'Último: cambio de horario por Rita Recepción — Pedido del paciente',
+      );
+      // Es un indicador: el estado sigue siendo el de siempre.
+      expect(contenido).toContain('Confirmado');
+    });
+
+    it('un turno que nunca se movió no lleva la marca', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+      expect(texto(fixture)).not.toContain('Reprogramado');
+    });
+
+    it('el historial rotula los eventos del turno de origen de un cambio de sede', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Ver historial');
+      httpMock.expectOne(`${TURNO}/historial`).flush([
+        {
+          id: 1,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-01T12:00:00Z',
+          turnoId: 5,
+          consultorioId: 8,
+        },
+        {
+          id: 2,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-02T12:00:00Z',
+          turnoId: 7,
+          consultorioId: 3,
+        },
+      ]);
+      httpMock.expectOne(`${TURNO}/recepcion/historial`).flush([]);
+      await asentar(fixture);
+
+      const items = Array.from(raiz(fixture).querySelectorAll('.flujo__historial li')).map(
+        (li) => li.textContent ?? '',
+      );
+      expect(items[0]).toContain('Turno anterior #5');
+      expect(items[1]).not.toContain('Turno anterior');
+    });
+  });
+
   // -------------------------------------------------------------------------------------
 
   async function montar(
     permisos: readonly string[] = [PERMISO_TURNO_MANAGE, PERMISO_SESION_REGISTER, PERMISO_HC_READ],
+    vistaInicial?: 'reprogramar' | 'cancelar',
   ): Promise<ComponentFixture<DetalleDeTurnoPanel>> {
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
@@ -1368,6 +1854,9 @@ describe('DetalleDeTurnoPanel', () => {
 
     const fixture = TestBed.createComponent(DetalleDeTurnoPanel);
     fixture.componentRef.setInput('turnoId', 7);
+    if (vistaInicial !== undefined) {
+      fixture.componentRef.setInput('vistaInicial', vistaInicial);
+    }
     fixture.componentInstance.cerrar.subscribe(() => cerrado++);
     fixture.detectChanges();
     return fixture;

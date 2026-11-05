@@ -16,6 +16,7 @@ import { DeactivateExcepcionRequest } from '../model/models';
 import { ExcepcionResponse } from '../model/models';
 import { ImpactoDisponibilidadResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { UpdateExcepcionRequest } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -49,6 +50,12 @@ export interface SimularImpactoBajaExcepcionRequestParams {
     excepcionId: number;
 }
 
+export interface UpdateExcepcionRequestParams {
+    consultorioId: number;
+    excepcionId: number;
+    updateExcepcionRequest: UpdateExcepcionRequest;
+}
+
 
 export interface ExcepcionesDeDisponibilidadServiceInterface {
     defaultHeaders: HttpHeaders;
@@ -56,7 +63,7 @@ export interface ExcepcionesDeDisponibilidadServiceInterface {
 
     /**
      * Alta de un cierre o de una apertura puntual
-     * Carga una excepcion al horario base: una ausencia, una licencia, un bloqueo o una ampliacion excepcional (RF-M05-004). Exige consultorio:manage sobre ESA sede.  RESPONDE 201 O 200, Y UN CLIENTE QUE SOLO CONTEMPLE 201 SE ROMPE. El alta es IDEMPOTENTE sin Idempotency-Key (CA-M05-004-05): un pedido que coincide EXACTAMENTE con una excepcion activa que ya existe devuelve 200 con esa fila, no crea nada y no vuelve a auditar. notes y feriadoId quedan FUERA de esa comparacion. Solo el alta que crea la fila responde 201, y solo ella trae Location.  NO HAY 409 POR SOLAPAMIENTO, Y ES UNA DIFERENCIA DELIBERADA CON LOS BLOQUES. Dos excepciones que se pisan sin ser identicas son las dos legitimas y las dos se guardan: una ausencia de una tarde dentro de una licencia mas larga es un hecho corriente, no un conflicto. No escribir manejo de error de solapamiento para esta operacion: nunca lo va a emitir.  Los 409 que SI existen aca son otros dos, y ninguno depende de las fechas: la sede dada de baja (consultorio-inactive) y el profesional sin vinculo vigente en esa sede (profesional-no-vinculado), este ultimo solo cuando se manda membershipId.  OMITIR membershipId significa SEDE ENTERA —afecta a TODOS los profesionales—, no un dato faltante. Y fechaHasta es EXCLUSIVA: un cierre de un solo dia se carga como [D, D+1). Mandar fechaDesde &#x3D;&#x3D; fechaHasta cierra cero dias.  APERTURA no es el caso raro: es como un centro declara que atiende un feriado o que suma una banda un sabado puntual.
+     * Carga una excepcion al horario base: una ausencia, una licencia, un bloqueo o una ampliacion excepcional (RF-M05-004). Exige agenda:excepciones sobre ESA sede.  RESPONDE 201 O 200, Y UN CLIENTE QUE SOLO CONTEMPLE 201 SE ROMPE. El alta es IDEMPOTENTE sin Idempotency-Key (CA-M05-004-05): un pedido que coincide EXACTAMENTE con una excepcion activa que ya existe devuelve 200 con esa fila, no crea nada y no vuelve a auditar. notes y feriadoId quedan FUERA de esa comparacion. Solo el alta que crea la fila responde 201, y solo ella trae Location.  NO HAY 409 POR SOLAPAMIENTO, Y ES UNA DIFERENCIA DELIBERADA CON LOS BLOQUES. Dos excepciones que se pisan sin ser identicas son las dos legitimas y las dos se guardan: una ausencia de una tarde dentro de una licencia mas larga es un hecho corriente, no un conflicto. No escribir manejo de error de solapamiento para esta operacion: nunca lo va a emitir.  Los 409 que SI existen aca son otros dos, y ninguno depende de las fechas: la sede dada de baja (consultorio-inactive) y el profesional sin vinculo vigente en esa sede (profesional-no-vinculado), este ultimo solo cuando se manda membershipId.  OMITIR membershipId significa SEDE ENTERA —afecta a TODOS los profesionales—, no un dato faltante. Y fechaHasta es EXCLUSIVA: un cierre de un solo dia se carga como [D, D+1). Mandar fechaDesde &#x3D;&#x3D; fechaHasta cierra cero dias.  APERTURA no es el caso raro: es como un centro declara que atiende un feriado o que suma una banda un sabado puntual.
      * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones
 * @param requestParameters
      */
@@ -64,7 +71,7 @@ export interface ExcepcionesDeDisponibilidadServiceInterface {
 
     /**
      * Baja logica de una excepcion de disponibilidad
-     * Da de baja la excepcion con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante, y sus fechas intactas. Cancelar una licencia es un hecho que hay que poder reconstruir.  El motivo va en el CUERPO y no en la query string: en la URL quedaria en los logs de acceso de cualquier proxy intermedio.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el calendario de un centro que se esta cerrando.  Dar de baja dos veces es 409 excepcion-already-inactive: \&quot;ya estaba dada de baja\&quot; es informacion distinta de \&quot;no existe\&quot;.  Exige consultorio:manage sobre esa sede.
+     * Da de baja la excepcion con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante, y sus fechas intactas. Cancelar una licencia es un hecho que hay que poder reconstruir.  El motivo va en el CUERPO y no en la query string: en la URL quedaria en los logs de acceso de cualquier proxy intermedio.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el calendario de un centro que se esta cerrando.  Dar de baja dos veces es 409 excepcion-already-inactive: \&quot;ya estaba dada de baja\&quot; es informacion distinta de \&quot;no existe\&quot;.  Exige agenda:excepciones sobre esa sede.
      * @endpoint delete /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}
 * @param requestParameters
      */
@@ -80,7 +87,7 @@ export interface ExcepcionesDeDisponibilidadServiceInterface {
 
     /**
      * Turnos que dejaria afuera una excepcion, sin cargarla
-     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige consultorio:manage sobre esa sede.
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige agenda:excepciones sobre esa sede.
      * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones/impacto-de-alta
 * @param requestParameters
      */
@@ -88,10 +95,18 @@ export interface ExcepcionesDeDisponibilidadServiceInterface {
 
     /**
      * Turnos que dejaria afuera la baja de una excepcion, sin aplicarla
-     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige consultorio:manage sobre esa sede.
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige agenda:excepciones sobre esa sede.
      * @endpoint get /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}/impacto-de-baja
 * @param requestParameters
      */
     simularImpactoBajaExcepcion(requestParameters: SimularImpactoBajaExcepcionRequestParams, extraHttpRequestParams?: any): Observable<ImpactoDisponibilidadResponse>;
+
+    /**
+     * Edicion de una excepcion de disponibilidad
+     * Reemplaza motivo, fechas, horario y notas de una excepcion ACTIVA. El tipo y el alcance no se editan: pasar un cierre a apertura, o de un profesional a la sede, es cargar otra excepcion.  version es obligatoria y se compara antes de mutar (409 concurrent-modification).  Si el cambio deja turnos pendientes fuera de la disponibilidad y no viene confirmaTurnosAfectados&#x3D;true, responde 409 bloqueo-con-turnos-afectados con la cuenta y la lista, igual que el alta. Confirmado, los turnos NO se tocan: quedan reservados y la agenda operativa los marca fuera de disponibilidad.  Con motivo OTRO las notas son obligatorias: 400 validation-error con el error en &#x60;errors.notes&#x60;. Queda auditado con el antes y el despues de cada campo que cambio.  Exige agenda:excepciones sobre esa sede; con alcance propio, la excepcion tiene que ser del profesional que opera (la de la sede entera responde 403).
+     * @endpoint put /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}
+* @param requestParameters
+     */
+    updateExcepcion(requestParameters: UpdateExcepcionRequestParams, extraHttpRequestParams?: any): Observable<ExcepcionResponse>;
 
 }

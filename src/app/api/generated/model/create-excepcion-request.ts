@@ -58,6 +58,7 @@ export enum CreateExcepcionRequestMotivoEnum {
     AUSENCIA = 'AUSENCIA',
     LICENCIA = 'LICENCIA',
     CAPACITACION = 'CAPACITACION',
+    VACACIONES = 'VACACIONES',
     FERIADO = 'FERIADO',
     BLOQUEO = 'BLOQUEO',
     AMPLIACION = 'AMPLIACION',

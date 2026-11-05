@@ -221,7 +221,12 @@
                 [class.fila--revocada]="cancelado(turno)"
                 [class.fila--seleccionada]="panel()?.turno?.id === turno.id"
               >
-                <td>{{ rango(turno) }}</td>
+                <td>
+                  {{ rango(turno) }}
+                  @if (reprogramado(turno); as marca) {
+                    <span class="celda-secundaria">{{ marca }}</span>
+                  }
+                </td>
 
                 <td>
                   <!-- Impeccable 29/10: de la fila a la ficha, donde estan la cuenta y los turnos. -->

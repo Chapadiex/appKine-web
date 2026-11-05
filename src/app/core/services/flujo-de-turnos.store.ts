@@ -1,6 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 
-import { ContextoDeTurno, SolicitudDeTurnos } from '../models/contexto-de-turno';
+import {
+  ContextoDeTurno,
+  SolicitudDeTurnos,
+  VistaInicialDeTurno,
+} from '../models/contexto-de-turno';
 
 /**
  * La puerta de entrada al flujo unico de turnos (TURNO - Tecnico §1 y §3).
@@ -28,8 +32,8 @@ export class FlujoDeTurnosStore {
     this.actual.set({ tipo: 'multiple', contexto });
   }
 
-  verTurno(turnoId: number): void {
-    this.actual.set({ tipo: 'detalle', turnoId });
+  verTurno(turnoId: number, vista?: VistaInicialDeTurno): void {
+    this.actual.set({ tipo: 'detalle', turnoId, vista });
   }
 
   listaDeEspera(contexto: ContextoDeTurno): void {

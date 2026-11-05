@@ -51,6 +51,8 @@ test.describe('Flujo unico de turnos', () => {
       readonly casoId?: number;
       readonly planId?: number;
       readonly sobreturno?: boolean;
+      readonly reprogramaciones?: number;
+      readonly reprogramacion?: { readonly inicioOriginal?: string };
     };
   }
 
@@ -362,6 +364,32 @@ test.describe('Flujo unico de turnos', () => {
     const reprogramacion = eventos.find((e) => e.tipo === 'REPROGRAMACION');
     expect(reprogramacion).toBeDefined();
     expect(reprogramacion?.actorNombre, 'el historial dice quien lo hizo').toBeTruthy();
+
+    // Reprogramado es un indicador y no un estado (contrato 0.155.0): el backend lo cuenta y guarda
+    // el horario original, y la agenda y el detalle lo muestran sin tocar el estado.
+    expect(movido.operativo?.reprogramaciones).toBe(1);
+    expect(new Date(movido.operativo?.reprogramacion?.inicioOriginal ?? '').getTime()).toBe(
+      new Date(turno.inicio).getTime(),
+    );
+    expect(['RESERVADO', 'CONFIRMADO']).toContain(movido.operativo?.estadoOperativo);
+
+    // El primer horario ofrecido puede caer en otro dia que `dia`: la tarjeta se busca en el dia
+    // al que se movio el turno, con el panel cerrado (un dialogo modal deja la grilla inerte).
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const diaNuevo = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ZONA,
+      dateStyle: 'short',
+    }).format(new Date(movido.inicio));
+    await navegar(page, `/agenda?fecha=${diaNuevo}`);
+    const tarjeta = page
+      .getByRole('button', { name: new RegExp(apellido()) })
+      .filter({ hasText: 'Reprogramado' });
+    await expect(tarjeta).toHaveCount(1);
+    await tarjeta.click();
+    const detalle = page.getByRole('dialog');
+    await expect(detalle.getByText(/Reprogramado/)).toBeVisible();
+    await expect(detalle.getByText(/Original: .* → Ahora: /)).toBeVisible();
   });
 
   test('Turno -> cancelar: libera el lugar y conserva el motivo', async ({ page }) => {

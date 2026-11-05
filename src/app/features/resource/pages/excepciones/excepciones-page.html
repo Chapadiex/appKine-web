@@ -214,6 +214,7 @@
                     <th scope="col" appOrdenable [tabla]="tabla" columna="fechas">Fechas</th>
                     <th scope="col" appOrdenable [tabla]="tabla" columna="franja">Franja</th>
                     <th scope="col" appOrdenable [tabla]="tabla" columna="motivo">Motivo</th>
+                    <th scope="col">Creado por</th>
                     <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                   </tr>
                 </thead>
@@ -277,23 +278,30 @@
                         }
                       </td>
 
+                      <td>
+                        {{ excepcion.createdByNombre || 'Sin registrar' }}
+                      </td>
+
                       <td class="tabla__acciones">
-                        <!-- La unica accion es destructiva: va en el menu "⋯", nunca suelta. -->
-                        <app-acciones-de-fila
-                          *akinePermiso="permisoManage"
-                          [de]="
-                            (excepcion.tipo === 'APERTURA' ? 'la apertura ' : 'el cierre ') +
-                            excepcion.id
-                          "
-                        >
-                          <button
-                            type="button"
-                            class="accion--peligro"
-                            (click)="abrirBaja(excepcion)"
+                        <!-- Editar y dar de baja van en el menu "⋯"; lo ajeno no se ofrece. -->
+                        @if (puedeOperarSobre(excepcion)) {
+                          <app-acciones-de-fila
+                            *akinePermiso="permisoManage"
+                            [de]="
+                              (excepcion.tipo === 'APERTURA' ? 'la apertura ' : 'el cierre ') +
+                              excepcion.id
+                            "
                           >
-                            Dar de baja
-                          </button>
-                        </app-acciones-de-fila>
+                            <button type="button" (click)="abrirEdicion(excepcion)">Editar</button>
+                            <button
+                              type="button"
+                              class="accion--peligro"
+                              (click)="abrirBaja(excepcion)"
+                            >
+                              Dar de baja
+                            </button>
+                          </app-acciones-de-fila>
+                        }
                       </td>
                     </tr>
                   }
@@ -309,7 +317,10 @@
   </section>
 
   @if (estado().tipo === 'listo' && altaAbierta()) {
-    <aside class="tarjeta panel-formulario panel-formulario--lateral" aria-label="Nueva excepción">
+    <aside
+      class="tarjeta panel-formulario panel-formulario--lateral"
+      [attr.aria-label]="edicion() === null ? 'Nueva excepción' : 'Editar excepción'"
+    >
       <form
         id="form-alta-excepcion"
         [formGroup]="formularioAlta"
@@ -318,7 +329,14 @@
       >
         <div class="panel-formulario__cuerpo grilla-12">
           <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-            <h2 class="panel__titulo">Cargar un cierre o una apertura</h2>
+            <h2 class="panel__titulo">
+              @if (edicion(); as editada) {
+                Editar {{ editada.tipo === 'APERTURA' ? 'la apertura' : 'el cierre' }} número
+                {{ editada.id }}
+              } @else {
+                Cargar un cierre o una apertura
+              }
+            </h2>
             <app-ayuda titulo="Antes de cargar">
               <p>
                 <b>El fin es exclusivo.</b> Es el primer día que ya <b>no</b> queda cubierto: para
@@ -367,8 +385,10 @@
             @if (profesionalesConocidos()) {
               <label for="alta-excepcion-alcance">A quien alcanza</label>
               <select id="alta-excepcion-alcance" formControlName="alcance">
-                <option value="">Toda la sede — todos los profesionales</option>
-                @for (profesional of profesionales(); track profesional.id ?? $index) {
+                @if (!soloPropio()) {
+                  <option value="">Toda la sede — todos los profesionales</option>
+                }
+                @for (profesional of profesionalesDelAlta(); track profesional.id ?? $index) {
                   <option [value]="profesional.id">
                     {{ profesional.accountName || profesional.accountEmail }}
                   </option>
@@ -479,14 +499,26 @@
 
           <div class="campo">
             <label for="alta-excepcion-notas">
-              Nota operativa <span class="campo__opcional">(opcional)</span>
+              Nota operativa
+              <span class="campo__opcional">{{
+                motivoEsOtro() ? '(obligatoria con el motivo Otro)' : '(opcional)'
+              }}</span>
             </label>
             <textarea
               id="alta-excepcion-notas"
               rows="2"
               formControlName="notes"
               aria-describedby="alta-excepcion-notas-ayuda"
+              [attr.aria-required]="motivoEsOtro()"
+              [attr.aria-invalid]="errorDeGrupo('notaObligatoria')"
             ></textarea>
+            @if (errorDeGrupo('notaObligatoria')) {
+              <p class="campo__error" role="alert">
+                Con el motivo "Otro" escribí cuál es: queda registrado junto a la excepción.
+              </p>
+            } @else if (errorDeNotas(); as mensaje) {
+              <p class="campo__error" role="alert">{{ mensaje }}</p>
+            }
             <p class="ayuda" id="alta-excepcion-notas-ayuda">
               Texto libre operativo. <b>Nunca información clínica</b>: esto no es una historia
               clínica y lo lee cualquiera con acceso a la agenda.
@@ -613,8 +645,12 @@
           <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
             Cancelar
           </button>
-          <button type="submit" class="boton" [disabled]="enviando() || !profesionalesConocidos()">
-            Cargar la excepción
+          <button
+            type="submit"
+            class="boton"
+            [disabled]="enviando() || (edicion() === null && !profesionalesConocidos())"
+          >
+            {{ edicion() === null ? 'Cargar la excepción' : 'Guardar los cambios' }}
           </button>
         </div>
       </form>

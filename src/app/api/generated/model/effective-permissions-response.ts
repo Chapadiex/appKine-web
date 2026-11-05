@@ -14,6 +14,10 @@
  */
 export interface EffectivePermissionsResponse { 
     /**
+     * Subconjunto de permissions que la cuenta tiene SOLO sobre su propia actividad: con turno:manage aqui, opera unicamente los turnos que atiende (los ajenos responden 403). Vacio si ninguno esta recortado. Orden alfabetico estable
+     */
+    ownScopedPermissions?: Array<string>;
+    /**
      * Codigos del catalogo que la cuenta tiene vigentes en este contexto, en orden alfabetico estable
      */
     permissions?: Array<string>;

@@ -10,7 +10,7 @@ import { diaEnZona } from './semana';
  * <p>Una columna es un profesional, un box o un dia, segun la vista. Lo que cambia entre vistas es como
  * se reparten las mismas cosas; por eso todo sale de {@link armarColumnas}.
  */
-export type VistaDeAgenda = 'dia' | 'semana';
+export type VistaDeAgenda = 'dia' | 'semana' | 'mes';
 export type AgrupacionDeAgenda = 'profesional' | 'box';
 
 /** Cada cuantos minutos se ofrece un horario libre si no hay prestaciones de donde sacarlo. */
@@ -44,7 +44,11 @@ const MINUTOS_DEL_DIA = 24 * 60;
 
 export interface EventoDeGrilla {
   readonly clave: string;
-  readonly tipo: 'turno' | 'clase' | 'bloqueo';
+  /**
+   * `fuera`: la persona de la columna esta ocupada en OTRA sede (turno o clase, contrato 0.156.0).
+   * No es interactivo ni lleva datos de paciente: solo dice que ese tramo no esta libre.
+   */
+  readonly tipo: 'turno' | 'clase' | 'bloqueo' | 'fuera';
   readonly inicioMin: number;
   readonly finMin: number;
   /** El carril dentro del grupo que se pisa, para dibujar lado a lado sin taparse. */
@@ -172,7 +176,7 @@ interface Entrada {
   readonly duracionesPropias?: ReadonlyMap<number, number>;
 }
 
-function tramoEnElDia(
+export function tramoEnElDia(
   desde: string | undefined,
   hasta: string | undefined,
   fecha: string,
@@ -243,8 +247,49 @@ function clasesDe(
       inicioMin: minutosEnZona(c.inicio, zona),
       finMin: minutosEnZona(c.fin, zona) || MINUTOS_DEL_DIA,
       titulo: c.titulo || c.ofertaNombre || 'Clase',
-      detalle: `Clase · ${c.ocupados ?? 0}/${c.capacidad ?? 0}`,
+      detalle:
+        `Clase · ${c.ocupados ?? 0}/${c.capacidad ?? 0}` +
+        ((entrada.agenda.conflictos ?? []).some((x) => x.claseId === c.claseId)
+          ? ' · ⚠ Choca con un turno'
+          : ''),
     }));
+}
+
+/**
+ * Lo que la persona de la columna tiene en otras sedes ese dia (contrato 0.156.0). Ocupa la celda
+ * aunque en esta sede no haya nada: sin esto la grilla ofreceria un horario que el backend rechaza.
+ */
+function fueraDe(entrada: Entrada, fecha: string, profesionalId: number | null) {
+  if (profesionalId === null) {
+    return [];
+  }
+  const zona = entrada.agenda.timezone ?? '';
+  return (entrada.agenda.ocupacionesEnOtrasSedes ?? [])
+    .filter((o) => o.membershipId === profesionalId)
+    .flatMap((o) => {
+      const tramo = tramoEnElDia(o.inicio, o.fin, fecha, zona);
+      return tramo === null
+        ? []
+        : [
+            {
+              clave: `f${profesionalId}-${o.consultorioId}-${o.inicio}`,
+              tipo: 'fuera' as const,
+              ...tramo,
+              titulo: 'Ocupado en otra sede',
+              detalle: o.tipo === 'CLASE' ? 'Clase' : 'Turno',
+            },
+          ];
+    });
+}
+
+/**
+ * Turnos de esta sede que ya se pisan con una clase de la misma persona (datos anteriores a la
+ * regla entre sedes). Van al filtro "A reubicar" junto con los que quedaron fuera del horario.
+ */
+export function turnosQueChocanConClase(agenda: AgendaOperativa | null): ReadonlySet<number> {
+  return new Set(
+    (agenda?.conflictos ?? []).map((c) => c.turnoId).filter((id): id is number => id !== undefined),
+  );
 }
 
 function bloqueosDe(entrada: Entrada, fecha: string, profesionalId: number | null) {
@@ -340,6 +385,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
       const otros = [
         ...clasesDe(entrada, dia, () => true),
         ...bloqueosDe(entrada, dia, profesionalFiltrado),
+        ...fueraDe(entrada, dia, profesionalFiltrado),
       ];
       const eventos = [...turnosDe(entrada, dia, () => true), ...otros];
       const franjas = franjasDe(entrada, dia, profesionalFiltrado);
@@ -390,6 +436,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
     const otros = [
       ...clasesDe(entrada, fecha, (profesionalId) => profesionalId === id),
       ...bloqueosDe(entrada, fecha, id),
+      ...fueraDe(entrada, fecha, id),
     ];
     const eventos = [...turnosDe(entrada, fecha, delProfesional), ...otros];
     const franjas = franjasDe(entrada, fecha, id);

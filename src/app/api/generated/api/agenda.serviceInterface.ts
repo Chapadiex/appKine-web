@@ -12,6 +12,7 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { Agenda } from '../model/models';
+import { HistorialDeAgendaPage } from '../model/models';
 import { ProblemDetail } from '../model/models';
 
 
@@ -26,6 +27,19 @@ export interface BuscarAgendaRequestParams {
     profesionalId?: number;
 }
 
+export interface ListarHistorialDeAgendaRequestParams {
+    orgId: number;
+    profesionalId: number;
+    consultorioId?: number;
+    tipo?: Array<'HORARIO_ALTA' | 'HORARIO_EDICION' | 'HORARIO_BAJA' | 'EXCEPCION_ALTA' | 'EXCEPCION_EDICION' | 'EXCEPCION_BAJA' | 'TURNO_RESERVA' | 'TURNO_SOBRETURNO' | 'TURNO_CONFIRMACION' | 'TURNO_CANCELACION' | 'TURNO_AUSENCIA' | 'TURNO_REPROGRAMACION' | 'TURNO_TRASLADO' | 'TURNO_OBSERVACIONES'>;
+    desde?: string;
+    hasta?: string;
+    q?: string;
+    page?: number;
+    size?: number;
+    sort?: 'ocurridoEn,asc' | 'ocurridoEn,desc';
+}
+
 
 export interface AgendaServiceInterface {
     defaultHeaders: HttpHeaders;
@@ -38,5 +52,13 @@ export interface AgendaServiceInterface {
 * @param requestParameters
      */
     buscarAgenda(requestParameters: BuscarAgendaRequestParams, extraHttpRequestParams?: any): Observable<Agenda>;
+
+    /**
+     * Historial de cambios de la agenda de un profesional
+     * Horario habitual (alta, edicion, baja), excepciones y bloqueos —ausencias, licencias y vacaciones incluidas; un desbloqueo es la baja de una excepcion— y turnos (reserva, sobreturno, confirmacion, cancelacion, ausencia, reprogramacion, cambio de sede, observaciones) del profesional, con quien lo hizo y con que rol, cuando, el motivo y como estaba antes y como quedo despues, ya armado para mostrar.  &#x60;profesionalId&#x60; es la membership del profesional en cualquier sede: se leen todas las de esa persona en la organizacion. Una reprogramacion que le saco un turno tambien aparece.  Exige &#x60;agenda:excepciones&#x60; con su alcance: el &#x60;ORG_ADMIN&#x60; lee la organizacion, el &#x60;CONSULTORIO_ADMIN&#x60; y el &#x60;ADMINISTRATIVO&#x60; sus sedes, y el &#x60;PROFESIONAL&#x60; solo su propia agenda (403 sobre la de otro). El paciente de un turno viaja solo a quien tiene &#x60;turno:read&#x60; en esa sede.  &#x60;desde&#x60; y &#x60;hasta&#x60; son instantes UTC (ISO-8601) sobre cuando se hizo el cambio, no sobre la fecha del turno: &#x60;desde&#x60; inclusivo, &#x60;hasta&#x60; exclusivo. Para \&quot;el dia de la sede\&quot; el cliente convierte la medianoche local a UTC. Las fechas de &#x60;antes&#x60;/&#x60;despues&#x60; ya vienen en la zona de la sede de cada cambio.  &#x60;actorRol&#x60; es el rol de quien opero: &#x60;ORG_ADMIN&#x60;, &#x60;CONSULTORIO_ADMIN&#x60;, &#x60;ADMINISTRATIVO&#x60;, &#x60;PROFESIONAL&#x60; (o &#x60;PLATFORM_ADMIN&#x60; con acceso de soporte); ausente en cambios anteriores a la agenda de profesionales.  Es una lectura de la auditoria transversal: una sola fuente. Un cambio de sede tambien deja la cancelacion del turno original como fila propia.
+     * @endpoint get /api/v1/organizations/{orgId}/agenda/historial
+* @param requestParameters
+     */
+    listarHistorialDeAgenda(requestParameters: ListarHistorialDeAgendaRequestParams, extraHttpRequestParams?: any): Observable<HistorialDeAgendaPage>;
 
 }

@@ -9,8 +9,10 @@
  */
 import { BloqueoEnAgenda } from './bloqueo-en-agenda';
 import { TurnoDeCalendario } from './turno-de-calendario';
+import { ConflictoDeAgenda } from './conflicto-de-agenda';
 import { EspacioDeAgenda } from './espacio-de-agenda';
 import { ClaseEnAgenda } from './clase-en-agenda';
+import { OcupacionEnOtraSede } from './ocupacion-en-otra-sede';
 import { ProfesionalDeAgenda } from './profesional-de-agenda';
 
 
@@ -20,12 +22,20 @@ import { ProfesionalDeAgenda } from './profesional-de-agenda';
 export interface AgendaOperativa { 
     bloqueos?: Array<BloqueoEnAgenda>;
     clases?: Array<ClaseEnAgenda>;
+    /**
+     * Turnos y clases de la misma persona que ya se pisan (datos anteriores a la regla entre sedes). Se calculan al leer; nada se modifica.
+     */
+    conflictos?: Array<ConflictoDeAgenda>;
     desde?: string;
     espacios?: Array<EspacioDeAgenda>;
     /**
      * EXCLUSIVO
      */
     hasta?: string;
+    /**
+     * Intervalos en que la persona de una columna esta ocupada en OTRA sede de la organizacion (turno o clase). La celda no esta libre aunque en esta sede no haya nada.
+     */
+    ocupacionesEnOtrasSedes?: Array<OcupacionEnOtraSede>;
     profesionales?: Array<ProfesionalDeAgenda>;
     timezone?: string;
     turnos?: Array<TurnoDeCalendario>;

@@ -18,6 +18,10 @@ export interface BloqueResponse {
      */
     consultorioId?: number;
     /**
+     * Cuenta que cargo el bloque. Ausente en los anteriores a la migracion V132
+     */
+    createdByCuentaId?: number;
+    /**
      * Motivo declarado en la baja. null si el bloque esta vigente
      */
     deactivationReason?: string;

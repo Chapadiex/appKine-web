@@ -11,12 +11,17 @@
         [titulo]="
           fallo.causa === 'slot-no-disponible'
             ? 'Ese horario ya no está disponible'
-            : conflictoDeLugar()
-              ? 'Este horario acaba de ser reservado'
-              : 'No pudimos crear el turno'
+            : fallo.conflictoTipo === 'CLASE'
+              ? 'El profesional tiene una clase en ese horario'
+              : conflictoDeLugar()
+                ? 'Este horario acaba de ser reservado'
+                : 'No pudimos crear el turno'
         "
       >
         <p>{{ fallo.mensaje }}</p>
+        @if (conflictoDelRechazo(); as detalle) {
+          <p class="ayuda">{{ detalle }}</p>
+        }
         @if (fallo.causa === 'persona-sin-perfil-paciente') {
           <p class="alerta__acciones">
             <button type="button" class="boton boton--secundario" (click)="activarPerfil()">
@@ -170,8 +175,18 @@
             >
               @if (resultado.conflictoInicio) {
                 <p>
-                  Se cruza con un turno de {{ hora(resultado.conflictoInicio) }} a
-                  {{ hora(resultado.conflictoFin) }}.
+                  Se cruza con otra actividad del profesional de
+                  {{ hora(resultado.conflictoInicio) }} a {{ hora(resultado.conflictoFin) }}.
+                  @if (resultado.conflictoTipo === 'CLASE') {
+                    Es una clase{{
+                      validacionEnOtraSede()
+                        ? ' en ' + (nombreDeSede(resultado.conflictoConsultorioId) || 'otra sede')
+                        : ''
+                    }}: no admite sobreturno.
+                  } @else if (validacionEnOtraSede()) {
+                    Es un turno en
+                    {{ nombreDeSede(resultado.conflictoConsultorioId) || 'otra sede' }}.
+                  }
                 </p>
               }
               <ng-container *ngTemplateOutlet="salidas" />
@@ -323,9 +338,9 @@
         }
       </div>
 
-      @if (coberturas().length > 0) {
-        <details>
-          <summary>Más opciones</summary>
+      <details>
+        <summary>Más opciones</summary>
+        @if (coberturas().length > 0) {
           <div class="campo">
             <label for="flujo-cobertura">Cobertura con la que se piensa atender (opcional)</label>
             <select
@@ -339,8 +354,22 @@
               }
             </select>
           </div>
-        </details>
-      }
+        }
+        <div class="campo">
+          <label for="flujo-observaciones">Observaciones (opcional)</label>
+          <textarea
+            id="flujo-observaciones"
+            rows="2"
+            maxlength="500"
+            aria-describedby="flujo-observaciones-ayuda"
+            [value]="observaciones()"
+            (input)="observaciones.set($any($event.target).value)"
+          ></textarea>
+          <p id="flujo-observaciones-ayuda" class="ayuda ayuda--fija">
+            Se ven en la agenda: no escribas información clínica.
+          </p>
+        </div>
+      </details>
     }
 
     <!-- Conflicto al confirmar: alternativas reales, y las salidas que quedan. -->
@@ -385,12 +414,16 @@
           <button
             type="button"
             class="boton"
-            [disabled]="enviando()"
+            [disabled]="enviando() || persona() === null"
+            [attr.aria-describedby]="persona() === null ? 'flujo-sobreturno-falta' : null"
             (click)="confirmarSobreturno()"
           >
             Crear sobreturno
           </button>
         </div>
+        @if (persona() === null) {
+          <p id="flujo-sobreturno-falta" class="ayuda">Falta elegir el paciente.</p>
+        }
       </section>
     }
 
@@ -439,7 +472,7 @@
         Agregar a lista de espera
       </button>
     }
-    @if (horario() && persona() && !sobreturnoAbierto()) {
+    @if (horario() && persona() && !sobreturnoAbierto() && !chocaConClase()) {
       <button
         *akinePermiso="PERMISO_TURNO_SOBRETURNO"
         type="button"

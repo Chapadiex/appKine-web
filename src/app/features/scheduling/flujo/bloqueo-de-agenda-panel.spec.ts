@@ -104,6 +104,7 @@ describe('BloqueoDeAgendaPanel', () => {
 
     expect(valor(fixture, '#bloqueo-profesional')).toBe('31');
     fijar(fixture, '#bloqueo-tipo', 'CAPACITACION');
+    marcarTodoElDia(fixture, false);
     fijar(fixture, '#bloqueo-hora-desde', '14:00');
     fijar(fixture, '#bloqueo-hora-hasta', '16:00');
     await asentar(fixture);
@@ -123,7 +124,6 @@ describe('BloqueoDeAgendaPanel', () => {
     it.each([
       ['#bloqueo-hasta', '2030-03-01', 'La fecha hasta no puede ser anterior'],
       ['#bloqueo-desde', '', 'Faltan las fechas.'],
-      ['#bloqueo-hora-desde', '14:00', 'lleva hora desde y hora hasta'],
     ])('%s = "%s"', async (selector, nuevo, mensaje) => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
@@ -133,16 +133,45 @@ describe('BloqueoDeAgendaPanel', () => {
       expect(raiz(fixture).querySelector('#bloqueo-faltante')?.textContent).toContain(mensaje);
     });
 
+    it('sin "Todo el día" pide las dos horas, y las esconde al volver a marcarla', async () => {
+      const fixture = await montar();
+      fijar(fixture, '#bloqueo-profesional', 'SEDE');
+      expect(raiz(fixture).querySelector('#bloqueo-hora-desde')).toBeNull();
+
+      marcarTodoElDia(fixture, false);
+      fijar(fixture, '#bloqueo-hora-desde', '14:00');
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#bloqueo-faltante')?.textContent).toContain(
+        'Faltan la hora desde y la hora hasta',
+      );
+
+      marcarTodoElDia(fixture, true);
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#bloqueo-hora-desde')).toBeNull();
+    });
+
+    it('con el tipo "Otro" exige las notas', async () => {
+      const fixture = await montar();
+      fijar(fixture, '#bloqueo-profesional', 'SEDE');
+      fijar(fixture, '#bloqueo-tipo', 'OTRO');
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#bloqueo-faltante')?.textContent).toContain('"Otro"');
+
+      escribir(fixture, '#bloqueo-notas', 'Mudanza del consultorio');
+      await asentar(fixture);
+      expect(raiz(fixture).querySelector('#bloqueo-faltante')).toBeNull();
+    });
+
     it('la hora hasta posterior, y el tipo', async () => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
+      marcarTodoElDia(fixture, false);
       fijar(fixture, '#bloqueo-hora-desde', '16:00');
       fijar(fixture, '#bloqueo-hora-hasta', '14:00');
       await asentar(fixture);
       expect(raiz(fixture).querySelector('#bloqueo-faltante')?.textContent).toContain('posterior');
 
-      fijar(fixture, '#bloqueo-hora-desde', '');
-      fijar(fixture, '#bloqueo-hora-hasta', '');
+      marcarTodoElDia(fixture, true);
       await asentar(fixture);
       expect(raiz(fixture).querySelector('#bloqueo-faltante')?.textContent).toContain(
         'Falta elegir el tipo.',
@@ -178,6 +207,58 @@ describe('BloqueoDeAgendaPanel', () => {
       alta.flush({ id: 1 });
       await asentar(fixture);
       expect(cerrado).toBe(1);
+    });
+
+    it('cancela los elegidos en lote, con la versión de cada uno, y muestra el resultado por fila', async () => {
+      const fixture = await revisado({
+        ...IMPACTO_CON_TURNOS,
+        turnos: IMPACTO_CON_TURNOS.turnos.map((t, i) => ({
+          ...t,
+          personaNombre: i === 0 ? 'Perez, Ana' : 'Gomez, Luis',
+          estado: 'RESERVADO',
+        })),
+      });
+      expect(texto(fixture)).toContain('Perez, Ana');
+      expect(texto(fixture)).toContain('Gomez, Luis');
+
+      const casillas = raiz(fixture).querySelectorAll<HTMLInputElement>(
+        'tbody input[type="checkbox"]',
+      );
+      for (const casilla of Array.from(casillas)) {
+        casilla.checked = true;
+        casilla.dispatchEvent(new Event('change'));
+      }
+      await asentar(fixture);
+      expect(texto(fixture)).toContain('Cancelar 2 turnos elegidos');
+
+      clic(fixture, 'Cancelar en lote');
+      httpMock.expectOne(`${SEDE}/turnos/700`).flush({ id: 700, version: 3 });
+      httpMock.expectOne(`${SEDE}/turnos/701`).flush({ id: 701, version: 5 });
+      const lote = httpMock.expectOne(`${SEDE}/turnos/cancelacion-en-lote`);
+      expect(lote.request.body).toEqual({
+        items: [
+          { turnoId: 700, expectedVersion: 3 },
+          { turnoId: 701, expectedVersion: 5 },
+        ],
+        motivo: 'Solicitud del paciente',
+        origen: 'INSTITUCION',
+      });
+      lote.flush({
+        cancelados: 1,
+        rechazados: 1,
+        resultados: [
+          { turnoId: 700, resultado: 'CANCELADO' },
+          { turnoId: 701, resultado: 'RECHAZADO', problemType: 'forbidden' },
+        ],
+      });
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('1 turno cancelado; 1 no se pudieron cancelar.');
+      expect(texto(fixture)).toContain('Cancelado');
+      expect(texto(fixture)).toContain('No se canceló: es de otro profesional');
+      // Lo resuelto no se vuelve a ofrecer.
+      expect(raiz(fixture).querySelectorAll('tbody input[type="checkbox"]').length).toBe(0);
+      httpMock.expectNone((r) => r.url === EXCEPCIONES && r.method === 'POST');
     });
 
     it('en singular cuando es uno, y avisa si la lista está recortada o la revisión no llegó', async () => {
@@ -257,6 +338,18 @@ describe('BloqueoDeAgendaPanel', () => {
       });
     });
 
+    it('"Reprogramar" del menú de la fila abre el turno ya en reprogramar', async () => {
+      const fixture = await revisado();
+
+      clic(fixture, 'Reprogramar');
+
+      expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toEqual({
+        tipo: 'detalle',
+        turnoId: 700,
+        vista: 'reprogramar',
+      });
+    });
+
     it('si entró un turno entre la consulta y el alta muestra la lista al día', async () => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
@@ -280,7 +373,7 @@ describe('BloqueoDeAgendaPanel', () => {
 
       expect(cerrado).toBe(0);
       expect(texto(fixture)).toContain('Este bloqueo afecta 2 turnos.');
-      expect(raiz(fixture).querySelectorAll('.flujo__historial li').length).toBe(2);
+      expect(raiz(fixture).querySelectorAll('tbody tr').length).toBe(2);
     });
 
     it('si la relectura falla muestra la cuenta sola antes que guardar sin avisar', async () => {
@@ -310,7 +403,7 @@ describe('BloqueoDeAgendaPanel', () => {
   });
 
   describe('errores', () => {
-    it('sin permiso lo dice en términos de administrar la sede', async () => {
+    it('sin permiso lo dice en términos del permiso de bloqueos', async () => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
       fijar(fixture, '#bloqueo-tipo', 'LICENCIA');
@@ -326,7 +419,7 @@ describe('BloqueoDeAgendaPanel', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('No pudimos bloquear la agenda');
-      expect(texto(fixture)).toContain('hace falta poder administrar la sede');
+      expect(texto(fixture)).toContain('hace falta el permiso de bloqueos y excepciones');
     });
 
     it('otro rechazo del alta se muestra y no cierra', async () => {
@@ -448,6 +541,13 @@ describe('BloqueoDeAgendaPanel', () => {
     const campo = raiz(fixture).querySelector(selector) as HTMLInputElement | HTMLSelectElement;
     campo.value = nuevo;
     campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function marcarTodoElDia(fixture: ComponentFixture<BloqueoDeAgendaPanel>, valor: boolean): void {
+    const casilla = raiz(fixture).querySelector('#bloqueo-todo-el-dia') as HTMLInputElement;
+    casilla.checked = valor;
+    casilla.dispatchEvent(new Event('change'));
     fixture.detectChanges();
   }
 

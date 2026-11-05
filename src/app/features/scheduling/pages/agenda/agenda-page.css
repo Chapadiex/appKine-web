@@ -347,7 +347,10 @@
   background: var(--color-exito-fondo);
 }
 
-.turno--atendido {
+/* Atendido, cancelado y lo ocupado en otra sede comparten el fondo apagado. */
+.turno--atendido,
+.turno--cancelado,
+.evento--fuera {
   background: var(--color-superficie-sutil);
 }
 
@@ -356,16 +359,19 @@
   background: var(--color-aviso-fondo);
 }
 
-.turno--cancelado {
-  background: var(--color-superficie-sutil);
-}
-
 .turno--cancelado .turno__persona {
   text-decoration: line-through;
 }
 
-.turno--sobreturno {
+/* Ocupado en otra sede (0.156.0): rayado como el sobreturno, sin parecer un turno de esta sede. */
+.turno--sobreturno,
+.evento--fuera {
   border-style: dashed;
+}
+
+/* Fuera de la disponibilidad: simbolo y texto, el borde solo refuerza (WCAG 1.4.1). */
+.turno__reubicar {
+  font-weight: var(--peso-medio);
 }
 
 .evento__enlace {
@@ -420,4 +426,90 @@
 
 .agenda-lista__persona {
   font-weight: var(--peso-medio);
+}
+
+/* Vista Mes: cuenta por dia y estado; el clic abre el dia. */
+.mes {
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+}
+
+.mes__cabecera,
+.mes__semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.mes__cabecera span {
+  padding: var(--esp-2) var(--esp-4);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.mes__dia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-2);
+  min-height: 5.5rem;
+  padding: var(--esp-2) var(--esp-4);
+  border: 0;
+  border-top: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mes__semana > :first-child {
+  border-left: 0;
+}
+
+button.mes__dia:hover {
+  background: var(--color-acento-claro);
+}
+
+.mes__dia--hoy .mes__numero {
+  color: var(--color-accion-texto);
+  background: var(--color-accion-fondo);
+  border-radius: var(--radio-sm);
+  padding: 0 var(--esp-2);
+}
+
+.mes__dia--fuera {
+  color: var(--color-texto-suave);
+  cursor: default;
+}
+
+.mes__numero {
+  font-weight: var(--peso-medio);
+}
+
+.mes__total {
+  font-size: var(--tipo-xs);
+}
+
+.mes__estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--esp-4);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.mes__bloqueo {
+  font-size: var(--tipo-xs);
+  padding: 0 var(--esp-2);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+}
+
+.mes__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
 }

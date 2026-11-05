@@ -121,8 +121,17 @@ export function errorSinContextoDeActividad(): ErrorActividad {
   return armar('sin-contexto', 'elegir-contexto', MENSAJE_SIN_CONTEXTO);
 }
 
-/** Traduce un error de cualquier operacion de clases o inscripciones. */
-export function traducirErrorActividad(error: unknown): ErrorActividad {
+/**
+ * Traduce un error de cualquier operacion de clases o inscripciones.
+ *
+ * <p>`consultorioActual` es la sede desde la que se opera: con ella, un `recurso-ocupado` que
+ * choca con algo de otra sede lo dice (contrato 0.156.0, `conflictoConsultorioId`). Sin ella se
+ * describe el choque sin nombrar sede.
+ */
+export function traducirErrorActividad(
+  error: unknown,
+  consultorioActual: number | null = null,
+): ErrorActividad {
   if (!(error instanceof AkineHttpError)) {
     return armar('otro', 'ninguna', MENSAJE_GENERICO);
   }
@@ -160,7 +169,7 @@ export function traducirErrorActividad(error: unknown): ErrorActividad {
         motivo,
       );
     case 'recurso-ocupado':
-      return armar('recurso-ocupado', 'corregir', mensajeDeRecurso(error));
+      return armar('recurso-ocupado', 'corregir', mensajeDeRecurso(error, consultorioActual));
     case 'slot-no-disponible':
       return armar('horario-no-disponible', 'corregir', MENSAJE_HORARIO, motivo);
     case 'concurrent-modification':
@@ -213,8 +222,20 @@ function mensajeDeCompleta(error: AkineHttpError): string {
   return `${MENSAJE_COMPLETA} Ocupados ${ocupados ?? efectiva} de ${efectiva}.`;
 }
 
-function mensajeDeRecurso(error: AkineHttpError): string {
+function mensajeDeRecurso(error: AkineHttpError, consultorioActual: number | null): string {
   const recurso = textoDeExtension(error, 'recurso');
+  const tipo = textoDeExtension(error, 'conflictoTipo');
+  const sede = error.numeroDeExtension('conflictoConsultorioId');
+  const enOtraSede =
+    consultorioActual !== null && sede !== null && sede !== consultorioActual
+      ? ' en otra sede'
+      : '';
+  if (recurso === 'profesional' && tipo === 'CLASE') {
+    return `El profesional ya da otra clase${enOtraSede} que se cruza con ese horario. Elegí otro horario u otro profesional.`;
+  }
+  if (recurso === 'profesional' && tipo === 'TURNO') {
+    return `El profesional ya tiene un turno${enOtraSede} que se cruza con ese horario. Elegí otro horario u otro profesional.`;
+  }
   if (recurso === 'profesional') {
     return 'El profesional ya tiene un turno u otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';
   }

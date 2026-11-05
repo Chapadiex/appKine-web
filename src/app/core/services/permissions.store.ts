@@ -40,6 +40,7 @@ export class PermissionsStore {
   private readonly cache = signal<{
     readonly epoca: number;
     readonly permisos: ReadonlySet<string>;
+    readonly propios: ReadonlySet<string>;
   } | null>(null);
 
   /**
@@ -81,6 +82,15 @@ export class PermissionsStore {
    * guard no tratar el arranque como una denegacion definitiva.
    */
   readonly cargados: Signal<boolean> = computed(() => this.vigente() !== null);
+
+  /**
+   * `true` si el permiso esta recortado a la actividad propia (`ownScopedPermissions`, contrato
+   * 0.154.0): con `turno:manage` asi, la cuenta opera solo los turnos que atiende y los ajenos
+   * responden 403. Sirve para esconder acciones sobre lo ajeno; el backend rechaza igual.
+   */
+  soloPropio(permiso: string): boolean {
+    return this.vigente()?.propios.has(permiso) ?? false;
+  }
 
   /** `true` si el contexto activo tiene ese permiso. Falso mientras no hayan cargado. */
   tiene(permiso: string): boolean {
@@ -141,7 +151,11 @@ export class PermissionsStore {
         if (this.tenant.contextEpoch() !== epoca) {
           return;
         }
-        this.cache.set({ epoca, permisos: new Set(respuesta.permissions ?? []) });
+        this.cache.set({
+          epoca,
+          permisos: new Set(respuesta.permissions ?? []),
+          propios: new Set(respuesta.ownScopedPermissions ?? []),
+        });
       }),
       map(() => undefined),
       finalize(() => {

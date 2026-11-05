@@ -1,4 +1,5 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
 
 /**
  * Motivo por el que fallo una operacion de agenda o de reserva (M12, AKINE-05.01 y 05.02).
@@ -174,6 +175,15 @@ export interface ErrorAgenda {
   readonly turnoEnConflictoId: number;
   readonly conflictoInicio: string;
   readonly conflictoFin: string;
+  /**
+   * Con que choca un `recurso-ocupado` del profesional: `TURNO` o `CLASE` (contrato 0.156.0). Vacio
+   * si el backend no lo dijo. Una clase no admite sobreturno: el backend responde 409 igual.
+   */
+  readonly conflictoTipo: string;
+  /** Clase con la que choca, si es una clase. 0 si no. */
+  readonly claseEnConflictoId: number;
+  /** Sede del turno o la clase con que choca: puede ser otra de la organizacion. 0 si no vino. */
+  readonly conflictoConsultorioId: number;
   /** Sesiones que le quedan al plan, en `plan-sin-sesiones`. */
   readonly pendientes: number;
   /** Turnos que deja afuera un bloqueo, en `bloqueo-con-turnos-afectados`. */
@@ -215,6 +225,14 @@ const MENSAJE_BOX_OCUPADO =
 const MENSAJE_RECURSO_OCUPADO =
   'Ya hay otro turno que se cruza con este intervalo. Elegí otro horario, o el mismo horario con ' +
   'otro profesional.';
+
+/**
+ * El profesional da una clase en ese horario, en esta sede o en otra (contrato 0.156.0). Una clase
+ * no se pisa con un sobreturno: la salida es otro horario u otro profesional.
+ */
+const MENSAJE_CLASE_OCUPA =
+  'El profesional tiene una clase que se cruza con este horario. Una clase no admite sobreturno: ' +
+  'elegí otro horario u otro profesional.';
 
 const MENSAJE_SIN_PERFIL_PACIENTE =
   'Esa persona todavía no tiene perfil de paciente, así que no se le puede reservar una atención. ' +
@@ -307,20 +325,26 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
         ...base(MENSAJE_SLOT_COMPLETO, 'slot-completo', 'ofrecer-siguiente'),
         cupoTotal: error.numeroDeExtension('cupoTotal') ?? 0,
       };
-    case 'recurso-ocupado':
+    case 'recurso-ocupado': {
+      const recurso = textoDeExtension(error, 'recurso');
+      const conflictoTipo = textoDeExtension(error, 'conflictoTipo');
+      const mensaje =
+        recurso === 'espacio'
+          ? MENSAJE_BOX_OCUPADO
+          : conflictoTipo === 'CLASE'
+            ? MENSAJE_CLASE_OCUPA
+            : MENSAJE_RECURSO_OCUPADO;
       return {
-        ...base(
-          textoDeExtension(error, 'recurso') === 'espacio'
-            ? MENSAJE_BOX_OCUPADO
-            : MENSAJE_RECURSO_OCUPADO,
-          'recurso-ocupado',
-          'elegir-otro',
-        ),
-        recurso: textoDeExtension(error, 'recurso'),
+        ...base(mensaje, 'recurso-ocupado', 'elegir-otro'),
+        recurso,
         turnoEnConflictoId: error.numeroDeExtension('turnoEnConflictoId') ?? 0,
         conflictoInicio: textoDeExtension(error, 'conflictoInicio'),
         conflictoFin: textoDeExtension(error, 'conflictoFin'),
+        conflictoTipo,
+        claseEnConflictoId: error.numeroDeExtension('claseEnConflictoId') ?? 0,
+        conflictoConsultorioId: error.numeroDeExtension('conflictoConsultorioId') ?? 0,
       };
+    }
     case 'plan-sin-sesiones':
       return {
         ...base(
@@ -509,6 +533,9 @@ function base(mensaje: string, causa: CausaAgenda, accion: AccionSugerida): Erro
     turnoEnConflictoId: 0,
     conflictoInicio: '',
     conflictoFin: '',
+    conflictoTipo: '',
+    claseEnConflictoId: 0,
+    conflictoConsultorioId: 0,
     pendientes: 0,
     turnosAfectados: 0,
   };
@@ -537,4 +564,59 @@ function segundosDeEspera(error: AkineHttpError): number {
     return 0;
   }
   return Math.ceil(segundos);
+}
+
+/**
+ * La lista de turnos que trae el 409 `bloqueo-con-turnos-afectados` desde el contrato 0.154.0 (la
+ * misma forma que el impacto previo), o vacia si no vino. Se verifica la forma: la extension no esta
+ * tipada en el contrato.
+ */
+export function turnosDelRechazo(
+  error: unknown,
+): readonly TurnoAfectadoPorDisponibilidadResponse[] {
+  if (!(error instanceof AkineHttpError)) {
+    return [];
+  }
+  const turnos = error.extension('turnos');
+  return Array.isArray(turnos)
+    ? turnos.filter(
+        (t): t is TurnoAfectadoPorDisponibilidadResponse => typeof t === 'object' && t !== null,
+      )
+    : [];
+}
+
+/**
+ * Con que choca un `recurso-ocupado`, en una linea: "Clase en Sede Centro, 10:00 a 11:00" o
+ * "Turno, 10:00 a 10:45". La sede se nombra solo si es otra; la nombra quien llama, que conoce los
+ * contextos de la cuenta. Vacio si el error no trae el intervalo.
+ */
+export function detalleDelConflicto(
+  error: ErrorAgenda,
+  consultorioActual: number | null,
+  nombreDeSede: (consultorioId: number) => string,
+  hora: (instante: string) => string,
+): string {
+  if (error.conflictoInicio === '') {
+    return '';
+  }
+  const que = error.conflictoTipo === 'CLASE' ? 'Clase' : 'Turno';
+  const otra =
+    error.conflictoConsultorioId !== 0 && error.conflictoConsultorioId !== consultorioActual;
+  const sede = otra ? nombreDeSede(error.conflictoConsultorioId) : '';
+  const donde = otra ? (sede === '' ? ' en otra sede' : ` en ${sede}`) : '';
+  const fin = error.conflictoFin === '' ? '' : ` a ${hora(error.conflictoFin)}`;
+  return `${que}${donde}, ${hora(error.conflictoInicio)}${fin}`;
+}
+
+/** `true` si el choque es con algo de otra sede: su detalle no se puede leer desde esta. */
+export function conflictoEnOtraSede(error: ErrorAgenda, consultorioActual: number | null): boolean {
+  return error.conflictoConsultorioId !== 0 && error.conflictoConsultorioId !== consultorioActual;
+}
+
+/** Nombre de una sede entre los contextos de la cuenta, o vacio si no la conoce. */
+export function nombreDeSede(
+  contextos: readonly { readonly consultorioId?: number; readonly consultorioName?: string }[],
+  consultorioId: number | undefined,
+): string {
+  return contextos.find((c) => c.consultorioId === consultorioId)?.consultorioName ?? '';
 }

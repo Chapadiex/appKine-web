@@ -26,6 +26,8 @@ import { ExcepcionResponse } from '../model/excepcion-response';
 import { ImpactoDisponibilidadResponse } from '../model/impacto-disponibilidad-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
+// @ts-ignore
+import { UpdateExcepcionRequest } from '../model/update-excepcion-request';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -37,7 +39,8 @@ import {
     DeactivateExcepcionRequestParams,
     ListExcepcionesRequestParams,
     SimularImpactoAltaExcepcionRequestParams,
-    SimularImpactoBajaExcepcionRequestParams
+    SimularImpactoBajaExcepcionRequestParams,
+    UpdateExcepcionRequestParams
 } from './excepciones-de-disponibilidad.serviceInterface';
 
 
@@ -53,7 +56,7 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
 
     /**
      * Alta de un cierre o de una apertura puntual
-     * Carga una excepcion al horario base: una ausencia, una licencia, un bloqueo o una ampliacion excepcional (RF-M05-004). Exige consultorio:manage sobre ESA sede.  RESPONDE 201 O 200, Y UN CLIENTE QUE SOLO CONTEMPLE 201 SE ROMPE. El alta es IDEMPOTENTE sin Idempotency-Key (CA-M05-004-05): un pedido que coincide EXACTAMENTE con una excepcion activa que ya existe devuelve 200 con esa fila, no crea nada y no vuelve a auditar. notes y feriadoId quedan FUERA de esa comparacion. Solo el alta que crea la fila responde 201, y solo ella trae Location.  NO HAY 409 POR SOLAPAMIENTO, Y ES UNA DIFERENCIA DELIBERADA CON LOS BLOQUES. Dos excepciones que se pisan sin ser identicas son las dos legitimas y las dos se guardan: una ausencia de una tarde dentro de una licencia mas larga es un hecho corriente, no un conflicto. No escribir manejo de error de solapamiento para esta operacion: nunca lo va a emitir.  Los 409 que SI existen aca son otros dos, y ninguno depende de las fechas: la sede dada de baja (consultorio-inactive) y el profesional sin vinculo vigente en esa sede (profesional-no-vinculado), este ultimo solo cuando se manda membershipId.  OMITIR membershipId significa SEDE ENTERA —afecta a TODOS los profesionales—, no un dato faltante. Y fechaHasta es EXCLUSIVA: un cierre de un solo dia se carga como [D, D+1). Mandar fechaDesde &#x3D;&#x3D; fechaHasta cierra cero dias.  APERTURA no es el caso raro: es como un centro declara que atiende un feriado o que suma una banda un sabado puntual.
+     * Carga una excepcion al horario base: una ausencia, una licencia, un bloqueo o una ampliacion excepcional (RF-M05-004). Exige agenda:excepciones sobre ESA sede.  RESPONDE 201 O 200, Y UN CLIENTE QUE SOLO CONTEMPLE 201 SE ROMPE. El alta es IDEMPOTENTE sin Idempotency-Key (CA-M05-004-05): un pedido que coincide EXACTAMENTE con una excepcion activa que ya existe devuelve 200 con esa fila, no crea nada y no vuelve a auditar. notes y feriadoId quedan FUERA de esa comparacion. Solo el alta que crea la fila responde 201, y solo ella trae Location.  NO HAY 409 POR SOLAPAMIENTO, Y ES UNA DIFERENCIA DELIBERADA CON LOS BLOQUES. Dos excepciones que se pisan sin ser identicas son las dos legitimas y las dos se guardan: una ausencia de una tarde dentro de una licencia mas larga es un hecho corriente, no un conflicto. No escribir manejo de error de solapamiento para esta operacion: nunca lo va a emitir.  Los 409 que SI existen aca son otros dos, y ninguno depende de las fechas: la sede dada de baja (consultorio-inactive) y el profesional sin vinculo vigente en esa sede (profesional-no-vinculado), este ultimo solo cuando se manda membershipId.  OMITIR membershipId significa SEDE ENTERA —afecta a TODOS los profesionales—, no un dato faltante. Y fechaHasta es EXCLUSIVA: un cierre de un solo dia se carga como [D, D+1). Mandar fechaDesde &#x3D;&#x3D; fechaHasta cierra cero dias.  APERTURA no es el caso raro: es como un centro declara que atiende un feriado o que suma una banda un sabado puntual.
      * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -129,7 +132,7 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
 
     /**
      * Baja logica de una excepcion de disponibilidad
-     * Da de baja la excepcion con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante, y sus fechas intactas. Cancelar una licencia es un hecho que hay que poder reconstruir.  El motivo va en el CUERPO y no en la query string: en la URL quedaria en los logs de acceso de cualquier proxy intermedio.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el calendario de un centro que se esta cerrando.  Dar de baja dos veces es 409 excepcion-already-inactive: \&quot;ya estaba dada de baja\&quot; es informacion distinta de \&quot;no existe\&quot;.  Exige consultorio:manage sobre esa sede.
+     * Da de baja la excepcion con MOTIVO OBLIGATORIO en el cuerpo. NO borra nada: la fila queda INACTIVA con su motivo, su autor y su instante, y sus fechas intactas. Cancelar una licencia es un hecho que hay que poder reconstruir.  El motivo va en el CUERPO y no en la query string: en la URL quedaria en los logs de acceso de cualquier proxy intermedio.  Se permite aunque la sede este dada de baja y aunque el profesional ya se haya desvinculado: son las operaciones con las que se ordena el calendario de un centro que se esta cerrando.  Dar de baja dos veces es 409 excepcion-already-inactive: \&quot;ya estaba dada de baja\&quot; es informacion distinta de \&quot;no existe\&quot;.  Exige agenda:excepciones sobre esa sede.
      * @endpoint delete /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -310,7 +313,7 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
 
     /**
      * Turnos que dejaria afuera una excepcion, sin cargarla
-     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige consultorio:manage sobre esa sede.
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004): evalua la excepcion propuesta —el mismo cuerpo que el alta— y devuelve los turnos pendientes que quedarian fuera de la disponibilidad efectiva. No guarda nada, no toma locks y no audita. Es POST porque la excepcion propuesta viaja en el cuerpo.  Un CIERRE de un profesional evalua sus turnos; uno sin membershipId (SEDE ENTERA) evalua los de todos los profesionales de la sede. Una APERTURA responde cero: solo agrega disponibilidad. Cuenta exacta: un turno cuenta si la disponibilidad lo cubria antes y no despues. La ventana es la de la excepcion desde hoy, acotada a noventa dias; evaluadoHasta dice hasta donde se miro.  No adelanta los 409 del alta (sede dada de baja, profesional sin vinculo vigente): esos los responde el alta. Exige agenda:excepciones sobre esa sede.
      * @endpoint post /api/v1/consultorios/{consultorioId}/excepciones/impacto-de-alta
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -386,7 +389,7 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
 
     /**
      * Turnos que dejaria afuera la baja de una excepcion, sin aplicarla
-     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige consultorio:manage sobre esa sede.
+     * Consulta previa SIN EFECTOS (A-11, RN-M05-004). Solo quitar una APERTURA puede dejar turnos afuera; quitar un CIERRE responde cero. Misma cuenta exacta y misma ventana que la consulta previa del alta. Exige agenda:excepciones sobre esa sede.
      * @endpoint get /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}/impacto-de-baja
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -440,6 +443,86 @@ export class ExcepcionesDeDisponibilidadService extends BaseService implements E
         return this.httpClient.request<ImpactoDisponibilidadResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Edicion de una excepcion de disponibilidad
+     * Reemplaza motivo, fechas, horario y notas de una excepcion ACTIVA. El tipo y el alcance no se editan: pasar un cierre a apertura, o de un profesional a la sede, es cargar otra excepcion.  version es obligatoria y se compara antes de mutar (409 concurrent-modification).  Si el cambio deja turnos pendientes fuera de la disponibilidad y no viene confirmaTurnosAfectados&#x3D;true, responde 409 bloqueo-con-turnos-afectados con la cuenta y la lista, igual que el alta. Confirmado, los turnos NO se tocan: quedan reservados y la agenda operativa los marca fuera de disponibilidad.  Con motivo OTRO las notas son obligatorias: 400 validation-error con el error en &#x60;errors.notes&#x60;. Queda auditado con el antes y el despues de cada campo que cambio.  Exige agenda:excepciones sobre esa sede; con alcance propio, la excepcion tiene que ser del profesional que opera (la de la sede entera responde 403).
+     * @endpoint put /api/v1/consultorios/{consultorioId}/excepciones/{excepcionId}
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public updateExcepcion(requestParameters: UpdateExcepcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ExcepcionResponse>;
+    public updateExcepcion(requestParameters: UpdateExcepcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ExcepcionResponse>>;
+    public updateExcepcion(requestParameters: UpdateExcepcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ExcepcionResponse>>;
+    public updateExcepcion(requestParameters: UpdateExcepcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling updateExcepcion.');
+        }
+        const excepcionId = requestParameters?.excepcionId;
+        if (excepcionId === null || excepcionId === undefined) {
+            throw new Error('Required parameter excepcionId was null or undefined when calling updateExcepcion.');
+        }
+        const updateExcepcionRequest = requestParameters?.updateExcepcionRequest;
+        if (updateExcepcionRequest === null || updateExcepcionRequest === undefined) {
+            throw new Error('Required parameter updateExcepcionRequest was null or undefined when calling updateExcepcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/excepciones/${this.configuration.encodeParam({name: "excepcionId", value: excepcionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ExcepcionResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: updateExcepcionRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

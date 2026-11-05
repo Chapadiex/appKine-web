@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { Agenda } from '../model/agenda';
 // @ts-ignore
+import { HistorialDeAgendaPage } from '../model/historial-de-agenda-page';
+// @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 
 // @ts-ignore
@@ -27,7 +29,8 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     AgendaServiceInterface,
-    BuscarAgendaRequestParams
+    BuscarAgendaRequestParams,
+    ListarHistorialDeAgendaRequestParams
 } from './agenda.serviceInterface';
 
 
@@ -133,6 +136,164 @@ export class AgendaService extends BaseService implements AgendaServiceInterface
         let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/agenda`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<Agenda>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Historial de cambios de la agenda de un profesional
+     * Horario habitual (alta, edicion, baja), excepciones y bloqueos —ausencias, licencias y vacaciones incluidas; un desbloqueo es la baja de una excepcion— y turnos (reserva, sobreturno, confirmacion, cancelacion, ausencia, reprogramacion, cambio de sede, observaciones) del profesional, con quien lo hizo y con que rol, cuando, el motivo y como estaba antes y como quedo despues, ya armado para mostrar.  &#x60;profesionalId&#x60; es la membership del profesional en cualquier sede: se leen todas las de esa persona en la organizacion. Una reprogramacion que le saco un turno tambien aparece.  Exige &#x60;agenda:excepciones&#x60; con su alcance: el &#x60;ORG_ADMIN&#x60; lee la organizacion, el &#x60;CONSULTORIO_ADMIN&#x60; y el &#x60;ADMINISTRATIVO&#x60; sus sedes, y el &#x60;PROFESIONAL&#x60; solo su propia agenda (403 sobre la de otro). El paciente de un turno viaja solo a quien tiene &#x60;turno:read&#x60; en esa sede.  &#x60;desde&#x60; y &#x60;hasta&#x60; son instantes UTC (ISO-8601) sobre cuando se hizo el cambio, no sobre la fecha del turno: &#x60;desde&#x60; inclusivo, &#x60;hasta&#x60; exclusivo. Para \&quot;el dia de la sede\&quot; el cliente convierte la medianoche local a UTC. Las fechas de &#x60;antes&#x60;/&#x60;despues&#x60; ya vienen en la zona de la sede de cada cambio.  &#x60;actorRol&#x60; es el rol de quien opero: &#x60;ORG_ADMIN&#x60;, &#x60;CONSULTORIO_ADMIN&#x60;, &#x60;ADMINISTRATIVO&#x60;, &#x60;PROFESIONAL&#x60; (o &#x60;PLATFORM_ADMIN&#x60; con acceso de soporte); ausente en cambios anteriores a la agenda de profesionales.  Es una lectura de la auditoria transversal: una sola fuente. Un cambio de sede tambien deja la cancelacion del turno original como fila propia.
+     * @endpoint get /api/v1/organizations/{orgId}/agenda/historial
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listarHistorialDeAgenda(requestParameters: ListarHistorialDeAgendaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HistorialDeAgendaPage>;
+    public listarHistorialDeAgenda(requestParameters: ListarHistorialDeAgendaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<HistorialDeAgendaPage>>;
+    public listarHistorialDeAgenda(requestParameters: ListarHistorialDeAgendaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<HistorialDeAgendaPage>>;
+    public listarHistorialDeAgenda(requestParameters: ListarHistorialDeAgendaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling listarHistorialDeAgenda.');
+        }
+        const profesionalId = requestParameters?.profesionalId;
+        if (profesionalId === null || profesionalId === undefined) {
+            throw new Error('Required parameter profesionalId was null or undefined when calling listarHistorialDeAgenda.');
+        }
+        const consultorioId = requestParameters?.consultorioId;
+        const tipo = requestParameters?.tipo;
+        const desde = requestParameters?.desde;
+        const hasta = requestParameters?.hasta;
+        const q = requestParameters?.q;
+        const page = requestParameters?.page;
+        const size = requestParameters?.size;
+        const sort = requestParameters?.sort;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'profesionalId',
+            <any>profesionalId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'consultorioId',
+            <any>consultorioId,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'tipo',
+            <any>tipo,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'desde',
+            <any>desde,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'hasta',
+            <any>hasta,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'page',
+            <any>page,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'size',
+            <any>size,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'sort',
+            <any>sort,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/agenda/historial`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<HistorialDeAgendaPage>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),

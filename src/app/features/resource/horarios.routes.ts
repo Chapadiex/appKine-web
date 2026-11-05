@@ -1,10 +1,11 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import {
   SEGMENTO_CALENDARIO,
+  SEGMENTO_CAMBIOS,
   SEGMENTO_EFECTIVO,
   SEGMENTO_EXCEPCIONES,
 } from './models/rutas-de-horarios';
@@ -47,48 +48,52 @@ import {
  * ademas que las cuatro URLs resuelvan de verdad contra la configuracion montada: una constante
  * garantiza que los dos lados digan lo mismo, no que la ruta exista.
  */
+/**
+ * Las cinco hijas comparten el guard de lectura y el ancho amplio, y solo cambian segmento,
+ * pantalla y titulo. Se arman con {@link hija} en vez de escribir cinco objetos completos: estas
+ * rutas viajan en el bundle inicial (son hijas eager de `app.routes.ts`, que esta al limite del
+ * presupuesto) y cada clave repetida se paga en bytes. La ruta de cambios entro pagada con esto.
+ *
+ * <p>Todas van en el ancho amplio: excepciones (fechas, franja, alcance y motivo por fila), el
+ * efectivo (franjas y el parrafo que explica un dia vacio), el calendario (horario general y
+ * feriados lado a lado), los cambios (antes, ahora, quien y motivo) y la semana (siete columnas).
+ * En el ancho de lectura cada una deja de leerse como lista o como semana.
+ */
+const LECTURA = [permissionGuard(PERMISO_COLABORADOR_READ)];
+const AMPLIO = { [DATA_ANCHO]: ANCHO_AMPLIO };
+
+function hija(path: string, loadComponent: Route['loadComponent'], title: string): Route {
+  return { path, canActivate: LECTURA, loadComponent, title, data: AMPLIO };
+}
+
 export const routes: Routes = [
-  // Las rutas fijas de las pantallas hermanas de esta etapa —excepciones, horario efectivo y
-  // calendario de sede— van ARRIBA de la ruta vacia y, sobre todo, arriba de cualquier futura
-  // ruta parametrica: el dia que exista un `horarios/:membershipId` se comeria a todas sin que
-  // nadie lo note.
-  {
-    path: SEGMENTO_EXCEPCIONES,
-    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
-    loadComponent: () =>
-      import('./pages/excepciones/excepciones-page').then((m) => m.ExcepcionesPage),
-    title: 'AKINE - Cierres y aperturas',
-    // Cada excepcion son fechas, franja, alcance y motivo: en el ancho de lectura cada fila
-    // se parte en cinco renglones y el listado deja de leerse como una lista.
-    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
-  },
-  {
-    path: SEGMENTO_EFECTIVO,
-    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
-    loadComponent: () =>
-      import('./pages/efectivo/horario-efectivo-page').then((m) => m.HorarioEfectivoPage),
-    title: 'AKINE - Horario efectivo del profesional',
-    // Cada dia lleva sus franjas y, si quedo vacio, el parrafo que lo explica: en el ancho de
-    // lectura la explicacion se parte en cinco renglones y deja de leerse como una lista.
-    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
-  },
-  {
-    path: SEGMENTO_CALENDARIO,
-    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
-    loadComponent: () =>
-      import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
-    title: 'AKINE - Horario general y feriados de la sede',
-    // Horario general y feriados van lado a lado: en el ancho de lectura se apilan.
-    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
-  },
-  {
-    path: '',
-    canActivate: [permissionGuard(PERMISO_COLABORADOR_READ)],
-    loadComponent: () =>
-      import('./pages/horarios/horario-semanal-page').then((m) => m.HorarioSemanalPage),
-    title: 'AKINE - Horario semanal del profesional',
-    // La semana son siete columnas: en el ancho de lectura entran dos por fila y el horario
-    // deja de leerse como una semana.
-    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
-  },
+  // Las rutas fijas de las pantallas hermanas de esta etapa —excepciones, horario efectivo,
+  // calendario de sede y cambios— van ARRIBA de la ruta vacia y, sobre todo, arriba de cualquier
+  // futura ruta parametrica: el dia que exista un `horarios/:membershipId` se comeria a todas sin
+  // que nadie lo note.
+  hija(
+    SEGMENTO_EXCEPCIONES,
+    () => import('./pages/excepciones/excepciones-page').then((m) => m.ExcepcionesPage),
+    'AKINE - Cierres y aperturas',
+  ),
+  hija(
+    SEGMENTO_EFECTIVO,
+    () => import('./pages/efectivo/horario-efectivo-page').then((m) => m.HorarioEfectivoPage),
+    'AKINE - Horario efectivo del profesional',
+  ),
+  hija(
+    SEGMENTO_CALENDARIO,
+    () => import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
+    'AKINE - Horario general y feriados de la sede',
+  ),
+  hija(
+    SEGMENTO_CAMBIOS,
+    () => import('./pages/cambios/cambios-de-agenda-page').then((m) => m.CambiosDeAgendaPage),
+    'AKINE - Cambios de la agenda',
+  ),
+  hija(
+    '',
+    () => import('./pages/horarios/horario-semanal-page').then((m) => m.HorarioSemanalPage),
+    'AKINE - Horario semanal del profesional',
+  ),
 ];

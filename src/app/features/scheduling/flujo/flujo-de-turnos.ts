@@ -38,8 +38,12 @@ import { ProgramacionMultiplePanel } from './programacion-multiple-panel';
           }
         }
         @case ('detalle') {
-          @for (turnoId of [solicitud.turnoId]; track turnoId) {
-            <app-detalle-de-turno-panel [turnoId]="turnoId" (cerrar)="flujo.cerrar()" />
+          @for (detalle of [solicitud]; track detalle) {
+            <app-detalle-de-turno-panel
+              [turnoId]="detalle.turnoId"
+              [vistaInicial]="detalle.vista ?? 'resumen'"
+              (cerrar)="flujo.cerrar()"
+            />
           }
         }
         @case ('espera') {

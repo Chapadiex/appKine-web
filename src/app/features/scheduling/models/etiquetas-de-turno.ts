@@ -1,4 +1,8 @@
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import {
+  ReprogramacionDeTurno,
+  ReprogramacionDeTurnoUltimoTipoEnum,
+} from '../../../api/generated/model/reprogramacion-de-turno';
 import { EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
 
@@ -44,6 +48,7 @@ const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
   [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registró que el paciente no vino',
   [EventoDeTurnoTipoEnum.LLEGADA]: 'Llegó al centro',
   [EventoDeTurnoTipoEnum.LLEGADA_DESHECHA]: 'Se deshizo el registro de llegada',
+  [EventoDeTurnoTipoEnum.OBSERVACIONES]: 'Se cambiaron las observaciones',
 };
 
 /** Estados desde los que ya no hay ninguna transicion posible. */
@@ -203,6 +208,7 @@ export const MOTIVOS_DE_REPROGRAMACION = [
 
 export const MOTIVOS_DE_BLOQUEO = [
   { valor: 'LICENCIA', etiqueta: 'Licencia' },
+  { valor: 'VACACIONES', etiqueta: 'Vacaciones' },
   { valor: 'CAPACITACION', etiqueta: 'Capacitación' },
   { valor: 'AUSENCIA', etiqueta: 'Personal' },
   { valor: 'BLOQUEO', etiqueta: 'Institucional' },
@@ -230,3 +236,43 @@ export const DIAS_ABREVIADOS = [
   { iso: 6, etiqueta: 'Sáb' },
   { iso: 7, etiqueta: 'Dom' },
 ] as const;
+
+/**
+ * Marca de un turno que se movio de horario o de sede. No es un estado: el turno sigue
+ * reservado, confirmado o atendido, y la marca solo avisa que no esta donde se pidio.
+ */
+export const SIMBOLO_REPROGRAMADO = '↻';
+
+/**
+ * "↻ Reprogramado", o "↻ Reprogramado 3 veces" cuando se movio mas de una. Vacio si nunca se
+ * movio: la marca no se dibuja para cero.
+ */
+export function textoDeReprogramado(cantidad: number | undefined): string {
+  if (cantidad === undefined || cantidad <= 0) {
+    return '';
+  }
+  const base = `${SIMBOLO_REPROGRAMADO} Reprogramado`;
+  return cantidad === 1 ? base : `${base} ${cantidad} veces`;
+}
+
+/** "era 10:00": a que hora estaba el turno antes de moverse. Vacio si no hay hora original. */
+export function eraA(horaOriginal: string | undefined): string {
+  return horaOriginal === undefined || horaOriginal === '' ? '' : `era ${horaOriginal}`;
+}
+
+/**
+ * El ultimo movimiento en una linea: "Último: cambio de sede por Ana Gomez — Pedido del paciente".
+ * Sin actor ni motivo dice solo que tipo de movimiento fue. Vacio si nunca se movio.
+ */
+export function textoDeUltimoMovimiento(reprogramacion: ReprogramacionDeTurno | undefined): string {
+  if (reprogramacion === undefined || (reprogramacion.cantidad ?? 0) <= 0) {
+    return '';
+  }
+  const tipo =
+    reprogramacion.ultimoTipo === ReprogramacionDeTurnoUltimoTipoEnum.TRASLADO
+      ? 'cambio de sede'
+      : 'cambio de horario';
+  const actor = reprogramacion.ultimoActorNombre ? ` por ${reprogramacion.ultimoActorNombre}` : '';
+  const motivo = reprogramacion.ultimoMotivo ? ` — ${reprogramacion.ultimoMotivo}` : '';
+  return `Último: ${tipo}${actor}${motivo}`;
+}

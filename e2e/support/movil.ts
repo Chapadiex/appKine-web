@@ -33,6 +33,8 @@ const PERMISOS = [
   'reporte:read',
   'auditoria:read',
   'consultorio:manage',
+  'agenda:horario',
+  'agenda:excepciones',
 ];
 
 const PERSONA = {

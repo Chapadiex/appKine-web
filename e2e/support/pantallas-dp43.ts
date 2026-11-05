@@ -22,6 +22,8 @@ const PERMISOS_DP43 = [
   'convenio:read',
   'convenio:manage',
   'consultorio:manage',
+  'agenda:horario',
+  'agenda:excepciones',
   'sesion:register',
   'sesion:amend',
   'colaborador:read',
