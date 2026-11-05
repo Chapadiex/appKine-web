@@ -31,7 +31,14 @@ import { Alerta } from '../../../shared/components/alerta/alerta';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
 import { nuevaClaveDeIntento } from '../../../shared/utils/clave-de-intento';
-import { ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
+import {
+  ErrorAgenda,
+  conflictoEnOtraSede,
+  detalleDelConflicto,
+  nombreDeSede,
+  traducirErrorAgenda,
+} from '../models/agenda-errors';
+import { SessionService } from '../../../core/services/session.service';
 import {
   fechaEnPalabras,
   horaEnZona,
@@ -92,6 +99,7 @@ export class NuevoTurnoPanel implements OnInit {
   private readonly avisos = inject(AvisosStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
   private readonly router = inject(Router);
+  private readonly session = inject(SessionService);
 
   readonly contexto = input.required<ContextoDeTurno>();
   readonly cerrar = output<void>();
@@ -298,6 +306,38 @@ export class NuevoTurnoPanel implements OnInit {
       causa === 'recurso-ocupado' || causa === 'slot-completo' || causa === 'slot-no-disponible'
     );
   });
+
+  /**
+   * El horario choca con una clase del profesional, aca o en otra sede (contrato 0.156.0). Una clase
+   * no admite sobreturno: el backend responde 409 igual, asi que no se ofrece.
+   */
+  protected readonly chocaConClase = computed(
+    () => this.rechazo()?.conflictoTipo === 'CLASE' || this.validacion()?.conflictoTipo === 'CLASE',
+  );
+
+  /** La validacion previa choca con algo de otra sede: se nombra la sede, no se lee el turno. */
+  protected readonly validacionEnOtraSede = computed(() => {
+    const otra = this.validacion()?.conflictoConsultorioId;
+    return otra !== undefined && otra !== this.tenant.consultorioId();
+  });
+
+  /** "Clase en Sede Norte, 10:00 a 11:00": con que choca el rechazo, o vacio. */
+  protected readonly conflictoDelRechazo = computed(() => {
+    const fallo = this.rechazo();
+    if (fallo?.causa !== 'recurso-ocupado') {
+      return '';
+    }
+    return detalleDelConflicto(
+      fallo,
+      this.tenant.consultorioId(),
+      (id) => nombreDeSede(this.session.contextos(), id),
+      (instante) => this.hora(instante),
+    );
+  });
+
+  protected nombreDeSede(consultorioId: number | undefined): string {
+    return nombreDeSede(this.session.contextos(), consultorioId);
+  }
 
   ngOnInit(): void {
     const contexto = this.contexto();
@@ -733,7 +773,14 @@ export class NuevoTurnoPanel implements OnInit {
       fallo.causa === 'slot-no-disponible'
     ) {
       this.validarSiCorresponde();
-      this.leerOcupante(fallo.turnoEnConflictoId);
+      // El ocupante se lee solo si es un turno de esta sede: el de otra no se puede leer desde aca
+      // (404) y una clase no tiene un paciente que nombrar.
+      if (
+        fallo.conflictoTipo !== 'CLASE' &&
+        !conflictoEnOtraSede(fallo, this.tenant.consultorioId())
+      ) {
+        this.leerOcupante(fallo.turnoEnConflictoId);
+      }
       if (!this.conHorarioDelContexto()) {
         this.buscarSinPerderElRechazo();
       }
@@ -779,8 +826,15 @@ export class NuevoTurnoPanel implements OnInit {
 
   protected abrirSobreturno(): void {
     this.sobreturnoAbierto.set(true);
+    const rechazo = this.rechazo();
+    const enOtraSede =
+      this.validacion() !== null
+        ? this.validacionEnOtraSede()
+        : rechazo !== null && conflictoEnOtraSede(rechazo, this.tenant.consultorioId());
     this.leerOcupante(
-      this.validacion()?.turnoEnConflictoId ?? this.rechazo()?.turnoEnConflictoId ?? 0,
+      enOtraSede
+        ? 0
+        : (this.validacion()?.turnoEnConflictoId ?? this.rechazo()?.turnoEnConflictoId ?? 0),
     );
   }
 

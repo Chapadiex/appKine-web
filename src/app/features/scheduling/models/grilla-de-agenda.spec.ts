@@ -1,4 +1,5 @@
 import { AgendaOperativa } from '../../../api/generated/model/agenda-operativa';
+import { OcupacionEnOtraSedeTipoEnum } from '../../../api/generated/model/ocupacion-en-otra-sede';
 import { OperativoDeTurnoEstadoOperativoEnum } from '../../../api/generated/model/operativo-de-turno';
 import { TurnoDeCalendario } from '../../../api/generated/model/turno-de-calendario';
 import {
@@ -7,6 +8,7 @@ import {
   instanteDeHoraLocal,
   minutosEnZona,
   rangoDeHoras,
+  turnosQueChocanConClase,
 } from './grilla-de-agenda';
 
 const ZONA = 'America/Argentina/Cordoba';
@@ -199,6 +201,68 @@ describe('grilla de la agenda', () => {
       expect(ana.franjas).toEqual([]);
       // El turno fuera de franja se ve igual: esconderlo dejaría un paciente sin atender.
       expect(ana.eventos.map((e) => e.inicioMin)).toEqual([min('18:00')]);
+    });
+  });
+
+  describe('entre sedes (contrato 0.156.0)', () => {
+    it('lo ocupado en otra sede se dibuja sin datos y no deja celdas libres; a otro no le afecta', () => {
+      const [ana, luis] = columnas({
+        ocupacionesEnOtrasSedes: [
+          {
+            membershipId: ANA,
+            tipo: OcupacionEnOtraSedeTipoEnum.CLASE,
+            consultorioId: 8,
+            inicio: a('10:00'),
+            fin: a('11:00'),
+          },
+        ],
+      });
+
+      const fuera = ana.eventos.find((e) => e.tipo === 'fuera');
+      expect(fuera?.titulo).toBe('Ocupado en otra sede');
+      expect(fuera?.detalle).toBe('Clase');
+      expect(fuera?.turno).toBeUndefined();
+      expect(horasDeLasCeldas(ana)).toEqual([min('09:00'), min('09:30')]);
+      expect(luis.eventos.some((e) => e.tipo === 'fuera')).toBe(false);
+    });
+
+    it('en la semana solo cuenta con un profesional elegido', () => {
+      const ocupacionesEnOtrasSedes = [
+        {
+          membershipId: ANA,
+          tipo: OcupacionEnOtraSedeTipoEnum.TURNO,
+          consultorioId: 8,
+          inicio: a('09:00'),
+          fin: a('09:30'),
+        },
+      ];
+      const sinElegir = columnas({ ocupacionesEnOtrasSedes }, { vista: 'semana', fecha: LUNES });
+      const conAna = columnas(
+        { ocupacionesEnOtrasSedes },
+        { vista: 'semana', fecha: LUNES, profesionalFiltrado: ANA },
+      );
+
+      const viernes = (cols: readonly ColumnaDeAgenda[]) => cols.find((c) => c.fecha === FECHA);
+      expect(viernes(sinElegir)?.eventos.some((e) => e.tipo === 'fuera')).toBe(false);
+      expect(viernes(conAna)?.eventos.find((e) => e.tipo === 'fuera')?.detalle).toBe('Turno');
+    });
+
+    it('los conflictos previos marcan el turno de esta sede y la clase de esta sede', () => {
+      const chocado = turno('09:00', '09:30');
+      const agenda: AgendaOperativa = {
+        ...AGENDA,
+        turnos: [chocado],
+        clases: [{ claseId: 90, profesionalId: LUIS, inicio: a('10:00'), fin: a('11:00') }],
+        conflictos: [
+          { membershipId: ANA, turnoId: chocado.turno?.id, claseConsultorioId: 8 },
+          { membershipId: LUIS, claseId: 90, turnoConsultorioId: 8 },
+        ],
+      };
+
+      expect([...turnosQueChocanConClase(agenda)]).toEqual([chocado.turno?.id]);
+      expect(turnosQueChocanConClase(null).size).toBe(0);
+      const [, luis] = columnas(agenda);
+      expect(luis.eventos.find((e) => e.tipo === 'clase')?.detalle).toContain('Choca con un turno');
     });
   });
 

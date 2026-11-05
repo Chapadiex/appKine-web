@@ -163,6 +163,21 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('aguarda ser llamado');
   });
 
+  it('un turno movido lleva la marca de reprogramado con la hora que tenía (0.155.0)', async () => {
+    const movido = {
+      ...DEL_DIA[0],
+      operativo: {
+        estadoOperativo: 'CONFIRMADO',
+        reprogramaciones: 1,
+        reprogramacion: { cantidad: 1, inicioOriginal: '2026-09-15T11:00:00Z' },
+      },
+    };
+    const fixture = await montar({ turnos: [movido, DEL_DIA[1]] });
+
+    expect(textoDe(fixture)).toContain('↻ Reprogramado · era 08:00');
+    expect(textoDe(fixture).match(/Reprogramado/g)).toHaveLength(1);
+  });
+
   it('"Nuevo turno" abre el flujo sobre esta pantalla, con el dia que se esta mirando', async () => {
     const fixture = await montar();
 

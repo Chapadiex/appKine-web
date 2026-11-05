@@ -28,6 +28,7 @@ import { DisponibilidadProfesionalService } from '../../../../api/generated/api/
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import {
+  PERMISO_AGENDA_EXCEPCIONES,
   PERMISO_AGENDA_HORARIO,
   PERMISO_TURNO_MANAGE,
   PERMISO_TURNO_READ,
@@ -72,7 +73,7 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_HORARIOS,
-  PESTANAS_DE_HORARIOS,
+  pestanasDeHorarios,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -177,7 +178,9 @@ export class HorarioSemanalPage {
   protected readonly permisoVerTurnos = PERMISO_TURNO_READ;
   protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
-  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly pestanas = computed(() =>
+    pestanasDeHorarios(this.permisos.tiene(PERMISO_AGENDA_EXCEPCIONES)),
+  );
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   /**
    * Con `agenda:horario` recortado a lo propio, el horario de otro profesional se mira y no se toca.

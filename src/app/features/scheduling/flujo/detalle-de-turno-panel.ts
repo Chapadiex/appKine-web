@@ -37,7 +37,13 @@ import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
-import { AccionSugerida, ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
+import {
+  AccionSugerida,
+  ErrorAgenda,
+  detalleDelConflicto,
+  nombreDeSede,
+  traducirErrorAgenda,
+} from '../models/agenda-errors';
 import { fechaEnPalabras, horaEnZona } from '../models/etiquetas-de-agenda';
 import {
   llegadaVigente,
@@ -56,6 +62,8 @@ import {
   nombreDeEstadoOperativo,
   simboloDeEstadoOperativo,
   textoDeEvento,
+  textoDeReprogramado,
+  textoDeUltimoMovimiento,
 } from '../models/etiquetas-de-turno';
 import { diaEnZona } from '../models/semana';
 import { SchedulingApi } from '../services/scheduling-api';
@@ -124,6 +132,8 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
   protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
   protected readonly textoDeEvento = textoDeEvento;
+  protected readonly textoDeReprogramado = textoDeReprogramado;
+  protected readonly textoDeUltimoMovimiento = textoDeUltimoMovimiento;
   protected readonly nombreDeEstado = nombreDeEstado;
   protected readonly textoDeEventoDeRecepcion = textoDeEventoDeRecepcion;
   protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
@@ -277,6 +287,24 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly subtitulo = computed(() => {
     const turno = this.turno();
     return [turno?.personaNombre, turno?.documento].filter(Boolean).join(' · ') || null;
+  });
+
+  /**
+   * Con que choco una reprogramacion o un traslado rechazados con `recurso-ocupado`: "Clase en Sede
+   * Norte, 10:00 a 11:00" (contrato 0.156.0). La carrera entre leer los horarios y confirmar es real:
+   * otra sede puede haber puesto una clase en el medio.
+   */
+  protected readonly conflictoDelError = computed(() => {
+    const fallo = this.error();
+    if (fallo?.causa !== 'recurso-ocupado') {
+      return '';
+    }
+    return detalleDelConflicto(
+      fallo,
+      this.tenant.consultorioId(),
+      (id) => nombreDeSede(this.session.contextos(), id),
+      (instante) => horaEnZona(instante, this.timezone()),
+    );
   });
 
   protected readonly tituloDelError = computed(() =>
@@ -533,6 +561,21 @@ export class DetalleDeTurnoPanel implements OnInit {
     }
     const box = (id: number | undefined): string => (id === undefined ? 'sin box' : `Box #${id}`);
     return `Box: ${box(antes)} → ${box(despues)}`;
+  }
+
+  /**
+   * El historial trae inline los eventos de los turnos de origen de un cambio de sede (contrato
+   * 0.155.0): esos llevan otro `turnoId`, y se rotulan para que no se lean como de este turno.
+   */
+  protected deOtroTurno(evento: EventoDeTurno): string {
+    const id = evento.turnoId;
+    if (id === undefined || id === this.turnoId()) {
+      return '';
+    }
+    const sede = this.session
+      .contextos()
+      .find((c) => c.consultorioId === evento.consultorioId)?.consultorioName;
+    return sede ? `Turno anterior #${id} · Sede ${sede}` : `Turno anterior #${id}`;
   }
 
   protected instante(valor: string | undefined): string {

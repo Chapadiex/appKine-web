@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ReprogramacionDeTurno } from './reprogramacion-de-turno';
 
 
 /**
@@ -49,6 +50,14 @@ export interface OperativoDeTurno {
      * Nombre del profesional. Ausente si el turno no tiene o no se resuelve.
      */
     profesionalNombre?: string;
+    /**
+     * Horario original y ultima reprogramacion. Ausente si nunca se movio.
+     */
+    reprogramacion?: ReprogramacionDeTurno;
+    /**
+     * Cuantas veces se movio el turno, contando sus traslados de sede: las reprogramaciones del turno y de sus turnos de origen, mas una por traslado. 0 si nunca. **Es un indicador, no un estado**: `estadoOperativo` no cambia.
+     */
+    reprogramaciones?: number;
     /**
      * La atencion del turno, si ya empezo
      */

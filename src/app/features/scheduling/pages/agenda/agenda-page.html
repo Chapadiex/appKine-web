@@ -233,8 +233,16 @@
                 }}</span>
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
+              @if (reprogramado(turno.turno); as marca) {
+                <span class="turno__marca"><span aria-hidden="true">↻</span> {{ marca }}</span>
+              }
               @if (turno.fueraDeDisponibilidad) {
                 <span class="turno__reubicar"><span aria-hidden="true">⚠</span> A reubicar</span>
+              }
+              @if (chocaConClase(turno)) {
+                <span class="turno__reubicar"
+                  ><span aria-hidden="true">⚠</span> Choca con una clase</span
+                >
               }
             </button>
           </li>
@@ -416,9 +424,20 @@
                     @if (evento.turno?.turno?.operativo?.sobreturno) {
                       <span class="turno__marca">Sobreturno</span>
                     }
+                    @if (
+                      textoDeReprogramado(evento.turno?.turno?.operativo?.reprogramaciones);
+                      as marca
+                    ) {
+                      <span class="turno__marca">{{ marca }}</span>
+                    }
                     @if (evento.turno?.fueraDeDisponibilidad) {
                       <span class="turno__reubicar"
                         ><span aria-hidden="true">⚠</span> A reubicar</span
+                      >
+                    }
+                    @if (chocaConClase(evento.turno)) {
+                      <span class="turno__reubicar"
+                        ><span aria-hidden="true">⚠</span> Choca con una clase</span
                       >
                     }
                   </button>
@@ -426,6 +445,20 @@
                 @case ('clase') {
                   <div
                     class="evento evento--clase"
+                    [style.top.px]="arriba(evento.inicioMin)"
+                    [style.height.px]="alto(evento.inicioMin, evento.finMin)"
+                    [style.left.%]="(evento.carril * 100) / evento.carriles"
+                    [style.width.%]="100 / evento.carriles"
+                    [title]="descripcion(evento)"
+                  >
+                    <span class="turno__persona">{{ evento.titulo }}</span>
+                    <span class="turno__linea">{{ evento.detalle }}</span>
+                  </div>
+                }
+                @case ('fuera') {
+                  <!-- Ocupado en otra sede: sin datos de paciente y sin accion (contrato 0.156.0). -->
+                  <div
+                    class="evento evento--fuera"
                     [style.top.px]="arriba(evento.inicioMin)"
                     [style.height.px]="alto(evento.inicioMin, evento.finMin)"
                     [style.left.%]="(evento.carril * 100) / evento.carriles"

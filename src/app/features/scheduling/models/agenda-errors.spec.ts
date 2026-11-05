@@ -1,6 +1,9 @@
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 
 import {
+  conflictoEnOtraSede,
+  detalleDelConflicto,
+  nombreDeSede,
   recortarVentana,
   traducirErrorAgenda,
   traducirErrorRecepcion,
@@ -41,6 +44,53 @@ describe('traducirErrorAgenda', () => {
       false,
     );
   }
+
+  it('recurso-ocupado con una clase lo dice, y trae la clase y la sede (contrato 0.156.0)', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('recurso-ocupado', {
+        recurso: 'profesional',
+        conflictoTipo: 'CLASE',
+        claseEnConflictoId: 55,
+        conflictoConsultorioId: 8,
+        conflictoInicio: '2030-03-04T13:00:00Z',
+        conflictoFin: '2030-03-04T14:00:00Z',
+      }),
+    );
+
+    expect(traducido.mensaje).toContain('clase');
+    expect(traducido.mensaje).toContain('no admite sobreturno');
+    expect(traducido.conflictoTipo).toBe('CLASE');
+    expect(traducido.claseEnConflictoId).toBe(55);
+    expect(traducido.conflictoConsultorioId).toBe(8);
+    expect(conflictoEnOtraSede(traducido, 3)).toBe(true);
+    expect(conflictoEnOtraSede(traducido, 8)).toBe(false);
+
+    const hora = (instante: string): string => instante.slice(11, 16);
+    expect(detalleDelConflicto(traducido, 3, () => 'Sede Norte', hora)).toBe(
+      'Clase en Sede Norte, 13:00 a 14:00',
+    );
+    expect(detalleDelConflicto(traducido, 3, () => '', hora)).toBe(
+      'Clase en otra sede, 13:00 a 14:00',
+    );
+    expect(detalleDelConflicto(traducido, 8, () => 'Sede Norte', hora)).toBe(
+      'Clase, 13:00 a 14:00',
+    );
+  });
+
+  it('un turno sin intervalo no arma detalle; los nombres de sede salen de los contextos', () => {
+    const turno = traducirErrorAgenda(conflicto('recurso-ocupado', { conflictoTipo: 'TURNO' }));
+    expect(turno.mensaje).toContain('Ya hay otro turno');
+    expect(
+      detalleDelConflicto(
+        turno,
+        3,
+        () => '',
+        (i) => i,
+      ),
+    ).toBe('');
+    expect(nombreDeSede([{ consultorioId: 8, consultorioName: 'Norte' }], 8)).toBe('Norte');
+    expect(nombreDeSede([], 8)).toBe('');
+  });
 
   it('slot-no-disponible manda a recargar la agenda y trae el motivo', () => {
     const traducido = traducirErrorAgenda(

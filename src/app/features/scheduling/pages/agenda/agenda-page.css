@@ -347,7 +347,10 @@
   background: var(--color-exito-fondo);
 }
 
-.turno--atendido {
+/* Atendido, cancelado y lo ocupado en otra sede comparten el fondo apagado. */
+.turno--atendido,
+.turno--cancelado,
+.evento--fuera {
   background: var(--color-superficie-sutil);
 }
 
@@ -356,15 +359,13 @@
   background: var(--color-aviso-fondo);
 }
 
-.turno--cancelado {
-  background: var(--color-superficie-sutil);
-}
-
 .turno--cancelado .turno__persona {
   text-decoration: line-through;
 }
 
-.turno--sobreturno {
+/* Ocupado en otra sede (0.156.0): rayado como el sobreturno, sin parecer un turno de esta sede. */
+.turno--sobreturno,
+.evento--fuera {
   border-style: dashed;
 }
 

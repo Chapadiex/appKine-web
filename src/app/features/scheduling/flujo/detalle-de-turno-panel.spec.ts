@@ -875,6 +875,43 @@ describe('DetalleDeTurnoPanel', () => {
       expect(raiz(fixture).querySelector('#flujo-reprogramar-motivo')).toBeNull();
     });
 
+    it('si en el medio otra sede puso una clase, dice con qué choca (carrera, 0.156.0)', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Reprogramar');
+      httpMock
+        .expectOne(BUSQUEDA)
+        .flush({ timezone: 'America/Argentina/Cordoba', horarios: [DESTINO] });
+      await asentar(fixture);
+      (raiz(fixture).querySelector('.horario') as HTMLButtonElement).click();
+      await asentar(fixture);
+
+      clic(fixture, 'Reprogramar');
+      httpMock.expectOne(`${TURNO}/reprogramacion`).flush(
+        {
+          type: 'https://akine.app/problems/recurso-ocupado',
+          status: 409,
+          recurso: 'profesional',
+          conflictoTipo: 'CLASE',
+          claseEnConflictoId: 55,
+          conflictoConsultorioId: 8,
+          conflictoInicio: DESTINO.desde,
+          conflictoFin: '2030-03-05T14:00:00Z',
+        },
+        { status: 409, statusText: 'C' },
+      );
+      httpMock.match(TURNO).forEach((r) => r.flush(turno('RESERVADO')));
+      httpMock
+        .match(BUSQUEDA)
+        .forEach((r) => r.flush({ timezone: 'America/Argentina/Cordoba', horarios: [] }));
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('El profesional tiene una clase que se cruza');
+      expect(texto(fixture)).toContain('Clase en otra sede, 10:00 a 11:00');
+      // Del turno o la clase de otra sede no se lee nada: no hay pedido a /turnos/{otro}.
+      httpMock.expectNone((r) => /\/turnos\/(?!7$)\d+$/.test(r.url));
+    });
+
     it('si el horario se fue lo dice, suelta la elección y vuelve a buscar', async () => {
       const fixture = await abierto(turno('RESERVADO'));
 
@@ -1732,6 +1769,71 @@ describe('DetalleDeTurnoPanel', () => {
 
       httpMock.expectNone((r) => r.url === `${SEDE}/disponibilidad/profesionales`);
       expect(texto(fixture)).not.toContain('Profesional:');
+    });
+  });
+
+  describe('reprogramado (contrato 0.155.0)', () => {
+    it('el resumen marca el turno movido con el horario original y el último movimiento', async () => {
+      const fixture = await abierto(
+        turno('CONFIRMADO', {
+          operativo: {
+            estadoOperativo: 'CONFIRMADO',
+            reprogramaciones: 2,
+            reprogramacion: {
+              cantidad: 2,
+              inicioOriginal: '2030-03-01T13:00:00Z',
+              ultimoTipo: 'REPROGRAMACION',
+              ultimoActorNombre: 'Rita Recepción',
+              ultimoMotivo: 'Pedido del paciente',
+            },
+          },
+        }),
+      );
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('↻ Reprogramado 2 veces');
+      expect(contenido).toContain('Original: 01/03/2030');
+      expect(contenido).toContain('Ahora: 04/03/2030');
+      expect(contenido).toContain(
+        'Último: cambio de horario por Rita Recepción — Pedido del paciente',
+      );
+      // Es un indicador: el estado sigue siendo el de siempre.
+      expect(contenido).toContain('Confirmado');
+    });
+
+    it('un turno que nunca se movió no lleva la marca', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+      expect(texto(fixture)).not.toContain('Reprogramado');
+    });
+
+    it('el historial rotula los eventos del turno de origen de un cambio de sede', async () => {
+      const fixture = await abierto(turno('RESERVADO'));
+
+      clic(fixture, 'Ver historial');
+      httpMock.expectOne(`${TURNO}/historial`).flush([
+        {
+          id: 1,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-01T12:00:00Z',
+          turnoId: 5,
+          consultorioId: 8,
+        },
+        {
+          id: 2,
+          tipo: 'RESERVA',
+          ocurridoEn: '2030-03-02T12:00:00Z',
+          turnoId: 7,
+          consultorioId: 3,
+        },
+      ]);
+      httpMock.expectOne(`${TURNO}/recepcion/historial`).flush([]);
+      await asentar(fixture);
+
+      const items = Array.from(raiz(fixture).querySelectorAll('.flujo__historial li')).map(
+        (li) => li.textContent ?? '',
+      );
+      expect(items[0]).toContain('Turno anterior #5');
+      expect(items[1]).not.toContain('Turno anterior');
     });
   });
 
