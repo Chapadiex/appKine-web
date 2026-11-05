@@ -227,10 +227,28 @@
   );
 }
 
+/* Doble disponibilidad entre sedes (0.158.0): borde al costado, no tapa celdas. */
+.grilla__aviso {
+  position: absolute;
+  right: 0;
+  border-right: 3px dashed var(--color-aviso);
+  pointer-events: none;
+}
+
+.grilla__aviso-texto,
 .grilla__fuera-texto {
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
   background: var(--color-superficie);
+}
+
+.grilla__aviso-texto {
+  position: absolute;
+  right: 4px;
+  white-space: nowrap;
+  font-size: var(--tipo-xs);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
 }
 
 /* Un horario libre se ve como tal: con su hora y la invitacion a darlo. */

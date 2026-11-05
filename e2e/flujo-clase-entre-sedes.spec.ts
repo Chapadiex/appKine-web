@@ -13,24 +13,27 @@ import {
   crearPersona,
   fechaLocal,
   ingresarComoPlataforma,
+  sumarDias,
   uriDeProblema,
 } from './support/sembrado';
 import { plataformaDisponible } from './support/sembrado-configuracion';
 
 /**
- * Turnos y clases de la MISMA persona en dos sedes de la organizacion, contra el backend real
- * (contrato 0.156.0).
+ * Turnos, clases y disponibilidad de la MISMA persona en dos sedes de la organizacion, contra el
+ * backend real (contratos 0.156.0 y 0.158.0).
  *
- * <p>La profesional atiende turnos en la sede Centro y da una clase en la sede Norte. Lo que se
- * afirma:
+ * <p>La profesional atiende turnos en la sede Centro (todo el dia, todos los dias) y da una clase en
+ * la sede Norte. Desde 0.158.0 la disponibilidad es central por persona: para dar la clase en Norte
+ * hay que abrirle esa franja alla, y como en Centro ya la ofrece, la apertura pide la sustitucion,
+ * que cierra la franja en Centro. Lo que se afirma:
  *
  * <ol>
- *   <li>La agenda de Centro no deja libre el horario de la clase de Norte: la API lo publica en
- *       `ocupacionesEnOtrasSedes` y la grilla lo dibuja como "Ocupado en otra sede", sin datos.</li>
- *   <li>Reservar ese horario en Centro es 409 `recurso-ocupado` con `conflictoTipo: CLASE` y la sede
- *       de Norte, y un sobreturno tampoco lo pisa.</li>
- *   <li>La carrera: mientras la pantalla de Centro reprograma un turno, Norte pone una clase en el
- *       horario elegido; confirmar dice que choca con una clase, en vez de un error generico.</li>
+ *   <li>Una apertura en Norte superpuesta con el horario de Centro es 409 `bloque-solapado` que
+ *       nombra a Centro; la pantalla de excepciones lo dice y ofrece cerrar la franja alla.</li>
+ *   <li>La agenda de Centro no deja libre el horario de la clase de Norte, y reservarlo es 409 con
+ *       la sede correcta, sin importar cual de los dos controles lo atrape primero.</li>
+ *   <li>La carrera: mientras Centro reprograma un turno, Norte abre el horario elegido y pone una
+ *       clase; confirmar dice con que choca y en que sede, nunca "en otra sede".</li>
  * </ol>
  *
  * <p>La segunda sede necesita un plan sin tope de sedes: lo da la plataforma, como en
@@ -42,6 +45,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
   let centro: Centro;
   let norte: Centro;
   let nombreDeCentro: string;
+  let nombreDeNorte: string;
   let api: ApiAkine;
   /** La administradora con el contexto en Norte: las rutas de una sede exigen esa sede. */
   let apiNorte: ApiAkine;
@@ -61,6 +65,36 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     const enLaSede = new Date(supuesto.toLocaleString('en-US', { timeZone: centro.timezone }));
     const enUtc = new Date(supuesto.toLocaleString('en-US', { timeZone: 'UTC' }));
     return new Date(supuesto.getTime() - (enLaSede.getTime() - enUtc.getTime())).toISOString();
+  }
+
+  /** `HH:mm` local de la sede de un instante UTC. */
+  function horaLocal(valor: string): string {
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: centro.timezone,
+    }).format(new Date(valor));
+  }
+
+  /** `YYYY-MM-DD` local de la sede de un instante UTC. */
+  function fechaDe(valor: string): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: centro.timezone }).format(new Date(valor));
+  }
+
+  /** Apertura de la profesional en Norte para un dia (`fechaHasta` es exclusiva). */
+  function abrirEnNorte(fecha: string, desde: string, hasta: string, sustituir: boolean) {
+    return apiNorte.pedir('POST', enNorte('/excepciones'), {
+      membershipId: norte.profesional.membershipId,
+      tipo: 'APERTURA',
+      motivo: 'AMPLIACION',
+      fechaDesde: fecha,
+      fechaHasta: sumarDias(fecha, 1),
+      horaDesde: desde,
+      horaHasta: hasta,
+      notes: 'Clase en Norte de la profesional de Centro (E2E entre sedes)',
+      ...(sustituir ? { sustituirDisponibilidadSuperpuesta: true } : {}),
+    });
   }
 
   function claseEnNorte(inicio: string, fin: string): Promise<{ id: number }> {
@@ -105,10 +139,11 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
       await http.dispose();
     }
 
+    nombreDeNorte = `Sede Norte ${nonce()}`;
     const alta = await api.pedir(
       'POST',
       `/api/v1/organizations/${centro.organizationId}/consultorios`,
-      { name: `Sede Norte ${nonce()}`, timezone: centro.timezone },
+      { name: nombreDeNorte, timezone: centro.timezone },
       { 'Idempotency-Key': randomUUID() },
     );
     expect(alta.status(), await alta.text()).toBe(201);
@@ -139,20 +174,6 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
       organizationId: centro.organizationId,
       consultorioId: sedeNorte.id,
     });
-    // El horario habitual de una persona no puede pisarse entre sedes (api #189, `bloque-solapado`),
-    // y en Centro atiende todo el dia. Para que dicte clases en Norte a cualquier hora se le abre
-    // una APERTURA puntual, que no valida el cruce entre sedes. Cubre de hoy a 30 dias: la carrera
-    // pone la clase en el primer horario que ofrece la reprogramacion, que puede no caer en `dia`.
-    await apiNorte.exigir('POST', enNorte('/excepciones'), {
-      membershipId,
-      tipo: 'APERTURA',
-      motivo: 'AMPLIACION',
-      fechaDesde: fechaLocal(centro.timezone),
-      fechaHasta: fechaLocal(centro.timezone, 30),
-      horaDesde: '00:00',
-      horaHasta: '23:45',
-      notes: 'Clases en Norte de la profesional de Centro (E2E entre sedes)',
-    });
 
     ofertaCentro = (await crearOferta(api, centro)).id;
     ofertaGrupalNorte = (
@@ -163,7 +184,11 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     ).id;
     personaId = (await crearPersona(api, { conPerfil: true })).id;
 
+    // La clase exige disponibilidad en Norte (0.158.0). En Centro atiende todo el dia, asi que la
+    // apertura de la franja de la clase pide la sustitucion: cierra esa franja en Centro.
     dia = fechaLocal(centro.timezone, 5);
+    const apertura = await abrirEnNorte(dia, '10:00', '11:00', true);
+    expect(apertura.status(), await apertura.text()).toBeLessThan(300);
     await claseEnNorte(instante(dia, '10:00'), instante(dia, '11:00'));
   });
 
@@ -172,7 +197,19 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     await apiNorte?.cerrar();
   });
 
-  test('Centro no ofrece la hora de la clase de Norte, ni con sobreturno', async () => {
+  test('una apertura en Norte sobre el horario de Centro es 409 y nombra a Centro (0.158.0)', async () => {
+    const otroDia = fechaLocal(centro.timezone, 6);
+    const rechazo = await abrirEnNorte(otroDia, '16:00', '17:00', false);
+    expect(rechazo.status(), await rechazo.text()).toBe(409);
+    const problema = (await rechazo.json()) as Record<string, unknown>;
+    expect(problema['type']).toBe(uriDeProblema('bloque-solapado'));
+    expect(problema['conflictoMismaSede']).toBe(false);
+    expect(problema['conflictoConsultorioNombre']).toBe(nombreDeCentro);
+    expect(problema['detail']).toContain(nombreDeCentro);
+    expect((problema['superposiciones'] as unknown[]).length).toBeGreaterThan(0);
+  });
+
+  test('Centro no ofrece la hora de la clase de Norte, y el 409 nombra la sede correcta', async () => {
     // `hasta` es exclusivo: la ventana del dia es [dia, dia + 1).
     const agenda = await api.exigir<{
       ocupacionesEnOtrasSedes?: { membershipId: number; tipo: string; consultorioId: number }[];
@@ -196,10 +233,18 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     });
     expect(rechazo.status(), await rechazo.text()).toBe(409);
     const problema = (await rechazo.json()) as Record<string, unknown>;
-    expect(problema['type']).toBe(uriDeProblema('recurso-ocupado'));
-    expect(problema['conflictoTipo']).toBe('CLASE');
-    expect(problema['conflictoConsultorioId']).toBe(norte.consultorioId);
-    expect(problema['claseEnConflictoId']).toBeGreaterThan(0);
+    // Dos controles lo atrapan: la franja cerrada en Centro por la sustitucion, o la clase de Norte.
+    // Cualquiera que gane, la sede que se nombra es la del conflicto, no "otra sede".
+    if (problema['type'] === uriDeProblema('recurso-ocupado')) {
+      expect(problema['conflictoTipo']).toBe('CLASE');
+      expect(problema['conflictoConsultorioNombre']).toBe(nombreDeNorte);
+      expect(problema['conflictoMismaSede']).toBe(false);
+    } else {
+      expect(problema['type']).toBe(uriDeProblema('slot-no-disponible'));
+      expect(problema['conflictoConsultorioNombre']).toBe(nombreDeCentro);
+      expect(problema['conflictoMismaSede']).toBe(true);
+    }
+    expect(String(problema['detail'])).not.toContain('otra sede');
 
     const sobreturno = await api.pedir('POST', enCentro(`/turnos/ofertas/${ofertaCentro}`), {
       ...reserva,
@@ -212,7 +257,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
   test('la grilla de Centro muestra "Ocupado en otra sede" sin datos de la clase', async ({
     page,
   }) => {
-    await entrarEnCentro(page);
+    await entrarEn(page, nombreDeCentro);
     await navegar(page, `/agenda?fecha=${dia}`);
 
     const fuera = page.locator('.evento--fuera');
@@ -222,7 +267,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     await expect(fuera.first()).not.toContainText('Pilates');
   });
 
-  test('carrera: Norte pone una clase en el horario elegido mientras Centro reprograma', async ({
+  test('carrera: Norte abre el horario elegido y pone una clase mientras Centro reprograma', async ({
     page,
   }) => {
     const turno = await api.exigir<{ id: number }>(
@@ -236,7 +281,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
       },
     );
 
-    await entrarEnCentro(page);
+    await entrarEn(page, nombreDeCentro);
     await navegar(page, `/agenda?fecha=${dia}`);
     await page.getByRole('button', { name: /^15:00 a / }).click();
     const dialogo = page.getByRole('dialog');
@@ -250,8 +295,16 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     };
     expect(horarios.length).toBeGreaterThan(0);
 
-    // Otra recepcion, en Norte, programa una clase justo en el primer horario ofrecido.
-    await claseEnNorte(horarios[0].desde, horarios[0].hasta);
+    // Otra recepcion, en Norte, abre ese horario (cerrandolo en Centro) y programa una clase.
+    const elegido = horarios[0];
+    const apertura = await abrirEnNorte(
+      fechaDe(elegido.desde),
+      horaLocal(elegido.desde),
+      horaLocal(elegido.hasta),
+      true,
+    );
+    expect(apertura.status(), await apertura.text()).toBeLessThan(300);
+    await claseEnNorte(elegido.desde, elegido.hasta);
 
     await dialogo.locator('.horario').first().click();
     const respuesta = page.waitForResponse(
@@ -259,21 +312,78 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     );
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
     expect((await respuesta).status()).toBe(409);
-    await expect(dialogo.getByText(/tiene una clase que se cruza/)).toBeVisible();
-    await expect(dialogo.getByText(/^Clase en /)).toBeVisible();
+    // La causa y la sede reales: el cierre en Centro, o la clase en Norte.
+    await expect(
+      dialogo.getByText(
+        new RegExp(`en la sede (${escapar(nombreDeCentro)}|${escapar(nombreDeNorte)})`),
+      ),
+    ).toBeVisible();
+    await expect(dialogo).not.toContainText('otra sede');
 
     const leido = await api.exigir<{ inicio: string }>('GET', enCentro(`/turnos/${turno.id}`));
     expect(new Date(leido.inicio).getTime()).toBe(new Date(instante(dia, '15:00')).getTime());
   });
 
+  test('la pantalla de excepciones de Norte nombra a Centro y sustituye solo con un click', async ({
+    page,
+  }) => {
+    const otroDia = fechaLocal(centro.timezone, 8);
+    await entrarEn(page, nombreDeNorte);
+    await navegar(page, '/horarios/excepciones');
+    await page.getByRole('button', { name: 'Cargar un cierre o una apertura' }).click();
+    await page.getByLabel('Que se carga').selectOption('APERTURA');
+    await page.getByLabel('Motivo').selectOption('AMPLIACION');
+    await page.getByLabel('A quien alcanza').selectOption(String(norte.profesional.membershipId));
+    await page.getByLabel('Primer día').fill(otroDia);
+    await page.getByLabel('Fin (exclusivo)').fill(sumarDias(otroDia, 1));
+    await page.getByLabel('Día completo').uncheck();
+    await page.getByLabel('Desde (HH:MM)').fill('16:00');
+    await page.getByLabel('Hasta (HH:MM, exclusiva)').fill('17:00');
+
+    const primera = page.waitForResponse(
+      (r) => /\/excepciones$/.test(r.url()) && r.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Cargar la excepción' }).click();
+    expect((await primera).status()).toBe(409);
+
+    const alerta = page.getByRole('alert').filter({ hasText: 'No pudimos cargar la excepción' });
+    await expect(alerta).toContainText(nombreDeCentro);
+    await expect(alerta).not.toContainText('otra sede');
+    const sustituir = page.getByRole('button', {
+      name: `Cerrar esa franja en ${nombreDeCentro} y abrir acá`,
+    });
+    await expect(sustituir).toBeVisible();
+
+    const segunda = page.waitForResponse(
+      (r) => /\/excepciones$/.test(r.url()) && r.request().method() === 'POST',
+    );
+    await sustituir.click();
+    const respuesta = await segunda;
+    expect(respuesta.request().postDataJSON()).toEqual(
+      expect.objectContaining({ sustituirDisponibilidadSuperpuesta: true }),
+    );
+    expect(respuesta.status()).toBeLessThan(300);
+    const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
+    await expect(avisos.getByText('Apertura cargada')).toBeVisible();
+
+    // En Centro quedo el cierre de esa franja, a nombre de la misma profesional.
+    const cierres = await api.exigir<{ tipo?: string; membershipId?: number }[]>(
+      'GET',
+      enCentro(`/excepciones?desde=${otroDia}&hasta=${sumarDias(otroDia, 1)}`),
+    );
+    expect(cierres).toContainEqual(
+      expect.objectContaining({ tipo: 'CIERRE', membershipId: centro.profesional.membershipId }),
+    );
+  });
+
   /**
-   * Con dos sedes el selector pregunta: se elige Centro por su nombre, anclado al principio porque
-   * la opcion de Norte tambien lo nombra (la organizacion se llama como la sede del alta).
+   * Con dos sedes el selector pregunta: se elige la sede por su nombre, anclado al principio porque
+   * la opcion de Norte tambien nombra a la organizacion (que se llama como la sede del alta).
    */
-  async function entrarEnCentro(page: Page): Promise<void> {
+  async function entrarEn(page: Page, sede: string): Promise<void> {
     await ingresarPorPantalla(page, centro.emailAdmin);
     await expect(page).toHaveURL(/\/seleccionar-contexto/, { timeout: 45_000 });
-    await page.getByRole('button', { name: new RegExp(`^${escapar(nombreDeCentro)}`) }).click();
+    await page.getByRole('button', { name: new RegExp(`^${escapar(sede)}`) }).click();
     await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 45_000 });
   }
 });

@@ -23,7 +23,7 @@ export interface AgendaOperativa {
     bloqueos?: Array<BloqueoEnAgenda>;
     clases?: Array<ClaseEnAgenda>;
     /**
-     * Turnos y clases de la misma persona que ya se pisan (datos anteriores a la regla entre sedes). Se calculan al leer; nada se modifica.
+     * Conflictos ya guardados: turno y clase de la misma persona que se pisan, clase con un instructor en cierre y doble oferta entre sedes (datos anteriores a la regla entre sedes). Se calculan al leer; nada se modifica.
      */
     conflictos?: Array<ConflictoDeAgenda>;
     desde?: string;

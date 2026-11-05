@@ -335,6 +335,8 @@ describe('NuevoTurnoPanel', () => {
           conflictoTipo: 'CLASE',
           claseEnConflictoId: 55,
           conflictoConsultorioId: 8,
+          conflictoConsultorioNombre: 'Norte',
+          conflictoMismaSede: false,
           conflictoInicio: LAS_9,
           conflictoFin: '2030-03-04T13:00:00Z',
         },
@@ -354,7 +356,9 @@ describe('NuevoTurnoPanel', () => {
 
       httpMock.expectNone((r) => r.url.startsWith(`${SEDE}/turnos/`));
       expect(texto(fixture)).toContain('El profesional tiene una clase en ese horario');
-      expect(texto(fixture)).toContain('Clase en otra sede, 09:00 a 10:00');
+      // La sede la nombra el servidor, no se supone.
+      expect(texto(fixture)).toContain('Clase en la sede Norte, 09:00 a 10:00');
+      expect(texto(fixture)).not.toContain('otra sede');
       expect(boton(fixture, 'Crear sobreturno')).toBeUndefined();
       expect(boton(fixture, 'Agregar a lista de espera')).toBeDefined();
     });
@@ -504,7 +508,9 @@ describe('NuevoTurnoPanel', () => {
     it('el aviso dice con qué choca y Volver cierra el sobreturno', async () => {
       const fixture = await horarioOcupado();
 
-      expect(texto(fixture)).toContain('Se cruza con otra actividad del profesional de');
+      expect(texto(fixture)).toContain(
+        'Se cruza con otra actividad del profesional: Turno, 12:00 a',
+      );
       boton(fixture, 'Crear sobreturno')?.click();
       httpMock.expectOne(`${SEDE}/turnos/99`).flush('', { status: 404, statusText: 'N' });
       await asentar(fixture);

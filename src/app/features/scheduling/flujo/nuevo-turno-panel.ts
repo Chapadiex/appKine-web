@@ -21,6 +21,8 @@ import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
 import { ReservarTurnoOrigenEnum } from '../../../api/generated/model/reservar-turno';
 import { SesionesDePrestacion } from '../../../api/generated/model/sesiones-de-prestacion';
 import { ValidacionDeHorario } from '../../../api/generated/model/validacion-de-horario';
+import { ProblemDetailConflictoTipoEnum } from '../../../api/generated/model/problem-detail';
+import { describirConflicto } from '../../../core/models/conflicto-de-agenda';
 import { ContextoDeTurno } from '../../../core/models/contexto-de-turno';
 import { PERMISO_TURNO_SOBRETURNO } from '../../../core/models/permisos';
 import { AvisosStore } from '../../../core/services/avisos.store';
@@ -308,7 +310,7 @@ export class NuevoTurnoPanel implements OnInit {
   });
 
   /**
-   * El horario choca con una clase del profesional, aca o en otra sede (contrato 0.156.0). Una clase
+   * El horario choca con una clase del profesional, en la sede que sea (contrato 0.156.0). Una clase
    * no admite sobreturno: el backend responde 409 igual, asi que no se ofrece.
    */
   protected readonly chocaConClase = computed(
@@ -321,10 +323,41 @@ export class NuevoTurnoPanel implements OnInit {
     return otra !== undefined && otra !== this.tenant.consultorioId();
   });
 
-  /** "Clase en Sede Norte, 10:00 a 11:00": con que choca el rechazo, o vacio. */
+  /**
+   * "Clase en la sede Norte, 10:00 a 11:00": con que choca la validacion previa, o vacio. La sede sale
+   * de los contextos de la cuenta; sin nombre queda la franja sola, nunca un "en otra sede" supuesto.
+   */
+  protected readonly conflictoDeLaValidacion = computed(() => {
+    const validacion = this.validacion();
+    const inicio = validacion?.conflictoInicio;
+    if (validacion === null || inicio === undefined) {
+      return '';
+    }
+    const fin = validacion.conflictoFin;
+    return (
+      describirConflicto(
+        {
+          conflictoTipo:
+            validacion.conflictoTipo === 'CLASE'
+              ? ProblemDetailConflictoTipoEnum.CLASE
+              : ProblemDetailConflictoTipoEnum.TURNO,
+          conflictoConsultorioId: validacion.conflictoConsultorioId,
+          conflictoInicio: inicio,
+          conflictoFin: fin,
+        },
+        {
+          hora: (instante) => this.hora(instante),
+          consultorioActual: this.tenant.consultorioId(),
+          nombreDeSede: (id) => nombreDeSede(this.session.contextos(), id),
+        },
+      ) || `de ${this.hora(inicio)}${fin === undefined ? '' : ` a ${this.hora(fin)}`}`
+    );
+  });
+
+  /** "Clase en la sede Norte, 10:00 a 11:00": con que choca el rechazo, o vacio. */
   protected readonly conflictoDelRechazo = computed(() => {
     const fallo = this.rechazo();
-    if (fallo?.causa !== 'recurso-ocupado') {
+    if (fallo === null) {
       return '';
     }
     return detalleDelConflicto(
@@ -334,10 +367,6 @@ export class NuevoTurnoPanel implements OnInit {
       (instante) => this.hora(instante),
     );
   });
-
-  protected nombreDeSede(consultorioId: number | undefined): string {
-    return nombreDeSede(this.session.contextos(), consultorioId);
-  }
 
   ngOnInit(): void {
     const contexto = this.contexto();

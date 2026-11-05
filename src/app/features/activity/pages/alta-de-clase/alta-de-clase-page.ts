@@ -261,7 +261,11 @@ export class AltaDeClasePage {
         },
         error: (error: unknown) => {
           this.enviando.set(false);
-          const traducido = traducirErrorActividad(error, this.tenant.consultorioId());
+          const traducido = traducirErrorActividad(
+            error,
+            this.tenant.consultorioId(),
+            this.diaDeLaSede.zona(),
+          );
           if (traducido.accion === 'reintentar-con-clave-nueva') {
             this.clave = nuevaClaveDeIntento();
           }

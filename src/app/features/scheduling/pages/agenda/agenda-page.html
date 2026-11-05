@@ -367,6 +367,18 @@
                 }
               </div>
             }
+            <!-- Disponible a la vez en otra sede (0.158.0): una marca, sin accion ni datos. -->
+            @for (aviso of columna.avisos ?? []; track aviso.inicioMin) {
+              <div
+                class="grilla__aviso"
+                [style.top.px]="arriba(aviso.inicioMin)"
+                [style.height.px]="(aviso.finMin - aviso.inicioMin) * PX_POR_MINUTO"
+                [title]="tituloDeAviso(aviso)"
+              >
+                <span class="grilla__aviso-texto">{{ aviso.texto }}</span>
+                <span class="visualmente-oculto">{{ tituloDeAviso(aviso) }}</span>
+              </div>
+            }
 
             <ng-container *akinePermiso="PERMISO_TURNO_MANAGE">
               @for (

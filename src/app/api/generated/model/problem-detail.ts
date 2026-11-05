@@ -10,15 +10,101 @@
 
 
 export interface ProblemDetail { 
+    /**
+     * conflictoTipo CLASE: la clase.
+     */
+    claseEnConflictoId?: number;
+    /**
+     * bloqueo-con-turnos-afectados: claseId, instructorMembershipId (ausente en un cierre de sede), inicio y fin de cada clase afectada. Sin participantes.
+     */
+    clases?: Array<object>;
+    /**
+     * bloqueo-con-turnos-afectados: cuantas clases quedan sin instructor.
+     */
+    clasesAfectadas?: number;
+    /**
+     * Sede donde esta el conflicto.
+     */
+    conflictoConsultorioId?: number;
+    /**
+     * Nombre de la sede del conflicto.
+     */
+    conflictoConsultorioNombre?: string;
+    /**
+     * bloque-solapado contra una apertura: el dia que choca.
+     */
+    conflictoFecha?: string;
+    /**
+     * Fin (exclusivo) de la franja en conflicto.
+     */
+    conflictoFin?: string;
+    /**
+     * bloque-solapado: hora local de inicio del horario que choca (HH:mm).
+     */
+    conflictoHoraDesde?: string;
+    /**
+     * bloque-solapado: hora local de fin del horario que choca (HH:mm, 24:00).
+     */
+    conflictoHoraHasta?: string;
+    /**
+     * Inicio de la franja en conflicto.
+     */
+    conflictoInicio?: string;
+    /**
+     * true si el conflicto es en la sede de la operacion.
+     */
+    conflictoMismaSede?: boolean;
+    /**
+     * bloque-solapado: si lo que choca es un bloque habitual o una apertura.
+     */
+    conflictoOrigen?: ProblemDetailConflictoOrigenEnum;
+    /**
+     * Causa del conflicto de agenda: TURNO, CLASE (principal o adicional), BLOQUEO o AUSENCIA del profesional, CIERRE_DE_SEDE, o DISPONIBILIDAD (su horario en otra sede).
+     */
+    conflictoTipo?: ProblemDetailConflictoTipoEnum;
     detail?: string;
     /**
      * Solo en un 400 validation-error: el primer mensaje de cada campo rechazado, por ruta del campo (motivo, items[0].importe). Cada mensaje nombra su campo y se puede mostrar tal cual.
      */
     errors?: { [key: string]: string; };
+    /**
+     * BLOQUEO, AUSENCIA o CIERRE_DE_SEDE: el cierre.
+     */
+    excepcionEnConflictoId?: number;
     instance?: string;
+    /**
+     * En una clase: el instructor (principal o adicional) que choca.
+     */
+    instructorMembershipId?: number;
+    /**
+     * En una clase: nombre del instructor que choca.
+     */
+    instructorNombre?: string;
     properties?: { [key: string]: any | null; };
     status?: number;
+    /**
+     * bloque-solapado de una apertura: cada franja superpuesta con su horario en otra sede, con las mismas claves conflicto*.
+     */
+    superposiciones?: Array<object>;
     title?: string;
+    /**
+     * conflictoTipo TURNO: el turno.
+     */
+    turnoEnConflictoId?: number;
     type?: string;
 }
+export enum ProblemDetailConflictoOrigenEnum {
+    BLOQUE = 'BLOQUE',
+    APERTURA = 'APERTURA'
+};
+export enum ProblemDetailConflictoTipoEnum {
+    TURNO = 'TURNO',
+    CLASE = 'CLASE',
+    BLOQUEO = 'BLOQUEO',
+    AUSENCIA = 'AUSENCIA',
+    CIERRE_DE_SEDE = 'CIERRE_DE_SEDE',
+    DISPONIBILIDAD = 'DISPONIBILIDAD'
+};
+
+
 

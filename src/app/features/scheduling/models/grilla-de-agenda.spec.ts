@@ -1,3 +1,7 @@
+import {
+  ConflictoDeAgendaCausaEnum,
+  ConflictoDeAgendaTipoEnum,
+} from '../../../api/generated/model/conflicto-de-agenda';
 import { AgendaOperativa } from '../../../api/generated/model/agenda-operativa';
 import { OcupacionEnOtraSedeTipoEnum } from '../../../api/generated/model/ocupacion-en-otra-sede';
 import { OperativoDeTurnoEstadoOperativoEnum } from '../../../api/generated/model/operativo-de-turno';
@@ -8,6 +12,8 @@ import {
   instanteDeHoraLocal,
   minutosEnZona,
   rangoDeHoras,
+  MARCA_CLASE_EN_CIERRE,
+  MARCA_DISPONIBILIDAD_DOBLE,
   turnosQueChocanConClase,
 } from './grilla-de-agenda';
 
@@ -263,6 +269,51 @@ describe('grilla de la agenda', () => {
       expect(turnosQueChocanConClase(null).size).toBe(0);
       const [, luis] = columnas(agenda);
       expect(luis.eventos.find((e) => e.tipo === 'clase')?.detalle).toContain('Choca con un turno');
+    });
+
+    it('0.158.0: clase con instructor en cierre y doble disponibilidad se marcan sin tocar el filtro', () => {
+      const libre = turno('09:00', '09:30');
+      const agenda: AgendaOperativa = {
+        ...AGENDA,
+        turnos: [libre],
+        clases: [{ claseId: 91, profesionalId: LUIS, inicio: a('10:00'), fin: a('11:00') }],
+        conflictos: [
+          {
+            tipo: ConflictoDeAgendaTipoEnum.CLASE_EN_CIERRE,
+            membershipId: LUIS,
+            claseId: 91,
+            excepcionId: 4,
+            causa: ConflictoDeAgendaCausaEnum.AUSENCIA,
+            inicio: a('10:00'),
+            fin: a('11:00'),
+          },
+          {
+            tipo: ConflictoDeAgendaTipoEnum.DISPONIBILIDAD_DOBLE,
+            membershipId: ANA,
+            otraSedeConsultorioId: 8,
+            inicio: a('09:00'),
+            fin: a('10:00'),
+          },
+        ],
+      };
+
+      // Ninguno es un turno que choca con una clase: "A reubicar" no cambia.
+      expect(turnosQueChocanConClase(agenda).size).toBe(0);
+      const [ana, luis] = columnas(agenda);
+      const clase = luis.eventos.find((e) => e.tipo === 'clase')?.detalle ?? '';
+      expect(clase).toContain(MARCA_CLASE_EN_CIERRE);
+      expect(clase).not.toContain('Choca con un turno');
+      expect(ana.avisos).toEqual([
+        {
+          inicioMin: min('09:00'),
+          finMin: min('10:00'),
+          texto: MARCA_DISPONIBILIDAD_DOBLE,
+          otraSedeConsultorioId: 8,
+        },
+      ]);
+      // La marca no ocupa celdas: el horario sigue ofreciendose.
+      expect(horasDeLasCeldas(ana)).toContain(min('09:30'));
+      expect(luis.avisos).toEqual([]);
     });
   });
 

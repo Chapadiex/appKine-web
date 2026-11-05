@@ -1,4 +1,6 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { conflictoDelProblema, sedeDelConflicto } from '../../../core/models/conflicto-de-agenda';
+import { formatearFecha } from '../../../shared/utils/instantes';
 import {
   MensajeTraducido,
   conDetalle,
@@ -152,7 +154,7 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
 function mensajeDeSolapamiento(conflicto: BloqueEnConflicto): string {
   if (conflicto.horaDesde === null || conflicto.horaHasta === null) {
     return (
-      'El horario que pediste se pisa con otro bloque activo de este profesional en esta sede. ' +
+      'El horario que pediste se pisa con otro bloque activo de este profesional. ' +
       'Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la hora de fin es ' +
       'exclusiva.'
     );
@@ -166,6 +168,35 @@ function mensajeDeSolapamiento(conflicto: BloqueEnConflicto): string {
     `${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}, que quedo marcado en la grilla. ` +
     'Corregi uno de los dos. Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la ' +
     'hora de fin es exclusiva: la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven.'
+  );
+}
+
+/**
+ * El bloque choca con la disponibilidad de la misma persona en otra sede (0.158.0): su horario
+ * habitual o una apertura futura. Sin nombre de sede, el `detail` del servidor, que ya la redacta.
+ */
+function mensajeEntreSedes(error: AkineHttpError): string {
+  const conflicto = conflictoDelProblema(error);
+  const sede = sedeDelConflicto(conflicto, {});
+  if (sede === '') {
+    return conDetalle(error, MENSAJE_GENERICO);
+  }
+  const que =
+    conflicto.conflictoOrigen === 'APERTURA' ? 'una apertura de agenda' : 'horario de atención';
+  const dia = error.numeroDeExtension('diaSemana');
+  const nombreDelDia = dia === null ? '' : etiquetaDeDia(dia).toLowerCase();
+  const cuando =
+    conflicto.conflictoFecha !== undefined
+      ? ` el ${formatearFecha(conflicto.conflictoFecha)}`
+      : nombreDelDia === ''
+        ? ''
+        : ` los ${nombreDelDia}${nombreDelDia.endsWith('s') ? '' : 's'}`;
+  const desde = conflicto.conflictoHoraDesde;
+  const franja =
+    desde === undefined ? '' : ` de ${rangoHorario(desde, conflicto.conflictoHoraHasta ?? '')}`;
+  return (
+    `El profesional ya tiene ${que} en la sede ${sede}${cuando}${franja}. No puede ofrecer ` +
+    'disponibilidad en dos sedes a la vez: ajustá uno de los dos horarios.'
   );
 }
 
@@ -208,6 +239,11 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
     case 'missing-tenant-context':
       return base(MENSAJE_SIN_CONTEXTO, 'sin-contexto');
     case 'bloque-solapado': {
+      // Desde 0.158.0 el choque puede ser con el horario o una apertura de la misma persona en OTRA
+      // sede: se nombra la sede y la franja, y no se marca ninguna fila de esta grilla.
+      if (error.extension('conflictoMismaSede') === false) {
+        return { ...base(mensajeEntreSedes(error), 'solapado'), conflicto: null };
+      }
       const conflicto = conflictoDe(error);
       return { ...base(mensajeDeSolapamiento(conflicto), 'solapado'), conflicto };
     }

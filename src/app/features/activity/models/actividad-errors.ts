@@ -1,4 +1,6 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { conflictoDelProblema, describirConflicto } from '../../../core/models/conflicto-de-agenda';
+import { horaEnZona } from './etiquetas-de-asistencia';
 
 /**
  * Errores de las clases grupales y sus inscripciones (M28, AKINE-08.01 y 08.02).
@@ -124,13 +126,15 @@ export function errorSinContextoDeActividad(): ErrorActividad {
 /**
  * Traduce un error de cualquier operacion de clases o inscripciones.
  *
- * <p>`consultorioActual` es la sede desde la que se opera: con ella, un `recurso-ocupado` que
- * choca con algo de otra sede lo dice (contrato 0.156.0, `conflictoConsultorioId`). Sin ella se
- * describe el choque sin nombrar sede.
+ * <p>`consultorioActual` es la sede desde la que se opera y `zona` su huso: con las dos, un
+ * `recurso-ocupado` o un horario no disponible por un cierre nombran al instructor que choca
+ * (principal o adicional), la causa, la sede y la franja (contrato 0.158.0). Sin zona, la franja la
+ * redacta el `detail` del servidor.
  */
 export function traducirErrorActividad(
   error: unknown,
   consultorioActual: number | null = null,
+  zona = '',
 ): ErrorActividad {
   if (!(error instanceof AkineHttpError)) {
     return armar('otro', 'ninguna', MENSAJE_GENERICO);
@@ -169,9 +173,17 @@ export function traducirErrorActividad(
         motivo,
       );
     case 'recurso-ocupado':
-      return armar('recurso-ocupado', 'corregir', mensajeDeRecurso(error, consultorioActual));
-    case 'slot-no-disponible':
-      return armar('horario-no-disponible', 'corregir', MENSAJE_HORARIO, motivo);
+      return armar(
+        'recurso-ocupado',
+        'corregir',
+        mensajeDelConflicto(error, consultorioActual, zona) ?? mensajeDeRecurso(error),
+      );
+    case 'slot-no-disponible': {
+      const conflicto = mensajeDelConflicto(error, consultorioActual, zona);
+      return conflicto === null
+        ? armar('horario-no-disponible', 'corregir', MENSAJE_HORARIO, motivo)
+        : armar('horario-no-disponible', 'corregir', conflicto);
+    }
     case 'concurrent-modification':
       return armar('version-vieja', 'recargar', MENSAJE_VERSION_VIEJA);
     case 'idempotency-key-conflict':
@@ -222,19 +234,45 @@ function mensajeDeCompleta(error: AkineHttpError): string {
   return `${MENSAJE_COMPLETA} Ocupados ${ocupados ?? efectiva} de ${efectiva}.`;
 }
 
-function mensajeDeRecurso(error: AkineHttpError, consultorioActual: number | null): string {
+/**
+ * Con que choca un instructor (0.158.0), en una frase: "El instructor Ana Paz no está disponible:
+ * Clase en la sede Norte, 10:00 a 11:00. Elegí otro horario u otro instructor." Sale de las
+ * extensiones; si no alcanzan para nombrar la sede o la franja, del `detail` del servidor, que ya
+ * la redacta. `null` si el error no trae `conflictoTipo`. Nunca datos de participantes.
+ */
+function mensajeDelConflicto(
+  error: AkineHttpError,
+  consultorioActual: number | null,
+  zona: string,
+): string | null {
+  const { instructorNombre, ...conflicto } = conflictoDelProblema(error);
+  if (conflicto.conflictoTipo === undefined || textoDeExtension(error, 'recurso') === 'espacio') {
+    return null;
+  }
+  const linea =
+    zona === ''
+      ? ''
+      : describirConflicto(conflicto, {
+          hora: (instante) => horaEnZona(instante, zona),
+          consultorioActual,
+        });
+  if (linea === '') {
+    return error.detalle ?? mensajeDeRecurso(error);
+  }
+  const quien =
+    instructorNombre === undefined ? 'El profesional' : `El instructor ${instructorNombre}`;
+  return `${quien} no está disponible: ${linea}. Elegí otro horario u otro instructor.`;
+}
+
+/** Sin extensiones de conflicto: lo que se pueda decir con `recurso` y `conflictoTipo`. */
+function mensajeDeRecurso(error: AkineHttpError): string {
   const recurso = textoDeExtension(error, 'recurso');
   const tipo = textoDeExtension(error, 'conflictoTipo');
-  const sede = error.numeroDeExtension('conflictoConsultorioId');
-  const enOtraSede =
-    consultorioActual !== null && sede !== null && sede !== consultorioActual
-      ? ' en otra sede'
-      : '';
   if (recurso === 'profesional' && tipo === 'CLASE') {
-    return `El profesional ya da otra clase${enOtraSede} que se cruza con ese horario. Elegí otro horario u otro profesional.`;
+    return 'El profesional ya da otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';
   }
   if (recurso === 'profesional' && tipo === 'TURNO') {
-    return `El profesional ya tiene un turno${enOtraSede} que se cruza con ese horario. Elegí otro horario u otro profesional.`;
+    return 'El profesional ya tiene un turno que se cruza con ese horario. Elegí otro horario u otro profesional.';
   }
   if (recurso === 'profesional') {
     return 'El profesional ya tiene un turno u otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';

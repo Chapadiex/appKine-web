@@ -354,6 +354,31 @@
           @if (errorAccion(); as mensaje) {
             <app-alerta tipo="error" titulo="No pudimos cargar la excepción">
               <p>{{ mensaje }}</p>
+              <!--
+                Apertura superpuesta con el horario de la misma persona en otra sede (0.158.0): se
+                dice donde y cuando, y la sustitucion es una accion explicita.
+              -->
+              @if (superposicion() !== null) {
+                @if (lineasDeLaSuperposicion().length > 0) {
+                  <ul class="lista-datos" aria-label="Franjas que se superponen">
+                    @for (linea of lineasDeLaSuperposicion(); track $index) {
+                      <li>{{ linea }}</li>
+                    }
+                  </ul>
+                }
+                <p class="alerta__acciones">
+                  <button
+                    id="alta-excepcion-sustituir"
+                    type="button"
+                    class="boton"
+                    [disabled]="enviando()"
+                    (click)="sustituir()"
+                  >
+                    Cerrar esa franja en
+                    {{ sedesDeLaSuperposicion() || 'la sede donde ya atiende' }} y abrir acá
+                  </button>
+                </p>
+              }
             </app-alerta>
           }
 
