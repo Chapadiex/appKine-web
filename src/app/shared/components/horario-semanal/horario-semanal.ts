@@ -28,7 +28,7 @@ const MODELOS: readonly {
   },
   {
     id: 'ls',
-    rotulo: 'Lunes a sábado · 8 a 20',
+    rotulo: 'Lunes a viernes 8 a 20 · sábado 8 a 13',
     franjas: [
       ...[1, 2, 3, 4, 5].map((dia) => ({ diaSemana: dia, horaDesde: '08:00', horaHasta: '20:00' })),
       { diaSemana: 6, horaDesde: '08:00', horaHasta: '13:00' },
