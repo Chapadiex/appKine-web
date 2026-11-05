@@ -767,3 +767,113 @@
 .ficha-en-columnas {
   margin-bottom: var(--esp-8);
 }
+
+/* --- Alta de colaborador: alcance como tarjetas elegibles ------------------------------- */
+
+/*
+ * El fieldset es un panel con cabecera adentro. `float: left` sobre el legend lo saca de la linea
+ * del borde (el unico modo de ponerlo dentro del panel sin perder la semantica del grupo), y el
+ * `clear` de las opciones lo devuelve al flujo.
+ */
+.alcance {
+  margin: 0 0 var(--esp-7);
+  padding: var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.alcance__cabecera {
+  float: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+}
+
+.alcance__insignia {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-size: var(--tipo-lg);
+}
+
+.alcance__textos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.alcance__titulo {
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+
+.alcance__detalle {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.alcance__opciones {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+/* La tarjeta: borde de CONTROL porque es lo unico que la delimita (WCAG 1.4.11). */
+.alcance__opcion {
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.alcance__opcion:has(input:checked) {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+}
+
+.alcance__opcion:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.alcance__eleccion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-6);
+  cursor: pointer;
+}
+
+.alcance__eleccion input {
+  flex-shrink: 0;
+  margin: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* La sede va adentro de la tarjeta que la pide, sobre fondo propio para que el control se lea. */
+.alcance__sede {
+  margin: 0 var(--esp-6) var(--esp-6);
+}
+
+.alcance__sede select {
+  background: var(--color-superficie);
+}
+
+@container (max-width: 40rem) {
+  .alcance__opciones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

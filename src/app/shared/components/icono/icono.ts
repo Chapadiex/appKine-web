@@ -34,7 +34,10 @@ export type NombreDeIcono =
   | 'exito'
   | 'info'
   | 'advertencia'
-  | 'error';
+  | 'error'
+  | 'alcance'
+  | 'organizacion'
+  | 'edificio';
 
 /**
  * Icono SVG en linea (UX-01, decision §9.3 del plan: sin libreria). Trazos propios de 24 px.
@@ -170,6 +173,20 @@ export type NombreDeIcono =
         @case ('error') {
           <circle cx="12" cy="12" r="9.5" />
           <path d="M9 9l6 6M15 9l-6 6" />
+        }
+        @case ('alcance') {
+          <path d="M12 3.5l8.5 4.5L12 12.5 3.5 8z" />
+          <path d="M3.5 12l8.5 4.5 8.5-4.5M3.5 16l8.5 4.5 8.5-4.5" />
+        }
+        @case ('organizacion') {
+          <circle cx="12" cy="6" r="2.5" />
+          <circle cx="5.5" cy="17" r="2.5" />
+          <circle cx="18.5" cy="17" r="2.5" />
+          <path d="M12 8.5v4M12 12.5l-4.5 2.7M12 12.5l4.5 2.7" />
+        }
+        @case ('edificio') {
+          <path d="M4.5 20.5h15M6 20.5V4.5h12v16" />
+          <path d="M9 8h2M13 8h2M9 11.5h2M13 11.5h2M9 15h2M13 15h2M10.5 20.5v-3h3v3" />
         }
       }
     </svg>
