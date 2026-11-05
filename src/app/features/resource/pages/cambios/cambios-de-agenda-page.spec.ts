@@ -73,7 +73,7 @@ const CIERRE = {
     motivo: 'FERIADO',
     fechaDesde: '2026-11-20',
     ultimoDia: '2026-11-21',
-    vigente: false,
+    vigente: true,
     conHorarioHabitual: true,
     turnosEnElPeriodo: 3,
     turnosPendientes: 2,
@@ -258,7 +258,7 @@ describe('CambiosDeAgendaPage', () => {
     expect(contenido).toContain(
       'Del 20 de noviembre de 2026 al 21 de noviembre de 2026 · día completo',
     );
-    expect(contenido).toContain('Revocado');
+    expect(contenido).toContain('Vigente');
     expect(contenido).toContain('Feriado');
     expect(contenido).toContain('3 turnos en el período · 2 a reubicar · 1 cancelado');
 

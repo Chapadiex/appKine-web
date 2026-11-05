@@ -119,6 +119,9 @@ describe('cambios de la agenda', () => {
     expect(
       turnosDelCierre({ turnosEnElPeriodo: 4, turnosPendientes: 2, turnosCancelados: 2 }),
     ).toBe('4 turnos en el período · 2 a reubicar · 2 cancelados');
+    expect(turnosDelCierre({ turnosEnElPeriodo: 1, turnosPendientes: 1, vigente: false })).toBe(
+      '1 turno en el período',
+    );
   });
 
   it('reubicar lleva a la agenda en a reubicar solo si queda algo pendiente', () => {
@@ -132,6 +135,7 @@ describe('cambios de la agenda', () => {
       { fecha: '2026-11-20', estado: 'A_REUBICAR', vista: 'semana' },
     );
     expect(consultaDeReubicacion({ cierreDeSede: { ...cierre, turnosPendientes: 0 } })).toBeNull();
+    expect(consultaDeReubicacion({ cierreDeSede: { ...cierre, vigente: false } })).toBeNull();
     expect(consultaDeReubicacion({ cierreDeSede: { ...cierre, fechaDesde: 'x' } })).toBeNull();
     expect(consultaDeReubicacion({})).toBeNull();
   });

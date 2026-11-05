@@ -214,10 +214,11 @@ export function turnosDelCierre(cierre: CierreDeSedeEnHistorial): string | null 
   if (total === 0) {
     return null;
   }
-  const partes = [
-    `${total} ${total === 1 ? 'turno' : 'turnos'} en el período`,
-    `${cierre.turnosPendientes ?? 0} a reubicar`,
-  ];
+  const partes = [`${total} ${total === 1 ? 'turno' : 'turnos'} en el período`];
+  // Un cierre revocado ya no deja turnos fuera de disponibilidad: no hay nada que reubicar por él.
+  if (cierre.vigente !== false) {
+    partes.push(`${cierre.turnosPendientes ?? 0} a reubicar`);
+  }
   const cancelados = cierre.turnosCancelados ?? 0;
   if (cancelados > 0) {
     partes.push(`${cancelados} ${cancelados === 1 ? 'cancelado' : 'cancelados'}`);
@@ -244,6 +245,7 @@ export function consultaDeReubicacion(
   const cierre = cambio.cierreDeSede;
   if (
     cierre === undefined ||
+    cierre.vigente === false ||
     (cierre.turnosPendientes ?? 0) === 0 ||
     cierre.fechaDesde === undefined ||
     !esFechaDeCalendario(cierre.fechaDesde)
