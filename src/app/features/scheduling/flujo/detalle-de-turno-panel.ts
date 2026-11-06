@@ -290,13 +290,13 @@ export class DetalleDeTurnoPanel implements OnInit {
   });
 
   /**
-   * Con que choco una reprogramacion o un traslado rechazados con `recurso-ocupado`: "Clase en Sede
-   * Norte, 10:00 a 11:00" (contrato 0.156.0). La carrera entre leer los horarios y confirmar es real:
+   * Con que choco una reprogramacion o un traslado rechazados por un conflicto: "Clase en la sede
+   * Norte, 10:00 a 11:00" (contratos 0.156.0 y 0.158.0). La carrera entre leer los horarios y confirmar es real:
    * otra sede puede haber puesto una clase en el medio.
    */
   protected readonly conflictoDelError = computed(() => {
     const fallo = this.error();
-    if (fallo?.causa !== 'recurso-ocupado') {
+    if (fallo === null) {
       return '';
     }
     return detalleDelConflicto(

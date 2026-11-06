@@ -2,7 +2,7 @@ import { Page } from '@playwright/test';
 
 import { expect, ingresar, navegar, respuestaDe, test } from './support/agenda-real';
 import { ClaseSembrada, claseConInscriptos } from './support/sembrado-asistencia';
-import { ApiAkine, Centro, crearOferta, fechaLocal } from './support/sembrado';
+import { ApiAkine, Centro, crearOferta, fechaLocal, sumarDias } from './support/sembrado';
 
 /**
  * E2E de los honorarios por clase (DP-38, appKine-api #164) y del servicio en el egreso (DP-39,
@@ -103,6 +103,23 @@ test.describe('Honorarios por clase contra el backend real', () => {
     await expect(page.getByRole('row').filter({ hasText: '1500' })).toContainText('Rige hoy');
 
     // ---- 2. Dos instructores adicionales en la clase (sin principal: la oferta no lo exige).
+    // Desde 0.158.0 un adicional que se suma a una clase PROGRAMADA tiene que atender en esta sede a
+    // esa hora, como el principal. La administradora no tiene horario: se le abre ese dia solo.
+    const apertura = await api.pedir(
+      'POST',
+      `/api/v1/consultorios/${centro.consultorioId}/excepciones`,
+      {
+        membershipId: administradora.id,
+        tipo: 'APERTURA',
+        motivo: 'AMPLIACION',
+        fechaDesde: clase.fecha,
+        fechaHasta: sumarDias(clase.fecha, 1),
+        horaDesde: '09:00',
+        horaHasta: '13:00',
+        notes: 'La administradora da la clase (E2E de honorarios)',
+      },
+    );
+    expect(apertura.status(), await apertura.text()).toBeLessThan(300);
     await navegar(page, `/clases/${clase.id}`);
     const instructores = page.getByRole('region', { name: 'Instructores' });
     await expect(instructores).toContainText('Sin instructor principal');
@@ -112,7 +129,7 @@ test.describe('Honorarios por clase contra el backend real', () => {
     const reemplazo = respuestaDe(page, 'PUT', /\/clases\/\d+\/instructores$/);
     await page.getByRole('button', { name: 'Guardar los instructores' }).click();
     const respuestaReemplazo = await reemplazo;
-    expect(respuestaReemplazo.status()).toBe(200);
+    expect(respuestaReemplazo.status(), await respuestaReemplazo.text()).toBe(200);
     expect(respuestaReemplazo.request().postDataJSON()).toEqual({
       adicionales: [profesional.id, administradora.id].sort((a, b) => a - b),
     });

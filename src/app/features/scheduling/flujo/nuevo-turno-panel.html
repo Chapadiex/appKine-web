@@ -173,19 +173,11 @@
               tipo="advertencia"
               [titulo]="resultado.motivo || 'Ese horario no se puede reservar'"
             >
-              @if (resultado.conflictoInicio) {
+              @if (conflictoDeLaValidacion(); as detalle) {
                 <p>
-                  Se cruza con otra actividad del profesional de
-                  {{ hora(resultado.conflictoInicio) }} a {{ hora(resultado.conflictoFin) }}.
+                  Se cruza con otra actividad del profesional: {{ detalle }}.
                   @if (resultado.conflictoTipo === 'CLASE') {
-                    Es una clase{{
-                      validacionEnOtraSede()
-                        ? ' en ' + (nombreDeSede(resultado.conflictoConsultorioId) || 'otra sede')
-                        : ''
-                    }}: no admite sobreturno.
-                  } @else if (validacionEnOtraSede()) {
-                    Es un turno en
-                    {{ nombreDeSede(resultado.conflictoConsultorioId) || 'otra sede' }}.
+                    Una clase no admite sobreturno.
                   }
                 </p>
               }
@@ -472,7 +464,7 @@
         Agregar a lista de espera
       </button>
     }
-    @if (horario() && persona() && !sobreturnoAbierto() && !chocaConClase()) {
+    @if (horario() && persona() && !sobreturnoAbierto() && admiteSobreturno()) {
       <button
         *akinePermiso="PERMISO_TURNO_SOBRETURNO"
         type="button"

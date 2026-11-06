@@ -66,23 +66,85 @@ describe('traducirErrorAgenda', () => {
     expect(conflictoEnOtraSede(traducido, 8)).toBe(false);
 
     const hora = (instante: string): string => instante.slice(11, 16);
-    expect(detalleDelConflicto(traducido, 3, () => 'Sede Norte', hora)).toBe(
-      'Clase en Sede Norte, 13:00 a 14:00',
+    expect(detalleDelConflicto(traducido, 3, () => 'Norte', hora)).toBe(
+      'Clase en la sede Norte, 13:00 a 14:00',
     );
-    expect(detalleDelConflicto(traducido, 3, () => '', hora)).toBe(
-      'Clase en otra sede, 13:00 a 14:00',
-    );
-    expect(detalleDelConflicto(traducido, 8, () => 'Sede Norte', hora)).toBe(
-      'Clase, 13:00 a 14:00',
+    // Sin nombre para otra sede no se supone nada: queda el detail del servidor.
+    expect(detalleDelConflicto(traducido, 3, () => '', hora)).toBe('Rechazado por el servidor.');
+    expect(detalleDelConflicto(traducido, 8, () => 'Norte', hora)).toBe(
+      'Clase en la sede Norte, 13:00 a 14:00',
     );
   });
 
-  it('un turno sin intervalo no arma detalle; los nombres de sede salen de los contextos', () => {
+  it('0.158.0: la sede y si es la misma vienen del servidor, con el instructor si lo hay', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('recurso-ocupado', {
+        recurso: 'profesional',
+        conflictoTipo: 'TURNO',
+        turnoEnConflictoId: 9,
+        conflictoConsultorioId: 8,
+        conflictoConsultorioNombre: 'Centro',
+        conflictoMismaSede: true,
+        conflictoInicio: '2030-03-04T13:00:00Z',
+        conflictoFin: '2030-03-04T13:45:00Z',
+      }),
+    );
+    const hora = (instante: string): string => instante.slice(11, 16);
+
+    expect(traducido.mensaje).toContain('Ya hay otro turno');
+    // La bandera del servidor manda sobre la comparacion de ids.
+    expect(conflictoEnOtraSede(traducido, 3)).toBe(false);
+    expect(detalleDelConflicto(traducido, 3, () => 'otro nombre', hora)).toBe(
+      'Turno en la sede Centro, 13:00 a 13:45',
+    );
+  });
+
+  it.each([
+    ['BLOQUEO', 'agenda bloqueada', 'Agenda bloqueada en la sede Norte, 10:00 a 12:00'],
+    ['AUSENCIA', 'ausencia registrada', 'Ausencia registrada en la sede Norte, 10:00 a 12:00'],
+    ['CIERRE_DE_SEDE', 'sede está cerrada', 'Sede cerrada (Norte), 10:00 a 12:00'],
+    ['DISPONIBILIDAD', 'dos lugares', 'Horario de atención en la sede Norte, 10:00 a 12:00'],
+  ])(
+    'slot-no-disponible por %s dice la causa, no "se fue mientras mirabas"',
+    (tipo, texto, linea) => {
+      const traducido = traducirErrorAgenda(
+        conflicto('slot-no-disponible', {
+          motivo: 'cerrado',
+          conflictoTipo: tipo,
+          conflictoConsultorioNombre: 'Norte',
+          conflictoMismaSede: false,
+          conflictoInicio: '2030-03-04T10:00:00Z',
+          conflictoFin: '2030-03-04T12:00:00Z',
+        }),
+      );
+
+      expect(traducido.causa).toBe('slot-no-disponible');
+      expect(traducido.mensaje).toContain(texto);
+      expect(
+        detalleDelConflicto(
+          traducido,
+          3,
+          () => '',
+          (i) => i.slice(11, 16),
+        ),
+      ).toBe(linea);
+    },
+  );
+
+  it('un turno sin intervalo ni sede cae al detail; los nombres de sede salen de los contextos', () => {
     const turno = traducirErrorAgenda(conflicto('recurso-ocupado', { conflictoTipo: 'TURNO' }));
     expect(turno.mensaje).toContain('Ya hay otro turno');
     expect(
       detalleDelConflicto(
         turno,
+        3,
+        () => '',
+        (i) => i,
+      ),
+    ).toBe('Rechazado por el servidor.');
+    expect(
+      detalleDelConflicto(
+        traducirErrorAgenda(conflicto('slot-completo')),
         3,
         () => '',
         (i) => i,

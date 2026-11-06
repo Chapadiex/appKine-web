@@ -83,6 +83,15 @@ import {
   sumarDias,
 } from '../../models/ventana-de-fechas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { SessionService } from '../../../../core/services/session.service';
+import {
+  ConflictoDelProblema,
+  clasesDelRechazo,
+  describirConflicto,
+  nombreDeSede,
+  sedeDelConflicto,
+} from '../../../../core/models/conflicto-de-agenda';
+import { formatearFecha, formatearHora } from '../../../../shared/utils/instantes';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -196,6 +205,7 @@ export class ExcepcionesPage {
   private readonly excepciones = inject(ExcepcionesDeDisponibilidadService);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
+  private readonly session = inject(SessionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly calendario = inject(CalendarioDeSedeService);
   private readonly colaboradores = inject(ColaboradoresService);
@@ -369,6 +379,46 @@ export class ExcepcionesPage {
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaExcepcion | null>(null);
   protected readonly intentos = signal(0);
+
+  /**
+   * 409 `bloque-solapado` de una APERTURA contra el horario de la misma persona en otra sede
+   * (0.158.0), con el cuerpo que lo provoco. Mientras esta puesto se ofrece, de forma explicita,
+   * cerrar esas franjas alla y abrir esta: nada se sustituye sin ese click.
+   */
+  protected readonly superposicion = signal<{
+    readonly cuerpo: CreateExcepcionRequest;
+    readonly conflictos: readonly ConflictoDelProblema[];
+  } | null>(null);
+
+  /** "Centro" o "Centro y Norte": donde se cerraria la franja. Vacio si no hay nombre. */
+  protected readonly sedesDeLaSuperposicion = computed(() => {
+    const nombres = (this.superposicion()?.conflictos ?? [])
+      .map((conflicto) =>
+        sedeDelConflicto(conflicto, {
+          nombreDeSede: (id) => nombreDeSede(this.session.contextos(), id),
+        }),
+      )
+      .filter((nombre) => nombre !== '');
+    const unicos = [...new Set(nombres)];
+    return unicos.length <= 1
+      ? (unicos[0] ?? '')
+      : `${unicos.slice(0, -1).join(', ')} y ${unicos[unicos.length - 1]}`;
+  });
+
+  /** Cada franja superpuesta en una linea: "Horario de atención en la sede Centro, 15/03/2027 de 09:00 a 13:00". */
+  protected readonly lineasDeLaSuperposicion = computed(() => {
+    const zona = this.diaDeLaSede.zona();
+    return (this.superposicion()?.conflictos ?? [])
+      .map((conflicto) =>
+        describirConflicto(conflicto, {
+          hora: (instante) => formatearHora(instante, zona) ?? '',
+          fecha: (instante) => formatearFecha(instante, zona),
+          consultorioActual: this.tenantContext.consultorioId(),
+          nombreDeSede: (id) => nombreDeSede(this.session.contextos(), id),
+        }),
+      )
+      .filter((linea) => linea !== '');
+  });
 
   /**
    * Aviso pendiente de confirmacion de una apertura de sede sobre un feriado.
@@ -714,6 +764,7 @@ export class ExcepcionesPage {
           notes: cuerpo.notes,
           version: editada.version,
           confirmaTurnosAfectados: confirma ? true : undefined,
+          sustituirDisponibilidadSuperpuesta: cuerpo.sustituirDisponibilidadSuperpuesta,
         },
       })
       .subscribe({
@@ -726,7 +777,7 @@ export class ExcepcionesPage {
           if (this.mostrarTurnosDelRechazo(error, cuerpo)) {
             return;
           }
-          this.fallar(error);
+          this.fallar(error, cuerpo);
         },
       });
   }
@@ -741,7 +792,8 @@ export class ExcepcionesPage {
       return false;
     }
     this.enviando.set(false);
-    this.impacto.set({ tipo: 'listo', impacto });
+    // Desde 0.158.0 tambien las clases que el cierre deja sin instructor, con la misma confirmacion.
+    this.impacto.set({ tipo: 'listo', impacto, clases: clasesDelRechazo(error) });
     this.cuerpoDelImpacto.set(cuerpo);
     this.enfocarImpacto();
     return true;
@@ -896,6 +948,33 @@ export class ExcepcionesPage {
     this.crear(consultorioId, { ...confirmado, confirmaTurnosAfectados: true });
   }
 
+  /**
+   * "Cerrar esa franja en <sede> y abrir aca": reenvia el mismo alta o edicion con
+   * `sustituirDisponibilidadSuperpuesta`. El backend carga el cierre alla en la misma transaccion,
+   * exige el permiso de excepciones en esa sede (403 si no) y nunca pisa un turno ni una clase.
+   */
+  protected sustituir(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const pendiente = this.superposicion();
+    if (consultorioId === null || pendiente === null || this.enviando()) {
+      return;
+    }
+    // Como en la confirmacion del impacto: si el formulario cambio, lo mostrado ya no lo describe.
+    if (this.formularioAlta.invalid || !mismoCuerpo(this.armarCuerpo(), pendiente.cuerpo)) {
+      this.superposicion.set(null);
+      this.enviarAlta();
+      return;
+    }
+    const cuerpo = { ...pendiente.cuerpo, sustituirDisponibilidadSuperpuesta: true };
+    this.errorAccion.set(null);
+    this.causaAccion.set(null);
+    if (this.edicion() !== null) {
+      this.guardarEdicion(consultorioId, cuerpo, false);
+      return;
+    }
+    this.crear(consultorioId, cuerpo);
+  }
+
   protected descartarImpacto(): void {
     this.impacto.set(null);
     this.cuerpoDelImpacto.set(null);
@@ -994,7 +1073,7 @@ export class ExcepcionesPage {
         if (!cuerpo.confirmaTurnosAfectados && this.mostrarTurnosDelRechazo(error, cuerpo)) {
           return;
         }
-        this.fallar(error);
+        this.fallar(error, cuerpo);
         // La consulta dijo que no habia turnos y ya no es cierto: sin borrarla quedaria "Cargar
         // igual" al lado de un impacto de cero, confirmando algo que nadie vio.
         if (this.causaAccion() === 'turnos-afectados') {
@@ -1134,11 +1213,26 @@ export class ExcepcionesPage {
     }
   }
 
-  private fallar(error: unknown): void {
+  private fallar(error: unknown, cuerpo?: CreateExcepcionRequest): void {
     const traducido = traducirErrorExcepcion(error);
+    const sedes = this.sedesDeLaSuperposicion();
     this.enviando.set(false);
-    this.errorAccion.set(traducido.mensaje);
+    this.errorAccion.set(
+      cuerpo?.sustituirDisponibilidadSuperpuesta === true && traducido.causa === 'sin-permiso'
+        ? mensajeSinPermisoParaSustituir(sedes)
+        : traducido.mensaje,
+    );
     this.causaAccion.set(traducido.causa);
+    // Solo se ofrece sustituir lo que es de OTRA sede: la superposicion en esta no es doble oferta.
+    this.superposicion.set(
+      cuerpo !== undefined &&
+        traducido.causa === 'superpuesta' &&
+        cuerpo.sustituirDisponibilidadSuperpuesta !== true &&
+        traducido.conflictos.length > 0 &&
+        traducido.conflictos.every((conflicto) => conflicto.conflictoMismaSede === false)
+        ? { cuerpo, conflictos: traducido.conflictos }
+        : null,
+    );
     // "Otro" sin notas: el 400 nombra el campo, y el mensaje va al lado del campo.
     const deNotas = error instanceof AkineHttpError ? error.erroresPorCampo['notes'] : undefined;
     this.errorDeNotas.set(deNotas ?? null);
@@ -1168,6 +1262,7 @@ export class ExcepcionesPage {
     this.errorDeNotas.set(null);
     this.errorAccion.set(null);
     this.causaAccion.set(null);
+    this.superposicion.set(null);
     this.avisoDeApertura.set(null);
     this.pendiente.set(null);
     this.intentos.set(0);
@@ -1188,6 +1283,18 @@ export class ExcepcionesPage {
   }
 }
 
+/**
+ * El 403 de la sustitucion (0.158.0): cerrar la franja en la otra sede exige `agenda:excepciones`
+ * alla. No es "no tenes permiso aca": esta apertura si se puede cargar, lo que falta es lo otro.
+ */
+function mensajeSinPermisoParaSustituir(sedes: string): string {
+  const donde = sedes === '' ? 'la sede donde ya atiende' : `la sede ${sedes}`;
+  return (
+    `No tenés permiso para cargar cierres en ${donde}, así que no se cerró esa franja ni se abrió ` +
+    'esta. Pedíselo a quien administra esa sede, o ajustá la apertura para que no se superponga.'
+  );
+}
+
 /** Causas de falla de la consulta previa que la mutacion tendria igual. */
 const FRENAN_LA_MUTACION: ReadonlySet<CausaExcepcion> = new Set<CausaExcepcion>([
   'ya-inactiva',
@@ -1205,11 +1312,19 @@ const FRENAN_LA_MUTACION: ReadonlySet<CausaExcepcion> = new Set<CausaExcepcion>(
  * cambio mas grave que puede sufrir este cuerpo, y una comparacion en un solo sentido no lo ve.
  */
 function mismoCuerpo(uno: CreateExcepcionRequest, otro: CreateExcepcionRequest): boolean {
-  const claves = new Set([...Object.keys(uno), ...Object.keys(otro)]);
+  // Las dos banderas son decisiones tomadas sobre lo mostrado, no contenido del formulario.
+  const claves = new Set(
+    [...Object.keys(uno), ...Object.keys(otro)].filter((clave) => !BANDERAS.has(clave)),
+  );
   const izquierda = uno as unknown as Record<string, unknown>;
   const derecha = otro as unknown as Record<string, unknown>;
   return [...claves].every((clave) => izquierda[clave] === derecha[clave]);
 }
+
+const BANDERAS: ReadonlySet<string> = new Set([
+  'confirmaTurnosAfectados',
+  'sustituirDisponibilidadSuperpuesta',
+]);
 
 /** Mismo criterio que en el horario semanal: el patron admite `24:00`. */
 function validadorDeHora(control: AbstractControl): ValidationErrors | null {

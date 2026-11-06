@@ -42,6 +42,10 @@ export interface UpdateExcepcionRequest {
      */
     notes?: string;
     /**
+     * Solo APERTURA de un profesional: igual que en el alta, cierra la otra sede en las franjas superpuestas con su horario alla. Lo reservado alla nunca se sustituye (409 `recurso-ocupado`)
+     */
+    sustituirDisponibilidadSuperpuesta?: boolean;
+    /**
      * Version que el cliente leyo. Si quedo vieja, 409 concurrent-modification
      */
     version: number;

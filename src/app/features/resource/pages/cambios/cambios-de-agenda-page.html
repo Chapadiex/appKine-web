@@ -6,6 +6,12 @@
       horario y de sede). Cada fila dice quién lo hizo, cuándo y por qué.
     </p>
     <p>
+      Los <b>cierres generales de sede</b> aparecen en la agenda de cada profesional al que
+      afectaron, con los turnos que quedaron en el período y los que falta reubicar. Un turno
+      trasladado de sede es una sola fila: el detalle técnico muestra la cancelación y la reserva
+      que la componen.
+    </p>
+    <p>
       Las fechas del filtro son las del <b>cambio</b>, no las del turno. No se edita ni se borra
       nada: es el rastro de lo que pasó.
     </p>
@@ -197,6 +203,36 @@
                       @if (cambio.cambioDeProfesional) {
                         <span class="cambios__secundario">Cambió de profesional</span>
                       }
+                      @if (cambio.cierreDeSede; as cierre) {
+                        <span class="cambios__secundario">{{ periodoDeCierre(cierre) }}</span>
+                        <span class="cambios__secundario">
+                          <span
+                            class="marca-estado"
+                            [class.marca-estado--activa]="cierre.vigente !== false"
+                            [class.marca-estado--revocada]="cierre.vigente === false"
+                            >{{ cierre.vigente === false ? 'Revocado' : 'Vigente' }}</span
+                          >
+                        </span>
+                        @if (turnosDelCierre(cierre); as turnos) {
+                          <span class="cambios__secundario">{{ turnos }}</span>
+                        }
+                      }
+                      @if (cambio.eventosRelacionados?.length) {
+                        <details class="cambios__relacionados">
+                          <summary>Detalle técnico</summary>
+                          <ul>
+                            @for (evento of cambio.eventosRelacionados; track evento.id ?? $index) {
+                              <li>
+                                {{ textoDeEventoRelacionado(evento.eventType) }} ·
+                                {{ cuando(evento.ocurridoEn) }}
+                                @if (evento.turnoId) {
+                                  · turno #{{ evento.turnoId }}
+                                }
+                              </li>
+                            }
+                          </ul>
+                        </details>
+                      }
                     </td>
                     <td class="tabla__col--secundaria">
                       @if (cambio.antes || cambio.despues) {
@@ -211,10 +247,34 @@
                         <span class="cambios__secundario">{{ rol }}</span>
                       }
                     </td>
-                    <td class="tabla__col--secundaria">{{ cambio.motivo || '-' }}</td>
+                    <td class="tabla__col--secundaria">
+                      @if (motivoDeCierre(cambio.cierreDeSede?.motivo); as motivo) {
+                        {{ motivo }}
+                        @if (cambio.motivo) {
+                          <span class="cambios__secundario">{{ cambio.motivo }}</span>
+                        }
+                      } @else {
+                        {{ cambio.motivo || '-' }}
+                      }
+                    </td>
                     <td class="tabla__col--secundaria">{{ cambio.consultorioNombre || '-' }}</td>
                     <td class="tabla__acciones">
-                      @if (turnoDeEstaSede(cambio)) {
+                      @if (reubicacion(cambio); as consulta) {
+                        <app-acciones-de-fila [de]="textoDeTipo(cambio.tipo)">
+                          <a
+                            principal
+                            class="accion-texto"
+                            [routerLink]="rutaAgenda"
+                            [queryParams]="consulta"
+                            >Reubicar turnos</a
+                          >
+                          <a
+                            [routerLink]="rutas.excepciones"
+                            [queryParams]="{ membershipId: membershipElegido() }"
+                            >Ver cierres y aperturas</a
+                          >
+                        </app-acciones-de-fila>
+                      } @else if (turnoDeEstaSede(cambio)) {
                         <app-acciones-de-fila [de]="textoDeTipo(cambio.tipo)">
                           <button
                             principal

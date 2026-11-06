@@ -42,6 +42,9 @@
         @if (errorDeAccion(); as fallo) {
           <app-alerta tipo="error" titulo="No pudimos guardar los instructores">
             <p>{{ fallo.mensaje }}</p>
+            @if (fallo.motivo) {
+              <p>Detalle: {{ fallo.motivo }}</p>
+            }
           </app-alerta>
         }
         <fieldset class="grupo">

@@ -24,6 +24,7 @@ import { CancelarTurnosEnLoteOrigenEnum } from '../../../api/generated/model/can
 import { RecursoLibre } from '../../../api/generated/model/recurso-libre';
 import { ResultadoDeCancelacionEnLote } from '../../../api/generated/model/resultado-de-cancelacion-en-lote';
 import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
+import { ClaseAfectadaPorCierre, clasesDelRechazo } from '../../../core/models/conflicto-de-agenda';
 import { ContextoDeTurno } from '../../../core/models/contexto-de-turno';
 import { PERMISO_AGENDA_EXCEPCIONES } from '../../../core/models/permisos';
 import { AvisosStore } from '../../../core/services/avisos.store';
@@ -143,6 +144,11 @@ export class BloqueoDeAgendaPanel implements OnInit {
 
   /** Con esto se muestra la pantalla de turnos afectados en lugar del formulario. */
   protected readonly impacto = signal<ImpactoDisponibilidadResponse | null>(null);
+  /**
+   * Clases que el bloqueo deja sin instructor (0.158.0). Solo las trae el 409 del alta —la consulta
+   * previa cuenta turnos—, y se confirman con el mismo "crear igualmente".
+   */
+  protected readonly clasesAfectadas = signal<readonly ClaseAfectadaPorCierre[]>([]);
 
   // Gestion de los afectados en lote: se eligen filas y se cancelan con un motivo comun.
   protected readonly seleccion = signal<ReadonlySet<number>>(new Set());
@@ -200,9 +206,15 @@ export class BloqueoDeAgendaPanel implements OnInit {
 
   protected readonly tituloDelImpacto = computed(() => {
     const cantidad = this.impacto()?.turnosAfectados ?? 0;
-    return cantidad === 1
-      ? 'Este bloqueo afecta 1 turno.'
-      : `Este bloqueo afecta ${cantidad} turnos.`;
+    const clases = this.clasesAfectadas().length;
+    const turnos = cantidad === 1 ? '1 turno' : `${cantidad} turnos`;
+    if (clases === 0) {
+      return `Este bloqueo afecta ${turnos}.`;
+    }
+    const deClases = clases === 1 ? '1 clase' : `${clases} clases`;
+    return cantidad === 0
+      ? `Este bloqueo afecta ${deClases}.`
+      : `Este bloqueo afecta ${turnos} y ${deClases}.`;
   });
 
   protected readonly rotuloDelAlcance = computed(() => {
@@ -341,12 +353,18 @@ export class BloqueoDeAgendaPanel implements OnInit {
         this.guardando.set(false);
         const fallo = this.traducir(error);
         const turnos = turnosDelRechazo(error);
-        if (fallo.causa === 'bloqueo-con-turnos-afectados' && turnos.length > 0) {
-          // Desde 0.154.0 el 409 trae la lista: no hace falta volver a preguntar.
-          this.mostrarImpacto(cierre, {
-            turnosAfectados: fallo.turnosAfectados,
-            turnos: [...turnos],
-          });
+        const clases = clasesDelRechazo(error);
+        if (
+          fallo.causa === 'bloqueo-con-turnos-afectados' &&
+          (turnos.length > 0 || clases.length > 0)
+        ) {
+          // Desde 0.154.0 el 409 trae la lista, y desde 0.158.0 tambien las clases: no hace falta
+          // volver a preguntar.
+          this.mostrarImpacto(
+            cierre,
+            { turnosAfectados: fallo.turnosAfectados, turnos: [...turnos] },
+            clases,
+          );
         } else if (fallo.causa === 'bloqueo-con-turnos-afectados') {
           this.releerImpacto(consultorioId, cierre, fallo.turnosAfectados);
         } else {
@@ -382,9 +400,11 @@ export class BloqueoDeAgendaPanel implements OnInit {
   private mostrarImpacto(
     cierre: CreateExcepcionRequest,
     impacto: ImpactoDisponibilidadResponse,
+    clases: readonly ClaseAfectadaPorCierre[] = [],
   ): void {
     this.cierreRevisado = cierre;
     this.impacto.set(impacto);
+    this.clasesAfectadas.set(clases);
     this.seleccion.set(new Set());
     this.enfocar('#bloqueo-impacto');
   }
@@ -491,6 +511,7 @@ export class BloqueoDeAgendaPanel implements OnInit {
   /** "Cancelar": no se guardo nada y lo cargado sigue ahi, para corregirlo o cerrar el panel. */
   protected volverAlFormulario(): void {
     this.impacto.set(null);
+    this.clasesAfectadas.set([]);
     this.resultadosDelLote.set(new Map());
     this.resumenDelLote.set('');
     this.cierreRevisado = null;

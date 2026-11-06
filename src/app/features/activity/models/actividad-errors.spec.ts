@@ -121,21 +121,45 @@ describe('traducirErrorActividad', () => {
     expect(traducirErrorActividad(new Error('x')).causa).toBe('otro');
   });
 
-  it('recurso-ocupado dice si choca con una clase o un turno, y si es de otra sede (0.156.0)', () => {
+  it('recurso-ocupado de un instructor nombra al instructor, la causa, la sede y la franja (0.158.0)', () => {
     const clase = error(409, 'recurso-ocupado', {
       recurso: 'profesional',
       conflictoTipo: 'CLASE',
       conflictoConsultorioId: 8,
+      conflictoConsultorioNombre: 'Norte',
+      conflictoMismaSede: false,
+      conflictoInicio: '2030-03-04T13:00:00Z',
+      conflictoFin: '2030-03-04T14:00:00Z',
+      instructorMembershipId: 21,
+      instructorNombre: 'Paz, Ana',
     });
-    expect(traducirErrorActividad(clase, 3).mensaje).toContain('otra clase en otra sede');
-    expect(traducirErrorActividad(clase, 8).mensaje).not.toContain('otra sede');
-    expect(traducirErrorActividad(clase).mensaje).not.toContain('otra sede');
+    expect(traducirErrorActividad(clase, 3, 'UTC').mensaje).toBe(
+      'El instructor Paz, Ana no está disponible: Clase en la sede Norte, 13:00 a 14:00. ' +
+        'Elegí otro horario u otro instructor.',
+    );
+    // Sin la zona de la sede no se arma la franja: manda el detail del servidor, que la tiene.
+    expect(traducirErrorActividad(clase, 3).mensaje).toBe('Detalle del servidor.');
+  });
 
-    const turno = error(409, 'recurso-ocupado', {
-      recurso: 'profesional',
-      conflictoTipo: 'TURNO',
-      conflictoConsultorioId: 8,
+  it('un cierre que alcanza al instructor es horario no disponible, con su causa (0.158.0)', () => {
+    const cierre = error(409, 'slot-no-disponible', {
+      motivo: 'bloqueado',
+      conflictoTipo: 'AUSENCIA',
+      conflictoConsultorioNombre: 'Centro',
+      conflictoMismaSede: true,
+      conflictoInicio: '2030-03-04T13:00:00Z',
+      conflictoFin: '2030-03-04T14:00:00Z',
     });
-    expect(traducirErrorActividad(turno, 3).mensaje).toContain('un turno en otra sede');
+    const traducido = traducirErrorActividad(cierre, 3, 'UTC');
+    expect(traducido.causa).toBe('horario-no-disponible');
+    expect(traducido.mensaje).toContain('El profesional no está disponible: Ausencia registrada');
+    expect(traducido.mensaje).toContain('sede Centro');
+  });
+
+  it('sin extensiones de conflicto describe el choque sin suponer la sede', () => {
+    const clase = error(409, 'recurso-ocupado', { recurso: 'profesional' });
+    expect(traducirErrorActividad(clase, 3).mensaje).not.toContain('otra sede');
+    const box = error(409, 'recurso-ocupado', { recurso: 'espacio', conflictoTipo: 'TURNO' });
+    expect(traducirErrorActividad(box, 3, 'UTC').mensaje).toContain('El box');
   });
 });

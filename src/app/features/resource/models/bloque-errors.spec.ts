@@ -155,4 +155,42 @@ describe('traducirErrorBloque', () => {
     expect(traducido.causa).toBe('otro');
     expect(traducido.mensaje.length).toBeGreaterThan(0);
   });
+
+  it('el bloque que choca con el horario de la persona en otra sede nombra la sede y no marca fila (0.158.0)', () => {
+    const traducido = traducirErrorBloque(
+      problema(409, 'bloque-solapado', {
+        bloqueEnConflictoId: 77,
+        diaSemana: 6,
+        conflictoTipo: 'DISPONIBILIDAD',
+        conflictoOrigen: 'BLOQUE',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Norte',
+        conflictoHoraDesde: '09:00',
+        conflictoHoraHasta: '13:00',
+      }),
+    );
+    expect(traducido.causa).toBe('solapado');
+    expect(traducido.conflicto).toBeNull();
+    expect(traducido.mensaje).toContain('horario de atención en la sede Norte los sabados');
+    expect(traducido.mensaje).toContain('09:00');
+    expect(traducido.mensaje).not.toContain('esta sede');
+
+    const apertura = traducirErrorBloque(
+      problema(409, 'bloque-solapado', {
+        conflictoOrigen: 'APERTURA',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Norte',
+        conflictoFecha: '2030-03-04',
+        conflictoHoraDesde: '09:00',
+        conflictoHoraHasta: '13:00',
+      }),
+    );
+    expect(apertura.mensaje).toContain('una apertura de agenda en la sede Norte el 04/03/2030');
+
+    // Sin nombre de sede, el detail del servidor.
+    const sinNombre = traducirErrorBloque(
+      problema(409, 'bloque-solapado', { conflictoMismaSede: false }),
+    );
+    expect(sinNombre.mensaje).toBe('prosa del backend');
+  });
 });

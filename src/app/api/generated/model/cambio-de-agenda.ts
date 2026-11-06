@@ -7,10 +7,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { CierreDeSedeEnHistorial } from './cierre-de-sede-en-historial';
+import { EventoRelacionadoDeAgenda } from './evento-relacionado-de-agenda';
 
 
 /**
- * Un cambio en la agenda de un profesional: horario habitual, excepcion o bloqueo, o un turno. `antes` y `despues` ya vienen armados para mostrar.
+ * Un cambio en la agenda de un profesional: horario habitual, excepcion o bloqueo, cierre de la sede entera que lo afecto, o un turno. `antes` y `despues` ya vienen armados para mostrar. Un cambio de sede es UNA fila `TURNO_TRASLADO` (la cancelacion y la reserva que deja viajan en `eventosRelacionados`).
  */
 export interface CambioDeAgenda { 
     /**
@@ -27,11 +29,15 @@ export interface CambioDeAgenda {
      */
     antes?: string;
     /**
-     * `true` en una reprogramacion que paso el turno a otro profesional
+     * `true` en una reprogramacion o un traslado que paso el turno a otra persona
      */
     cambioDeProfesional?: boolean;
     /**
-     * Sede del cambio
+     * Solo en `CIERRE_DE_SEDE_*`: el cierre y lo que le dejo al profesional
+     */
+    cierreDeSede?: CierreDeSedeEnHistorial;
+    /**
+     * Sede del cambio (en un traslado, la de origen)
      */
     consultorioId?: number;
     consultorioNombre?: string;
@@ -44,9 +50,13 @@ export interface CambioDeAgenda {
      */
     entidad?: CambioDeAgendaEntidadEnum;
     /**
-     * Id del bloque, de la excepcion o del turno
+     * Id del bloque, de la excepcion (tambien en un cierre de sede) o del turno
      */
     entidadId?: number;
+    /**
+     * Los hechos de la auditoria que esta fila resume (en un traslado: la cancelacion del original y la reserva del nuevo). Vacio en el resto
+     */
+    eventosRelacionados?: Array<EventoRelacionadoDeAgenda>;
     /**
      * Id del hecho en la auditoria
      */
@@ -57,7 +67,11 @@ export interface CambioDeAgenda {
     motivo?: string;
     ocurridoEn?: string;
     /**
-     * Paciente del turno. Solo si quien lee tiene `turno:read` en esa sede
+     * Id comun de los hechos auditados de una misma operacion. Ausente en operaciones anteriores a 0.157.0
+     */
+    operacionId?: string;
+    /**
+     * Paciente del turno. Solo si quien lee tiene `turno:read` en esa sede (en un traslado, en la de origen o en la de destino)
      */
     personaId?: number;
     /**
@@ -65,7 +79,7 @@ export interface CambioDeAgenda {
      */
     personaNombre?: string;
     /**
-     * Membership del profesional en esa sede
+     * Membership del profesional en esa sede. En un cierre de sede, la del profesional consultado en esa sede
      */
     profesionalId?: number;
     profesionalNombre?: string;
@@ -74,17 +88,22 @@ export interface CambioDeAgenda {
      */
     tipo?: CambioDeAgendaTipoEnum;
     /**
-     * El turno, en los cambios de turno
+     * El turno, en los cambios de turno (en un traslado, el original)
      */
     turnoId?: number;
     /**
      * Horario del turno, en los cambios de turno
      */
     turnoInicio?: string;
+    /**
+     * En un traslado, el turno que nacio en la sede de destino
+     */
+    turnoNuevoId?: number;
 }
 export enum CambioDeAgendaEntidadEnum {
     HORARIO = 'HORARIO',
     EXCEPCION = 'EXCEPCION',
+    CIERRE_DE_SEDE = 'CIERRE_DE_SEDE',
     TURNO = 'TURNO'
 };
 export enum CambioDeAgendaTipoEnum {
@@ -94,6 +113,9 @@ export enum CambioDeAgendaTipoEnum {
     EXCEPCION_ALTA = 'EXCEPCION_ALTA',
     EXCEPCION_EDICION = 'EXCEPCION_EDICION',
     EXCEPCION_BAJA = 'EXCEPCION_BAJA',
+    CIERRE_DE_SEDE_ALTA = 'CIERRE_DE_SEDE_ALTA',
+    CIERRE_DE_SEDE_EDICION = 'CIERRE_DE_SEDE_EDICION',
+    CIERRE_DE_SEDE_BAJA = 'CIERRE_DE_SEDE_BAJA',
     TURNO_RESERVA = 'TURNO_RESERVA',
     TURNO_SOBRETURNO = 'TURNO_SOBRETURNO',
     TURNO_CONFIRMACION = 'TURNO_CONFIRMACION',

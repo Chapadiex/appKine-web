@@ -1,7 +1,7 @@
 import { Location } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { catchError, forkJoin, of } from 'rxjs';
+import { Subscription, catchError, forkJoin, of } from 'rxjs';
 
 import { ListarSeriesDeTurnosRequestParams } from '../../../../api/generated/api/series-de-turnos.serviceInterface';
 import { SerieDeTurnosPage } from '../../../../api/generated/model/serie-de-turnos-page';
@@ -152,6 +152,7 @@ export class BandejaDeSeriesPage {
   protected readonly resultado = signal<SerieDeTurnosPage | null>(null);
   protected readonly cargando = signal(false);
   protected readonly error = signal<ErrorSerie | null>(null);
+  private pedidoDelListado: Subscription | null = null;
 
   /** Nombres de profesional por oferta: `ofertaId -> (membershipId -> nombre)`. */
   private readonly profesionales = signal<ReadonlyMap<number, ReadonlyMap<number, string>>>(
@@ -229,7 +230,9 @@ export class BandejaDeSeriesPage {
     const estado = this.filtroEstado();
     this.cargando.set(true);
     this.error.set(null);
-    this.series
+    // Una lectura vieja (la inicial, sin busqueda) no puede pisar a la nueva si llega despues.
+    this.pedidoDelListado?.unsubscribe();
+    this.pedidoDelListado = this.series
       .listar(consultorioId, {
         estado: estado === TODAS ? undefined : estado,
         personaId: this.persona()?.id,

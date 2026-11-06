@@ -665,7 +665,7 @@ export class DetalleDeClasePage {
 
   private fallo(
     error: unknown,
-    traducido = traducirErrorActividad(error, this.tenant.consultorioId()),
+    traducido = traducirErrorActividad(error, this.tenant.consultorioId(), this.zona()),
   ): void {
     this.enviando.set(false);
     this.errorDeAccion.set(traducido);

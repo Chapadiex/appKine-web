@@ -376,6 +376,43 @@ describe('BloqueoDeAgendaPanel', () => {
       expect(raiz(fixture).querySelectorAll('tbody tr').length).toBe(2);
     });
 
+    it('las clases que quedan sin instructor se listan y se confirman igual (0.158.0)', async () => {
+      const fixture = await montar();
+      fijar(fixture, '#bloqueo-profesional', 'SEDE');
+      fijar(fixture, '#bloqueo-tipo', 'LICENCIA');
+      await asentar(fixture);
+
+      clic(fixture, 'Revisar');
+      httpMock.expectOne(IMPACTO).flush({ turnosAfectados: 0 });
+      httpMock
+        .expectOne((r) => r.url === EXCEPCIONES && r.method === 'POST')
+        .flush(
+          {
+            type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+            status: 409,
+            turnosAfectados: 0,
+            turnos: [],
+            clasesAfectadas: 1,
+            clases: [{ claseId: 90, inicio: '2030-03-04T13:00:00Z', fin: '2030-03-04T14:00:00Z' }],
+          },
+          { status: 409, statusText: 'C' },
+        );
+      await asentar(fixture);
+
+      // Sin volver a consultar: el 409 ya trae la lista.
+      httpMock.expectNone(IMPACTO);
+      expect(texto(fixture)).toContain('Este bloqueo afecta 1 clase.');
+      expect(texto(fixture)).toContain('Clases que quedan sin instructor');
+      expect(texto(fixture)).toMatch(/Clase \d{2}\/\d{2}\/2030, \d{2}:00 a \d{2}:00/);
+
+      clic(fixture, 'Crear bloqueo igualmente');
+      const alta = httpMock.expectOne((r) => r.url === EXCEPCIONES && r.method === 'POST');
+      expect(alta.request.body.confirmaTurnosAfectados).toBe(true);
+      alta.flush({ id: 1 });
+      await asentar(fixture);
+      expect(cerrado).toBe(1);
+    });
+
     it('si la relectura falla muestra la cuenta sola antes que guardar sin avisar', async () => {
       const fixture = await montar();
       fijar(fixture, '#bloqueo-profesional', 'SEDE');
