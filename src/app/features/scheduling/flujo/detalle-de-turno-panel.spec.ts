@@ -95,6 +95,11 @@ describe('DetalleDeTurnoPanel', () => {
 
   afterEach(() => {
     soltarReloj();
+    // La ficha de la sede (direccion y "Como llegar") se lee una vez por contexto al abrir el
+    // panel: se responde sin direccion para que no cambie lo que cada caso espera.
+    httpMock
+      .match((pedido) => /[/]organizations[/][0-9]+[/]consultorios[/][0-9]+$/.test(pedido.url))
+      .forEach((pedido) => pedido.flush({ id: 3, name: 'Belgrano' }));
     httpMock.verify();
   });
 

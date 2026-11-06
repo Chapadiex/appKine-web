@@ -19,7 +19,11 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { BloqueResponse } from '../model/bloque-response';
 // @ts-ignore
+import { BloquesCreadosResponse } from '../model/bloques-creados-response';
+// @ts-ignore
 import { CreateBloqueRequest } from '../model/create-bloque-request';
+// @ts-ignore
+import { CreateBloquesRequest } from '../model/create-bloques-request';
 // @ts-ignore
 import { DeactivateBloqueRequest } from '../model/deactivate-bloque-request';
 // @ts-ignore
@@ -40,6 +44,7 @@ import { BaseService } from '../api.base.service';
 import {
     DisponibilidadProfesionalServiceInterface,
     CreateBloqueDisponibilidadRequestParams,
+    CreateBloquesDisponibilidadRequestParams,
     DeactivateBloqueDisponibilidadRequestParams,
     GetDisponibilidadEfectivaRequestParams,
     ListBloquesDisponibilidadRequestParams,
@@ -129,6 +134,86 @@ export class DisponibilidadProfesionalService extends BaseService implements Dis
             {
                 context: localVarHttpContext,
                 body: createBloqueRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Alta en lote de bloques de disponibilidad: varios dias, un horario
+     * Carga el mismo tramo horario en VARIOS dias de la semana de una vez: \&quot;de lunes a viernes de 09 a 13, desde marzo\&quot; (RF-M05-003). Es la carga rapida del horario semanal. Exige agenda:horario sobre ESA sede.  ES ATOMICO. Los dias se procesan en UNA transaccion: si alguno no puede guardarse —se pisa con otro bloque activo, con el horario de la misma persona en otra sede o con una apertura—, NO se guarda ninguno y la respuesta es el 409 del dia que fallo, con diaSemana en el cuerpo para que la pantalla lo senale. Antes, cargar la semana eran cinco pedidos y el cuarto podia fallar dejando tres.  Cada dia se valida exactamente como un alta suelta (ver el POST sin /lote): coincidir EXACTO con un bloque activo devuelve ese bloque sin crear nada ni volver a auditar, y solapar sin coincidir es 409 bloque-solapado. La respuesta dice cuantos se crearon y cuantos ya existian.  RESPONDE 201 SI CREO AL MENOS UNO Y 200 SI TODOS YA EXISTIAN. No trae Location: son varios recursos.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/lote
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public createBloquesDisponibilidad(requestParameters: CreateBloquesDisponibilidadRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<BloquesCreadosResponse>;
+    public createBloquesDisponibilidad(requestParameters: CreateBloquesDisponibilidadRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<BloquesCreadosResponse>>;
+    public createBloquesDisponibilidad(requestParameters: CreateBloquesDisponibilidadRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<BloquesCreadosResponse>>;
+    public createBloquesDisponibilidad(requestParameters: CreateBloquesDisponibilidadRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling createBloquesDisponibilidad.');
+        }
+        const membershipId = requestParameters?.membershipId;
+        if (membershipId === null || membershipId === undefined) {
+            throw new Error('Required parameter membershipId was null or undefined when calling createBloquesDisponibilidad.');
+        }
+        const createBloquesRequest = requestParameters?.createBloquesRequest;
+        if (createBloquesRequest === null || createBloquesRequest === undefined) {
+            throw new Error('Required parameter createBloquesRequest was null or undefined when calling createBloquesDisponibilidad.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/profesionales/${this.configuration.encodeParam({name: "membershipId", value: membershipId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/disponibilidad/lote`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<BloquesCreadosResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: createBloquesRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

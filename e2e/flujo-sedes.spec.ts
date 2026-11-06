@@ -69,19 +69,52 @@ test.describe('Sedes contra el backend real', () => {
     const nombre = `Sede Norte ${sufijo}`;
     await navegar(page, '/organizacion/sedes/nueva');
     await page.getByLabel('Nombre de la sede').fill(nombre);
-    // Paso 1 -> 2: el box y el horario son la configuracion inicial opcional.
+    await page.getByLabel(/Nombre visible/).fill('Norte');
+    await page.getByLabel(/Teléfono de contacto/).fill('+54 11 4321-9876');
+    // Paso 1 -> 2: la ubicacion es un paso propio.
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    // Direccion en partes y punto en el mapa escrito a mano: el buscador de direcciones sale a
+    // internet y el CI no depende de el.
+    await page.locator('#sede-ubicacion-calle').fill('Av. Cabildo');
+    await page.locator('#sede-ubicacion-numero').fill('1234');
+    await page.locator('#sede-ubicacion-ciudad').fill('CABA');
+    await page.locator('#sede-ubicacion-codigoPostal').fill('C1426');
+    await page.locator('#sede-ubicacion-latitud').fill('-34.5593');
+    await page.locator('#sede-ubicacion-longitud').fill('-58.4526');
+    await expect(page.getByRole('link', { name: /Ver en Google Maps/ })).toHaveAttribute(
+      'href',
+      /query=-34.5593,-58.4526/,
+    );
+    // Paso 2 -> 3: el box y el horario son la configuracion inicial opcional.
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByLabel('Nombre del box').fill('Box 1');
-    await page.getByRole('button', { name: 'Agregar una franja' }).click();
-    await page.locator('#sede-horario-dia-0').selectOption({ label: 'Lunes' });
-    await page.locator('#sede-horario-desde-0').fill('08:00');
-    await page.locator('#sede-horario-hasta-0').fill('20:00');
+    // El horario es una semana con un interruptor por dia: abrir el lunes propone 09 a 18.
+    await page.getByRole('switch', { name: 'Lunes' }).check();
+    await page.locator('#sede-horario-desde-0').selectOption('08:00');
+    await page.locator('#sede-horario-hasta-0').selectOption('20:00');
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     const alta = respuestaDe(page, 'POST', /\/organizations\/\d+\/consultorios$/);
-    await page.getByRole('button', { name: 'Crear la sede' }).click();
+    await page.getByRole('button', { name: 'Crear sede' }).click();
     const creada = await alta;
     expect(creada.status(), await creada.text()).toBe(201);
+    // La direccion estructurada y el punto vuelven en la respuesta: lo que se guardo es lo que se cargo.
+    const cuerpo = (await creada.json()) as {
+      alias?: string;
+      calle?: string;
+      numero?: string;
+      direccionFormateada?: string;
+      ubicacion?: { latitud?: number; longitud?: number; origen?: string };
+      agendaHabilitada?: boolean;
+    };
+    expect(cuerpo.alias).toBe('Norte');
+    expect(cuerpo.calle).toBe('Av. Cabildo');
+    expect(cuerpo.numero).toBe('1234');
+    expect(cuerpo.direccionFormateada).toContain('Av. Cabildo 1234');
+    expect(cuerpo.ubicacion?.latitud).toBeCloseTo(-34.5593, 4);
+    expect(cuerpo.ubicacion?.longitud).toBeCloseTo(-58.4526, 4);
+    expect(cuerpo.ubicacion?.origen).toBe('MANUAL');
+    expect(cuerpo.agendaHabilitada).toBe(true);
     // UX-12: el alta vuelve sola al listado y el resultado va al aviso global.
     const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
     await expect(avisos.getByText('Sede creada')).toBeVisible();
@@ -93,6 +126,8 @@ test.describe('Sedes contra el backend real', () => {
     const region = page.getByRole('region', { name: 'Sedes de la organización' });
     const fila = region.getByRole('row').filter({ hasText: nombre });
     await expect(fila).toBeVisible();
+    // La direccion queda a la vista en el listado.
+    await expect(fila.getByText(/Av. Cabildo 1234/)).toBeVisible();
     // La baja vive en el menu "⋯" de la fila y se confirma en el panel lateral.
     await fila.getByRole('button', { name: /Más acciones de/ }).click();
     await page.getByRole('button', { name: 'Dar de baja' }).click();

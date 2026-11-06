@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { BusquedaDeDireccionesResponse } from '../model/busqueda-de-direcciones-response';
+// @ts-ignore
 import { ConsultorioResponse } from '../model/consultorio-response';
 // @ts-ignore
 import { CreateConsultorioRequest } from '../model/create-consultorio-request';
@@ -33,6 +35,7 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     ConsultoriosServiceInterface,
+    BuscarDireccionesRequestParams,
     CreateConsultorioRequestParams,
     DeactivateConsultorioRequestParams,
     GetConsultorioRequestParams,
@@ -48,6 +51,94 @@ export class ConsultoriosService extends BaseService implements ConsultoriosServ
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Busca una direccion para ubicar la sede
+     * Devuelve hasta cinco direcciones candidatas con sus coordenadas para el texto escrito, acotadas opcionalmente a un pais. Sirve para completar la direccion estructurada y la ubicacion de una sede al darla de alta o editarla.  Requiere ser miembro de la organizacion. La respuesta trae el proveedor y el texto de atribucion que la pantalla tiene que mostrar junto a los resultados: la licencia del proveedor lo exige.  NO es autocompletado: se llama cuando la persona pide buscar, no tecla a tecla. El proveedor admite una consulta por segundo para todo el despliegue, y el backend serializa los pedidos para respetarlo. Si el proveedor no responde o esta apagado en este despliegue, 503 geocodificador-no-disponible con Retry-After: la sede se puede guardar igual con la direccion escrita y sin coordenadas, o fijando la ubicacion a mano.
+     * @endpoint get /api/v1/organizations/{orgId}/direcciones/busqueda
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public buscarDirecciones(requestParameters: BuscarDireccionesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<BusquedaDeDireccionesResponse>;
+    public buscarDirecciones(requestParameters: BuscarDireccionesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<BusquedaDeDireccionesResponse>>;
+    public buscarDirecciones(requestParameters: BuscarDireccionesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<BusquedaDeDireccionesResponse>>;
+    public buscarDirecciones(requestParameters: BuscarDireccionesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling buscarDirecciones.');
+        }
+        const q = requestParameters?.q;
+        if (q === null || q === undefined) {
+            throw new Error('Required parameter q was null or undefined when calling buscarDirecciones.');
+        }
+        const pais = requestParameters?.pais;
+
+        let localVarQueryParameters = new OpenApiHttpParams(this.encoder);
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'q',
+            <any>q,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'pais',
+            <any>pais,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/direcciones/busqueda`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<BusquedaDeDireccionesResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**

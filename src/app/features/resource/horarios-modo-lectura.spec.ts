@@ -153,7 +153,7 @@ describe('Modo lectura de las pantallas de horarios', () => {
     expect(contenido).toContain('12:00');
 
     // Y ninguna de las tres acciones se ofrece.
-    expect(boton(fixture, 'Agregar un bloque')).toBeUndefined();
+    expect(boton(fixture, 'Agregar horario')).toBeUndefined();
     expect(boton(fixture, 'Editar')).toBeUndefined();
     expect(boton(fixture, 'Dar de baja')).toBeUndefined();
 
@@ -166,7 +166,7 @@ describe('Modo lectura de las pantallas de horarios', () => {
   it('con consultorio:manage el horario semanal si ofrece las acciones', async () => {
     const fixture = await montarSemanal(GESTION);
 
-    expect(boton(fixture, 'Agregar un bloque')).toBeDefined();
+    expect(boton(fixture, 'Agregar horario')).toBeDefined();
     expect(boton(fixture, 'Editar')).toBeDefined();
     expect(boton(fixture, 'Dar de baja')).toBeDefined();
     expect(texto(fixture)).not.toContain('Modo lectura');

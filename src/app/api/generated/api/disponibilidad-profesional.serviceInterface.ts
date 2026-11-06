@@ -12,7 +12,9 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { BloqueResponse } from '../model/models';
+import { BloquesCreadosResponse } from '../model/models';
 import { CreateBloqueRequest } from '../model/models';
+import { CreateBloquesRequest } from '../model/models';
 import { DeactivateBloqueRequest } from '../model/models';
 import { DisponibilidadEfectivaResponse } from '../model/models';
 import { ImpactoDisponibilidadResponse } from '../model/models';
@@ -28,6 +30,12 @@ export interface CreateBloqueDisponibilidadRequestParams {
     consultorioId: number;
     membershipId: number;
     createBloqueRequest: CreateBloqueRequest;
+}
+
+export interface CreateBloquesDisponibilidadRequestParams {
+    consultorioId: number;
+    membershipId: number;
+    createBloquesRequest: CreateBloquesRequest;
 }
 
 export interface DeactivateBloqueDisponibilidadRequestParams {
@@ -81,6 +89,14 @@ export interface DisponibilidadProfesionalServiceInterface {
 * @param requestParameters
      */
     createBloqueDisponibilidad(requestParameters: CreateBloqueDisponibilidadRequestParams, extraHttpRequestParams?: any): Observable<BloqueResponse>;
+
+    /**
+     * Alta en lote de bloques de disponibilidad: varios dias, un horario
+     * Carga el mismo tramo horario en VARIOS dias de la semana de una vez: \&quot;de lunes a viernes de 09 a 13, desde marzo\&quot; (RF-M05-003). Es la carga rapida del horario semanal. Exige agenda:horario sobre ESA sede.  ES ATOMICO. Los dias se procesan en UNA transaccion: si alguno no puede guardarse —se pisa con otro bloque activo, con el horario de la misma persona en otra sede o con una apertura—, NO se guarda ninguno y la respuesta es el 409 del dia que fallo, con diaSemana en el cuerpo para que la pantalla lo senale. Antes, cargar la semana eran cinco pedidos y el cuarto podia fallar dejando tres.  Cada dia se valida exactamente como un alta suelta (ver el POST sin /lote): coincidir EXACTO con un bloque activo devuelve ese bloque sin crear nada ni volver a auditar, y solapar sin coincidir es 409 bloque-solapado. La respuesta dice cuantos se crearon y cuantos ya existian.  RESPONDE 201 SI CREO AL MENOS UNO Y 200 SI TODOS YA EXISTIAN. No trae Location: son varios recursos.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/profesionales/{membershipId}/disponibilidad/lote
+* @param requestParameters
+     */
+    createBloquesDisponibilidad(requestParameters: CreateBloquesDisponibilidadRequestParams, extraHttpRequestParams?: any): Observable<BloquesCreadosResponse>;
 
     /**
      * Baja logica de un bloque de disponibilidad

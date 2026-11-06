@@ -18,9 +18,17 @@ export interface OrganizationResponse {
      */
     active?: boolean;
     /**
+     * Domicilio fiscal del tenant. null si no se cargo
+     */
+    fiscalAddressLine?: string;
+    /**
      * Identificador de la organizacion
      */
     id?: number;
+    /**
+     * Razon social del tenant (V140). La heredan las sedes sin datos fiscales propios. null si no se cargo
+     */
+    legalName?: string;
     /**
      * Nombre del centro
      */
@@ -33,6 +41,10 @@ export interface OrganizationResponse {
      * Identificador legible y estable. No cambia al renombrar el centro: se usa en URLs y en soporte
      */
     slug?: string;
+    /**
+     * Identificacion fiscal del tenant. null si no se cargo
+     */
+    taxId?: string;
     /**
      * Zona horaria IANA del centro. Decide el dia de hoy en lo que se hace sin sede (padron, coberturas, autorizaciones, ordenes, planes); por defecto la de su primera sede (DP-43)
      */

@@ -8,6 +8,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { PERMISO_TENANT_UPDATE } from '../../../../core/models/permisos';
 
 const ORGANIZACION = {
   id: 1,
@@ -45,7 +46,53 @@ describe('OrganizationPage', () => {
     tenantContext = TestBed.inject(TenantContextStore);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // El boton de editar los datos fiscales va detras de `*akinePermiso`, que lee los permisos
+    // una vez: se responde lo que quedo pendiente antes de verificar.
+    httpMock.match('/api/v1/me/permissions').forEach((pedido) => pedido.flush({ permissions: [] }));
+    httpMock.verify();
+  });
+
+  it('edita los datos fiscales con un PATCH que lleva solo lo que cambio y la version', async () => {
+    tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
+    const fixture = TestBed.createComponent(OrganizationPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne('/api/v1/organizations/1')
+      .flush({ ...ORGANIZACION, version: 4, taxId: '30-71094127-7' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    httpMock.expectOne('/api/v1/me/permissions').flush({ permissions: [PERMISO_TENANT_UPDATE] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('30-71094127-7');
+    pulsar(fixture, 'Editar datos fiscales');
+    escribir(fixture, '#fiscal-legalName', 'Centro Belgrano SRL');
+    escribir(fixture, '#fiscal-taxId', '30-71094127-9');
+    pulsar(fixture, 'Guardar los cambios');
+    // Un CUIT que no cierra no sale a la red.
+    expect(texto(fixture)).toContain('El CUIT no es válido');
+    httpMock.expectNone('/api/v1/organizations/1');
+
+    escribir(fixture, '#fiscal-taxId', '30-71094127-7');
+    pulsar(fixture, 'Guardar los cambios');
+    const patch = httpMock.expectOne(
+      (pedido) => pedido.method === 'PATCH' && pedido.url === '/api/v1/organizations/1',
+    );
+    expect(patch.request.body).toEqual({ version: 4, legalName: 'Centro Belgrano SRL' });
+    patch.flush({
+      ...ORGANIZACION,
+      version: 5,
+      legalName: 'Centro Belgrano SRL',
+      taxId: '30-71094127-7',
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Centro Belgrano SRL');
+    expect(fixture.nativeElement.querySelector('#fiscal-legalName')).toBeNull();
+  });
 
   it('sin contexto elegido no pide nada y ofrece ir a elegirlo', () => {
     const fixture = TestBed.createComponent(OrganizationPage);
@@ -256,4 +303,29 @@ describe('OrganizationPage', () => {
 
 function texto(fixture: { nativeElement: HTMLElement }): string {
   return fixture.nativeElement.textContent ?? '';
+}
+
+function escribir(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  selector: string,
+  valor: string,
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el campo ${selector}`);
+  }
+  campo.value = valor;
+  campo.dispatchEvent(new Event('input'));
+  fixture.detectChanges();
+}
+
+function pulsar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, rotulo: string) {
+  const boton = Array.from(
+    fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((candidato) => candidato.textContent?.includes(rotulo));
+  if (boton === undefined) {
+    throw new Error(`No existe el botón ${rotulo}`);
+  }
+  boton.click();
+  fixture.detectChanges();
 }

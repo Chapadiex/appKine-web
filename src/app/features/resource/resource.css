@@ -521,3 +521,153 @@ textarea:disabled {
   white-space: normal;
   text-align: start;
 }
+
+/*
+ * Formulario de horario del profesional en el panel lateral (rediseño del 05/11/2026): pocas
+ * filas, cada seccion con su titulo, un solo renglon de error por seccion con alto reservado para
+ * que aparecer no mueva nada.
+ */
+.formulario-horario__seccion {
+  display: block;
+  min-width: 0;
+  margin: 0 0 var(--esp-5);
+  padding: 0;
+  border: 0;
+}
+
+.formulario-horario__seccion > legend {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  width: 100%;
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.formulario-horario__paso {
+  margin-left: auto;
+  min-height: 1.5rem;
+}
+
+.formulario-horario__error {
+  min-height: 1.25rem;
+  margin: var(--esp-3) 0 0;
+  font-size: var(--tipo-sm);
+  line-height: 1.25rem;
+  color: var(--color-peligro);
+}
+
+/* Pastillas: radios y casillas nativas con aspecto de boton, estado elegido bien visible. */
+.pastillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.pastillas + .pastillas {
+  margin-top: var(--esp-4);
+}
+
+.pastilla {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pastilla input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pastilla:hover {
+  border-color: var(--color-acento);
+}
+
+.pastilla:has(input:checked) {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.pastilla:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.pastilla--dia {
+  min-width: 2.75rem;
+  padding: 0 var(--esp-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pastilla--conflicto {
+  border-color: var(--color-peligro);
+  box-shadow: inset 0 0 0 1px var(--color-peligro);
+  background: var(--color-peligro-fondo);
+}
+
+/* Desde y hasta en la misma fila, con la ayuda al final. Envuelve en pantallas angostas. */
+.horario-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-4) var(--esp-5);
+}
+
+.horario-fila > .campo {
+  flex: 1 1 8rem;
+  margin: 0;
+}
+
+.horario-fila > .campo--dia {
+  flex: 1 1 9rem;
+}
+
+.horario-fila > .campo--fecha {
+  flex: 1 1 10rem;
+}
+
+.horario-fila__ayuda {
+  align-self: center;
+  margin-bottom: var(--esp-3);
+}
+
+.vigencia-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-5);
+}
+
+.vigencia-fila + .vigencia-fila {
+  margin-top: var(--esp-4);
+}
+
+.vigencia-fila > .campo--fecha {
+  flex: 0 1 11rem;
+  margin: 0;
+}
+
+.formulario-horario .opcion-casilla {
+  margin-top: var(--esp-4);
+  font-size: var(--tipo-sm);
+}

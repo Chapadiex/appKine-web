@@ -440,6 +440,14 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
     // falls through
     case 'oferta-no-agendable':
       return base(MENSAJE_OFERTA_NO_AGENDABLE, 'oferta-no-agendable', 'ninguna');
+    case 'consultorio-sin-agenda':
+      // La sede existe pero no esta habilitada para turnos (05/11/2026): lo cambia quien
+      // administra la sede, no quien reserva.
+      return base(
+        'Esta sede todavía no está habilitada para agenda y turnos. Un administrador puede habilitarla desde Configuración › Sedes.',
+        'conflicto',
+        'ninguna',
+      );
     default:
       break;
   }

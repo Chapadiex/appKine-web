@@ -30,6 +30,9 @@
             "styles": [
               "src/styles.css",
               "src/design-system.css"
+            ],
+            "allowedCommonJsDependencies": [
+              "leaflet"
             ]
           },
           "configurations": {

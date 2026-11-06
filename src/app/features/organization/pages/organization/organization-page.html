@@ -37,7 +37,33 @@
 
             <dt>Identificador de soporte</dt>
             <dd>{{ organizacion()?.slug }}</dd>
+
+            <!--
+              Datos fiscales (05/11/2026): los heredan las sedes que no tienen los suyos, asi que
+              viven aca y no se repiten sede por sede.
+            -->
+            <dt>Razón social</dt>
+            <dd>{{ organizacion()?.legalName || '-' }}</dd>
+
+            <dt>CUIT</dt>
+            <dd>{{ organizacion()?.taxId || '-' }}</dd>
+
+            <dt>Domicilio fiscal</dt>
+            <dd>{{ organizacion()?.fiscalAddressLine || '-' }}</dd>
           </dl>
+
+          @if (organizacion()?.active !== false) {
+            <p class="acciones">
+              <button
+                *akinePermiso="permisoEditar"
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirEdicionFiscal()"
+              >
+                Editar datos fiscales
+              </button>
+            </p>
+          }
 
           @if (organizacion()?.active === false) {
             <p class="estado estado--error" role="alert">
@@ -88,3 +114,76 @@
     </section>
   }
 </div>
+
+<!--
+  Edicion de los datos fiscales en un panel lateral. Solo esos tres: el nombre y la zona horaria
+  tienen consecuencias operativas (DP-43) y no se tocan desde aca.
+-->
+@if (editandoFiscal()) {
+  <app-panel-lateral
+    titulo="Datos fiscales de la organización"
+    subtitulo="Los usan las sedes que no tienen datos fiscales propios."
+    (cerrar)="cerrarEdicionFiscal()"
+  >
+    <form [formGroup]="formularioFiscal" (ngSubmit)="guardarFiscal()" novalidate>
+      @if (errorFiscal(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos guardar los datos fiscales">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <p class="ayuda ayuda--fija panel-lateral__nota" id="fiscal-ayuda">
+        Todos son opcionales. <b>Vaciar un dato lo borra</b>.
+      </p>
+
+      <div class="campo campo--12">
+        <label for="fiscal-legalName">Razón social</label>
+        <input
+          id="fiscal-legalName"
+          type="text"
+          formControlName="legalName"
+          aria-describedby="fiscal-ayuda"
+        />
+      </div>
+
+      <div class="campo campo--6">
+        <label for="fiscal-taxId">CUIT o identificación fiscal</label>
+        <input
+          id="fiscal-taxId"
+          type="text"
+          inputmode="numeric"
+          formControlName="taxId"
+          placeholder="30-12345678-9"
+          [attr.aria-invalid]="mostrarErrorFiscal('taxId')"
+          [attr.aria-describedby]="
+            mostrarErrorFiscal('taxId') ? 'fiscal-taxId-error' : 'fiscal-ayuda'
+          "
+        />
+        @if (mostrarErrorFiscal('taxId')) {
+          <p class="campo__error" id="fiscal-taxId-error">
+            {{ erroresFiscal()['taxId'] ?? 'El CUIT no es válido: revisá el dígito verificador.' }}
+          </p>
+        }
+      </div>
+
+      <div class="campo campo--12">
+        <label for="fiscal-addressLine">Domicilio fiscal</label>
+        <input
+          id="fiscal-addressLine"
+          type="text"
+          formControlName="fiscalAddressLine"
+          aria-describedby="fiscal-ayuda"
+        />
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="guardandoFiscal()">
+          Guardar los cambios
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarEdicionFiscal()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
