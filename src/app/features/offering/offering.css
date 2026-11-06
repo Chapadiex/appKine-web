@@ -3,7 +3,7 @@
  *
  * <b>Deliberadamente corta</b>, igual que las de `resource` y `catalog`. `.boton`, `.campo`,
  * `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.etiqueta`, `.marca-estado`,
- * `.fila--revocada`, `.fila-panel`, `.acciones-fila` y `.campo__error` los aporta
+ * `.fila--revocada`, `.fila-panel` y `.campo__error` los aporta
  * `src/design-system.css`, que es global. Copiarlos aca no seria aislar el feature: seria una
  * copia que se despega del original el dia que alguien retoque un gris.
  *

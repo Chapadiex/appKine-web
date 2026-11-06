@@ -2,7 +2,7 @@
  * Hoja de la feature `resource` (espacios y boxes, M04).
  *
  * <b>Deliberadamente corta.</b> `.boton`, `.campo`, `.tabla`, `.tabla-scroll`, `.estado`,
- * `.tarjeta`, `.etiqueta`, `.marca-estado`, `.fila--revocada`, `.fila-panel`, `.acciones-fila`
+ * `.tarjeta`, `.etiqueta`, `.marca-estado`, `.fila--revocada`, `.fila-panel`
  * y `.paginacion` los aporta `src/design-system.css`, que es global. Volver a declararlos aca
  * no seria "aislar el feature": seria una copia que se despega del original el dia que alguien
  * retoque un gris en la hoja global y estas pantallas se queden con el viejo.
