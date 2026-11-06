@@ -29,6 +29,8 @@ const SEDE = 3;
 const PROFESIONAL = 42;
 
 const BLOQUES = rutaBloquesDisponibilidad(SEDE, PROFESIONAL);
+/** El alta en lote (contrato 0.159.0): todos los dias en un pedido. */
+const LOTE = `${BLOQUES}/lote`;
 
 /** Profesional con vinculo de alcance organizacion: habilita en TODAS las sedes, incluida esta. */
 const ANA = {
@@ -204,42 +206,51 @@ describe('HorarioSemanalPage', () => {
 
     // Y se puede volver a escribir: el campo es de texto justamente porque un `type="time"`
     // rechaza 24:00 y vacia el control sin decir nada.
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '20:00');
-    escribir(fixture, '#alta-bloque-hasta', '24:00');
-    seleccionar(fixture, '#alta-bloque-dia', '3');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '20:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '24:00');
+    elegirDias(fixture, [3]);
     enviar(fixture, 'form');
 
+    // Un solo pedido al lote, con el dia elegido y las horas tal cual (contrato 0.159.0).
     const alta = httpMock.expectOne(
-      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === BLOQUES,
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LOTE,
     );
-    expect(alta.request.body).toEqual({ diaSemana: 3, horaDesde: '20:00', horaHasta: '24:00' });
+    expect(alta.request.body).toEqual({ diasSemana: [3], horaDesde: '20:00', horaHasta: '24:00' });
 
-    alta.flush({ ...MARTES_NOCHE, id: 103, diaSemana: 3 }, { status: 201, statusText: 'Created' });
+    alta.flush(
+      { bloques: [{ ...MARTES_NOCHE, id: 103, diaSemana: 3 }], creados: 1, existentes: 0 },
+      { status: 201, statusText: 'Created' },
+    );
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
 
-    expect(titulosDeAvisos()).toEqual(['Bloque agregado al horario']);
+    expect(titulosDeAvisos()).toEqual(['Horario agregado']);
     expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un 409 de solapamiento muestra los dos bloques que chocan, no un cartel generico', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '10:00');
-    escribir(fixture, '#alta-bloque-hasta', '11:00');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '10:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '11:00');
     enviar(fixture, 'form');
 
     httpMock
-      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LOTE,
+      )
       .flush(
         {
           type: 'https://akine.app/problems/bloque-solapado',
           bloqueEnConflictoId: LUNES_MANANA.id,
           diaSemana: 1,
-          horaDesde: '09:00',
-          horaHasta: '12:00',
+          horaDesde: '10:00',
+          horaHasta: '11:00',
+          conflictoHoraDesde: '09:00',
+          conflictoHoraHasta: '12:00',
+          conflictoMismaSede: true,
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -247,10 +258,10 @@ describe('HorarioSemanalPage', () => {
 
     const contenido = texto(fixture);
 
-    // 1. El mensaje NOMBRA el otro bloque: sin esto hay que recorrer la semana comparando horas.
-    expect(contenido).toContain('se pisa con el bloque del lunes de 09:00 a 12:00');
-    // 2. Y aclara lo que el usuario esta por "corregir" mal: contiguo no es solapado.
-    expect(contenido).toContain('la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven');
+    // 1. El mensaje NOMBRA el otro bloque, en una linea: sin esto hay que recorrer la semana
+    //    comparando horas. Que contiguo no es solapado lo explica la ayuda "?", no el error.
+    expect(contenido).toContain('Ya existe un horario para el lunes de 09:00 a 12:00');
+    expect(contenido).not.toContain('conviven');
 
     // 3. La fila del bloque en conflicto queda senalada, y SOLO esa. El color no es lo unico
     //    que la distingue: dentro de la fila hay un texto que lo dice.
@@ -262,13 +273,13 @@ describe('HorarioSemanalPage', () => {
     // 4. El panel sigue abierto con lo escrito: la correccion es sobre eso mismo.
     expect(campo(fixture, '#alta-bloque-desde')).toBe('10:00');
 
-    // 5. UX-12: el choque es una advertencia pegada al día y las horas que lo producen.
-    const alerta = fixture.nativeElement.querySelector('#alta-bloque-solapado');
-    expect(alerta?.textContent).toContain('Se superpone con otro bloque del horario');
-    for (const selector of ['#alta-bloque-dia', '#alta-bloque-desde', '#alta-bloque-hasta']) {
+    // 5. El choque es el unico mensaje de la fila de horas, y los dos selectores lo describen.
+    const error = fixture.nativeElement.querySelector('#alta-bloque-horas-error');
+    expect(error?.textContent).toContain('Ya existe un horario para el lunes');
+    for (const selector of ['#alta-bloque-desde', '#alta-bloque-hasta']) {
       const control = fixture.nativeElement.querySelector(selector);
       expect(control?.getAttribute('aria-invalid')).toBe('true');
-      expect(control?.getAttribute('aria-describedby')).toBe('alta-bloque-solapado');
+      expect(control?.getAttribute('aria-describedby')).toBe('alta-bloque-horas-error');
     }
   });
 
@@ -516,28 +527,29 @@ describe('HorarioSemanalPage', () => {
     const rotulos = [...fixture.nativeElement.querySelectorAll('button')].map((b) =>
       (b.textContent ?? '').trim(),
     );
-    expect(rotulos).not.toContain('Agregar un bloque');
+    expect(rotulos).not.toContain('Agregar horario');
     expect(rotulos).not.toContain('Editar');
   });
 
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '15:00');
-    escribir(fixture, '#alta-bloque-hasta', '09:00');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '15:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '09:00');
     enviar(fixture, 'form');
 
     // Un bloque nunca cruza al dia siguiente: el backend lo rechazaria con 400 y gastar ese
     // viaje no aporta nada.
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('tiene que ser posterior a la de inicio');
+    expect(texto(fixture)).toContain('La hora de fin debe ser posterior al inicio');
 
-    // Y una hora mal escrita se senala en el campo, no al pie.
-    escribir(fixture, '#alta-bloque-desde', '9:00');
+    // Y una hora mal escrita en el campo de hora exacta se senala en la fila, en una linea.
+    seleccionar(fixture, '#alta-bloque-desde', 'otra');
+    escribir(fixture, '#alta-bloque-desde-exacta', '9:00');
     enviar(fixture, 'form');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('Escribi la hora de inicio como HH:MM');
+    expect(texto(fixture)).toContain('Ingresá una hora válida');
 
     // Deseleccionar vuelve al estado inicial sin consultar nada: la semana que quedaba en
     // pantalla era de un profesional que ya no esta elegido.
@@ -572,7 +584,7 @@ describe('HorarioSemanalPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-bloque-hasta', '11:00');
+    seleccionar(fixture, '#editar-bloque-hasta', '11:00');
     enviar(fixture, 'form');
 
     httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`).flush({
@@ -675,7 +687,7 @@ describe('HorarioSemanalPage', () => {
 
     expect(fixture.nativeElement.querySelector('#selector-profesional')).not.toBeNull();
     // Sin `consultorio:manage` no se ofrece ninguna accion que termine en 403.
-    expect(texto(fixture)).not.toContain('Agregar un bloque');
+    expect(texto(fixture)).not.toContain('Agregar horario');
   });
 
   /**
@@ -969,4 +981,35 @@ function titulosDeAvisos(): string[] {
   return TestBed.inject(AvisosStore)
     .avisos()
     .map((aviso) => aviso.titulo);
+}
+
+/**
+ * Elige exactamente esos dias en el alta: pasa al modo personalizado y deja marcadas solo esas
+ * pastillas. Las pastillas son casillas nativas: se marcan con un click.
+ */
+function elegirDias(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  dias: readonly number[],
+) {
+  const host = fixture.nativeElement as HTMLElement;
+  // El `[value]` del radio lo administra Angular y no llega al DOM: se busca por su rotulo.
+  const personalizado =
+    [...host.querySelectorAll<HTMLLabelElement>('label.pastilla')]
+      .find((pastilla) => (pastilla.textContent ?? '').trim() === 'Personalizado')
+      ?.querySelector<HTMLInputElement>('input[name="modoDias"]') ?? null;
+  if (personalizado === null) {
+    throw new Error('No existe la opción Personalizado');
+  }
+  personalizado.click();
+  fixture.detectChanges();
+  for (let dia = 1; dia <= 7; dia++) {
+    const casilla = host.querySelector<HTMLInputElement>(`#alta-bloque-dia-${dia}`);
+    if (casilla === null) {
+      throw new Error(`No existe la pastilla del día ${dia}`);
+    }
+    if (casilla.checked !== dias.includes(dia)) {
+      casilla.click();
+      fixture.detectChanges();
+    }
+  }
 }

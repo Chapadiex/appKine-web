@@ -76,9 +76,9 @@ describe('traducirErrorBloque', () => {
       horaDesde: '09:00',
       horaHasta: '12:00',
     });
-    expect(traducido.mensaje).toContain('el bloque del miercoles de 09:00 a 12:00');
-    // Y aclara lo que el usuario esta por corregir mal: contiguo no es solapado.
-    expect(traducido.mensaje).toContain('la hora de fin es exclusiva');
+    expect(traducido.mensaje).toBe('Ya existe un horario para el miercoles de 09:00 a 12:00.');
+    // Corto y en una linea (05/11/2026): que contiguo no es solapado lo explica la ayuda "?".
+    expect(traducido.mensaje).not.toContain('exclusiva');
   });
 
   it('un solapamiento sin extensiones degrada a un mensaje sin senalamiento, no rompe', () => {
@@ -93,7 +93,7 @@ describe('traducirErrorBloque', () => {
       horaDesde: null,
       horaHasta: null,
     });
-    expect(traducido.mensaje).toContain('NO se pisan');
+    expect(traducido.mensaje).toBe('Ya existe un horario que se pisa con el pedido.');
   });
 
   it('la medianoche se nombra en palabras: 24:00 a secas se lee como un error de carga', () => {
@@ -171,7 +171,9 @@ describe('traducirErrorBloque', () => {
     );
     expect(traducido.causa).toBe('solapado');
     expect(traducido.conflicto).toBeNull();
-    expect(traducido.mensaje).toContain('horario de atención en la sede Norte los sabados');
+    expect(traducido.mensaje).toContain(
+      'Conflicto con actividad en otra sede: ya tiene horario de atención en Norte los sabados',
+    );
     expect(traducido.mensaje).toContain('09:00');
     expect(traducido.mensaje).not.toContain('esta sede');
 
@@ -185,7 +187,7 @@ describe('traducirErrorBloque', () => {
         conflictoHoraHasta: '13:00',
       }),
     );
-    expect(apertura.mensaje).toContain('una apertura de agenda en la sede Norte el 04/03/2030');
+    expect(apertura.mensaje).toContain('ya tiene una apertura de agenda en Norte el 04/03/2030');
 
     // Sin nombre de sede, el detail del servidor.
     const sinNombre = traducirErrorBloque(
