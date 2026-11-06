@@ -90,8 +90,8 @@ test.describe('Sedes contra el backend real', () => {
     await page.getByLabel('Nombre del box').fill('Box 1');
     // El horario es una semana con un interruptor por dia: abrir el lunes propone 09 a 18.
     await page.getByRole('switch', { name: 'Lunes' }).check();
-    await page.locator('#sede-horario-desde-0').fill('08:00');
-    await page.locator('#sede-horario-hasta-0').fill('20:00');
+    await page.locator('#sede-horario-desde-0').selectOption('08:00');
+    await page.locator('#sede-horario-hasta-0').selectOption('20:00');
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     const alta = respuestaDe(page, 'POST', /\/organizations\/\d+\/consultorios$/);

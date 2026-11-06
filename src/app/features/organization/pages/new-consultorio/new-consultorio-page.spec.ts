@@ -376,12 +376,13 @@ function escribir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement | HTMLSelectElement>(selector);
   if (campo === null) {
     throw new Error(`No existe el campo ${selector}`);
   }
   campo.value = valor;
-  campo.dispatchEvent(new Event('input'));
+  // Las horas del horario son desplegables: el formulario escucha `change`, no `input`.
+  campo.dispatchEvent(new Event(campo instanceof HTMLSelectElement ? 'change' : 'input'));
   fixture.detectChanges();
 }
 

@@ -63,11 +63,13 @@
   list-style: none;
 }
 
+/* Tres columnas: el dia, sus franjas (una por renglon) y las acciones a la derecha. El error va
+   debajo de las horas, en la misma columna, y no corre al renglon siguiente las acciones. */
 .semana__dia {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--esp-4) var(--esp-6);
+  gap: var(--esp-3) var(--esp-6);
   min-height: 3.5rem;
   padding: var(--esp-4) 0;
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
@@ -75,7 +77,6 @@
 
 .semana__interruptor {
   display: flex;
-  flex: 0 0 9rem;
   align-items: center;
   gap: var(--esp-5);
   cursor: pointer;
@@ -133,15 +134,14 @@
 }
 
 .semana__cerrada {
-  flex: 1 1 auto;
+  grid-column: 2 / -1;
 }
 
 .semana__franjas {
   display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-6);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-3);
 }
 
 .semana__franja {
@@ -150,18 +150,12 @@
   gap: var(--esp-3);
 }
 
-.semana__y {
-  padding-right: var(--esp-2);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-}
-
 /* Fuera de `.campo`: las reglas de controles del sistema no llegan, se repiten las que hacen falta. */
 .semana__hora {
   box-sizing: border-box;
-  width: 5.25rem;
+  width: 6.25rem;
   min-height: 2.5rem;
-  padding: var(--esp-4) var(--esp-3);
+  padding: var(--esp-3) var(--esp-3);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -189,6 +183,8 @@
 .semana__acciones {
   display: flex;
   flex-wrap: wrap;
+  align-self: start;
+  justify-content: flex-end;
   align-items: center;
 }
 
@@ -218,9 +214,8 @@
 }
 
 .semana__error {
-  flex-basis: 100%;
+  grid-column: 2 / -1;
   margin: 0;
-  padding-left: calc(9rem + var(--esp-6));
 }
 
 .semana__pie {
@@ -229,11 +224,16 @@
 }
 
 @media (max-width: 40rem) {
-  .semana__interruptor {
-    flex-basis: 100%;
+  .semana__dia {
+    grid-template-columns: minmax(0, 1fr);
   }
 
+  .semana__cerrada,
   .semana__error {
-    padding-left: 0;
+    grid-column: 1;
+  }
+
+  .semana__acciones {
+    justify-content: flex-start;
   }
 }

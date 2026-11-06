@@ -49,24 +49,21 @@ describe('HorarioSemanal', () => {
     expect(marcado?.textContent?.trim()).toBe('Lunes a sábado');
   });
 
-  it('ofrece un datalist por instancia con los 97 cuartos de hora, de 00:00 a 24:00', async () => {
+  it('las horas son desplegables de cuartos: abre hasta 23:45 y cierra hasta 24:00', async () => {
     const { raiz, pulsar } = await montar();
     await pulsar('Lunes a viernes');
 
-    const listas = raiz.querySelectorAll('datalist');
-    expect(listas.length).toBe(1);
-    expect(listas[0].id).toBe('prueba-horas');
-    const opciones = [...listas[0].querySelectorAll('option')].map((opcion) => opcion.value);
-    expect(opciones.length).toBe(97);
-    expect(opciones[0]).toBe('00:00');
-    expect(opciones[96]).toBe('24:00');
-    // Cada campo de hora sigue siendo texto —24:00 tiene que poder escribirse— y nombra la lista.
-    const horas = raiz.querySelectorAll<HTMLInputElement>('input.semana__hora');
+    const horas = raiz.querySelectorAll<HTMLSelectElement>('select.semana__hora');
     expect(horas.length).toBe(10);
-    for (const hora of horas) {
-      expect(hora.type).toBe('text');
-      expect(hora.getAttribute('list')).toBe('prueba-horas');
-    }
+    expect(raiz.querySelector('input.semana__hora')).toBeNull();
+    const valores = (campo: HTMLSelectElement) => [...campo.options].map((opcion) => opcion.value);
+    const abre = valores(raiz.querySelector<HTMLSelectElement>('#prueba-desde-0')!);
+    const cierra = valores(raiz.querySelector<HTMLSelectElement>('#prueba-hasta-0')!);
+    expect(abre.slice(0, 2)).toEqual(['', '00:00']);
+    expect(abre.at(-1)).toBe('23:45');
+    expect(cierra.slice(0, 2)).toEqual(['', '00:15']);
+    expect(cierra.at(-1)).toBe('24:00');
+    expect(horas[0].value).toBe('09:00');
   });
 
   it('"+ Otra franja" suma una tercera franja vacia al dia y "Quitar" la saca', async () => {

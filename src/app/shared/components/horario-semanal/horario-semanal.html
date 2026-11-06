@@ -15,13 +15,6 @@
   <p class="semana__resumen" aria-live="polite">{{ resumen() }}</p>
 </div>
 
-<!-- Una sola lista de cuartos de hora para todos los campos de la instancia. -->
-<datalist [id]="idListaDeHoras()">
-  @for (hora of cuartos; track hora) {
-    <option [value]="hora"></option>
-  }
-</datalist>
-
 <ul class="semana__dias">
   @for (dia of dias(); track dia.numero) {
     <li class="semana__dia" [class.semana__dia--cerrado]="dia.franjas.length === 0">
@@ -42,48 +35,41 @@
         <div class="semana__franjas">
           @for (franja of dia.franjas; track franja.control; let posicion = $index) {
             <div class="semana__franja" [formGroup]="franja.control">
-              @if (posicion > 0) {
-                <span class="semana__y" aria-hidden="true">y</span>
-              }
               <label class="visualmente-oculto" [for]="idBase() + '-desde-' + franja.indice">
                 {{ dia.etiqueta }}, abre{{ sufijoDeFranja(posicion) }}
               </label>
-              <input
+              <select
                 class="semana__hora"
                 [id]="idBase() + '-desde-' + franja.indice"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                maxlength="5"
-                placeholder="09:00"
-                [attr.list]="idListaDeHoras()"
-                [attr.pattern]="patronHora"
                 formControlName="horaDesde"
                 [attr.aria-invalid]="mensaje(franja.indice) !== null"
                 [attr.aria-describedby]="
                   errorDelDia(dia) ? idBase() + '-error-' + errorDelDia(dia)?.indice : null
                 "
-              />
+              >
+                <option value="">--:--</option>
+                @for (hora of horasDeApertura; track hora) {
+                  <option [value]="hora">{{ hora }}</option>
+                }
+              </select>
               <span aria-hidden="true">–</span>
               <label class="visualmente-oculto" [for]="idBase() + '-hasta-' + franja.indice">
                 {{ dia.etiqueta }}, cierra{{ sufijoDeFranja(posicion) }}
               </label>
-              <input
+              <select
                 class="semana__hora"
                 [id]="idBase() + '-hasta-' + franja.indice"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                maxlength="5"
-                placeholder="18:00"
-                [attr.list]="idListaDeHoras()"
-                [attr.pattern]="patronHora"
                 formControlName="horaHasta"
                 [attr.aria-invalid]="mensaje(franja.indice) !== null"
                 [attr.aria-describedby]="
                   errorDelDia(dia) ? idBase() + '-error-' + errorDelDia(dia)?.indice : null
                 "
-              />
+              >
+                <option value="">--:--</option>
+                @for (hora of horasDeCierre; track hora) {
+                  <option [value]="hora">{{ hora }}</option>
+                }
+              </select>
               @if (puedeQuitarFranja(dia)) {
                 <button type="button" class="semana__quitar" (click)="quitarFranja(franja.indice)">
                   Quitar<span class="visualmente-oculto">

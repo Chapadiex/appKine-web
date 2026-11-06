@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, signal } f
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../utils/dias-de-la-semana';
-import { PATRON_HORA, cuartosDeHora, minutosDeHora } from '../../utils/horas-de-pared';
+import { cuartosDeHora, minutosDeHora } from '../../utils/horas-de-pared';
 import {
   FranjaForm,
   FranjaSemanal,
@@ -59,6 +59,8 @@ interface FranjaDelDia {
   readonly control: FranjaForm;
 }
 
+const CUARTOS = cuartosDeHora();
+
 interface DiaDelEditor {
   readonly numero: number;
   readonly etiqueta: string;
@@ -77,8 +79,9 @@ interface DiaDelEditor {
  * <p>La lista se mantiene <b>ordenada por dia</b>. Los indices que nombra un `400`
  * (`horarioGeneral[2]`) son los del cuerpo enviado, que es esta misma lista en este mismo orden.
  *
- * <p>Las horas siguen siendo texto (`24:00` tiene que poder escribirse); un `<datalist>` por
- * instancia, `{idBase}-horas`, le ofrece al navegador los cuartos de hora sin impedir tipear.
+ * <p>Las horas se eligen de un desplegable de cuartos de hora (06/11/2026): el campo de texto con
+ * `<datalist>` dejaba escribir cualquier cosa. El valor sigue siendo el string del contrato, y el
+ * cierre ofrece `24:00` para la medianoche.
  *
  * <p>Como el editor libre, vive en `shared/` y no sabe que es una sede.
  */
@@ -103,11 +106,9 @@ export class HorarioSemanal {
   readonly erroresDelServidor = input<ReadonlyMap<number, string>>(new Map());
 
   protected readonly modelos = MODELOS;
-  protected readonly patronHora = PATRON_HORA;
-  protected readonly cuartos = cuartosDeHora();
-
-  /** `id` del `<datalist>` de horas, uno por instancia: cada campo de hora lo nombra en `list`. */
-  protected readonly idListaDeHoras = computed(() => `${this.idBase()}-horas`);
+  /** Abrir va de 00:00 a 23:45; cerrar, de 00:15 a 24:00 (medianoche). */
+  protected readonly horasDeApertura = CUARTOS.slice(0, -1);
+  protected readonly horasDeCierre = CUARTOS.slice(1);
 
   /** Con OnPush, el padre que muta la misma instancia no dispara nada: se escucha la lista. */
   private readonly cambios = signal(0);
