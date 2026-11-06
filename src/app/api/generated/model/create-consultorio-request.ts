@@ -8,6 +8,7 @@
  * Do not edit the class manually.
  */
 import { AltaSedeFranjaHorariaRequest } from './alta-sede-franja-horaria-request';
+import { UbicacionRequest } from './ubicacion-request';
 import { AltaSedePrimerBoxRequest } from './alta-sede-primer-box-request';
 
 
@@ -16,19 +17,47 @@ import { AltaSedePrimerBoxRequest } from './alta-sede-primer-box-request';
  */
 export interface CreateConsultorioRequest { 
     /**
-     * Direccion
+     * Direccion fiscal propia de la sede, en una linea. Cuenta solo con datosFiscalesPropios. La direccion FISICA va en pais, provincia, ciudad, calle, numero, codigoPostal y piso
      */
     addressLine?: string;
+    /**
+     * Si la sede ya recibe turnos. Si se omite, true. En false la sede existe y se configura pero reservar, crear series o trasladar turnos hacia ella es 409 consultorio-sin-agenda
+     */
+    agendaHabilitada?: boolean;
+    /**
+     * Nombre corto para la agenda y los listados
+     */
+    alias?: string;
+    /**
+     * Calle
+     */
+    calle?: string;
+    /**
+     * Ciudad o localidad
+     */
+    ciudad?: string;
+    /**
+     * Codigo postal
+     */
+    codigoPostal?: string;
     /**
      * Email de contacto
      */
     contactEmail?: string;
     /**
+     * true: la sede factura con legalName, taxId y addressLine propios. false (default): con los datos fiscales de la organizacion
+     */
+    datosFiscalesPropios?: boolean;
+    /**
+     * Si la direccion fisica viaja en los avisos de turno al paciente. Si se omite, true
+     */
+    direccionPublica?: boolean;
+    /**
      * Horario general de la sede (RF-M03-002): franjas semanales en la zona de la sede. Desde 0.74.0 (DP-19) LIMITA la agenda: ningun turno se ofrece ni se reserva fuera de este horario. NO sustituye la disponibilidad de cada profesional (RN-M03-004): la recorta. Omitido, no limita nada. Se crea en la misma transaccion que la sede; dos franjas del mismo dia que se pisan, o una que termina antes de empezar, rechazan el alta entera con 400. Se lee y se edita despues por /consultorios/{id}/calendario
      */
     horarioGeneral?: Array<AltaSedeFranjaHorariaRequest>;
     /**
-     * Razon social
+     * Razon social propia de la sede. Cuenta solo con datosFiscalesPropios
      */
     legalName?: string;
     /**
@@ -36,24 +65,48 @@ export interface CreateConsultorioRequest {
      */
     name: string;
     /**
+     * Altura. Texto: admite S/N o 1234 bis
+     */
+    numero?: string;
+    /**
+     * Pais de la direccion fisica, ISO 3166-1 alpha-2. Se guarda en mayusculas
+     */
+    pais?: string;
+    /**
      * Telefono de contacto
      */
     phone?: string;
+    /**
+     * Piso, oficina o departamento
+     */
+    piso?: string;
     /**
      * Primer box de la sede (RF-M03-002). Si viene, se crea en la misma transaccion que la sede: si algo falla no queda ni la sede ni el box. Omitirlo da de alta la sede sola, como antes
      */
     primerBox?: AltaSedePrimerBoxRequest;
     /**
+     * Provincia o estado
+     */
+    provincia?: string;
+    /**
+     * Indicaciones para llegar
+     */
+    referencias?: string;
+    /**
      * Intervalo por defecto de la agenda, en minutos. Si se omite, 30
      */
     slotMinutes?: number;
     /**
-     * Identificacion fiscal
+     * Identificacion fiscal propia de la sede. Si tiene forma de CUIT (11 digitos, guiones opcionales) el digito verificador tiene que ser correcto: si no, 400 con errors.taxId. Cualquier otro formato se acepta como texto
      */
     taxId?: string;
     /**
      * Zona horaria IANA de la sede. Si se omite, se hereda la de la organizacion. Solo se aceptan identificadores IANA: un offset fijo como -03:00 no conoce el horario de verano y correria la agenda
      */
     timezone?: string;
+    /**
+     * Coordenadas de la sede. Las dos juntas: una sola es 400 con errors.ubicacion. Si se omite, la sede queda con la direccion escrita y sin ubicar (ubicacionPendiente)
+     */
+    ubicacion?: UbicacionRequest;
 }
 

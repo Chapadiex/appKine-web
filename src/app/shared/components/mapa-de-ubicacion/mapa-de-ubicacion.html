@@ -1,0 +1,21 @@
+<div class="mapa-de-ubicacion__marco">
+  <div
+    #lienzo
+    class="mapa-de-ubicacion__lienzo"
+    role="application"
+    [attr.aria-label]="nombreAccesible()"
+    [attr.aria-describedby]="editable() ? idAyuda : null"
+    [attr.aria-busy]="estado() === 'cargando'"
+  ></div>
+  @if (estado() === 'cargando') {
+    <p class="mapa-de-ubicacion__aviso" aria-busy="true">Cargando el mapa…</p>
+  } @else if (estado() === 'error') {
+    <p class="mapa-de-ubicacion__aviso" role="status">No se pudo cargar el mapa</p>
+  }
+</div>
+@if (editable()) {
+  <p class="visualmente-oculto" [id]="idAyuda">
+    Arrastrá el marcador o hacé clic en el mapa para ajustar la ubicación. También podés escribir
+    las coordenadas.
+  </p>
+}

@@ -1,5 +1,6 @@
 import {
   Component,
+  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
@@ -12,12 +13,15 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
+import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { CreateConsultorioRequest } from '../../../../api/generated/model/create-consultorio-request';
+import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
@@ -26,6 +30,7 @@ import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { validadorDeCuit } from '../../../../shared/utils/cuit';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { HorarioSemanal } from '../../../../shared/components/horario-semanal/horario-semanal';
 import {
@@ -39,6 +44,16 @@ import {
 } from '../../../../shared/utils/franjas-semanales';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { MapaDeUbicacion } from '../../../../shared/components/mapa-de-ubicacion/mapa-de-ubicacion';
+import { coordenadasFormateadas } from '../../../../shared/utils/enlaces-de-mapa';
+import { EditorDeUbicacion } from '../../components/editor-de-ubicacion/editor-de-ubicacion';
+import { direccionEnUnaLinea, tieneDireccion } from '../../models/direccion';
+import {
+  crearUbicacionForm,
+  estadoDeUbicacion,
+  origenParaElCable,
+  ubicacionDelFormulario,
+} from '../../models/ubicacion-form';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -48,36 +63,27 @@ type EstadoAlta =
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaConsultorio };
 
 /** Campos de cada paso, en el orden en que se enfoca el primero invalido tras un submit. */
-const CAMPOS_PASO_1 = ['name', 'slotMinutes'] as const;
-const CAMPOS_PASO_2 = ['boxCapacidad', 'contactEmail'] as const;
+const CAMPOS_PASO_1 = ['name', 'alias', 'slotMinutes', 'phone', 'contactEmail'] as const;
+const CAMPOS_PASO_2 = ['boxCapacidad', 'taxId'] as const;
 
 type Paso = 1 | 2 | 3;
 
 /** Los tres pasos del alta, con lo que se carga en cada uno. */
 const PASOS: readonly { readonly numero: Paso; readonly titulo: string; readonly sub: string }[] = [
-  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre y agenda' },
-  { numero: 2, titulo: 'Horario y box', sub: 'Opcional' },
+  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, ubicación y contacto' },
+  { numero: 2, titulo: 'Configuración inicial', sub: 'Opcional: box, horario y datos fiscales' },
   { numero: 3, titulo: 'Confirmación', sub: 'Revisar y crear' },
 ];
 
-/**
- * Duraciones de turno que se eligen de un clic. 30 es la que rige si no se declara ninguna:
- * elegirla omite el campo del alta, como cuando el campo quedaba vacio.
- */
-const DURACIONES = ['15', '20', '30', '45', '60'] as const;
-const DURACION_POR_DEFECTO = '30';
+/** Duracion de turno que rige si no se cambia (la misma que el backend). */
+const DURACION_POR_DEFECTO = 30;
 
-/** Datos institucionales, con el rotulo que lleva cada uno en el resumen. */
-const INSTITUCIONALES = [
-  ['legalName', 'Razón social'],
-  ['taxId', 'CUIT'],
-  ['addressLine', 'Dirección'],
-  ['phone', 'Teléfono'],
-  ['contactEmail', 'Email'],
-] as const;
+/** Un telefono razonable: digitos con separadores habituales, al menos seis cifras. */
+const PATRON_TELEFONO = /^\+?[\d\s().-]{6,}$/;
 
 /**
- * Alta de una sede adicional, en tres pasos (M01, AKINE-02.01; refactor UX/UI del 28/10/2026).
+ * Alta de una sede adicional, en tres pasos (M01, AKINE-02.01; refactor UX/UI del 28/10/2026;
+ * ubicacion, contacto y datos fiscales heredados el 05/11/2026).
  *
  * <p>Consume `POST /organizations/{orgId}/consultorios`, que exige `consultorio:manage` con
  * alcance de <b>organizacion</b>: un administrador de una sola sede no puede crear otras, y
@@ -86,10 +92,10 @@ const INSTITUCIONALES = [
  * `403`—.
  *
  * <p><b>Por que tres pasos y no un formulario largo.</b> Lo unico obligatorio es el nombre.
- * El paso 1 es lo minimo para que la sede exista (nombre, zona, agenda). El paso 2 junta la
- * configuracion inicial OPCIONAL —primer box y horario general lado a lado, y los datos
- * institucionales plegados—: se puede saltear entero y completar despues. El paso 3 muestra
- * todo lo que se va a crear antes de crearlo, agrupado como se cargo.
+ * El paso 1 identifica la sede: nombre, agenda, contacto y donde esta (direccion en partes y
+ * punto en el mapa, con {@link EditorDeUbicacion}). El paso 2 es configuracion OPCIONAL:
+ * primer box, horario de atencion y datos fiscales, que por defecto son los de la
+ * organizacion. El paso 3 muestra todo lo que se va a crear antes de crearlo.
  *
  * <h2>La clave de idempotencia</h2>
  *
@@ -122,18 +128,22 @@ const INSTITUCIONALES = [
     HorarioSemanal,
     SemanaDibujada,
     Alerta,
+    EditorDeUbicacion,
+    MapaDeUbicacion,
   ],
   templateUrl: './new-consultorio-page.html',
-  styleUrl: '../../organization.css',
+  styleUrls: ['../../organization.css', './new-consultorio-page.css'],
 })
 export class NewConsultorioPage {
   private readonly consultorios = inject(ConsultoriosService);
+  private readonly organizaciones = inject(OrganizacionesService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly sedes = inject(SedesDelContexto);
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly pasos = PASOS;
 
@@ -143,19 +153,28 @@ export class NewConsultorioPage {
 
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
     name: ['', [textoRequerido]],
+    alias: [''],
     // Vacio significa "heredar la de la organizacion": el contrato lo expresa OMITIENDO el
     // campo, no mandando una cadena vacia, que seria una zona invalida.
     timezone: [''],
-    slotMinutes: ['', [Validators.min(1)]],
-    legalName: [''],
-    taxId: [''],
-    addressLine: [''],
-    phone: [''],
+    slotMinutes: [String(DURACION_POR_DEFECTO), [Validators.min(5), Validators.max(480)]],
+    phone: ['', [Validators.pattern(PATRON_TELEFONO)]],
     contactEmail: ['', [Validators.email]],
+    // Visibilidad (RF-M03-002): una sede puede existir sin recibir turnos todavia.
+    agendaHabilitada: [true],
+    direccionPublica: [true],
+    // Datos fiscales: por defecto los de la organizacion; propios solo si se piden.
+    datosFiscalesPropios: [false],
+    legalName: [''],
+    taxId: ['', [validadorDeCuit]],
+    addressLine: [''],
     // Primer box (A-8, RF-M03-002). Vacio = la sede se crea sin box, como antes.
     boxNombre: [''],
     boxCapacidad: ['', [Validators.min(1)]],
   });
+
+  /** Direccion en partes y punto en el mapa. Lo edita {@link EditorDeUbicacion}. */
+  protected readonly ubicacion = crearUbicacionForm();
 
   /**
    * Horario general de la sede (A-8). Lista vacia = el campo se omite del alta. Fuera de
@@ -170,15 +189,14 @@ export class NewConsultorioPage {
   /** Error del primer box en el ultimo `400` (`primerBox.name`, `primerBox.capacidad`). */
   protected readonly errorPrimerBox = signal<string | null>(null);
 
+  /** Error de un campo suelto en el ultimo `400` que no tiene lugar propio en pantalla. */
+  protected readonly erroresDeCampo = signal<Readonly<Record<string, string>>>({});
+
   protected readonly paso = signal<Paso>(1);
 
-  protected readonly duraciones = DURACIONES;
+  /** La organizacion, para mostrar los datos fiscales que la sede hereda. `null` hasta leerla. */
+  protected readonly organizacion = signal<OrganizationResponse | null>(null);
 
-  /** Boton de duracion elegido; `otra` muestra el campo para escribir los minutos. */
-  protected readonly duracion = signal<string>(DURACION_POR_DEFECTO);
-
-  /** "Datos institucionales" plegado: se abre solo si hay algo cargado o algo que corregir. */
-  protected readonly institucionalAbierto = signal(false);
   protected readonly estado = signal<EstadoAlta>({ tipo: 'editando' });
   protected readonly intentos = signal(0);
 
@@ -212,8 +230,23 @@ export class NewConsultorioPage {
     () => this.enviando() || this.hecho() || this.espera.activa(),
   );
 
+  /** Datos fiscales de la organizacion, en renglones, para la herencia y el resumen. */
+  protected readonly fiscalesDeLaOrganizacion = computed(() => {
+    const organizacion = this.organizacion();
+    if (organizacion === null) {
+      return [];
+    }
+    return [
+      ['Razón social', organizacion.legalName],
+      ['CUIT', organizacion.taxId],
+      ['Dirección fiscal', organizacion.fiscalAddressLine],
+    ]
+      .filter((par): par is [string, string] => !!par[1])
+      .map(([rotulo, valor]) => `${rotulo}: ${valor}`);
+  });
+
   /**
-   * Resumen del paso 2: lo que se va a crear, para confirmar sin volver atras.
+   * Resumen del paso 3: lo que se va a crear, para confirmar sin volver atras.
    *
    * <p>Metodo y no `computed`: lee el formulario, que no es un signal, y un `computed` sin
    * dependencias reactivas se calcula una vez y queda congelado. Volver al paso 1, cambiar el
@@ -223,26 +256,38 @@ export class NewConsultorioPage {
     const valores = this.formulario.getRawValue();
     const box = valores.boxNombre.trim();
     const capacidad = numeroDeclarado(valores.boxCapacidad);
+    const ubicacion = ubicacionDelFormulario(this.ubicacion);
+    const alias = valores.alias.trim();
+    const contacto = [valores.phone.trim(), valores.contactEmail.trim()].filter((d) => d !== '');
+    const fiscalesPropios = [
+      ['Razón social', valores.legalName.trim()],
+      ['CUIT', valores.taxId.trim()],
+      ['Dirección fiscal', valores.addressLine.trim()],
+    ]
+      .filter(([, valor]) => valor !== '')
+      .map(([rotulo, valor]) => `${rotulo}: ${valor}`);
     return {
       nombre: valores.name.trim(),
+      alias: alias === '' ? null : alias,
       zona: valores.timezone === '' ? 'La misma que la organización' : valores.timezone,
       turno: `Turnos de ${numeroDeclarado(valores.slotMinutes) ?? DURACION_POR_DEFECTO} min`,
+      contacto,
+      direccion: direccionEnUnaLinea(ubicacion.direccion),
+      referencias: ubicacion.direccion.referencias ?? '',
+      coordenadas: ubicacion.coordenadas,
+      coordenadasTexto:
+        ubicacion.coordenadas === null
+          ? ''
+          : coordenadasFormateadas(ubicacion.coordenadas.latitud, ubicacion.coordenadas.longitud),
+      estadoUbicacion: estadoDeUbicacion(ubicacion),
+      agendaHabilitada: valores.agendaHabilitada,
+      direccionPublica: valores.direccionPublica,
       box: box === '' ? null : `${box} (capacidad ${capacidad ?? 1})`,
       franjas: franjasDelFormulario(this.horario),
       horario: horarioRedactado(franjasDelFormulario(this.horario)),
-      institucional: INSTITUCIONALES.filter(([campo]) => valores[campo].trim() !== '').map(
-        ([campo, rotulo]) => `${rotulo}: ${valores[campo].trim()}`,
-      ),
+      fiscalesPropios: valores.datosFiscalesPropios,
+      fiscales: valores.datosFiscalesPropios ? fiscalesPropios : this.fiscalesDeLaOrganizacion(),
     };
-  }
-
-  /** Lo que dice la seccion plegada de datos institucionales sin abrirla. */
-  protected resumenInstitucional(): string {
-    const valores = this.formulario.getRawValue();
-    const cargados = INSTITUCIONALES.filter(([campo]) => valores[campo].trim() !== '').length;
-    return cargados === 0
-      ? 'Razón social, CUIT, dirección, teléfono y email'
-      : `${cargados} de 5 cargados`;
   }
 
   constructor() {
@@ -251,27 +296,33 @@ export class NewConsultorioPage {
       untracked(() => {
         this.formulario.reset({
           name: '',
+          alias: '',
           timezone: '',
-          slotMinutes: '',
+          slotMinutes: String(DURACION_POR_DEFECTO),
+          phone: '',
+          contactEmail: '',
+          agendaHabilitada: true,
+          direccionPublica: true,
+          datosFiscalesPropios: false,
           legalName: '',
           taxId: '',
           addressLine: '',
-          phone: '',
-          contactEmail: '',
           boxNombre: '',
           boxCapacidad: '',
         });
+        this.ubicacion.reset();
         this.horario.clear();
         this.erroresHorario.set(new Map());
         this.errorPrimerBox.set(null);
+        this.erroresDeCampo.set({});
         this.paso.set(1);
-        this.duracion.set(DURACION_POR_DEFECTO);
-        this.institucionalAbierto.set(false);
         this.estado.set({ tipo: 'editando' });
         this.intentos.set(0);
         // La clave identifica un alta contra una organizacion concreta: reusarla despues de
         // cambiar de tenant no seria un reintento de nada.
         this.intento.set(null);
+        this.organizacion.set(null);
+        this.leerOrganizacion();
       });
     });
 
@@ -281,28 +332,42 @@ export class NewConsultorioPage {
         this.erroresHorario.set(new Map());
       }
     });
+    this.formulario.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (Object.keys(this.erroresDeCampo()).length > 0) {
+        this.erroresDeCampo.set({});
+      }
+    });
+  }
+
+  /** Los datos fiscales que la sede hereda. Si falla, el paso 2 lo dice y sigue sirviendo. */
+  private leerOrganizacion(): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null) {
+      return;
+    }
+    this.organizaciones
+      .getOrganization({ orgId })
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((organizacion) => this.organizacion.set(organizacion));
   }
 
   protected mostrarError(
-    nombre: 'name' | 'slotMinutes' | 'contactEmail' | 'boxCapacidad',
+    nombre: 'name' | 'alias' | 'slotMinutes' | 'phone' | 'contactEmail' | 'taxId' | 'boxCapacidad',
   ): boolean {
     const control = this.formulario.controls[nombre];
-    return control.invalid && (control.touched || this.intentos() > 0);
+    const delServidor = this.erroresDeCampo()[nombre] !== undefined;
+    return (control.invalid || delServidor) && (control.touched || this.intentos() > 0);
   }
 
-  /**
-   * Elige la duracion del turno. La de por defecto se omite del alta; `otra` abre el campo
-   * para escribirla y lo enfoca.
-   */
-  protected elegirDuracion(valor: string): void {
-    this.duracion.set(valor);
-    const control = this.formulario.controls.slotMinutes;
-    if (valor === 'otra') {
-      control.setValue('');
-      afterNextRender(() => this.enfocar('#sede-slotMinutes'), { injector: this.injector });
-      return;
-    }
-    control.setValue(valor === DURACION_POR_DEFECTO ? '' : valor);
+  /** El mensaje de un campo: el del servidor si lo hay, si no el de la validacion local. */
+  protected errorDe(
+    nombre: 'name' | 'alias' | 'slotMinutes' | 'phone' | 'contactEmail' | 'taxId' | 'boxCapacidad',
+    local: string,
+  ): string {
+    return this.erroresDeCampo()[nombre] ?? local;
   }
 
   /** Los botones - y + de la capacidad del box: nunca baja de 1. */
@@ -344,20 +409,19 @@ export class NewConsultorioPage {
     afterNextRender(() => this.enfocar('#titulo-alta-sede'), { injector: this.injector });
   }
 
-  /**
-   * Si el paso tiene algo invalido, lo marca y enfoca el primer campo a corregir.
-   *
-   * <p>El email esta en una seccion plegada: se despliega antes de enfocarlo.
-   */
+  /** Si el paso tiene algo invalido, lo marca y enfoca el primer campo a corregir. */
   private pasoValido(paso: 1 | 2): boolean {
     const campos = paso === 1 ? CAMPOS_PASO_1 : CAMPOS_PASO_2;
     const invalido = campos.find((campo) => this.formulario.controls[campo].invalid);
     if (invalido !== undefined) {
       this.formulario.markAllAsTouched();
-      if (invalido === 'contactEmail') {
-        this.institucionalAbierto.set(true);
-      }
       afterNextRender(() => this.enfocar(`#sede-${invalido}`), { injector: this.injector });
+      return false;
+    }
+
+    if (paso === 1 && this.ubicacion.invalid) {
+      this.ubicacion.markAllAsTouched();
+      afterNextRender(() => this.enfocar('#sede-ubicacion-latitud'), { injector: this.injector });
       return false;
     }
 
@@ -373,7 +437,10 @@ export class NewConsultorioPage {
     this.intentos.update((valor) => valor + 1);
 
     // Lo invalido se corrige en su paso: se vuelve ahi en vez de marcar campos que no se ven.
-    if (this.formulario.controls.name.invalid || this.formulario.controls.slotMinutes.invalid) {
+    const paso1Invalido =
+      CAMPOS_PASO_1.some((campo) => this.formulario.controls[campo].invalid) ||
+      this.ubicacion.invalid;
+    if (paso1Invalido) {
       this.paso.set(1);
       this.pasoValido(1);
       return;
@@ -395,6 +462,7 @@ export class NewConsultorioPage {
     this.estado.set({ tipo: 'enviando' });
     this.erroresHorario.set(new Map());
     this.errorPrimerBox.set(null);
+    this.erroresDeCampo.set({});
 
     this.consultorios
       .createConsultorio({ orgId, idempotencyKey: clave, createConsultorioRequest: cuerpo })
@@ -413,6 +481,8 @@ export class NewConsultorioPage {
               sede.name ?? cuerpo.name,
               cuerpo.primerBox !== undefined,
               (cuerpo.horarioGeneral?.length ?? 0) > 0,
+              cuerpo.ubicacion !== undefined,
+              cuerpo.agendaHabilitada !== false,
             ),
           });
           this.router.navigateByUrl('/organizacion/sedes').catch(() => undefined);
@@ -447,7 +517,8 @@ export class NewConsultorioPage {
    *
    * <p>Los opcionales vacios se <b>omiten</b> y no se mandan como cadena vacia: en el alta
    * una cadena vacia no significa "sin dato" sino un dato vacio, y en `timezone` seria
-   * directamente una zona invalida que el backend rechaza con `400`.
+   * directamente una zona invalida que el backend rechaza con `400`. Los interruptores viajan
+   * solo cuando se apartan de su valor por defecto, que es el que el backend asume.
    */
   private armarCuerpo(): CreateConsultorioRequest {
     const valores = this.formulario.getRawValue();
@@ -461,14 +532,57 @@ export class NewConsultorioPage {
     // entrega `null`, no `''`, y `Number(null)` es `0`. Un slot de 0 minutos viajaba como una
     // duracion deliberada.
     const slot = numeroDeclarado(valores.slotMinutes);
-    if (slot !== null) {
+    if (slot !== null && slot !== DURACION_POR_DEFECTO) {
       cuerpo.slotMinutes = slot;
     }
 
-    for (const campo of ['legalName', 'taxId', 'addressLine', 'phone', 'contactEmail'] as const) {
+    for (const campo of ['alias', 'phone', 'contactEmail'] as const) {
       const valor = valores[campo].trim();
       if (valor !== '') {
         cuerpo[campo] = valor;
+      }
+    }
+
+    const ubicacion = ubicacionDelFormulario(this.ubicacion);
+    if (tieneDireccion(ubicacion.direccion) || ubicacion.coordenadas !== null) {
+      for (const parte of [
+        'pais',
+        'provincia',
+        'ciudad',
+        'calle',
+        'numero',
+        'codigoPostal',
+        'piso',
+        'referencias',
+      ] as const) {
+        const valor = ubicacion.direccion[parte] ?? '';
+        if (valor !== '') {
+          cuerpo[parte] = valor;
+        }
+      }
+    }
+    if (ubicacion.coordenadas !== null) {
+      cuerpo.ubicacion = {
+        latitud: ubicacion.coordenadas.latitud,
+        longitud: ubicacion.coordenadas.longitud,
+        origen: origenParaElCable(ubicacion.origen),
+      };
+    }
+
+    if (!valores.agendaHabilitada) {
+      cuerpo.agendaHabilitada = false;
+    }
+    if (!valores.direccionPublica) {
+      cuerpo.direccionPublica = false;
+    }
+
+    if (valores.datosFiscalesPropios) {
+      cuerpo.datosFiscalesPropios = true;
+      for (const campo of ['legalName', 'taxId', 'addressLine'] as const) {
+        const valor = valores[campo].trim();
+        if (valor !== '') {
+          cuerpo[campo] = valor;
+        }
       }
     }
 
@@ -514,20 +628,26 @@ export class NewConsultorioPage {
 
     if (traducido.causa === 'validacion' && error instanceof AkineHttpError) {
       // El alta es atomica: un box o una franja invalidos rechazan todo con 400 y no queda
-      // nada creado. Lo que falla se marca junto al campo, en el paso 2, que es donde se
-      // corrige; un cartel "la franja 3 es invalida" obligaria a contar filas.
+      // nada creado. Lo que falla se marca junto al campo, en el paso donde se corrige; un
+      // cartel "la franja 3 es invalida" obligaria a contar filas.
       const campos = error.erroresPorCampo;
       const franjas = erroresDeFranjasDelServidor(campos);
       const box = Object.entries(campos).find(([campo]) => campo.startsWith('primerBox'));
+      const sueltos = Object.fromEntries(
+        Object.entries(campos).filter(
+          ([campo]) => !campo.startsWith('horarioGeneral[') && !campo.startsWith('primerBox'),
+        ),
+      );
       this.erroresHorario.set(franjas);
       this.errorPrimerBox.set(box === undefined ? null : box[1]);
-      if (franjas.size > 0 || box !== undefined) {
+      this.erroresDeCampo.set(sueltos);
+      const nombres = Object.keys(sueltos);
+      if (franjas.size > 0 || box !== undefined || nombres.includes('taxId')) {
         this.paso.set(2);
+      } else if (nombres.length > 0) {
+        this.paso.set(1);
       }
-      mensaje =
-        error.mensajeSinCampos(
-          (campo) => campo.startsWith('horarioGeneral[') || campo.startsWith('primerBox'),
-        ) ?? mensaje;
+      mensaje = error.mensajeSinCampos(() => true) ?? mensaje;
     }
 
     this.estado.set({ tipo: 'error', mensaje, causa: traducido.causa });
@@ -539,12 +659,22 @@ export class NewConsultorioPage {
 }
 
 /** Que quedo creado junto con la sede, para la descripcion del aviso de exito. */
-function descripcionDelAlta(nombre: string, conBox: boolean, conHorario: boolean): string {
+function descripcionDelAlta(
+  nombre: string,
+  conBox: boolean,
+  conHorario: boolean,
+  conUbicacion: boolean,
+  conAgenda: boolean,
+): string {
   const box = conBox
     ? 'Se creo junto con su primer box.'
     : 'Todavía no tiene boxes: se agregan desde Espacios.';
   const horario = conHorario
     ? 'El horario general quedo cargado: ningún turno se ofrece fuera de ese horario.'
     : 'Sin horario general: se puede cargar desde el calendario de la sede.';
-  return `${nombre}. ${box} ${horario}`;
+  const ubicacion = conUbicacion ? '' : ' La ubicación en el mapa queda pendiente.';
+  const agenda = conAgenda
+    ? ''
+    : ' Todavía no recibe turnos: habilitá la agenda cuando esté lista.';
+  return `${nombre}. ${box} ${horario}${ubicacion}${agenda}`;
 }

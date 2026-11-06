@@ -191,8 +191,10 @@ model/baja-de-persona-request.ts
 model/baja-de-producto.ts
 model/bloque-response.ts
 model/bloqueo-en-agenda.ts
+model/bloques-creados-response.ts
 model/borrador-de-honorarios.ts
 model/buscar-disponibilidad-de-turnos.ts
+model/busqueda-de-direcciones-response.ts
 model/calendario-sede-response.ts
 model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-honorario-por-clase-request.ts
@@ -252,6 +254,7 @@ model/crear-serie-de-turnos.ts
 model/create-arancel-request.ts
 model/create-autorizacion-request.ts
 model/create-bloque-request.ts
+model/create-bloques-request.ts
 model/create-catalogo-concepto-request.ts
 model/create-catalogo-solicitud-request.ts
 model/create-cobertura-request.ts
@@ -277,6 +280,7 @@ model/cuenta-corriente-de-financiador.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
 model/datos-administrativos-de-historia-response.ts
+model/datos-fiscales-efectivos-response.ts
 model/deactivate-bloque-request.ts
 model/deactivate-catalogo-request.ts
 model/deactivate-cobertura-request.ts
@@ -298,6 +302,7 @@ model/deuda-de-venta.ts
 model/devengo-de-clase.ts
 model/dia-de-agenda.ts
 model/dia-efectivo-response.ts
+model/direccion-encontrada-response.ts
 model/disponibilidad-de-turnos.ts
 model/disponibilidad-efectiva-response.ts
 model/duracion-propia-pedida.ts
@@ -560,6 +565,8 @@ model/turno-omitido.ts
 model/turno.ts
 model/turnos-de-persona.ts
 model/turnos-de-sede.ts
+model/ubicacion-request.ts
+model/ubicacion-response.ts
 model/update-arancel-request.ts
 model/update-autorizacion-request.ts
 model/update-bloque-request.ts

@@ -1,0 +1,268 @@
+<div class="ubicacion" [class.ubicacion--compacta]="compacto()">
+  <div class="ubicacion__columna">
+    <ng-content select="[arriba]" />
+
+    <section
+      class="bloque ubicacion__direccion"
+      [formGroup]="formulario()"
+      [attr.aria-labelledby]="idBase() + '-titulo-direccion'"
+    >
+      <h3 class="bloque__titulo" [id]="idBase() + '-titulo-direccion'">Dirección y ubicación</h3>
+      <p class="bloque__ayuda">
+        Es la dirección física, la que ven los pacientes para llegar. Toda opcional.
+      </p>
+
+      <div class="grilla-12">
+        <div class="campo campo--8">
+          <label [for]="idBase() + '-calle'">Calle</label>
+          <input
+            [id]="idBase() + '-calle'"
+            type="text"
+            formControlName="calle"
+            autocomplete="address-line1"
+            placeholder="Av. Cabildo"
+          />
+        </div>
+
+        <div class="campo campo--4">
+          <label [for]="idBase() + '-numero'">Número</label>
+          <input
+            [id]="idBase() + '-numero'"
+            type="text"
+            inputmode="numeric"
+            formControlName="numero"
+            autocomplete="off"
+            placeholder="1234"
+          />
+        </div>
+
+        <div class="campo campo--4">
+          <label [for]="idBase() + '-ciudad'">Ciudad / localidad</label>
+          <input
+            [id]="idBase() + '-ciudad'"
+            type="text"
+            formControlName="ciudad"
+            autocomplete="address-level2"
+          />
+        </div>
+
+        <div class="campo campo--4">
+          <label [for]="idBase() + '-provincia'">Provincia / estado</label>
+          <input
+            [id]="idBase() + '-provincia'"
+            type="text"
+            formControlName="provincia"
+            autocomplete="address-level1"
+            [attr.list]="esArgentina() ? idBase() + '-provincias' : null"
+          />
+          @if (esArgentina()) {
+            <datalist [id]="idBase() + '-provincias'">
+              @for (provincia of provinciasArgentinas; track provincia) {
+                <option [value]="provincia"></option>
+              }
+            </datalist>
+          }
+        </div>
+
+        <div class="campo campo--4">
+          <label [for]="idBase() + '-codigoPostal'">Código postal</label>
+          <input
+            [id]="idBase() + '-codigoPostal'"
+            type="text"
+            formControlName="codigoPostal"
+            autocomplete="postal-code"
+          />
+        </div>
+
+        <div class="campo campo--4">
+          <label [for]="idBase() + '-pais'">País</label>
+          <select [id]="idBase() + '-pais'" formControlName="pais" autocomplete="country">
+            @for (pais of paises; track pais.codigo) {
+              <option [value]="pais.codigo">{{ pais.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo campo--8">
+          <label [for]="idBase() + '-piso'">
+            Piso / departamento / oficina <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            [id]="idBase() + '-piso'"
+            type="text"
+            formControlName="piso"
+            autocomplete="address-line2"
+            placeholder="Piso 3, oficina 301"
+          />
+        </div>
+
+        <div class="campo campo--12">
+          <label [for]="idBase() + '-referencias'">
+            Referencias para llegar <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            [id]="idBase() + '-referencias'"
+            type="text"
+            formControlName="referencias"
+            autocomplete="off"
+            placeholder="Entrada por la galería, a una cuadra de la estación"
+          />
+        </div>
+      </div>
+
+      <!-- La busqueda sale a pedido: el proveedor no admite autocompletado. -->
+      <div class="ubicacion__buscar">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="busqueda().tipo === 'buscando'"
+          (click)="buscar()"
+        >
+          @if (busqueda().tipo === 'buscando') {
+            Buscando…
+          } @else {
+            Ubicar en el mapa
+          }
+        </button>
+        <span class="ayuda ayuda--fija ubicacion__nota">
+          Busca la dirección y pone el marcador. Después podés ajustarlo a mano.
+        </span>
+      </div>
+
+      <div aria-live="polite">
+        @switch (busqueda().tipo) {
+          @case ('sin-resultados') {
+            <p class="campo__error">
+              No encontramos esa dirección. Revisá la calle y la ciudad, o ubicá el marcador a mano
+              en el mapa.
+            </p>
+          }
+          @case ('no-disponible') {
+            <p class="campo__error">
+              El buscador de direcciones no está disponible ahora. Podés arrastrar el marcador o
+              escribir las coordenadas, o guardar la dirección y ubicarla después.
+            </p>
+          }
+          @case ('error') {
+            <p class="campo__error">{{ $any(busqueda()).mensaje }}</p>
+          }
+        }
+
+        @if (candidatos().length > 0) {
+          <div
+            class="ubicacion__candidatos"
+            role="group"
+            [attr.aria-labelledby]="idBase() + '-titulo-candidatos'"
+          >
+            <p class="ubicacion__candidatos-titulo" [id]="idBase() + '-titulo-candidatos'">
+              ¿Es alguna de estas?
+            </p>
+            <ul class="ubicacion__lista">
+              @for (candidato of candidatos(); track $index) {
+                <li>
+                  <button type="button" class="ubicacion__candidato" (click)="elegir(candidato)">
+                    {{ candidato.etiqueta }}
+                  </button>
+                </li>
+              }
+            </ul>
+            <button type="button" class="enlace-boton" (click)="descartarCandidatos()">
+              Ninguna: la ubico a mano
+            </button>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <div class="ubicacion__columna">
+    <section
+      class="bloque ubicacion__mapa"
+      [formGroup]="formulario()"
+      [attr.aria-labelledby]="idBase() + '-titulo-mapa'"
+    >
+      <h3 class="bloque__titulo" [id]="idBase() + '-titulo-mapa'">Ubicación en el mapa</h3>
+      <p class="bloque__ayuda">{{ textoDeEstado() }}</p>
+
+      <app-mapa-de-ubicacion
+        [latitud]="coordenadas()?.latitud ?? null"
+        [longitud]="coordenadas()?.longitud ?? null"
+        [editable]="true"
+        [etiqueta]="nombreDeSede() || 'la sede'"
+        [alto]="compacto() ? 'compacto' : 'normal'"
+        (ubicacionCambiada)="moverMarcador($event)"
+      />
+
+      <div class="ubicacion__coordenadas">
+        <div class="campo">
+          <label [for]="idBase() + '-latitud'">Latitud</label>
+          <input
+            [id]="idBase() + '-latitud'"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="-34.5593"
+            formControlName="latitud"
+            (input)="coordenadaEscrita()"
+            [attr.aria-invalid]="mostrarError('latitud')"
+            [attr.aria-describedby]="
+              mensajeDeCoordenadas() ? idBase() + '-coordenadas-error' : null
+            "
+          />
+        </div>
+        <div class="campo">
+          <label [for]="idBase() + '-longitud'">Longitud</label>
+          <input
+            [id]="idBase() + '-longitud'"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="-58.4526"
+            formControlName="longitud"
+            (input)="coordenadaEscrita()"
+            [attr.aria-invalid]="mostrarError('longitud')"
+            [attr.aria-describedby]="
+              mensajeDeCoordenadas() ? idBase() + '-coordenadas-error' : null
+            "
+          />
+        </div>
+      </div>
+      @if (mensajeDeCoordenadas(); as mensaje) {
+        <p class="campo__error" [id]="idBase() + '-coordenadas-error'">{{ mensaje }}</p>
+      }
+
+      @if (enlaceVer(); as enlace) {
+        <div class="ubicacion__enlaces">
+          <a
+            class="boton boton--secundario boton--chico"
+            [href]="enlace"
+            target="_blank"
+            rel="noopener"
+          >
+            Ver en Google Maps<span class="visualmente-oculto"> (se abre en otra pestaña)</span>
+          </a>
+          <a
+            class="boton boton--secundario boton--chico"
+            [href]="enlaceLlegar()"
+            target="_blank"
+            rel="noopener"
+          >
+            Cómo llegar<span class="visualmente-oculto"> (se abre en otra pestaña)</span>
+          </a>
+          <button
+            type="button"
+            class="boton boton--secundario boton--chico"
+            (click)="copiarEnlace()"
+          >
+            Copiar enlace
+          </button>
+          <button type="button" class="enlace-boton" (click)="quitarUbicacion()">
+            Quitar el punto
+          </button>
+        </div>
+      }
+    </section>
+
+    <ng-content select="[abajo]" />
+  </div>
+</div>

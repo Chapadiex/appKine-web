@@ -5,16 +5,22 @@
       agenda y sus propios turnos. Lo unico obligatorio es el nombre.
     </p>
     <p>
-      El horario, el primer box y los datos institucionales son opcionales: podés saltearlos y
-      completarlos después desde Espacios, el calendario de la sede o la edición de la sede.
+      La dirección y el punto en el mapa sirven para que los pacientes sepan cómo llegar: aparecen
+      en los avisos de turno si la dirección es pública. Si el buscador no reconoce la dirección,
+      podés arrastrar el marcador o escribir las coordenadas, o dejarla pendiente de verificar.
+    </p>
+    <p>
+      El horario, el primer box y los datos fiscales son opcionales: podés saltearlos y completarlos
+      después desde Espacios, el calendario de la sede o la edición de la sede. Los datos fiscales
+      se heredan de la organización salvo que la sede tenga los suyos.
     </p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
 <!--
   Proceso guiado en tres pasos, con el indicador ARRIBA y a todo el ancho (refactor UX/UI del
-  28/10/2026). El 03/11/2026 el paso 1 pasó a una sola columna angosta y el horario, de una lista
-  de "franjas" a una semana con un interruptor por día.
+  28/10/2026). El 05/11/2026 el paso 1 paso a dos columnas: datos y direccion a la izquierda,
+  mapa y visibilidad a la derecha.
 -->
 <section class="asistente" aria-labelledby="titulo-alta-sede">
   <ol class="asistente__pasos" aria-label="Pasos para abrir la sede">
@@ -47,7 +53,7 @@
     }
   </ol>
 
-  <div class="asistente__contenido" [class.asistente__contenido--angosto]="paso() !== 2">
+  <div class="asistente__contenido">
     <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
       @if (hecho()) {
         Sede creada
@@ -55,10 +61,10 @@
         <span class="asistente__numero">Paso {{ paso() }} de 3</span>
         @switch (paso()) {
           @case (1) {
-            ¿Cómo se llama la nueva sede?
+            Datos de la sede
           }
           @case (2) {
-            ¿Qué días abre y con qué box arranca?
+            Configuración inicial
           }
           @case (3) {
             Revisá y creá {{ resumen().nombre }}
@@ -92,113 +98,208 @@
 
         @switch (paso()) {
           @case (1) {
-            <!-- Lo minimo para que la sede exista, en una columna: se lee de arriba abajo. -->
             <p class="asistente__nota">
-              Con el nombre alcanza. Lo demás ya viene con un valor razonable.
+              Con el nombre alcanza. La dirección permite mostrar la sede en el mapa y guiar a los
+              pacientes.
             </p>
 
-            <div class="pila-de-campos">
-              <div class="campo">
-                <label for="sede-name">Nombre de la sede</label>
-                <input
-                  id="sede-name"
-                  class="campo__grande"
-                  type="text"
-                  formControlName="name"
-                  autocomplete="off"
-                  placeholder="Ej.: Sede Norte"
-                  aria-describedby="sede-name-ayuda"
-                  [attr.aria-invalid]="mostrarError('name')"
-                />
-                <p class="ayuda" id="sede-name-ayuda">
-                  Como la llaman en el centro. Tiene que ser distinto del de las otras sedes
-                  vigentes.
-                </p>
-                @if (mostrarError('name')) {
-                  <p class="campo__error" id="sede-name-error">La sede necesita un nombre.</p>
-                }
-              </div>
+            <app-editor-de-ubicacion
+              idBase="sede-ubicacion"
+              [formulario]="ubicacion"
+              [mostrarErrores]="intentos() > 0"
+              [nombreDeSede]="formulario.controls.name.value"
+            >
+              <!-- Identificacion y agenda: a la izquierda, arriba de la direccion. -->
+              <section arriba class="bloque" aria-labelledby="titulo-datos-generales">
+                <h3 class="bloque__titulo" id="titulo-datos-generales">Información general</h3>
+                <p class="bloque__ayuda">Identificación de la sede, agenda y contacto.</p>
 
-              <fieldset class="duraciones" aria-describedby="sede-duracion-ayuda">
-                <legend>Duración habitual del turno</legend>
-                <div class="duraciones__lista">
-                  @for (minutos of duraciones; track minutos) {
-                    <label class="duracion">
-                      <input
-                        type="radio"
-                        name="sede-duracion"
-                        [value]="minutos"
-                        [checked]="duracion() === minutos"
-                        (change)="elegirDuracion(minutos)"
-                      />
-                      <span>{{ minutos }} min</span>
-                    </label>
-                  }
-                  <label class="duracion">
+                <div class="grilla-12">
+                  <div class="campo campo--6">
+                    <label for="sede-name">Nombre de la sede</label>
                     <input
-                      type="radio"
-                      name="sede-duracion"
-                      value="otra"
-                      [checked]="duracion() === 'otra'"
-                      (change)="elegirDuracion('otra')"
+                      id="sede-name"
+                      type="text"
+                      formControlName="name"
+                      autocomplete="organization"
+                      placeholder="Sede Norte"
+                      aria-describedby="sede-name-ayuda"
+                      [attr.aria-invalid]="mostrarError('name')"
                     />
-                    <span>Otra</span>
-                  </label>
-                </div>
-                @if (duracion() === 'otra') {
-                  <div class="campo duraciones__otra">
-                    <label for="sede-slotMinutes">Minutos</label>
+                    <p class="ayuda" id="sede-name-ayuda">
+                      Tiene que ser distinto del de las otras sedes vigentes.
+                    </p>
+                    @if (mostrarError('name')) {
+                      <p class="campo__error" id="sede-name-error">
+                        {{ errorDe('name', 'La sede necesita un nombre.') }}
+                      </p>
+                    }
+                  </div>
+
+                  <div class="campo campo--6">
+                    <label for="sede-alias">
+                      Nombre visible / alias <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <input
+                      id="sede-alias"
+                      type="text"
+                      formControlName="alias"
+                      autocomplete="off"
+                      placeholder="Norte"
+                      aria-describedby="sede-alias-ayuda"
+                      [attr.aria-invalid]="mostrarError('alias')"
+                    />
+                    <p class="ayuda" id="sede-alias-ayuda">
+                      Cómo se la nombra en avisos y listados, si difiere del nombre.
+                    </p>
+                    @if (mostrarError('alias')) {
+                      <p class="campo__error">
+                        {{ errorDe('alias', 'El alias es demasiado largo.') }}
+                      </p>
+                    }
+                  </div>
+
+                  <div class="campo campo--6">
+                    <label for="sede-timezone">Zona horaria</label>
+                    <!--
+                      Es un selector y no un campo de texto a proposito: el backend solo acepta
+                      identificadores IANA. Un offset como -03:00 lo rechaza, y con razon: no conoce
+                      el horario de verano, asi que la agenda se correria una hora al cambiar la regla.
+                    -->
+                    <select
+                      id="sede-timezone"
+                      formControlName="timezone"
+                      aria-describedby="sede-timezone-ayuda"
+                    >
+                      <option value="">La misma que la organización</option>
+                      <optgroup label="Argentina">
+                        @for (zona of zonas.argentinas; track zona) {
+                          <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+                        }
+                      </optgroup>
+                      @if (zonas.resto.length > 0) {
+                        <optgroup label="Resto del mundo">
+                          @for (zona of zonas.resto; track zona) {
+                            <option [value]="zona">{{ zona }}</option>
+                          }
+                        </optgroup>
+                      }
+                    </select>
+                    <p class="ayuda" id="sede-timezone-ayuda">
+                      Cambiala solo si la sede está en otra provincia con horario distinto.
+                    </p>
+                  </div>
+
+                  <div class="campo campo--6">
+                    <label for="sede-slotMinutes">Duración del turno (min)</label>
                     <input
                       id="sede-slotMinutes"
                       type="number"
-                      min="1"
-                      placeholder="30"
+                      min="5"
+                      max="480"
+                      step="5"
                       formControlName="slotMinutes"
+                      aria-describedby="sede-slotMinutes-ayuda"
                       [attr.aria-invalid]="mostrarError('slotMinutes')"
                     />
-                  </div>
-                }
-                <p class="ayuda" id="sede-duracion-ayuda">
-                  El intervalo por defecto de la agenda. Cada servicio puede tener el suyo.
-                </p>
-                @if (mostrarError('slotMinutes')) {
-                  <p class="campo__error" id="sede-slotMinutes-error">
-                    Tiene que ser un número de minutos mayor que cero.
-                  </p>
-                }
-              </fieldset>
-
-              <div class="campo">
-                <label for="sede-timezone">Zona horaria</label>
-                <!--
-                  Es un selector y no un campo de texto a proposito: el backend solo acepta
-                  identificadores IANA. Un offset como -03:00 lo rechaza, y con razon: no conoce
-                  el horario de verano, asi que la agenda se correria una hora al cambiar la regla.
-                -->
-                <select
-                  id="sede-timezone"
-                  formControlName="timezone"
-                  aria-describedby="sede-timezone-ayuda"
-                >
-                  <option value="">La misma que la organización</option>
-                  <optgroup label="Argentina">
-                    @for (zona of zonas.argentinas; track zona) {
-                      <option [value]="zona">{{ etiquetaDeZona(zona) }}</option>
+                    <p class="ayuda" id="sede-slotMinutes-ayuda">
+                      Es el valor predeterminado de la agenda. Cada servicio puede tener el suyo.
+                    </p>
+                    @if (mostrarError('slotMinutes')) {
+                      <p class="campo__error" id="sede-slotMinutes-error">
+                        {{
+                          errorDe('slotMinutes', 'Tiene que ser un número entre 5 y 480 minutos.')
+                        }}
+                      </p>
                     }
-                  </optgroup>
-                  @if (zonas.resto.length > 0) {
-                    <optgroup label="Resto del mundo">
-                      @for (zona of zonas.resto; track zona) {
-                        <option [value]="zona">{{ zona }}</option>
-                      }
-                    </optgroup>
-                  }
-                </select>
-                <p class="ayuda" id="sede-timezone-ayuda">
-                  Cambiala solo si la sede está en otra provincia con horario distinto.
-                </p>
-              </div>
-            </div>
+                  </div>
+
+                  <div class="campo campo--6">
+                    <label for="sede-phone">
+                      Teléfono de contacto <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <input
+                      id="sede-phone"
+                      type="tel"
+                      formControlName="phone"
+                      autocomplete="tel"
+                      placeholder="+54 11 4321-9876"
+                      [attr.aria-invalid]="mostrarError('phone')"
+                      [attr.aria-describedby]="mostrarError('phone') ? 'sede-phone-error' : null"
+                    />
+                    @if (mostrarError('phone')) {
+                      <p class="campo__error" id="sede-phone-error">
+                        {{
+                          errorDe(
+                            'phone',
+                            'Ese teléfono no tiene una forma válida: solo números, espacios, paréntesis y guiones.'
+                          )
+                        }}
+                      </p>
+                    }
+                  </div>
+
+                  <div class="campo campo--6">
+                    <label for="sede-contactEmail">
+                      Email de contacto <span class="campo__opcional">(opcional)</span>
+                    </label>
+                    <input
+                      id="sede-contactEmail"
+                      type="email"
+                      formControlName="contactEmail"
+                      autocomplete="email"
+                      placeholder="sedenorte@centro.com"
+                      [attr.aria-invalid]="mostrarError('contactEmail')"
+                      [attr.aria-describedby]="
+                        mostrarError('contactEmail') ? 'sede-contactEmail-error' : null
+                      "
+                    />
+                    @if (mostrarError('contactEmail')) {
+                      <p class="campo__error" id="sede-contactEmail-error">
+                        {{ errorDe('contactEmail', 'Ese email no tiene una forma válida.') }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              </section>
+
+              <!-- Visibilidad: debajo del mapa, en la columna derecha. -->
+              <fieldset abajo class="bloque visibilidad">
+                <legend class="bloque__titulo">Visibilidad de la sede</legend>
+
+                <label class="interruptor">
+                  <input
+                    id="sede-agendaHabilitada"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="agendaHabilitada"
+                    aria-describedby="sede-agendaHabilitada-ayuda"
+                  />
+                  <span class="interruptor__textos">
+                    <span class="interruptor__titulo">Habilitar la sede para agenda y turnos</span>
+                    <span class="interruptor__ayuda" id="sede-agendaHabilitada-ayuda">
+                      Si está apagado, la sede existe pero todavía no recibe turnos.
+                    </span>
+                  </span>
+                </label>
+
+                <label class="interruptor">
+                  <input
+                    id="sede-direccionPublica"
+                    type="checkbox"
+                    role="switch"
+                    formControlName="direccionPublica"
+                    aria-describedby="sede-direccionPublica-ayuda"
+                  />
+                  <span class="interruptor__textos">
+                    <span class="interruptor__titulo">Mostrar la dirección a los pacientes</span>
+                    <span class="interruptor__ayuda" id="sede-direccionPublica-ayuda">
+                      Va en los avisos de turno, con el enlace para llegar.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
+            </app-editor-de-ubicacion>
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
@@ -229,122 +330,154 @@
                 />
               </section>
 
-              <fieldset class="bloque" aria-describedby="sede-box-ayuda">
-                <legend class="bloque__titulo">Primer box</legend>
-                <p class="bloque__ayuda" id="sede-box-ayuda">
-                  Si le ponés nombre, la sede y el box se crean juntos. Si no, lo agregás desde
-                  Espacios.
-                </p>
+              <div class="asistente__columna">
+                <fieldset class="bloque" aria-describedby="sede-box-ayuda">
+                  <legend class="bloque__titulo">Primer box</legend>
+                  <p class="bloque__ayuda" id="sede-box-ayuda">
+                    Si le ponés nombre, la sede y el box se crean juntos. Si no, lo agregás desde
+                    Espacios.
+                  </p>
 
-                <div class="pila-de-campos">
-                  <div class="campo">
-                    <label for="sede-boxNombre">Nombre del box</label>
-                    <input
-                      id="sede-boxNombre"
-                      type="text"
-                      formControlName="boxNombre"
-                      autocomplete="off"
-                      placeholder="Box 1"
-                      [attr.aria-invalid]="errorPrimerBox() !== null"
-                      [attr.aria-describedby]="errorPrimerBox() !== null ? 'sede-box-error' : null"
-                    />
-                  </div>
-
-                  <div class="campo">
-                    <label for="sede-boxCapacidad">Pacientes a la vez</label>
-                    <div class="contador">
-                      <button
-                        type="button"
-                        class="contador__boton"
-                        aria-label="Uno menos"
-                        aria-controls="sede-boxCapacidad"
-                        (click)="cambiarCapacidad(-1)"
-                      >
-                        −
-                      </button>
+                  <div class="pila-de-campos">
+                    <div class="campo">
+                      <label for="sede-boxNombre">Nombre del box</label>
                       <input
-                        id="sede-boxCapacidad"
-                        class="contador__valor"
-                        type="number"
-                        min="1"
-                        placeholder="1"
-                        formControlName="boxCapacidad"
-                        [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                        id="sede-boxNombre"
+                        type="text"
+                        formControlName="boxNombre"
+                        autocomplete="off"
+                        placeholder="Box 1"
+                        [attr.aria-invalid]="errorPrimerBox() !== null"
+                        [attr.aria-describedby]="
+                          errorPrimerBox() !== null ? 'sede-box-error' : null
+                        "
                       />
-                      <button
-                        type="button"
-                        class="contador__boton"
-                        aria-label="Uno más"
-                        aria-controls="sede-boxCapacidad"
-                        (click)="cambiarCapacidad(1)"
-                      >
-                        +
-                      </button>
                     </div>
-                    @if (mostrarError('boxCapacidad')) {
-                      <p class="campo__error" id="sede-boxCapacidad-error">
-                        Tiene que ser un número mayor que cero.
-                      </p>
-                    }
+
+                    <div class="campo">
+                      <label for="sede-boxCapacidad">Pacientes a la vez</label>
+                      <div class="contador">
+                        <button
+                          type="button"
+                          class="contador__boton"
+                          aria-label="Uno menos"
+                          aria-controls="sede-boxCapacidad"
+                          (click)="cambiarCapacidad(-1)"
+                        >
+                          −
+                        </button>
+                        <input
+                          id="sede-boxCapacidad"
+                          class="contador__valor"
+                          type="number"
+                          min="1"
+                          placeholder="1"
+                          formControlName="boxCapacidad"
+                          [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                        />
+                        <button
+                          type="button"
+                          class="contador__boton"
+                          aria-label="Uno más"
+                          aria-controls="sede-boxCapacidad"
+                          (click)="cambiarCapacidad(1)"
+                        >
+                          +
+                        </button>
+                      </div>
+                      @if (mostrarError('boxCapacidad')) {
+                        <p class="campo__error" id="sede-boxCapacidad-error">
+                          Tiene que ser un número mayor que cero.
+                        </p>
+                      }
+                    </div>
                   </div>
-                </div>
 
-                @if (errorPrimerBox(); as mensaje) {
-                  <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
-                }
-              </fieldset>
-            </div>
-
-            <details
-              class="seccion-plegable"
-              [open]="institucionalAbierto()"
-              (toggle)="institucionalAbierto.set($any($event.target).open)"
-            >
-              <summary>
-                Datos institucionales
-                <span class="seccion-plegable__resumen">{{ resumenInstitucional() }}</span>
-              </summary>
-
-              <div class="grilla-12">
-                <div class="campo campo--6">
-                  <label for="sede-legalName">Razón social</label>
-                  <input id="sede-legalName" type="text" formControlName="legalName" />
-                </div>
-
-                <div class="campo campo--3">
-                  <label for="sede-taxId">CUIT o identificación fiscal</label>
-                  <input id="sede-taxId" type="text" formControlName="taxId" />
-                </div>
-
-                <div class="campo campo--3">
-                  <label for="sede-phone">Teléfono</label>
-                  <input id="sede-phone" type="tel" formControlName="phone" />
-                </div>
-
-                <div class="campo campo--6">
-                  <label for="sede-addressLine">Dirección</label>
-                  <input id="sede-addressLine" type="text" formControlName="addressLine" />
-                </div>
-
-                <div class="campo">
-                  <label for="sede-contactEmail">Email de contacto</label>
-                  <input
-                    id="sede-contactEmail"
-                    type="email"
-                    formControlName="contactEmail"
-                    [attr.aria-invalid]="mostrarError('contactEmail')"
-                    [attr.aria-describedby]="
-                      mostrarError('contactEmail') ? 'sede-contactEmail-error' : null
-                    "
-                  />
-                  @if (mostrarError('contactEmail')) {
-                    <p class="campo__error" id="sede-contactEmail-error">
-                      Ese email no tiene una forma valida.
-                    </p>
+                  @if (errorPrimerBox(); as mensaje) {
+                    <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
                   }
-                </div>
+                </fieldset>
+
+                <fieldset class="bloque fiscales">
+                  <legend class="bloque__titulo">Datos fiscales</legend>
+                  <p class="bloque__ayuda">
+                    Razón social, CUIT y domicilio fiscal. Distintos de la dirección física.
+                  </p>
+
+                  <label class="interruptor">
+                    <input
+                      id="sede-datosFiscalesPropios"
+                      type="checkbox"
+                      role="switch"
+                      [checked]="!formulario.controls.datosFiscalesPropios.value"
+                      (change)="
+                        formulario.controls.datosFiscalesPropios.setValue(
+                          !$any($event.target).checked
+                        )
+                      "
+                    />
+                    <span class="interruptor__textos">
+                      <span class="interruptor__titulo"
+                        >Usar los datos fiscales de la organización</span
+                      >
+                      <span class="interruptor__ayuda">
+                        @if (formulario.controls.datosFiscalesPropios.value) {
+                          Apagado: esta sede factura con datos propios.
+                        } @else if (fiscalesDeLaOrganizacion().length === 0) {
+                          @if (organizacion() === null) {
+                            La organización todavía no tiene datos fiscales cargados.
+                          } @else {
+                            La organización no tiene datos fiscales cargados: se completan desde
+                            Configuración &rsaquo; Organización.
+                          }
+                        } @else {
+                          {{ fiscalesDeLaOrganizacion().join(' · ') }}
+                        }
+                      </span>
+                    </span>
+                  </label>
+
+                  @if (formulario.controls.datosFiscalesPropios.value) {
+                    <div class="pila-de-campos fiscales__propios">
+                      <div class="campo">
+                        <label for="sede-legalName">Razón social</label>
+                        <input id="sede-legalName" type="text" formControlName="legalName" />
+                      </div>
+
+                      <div class="campo">
+                        <label for="sede-taxId">CUIT o identificación fiscal</label>
+                        <input
+                          id="sede-taxId"
+                          type="text"
+                          inputmode="numeric"
+                          formControlName="taxId"
+                          placeholder="30-12345678-9"
+                          [attr.aria-invalid]="mostrarError('taxId')"
+                          [attr.aria-describedby]="
+                            mostrarError('taxId') ? 'sede-taxId-error' : null
+                          "
+                        />
+                        @if (mostrarError('taxId')) {
+                          <p class="campo__error" id="sede-taxId-error">
+                            {{
+                              errorDe(
+                                'taxId',
+                                'El CUIT no es válido: revisá el dígito verificador.'
+                              )
+                            }}
+                          </p>
+                        }
+                      </div>
+
+                      <div class="campo">
+                        <label for="sede-addressLine">Domicilio fiscal</label>
+                        <input id="sede-addressLine" type="text" formControlName="addressLine" />
+                      </div>
+                    </div>
+                  }
+                </fieldset>
               </div>
-            </details>
+            </div>
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
@@ -362,13 +495,84 @@
               <div class="confirmacion__fila">
                 <dt>Sede</dt>
                 <dd>
-                  <span class="confirmacion__principal">{{ resumen().nombre }}</span>
+                  <span class="confirmacion__principal">
+                    {{ resumen().nombre }}
+                    @if (resumen().alias; as alias) {
+                      <span class="confirmacion__secundario">· {{ alias }}</span>
+                    }
+                  </span>
                   <span class="confirmacion__secundario"
                     >{{ resumen().turno }} · {{ resumen().zona }}</span
                   >
+                  @if (resumen().contacto.length > 0) {
+                    <span>{{ resumen().contacto.join(' · ') }}</span>
+                  }
                 </dd>
                 <button type="button" class="enlace-boton" (click)="irAPaso(1)">
                   Cambiar<span class="visualmente-oculto"> los datos de la sede</span>
+                </button>
+              </div>
+
+              <div class="confirmacion__fila">
+                <dt>Dirección</dt>
+                <dd>
+                  @if (resumen().direccion === '') {
+                    <span class="confirmacion__secundario">Sin dirección por ahora</span>
+                  } @else {
+                    <span>{{ resumen().direccion }}</span>
+                    @if (resumen().referencias) {
+                      <span class="confirmacion__secundario">{{ resumen().referencias }}</span>
+                    }
+                  }
+                  @switch (resumen().estadoUbicacion) {
+                    @case ('pendiente') {
+                      <span class="etiqueta">Ubicación pendiente de verificar</span>
+                    }
+                    @case ('geocodificada') {
+                      <span class="confirmacion__secundario">
+                        En el mapa: {{ resumen().coordenadasTexto }} (ubicada por el buscador)
+                      </span>
+                    }
+                    @case ('manual') {
+                      <span class="confirmacion__secundario">
+                        En el mapa: {{ resumen().coordenadasTexto }} (ajustada a mano)
+                      </span>
+                    }
+                  }
+                  @if (resumen().coordenadas; as punto) {
+                    <app-mapa-de-ubicacion
+                      [latitud]="punto.latitud"
+                      [longitud]="punto.longitud"
+                      [etiqueta]="resumen().nombre"
+                      alto="compacto"
+                    />
+                  }
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(1)">
+                  Cambiar<span class="visualmente-oculto"> la dirección</span>
+                </button>
+              </div>
+
+              <div class="confirmacion__fila">
+                <dt>Visibilidad</dt>
+                <dd>
+                  <span>
+                    @if (resumen().agendaHabilitada) {
+                      Habilitada para agenda y turnos
+                    } @else {
+                      Sin agenda por ahora: no recibe turnos
+                    }
+                  </span>
+                  <span class="confirmacion__secundario">
+                    @if (resumen().direccionPublica) {
+                      La dirección se muestra a los pacientes
+                    } @else {
+                      La dirección no se muestra a los pacientes
+                    }
+                  </span>
+                </dd>
+                <button type="button" class="enlace-boton" (click)="irAPaso(1)">
+                  Cambiar<span class="visualmente-oculto"> la visibilidad</span>
                 </button>
               </div>
 
@@ -408,20 +612,27 @@
               </div>
 
               <div class="confirmacion__fila">
-                <dt>Datos institucionales</dt>
+                <dt>Datos fiscales</dt>
                 <dd>
-                  @if (resumen().institucional.length === 0) {
+                  <span class="confirmacion__secundario">
+                    @if (resumen().fiscalesPropios) {
+                      Propios de la sede
+                    } @else {
+                      Los de la organización
+                    }
+                  </span>
+                  @if (resumen().fiscales.length === 0) {
                     <span class="confirmacion__secundario">Sin cargar por ahora</span>
                   } @else {
                     <ul class="resumen__lista confirmacion__lista">
-                      @for (dato of resumen().institucional; track $index) {
+                      @for (dato of resumen().fiscales; track $index) {
                         <li>{{ dato }}</li>
                       }
                     </ul>
                   }
                 </dd>
                 <button type="button" class="enlace-boton" (click)="irAPaso(2)">
-                  Cambiar<span class="visualmente-oculto"> los datos institucionales</span>
+                  Cambiar<span class="visualmente-oculto"> los datos fiscales</span>
                 </button>
               </div>
             </dl>
@@ -431,7 +642,7 @@
                 @if (espera.activa()) {
                   Espera {{ espera.segundos() }} s
                 } @else {
-                  Crear la sede
+                  Crear sede
                 }
               </button>
               <button type="button" class="boton boton--secundario" (click)="volver()">

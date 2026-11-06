@@ -56,7 +56,20 @@
           <span>{{ espacio }}</span>
         }
         @if (sede(); as nombreDeSede) {
-          <span>Sede {{ nombreDeSede }}</span>
+          <span>
+            Sede {{ nombreDeSede }}
+            @if (comoLlegar(); as llegar) {
+              @if (llegar.direccion) {
+                · {{ llegar.direccion }}
+              }
+              @if (llegar.enlace) {
+                ·
+                <a [href]="llegar.enlace" target="_blank" rel="noopener">
+                  Cómo llegar<span class="visualmente-oculto"> (se abre en otra pestaña)</span>
+                </a>
+              }
+            }
+          </span>
         }
         @if (cobertura(); as elegida) {
           <span>{{ elegida }}</span>

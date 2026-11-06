@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, signal } f
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../utils/dias-de-la-semana';
-import { PATRON_HORA, minutosDeHora } from '../../utils/horas-de-pared';
+import { PATRON_HORA, cuartosDeHora, minutosDeHora } from '../../utils/horas-de-pared';
 import {
   FranjaForm,
   FranjaSemanal,
   FranjasForm,
+  MAXIMO_FRANJAS,
   franjasDelFormulario,
   mensajeDeFranja,
   reemplazarFranjas,
@@ -14,6 +15,9 @@ import {
 
 /** Horario de un dia nuevo cuando no hay otro dia abierto del que copiarlo. */
 const HORARIO_POR_DEFECTO = { horaDesde: '09:00', horaHasta: '18:00' } as const;
+
+/** Franjas que admite un dia. Mas que eso ya no es un horario de atencion: es una agenda. */
+const MAXIMO_FRANJAS_POR_DIA = 3;
 
 /** Modelos de un clic: lo que carga casi cualquier centro, para no armar la semana dia por dia. */
 const MODELOS: readonly {
@@ -23,20 +27,25 @@ const MODELOS: readonly {
 }[] = [
   {
     id: 'lv',
-    rotulo: 'Lunes a viernes · 9 a 18',
+    rotulo: 'Lunes a viernes',
     franjas: [1, 2, 3, 4, 5].map((dia) => ({ diaSemana: dia, ...HORARIO_POR_DEFECTO })),
   },
   {
     id: 'ls',
-    rotulo: 'Lunes a viernes 8 a 20 · sábado 8 a 13',
+    rotulo: 'Lunes a sábado',
     franjas: [
-      ...[1, 2, 3, 4, 5].map((dia) => ({ diaSemana: dia, horaDesde: '08:00', horaHasta: '20:00' })),
-      { diaSemana: 6, horaDesde: '08:00', horaHasta: '13:00' },
+      ...[1, 2, 3, 4, 5].map((dia) => ({ diaSemana: dia, ...HORARIO_POR_DEFECTO })),
+      { diaSemana: 6, horaDesde: '09:00', horaHasta: '13:00' },
     ],
   },
   {
+    id: 'semana',
+    rotulo: 'Toda la semana',
+    franjas: [1, 2, 3, 4, 5, 6, 7].map((dia) => ({ diaSemana: dia, ...HORARIO_POR_DEFECTO })),
+  },
+  {
     id: 'corte',
-    rotulo: 'Con corte · 8 a 13 y 15 a 20',
+    rotulo: 'Con corte al mediodía',
     franjas: [1, 2, 3, 4, 5].flatMap((dia) => [
       { diaSemana: dia, horaDesde: '08:00', horaHasta: '13:00' },
       { diaSemana: dia, horaDesde: '15:00', horaHasta: '20:00' },
@@ -68,6 +77,9 @@ interface DiaDelEditor {
  * <p>La lista se mantiene <b>ordenada por dia</b>. Los indices que nombra un `400`
  * (`horarioGeneral[2]`) son los del cuerpo enviado, que es esta misma lista en este mismo orden.
  *
+ * <p>Las horas siguen siendo texto (`24:00` tiene que poder escribirse); un `<datalist>` por
+ * instancia, `{idBase}-horas`, le ofrece al navegador los cuartos de hora sin impedir tipear.
+ *
  * <p>Como el editor libre, vive en `shared/` y no sabe que es una sede.
  */
 @Component({
@@ -92,6 +104,10 @@ export class HorarioSemanal {
 
   protected readonly modelos = MODELOS;
   protected readonly patronHora = PATRON_HORA;
+  protected readonly cuartos = cuartosDeHora();
+
+  /** `id` del `<datalist>` de horas, uno por instancia: cada campo de hora lo nombra en `list`. */
+  protected readonly idListaDeHoras = computed(() => `${this.idBase()}-horas`);
 
   /** Con OnPush, el padre que muta la misma instancia no dispara nada: se escucha la lista. */
   private readonly cambios = signal(0);
@@ -137,6 +153,12 @@ export class HorarioSemanal {
     return abiertos.length > 1 && abiertos[0].numero === 1;
   });
 
+  /** El tope total lo pone el backend; se replica solo para no ofrecer un boton que falla. */
+  protected readonly hayLugar = computed(() => {
+    this.cambios();
+    return this.franjas().length < MAXIMO_FRANJAS;
+  });
+
   constructor() {
     effect((alLimpiar) => {
       const suscripcion = this.franjas().events.subscribe(() =>
@@ -170,7 +192,7 @@ export class HorarioSemanal {
    *
    * <p>Al partir, el corte va de 13 a 14 si cae adentro del horario; si no, la segunda franja
    * queda vacia para que la complete quien carga. Al unir, queda una sola franja del inicio de
-   * la primera al fin de la ultima.
+   * la primera al fin de la ultima, tenga el dia dos franjas o tres.
    */
   protected alternarCorte(dia: DiaDelEditor): void {
     const actuales = franjasDelFormulario(this.franjas());
@@ -195,6 +217,33 @@ export class HorarioSemanal {
         ]
       : [primera, { diaSemana: dia.numero, horaDesde: '', horaHasta: '' }];
     this.guardar([...resto, ...partido]);
+  }
+
+  /** Un dia ya partido puede sumar una franja mas, vacia, hasta el tope por dia. */
+  protected puedeAgregarFranja(dia: DiaDelEditor): boolean {
+    return (
+      dia.franjas.length >= 2 && dia.franjas.length < MAXIMO_FRANJAS_POR_DIA && this.hayLugar()
+    );
+  }
+
+  /** Agrega una franja vacia al final del dia: quien carga escribe las dos horas. */
+  protected agregarFranja(dia: DiaDelEditor): void {
+    if (!this.puedeAgregarFranja(dia)) {
+      return;
+    }
+    const actuales = franjasDelFormulario(this.franjas());
+    this.guardar([...actuales, { diaSemana: dia.numero, horaDesde: '', horaHasta: '' }]);
+  }
+
+  /** "Quitar" solo aparece con tres franjas: con dos, el camino de vuelta es "Sin corte". */
+  protected puedeQuitarFranja(dia: DiaDelEditor): boolean {
+    return dia.franjas.length >= MAXIMO_FRANJAS_POR_DIA;
+  }
+
+  /** Saca una franja puntual del dia. El resto conserva su orden y el dia sigue abierto. */
+  protected quitarFranja(indice: number): void {
+    const actuales = franjasDelFormulario(this.franjas());
+    this.guardar(actuales.filter((_, posicion) => posicion !== indice));
   }
 
   /** Lleva el horario del lunes a cada dia abierto. Los cerrados siguen cerrados. */
@@ -228,6 +277,14 @@ export class HorarioSemanal {
       }
     }
     return null;
+  }
+
+  /** Lo que el lector de pantalla agrega al rotulo de la hora: cual de las franjas del dia es. */
+  protected sufijoDeFranja(posicion: number): string {
+    if (posicion === 0) {
+      return '';
+    }
+    return posicion === 1 ? ' (después del corte)' : ` (franja ${posicion + 1})`;
   }
 
   /** Reemplaza la lista ordenada por dia: el orden es el del cuerpo y el de los indices. */

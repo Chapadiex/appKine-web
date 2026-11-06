@@ -15,6 +15,13 @@
   <p class="semana__resumen" aria-live="polite">{{ resumen() }}</p>
 </div>
 
+<!-- Una sola lista de cuartos de hora para todos los campos de la instancia. -->
+<datalist [id]="idListaDeHoras()">
+  @for (hora of cuartos; track hora) {
+    <option [value]="hora"></option>
+  }
+</datalist>
+
 <ul class="semana__dias">
   @for (dia of dias(); track dia.numero) {
     <li class="semana__dia" [class.semana__dia--cerrado]="dia.franjas.length === 0">
@@ -33,13 +40,13 @@
         <span class="semana__cerrada">Cerrada</span>
       } @else {
         <div class="semana__franjas">
-          @for (franja of dia.franjas; track franja.control; let primera = $first) {
+          @for (franja of dia.franjas; track franja.control; let posicion = $index) {
             <div class="semana__franja" [formGroup]="franja.control">
-              @if (!primera) {
+              @if (posicion > 0) {
                 <span class="semana__y" aria-hidden="true">y</span>
               }
               <label class="visualmente-oculto" [for]="idBase() + '-desde-' + franja.indice">
-                {{ dia.etiqueta }}, abre{{ primera ? '' : ' (después del corte)' }}
+                {{ dia.etiqueta }}, abre{{ sufijoDeFranja(posicion) }}
               </label>
               <input
                 class="semana__hora"
@@ -49,6 +56,7 @@
                 autocomplete="off"
                 maxlength="5"
                 placeholder="09:00"
+                [attr.list]="idListaDeHoras()"
                 [attr.pattern]="patronHora"
                 formControlName="horaDesde"
                 [attr.aria-invalid]="mensaje(franja.indice) !== null"
@@ -58,7 +66,7 @@
               />
               <span aria-hidden="true">–</span>
               <label class="visualmente-oculto" [for]="idBase() + '-hasta-' + franja.indice">
-                {{ dia.etiqueta }}, cierra{{ primera ? '' : ' (después del corte)' }}
+                {{ dia.etiqueta }}, cierra{{ sufijoDeFranja(posicion) }}
               </label>
               <input
                 class="semana__hora"
@@ -68,6 +76,7 @@
                 autocomplete="off"
                 maxlength="5"
                 placeholder="18:00"
+                [attr.list]="idListaDeHoras()"
                 [attr.pattern]="patronHora"
                 formControlName="horaHasta"
                 [attr.aria-invalid]="mensaje(franja.indice) !== null"
@@ -75,17 +84,31 @@
                   errorDelDia(dia) ? idBase() + '-error-' + errorDelDia(dia)?.indice : null
                 "
               />
+              @if (puedeQuitarFranja(dia)) {
+                <button type="button" class="semana__quitar" (click)="quitarFranja(franja.indice)">
+                  Quitar<span class="visualmente-oculto">
+                    la franja {{ posicion + 1 }} del {{ dia.etiqueta }}</span
+                  >
+                </button>
+              }
             </div>
           }
         </div>
 
-        <button type="button" class="semana__corte" (click)="alternarCorte(dia)">
-          @if (dia.franjas.length > 1) {
-            Sin corte<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
-          } @else {
-            + Corte al mediodía<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+        <div class="semana__acciones">
+          <button type="button" class="semana__corte" (click)="alternarCorte(dia)">
+            @if (dia.franjas.length > 1) {
+              Sin corte<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            } @else {
+              + Corte al mediodía<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            }
+          </button>
+          @if (puedeAgregarFranja(dia)) {
+            <button type="button" class="semana__corte" (click)="agregarFranja(dia)">
+              + Otra franja<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            </button>
           }
-        </button>
+        </div>
 
         @if (errorDelDia(dia); as error) {
           <p class="campo__error semana__error" [id]="idBase() + '-error-' + error.indice">
@@ -100,7 +123,7 @@
 @if (puedeCopiarLunes()) {
   <div class="semana__pie">
     <button type="button" class="boton boton--secundario" (click)="copiarLunes()">
-      Usar el horario del lunes en todos los días abiertos
+      Copiar el horario del lunes a los demás días abiertos
     </button>
   </div>
 }

@@ -10,6 +10,11 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { provideApi } from '../../../../api/generated/provide-api';
 
 const RUTA_ALTA = '/api/v1/organizations/1/consultorios';
+const RUTA_ORGANIZACION = '/api/v1/organizations/1';
+
+/** CUIT con digito verificador correcto segun el modulo 11 (y el mismo con el digito mal). */
+const CUIT_VALIDO = '20-12345678-6';
+const CUIT_INVALIDO = '20-12345678-5';
 
 /**
  * Spec del alta de sede (M01, AKINE-02.01).
@@ -79,10 +84,11 @@ describe('NewConsultorioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // Ahora el usuario corrige el nombre: es otra alta, no un reintento. Reusar la clave
+    // Ahora el usuario agrega un contacto: es otra alta, no un reintento. Reusar la clave
     // daria 409 idempotency-key-conflict y dejaria el formulario trabado para siempre.
-    volverAlPaso(fixture, 'Horario y box');
+    volverAlPaso(fixture, 'Datos de la sede');
     escribir(fixture, '#sede-contactEmail', 'sede.norte@ejemplo.test');
+    enviar(fixture);
     enviar(fixture);
     enviar(fixture);
     const tercero = httpMock.expectOne(RUTA_ALTA);
@@ -116,8 +122,7 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    marcar(fixture, 'input[name="sede-duracion"][value="otra"]');
-    escribir(fixture, '#sede-slotMinutes', '30');
+    escribir(fixture, '#sede-slotMinutes', '45');
     escribir(fixture, '#sede-slotMinutes', '');
     enviar(fixture);
     enviar(fixture);
@@ -246,8 +251,124 @@ describe('NewConsultorioPage', () => {
     });
   });
 
+  describe('ubicación, visibilidad y datos fiscales (M03, 05/11/2026)', () => {
+    it('la dirección en partes, el punto escrito a mano y la agenda apagada viajan en el alta', async () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      escribir(fixture, '#sede-alias', 'Norte');
+      escribir(fixture, '#sede-phone', '+54 11 4321-9876');
+      escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
+      escribir(fixture, '#sede-ubicacion-numero', '1234');
+      escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
+      escribir(fixture, '#sede-ubicacion-codigoPostal', 'C1426');
+      escribir(fixture, '#sede-ubicacion-latitud', '-34.5593');
+      escribir(fixture, '#sede-ubicacion-longitud', '-58.4526');
+      marcar(fixture, '#sede-agendaHabilitada');
+      enviar(fixture);
+      enviar(fixture);
+
+      // La confirmacion dice donde esta y que todavia no recibe turnos.
+      expect(texto(fixture)).toContain('Av. Cabildo 1234, CABA (C1426), Argentina');
+      expect(texto(fixture)).toContain('ajustada a mano');
+      expect(texto(fixture)).toContain('Sin agenda por ahora');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        alias: 'Norte',
+        phone: '+54 11 4321-9876',
+        pais: 'AR',
+        ciudad: 'CABA',
+        calle: 'Av. Cabildo',
+        numero: '1234',
+        codigoPostal: 'C1426',
+        ubicacion: { latitud: -34.5593, longitud: -58.4526, origen: 'MANUAL' },
+        agendaHabilitada: false,
+      });
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.descripcion).toContain('Todavía no recibe turnos');
+    });
+
+    it('una dirección sin punto se guarda igual y queda pendiente de verificar', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
+      escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
+      enviar(fixture);
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Ubicación pendiente de verificar');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        pais: 'AR',
+        ciudad: 'CABA',
+        calle: 'Av. Cabildo',
+      });
+      expect(alta.request.body).not.toHaveProperty('ubicacion');
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+    });
+
+    it('una latitud sin longitud no deja avanzar del paso 1', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      escribir(fixture, '#sede-ubicacion-latitud', '-34.5');
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Paso 1 de 3');
+      expect(texto(fixture)).toContain('Latitud y longitud van juntas');
+    });
+
+    it('los datos fiscales propios exigen un CUIT que cierre, y por defecto se heredan', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
+
+      // Heredados: el paso 2 muestra los de la organizacion sin pedir nada.
+      expect(texto(fixture)).toContain('CUIT: 30-71094127-7');
+
+      marcar(fixture, '#sede-datosFiscalesPropios');
+      escribir(fixture, '#sede-legalName', 'Sede Norte SRL');
+      escribir(fixture, '#sede-taxId', CUIT_INVALIDO);
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('El CUIT no es válido');
+
+      escribir(fixture, '#sede-taxId', CUIT_VALIDO);
+      enviar(fixture);
+      expect(texto(fixture)).toContain('Propios de la sede');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        datosFiscalesPropios: true,
+        legalName: 'Sede Norte SRL',
+        taxId: CUIT_VALIDO,
+      });
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+    });
+  });
+
+  /** Monta la pantalla y responde la lectura de la organizacion que hace al arrancar. */
   function montar() {
     const fixture = TestBed.createComponent(NewConsultorioPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(RUTA_ORGANIZACION)
+      .flush({ id: 1, name: 'Belgrano', version: 1, taxId: '30-71094127-7' });
     fixture.detectChanges();
     return fixture;
   }

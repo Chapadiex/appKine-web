@@ -19,7 +19,8 @@ const CENTRO = {
   timezone: 'America/Argentina/Cordoba',
   slotMinutes: 30,
   legalName: 'Kine Centro SRL',
-  taxId: '30-11111111-1',
+  // Un CUIT que cierra: desde el 05/11 la pantalla no deja guardar uno con el verificador mal.
+  taxId: '30-71094127-7',
   phone: '351 400 0000',
   active: true,
   estado: 'ACTIVO',

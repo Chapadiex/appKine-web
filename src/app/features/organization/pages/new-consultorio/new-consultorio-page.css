@@ -1,0 +1,440 @@
+/*
+  Asistente de alta de sede (refactor UX/UI del 28/10/2026): los pasos en una franja horizontal
+  arriba, a todo el ancho, y el contenido debajo. La columna lateral ocupaba 200 px permanentes
+  para dos rotulos.
+*/
+.asistente {
+  margin-bottom: var(--esp-8);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.asistente__pasos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  margin: 0;
+  padding: 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  list-style: none;
+  counter-reset: paso;
+}
+
+.asistente__paso {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  min-width: 0;
+  padding: var(--esp-6) var(--esp-8);
+  border-bottom: var(--borde-medio) solid transparent;
+}
+
+/* Linea que une un paso con el siguiente. */
+.asistente__paso + .asistente__paso::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--esp-6);
+  height: var(--borde-fino);
+  background: var(--color-borde);
+}
+
+.asistente__paso[aria-current='step'] {
+  border-bottom-color: var(--color-acento);
+}
+
+.asistente__volver {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.asistente__volver:hover .asistente__titulo {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+.asistente__textos {
+  min-width: 0;
+}
+
+.asistente__marca {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: 50%;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+.asistente__paso[aria-current='step'] .asistente__marca {
+  border-color: var(--color-acento);
+  background: var(--color-acento);
+  color: var(--color-accion-texto);
+}
+
+.asistente__paso--hecho .asistente__marca {
+  border-color: var(--color-exito);
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.asistente__titulo {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.asistente__paso:not([aria-current='step']):not(.asistente__paso--hecho) .asistente__titulo {
+  color: var(--color-texto-suave);
+}
+
+.asistente__sub {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.asistente__contenido {
+  padding: var(--esp-7) var(--esp-8) var(--esp-8);
+}
+
+.asistente__encabezado {
+  margin: 0 0 var(--esp-7);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+}
+
+.asistente__numero {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.asistente__nota {
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  color: var(--color-texto-suave);
+}
+
+/*
+  Bloques del contenido (primer box y horario, resumen): dos columnas de bloques. Los campos no
+  usan esta grilla sino la de 12 columnas (`.grilla-12`, UX-14).
+*/
+.asistente__grilla {
+  display: grid;
+  gap: 0 var(--esp-7);
+  align-items: start;
+}
+
+.asistente__grilla--dos {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--esp-7);
+}
+
+/* Bloque de configuracion opcional: superficie sutil, sin borde de tarjeta. */
+.bloque {
+  min-width: 0;
+  margin: 0;
+  padding: var(--esp-6) var(--esp-7);
+  border: 0;
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.bloque__titulo {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--esp-2);
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.bloque__ayuda {
+  clear: both;
+  margin: 0 0 var(--esp-6);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.asistente .seccion-plegable {
+  margin-top: var(--esp-7);
+}
+
+/* Resumen de la confirmacion: dos columnas agrupadas como se cargo. */
+.resumen {
+  padding: var(--esp-6) var(--esp-7);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.resumen__titulo {
+  margin: 0 0 var(--esp-5);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.resumen__lista {
+  margin: 0;
+  padding-left: var(--esp-7);
+}
+
+/*
+  Pasos 1 y 3 del alta de sede (03/11/2026): una columna angosta. Tres campos estirados a todo el
+  ancho dejaban un nombre de 800 px al lado de una duracion de 230.
+*/
+.asistente__contenido--angosto > * {
+  max-width: 40rem;
+}
+
+.pila-de-campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.campo__grande {
+  min-height: 3rem;
+  font-size: var(--tipo-lg);
+}
+
+/* Duracion del turno: radios reales con aspecto de pastilla. */
+.duraciones {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.duraciones legend {
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.duraciones__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-4);
+}
+
+.duracion {
+  position: relative;
+}
+
+.duracion input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.duracion span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  font-size: var(--tipo-md);
+}
+
+.duracion input:checked + span {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+  font-weight: var(--peso-medio);
+}
+
+.duracion input:focus-visible + span {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.duraciones__otra {
+  max-width: 10rem;
+}
+
+/* Paso 2: el horario se lleva el ancho; el box, una columna al costado. */
+.asistente__grilla--horario {
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: var(--esp-7);
+}
+
+@media (max-width: 64rem) {
+  .asistente__grilla--horario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Capacidad del box: - [n] + */
+.contador {
+  display: flex;
+  align-items: stretch;
+  width: fit-content;
+}
+
+.contador__boton {
+  width: 2.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-lg);
+  cursor: pointer;
+}
+
+.contador__boton:first-child {
+  border-radius: var(--radio-md) 0 0 var(--radio-md);
+}
+
+.contador__boton:last-child {
+  border-radius: 0 var(--radio-md) var(--radio-md) 0;
+}
+
+.contador__boton:focus-visible {
+  position: relative;
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.campo .contador__valor {
+  width: 4rem;
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0;
+  text-align: center;
+  appearance: textfield;
+}
+
+.contador__valor::-webkit-inner-spin-button,
+.contador__valor::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Paso 3: una fila por cosa que se crea, con su "Cambiar" a la derecha. */
+.confirmacion {
+  margin: 0;
+}
+
+.confirmacion__fila {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr) auto;
+  gap: var(--esp-3) var(--esp-6);
+  align-items: start;
+  padding: var(--esp-6) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.confirmacion__fila dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.confirmacion__fila dd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin: 0;
+}
+
+.confirmacion__principal {
+  font-weight: var(--peso-medio);
+}
+
+.confirmacion__secundario {
+  color: var(--color-texto-suave);
+}
+
+.confirmacion__lista {
+  padding-left: 0;
+  font-weight: var(--peso-normal);
+  list-style: none;
+}
+
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 40rem) {
+  .confirmacion__fila {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .confirmacion__fila dd {
+    grid-column: 1 / -1;
+  }
+}
+
+.asistente__acciones {
+  margin-top: var(--esp-8);
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+@media (max-width: 40rem) {
+  .asistente__paso {
+    padding: var(--esp-5) var(--esp-6);
+  }
+
+  .asistente__sub {
+    display: none;
+  }
+
+  .asistente__contenido {
+    padding: var(--esp-6);
+  }
+}
+
+/*
+  Paso 2 (05/11/2026): el horario a la izquierda; a la derecha, el primer box y los datos
+  fiscales apilados.
+*/
+.asistente__columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-7);
+  min-width: 0;
+}
+
+/* Bloques de un paso que no forman parte de la grilla de campos. */
+.visibilidad,
+.fiscales {
+  margin: 0;
+}
+
+.fiscales__propios {
+  margin-top: var(--esp-5);
+}

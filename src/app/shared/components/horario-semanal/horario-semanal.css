@@ -179,12 +179,21 @@
 .semana__hora:focus-visible,
 .semana__interruptor input:focus-visible,
 .semana__modelo:focus-visible,
-.semana__corte:focus-visible {
+.semana__corte:focus-visible,
+.semana__quitar:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
 }
 
-.semana__corte {
+/* Las acciones del dia van juntas: el corte y, con el dia ya partido, la tercera franja. */
+.semana__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.semana__corte,
+.semana__quitar {
   min-height: 2.5rem;
   padding: 0 var(--esp-4);
   border: 0;
@@ -196,8 +205,16 @@
   cursor: pointer;
 }
 
-.semana__corte:hover {
+.semana__corte:hover,
+.semana__quitar:hover {
   text-decoration: underline;
+}
+
+/* "Quitar" acompaña a la franja: mas chico y en gris, para no competir con las horas. */
+.semana__quitar {
+  padding: 0 var(--esp-3);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
 }
 
 .semana__error {
