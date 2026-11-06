@@ -1,0 +1,29 @@
+/*
+  Selector de hora (`app-selector-de-hora`): el desplegable y, cuando hace falta, el campo de hora
+  exacta a su lado. Vive con el componente y no en design-system.css para no pesar en la carga
+  inicial. Los controles toman el aspecto de `.campo input/select` de la hoja global cuando el
+  componente esta dentro de un `.campo`, que es como se usa.
+*/
+
+app-selector-de-hora {
+  display: contents;
+}
+
+.selector-de-hora {
+  display: flex;
+  gap: var(--esp-3);
+  min-width: 0;
+}
+
+.selector-de-hora__lista {
+  flex: 1 1 5.5rem;
+  min-width: 5.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.selector-de-hora__exacta {
+  flex: 0 0 5rem;
+  width: 5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

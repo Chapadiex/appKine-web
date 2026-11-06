@@ -140,35 +140,22 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'Se resuelve desde la pantalla de suscripción.';
 
 /**
- * Redacta el solapamiento nombrando <b>el otro bloque</b>.
+ * Redacta el solapamiento nombrando <b>el otro bloque</b>, en una linea.
  *
- * <p>El mensaje dice el dia y las horas del bloque con el que se choca; la grilla, ademas,
- * marca esa fila. Las dos cosas juntas: el cartel se lee donde esta el foco despues del
- * envio, y la marca resuelve cual de dos bloques parecidos es.
- *
- * <p><b>Aclara que ser contiguo no es solapar</b> porque es la confusion inmediata de quien
- * acaba de cargar la tarde despues de la manana: la hora de fin es exclusiva, y 09:00-12:00
- * con 12:00-15:00 conviven sin conflicto. Sin la aclaracion, el usuario "corrige" un horario
- * que estaba bien.
+ * <p>"Ya existe un horario para el martes de 09:00 a 13:00": dia y horas del bloque con el que se
+ * choca, y la grilla marca esa fila. Corto a proposito (rediseño del 05/11/2026): el mensaje vive
+ * pegado a los campos y no puede desarmar el formulario. Que contiguo no es solapado lo explica
+ * la ayuda "?" del horario, no el error.
  */
 function mensajeDeSolapamiento(conflicto: BloqueEnConflicto): string {
   if (conflicto.horaDesde === null || conflicto.horaHasta === null) {
-    return (
-      'El horario que pediste se pisa con otro bloque activo de este profesional. ' +
-      'Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la hora de fin es ' +
-      'exclusiva.'
-    );
+    return 'Ya existe un horario que se pisa con el pedido.';
   }
-
   const dia =
-    conflicto.diaSemana === null ? '' : ` del ${etiquetaDeDia(conflicto.diaSemana).toLowerCase()}`;
-
-  return (
-    `El horario que pediste se pisa con el bloque${dia} de ` +
-    `${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}, que quedo marcado en la grilla. ` +
-    'Corregi uno de los dos. Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la ' +
-    'hora de fin es exclusiva: la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven.'
-  );
+    conflicto.diaSemana === null
+      ? ''
+      : ` para el ${etiquetaDeDia(conflicto.diaSemana).toLowerCase()}`;
+  return `Ya existe un horario${dia} de ${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}.`;
 }
 
 /**
@@ -179,7 +166,7 @@ function mensajeEntreSedes(error: AkineHttpError): string {
   const conflicto = conflictoDelProblema(error);
   const sede = sedeDelConflicto(conflicto, {});
   if (sede === '') {
-    return conDetalle(error, MENSAJE_GENERICO);
+    return conDetalle(error, 'Conflicto con actividad en otra sede.');
   }
   const que =
     conflicto.conflictoOrigen === 'APERTURA' ? 'una apertura de agenda' : 'horario de atención';
@@ -194,15 +181,15 @@ function mensajeEntreSedes(error: AkineHttpError): string {
   const desde = conflicto.conflictoHoraDesde;
   const franja =
     desde === undefined ? '' : ` de ${rangoHorario(desde, conflicto.conflictoHoraHasta ?? '')}`;
-  return (
-    `El profesional ya tiene ${que} en la sede ${sede}${cuando}${franja}. No puede ofrecer ` +
-    'disponibilidad en dos sedes a la vez: ajustá uno de los dos horarios.'
-  );
+  return `Conflicto con actividad en otra sede: ya tiene ${que} en ${sede}${cuando}${franja}.`;
 }
 
 function conflictoDe(error: AkineHttpError): BloqueEnConflicto {
-  const horaDesde = error.extension('horaDesde');
-  const horaHasta = error.extension('horaHasta');
+  // Desde 0.158.0 `horaDesde`/`horaHasta` son las horas PEDIDAS y las del bloque que ya existe
+  // viajan en `conflictoHoraDesde`/`conflictoHoraHasta`. El mensaje nombra al bloque existente:
+  // "ya existe un horario de 09:00 a 13:00", no "de 10:00 a 12:00", que es lo que se pidio.
+  const horaDesde = error.extension('conflictoHoraDesde') ?? error.extension('horaDesde');
+  const horaHasta = error.extension('conflictoHoraHasta') ?? error.extension('horaHasta');
 
   return {
     id: error.numeroDeExtension('bloqueEnConflictoId'),
