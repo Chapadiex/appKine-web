@@ -12,7 +12,7 @@ import { Router, RouterLink } from '@angular/router';
   selector: 'app-not-found',
   imports: [RouterLink],
   templateUrl: './not-found.html',
-  styleUrl: './not-found.css',
+  styleUrls: ['../pantalla-error.css', './not-found.css'],
 })
 export class NotFound {
   private readonly location = inject(Location);

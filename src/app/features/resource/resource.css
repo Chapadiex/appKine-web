@@ -200,16 +200,18 @@ textarea:disabled {
   margin-bottom: 0;
 }
 
+/* El selector del profesional mide un nombre, no la fila: solo en su linea se estiraba a 1.000 px. */
 .barra-consulta__profesional {
-  flex: 2 1 16rem;
+  flex: 0 1 var(--ancho-selector);
 }
 
 .barra-consulta__formulario {
   display: contents;
 }
 
+/* Fechas y horas de la consulta: el ancho de una fecha, sin estirarse a media fila en 1920. */
 .barra-consulta__formulario .campo {
-  flex: 1 1 10rem;
+  flex: 0 1 12rem;
 }
 
 .barra-consulta__acciones {

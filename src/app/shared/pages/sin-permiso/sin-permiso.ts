@@ -31,7 +31,7 @@ import { TenantContextStore } from '../../../core/services/tenant-context.store'
   selector: 'app-sin-permiso',
   imports: [RouterLink],
   templateUrl: './sin-permiso.html',
-  styleUrl: './sin-permiso.css',
+  styleUrls: ['../pantalla-error.css', './sin-permiso.css'],
 })
 export class SinPermiso {
   private readonly tenantContext = inject(TenantContextStore);

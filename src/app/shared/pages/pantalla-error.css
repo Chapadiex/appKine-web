@@ -1,0 +1,44 @@
+/*
+ * Pagina de error (404, sin permiso). Vivia en `design-system.css`, que entra en la carga inicial;
+ * solo la usan estas dos paginas, que se cargan a pedido (06/11/2026).
+ */
+.pantalla-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-5);
+  max-width: 30rem;
+  margin: 4rem auto 0;
+}
+
+.pantalla-error__codigo {
+  color: var(--color-texto-suave);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+.pantalla-error h1 {
+  margin: 0;
+}
+
+.pantalla-error p {
+  margin: 0;
+  color: var(--color-marca-texto-suave);
+  line-height: 1.5;
+}
+
+.pantalla-error__ruta {
+  padding: var(--esp-2) var(--esp-4);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-codigo);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+}
+
+.pantalla-error__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  padding-top: var(--esp-4);
+}
