@@ -1,5 +1,6 @@
 import {
   Component,
+  viewChild,
   ElementRef,
   Injector,
   afterNextRender,
@@ -50,6 +51,15 @@ import {
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListOrganizationConsultoriosRequestParams } from '../../../../api/generated/api/organizaciones.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { validadorDeCuit } from '../../../../shared/utils/cuit';
+import { tieneDireccion } from '../../models/direccion';
+import { EditorDeUbicacion } from '../../components/editor-de-ubicacion/editor-de-ubicacion';
+import {
+  cargarUbicacion,
+  crearUbicacionForm,
+  origenParaElCable,
+  ubicacionDelFormulario,
+} from '../../models/ubicacion-form';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -57,14 +67,36 @@ type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
 
-/** Campos institucionales: los unicos que el `PATCH` puede BORRAR con una cadena vacia. */
+/** Campos de texto opcionales: los que el `PATCH` puede BORRAR con una cadena vacia. */
 const CAMPOS_INSTITUCIONALES = [
+  'alias',
   'legalName',
   'taxId',
   'addressLine',
   'phone',
   'contactEmail',
 ] as const;
+
+/** Partes de la direccion fisica, con la misma regla de borrado que los institucionales. */
+const PARTES_DE_DIRECCION = [
+  'pais',
+  'provincia',
+  'ciudad',
+  'calle',
+  'numero',
+  'codigoPostal',
+  'piso',
+  'referencias',
+] as const;
+
+/** Pestañas del panel de edicion. */
+type PestanaDeEdicion = 'general' | 'ubicacion' | 'institucional';
+
+const PESTANAS: readonly { readonly id: PestanaDeEdicion; readonly rotulo: string }[] = [
+  { id: 'general', rotulo: 'General' },
+  { id: 'ubicacion', rotulo: 'Ubicación' },
+  { id: 'institucional', rotulo: 'Datos fiscales' },
+];
 
 /**
  * Sedes (consultorios) de la organizacion activa (M01, AKINE-02.01).
@@ -115,6 +147,7 @@ const CAMPOS_INSTITUCIONALES = [
     ConfirmacionConMotivo,
     AccionesDeFila,
     PanelLateral,
+    EditorDeUbicacion,
   ],
   templateUrl: './consultorios-page.html',
   styleUrl: '../../organization.css',
@@ -179,7 +212,14 @@ export class ConsultoriosPage {
   });
 
   /** Pestaña del panel de edicion: lo que hace funcionar la sede, o sus datos institucionales. */
-  protected readonly pestanaEdicion = signal<'general' | 'institucional'>('general');
+  protected readonly pestanaEdicion = signal<PestanaDeEdicion>('general');
+  protected readonly pestanas = PESTANAS;
+
+  /** El editor de ubicacion del panel, para redibujar el mapa al mostrar su pestaña. */
+  private readonly editorDeUbicacion = viewChild(EditorDeUbicacion);
+
+  /** Direccion fisica y punto en el mapa de la sede en edicion. */
+  protected readonly ubicacionEdicion = crearUbicacionForm();
 
   /**
    * Sede tal como la devolvio el backend la ultima vez, para el panel abierto.
@@ -199,13 +239,17 @@ export class ConsultoriosPage {
   /** Datos de la sede. `slotMinutes` va como texto: el `input` siempre entrega texto. */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
     name: ['', [textoRequerido]],
+    alias: [''],
     timezone: [''],
     slotMinutes: [''],
-    legalName: [''],
-    taxId: [''],
-    addressLine: [''],
     phone: [''],
     contactEmail: ['', [Validators.email]],
+    agendaHabilitada: [true],
+    direccionPublica: [true],
+    datosFiscalesPropios: [false],
+    legalName: [''],
+    taxId: ['', [validadorDeCuit]],
+    addressLine: [''],
   });
 
   protected readonly sedesDeLaPagina = this.vista.filas;
@@ -337,15 +381,30 @@ export class ConsultoriosPage {
     this.intentos.set(0);
   }
 
-  /** Flechas entre las dos pestañas del panel: cambia y lleva el foco a la elegida. */
-  protected cambiarPestana(pestana: 'general' | 'institucional'): void {
+  /** Muestra una pestaña. El mapa nace en una pestaña oculta: se redibuja al mostrarla. */
+  protected mostrarPestana(pestana: PestanaDeEdicion): void {
     this.pestanaEdicion.set(pestana);
-    this.enfocar(`#editar-pestana-${pestana}`);
+    if (pestana === 'ubicacion') {
+      afterNextRender(() => this.editorDeUbicacion()?.redibujar(), { injector: this.injector });
+    }
   }
 
-  protected mostrarErrorEdicion(campo: 'name' | 'contactEmail'): boolean {
+  /** Flechas entre las pestañas del panel: cambia a la vecina y lleva el foco a la elegida. */
+  protected cambiarPestana(desde: PestanaDeEdicion, paso: 1 | -1): void {
+    const indice = PESTANAS.findIndex((pestana) => pestana.id === desde);
+    const destino = PESTANAS[(indice + paso + PESTANAS.length) % PESTANAS.length].id;
+    this.mostrarPestana(destino);
+    this.enfocar(`#editar-pestana-${destino}`);
+  }
+
+  protected mostrarErrorEdicion(campo: 'name' | 'contactEmail' | 'taxId'): boolean {
     const control = this.formularioEdicion.controls[campo];
     return control.invalid && (control.touched || this.intentos() > 0);
+  }
+
+  /** La direccion de una fila del listado, o lo que la reemplaza. */
+  protected direccionDe(sede: ConsultorioResponse): string | null {
+    return sede.direccionFormateada ?? null;
   }
 
   /**
@@ -363,14 +422,19 @@ export class ConsultoriosPage {
     }
 
     this.intentos.update((valor) => valor + 1);
-    if (this.formularioEdicion.invalid) {
+    if (this.formularioEdicion.invalid || this.ubicacionEdicion.invalid) {
       this.formularioEdicion.markAllAsTouched();
-      // El campo invalido puede estar en la otra pestaña: se muestra antes de enfocarlo.
-      const enGeneral = this.formularioEdicion.controls.name.invalid;
-      this.pestanaEdicion.set(enGeneral ? 'general' : 'institucional');
-      afterNextRender(() => this.enfocar(enGeneral ? '#editar-name' : '#editar-email'), {
-        injector: this.injector,
-      });
+      this.ubicacionEdicion.markAllAsTouched();
+      // El campo invalido puede estar en otra pestaña: se muestra antes de enfocarlo.
+      const controles = this.formularioEdicion.controls;
+      const [pestana, selector]: [PestanaDeEdicion, string] =
+        controles.name.invalid || controles.contactEmail.invalid
+          ? ['general', controles.name.invalid ? '#editar-name' : '#editar-email']
+          : this.ubicacionEdicion.invalid
+            ? ['ubicacion', '#editar-ubicacion-latitud']
+            : ['institucional', '#editar-taxId'];
+      this.mostrarPestana(pestana);
+      afterNextRender(() => this.enfocar(selector), { injector: this.injector });
       return;
     }
 
@@ -531,19 +595,71 @@ export class ConsultoriosPage {
       }
     }
 
+    for (const campo of ['agendaHabilitada', 'direccionPublica', 'datosFiscalesPropios'] as const) {
+      if (valores[campo] !== (original[campo] ?? campo !== 'datosFiscalesPropios')) {
+        cambios[campo] = valores[campo];
+      }
+    }
+
+    const ubicacion = ubicacionDelFormulario(this.ubicacionEdicion);
+    const hayDireccion = tieneDireccion(ubicacion.direccion);
+    for (const parte of PARTES_DE_DIRECCION) {
+      const actual = ubicacion.direccion[parte] ?? '';
+      const previo = original[parte] ?? '';
+      // El pais arranca en Argentina para no pedirlo; sin ninguna otra parte cargada, un pais
+      // solo no es una direccion y no viaja.
+      if (parte === 'pais' && !hayDireccion && previo === '') {
+        continue;
+      }
+      if (actual !== previo) {
+        cambios[parte] = actual;
+      }
+    }
+
+    const previa = original.ubicacion ?? null;
+    const latitudPrevia = previa?.latitud ?? null;
+    const longitudPrevia = previa?.longitud ?? null;
+    const punto = ubicacion.coordenadas;
+    if (punto === null) {
+      if (latitudPrevia !== null) {
+        // Las dos en `null` es la forma que el contrato define para quitar el punto.
+        cambios.ubicacion = { latitud: null, longitud: null };
+      }
+    } else if (
+      punto.latitud !== latitudPrevia ||
+      punto.longitud !== longitudPrevia ||
+      (ubicacion.origen ?? 'MANUAL') !== (previa?.origen ?? 'MANUAL')
+    ) {
+      cambios.ubicacion = {
+        latitud: punto.latitud,
+        longitud: punto.longitud,
+        origen: origenParaElCable(ubicacion.origen),
+      };
+    }
+
     return cambios;
   }
 
   private cargarFormulario(sede: ConsultorioResponse): void {
     this.formularioEdicion.reset({
       name: sede.name ?? '',
+      alias: sede.alias ?? '',
       timezone: sede.timezone ?? '',
       slotMinutes: sede.slotMinutes === undefined ? '' : String(sede.slotMinutes),
+      phone: sede.phone ?? '',
+      contactEmail: sede.contactEmail ?? '',
+      agendaHabilitada: sede.agendaHabilitada ?? true,
+      direccionPublica: sede.direccionPublica ?? true,
+      datosFiscalesPropios: sede.datosFiscalesPropios ?? false,
       legalName: sede.legalName ?? '',
       taxId: sede.taxId ?? '',
       addressLine: sede.addressLine ?? '',
-      phone: sede.phone ?? '',
-      contactEmail: sede.contactEmail ?? '',
+    });
+    cargarUbicacion(this.ubicacionEdicion, {
+      ...sede,
+      latitud: sede.ubicacion?.latitud,
+      longitud: sede.ubicacion?.longitud,
+      origen: sede.ubicacion?.origen,
     });
   }
 

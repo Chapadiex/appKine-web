@@ -31,11 +31,13 @@ import { DiaDeLaSede } from '../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../core/services/flujo-de-turnos.store';
 import { PerfilPropioStore } from '../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
+import { SedeActivaStore } from '../../../core/services/sede-activa.store';
 import { SessionService } from '../../../core/services/session.service';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
+import { enlaceComoLlegar } from '../../../shared/utils/enlaces-de-mapa';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
 import {
   AccionSugerida,
@@ -109,6 +111,7 @@ const QUEDO_VIEJO: ReadonlySet<AccionSugerida> = new Set<AccionSugerida>([
 export class DetalleDeTurnoPanel implements OnInit {
   private readonly api = inject(SchedulingApi);
   private readonly tenant = inject(TenantContextStore);
+  private readonly sedeActiva = inject(SedeActivaStore);
   private readonly dia = inject(DiaDeLaSede);
   private readonly avisos = inject(AvisosStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
@@ -149,6 +152,25 @@ export class DetalleDeTurnoPanel implements OnInit {
 
   /** La sede del contexto: el turno es de la sede en la que se esta trabajando. */
   protected readonly sede = computed(() => this.tenant.context()?.consultorioName ?? '');
+
+  /**
+   * Direccion de la sede y enlace para llegar (05/11/2026), para un turno presencial. Solo si la
+   * sede la hace publica: es lo mismo que recibe el paciente en el aviso del turno.
+   */
+  protected readonly comoLlegar = computed(() => {
+    const ficha = this.sedeActiva.sede();
+    if (ficha === null || ficha.direccionPublica === false) {
+      return null;
+    }
+    const punto = ficha.ubicacion;
+    return {
+      direccion: ficha.direccionFormateada ?? null,
+      enlace:
+        punto?.latitud !== undefined && punto?.longitud !== undefined
+          ? enlaceComoLlegar(punto.latitud, punto.longitud)
+          : null,
+    };
+  });
 
   protected readonly eventos = signal<readonly EventoDeTurno[]>([]);
   protected readonly leyendoHistorial = signal(false);
@@ -377,6 +399,9 @@ export class DetalleDeTurnoPanel implements OnInit {
   });
 
   ngOnInit(): void {
+    // La ficha de la sede, para la direccion y el "Cómo llegar" del resumen. Es una lectura
+    // cacheada por contexto: abrir diez turnos no la pide diez veces.
+    this.sedeActiva.asegurarCargada();
     this.perfil.asegurarCargado();
     this.leer();
   }

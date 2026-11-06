@@ -73,3 +73,21 @@ export function rangoHorario(desde: string | undefined, hasta: string | undefine
   const fin = hasta === HORA_MEDIANOCHE ? 'medianoche (24:00)' : etiquetaDeHora(hasta);
   return `${etiquetaDeHora(desde)} a ${fin}`;
 }
+
+/**
+ * Todos los cuartos de hora del dia, de `00:00` a `23:45`, mas {@link HORA_MEDIANOCHE} al final.
+ *
+ * <p>Son las 97 opciones que un `<datalist>` le ofrece al campo de hora: el navegador propone
+ * la lista y el usuario puede igual escribir a mano cualquier `HH:MM`, que es lo que un
+ * `<input type="time">` no permite para la medianoche.
+ */
+export function cuartosDeHora(): readonly string[] {
+  const cuartos: string[] = [];
+  for (let hora = 0; hora < 24; hora++) {
+    for (const minutos of ['00', '15', '30', '45']) {
+      cuartos.push(`${String(hora).padStart(2, '0')}:${minutos}`);
+    }
+  }
+  cuartos.push(HORA_MEDIANOCHE);
+  return cuartos;
+}

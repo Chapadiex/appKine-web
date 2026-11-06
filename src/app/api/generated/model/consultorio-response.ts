@@ -7,6 +7,8 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { DatosFiscalesEfectivosResponse } from './datos-fiscales-efectivos-response';
+import { UbicacionResponse } from './ubicacion-response';
 
 
 /**
@@ -18,13 +20,41 @@ export interface ConsultorioResponse {
      */
     active?: boolean;
     /**
-     * Direccion, si se cargo
+     * Direccion FISCAL propia de la sede, si se cargo. La direccion fisica esta en pais, provincia, ciudad, calle, numero, codigoPostal y piso, y en una linea en direccionFormateada
      */
     addressLine?: string;
+    /**
+     * false mientras la sede no reciba turnos: reservar, crear series o trasladar turnos hacia ella es 409 consultorio-sin-agenda
+     */
+    agendaHabilitada?: boolean;
+    /**
+     * Nombre corto para la agenda y los listados, si se cargo
+     */
+    alias?: string;
+    /**
+     * Calle
+     */
+    calle?: string;
+    /**
+     * Ciudad o localidad
+     */
+    ciudad?: string;
+    /**
+     * Codigo postal
+     */
+    codigoPostal?: string;
     /**
      * Email de contacto, si se cargo
      */
     contactEmail?: string;
+    /**
+     * Los datos fiscales que RIGEN para la sede, ya resueltos
+     */
+    datosFiscalesEfectivos?: DatosFiscalesEfectivosResponse;
+    /**
+     * true: factura con legalName, taxId y addressLine propios; false: con los de la organizacion
+     */
+    datosFiscalesPropios?: boolean;
     /**
      * Motivo declarado de la baja. null si la sede esta activa
      */
@@ -34,6 +64,14 @@ export interface ConsultorioResponse {
      */
     deletedAt?: string;
     /**
+     * La direccion fisica en una linea, armada con las partes cargadas: \"Calle Numero, Piso, Ciudad, Provincia, CP, Pais\". null si no hay ninguna
+     */
+    direccionFormateada?: string;
+    /**
+     * Si la direccion fisica viaja en los avisos de turno al paciente
+     */
+    direccionPublica?: boolean;
+    /**
      * Estado derivado de la sede: ACTIVO o INACTIVO
      */
     estado?: string;
@@ -42,7 +80,7 @@ export interface ConsultorioResponse {
      */
     id?: number;
     /**
-     * Razon social, si se cargo
+     * Razon social PROPIA de la sede, si se cargo. Cuenta solo con datosFiscalesPropios; los datos que rigen estan en datosFiscalesEfectivos
      */
     legalName?: string;
     /**
@@ -50,25 +88,53 @@ export interface ConsultorioResponse {
      */
     name?: string;
     /**
+     * Altura
+     */
+    numero?: string;
+    /**
      * Organizacion a la que pertenece
      */
     organizationId?: number;
+    /**
+     * Pais de la direccion fisica, ISO 3166-1 alpha-2
+     */
+    pais?: string;
     /**
      * Telefono de contacto, si se cargo
      */
     phone?: string;
     /**
+     * Piso, oficina o departamento
+     */
+    piso?: string;
+    /**
+     * Provincia o estado
+     */
+    provincia?: string;
+    /**
+     * Indicaciones para llegar
+     */
+    referencias?: string;
+    /**
      * Intervalo por defecto de la agenda, en minutos
      */
     slotMinutes?: number;
     /**
-     * Identificacion fiscal, si se cargo
+     * Identificacion fiscal PROPIA de la sede, si se cargo
      */
     taxId?: string;
     /**
      * Zona horaria IANA efectiva de la sede. Es la que rige el dia operativo y la agenda, no la de la organizacion
      */
     timezone?: string;
+    /**
+     * Coordenadas de la sede. null si todavia no se ubico
+     */
+    ubicacion?: UbicacionResponse;
+    /**
+     * true cuando hay direccion escrita pero ninguna coordenada: la sede todavia no esta en el mapa
+     */
+    ubicacionPendiente?: boolean;
     /**
      * Version para el control de concurrencia optimista. Hay que reenviarla al editar: sin ella dos ediciones simultaneas se pisan
      */

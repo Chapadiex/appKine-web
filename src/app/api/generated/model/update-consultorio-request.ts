@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { UbicacionRequest } from './ubicacion-request';
 
 
 /**
@@ -14,15 +15,43 @@
  */
 export interface UpdateConsultorioRequest { 
     /**
-     * Direccion. Cadena vacia la borra
+     * Direccion fiscal propia de la sede, en una linea. Cadena vacia la borra. La direccion FISICA va en pais, provincia, ciudad, calle, numero, codigoPostal y piso
      */
     addressLine?: string;
+    /**
+     * Si la sede recibe turnos. Omitido: no se toca. En false reservar, crear series o trasladar turnos hacia ella es 409 consultorio-sin-agenda; los turnos ya dados no se tocan
+     */
+    agendaHabilitada?: boolean;
+    /**
+     * Nombre corto. Cadena vacia lo borra
+     */
+    alias?: string;
+    /**
+     * Calle. Cadena vacia la borra
+     */
+    calle?: string;
+    /**
+     * Ciudad o localidad. Cadena vacia la borra
+     */
+    ciudad?: string;
+    /**
+     * Codigo postal. Cadena vacia lo borra
+     */
+    codigoPostal?: string;
     /**
      * Email de contacto. Cadena vacia lo borra
      */
     contactEmail?: string;
     /**
-     * Razon social. Cadena vacia la borra
+     * true: factura con los datos fiscales propios; false: con los de la organizacion. Omitido: no se toca
+     */
+    datosFiscalesPropios?: boolean;
+    /**
+     * Si la direccion fisica viaja en los avisos de turno. Omitido: no se toca
+     */
+    direccionPublica?: boolean;
+    /**
+     * Razon social propia de la sede. Cadena vacia la borra. Cuenta solo con datosFiscalesPropios
      */
     legalName?: string;
     /**
@@ -30,21 +59,45 @@ export interface UpdateConsultorioRequest {
      */
     name?: string;
     /**
+     * Altura. Cadena vacia la borra
+     */
+    numero?: string;
+    /**
+     * Pais de la direccion fisica, ISO 3166-1 alpha-2. Cadena vacia lo borra
+     */
+    pais?: string;
+    /**
      * Telefono. Cadena vacia lo borra
      */
     phone?: string;
+    /**
+     * Piso, oficina o departamento. Cadena vacia lo borra
+     */
+    piso?: string;
+    /**
+     * Provincia o estado. Cadena vacia la borra
+     */
+    provincia?: string;
+    /**
+     * Indicaciones para llegar. Cadena vacia las borra
+     */
+    referencias?: string;
     /**
      * Nuevo intervalo por defecto de la agenda, en minutos
      */
     slotMinutes?: number;
     /**
-     * Identificacion fiscal. Cadena vacia la borra
+     * Identificacion fiscal propia de la sede. Cadena vacia la borra. Si tiene forma de CUIT (11 digitos, guiones opcionales) el digito verificador tiene que ser correcto: si no, 400 con errors.taxId. Cualquier otro formato se acepta como texto
      */
     taxId?: string;
     /**
      * Nueva zona horaria IANA de la sede
      */
     timezone?: string;
+    /**
+     * Coordenadas. Omitido: no se toca. Con latitud y longitud: se fija. Con las dos en null ({\"latitud\":null,\"longitud\":null}): se borra. Una sola es 400 con errors.ubicacion
+     */
+    ubicacion?: UbicacionRequest;
     /**
      * Version leida del recurso. Si quedo vieja, la edicion se rechaza con 409 en vez de pisar el cambio de otro
      */

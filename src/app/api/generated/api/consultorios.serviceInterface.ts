@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { BusquedaDeDireccionesResponse } from '../model/models';
 import { ConsultorioResponse } from '../model/models';
 import { CreateConsultorioRequest } from '../model/models';
 import { DeactivateConsultorioRequest } from '../model/models';
@@ -20,6 +21,12 @@ import { UpdateConsultorioRequest } from '../model/models';
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface BuscarDireccionesRequestParams {
+    orgId: number;
+    q: string;
+    pais?: string;
+}
 
 export interface CreateConsultorioRequestParams {
     orgId: number;
@@ -48,6 +55,14 @@ export interface UpdateConsultorioRequestParams {
 export interface ConsultoriosServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Busca una direccion para ubicar la sede
+     * Devuelve hasta cinco direcciones candidatas con sus coordenadas para el texto escrito, acotadas opcionalmente a un pais. Sirve para completar la direccion estructurada y la ubicacion de una sede al darla de alta o editarla.  Requiere ser miembro de la organizacion. La respuesta trae el proveedor y el texto de atribucion que la pantalla tiene que mostrar junto a los resultados: la licencia del proveedor lo exige.  NO es autocompletado: se llama cuando la persona pide buscar, no tecla a tecla. El proveedor admite una consulta por segundo para todo el despliegue, y el backend serializa los pedidos para respetarlo. Si el proveedor no responde o esta apagado en este despliegue, 503 geocodificador-no-disponible con Retry-After: la sede se puede guardar igual con la direccion escrita y sin coordenadas, o fijando la ubicacion a mano.
+     * @endpoint get /api/v1/organizations/{orgId}/direcciones/busqueda
+* @param requestParameters
+     */
+    buscarDirecciones(requestParameters: BuscarDireccionesRequestParams, extraHttpRequestParams?: any): Observable<BusquedaDeDireccionesResponse>;
 
     /**
      * Alta de una sede adicional

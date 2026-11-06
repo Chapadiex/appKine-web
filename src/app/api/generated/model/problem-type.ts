@@ -76,6 +76,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/consultorio-has-active-references',
 
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_SIN_AGENDA = 'https://akine.app/problems/consultorio-sin-agenda',
+
+    HTTPS___AKINE_APP_PROBLEMS_GEOCODIFICADOR_NO_DISPONIBLE = 'https://akine.app/problems/geocodificador-no-disponible',
+
     HTTPS___AKINE_APP_PROBLEMS_ESPACIO_NAME_TAKEN = 'https://akine.app/problems/espacio-name-taken',
 
     HTTPS___AKINE_APP_PROBLEMS_ESPACIO_INACTIVE = 'https://akine.app/problems/espacio-inactive',

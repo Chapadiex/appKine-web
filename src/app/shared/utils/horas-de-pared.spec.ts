@@ -1,6 +1,7 @@
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from './dias-de-la-semana';
 import {
   HORA_MEDIANOCHE,
+  cuartosDeHora,
   esHoraDePared,
   etiquetaDeHora,
   minutosDeHora,
@@ -47,6 +48,16 @@ describe('horas de pared', () => {
     // grilla escrito con letras.
     expect(etiquetaDeHora(undefined)).toBe('');
     expect(rangoHorario(undefined, undefined)).toBe(' a ');
+  });
+
+  it('los cuartos de hora van de 00:00 a 23:45 y terminan en 24:00, todos horas válidas', () => {
+    const cuartos = cuartosDeHora();
+    expect(cuartos.length).toBe(97);
+    expect(cuartos[0]).toBe('00:00');
+    expect(cuartos[1]).toBe('00:15');
+    expect(cuartos[95]).toBe('23:45');
+    expect(cuartos[96]).toBe(HORA_MEDIANOCHE);
+    expect(cuartos.every((hora) => esHoraDePared(hora))).toBe(true);
   });
 });
 
