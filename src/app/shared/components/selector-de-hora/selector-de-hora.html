@@ -1,0 +1,40 @@
+<label [for]="idCampo()">{{ etiqueta() }}</label>
+<div class="selector-de-hora">
+  <select
+    [id]="idCampo()"
+    class="selector-de-hora__lista"
+    [disabled]="deshabilitado()"
+    [attr.aria-invalid]="invalido() ? 'true' : null"
+    [attr.aria-describedby]="describedBy()"
+    (change)="elegir($event)"
+    (blur)="tocar()"
+  >
+    <option value="" [selected]="valorDelDesplegable() === ''">--:--</option>
+    @for (opcion of opciones(); track opcion.valor) {
+      <option [value]="opcion.valor" [selected]="valorDelDesplegable() === opcion.valor">
+        {{ opcion.rotulo }}
+      </option>
+    }
+    <option [value]="otraHora" [selected]="valorDelDesplegable() === otraHora">Otra hora…</option>
+  </select>
+
+  @if (exacta()) {
+    <input
+      [id]="idCampo() + '-exacta'"
+      class="selector-de-hora__exacta"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      maxlength="5"
+      placeholder="HH:MM"
+      [attr.pattern]="patronHora"
+      [attr.aria-label]="etiqueta() + ', hora exacta'"
+      [attr.aria-invalid]="invalido() ? 'true' : null"
+      [attr.aria-describedby]="describedBy()"
+      [value]="valor()"
+      [disabled]="deshabilitado()"
+      (input)="escribir($event)"
+      (blur)="tocar()"
+    />
+  }
+</div>

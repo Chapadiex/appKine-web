@@ -191,6 +191,7 @@ model/baja-de-persona-request.ts
 model/baja-de-producto.ts
 model/bloque-response.ts
 model/bloqueo-en-agenda.ts
+model/bloques-creados-response.ts
 model/borrador-de-honorarios.ts
 model/buscar-disponibilidad-de-turnos.ts
 model/calendario-sede-response.ts
@@ -252,6 +253,7 @@ model/crear-serie-de-turnos.ts
 model/create-arancel-request.ts
 model/create-autorizacion-request.ts
 model/create-bloque-request.ts
+model/create-bloques-request.ts
 model/create-catalogo-concepto-request.ts
 model/create-catalogo-solicitud-request.ts
 model/create-cobertura-request.ts

@@ -29,6 +29,17 @@ import {
  * que un solo bloque semanal alcanza. F se busca dentro de los proximos 60 dias porque el impacto
  * previo de una excepcion mira como mucho 90 dias hacia adelante.
  */
+/** Nombre de cada dia ISO tal como lo rotulan las pastillas del formulario. */
+const NOMBRE_DE_DIA: Record<number, string> = {
+  1: 'Lunes',
+  2: 'Martes',
+  3: 'Miercoles',
+  4: 'Jueves',
+  5: 'Viernes',
+  6: 'Sabado',
+  7: 'Domingo',
+};
+
 test.describe('Horarios y disponibilidad contra el backend real', () => {
   test('bloque semanal, cierre con impacto y feriado, reflejados en la agenda', async ({
     page,
@@ -54,16 +65,23 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: `Semana de ${profesional.nombre}`, level: 2 }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Agregar un bloque' }).click();
-    await page.getByLabel('Día de la semana').selectOption(String(diaIso(f)));
-    await page.getByLabel('Desde (HH:MM)').fill('09:00');
-    await page.getByLabel('Hasta (HH:MM, exclusiva)').fill('12:00');
-    const bloque = respuestaDe(page, 'POST', /\/profesionales\/\d+\/disponibilidad$/);
-    await page.getByRole('button', { name: 'Cargar el bloque' }).click();
+    await page.getByRole('button', { name: 'Agregar horario' }).click();
+    // Carga rapida (05/11/2026): un solo dia, elegido a mano entre los siete.
+    await page.getByRole('radio', { name: 'Personalizado' }).check();
+    for (const dia of [1, 2, 3, 4, 5]) {
+      if (dia !== diaIso(f)) {
+        await page.getByRole('checkbox', { name: NOMBRE_DE_DIA[dia] }).uncheck();
+      }
+    }
+    await page.getByRole('checkbox', { name: NOMBRE_DE_DIA[diaIso(f)] }).check();
+    await page.getByLabel('Desde', { exact: true }).selectOption('09:00');
+    await page.getByLabel('Hasta', { exact: true }).selectOption('12:00');
+    const bloque = respuestaDe(page, 'POST', /\/profesionales\/\d+\/disponibilidad\/lote$/);
+    await page.getByRole('button', { name: 'Guardar horario' }).click();
     expect((await bloque).status()).toBe(201);
     // UX-12: el resultado va al aviso global, no al cuerpo de la pantalla.
     const avisos = page.getByRole('region', { name: 'Notificaciones', exact: true });
-    await expect(avisos.getByText('Bloque agregado al horario')).toBeVisible();
+    await expect(avisos.getByText('Horario agregado')).toBeVisible();
     await expect(page.locator('.bloque__horario', { hasText: '09:00 a 12:00' })).toBeVisible();
 
     // El bloque ya produce turnos el dia habil y el que despues se cierra; el feriado no.
