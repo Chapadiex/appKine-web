@@ -160,13 +160,13 @@ describe('ImportarArancelesPage', () => {
 
   it('el asistente marca el paso actual con aria-current y empieza en Cargar', async () => {
     const fixture = await montar();
-    const pasos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('ol.pasos > li')];
+    const pasos = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('ol.indicador-pasos > li'),
+    ];
 
-    expect(pasos.map((paso) => paso.querySelector('.paso__titulo')?.textContent?.trim())).toEqual([
-      'Cargar',
-      'Vista previa',
-      'Confirmar',
-    ]);
+    expect(
+      pasos.map((paso) => paso.querySelector('.indicador-pasos__titulo')?.textContent?.trim()),
+    ).toEqual(['Cargar', 'Vista previa', 'Confirmar']);
     expect(pasoActual(fixture)).toBe('Cargar');
     expect(pasos.filter((paso) => paso.getAttribute('aria-current') === 'step').length).toBe(1);
   });
@@ -314,7 +314,7 @@ describe('ImportarArancelesPage', () => {
   /** Rotulo del paso marcado con aria-current="step". */
   function pasoActual(fixture: ComponentFixture<ImportarArancelesPage>): string | undefined {
     return (fixture.nativeElement as HTMLElement)
-      .querySelector('ol.pasos > li[aria-current="step"] .paso__titulo')
+      .querySelector('ol.indicador-pasos > li[aria-current="step"] .indicador-pasos__titulo')
       ?.textContent?.trim();
   }
 

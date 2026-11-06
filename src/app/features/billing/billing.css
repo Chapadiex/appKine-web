@@ -3,7 +3,7 @@
  *
  * <b>Deliberadamente corta</b>, igual que las de `person`, `resource` y `offering`. `.boton`,
  * `.campo`, `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.marca-estado`, `.acciones`,
- * `.acciones-fila`, `.fila-panel`, `.fila--revocada`, `.ayuda` y `.descripcion` los aporta
+ * `.fila-panel`, `.fila--revocada`, `.ayuda` y `.descripcion` los aporta
  * `src/design-system.css`, que es global. Copiarlos aca no seria aislar la feature: seria una
  * copia que se despega del original el dia que alguien retoque un gris.
  *

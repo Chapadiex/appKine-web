@@ -3,7 +3,7 @@
  *
  * <b>Deliberadamente corta</b>, igual que las de `resource` y `catalog`. `.boton`, `.campo`,
  * `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.etiqueta`, `.marca-estado`,
- * `.fila--revocada`, `.fila-panel`, `.acciones-fila` y `.campo__error` los aporta
+ * `.fila--revocada`, `.fila-panel` y `.campo__error` los aporta
  * `src/design-system.css`, que es global. Copiarlos aca no seria aislar el feature: seria una
  * copia que se despega del original el dia que alguien retoque un gris.
  *
@@ -234,7 +234,12 @@
   align-items: start;
 }
 
-@media (min-width: 64rem) {
+/*
+ * Dos columnas cuando el CONTENIDO las admite, no la ventana: con la barra lateral, una ventana de
+ * 1366 deja 1070 px y la tabla de profesionales de las habilitaciones no entraba en la mitad (la
+ * pastilla de estado quedaba cortada por el scroll interno). 76rem de contenido = ventana de ~1470.
+ */
+@container (min-width: 76rem) {
   .columnas-de-trabajo {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
