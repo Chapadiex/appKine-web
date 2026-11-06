@@ -71,6 +71,8 @@ test.describe('Sedes contra el backend real', () => {
     await page.getByLabel('Nombre de la sede').fill(nombre);
     await page.getByLabel(/Nombre visible/).fill('Norte');
     await page.getByLabel(/Teléfono de contacto/).fill('+54 11 4321-9876');
+    // Paso 1 -> 2: la ubicacion es un paso propio.
+    await page.getByRole('button', { name: 'Continuar' }).click();
     // Direccion en partes y punto en el mapa escrito a mano: el buscador de direcciones sale a
     // internet y el CI no depende de el.
     await page.locator('#sede-ubicacion-calle').fill('Av. Cabildo');
@@ -83,7 +85,7 @@ test.describe('Sedes contra el backend real', () => {
       'href',
       /query=-34.5593,-58.4526/,
     );
-    // Paso 1 -> 2: el box y el horario son la configuracion inicial opcional.
+    // Paso 2 -> 3: el box y el horario son la configuracion inicial opcional.
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByLabel('Nombre del box').fill('Box 1');
     // El horario es una semana con un interruptor por dia: abrir el lunes propone 09 a 18.

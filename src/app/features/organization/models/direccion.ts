@@ -1,4 +1,4 @@
-import { nombreDePais } from './paises';
+import { PAIS_POR_DEFECTO, nombreDePais } from './paises';
 
 /**
  * Direccion fisica de una sede, en partes (M03, alta de sede con ubicacion, 05/11/2026).
@@ -35,29 +35,26 @@ export function tieneDireccion(partes: DireccionPartes): boolean {
 }
 
 /**
- * La direccion en un renglon: "Av. Cabildo 1234, piso 3 of. 301, CABA, Buenos Aires (C1426),
- * Argentina". Omite lo que falta sin dejar comas colgando. Vacio si no hay nada cargado.
+ * La direccion en un renglon: "Av. Cabildo 1234, piso 3 of. 301, CABA, Buenos Aires, C1426".
+ * Omite lo que falta sin dejar comas colgando, y el pais cuando es Argentina, que es el caso de
+ * casi todas las sedes: decirlo seria ruido. Es el MISMO formato que `direccionFormateada` del
+ * backend, para que el resumen del alta y el listado digan lo mismo. Vacio si no hay nada cargado.
  */
 export function direccionEnUnaLinea(partes: DireccionPartes): string {
   const calleYNumero = [limpio(partes.calle), limpio(partes.numero)].filter((p) => p !== '');
   const ciudad = limpio(partes.ciudad);
   const provincia = limpio(partes.provincia);
-  const codigoPostal = limpio(partes.codigoPostal);
-  const tramos = [
+  const pais = limpio(partes.pais).toUpperCase();
+  return [
     calleYNumero.join(' '),
     limpio(partes.piso),
     ciudad,
     provincia === ciudad ? '' : provincia,
-  ].filter((tramo) => tramo !== '');
-  let texto = tramos.join(', ');
-  if (codigoPostal !== '') {
-    texto = texto === '' ? codigoPostal : `${texto} (${codigoPostal})`;
-  }
-  const pais = nombreDePais(partes.pais);
-  if (pais !== '' && texto !== '') {
-    texto = `${texto}, ${pais}`;
-  }
-  return texto;
+    limpio(partes.codigoPostal),
+    pais === '' || pais === PAIS_POR_DEFECTO ? '' : nombreDePais(pais),
+  ]
+    .filter((tramo) => tramo !== '')
+    .join(', ');
 }
 
 /**

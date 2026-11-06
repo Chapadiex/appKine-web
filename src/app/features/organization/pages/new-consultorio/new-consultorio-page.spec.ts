@@ -61,10 +61,9 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 3);
 
-    // Paso 3: se envia y el request se pierde en el camino (status 0 = nunca llego).
+    // Paso 4: se envia y el request se pierde en el camino (status 0 = nunca llego).
     enviar(fixture);
     const primero = httpMock.expectOne(RUTA_ALTA);
     const clave = primero.request.headers.get('Idempotency-Key');
@@ -88,9 +87,7 @@ describe('NewConsultorioPage', () => {
     // daria 409 idempotency-key-conflict y dejaria el formulario trabado para siempre.
     volverAlPaso(fixture, 'Datos de la sede');
     escribir(fixture, '#sede-contactEmail', 'sede.norte@ejemplo.test');
-    enviar(fixture);
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
     const tercero = httpMock.expectOne(RUTA_ALTA);
     expect(tercero.request.headers.get('Idempotency-Key')).not.toBe(clave);
 
@@ -124,9 +121,7 @@ describe('NewConsultorioPage', () => {
     escribir(fixture, '#sede-name', 'Sede Norte');
     escribir(fixture, '#sede-slotMinutes', '45');
     escribir(fixture, '#sede-slotMinutes', '');
-    enviar(fixture);
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
 
     const alta = httpMock.expectOne(RUTA_ALTA);
     expect(alta.request.body).toEqual({ name: 'Sede Norte' });
@@ -143,9 +138,7 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    enviar(fixture);
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
 
     httpMock.expectOne(RUTA_ALTA).flush(
       {
@@ -174,7 +167,7 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
+      enviar(fixture, 2);
       escribir(fixture, '#sede-boxNombre', 'Box 1');
       escribir(fixture, '#sede-boxCapacidad', '2');
       // Abrir el lunes propone 09:00 a 18:00; el corte lo parte en 09-13 y 14-18.
@@ -210,25 +203,24 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
+      enviar(fixture, 2);
       marcar(fixture, '#sede-horario-abre-1');
       pulsar(fixture, 'Corte al mediodía');
       escribir(fixture, '#sede-horario-desde-1', '12:00');
       enviar(fixture);
 
-      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('Paso 3 de 4');
       expect(texto(fixture)).toContain('Se pisa con otra franja del mismo día');
     });
 
-    it('un 400 sobre una franja vuelve al paso 2 y marca esa franja, no un cartel generico', async () => {
+    it('un 400 sobre una franja vuelve al paso 3 y marca esa franja, no un cartel generico', async () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
+      enviar(fixture, 2);
       marcar(fixture, '#sede-horario-abre-1');
       pulsar(fixture, 'Corte al mediodía');
-      enviar(fixture);
-      enviar(fixture);
+      enviar(fixture, 2);
 
       httpMock.expectOne(RUTA_ALTA).flush(
         {
@@ -241,7 +233,7 @@ describe('NewConsultorioPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('Paso 3 de 4');
       const error = fixture.nativeElement.querySelector('#sede-horario-error-1');
       expect(error?.textContent).toContain('La hora de cierre tiene que ser HH:mm');
       expect(fixture.nativeElement.querySelector('#sede-horario-error-0')).toBeNull();
@@ -258,18 +250,18 @@ describe('NewConsultorioPage', () => {
       escribir(fixture, '#sede-name', 'Sede Norte');
       escribir(fixture, '#sede-alias', 'Norte');
       escribir(fixture, '#sede-phone', '+54 11 4321-9876');
+      marcar(fixture, '#sede-agendaHabilitada');
+      enviar(fixture);
       escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
       escribir(fixture, '#sede-ubicacion-numero', '1234');
       escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
       escribir(fixture, '#sede-ubicacion-codigoPostal', 'C1426');
       escribir(fixture, '#sede-ubicacion-latitud', '-34.5593');
       escribir(fixture, '#sede-ubicacion-longitud', '-58.4526');
-      marcar(fixture, '#sede-agendaHabilitada');
-      enviar(fixture);
-      enviar(fixture);
+      enviar(fixture, 2);
 
       // La confirmacion dice donde esta y que todavia no recibe turnos.
-      expect(texto(fixture)).toContain('Av. Cabildo 1234, CABA (C1426), Argentina');
+      expect(texto(fixture)).toContain('Av. Cabildo 1234, CABA, C1426');
       expect(texto(fixture)).toContain('ajustada a mano');
       expect(texto(fixture)).toContain('Sin agenda por ahora');
 
@@ -299,10 +291,10 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
       escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
       escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
-      enviar(fixture);
-      enviar(fixture);
+      enviar(fixture, 2);
 
       expect(texto(fixture)).toContain('Ubicación pendiente de verificar');
 
@@ -318,14 +310,15 @@ describe('NewConsultorioPage', () => {
       alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
     });
 
-    it('una latitud sin longitud no deja avanzar del paso 1', () => {
+    it('una latitud sin longitud no deja avanzar del paso 2', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
       escribir(fixture, '#sede-ubicacion-latitud', '-34.5');
       enviar(fixture);
 
-      expect(texto(fixture)).toContain('Paso 1 de 3');
+      expect(texto(fixture)).toContain('Paso 2 de 4');
       expect(texto(fixture)).toContain('Latitud y longitud van juntas');
     });
 
@@ -333,9 +326,9 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
+      enviar(fixture, 2);
 
-      // Heredados: el paso 2 muestra los de la organizacion sin pedir nada.
+      // Heredados: el paso 3 muestra los de la organizacion sin pedir nada.
       expect(texto(fixture)).toContain('CUIT: 30-71094127-7');
 
       marcar(fixture, '#sede-datosFiscalesPropios');
@@ -343,7 +336,7 @@ describe('NewConsultorioPage', () => {
       escribir(fixture, '#sede-taxId', CUIT_INVALIDO);
       enviar(fixture);
 
-      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('Paso 3 de 4');
       expect(texto(fixture)).toContain('El CUIT no es válido');
 
       escribir(fixture, '#sede-taxId', CUIT_VALIDO);
@@ -413,10 +406,12 @@ function pulsar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
 }
 
 /** El unico `form` de la pantalla avanza de paso o envia, segun en cual este. */
-function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
-  const formulario = fixture.nativeElement.querySelector<HTMLFormElement>('form');
-  formulario?.dispatchEvent(new Event('submit'));
-  fixture.detectChanges();
+function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, veces = 1) {
+  for (let i = 0; i < veces; i++) {
+    const formulario = fixture.nativeElement.querySelector<HTMLFormElement>('form');
+    formulario?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+  }
 }
 
 /** Vuelve a un paso ya hecho desde el indicador de pasos, como lo haria el usuario. */

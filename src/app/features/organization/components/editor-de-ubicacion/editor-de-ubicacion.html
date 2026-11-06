@@ -13,7 +13,7 @@
       </p>
 
       <div class="grilla-12">
-        <div class="campo campo--8">
+        <div class="campo campo--4">
           <label [for]="idBase() + '-calle'">Calle</label>
           <input
             [id]="idBase() + '-calle'"
@@ -24,7 +24,7 @@
           />
         </div>
 
-        <div class="campo campo--4">
+        <div class="campo campo--2">
           <label [for]="idBase() + '-numero'">Número</label>
           <input
             [id]="idBase() + '-numero'"
@@ -36,7 +36,7 @@
           />
         </div>
 
-        <div class="campo campo--4">
+        <div class="campo campo--3">
           <label [for]="idBase() + '-ciudad'">Ciudad / localidad</label>
           <input
             [id]="idBase() + '-ciudad'"
@@ -46,7 +46,7 @@
           />
         </div>
 
-        <div class="campo campo--4">
+        <div class="campo campo--3">
           <label [for]="idBase() + '-provincia'">Provincia / estado</label>
           <input
             [id]="idBase() + '-provincia'"
@@ -64,7 +64,7 @@
           }
         </div>
 
-        <div class="campo campo--4">
+        <div class="campo campo--3">
           <label [for]="idBase() + '-codigoPostal'">Código postal</label>
           <input
             [id]="idBase() + '-codigoPostal'"
@@ -74,7 +74,7 @@
           />
         </div>
 
-        <div class="campo campo--4">
+        <div class="campo campo--3">
           <label [for]="idBase() + '-pais'">País</label>
           <select [id]="idBase() + '-pais'" formControlName="pais" autocomplete="country">
             @for (pais of paises; track pais.codigo) {
@@ -83,7 +83,7 @@
           </select>
         </div>
 
-        <div class="campo campo--8">
+        <div class="campo campo--6">
           <label [for]="idBase() + '-piso'">
             Piso / departamento / oficina <span class="campo__opcional">(opcional)</span>
           </label>

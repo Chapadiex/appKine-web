@@ -64,15 +64,18 @@ type EstadoAlta =
 
 /** Campos de cada paso, en el orden en que se enfoca el primero invalido tras un submit. */
 const CAMPOS_PASO_1 = ['name', 'alias', 'slotMinutes', 'phone', 'contactEmail'] as const;
-const CAMPOS_PASO_2 = ['boxCapacidad', 'taxId'] as const;
+const CAMPOS_PASO_3 = ['boxCapacidad', 'taxId'] as const;
 
-type Paso = 1 | 2 | 3;
+type Paso = 1 | 2 | 3 | 4;
 
-/** Los tres pasos del alta, con lo que se carga en cada uno. */
+const ULTIMO_PASO: Paso = 4;
+
+/** Los cuatro pasos del alta, con lo que se carga en cada uno. */
 const PASOS: readonly { readonly numero: Paso; readonly titulo: string; readonly sub: string }[] = [
-  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, ubicación y contacto' },
-  { numero: 2, titulo: 'Configuración inicial', sub: 'Opcional: box, horario y datos fiscales' },
-  { numero: 3, titulo: 'Confirmación', sub: 'Revisar y crear' },
+  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, agenda, contacto y visibilidad' },
+  { numero: 2, titulo: 'Ubicación', sub: 'Dirección y punto en el mapa' },
+  { numero: 3, titulo: 'Configuración inicial', sub: 'Opcional: horario, box y datos fiscales' },
+  { numero: 4, titulo: 'Confirmación', sub: 'Revisar y crear' },
 ];
 
 /** Duracion de turno que rige si no se cambia (la misma que el backend). */
@@ -91,11 +94,13 @@ const PATRON_TELEFONO = /^\+?[\d\s().-]{6,}$/;
  * asi que la interseccion con un alcance de una sola sede es vacia y el backend responde
  * `403`—.
  *
- * <p><b>Por que tres pasos y no un formulario largo.</b> Lo unico obligatorio es el nombre.
- * El paso 1 identifica la sede: nombre, agenda, contacto y donde esta (direccion en partes y
- * punto en el mapa, con {@link EditorDeUbicacion}). El paso 2 es configuracion OPCIONAL:
- * primer box, horario de atencion y datos fiscales, que por defecto son los de la
- * organizacion. El paso 3 muestra todo lo que se va a crear antes de crearlo.
+ * <p><b>Por que cuatro pasos y no un formulario largo.</b> Lo unico obligatorio es el nombre.
+ * El paso 1 identifica la sede: nombre, agenda, contacto y visibilidad. El paso 2 dice donde
+ * esta: direccion en partes y punto en el mapa ({@link EditorDeUbicacion}); va aparte porque
+ * el mapa necesita el ancho entero y porque la ubicacion se completa muchas veces despues. El
+ * paso 3 es configuracion OPCIONAL: horario de atencion, primer box y datos fiscales, que por
+ * defecto son los de la organizacion. El paso 4 muestra todo lo que se va a crear antes de
+ * crearlo.
  *
  * <h2>La clave de idempotencia</h2>
  *
@@ -146,6 +151,7 @@ export class NewConsultorioPage {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly pasos = PASOS;
+  protected readonly ultimoPaso = ULTIMO_PASO;
 
   protected readonly zonas = zonasHorarias();
   protected readonly etiquetaDeZona = etiquetaDeZona;
@@ -380,23 +386,18 @@ export class NewConsultorioPage {
   /** Valida el paso actual y pasa al siguiente. */
   protected avanzar(): void {
     this.intentos.update((valor) => valor + 1);
-
-    if (this.paso() === 1) {
-      if (!this.pasoValido(1)) {
-        return;
-      }
-      this.irAPaso(2);
+    const actual = this.paso();
+    if (actual === ULTIMO_PASO || !this.pasoValido(actual)) {
       return;
     }
-
-    if (!this.pasoValido(2)) {
-      return;
-    }
-    this.irAPaso(3);
+    this.irAPaso((actual + 1) as Paso);
   }
 
   protected volver(): void {
-    this.irAPaso(this.paso() === 3 ? 2 : 1);
+    const actual = this.paso();
+    if (actual > 1) {
+      this.irAPaso((actual - 1) as Paso);
+    }
   }
 
   /** Cambia de paso y lleva el foco al titulo del paso nuevo: el lector anuncia donde quedo. */
@@ -410,8 +411,8 @@ export class NewConsultorioPage {
   }
 
   /** Si el paso tiene algo invalido, lo marca y enfoca el primer campo a corregir. */
-  private pasoValido(paso: 1 | 2): boolean {
-    const campos = paso === 1 ? CAMPOS_PASO_1 : CAMPOS_PASO_2;
+  private pasoValido(paso: Paso): boolean {
+    const campos = paso === 1 ? CAMPOS_PASO_1 : paso === 3 ? CAMPOS_PASO_3 : [];
     const invalido = campos.find((campo) => this.formulario.controls[campo].invalid);
     if (invalido !== undefined) {
       this.formulario.markAllAsTouched();
@@ -419,13 +420,13 @@ export class NewConsultorioPage {
       return false;
     }
 
-    if (paso === 1 && this.ubicacion.invalid) {
+    if (paso === 2 && this.ubicacion.invalid) {
       this.ubicacion.markAllAsTouched();
       afterNextRender(() => this.enfocar('#sede-ubicacion-latitud'), { injector: this.injector });
       return false;
     }
 
-    if (paso === 2 && this.horario.invalid) {
+    if (paso === 3 && this.horario.invalid) {
       this.horario.markAllAsTouched();
       this.enfocar('#titulo-horario-general');
       return false;
@@ -433,21 +434,28 @@ export class NewConsultorioPage {
     return true;
   }
 
+  /** El primer paso con algo invalido, o `null` si todo esta bien. */
+  private primerPasoInvalido(): Paso | null {
+    if (CAMPOS_PASO_1.some((campo) => this.formulario.controls[campo].invalid)) {
+      return 1;
+    }
+    if (this.ubicacion.invalid) {
+      return 2;
+    }
+    if (this.formulario.invalid || this.horario.invalid) {
+      return 3;
+    }
+    return null;
+  }
+
   protected enviar(): void {
     this.intentos.update((valor) => valor + 1);
 
     // Lo invalido se corrige en su paso: se vuelve ahi en vez de marcar campos que no se ven.
-    const paso1Invalido =
-      CAMPOS_PASO_1.some((campo) => this.formulario.controls[campo].invalid) ||
-      this.ubicacion.invalid;
-    if (paso1Invalido) {
-      this.paso.set(1);
-      this.pasoValido(1);
-      return;
-    }
-    if (this.formulario.invalid || this.horario.invalid) {
-      this.paso.set(2);
-      this.pasoValido(2);
+    const pasoInvalido = this.primerPasoInvalido();
+    if (pasoInvalido !== null) {
+      this.paso.set(pasoInvalido);
+      this.pasoValido(pasoInvalido);
       return;
     }
 
@@ -643,6 +651,8 @@ export class NewConsultorioPage {
       this.erroresDeCampo.set(sueltos);
       const nombres = Object.keys(sueltos);
       if (franjas.size > 0 || box !== undefined || nombres.includes('taxId')) {
+        this.paso.set(3);
+      } else if (nombres.some((nombre) => nombre.startsWith('ubicacion'))) {
         this.paso.set(2);
       } else if (nombres.length > 0) {
         this.paso.set(1);

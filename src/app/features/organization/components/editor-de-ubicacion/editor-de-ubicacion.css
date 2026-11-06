@@ -124,3 +124,19 @@
   gap: var(--esp-4);
   margin-top: var(--esp-2);
 }
+
+/* Accion secundaria con aspecto de enlace (quitar el punto, descartar candidatos). */
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  text-decoration: underline;
+}

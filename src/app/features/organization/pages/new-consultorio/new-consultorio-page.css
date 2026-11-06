@@ -438,3 +438,15 @@
 .fiscales__propios {
   margin-top: var(--esp-5);
 }
+
+/* Paso 1 (06/11/2026): datos generales a la izquierda, visibilidad en una columna angosta. */
+.asistente__grilla--datos {
+  grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
+  gap: var(--esp-7);
+}
+
+@media (max-width: 64rem) {
+  .asistente__grilla--datos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
