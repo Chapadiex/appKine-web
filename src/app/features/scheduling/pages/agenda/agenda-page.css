@@ -4,67 +4,148 @@
  * texto, el color acompana.
  */
 
+/* --- Cabecera: las pestañas en la fila del titulo (formato compacto, 06/11) --- */
+
+.agenda-cabecera {
+  margin-bottom: var(--esp-5);
+}
+
+/*
+ * Encoge y parte sus pestañas antes que ensanchar la pagina. El selector doble le gana al
+ * flex-shrink: 0 que la cabecera pone a todo lo que acompaña al titulo.
+ */
+.agenda-cabecera .agenda-cabecera__pestanas {
+  flex: 1 1 auto;
+  align-self: flex-end;
+  min-width: 0;
+  margin-left: var(--esp-6);
+}
+
+/* En la fila del titulo no hay linea de base: solo el subrayado de la actual. El nav es de
+   app-pestanas, otra vista: sin ::ng-deep la regla no lo alcanza. */
+.agenda-cabecera__pestanas ::ng-deep .pestanas {
+  box-shadow: none;
+}
+
+/* --- Barra: fecha, vista y filtros en una tarjeta --- */
+
+.agenda-barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+  margin-bottom: var(--esp-5);
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: 0 1px 2px rgb(16 38 63 / 0.05);
+}
+
+.agenda-barra__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-6);
+}
+
+/* Ocupa lo que sobra y se parte por dentro: lo que baja de linea es un control, no la fila entera. */
+.agenda-barra__derecha {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+/* Todos los controles de la barra tienen el mismo alto y el mismo contorno (3:1, WCAG 1.4.11). */
+.agenda-nav__boton,
+.segmento button,
+.agenda-filtros-boton,
+.agenda-buscar input,
+.pastilla-filtro {
+  min-height: 2rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+}
+
 .agenda-nav {
   display: inline-flex;
-  flex-direction: row;
   align-items: center;
   gap: var(--esp-2);
-  margin: 0;
 }
 
 .agenda-nav__boton,
-.segmento button {
-  min-height: 2.25rem;
+.segmento button,
+.agenda-filtros-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-3);
   padding: 0 var(--esp-5);
-  background: var(--color-superficie);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  color: var(--color-texto);
-  font: inherit;
+  font-weight: var(--peso-medio);
   cursor: pointer;
 }
 
 .agenda-nav__boton {
+  min-width: 2rem;
   border-radius: var(--radio-sm);
 }
 
+.agenda-nav__boton:has(app-icono) {
+  padding: 0;
+}
+
 .agenda-nav__boton:hover,
-.segmento button:hover {
-  background: var(--color-acento-claro);
+.segmento button:hover,
+.agenda-filtros-boton:hover {
+  background: var(--color-superficie-sutil);
 }
 
-.agenda-nav__fecha {
-  width: auto;
-  min-height: 2.25rem;
+/* La fecha en palabras es el boton del calendario: el input la cubre, transparente. */
+.agenda-fecha {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-2) var(--esp-3);
+  border-radius: var(--radio-sm);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
 }
 
-.agenda-barra {
-  display: block;
-  margin-bottom: var(--esp-4);
+.agenda-fecha:hover {
+  background: var(--color-superficie-sutil);
 }
 
-.agenda-barra__fecha {
-  margin: 0;
+.agenda-fecha:focus-within {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
 }
 
-.agenda-barra__fecha b::first-letter {
+.agenda-fecha__rotulo::first-letter {
   text-transform: uppercase;
 }
 
-.agenda-barra__vistas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4);
+.agenda-fecha app-icono {
+  color: var(--color-texto-suave);
 }
 
-.agenda-barra__filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4) var(--esp-6);
+.agenda-fecha__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
-.agenda-barra__filtros .campo {
-  flex: 1 1 10rem;
-  max-width: 18rem;
+.agenda-fecha__estado {
   margin: 0;
 }
 
@@ -78,36 +159,186 @@
 
 .segmento button:last-child {
   border-radius: 0 var(--radio-sm) var(--radio-sm) 0;
+}
+
+.segmento button + button {
   border-left: 0;
 }
 
-.segmento button[aria-pressed='true'] {
-  background: var(--color-accion-fondo);
-  border-color: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
+/* Elegido y desplegado: fondo de acento, texto de enlace y peso (no solo color, WCAG 1.4.1). */
+.segmento button[aria-pressed='true'],
+.agenda-filtros-boton[aria-expanded='true'] {
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+  font-weight: var(--peso-semi);
 }
 
-.agenda-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-2);
-  margin: 0 0 var(--esp-4);
-  padding: 0;
-  list-style: none;
+.agenda-filtros-boton {
+  border-radius: var(--radio-sm);
 }
 
-.agenda-chip {
+.agenda-filtros-boton[aria-expanded='true'] {
+  border-color: var(--color-enlace);
+}
+
+.agenda-filtros-boton__contador {
   display: inline-flex;
   align-items: center;
-  gap: var(--esp-2);
-  padding: var(--esp-1) var(--esp-4);
-  background: var(--color-acento-claro);
-  border: var(--borde-fino) solid var(--color-borde-control);
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 var(--esp-2);
   border-radius: var(--radio-pastilla);
-  color: var(--color-texto);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-semi);
+}
+
+.agenda-buscar {
+  position: relative;
+  flex: 0 1 13rem;
+  min-width: 9rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.agenda-buscar app-icono {
+  position: absolute;
+  left: var(--esp-4);
+  color: var(--color-texto-suave);
+  pointer-events: none;
+}
+
+.agenda-buscar input {
+  width: 100%;
+  padding: 0 var(--esp-4) 0 1.875rem;
+  border-radius: var(--radio-sm);
+}
+
+.agenda-buscar input:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Filtros en pastilla: el nombre suave y el valor fuerte, el select sin caja propia. */
+.agenda-barra__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.agenda-barra__filtros[hidden] {
+  display: none;
+}
+
+.pastilla-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: 0 var(--esp-3) 0 var(--esp-5);
+  border-radius: var(--radio-pastilla);
+}
+
+.pastilla-filtro:focus-within {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.pastilla-filtro--activa {
+  border-color: var(--color-enlace);
+  background: var(--color-acento-claro);
+}
+
+.pastilla-filtro label {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+.pastilla-filtro select {
+  /* Del ancho de lo elegido, no del nombre mas largo de la lista. */
+  field-sizing: content;
+  max-width: 14rem;
+  padding: var(--esp-2) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-texto-fuerte);
   font: inherit;
-  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
   cursor: pointer;
+}
+
+.pastilla-filtro select:focus-visible {
+  outline: none;
+}
+
+.agenda-limpiar {
+  font-weight: var(--peso-semi);
+}
+
+/* --- Dia sin turnos: una franja con icono, explicacion y acciones --- */
+
+.agenda-sin-turnos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-5) var(--esp-7);
+  padding: var(--esp-7) var(--esp-8);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: 0 1px 2px rgb(16 38 63 / 0.05);
+}
+
+.agenda-sin-turnos__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+  font-size: 1.25rem;
+}
+
+.agenda-sin-turnos__texto {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.agenda-sin-turnos__texto p {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  text-wrap: pretty;
+}
+
+.agenda-sin-turnos__texto .agenda-sin-turnos__titulo {
+  margin-bottom: var(--esp-2);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.agenda-sin-turnos__texto .agenda-sin-turnos__aviso {
+  margin-top: var(--esp-3);
+  color: var(--color-texto);
+  font-weight: var(--peso-medio);
+}
+
+.agenda-sin-turnos__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-5);
+}
+
+.agenda-sin-turnos__proximo {
+  border-color: var(--color-borde-control);
+  color: var(--color-texto);
 }
 
 .agenda-vacia {

@@ -23,6 +23,8 @@ export type NombreDeIcono =
   | 'servicios'
   | 'contratacion'
   | 'horarios'
+  | 'calendario'
+  | 'candado'
   | 'salir'
   | 'plataforma'
   | 'mas'
@@ -117,6 +119,14 @@ export type NombreDeIcono =
         }
         @case ('contratacion') {
           <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />
+        }
+        @case ('calendario') {
+          <rect x="4" y="5" width="16" height="15" rx="2" />
+          <path d="M8 3v4M16 3v4M4 10h16" />
+        }
+        @case ('candado') {
+          <rect x="5" y="11" width="14" height="9" rx="2" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" />
         }
         @case ('horarios') {
           <circle cx="12" cy="12" r="9" />
