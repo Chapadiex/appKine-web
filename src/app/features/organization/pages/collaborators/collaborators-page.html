@@ -8,6 +8,13 @@
   </app-ayuda>
   <div cabeceraAcciones>
     <a class="boton boton--secundario" routerLink="/organizacion/auditoria">Ver la auditoría</a>
+    <a
+      *akinePermiso="permisoManage"
+      class="boton boton--secundario"
+      routerLink="/organizacion/colaboradores/manual/nuevo"
+    >
+      Alta manual
+    </a>
     <a *akinePermiso="permisoManage" class="boton" routerLink="/organizacion/colaboradores/nuevo">
       <app-icono nombre="agregar" />
       Vincular colaborador

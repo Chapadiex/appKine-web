@@ -251,6 +251,7 @@ model/crear-plan-tratamiento-request.ts
 model/crear-presentacion.ts
 model/crear-producto.ts
 model/crear-serie-de-turnos.ts
+model/create-alta-manual-request.ts
 model/create-arancel-request.ts
 model/create-autorizacion-request.ts
 model/create-bloque-request.ts
@@ -431,6 +432,7 @@ model/pase-detalle.ts
 model/pase.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
+model/perfil-de-invitacion.ts
 model/permisos-otorgables-response.ts
 model/persona-page-response.ts
 model/persona-response.ts
@@ -533,6 +535,7 @@ model/serie-de-reporte.ts
 model/serie-de-turnos-page.ts
 model/serie-de-turnos-resumen.ts
 model/serie-de-turnos.ts
+model/servicio-elegido-request.ts
 model/servicio-response.ts
 model/sesion-version.ts
 model/sesion.ts

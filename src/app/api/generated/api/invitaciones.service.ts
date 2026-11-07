@@ -19,6 +19,8 @@ import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 // @ts-ignore
 import { CancelInvitacionRequest } from '../model/cancel-invitacion-request';
 // @ts-ignore
+import { CreateAltaManualRequest } from '../model/create-alta-manual-request';
+// @ts-ignore
 import { CreateInvitacionRequest } from '../model/create-invitacion-request';
 // @ts-ignore
 import { InvitacionResponse } from '../model/invitacion-response';
@@ -32,6 +34,7 @@ import { BaseService } from '../api.base.service';
 import {
     InvitacionesServiceInterface,
     CancelColaboradorInvitacionRequestParams,
+    CreateAltaManualColaboradorRequestParams,
     CreateColaboradorInvitacionRequestParams,
     ListColaboradorInvitacionesRequestParams,
     ResendColaboradorInvitacionRequestParams
@@ -118,6 +121,82 @@ export class InvitacionesService extends BaseService implements InvitacionesServ
             {
                 context: localVarHttpContext,
                 body: cancelInvitacionRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Preparar colaborador e invitarlo a completar su cuenta
+     * Guarda los datos de incorporacion junto a la invitacion. El acceso se crea cuando la persona acepta el enlace. Requiere colaborador:manage en cada sede elegida.
+     * @endpoint post /api/v1/organizations/{orgId}/colaborador-invitaciones/manual
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public createAltaManualColaborador(requestParameters: CreateAltaManualColaboradorRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<InvitacionResponse>;
+    public createAltaManualColaborador(requestParameters: CreateAltaManualColaboradorRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<InvitacionResponse>>;
+    public createAltaManualColaborador(requestParameters: CreateAltaManualColaboradorRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<InvitacionResponse>>;
+    public createAltaManualColaborador(requestParameters: CreateAltaManualColaboradorRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling createAltaManualColaborador.');
+        }
+        const createAltaManualRequest = requestParameters?.createAltaManualRequest;
+        if (createAltaManualRequest === null || createAltaManualRequest === undefined) {
+            throw new Error('Required parameter createAltaManualRequest was null or undefined when calling createAltaManualColaborador.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/colaborador-invitaciones/manual`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<InvitacionResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: createAltaManualRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
