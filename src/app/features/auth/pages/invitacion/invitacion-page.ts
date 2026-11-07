@@ -126,6 +126,14 @@ export class InvitacionPage {
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     nombre: [''],
     apellido: [''],
+    tipoDocumento: [''],
+    numeroDocumento: [''],
+    telefono: [''],
+    profesion: [''],
+    matricula: [''],
+    jurisdiccion: [''],
+    especialidadPrincipal: [''],
+    especialidadesAdicionales: [''],
     password: [''],
   });
 
@@ -176,13 +184,29 @@ export class InvitacionPage {
           return;
         }
         this.estado.set({ tipo: 'listo', invitacion: respuesta });
+        if (respuesta.perfil) {
+          this.formularioAlta.patchValue({
+            nombre: respuesta.perfil.nombre ?? '',
+            apellido: respuesta.perfil.apellido ?? '',
+            tipoDocumento: respuesta.perfil.tipoDocumento ?? '',
+            numeroDocumento: respuesta.perfil.numeroDocumento ?? '',
+            telefono: respuesta.perfil.telefono ?? '',
+            profesion: respuesta.perfil.profesion ?? '',
+            matricula: respuesta.perfil.matricula ?? '',
+            jurisdiccion: respuesta.perfil.jurisdiccion ?? '',
+            especialidadPrincipal: respuesta.perfil.especialidadPrincipal ?? '',
+            especialidadesAdicionales: (respuesta.perfil.especialidadesAdicionales ?? []).join(
+              ', ',
+            ),
+          });
+        }
         if (respuesta.requiereRegistro === true) {
           this.terminos.cargar();
         }
       });
   }
 
-  protected mostrarErrorDe(campo: 'nombre' | 'password'): boolean {
+  protected mostrarErrorDe(campo: 'nombre' | 'apellido' | 'password'): boolean {
     const control = this.formularioAlta.controls[campo];
     return control.invalid && (control.touched || this.intentos() > 0);
   }
@@ -196,6 +220,41 @@ export class InvitacionPage {
     this.intentos.update((valor) => valor + 1);
 
     const cuerpo: AcceptInvitacionRequest = { token };
+
+    if (this.invitacion()?.perfil) {
+      this.formularioAlta.controls.nombre.setValidators([textoRequerido]);
+      this.formularioAlta.controls.apellido.setValidators([textoRequerido]);
+      this.formularioAlta.controls.nombre.updateValueAndValidity();
+      this.formularioAlta.controls.apellido.updateValueAndValidity();
+      if (
+        this.formularioAlta.controls.nombre.invalid ||
+        this.formularioAlta.controls.apellido.invalid
+      ) {
+        this.formularioAlta.markAllAsTouched();
+        this.enfocar(
+          this.formularioAlta.controls.nombre.invalid
+            ? '#invitacion-nombre'
+            : '#invitacion-apellido',
+        );
+        return;
+      }
+      const perfil = this.formularioAlta.getRawValue();
+      cuerpo.perfil = {
+        nombre: perfil.nombre.trim(),
+        apellido: perfil.apellido.trim(),
+        tipoDocumento: perfil.tipoDocumento.trim(),
+        numeroDocumento: perfil.numeroDocumento.trim(),
+        telefono: perfil.telefono.trim(),
+        profesion: perfil.profesion.trim(),
+        matricula: perfil.matricula.trim(),
+        jurisdiccion: perfil.jurisdiccion.trim(),
+        especialidadPrincipal: perfil.especialidadPrincipal.trim(),
+        especialidadesAdicionales: perfil.especialidadesAdicionales
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      };
+    }
 
     if (this.requiereRegistro()) {
       // Los validadores se ponen aca y no en el grupo porque son condicionales: a quien ya

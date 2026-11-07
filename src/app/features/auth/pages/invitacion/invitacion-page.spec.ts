@@ -133,6 +133,35 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('con tu cuenta de siempre');
   });
 
+  it('permite corregir los datos preparados en un alta manual antes de aceptar', async () => {
+    TestBed.resetTestingModule();
+    const perfil = {
+      nombre: 'Juan',
+      apellido: 'Pérez',
+      tipoDocumento: 'DNI',
+      numeroDocumento: '12345678',
+      telefono: '3511234567',
+      profesion: 'Kinesiología',
+      matricula: 'MP 4521',
+      jurisdiccion: 'Córdoba',
+      especialidadPrincipal: 'Traumatología',
+      especialidadesAdicionales: ['Deportiva'],
+    };
+    const fixture = await montarLista({ ...SIN_CUENTA, requiereRegistro: false, perfil });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.querySelector<HTMLInputElement>('#invitacion-nombre')?.value).toBe('Juan');
+    expect(anfitrion.querySelector('#invitacion-password')).toBeNull();
+    escribir(anfitrion, '#invitacion-matricula', 'MP 5000');
+    fixture.detectChanges();
+    aceptar(fixture);
+    const peticion = httpMock.expectOne(ACCEPT);
+    expect(peticion.request.body).toEqual({
+      token: TOKEN,
+      perfil: { ...perfil, matricula: 'MP 5000' },
+    });
+    peticion.flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: false });
+  });
+
   it('el alta exige nombre, contraseña y los términos vigentes antes de mandar nada', async () => {
     TestBed.resetTestingModule();
     const fixture = await montarLista(SIN_CUENTA, CON_TERMINOS);

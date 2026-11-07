@@ -7,6 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
 import {
+  PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
   PERMISO_PACIENTE_READ,
   PERMISO_TURNO_READ,
@@ -58,6 +59,7 @@ describe('NavegacionPrincipal', () => {
           { path: 'pacientes', component: Pagina },
           { path: 'horarios', component: Pagina },
           { path: 'organizacion', component: Pagina },
+          { path: 'organizacion/colaboradores/manual/nuevo', component: Pagina },
           { path: 'plataforma/solicitudes', component: Pagina },
         ]),
         { provide: SessionService, useValue: { estado, restaurando } },
@@ -134,6 +136,26 @@ describe('NavegacionPrincipal', () => {
     fixture.detectChanges();
 
     expect(enlaces(fixture)).toContain('Horarios de profesionales');
+  });
+
+  it('muestra el alta manual en Configuración solo con permiso de gestión', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([PERMISO_COLABORADOR_READ]);
+    fixture.detectChanges();
+    expect(enlaces(fixture)).not.toContain('Alta manual de colaborador');
+
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [PERMISO_COLABORADOR_READ, PERMISO_COLABORADOR_MANAGE],
+    });
+    fixture.detectChanges();
+    expect(enlaces(fixture)).toContain('Alta manual de colaborador');
+
+    await router.navigateByUrl('/organizacion/colaboradores/manual/nuevo');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Configuración']);
+    expect(marcados(fixture)).toEqual(['Alta manual de colaborador']);
   });
 
   /**

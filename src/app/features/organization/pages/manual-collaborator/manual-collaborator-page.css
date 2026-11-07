@@ -1,0 +1,380 @@
+:host {
+  display: block;
+}
+
+.alta-manual__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-6) var(--esp-9);
+  margin-bottom: var(--esp-6);
+}
+
+.alta-manual__cabecera h1 {
+  margin: 0;
+  font-size: var(--tipo-xl);
+}
+
+.alta-manual__pasos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alta-manual__pasos li {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto-suave);
+}
+
+.alta-manual__pasos li + li::before {
+  content: '';
+  width: 2rem;
+  border-top: var(--borde-fino) solid var(--color-borde-control);
+}
+
+.alta-manual__pasos button,
+.alta-manual__paso-estatico {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.alta-manual__pasos button:not(:disabled) {
+  cursor: pointer;
+}
+.alta-manual__pasos li[aria-current='step'] {
+  color: var(--color-acento);
+  font-weight: var(--peso-semi);
+}
+.alta-manual__pasos li.alta-manual__paso--hecho {
+  color: var(--color-exito);
+}
+
+.alta-manual__numero {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: 50%;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.alta-manual__pasos li[aria-current='step'] .alta-manual__numero {
+  border-color: var(--color-acento);
+  background: var(--color-acento);
+  color: var(--color-accion-texto);
+}
+
+.alta-manual__pasos li.alta-manual__paso--hecho .alta-manual__numero {
+  border-color: var(--color-exito);
+  background: var(--color-exito);
+  color: var(--color-accion-texto);
+}
+
+.alta-manual__columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(17rem, 0.92fr);
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+.alta-manual__principal,
+.alta-manual__panel {
+  min-width: 0;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+}
+
+.alta-manual__principal form {
+  padding: var(--esp-7);
+}
+.alta-manual__principal h2,
+.alta-manual__panel h2 {
+  margin: 0 0 var(--esp-6);
+  font-size: var(--tipo-base);
+}
+
+.alta-manual__grilla {
+  display: grid;
+  gap: 0 var(--esp-6);
+}
+.alta-manual__grilla--tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.alta-manual__grilla--dos {
+  grid-template-columns: minmax(0, 2fr) minmax(13rem, 1fr);
+}
+.alta-manual__campo-doble {
+  grid-column: span 2;
+}
+.alta-manual__principal .campo input,
+.alta-manual__principal .campo select {
+  width: 100%;
+}
+
+.alta-manual__seccion {
+  min-width: 0;
+  margin: var(--esp-6) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.alta-manual__seccion legend {
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.alta-manual__seccion > p,
+.alta-manual__descripcion {
+  margin: 0 0 var(--esp-6);
+  color: var(--color-texto-suave);
+}
+
+.alta-manual__servicios {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-4);
+}
+
+.alta-manual__servicio {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  cursor: pointer;
+}
+
+.alta-manual__servicio--elegido {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+}
+
+.alta-manual__servicio input {
+  flex: none;
+  accent-color: var(--color-acento);
+}
+.alta-manual__servicio > span:nth-child(2) {
+  min-width: 0;
+}
+.alta-manual__servicio small {
+  display: block;
+  color: var(--color-texto-suave);
+}
+.alta-manual__duracion {
+  margin-left: auto;
+  color: var(--color-texto-suave);
+  white-space: nowrap;
+}
+.alta-manual__sin-servicios {
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.alta-manual__etiqueta {
+  margin: 0 0 var(--esp-4);
+  font-weight: var(--peso-semi);
+}
+.alta-manual__alcance-total {
+  align-self: center;
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+.alta-manual__sedes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+.alta-manual__sede,
+.alta-manual__todas {
+  min-height: 2.5rem;
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  cursor: pointer;
+}
+.alta-manual__sede--elegida {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+}
+.alta-manual__todas {
+  border-color: transparent;
+  color: var(--color-enlace);
+}
+.alta-manual__indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-5);
+  margin-top: var(--esp-6);
+}
+.alta-manual__indicadores label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  cursor: pointer;
+}
+.alta-manual__indicadores input {
+  accent-color: var(--color-acento);
+}
+.alta-manual__nota-agenda {
+  margin: var(--esp-4) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.alta-manual__rol-elegido {
+  font-weight: var(--peso-semi);
+}
+.alta-manual__resumen {
+  margin: 0 0 var(--esp-7);
+}
+.alta-manual__resumen > div {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: var(--esp-6);
+  padding: var(--esp-4) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+.alta-manual__resumen dt {
+  color: var(--color-texto-suave);
+}
+.alta-manual__resumen dd {
+  margin: 0;
+  font-weight: var(--peso-medio);
+}
+.alta-manual__email-final {
+  max-width: 30rem;
+}
+
+.alta-manual__acciones {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin: var(--esp-7) calc(-1 * var(--esp-7)) calc(-1 * var(--esp-7));
+  padding: var(--esp-5) var(--esp-7);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie-atenuada);
+}
+
+.alta-manual__lateral {
+  display: grid;
+  gap: var(--esp-4);
+}
+.alta-manual__panel {
+  padding: var(--esp-6);
+}
+.alta-manual__panel p {
+  margin: 0;
+}
+.alta-manual__persona {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+}
+.alta-manual__persona > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.alta-manual__persona span:not(.alta-manual__avatar) {
+  color: var(--color-texto-suave);
+  overflow-wrap: anywhere;
+}
+.alta-manual__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+  font-weight: var(--peso-semi);
+}
+.alta-manual__lista-estado {
+  display: grid;
+  gap: var(--esp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.alta-manual__lista-estado li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-3);
+}
+.alta-manual__lista-estado li > span {
+  color: var(--color-texto-suave);
+}
+.alta-manual__lista-estado li.alta-manual__listo > span {
+  color: var(--color-exito);
+}
+.alta-manual__lista-estado small {
+  margin-left: auto;
+  color: var(--color-texto-suave);
+  text-align: right;
+}
+
+@media (max-width: 70rem) {
+  .alta-manual__columnas {
+    grid-template-columns: 1fr;
+  }
+  .alta-manual__lateral {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .alta-manual__indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 48rem) {
+  .alta-manual__grilla--tres,
+  .alta-manual__grilla--dos,
+  .alta-manual__servicios,
+  .alta-manual__lateral {
+    grid-template-columns: 1fr;
+  }
+  .alta-manual__campo-doble {
+    grid-column: auto;
+  }
+  .alta-manual__resumen > div {
+    grid-template-columns: 1fr;
+    gap: var(--esp-2);
+  }
+  .alta-manual__pasos li + li::before {
+    width: var(--esp-4);
+  }
+  .alta-manual__indicadores {
+    grid-template-columns: 1fr;
+  }
+}

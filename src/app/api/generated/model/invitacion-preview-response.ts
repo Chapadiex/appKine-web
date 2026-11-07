@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PerfilDeInvitacion } from './perfil-de-invitacion';
 
 
 /**
@@ -29,6 +30,10 @@ export interface InvitacionPreviewResponse {
      * Organizacion que invita
      */
     organizacionNombre?: string;
+    /**
+     * Datos precargados por quien invita; la persona puede corregirlos
+     */
+    perfil?: PerfilDeInvitacion;
     /**
      * Si al aceptar hay que crear la cuenta
      */

@@ -27,6 +27,9 @@ export type NombreDeIcono =
   | 'plataforma'
   | 'mas'
   | 'sede'
+  | 'capas'
+  | 'organizacion'
+  | 'edificio'
   | 'perfil'
   | 'preferencias'
   | 'tilde'
@@ -139,6 +142,18 @@ export type NombreDeIcono =
         @case ('sede') {
           <path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z" />
           <circle cx="12" cy="10" r="2.3" />
+        }
+        @case ('capas') {
+          <path d="m12 3 9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 16l9 5 9-5" />
+        }
+        @case ('organizacion') {
+          <circle cx="12" cy="5" r="2.5" />
+          <circle cx="5" cy="18" r="2.5" />
+          <circle cx="19" cy="18" r="2.5" />
+          <path d="M10.5 7 6 15.5M13.5 7l4.5 8.5" />
+        }
+        @case ('edificio') {
+          <path d="M5 21V4l7-2v19M12 8h7v13M3 21h18M8 6v1M8 11v1M8 16v1M15 11v1M15 16v1" />
         }
         @case ('perfil') {
           <circle cx="12" cy="8" r="3.8" />

@@ -14,6 +14,7 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
@@ -55,9 +56,9 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-collaborator-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta, Icono],
   templateUrl: './new-collaborator-page.html',
-  styleUrl: '../../organization.css',
+  styleUrls: ['../../organization.css', './new-collaborator-page.css'],
 })
 export class NewCollaboratorPage {
   private readonly colaboradores = inject(ColaboradoresService);

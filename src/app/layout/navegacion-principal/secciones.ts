@@ -5,6 +5,7 @@ import {
   PERMISO_CATALOGO_READ,
   PERMISO_CLASE_READ,
   PERMISO_COBRO_REGISTER,
+  PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
   PERMISO_CONSULTORIO_MANAGE,
   PERMISO_CONVENIO_READ,
@@ -208,6 +209,11 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Colaboradores',
         ruta: '/organizacion/colaboradores',
         permisos: [PERMISO_COLABORADOR_READ],
+      },
+      {
+        etiqueta: 'Alta manual de colaborador',
+        ruta: '/organizacion/colaboradores/manual/nuevo',
+        permisos: [PERMISO_COLABORADOR_MANAGE],
       },
       { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' },
       {

@@ -61,6 +61,16 @@ export const routes: Routes = [
   // seguiria funcionando -son paths distintos, no un parametro-, pero el orden explicito
   // evita que un futuro `colaboradores/:id` se coma esta ruta sin que nadie lo note.
   {
+    path: 'colaboradores/manual/nuevo',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
+    loadComponent: () =>
+      import('./pages/manual-collaborator/manual-collaborator-page').then(
+        (m) => m.ManualCollaboratorPage,
+      ),
+    title: 'AKINE - Nuevo colaborador',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'colaboradores/nuevo',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
     loadComponent: () =>
