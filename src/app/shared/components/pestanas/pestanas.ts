@@ -26,13 +26,15 @@ export interface Pestana {
  * <p><b>No sabe de dominio.</b> Recibe etiquetas y rutas; quien la usa decide cuales y con que
  * permiso. Por eso vive en `shared/` (AGENT.md 4.1).
  *
- * <p><b>Sin hoja propia.</b> `.pestanas` la aporta `src/design-system.css`.
+ * <p><b>Hoja propia</b> para la lista y los enlaces; `.pestanas` (el `nav`) la aporta
+ * `src/design-system.css`.
  */
 @Component({
   selector: 'akine-pestanas, app-pestanas',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './pestanas.html',
+  styleUrl: './pestanas.css',
 })
 export class Pestanas {
   /** Las pestanas, en orden. Con una sola no se renderiza nada: no hay entre que elegir. */

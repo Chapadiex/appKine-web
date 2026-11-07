@@ -91,7 +91,6 @@
   --color-marca-texto: #1f2933;
   --color-marca-texto-suave: #3b4754;
   --color-marca-superficie-activa: #eaf1fb;
-  --color-marca-borde: #1d5fbf;
   --color-acento: #1d5fbf;
   --color-acento-claro: #eaf1fb;
   --color-accion-fondo: #1d5fbf;
@@ -208,7 +207,6 @@
     --color-marca-texto-suave: #b9cde0;
     /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
     --color-marca-superficie-activa: #22313f;
-    --color-marca-borde: #7fb6ea;
     --color-acento: #5aa2e5;
     --color-acento-claro: #17304a;
     --color-accion-fondo: #4f9ae0;
@@ -252,7 +250,6 @@
   --color-marca-texto-suave: #b9cde0;
   /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
   --color-marca-superficie-activa: #22313f;
-  --color-marca-borde: #7fb6ea;
   --color-acento: #5aa2e5;
   --color-acento-claro: #17304a;
   --color-accion-fondo: #4f9ae0;
@@ -299,11 +296,6 @@
 :focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
-}
-
-/* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
-.barra-lateral :focus-visible {
-  outline-color: var(--color-foco-sobre-marca);
 }
 
 /* --- Tipografia de pagina ------------------------------------------------------------- */
@@ -484,7 +476,9 @@ a.enlace {
  * minimo automatico es el ancho intrinseco del control: un `select` con una opcion larga (el
  * nombre de un financiador, una practica) empujaba la PAGINA a 470-670 px en un telefono de 375.
  */
+/* `position: relative`: ancla la ayuda a demanda (ver "Ayuda de campo a demanda", mas abajo). */
 .campo {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--esp-2);
@@ -504,7 +498,6 @@ a.enlace {
 .campo textarea {
   padding: var(--esp-4) 0.625rem;
   min-height: 2.5rem;
-  box-sizing: border-box;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -533,7 +526,6 @@ a.enlace {
 /* El textarea ocupa el ancho y crece solo para abajo: horizontal desborda la tarjeta. */
 .campo textarea {
   width: 100%;
-  box-sizing: border-box;
   line-height: var(--linea-base);
   resize: vertical;
 }
@@ -617,24 +609,18 @@ a.enlace {
  * incumplimiento de WCAG 2.1.1 (Teclado, nivel A), y ninguna auditoria de axe lo detecta
  * porque depende del layout, que jsdom no calcula.
  */
-.tabla-scroll {
-  overflow-x: auto;
-}
-
 /*
  * Alto de la tabla (UX-14): usa el alto disponible y, si las filas no entran, se desplaza ELLA
  * con el encabezado fijo -no la pagina entera-, asi el paginado sigue a la vista. Con 10 filas por
  * pagina casi nunca llega al tope.
+ *
+ * `position: relative` y el borde: ver el indicador de desborde, mas abajo.
  */
 .tabla-scroll {
+  position: relative;
   max-height: max(18rem, calc(100dvh - var(--alto-barra-superior) - 15rem));
-  overflow-y: auto;
-}
-
-.tabla thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  overflow: auto;
+  border-inline: var(--borde-acento) solid transparent;
 }
 
 /* Foco visible en la region desplazable: si se puede tabular hasta ella, tiene que verse
@@ -671,12 +657,8 @@ a.enlace {
  * va posicionado adentro. Sin eso, un `.visualmente-oculto` dentro de una celda —el nombre largo de
  * un enlace "Abrir"— se ubicaba contra la pagina y no contra el scroll, escapaba del recorte y le
  * daba a la PAGINA un scroll horizontal (841 px en un telefono de 375, medido en egresos).
+ * Las dos declaraciones viven en la regla `.tabla-scroll` de arriba.
  */
-.tabla-scroll {
-  position: relative;
-  border-inline: var(--borde-acento) solid transparent;
-}
-
 @supports (animation-timeline: scroll()) {
   .tabla-scroll {
     animation: tabla-desborde linear both;
@@ -717,6 +699,9 @@ a.enlace {
 
 /* Encabezado chico y en mayusculas: se lee como rotulo de columna, no como un dato mas. */
 .tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: var(--color-superficie-atenuada);
   color: var(--color-marca-texto-suave);
   font-size: var(--tipo-2xs);
@@ -801,20 +786,6 @@ a.enlace {
   color: var(--color-peligro-texto);
 }
 
-/* Botones de la celda de acciones: mas chicos que un boton de formulario, y envuelven. */
-.acciones-fila {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-3);
-}
-
-.acciones-fila .boton {
-  font-size: var(--tipo-xs);
-  padding: var(--esp-2) var(--esp-4);
-}
-
-/* --- Paginacion ----------------------------------------------------------------------- */
-
 /* --- Responsive ----------------------------------------------------------------------- */
 
 /* Layout fluido: recepcion usa desktop, profesionales usan tablet. */
@@ -846,37 +817,8 @@ a.enlace {
   box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
 }
 
-.pestanas__lista {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--esp-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pestanas__enlace {
-  display: inline-block;
-  padding: var(--esp-3) var(--esp-5);
-  border-bottom: var(--borde-medio) solid transparent;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.pestanas__enlace:hover {
-  color: var(--color-texto);
-  border-bottom-color: var(--color-borde-control);
-}
-
-/* La actual se marca con subrayado Y peso, no solo con color (WCAG 1.4.1). */
-.pestanas__enlace--actual {
-  color: var(--color-texto-fuerte);
-  font-weight: var(--peso-semi);
-  border-bottom-color: var(--color-acento);
-}
+/* La lista y los enlaces viven en `shared/components/pestanas/pestanas.css`: solo los pinta esa
+   plantilla, que va en chunks diferidos. `.pestanas` queda aca porque otras hojas lo ajustan. */
 
 /* --- Titulo con ayuda contextual (UX-01) ----------------------------------------------- */
 
@@ -887,12 +829,9 @@ a.enlace {
 .titulo-con-ayuda {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--esp-4);
   margin-bottom: var(--esp-7);
-}
-
-.titulo-con-ayuda {
-  flex-wrap: wrap;
 }
 
 /* Titulo de seccion con su "?": mismo ritmo que el h2 suelto de una tarjeta. */
@@ -922,22 +861,6 @@ a.enlace {
 .campo .campo-busqueda input {
   width: 100%;
   padding-left: 2.5rem;
-}
-
-/* Debajo de la tabla: cuantos hay a la izquierda, el paginador a la derecha. */
-.tabla-pie {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-4);
-  margin-top: var(--esp-5);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-}
-
-.tabla-pie .paginacion {
-  margin: 0;
 }
 
 /* Grilla de campos dentro de un formulario: la misma grilla de 12 columnas (UX-14). */
@@ -985,47 +908,6 @@ a.enlace {
   text-decoration: underline;
 }
 
-.pantalla-error {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--esp-5);
-  max-width: 30rem;
-  margin: 4rem auto 0;
-}
-
-.pantalla-error__codigo {
-  color: var(--color-texto-suave);
-  font-family: var(--fuente-mono);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-}
-
-.pantalla-error h1 {
-  margin: 0;
-}
-
-.pantalla-error p {
-  margin: 0;
-  color: var(--color-marca-texto-suave);
-  line-height: 1.5;
-}
-
-.pantalla-error__ruta {
-  padding: var(--esp-2) var(--esp-4);
-  border-radius: var(--radio-sm);
-  background: var(--color-superficie-codigo);
-  font-family: var(--fuente-mono);
-  font-size: var(--tipo-xs);
-}
-
-.pantalla-error__acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4);
-  padding-top: var(--esp-4);
-}
-
 /* En un telefono un rotulo largo parte en dos renglones en vez de empujar la pagina de costado. */
 @media (max-width: 40rem) {
   .boton {
@@ -1071,8 +953,8 @@ form:not(.formulario--libre) fieldset {
 /*
  * Grilla de 12 columnas (UX-14). Cada campo ocupa lo que pide su dato: 3 columnas por defecto
  * (cuatro por fila), 2 para fecha, hora o numero, 4 para un email, la fila entera para texto
- * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--corto` = 2,
- * `--medio` = 3, `--largo` = 6, `--ancho` = 12). Lo que no es un campo ocupa la fila entera.
+ * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--ancho` = 12;
+ * los alias `--corto`, `--medio` y `--largo` se borraron el 07/11/2026: ninguna plantilla los usaba). Lo que no es un campo ocupa la fila entera.
  * Los anchos por tipo de dato van en `:where()` (especificidad cero): la clase explicita siempre
  * gana. Sin eso `.campo--4` sobre un numero quedaba en 2 y su etiqueta partia en dos renglones.
  *
@@ -1100,13 +982,11 @@ form:not(.formulario--libre),
 }
 
 :where(.campo:has(> input:is([type='date'], [type='time'], [type='number'], [type='month']))),
-.campo--2,
-.campo--corto {
+.campo--2 {
   --ancho-campo: 2;
 }
 
-.campo--3,
-.campo--medio {
+.campo--3 {
   --ancho-campo: 3;
 }
 
@@ -1115,8 +995,7 @@ form:not(.formulario--libre),
   --ancho-campo: 4;
 }
 
-.campo--6,
-.campo--largo {
+.campo--6 {
   --ancho-campo: 6;
 }
 
@@ -1165,10 +1044,6 @@ form:not(.formulario--libre),
  * tapa (el "Guardar ahora" debajo de las notas de la atencion) le llega a la ayuda, el campo pierde
  * el foco y hay que volver a hacer clic. Por eso una ayuda a demanda no lleva enlaces ni botones.
  */
-.campo {
-  position: relative;
-}
-
 .campo > .ayuda:not(.ayuda--fija) {
   display: none;
 }
