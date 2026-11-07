@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Agenda">
+<app-cabecera-de-pagina titulo="Agenda" class="agenda-cabecera">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Hacé clic en un horario libre para dar un turno: la fecha, la hora y el profesional ya quedan
@@ -10,22 +10,9 @@
     </p>
   </app-ayuda>
 
-  <div cabeceraContexto class="campo agenda-nav" role="group" aria-label="Fecha de la agenda">
-    <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
-      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
-    </button>
-    <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
-    <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
-      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
-    </button>
-    <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
-    <input
-      id="agenda-fecha"
-      type="date"
-      class="agenda-nav__fecha"
-      [value]="fechaVisible()"
-      (change)="irAFecha($any($event.target).value)"
-    />
+  <!-- Envuelta: asi no la toma la ranura de pestañas y queda en la fila del titulo. -->
+  <div class="agenda-cabecera__pestanas">
+    <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
   </div>
 
   <div cabeceraAcciones>
@@ -35,91 +22,126 @@
       class="boton boton--secundario"
       (click)="bloquearAgenda()"
     >
-      Bloquear agenda
+      <app-icono nombre="candado" />
+      Bloquear<span class="visualmente-oculto"> agenda</span>
     </button>
     <button *akinePermiso="PERMISO_TURNO_MANAGE" type="button" class="boton" (click)="nuevoTurno()">
       <app-icono nombre="agregar" />
       Nuevo turno
     </button>
   </div>
-
-  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<!-- Una sola fila: lo que se usa siempre, y el resto detras del embudo (docs/ux §3.4). -->
-<app-filtros
-  class="agenda-barra"
-  [activos]="filtrosActivos().length"
-  limpiable
-  (limpiar)="limpiarFiltros()"
->
-  <p class="agenda-barra__fecha" filtro-principal>
-    <b>{{ rotuloDeFecha() }}</b>
-    @if (cargando()) {
-      <span class="ayuda" role="status">Actualizando…</span>
-    }
-  </p>
+<!-- La barra de la agenda: que dia se mira, como, y que se filtra. -->
+<section class="agenda-barra" aria-label="Fecha, vista y filtros">
+  <div class="agenda-barra__fila">
+    <div class="agenda-nav" role="group" aria-label="Fecha de la agenda">
+      <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
+        <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
+      </button>
+      <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
+      <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
+        <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
+      </button>
+    </div>
 
-  <!-- Un solo elemento: lo que va adentro de un @if no se proyecta a su lugar por el atributo. -->
-  <div class="agenda-barra__vistas" filtro-frecuente>
-    @if (!angosta()) {
-      <div class="segmento" role="group" aria-label="Período">
-        <button
-          type="button"
-          [attr.aria-pressed]="vistaElegida() === 'dia'"
-          (click)="elegirVista('dia')"
-        >
-          Día
-        </button>
-        <button
-          type="button"
-          [attr.aria-pressed]="vistaElegida() === 'semana'"
-          (click)="elegirVista('semana')"
-        >
-          Semana
-        </button>
-        <button
-          type="button"
-          [attr.aria-pressed]="vistaElegida() === 'mes'"
-          (click)="elegirVista('mes')"
-        >
-          Mes
-        </button>
-      </div>
-      @if (vistaElegida() === 'dia') {
-        <div class="segmento" role="group" aria-label="Columnas de la agenda">
-          <button
-            type="button"
-            [attr.aria-pressed]="agrupacion() === 'profesional'"
-            (click)="elegirAgrupacion('profesional')"
-          >
-            Profesionales
-          </button>
-          <button
-            type="button"
-            [attr.aria-pressed]="agrupacion() === 'box'"
-            (click)="elegirAgrupacion('box')"
-          >
-            Boxes
-          </button>
-        </div>
-      }
-    }
-  </div>
-
-  <div class="agenda-barra__filtros">
-    <div class="campo">
-      <label for="agenda-paciente">Paciente</label>
+    <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente, y recibe el clic. -->
+    <div class="agenda-fecha">
+      <span class="agenda-fecha__rotulo" aria-hidden="true">{{ rotuloDeFecha() }}</span>
+      <app-icono nombre="calendario" />
+      <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
       <input
-        id="agenda-paciente"
-        type="search"
-        autocomplete="off"
-        placeholder="Nombre o documento"
-        [value]="paciente()"
-        (input)="paciente.set($any($event.target).value)"
+        #selectorDeFecha
+        id="agenda-fecha"
+        type="date"
+        class="agenda-fecha__input"
+        [value]="fechaVisible()"
+        (click)="abrirCalendario(selectorDeFecha)"
+        (change)="irAFecha($any($event.target).value)"
       />
     </div>
-    <div class="campo">
+    @if (cargando()) {
+      <span class="ayuda agenda-fecha__estado" role="status">Actualizando…</span>
+    }
+
+    <div class="agenda-barra__derecha">
+      @if (!angosta()) {
+        <div class="segmento" role="group" aria-label="Período">
+          <button
+            type="button"
+            [attr.aria-pressed]="vistaElegida() === 'dia'"
+            (click)="elegirVista('dia')"
+          >
+            Día
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="vistaElegida() === 'semana'"
+            (click)="elegirVista('semana')"
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="vistaElegida() === 'mes'"
+            (click)="elegirVista('mes')"
+          >
+            Mes
+          </button>
+        </div>
+        @if (vistaElegida() === 'dia') {
+          <div class="segmento" role="group" aria-label="Columnas de la agenda">
+            <button
+              type="button"
+              [attr.aria-pressed]="agrupacion() === 'profesional'"
+              (click)="elegirAgrupacion('profesional')"
+            >
+              Profesionales
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="agrupacion() === 'box'"
+              (click)="elegirAgrupacion('box')"
+            >
+              Boxes
+            </button>
+          </div>
+        }
+      }
+
+      <div class="agenda-buscar">
+        <app-icono nombre="buscar" />
+        <label class="visualmente-oculto" for="agenda-paciente">Paciente</label>
+        <input
+          id="agenda-paciente"
+          type="search"
+          autocomplete="off"
+          placeholder="Paciente o DNI"
+          [value]="paciente()"
+          (input)="paciente.set($any($event.target).value)"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="agenda-filtros-boton"
+        aria-controls="agenda-filtros"
+        [attr.aria-expanded]="filtrosAbiertos()"
+        (click)="filtrosAbiertos.set(!filtrosAbiertos())"
+      >
+        <app-icono nombre="filtro" />
+        Filtros
+        @if (filtrosActivos().length > 0) {
+          <span class="agenda-filtros-boton__contador"
+            >{{ filtrosActivos().length }}<span class="visualmente-oculto"> activos</span></span
+          >
+        }
+      </button>
+    </div>
+  </div>
+
+  <div id="agenda-filtros" class="agenda-barra__filtros" [hidden]="!filtrosAbiertos()">
+    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="profesionalId() !== null">
       <label for="agenda-profesional">Profesional</label>
       <select
         id="agenda-profesional"
@@ -134,7 +156,7 @@
         }
       </select>
     </div>
-    <div class="campo">
+    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="ofertaId() !== null">
       <label for="agenda-oferta">Prestación</label>
       <select
         id="agenda-oferta"
@@ -149,7 +171,7 @@
         }
       </select>
     </div>
-    <div class="campo">
+    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="estadoElegido() !== ''">
       <label for="agenda-estado">Estado</label>
       <select
         id="agenda-estado"
@@ -165,22 +187,13 @@
         <option [value]="A_REUBICAR" [selected]="estadoElegido() === A_REUBICAR">A reubicar</option>
       </select>
     </div>
-  </div>
-</app-filtros>
-
-@if (filtrosActivos().length > 0) {
-  <ul class="agenda-chips" aria-label="Filtros activos">
-    @for (chip of filtrosActivos(); track chip.clave) {
-      <li>
-        <button type="button" class="agenda-chip" (click)="chip.quitar()">
-          {{ chip.texto }}
-          <app-icono nombre="cerrar" />
-          <span class="visualmente-oculto">Quitar filtro</span>
-        </button>
-      </li>
+    @if (filtrosActivos().length > 0) {
+      <button type="button" class="boton-texto agenda-limpiar" (click)="limpiarFiltros()">
+        Limpiar<span class="visualmente-oculto"> filtros</span>
+      </button>
     }
-  </ul>
-}
+  </div>
+</section>
 
 <div aria-live="polite">
   @if (error(); as fallo) {
@@ -201,16 +214,7 @@
   @if (angosta()) {
     <!-- En un celular no se comprime una grilla: la lista cronologica del dia. -->
     @if (turnosVisibles().length === 0) {
-      <app-estado-vacio titulo="No hay turnos para este día">
-        <button
-          *akinePermiso="PERMISO_TURNO_MANAGE"
-          type="button"
-          class="boton"
-          (click)="nuevoTurno()"
-        >
-          Crear turno
-        </button>
-      </app-estado-vacio>
+      <ng-container [ngTemplateOutlet]="sinTurnos" />
     } @else {
       <ul class="agenda-lista">
         @for (turno of turnosVisibles(); track turno.turno?.id) {
@@ -303,19 +307,7 @@
       }
     </p>
   } @else if (sinHorarios()) {
-    <app-estado-vacio
-      titulo="No hay turnos para este período"
-      texto="Tampoco hay horarios de atención cargados. Podés dar un turno buscando otro día, o cargar los horarios del profesional."
-    >
-      <button
-        *akinePermiso="PERMISO_TURNO_MANAGE"
-        type="button"
-        class="boton"
-        (click)="nuevoTurno()"
-      >
-        Crear turno
-      </button>
-    </app-estado-vacio>
+    <ng-container [ngTemplateOutlet]="sinTurnos" />
   } @else if (columnas().length === 0) {
     <app-estado-vacio
       [titulo]="
@@ -530,3 +522,54 @@
     }
   }
 }
+
+<!--
+  Dia sin turnos: que paso y que hacer, en una sola franja. Si tampoco hay horarios lo dice, porque
+  es la causa mas comun de una agenda vacia y se arregla en Horarios, no aca.
+-->
+<ng-template #sinTurnos>
+  <div class="agenda-sin-turnos" role="status">
+    <span class="agenda-sin-turnos__icono"><app-icono nombre="calendario" /></span>
+    <div class="agenda-sin-turnos__texto">
+      <p class="agenda-sin-turnos__titulo">
+        No hay turnos para este {{ vistaEfectiva() === 'semana' ? 'período' : 'día' }}
+      </p>
+      <p>
+        @if (sinHorarios()) {
+          Tampoco hay horarios de atención cargados. Podés dar un turno igual, ir al próximo día con
+          agenda o cargar los horarios del profesional.
+        } @else {
+          Podés dar un turno o ir al próximo día con turnos.
+        }
+      </p>
+      @if (sinProximo()) {
+        <p class="agenda-sin-turnos__aviso">
+          No hay turnos en los próximos {{ DIAS_POR_PEDIDO }} días.
+        </p>
+      }
+    </div>
+    <div class="agenda-sin-turnos__acciones">
+      <button
+        *akinePermiso="PERMISO_TURNO_MANAGE"
+        type="button"
+        class="boton boton--chico"
+        (click)="nuevoTurno()"
+      >
+        Crear turno
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario boton--chico agenda-sin-turnos__proximo"
+        [disabled]="buscandoProximo()"
+        (click)="irAlProximoDiaConTurnos()"
+      >
+        Próximo día con turnos <span aria-hidden="true">→</span>
+      </button>
+      @if (sinHorarios()) {
+        <a *akinePermiso="PERMISO_AGENDA_HORARIO" class="enlace" [routerLink]="rutaDeHorarios"
+          >Cargar horarios</a
+        >
+      }
+    </div>
+  </div>
+</ng-template>
