@@ -89,6 +89,16 @@ describe('NewCollaboratorPage', () => {
 
     expect(texto(fixture)).toContain('No existe una cuenta con ese email');
 
+    // La salida es la invitacion, que es el unico camino que crea la cuenta; y la alerta
+    // describe al email, que es el campo del que habla.
+    const alerta = fixture.nativeElement.querySelector('#alta-email-sin-cuenta') as HTMLElement;
+    expect(alerta.querySelector('a')?.getAttribute('href')).toBe(
+      '/organizacion/colaboradores/invitaciones',
+    );
+    const email = fixture.nativeElement.querySelector('#alta-email') as HTMLInputElement;
+    expect(email.getAttribute('aria-invalid')).toBe('true');
+    expect(email.getAttribute('aria-describedby')).toContain('alta-email-sin-cuenta');
+
     // Nada que invite a barrer direcciones: ni sugerencias, ni un buscador de emails, ni
     // autocompletado sobre el campo. El limite de 10 por minuto y la auditoria de cada
     // intento fallido son una decision del backend que la interfaz no tiene que ablandar.
@@ -97,6 +107,32 @@ describe('NewCollaboratorPage', () => {
     expect(fixture.nativeElement.querySelector('#alta-email')?.getAttribute('autocomplete')).toBe(
       'off',
     );
+  });
+
+  it('con alcance "una sede" y ninguna elegida no envía: antes salía como toda la organización', () => {
+    const fixture = montar();
+
+    escribir(fixture, '#alta-email', 'kine@ejemplo.test');
+    elegir(fixture, '#alta-roleCode', 'PROFESIONAL');
+    escribir(fixture, '#alta-reason', 'Atiende en una sola sede');
+    const sede = fixture.nativeElement.querySelector('#alta-alcance-sede') as HTMLInputElement;
+    sede.click();
+    fixture.detectChanges();
+    enviar(fixture);
+
+    httpMock.expectNone(
+      (candidata: HttpRequest<unknown>) => candidata.url === '/api/v1/memberships',
+    );
+    expect(texto(fixture)).toContain('Elegí en qué sede va a trabajar.');
+    expect(document.activeElement?.id).toBe('alta-consultorioId');
+
+    elegir(fixture, '#alta-consultorioId', '3');
+    enviar(fixture);
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.url === '/api/v1/memberships',
+    );
+    expect(peticion.request.body).toMatchObject({ consultorioId: 3 });
+    peticion.flush({ membershipId: 7 }, { status: 201, statusText: 'Created' });
   });
 
   it('un 409 de vinculo existente se muestra pegado al email, con la salida al listado', async () => {

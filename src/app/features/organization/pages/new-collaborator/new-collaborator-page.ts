@@ -1,4 +1,5 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -11,13 +12,14 @@ import { CausaColaborador, traducirErrorColaborador } from '../../models/colabor
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 /** Campos obligatorios, en el orden en que se enfoca el primero invalido tras un submit. */
-const CAMPOS = ['email', 'roleCode', 'reason'] as const;
+const CAMPOS = ['email', 'roleCode', 'consultorioId', 'reason'] as const;
 
 type Campo = (typeof CAMPOS)[number];
 
@@ -55,7 +57,7 @@ type EstadoAlta =
  */
 @Component({
   selector: 'app-new-collaborator-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Ayuda, Icono, ReactiveFormsModule, RouterLink, Alerta],
   templateUrl: './new-collaborator-page.html',
   styleUrl: '../../organization.css',
 })
@@ -76,6 +78,8 @@ export class NewCollaboratorPage {
     // Mismo tratamiento del alcance que en el cambio de rol, con una diferencia: aca no
     // existe "no tocar", porque el vinculo se esta creando. Son dos opciones, no tres.
     alcance: ['organizacion' as 'organizacion' | 'sede'],
+    // Obligatoria solo con alcance "sede": antes, "una sede" sin elegir cual salia como alcance
+    // organizacion, en silencio. El validador se prende y apaga con el radio (ver constructor).
     consultorioId: [''],
     reason: ['', [textoRequerido]],
   });
@@ -100,7 +104,21 @@ export class NewCollaboratorPage {
     () => this.enviando() || this.hecho() || this.espera.activa(),
   );
 
+  /** El 404 marca el email: es el campo del que habla la alerta, y la alerta lo describe. */
+  protected readonly emailRechazado = computed(() => {
+    const causa = this.causaError();
+    return causa === 'no-encontrado' || causa === 'conflicto';
+  });
+
   constructor() {
+    this.formulario.controls.alcance.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((alcance) => {
+        const sede = this.formulario.controls.consultorioId;
+        sede.setValidators(alcance === 'sede' ? [Validators.required] : []);
+        sede.updateValueAndValidity();
+      });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {
@@ -121,6 +139,17 @@ export class NewCollaboratorPage {
   protected mostrarError(nombre: Campo): boolean {
     const control = this.formulario.controls[nombre];
     return control.invalid && (control.touched || this.intentos() > 0);
+  }
+
+  protected describeEmail(): string {
+    const causa = this.causaError();
+    if (causa === 'no-encontrado') {
+      return 'alta-email-ayuda alta-email-sin-cuenta';
+    }
+    if (causa === 'conflicto') {
+      return 'alta-email-ayuda alta-email-vinculado';
+    }
+    return this.mostrarError('email') ? 'alta-email-ayuda alta-email-error' : 'alta-email-ayuda';
   }
 
   protected enviar(): void {
@@ -179,12 +208,14 @@ export class NewCollaboratorPage {
 
   private fallar(error: unknown): void {
     const traducido = traducirErrorColaborador(error, {
-      // El unico texto que esta pantalla sobreescribe. El `detail` del backend es correcto
-      // pero cubre dos casos -email sin cuenta y sede de otra organizacion- y el usuario
-      // necesita saber cual de los dos campos mirar.
+      // El unico texto que esta pantalla sobreescribe. El `detail` del backend cubre dos casos
+      // -email sin cuenta y sede de otra organizacion- porque distinguirlos seria un segundo
+      // oraculo; pero la sede sale del listado de esta organizacion, asi que de este lado el
+      // unico caso real es la cuenta. Se dice eso y se ofrece el camino que si la crea.
       noEncontrado:
-        'No existe una cuenta con ese email, o la sede elegida no pertenece a esta ' +
-        'organización. Revisa los dos campos.',
+        'Ninguna cuenta de AKINE está registrada con esa dirección. Si la persona todavía no ' +
+        'se registró, invitala por correo: crea la cuenta al aceptar y queda vinculada en el ' +
+        'mismo paso.',
     });
 
     if (traducido.causa === 'limite') {

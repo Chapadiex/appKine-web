@@ -4,13 +4,36 @@
       Le da acceso a esta organización a una cuenta que ya existe en AKINE. No se crea la cuenta ni
       se manda ningún correo: la persona tiene que haberse registrado antes.
     </p>
+    <p>
+      Si todavía no tiene cuenta, mandale una
+      <a routerLink="/organizacion/colaboradores/invitaciones">invitación</a>: la crea al aceptar y
+      queda vinculada en el mismo paso.
+    </p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Datos del vínculo">
   <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
-    <!-- Error general del alta (no de un campo): arriba del formulario, a la vista. -->
-    @if (mensajeError() && causaError() !== 'conflicto') {
+    <!--
+      El email no tiene cuenta (404). El backend responde lo mismo para una sede ajena, pero la
+      sede sale de la lista de esta organizacion, asi que lo unico que puede faltar es la cuenta.
+      Se ofrece la invitacion -el camino que SI crea la cuenta- y nada que invite a probar otras
+      direcciones: el endpoint es un oraculo acotado a proposito.
+    -->
+    @if (causaError() === 'no-encontrado') {
+      <app-alerta
+        tipo="error"
+        titulo="No existe una cuenta con ese email"
+        id="alta-email-sin-cuenta"
+      >
+        <p>{{ mensajeError() }}</p>
+        <p class="alerta__acciones">
+          <a class="boton boton--secundario" routerLink="/organizacion/colaboradores/invitaciones">
+            Invitar por correo
+          </a>
+        </p>
+      </app-alerta>
+    } @else if (mensajeError() && causaError() !== 'conflicto') {
       <app-alerta tipo="error" titulo="No pudimos vincular al colaborador">
         <p>{{ mensajeError() }}</p>
         @if (causaError() === 'sin-contexto') {
@@ -21,37 +44,12 @@
       </app-alerta>
     }
 
-    <div class="campo">
-      <label for="alta-email">Email de la cuenta</label>
-      <input
-        id="alta-email"
-        type="email"
-        formControlName="email"
-        autocomplete="off"
-        [attr.aria-invalid]="mostrarError('email') || causaError() === 'conflicto' ? 'true' : null"
-        [attr.aria-describedby]="
-          causaError() === 'conflicto'
-            ? 'alta-email-ayuda alta-email-vinculado'
-            : mostrarError('email')
-              ? 'alta-email-ayuda alta-email-error'
-              : 'alta-email-ayuda'
-        "
-      />
-      <p class="ayuda" id="alta-email-ayuda">
-        Tiene que ser el email exacto con el que esa persona se registro.
-      </p>
-      @if (mostrarError('email')) {
-        <p class="campo__error" id="alta-email-error">Escribi un email valido.</p>
-      }
-    </div>
-
     <!--
       Conflicto con un vinculo que ya existe: pegado al email que lo produjo, con la salida. Si
       esta suspendido o revocado se gestiona desde el listado, no creando otro.
     -->
     @if (causaError() === 'conflicto') {
       <app-alerta
-        class="campo--ancho"
         tipo="advertencia"
         titulo="Esta cuenta ya tiene un vínculo con la organización"
         id="alta-email-vinculado"
@@ -69,7 +67,25 @@
       </app-alerta>
     }
 
-    <div class="campo campo--4">
+    <div class="campo campo--6">
+      <label for="alta-email">Email de la cuenta</label>
+      <input
+        id="alta-email"
+        type="email"
+        formControlName="email"
+        autocomplete="off"
+        [attr.aria-invalid]="mostrarError('email') || emailRechazado() ? 'true' : null"
+        [attr.aria-describedby]="describeEmail()"
+      />
+      <p class="ayuda" id="alta-email-ayuda">
+        Tiene que ser el email exacto con el que esa persona se registro.
+      </p>
+      @if (mostrarError('email')) {
+        <p class="campo__error" id="alta-email-error">Escribi un email valido.</p>
+      }
+    </div>
+
+    <div class="campo campo--6">
       <label for="alta-roleCode">Rol</label>
       <select
         id="alta-roleCode"
@@ -87,39 +103,76 @@
       }
     </div>
 
-    <fieldset class="grupo">
-      <legend>Alcance</legend>
-      <p class="ayuda" id="alta-alcance-ayuda">
-        Sobre qué puede trabajar: toda la organización o una sede.
-      </p>
+    <!--
+      Alcance como dos tarjetas elegibles: el titulo y la explicacion viven dentro del label, asi
+      que la tarjeta entera es el area de clic y el nombre accesible del radio dice que hace. La
+      sede se elige adentro de la tarjeta que la pide, y solo cuando esta elegida.
+    -->
+    <fieldset class="alcance">
+      <legend class="alcance__cabecera">
+        <span class="alcance__insignia"><app-icono nombre="alcance" /></span>
+        <span class="alcance__textos">
+          <span class="alcance__titulo">Alcance</span>
+          <span class="alcance__detalle">
+            Sobre qué puede trabajar: toda la organización o una sede.
+          </span>
+        </span>
+      </legend>
 
-      <div class="opcion-radio">
-        <input
-          id="alta-alcance-organizacion"
-          type="radio"
-          formControlName="alcance"
-          value="organizacion"
-          aria-describedby="alta-alcance-ayuda"
-        />
-        <label for="alta-alcance-organizacion">Toda la organización</label>
-      </div>
-
-      <div class="opcion-radio">
-        <input id="alta-alcance-sede" type="radio" formControlName="alcance" value="sede" />
-        <label for="alta-alcance-sede">Una sede en particular</label>
-      </div>
-
-      @if (formulario.controls.alcance.value === 'sede') {
-        <div class="campo campo--4">
-          <label for="alta-consultorioId">Sede</label>
-          <select id="alta-consultorioId" formControlName="consultorioId">
-            <option value="">Elegí una sede</option>
-            @for (sede of sedes.sedes(); track sede.id) {
-              <option [value]="sede.id">{{ sede.name }}</option>
-            }
-          </select>
+      <div class="alcance__opciones">
+        <div class="alcance__opcion">
+          <label class="alcance__eleccion">
+            <input
+              id="alta-alcance-organizacion"
+              type="radio"
+              formControlName="alcance"
+              value="organizacion"
+            />
+            <span class="alcance__insignia"><app-icono nombre="organizacion" /></span>
+            <span class="alcance__textos">
+              <span class="alcance__titulo">Toda la organización</span>
+              <span class="alcance__detalle">
+                Puede trabajar en todas las sedes de la organización.
+              </span>
+            </span>
+          </label>
         </div>
-      }
+
+        <div class="alcance__opcion">
+          <label class="alcance__eleccion">
+            <input id="alta-alcance-sede" type="radio" formControlName="alcance" value="sede" />
+            <span class="alcance__insignia"><app-icono nombre="edificio" /></span>
+            <span class="alcance__textos">
+              <span class="alcance__titulo">Una sede en particular</span>
+              <span class="alcance__detalle">Puede trabajar solo en una sede específica.</span>
+            </span>
+          </label>
+
+          @if (formulario.controls.alcance.value === 'sede') {
+            <div class="campo alcance__sede">
+              <label for="alta-consultorioId">Sede</label>
+              <select
+                id="alta-consultorioId"
+                formControlName="consultorioId"
+                [attr.aria-invalid]="mostrarError('consultorioId')"
+                [attr.aria-describedby]="
+                  mostrarError('consultorioId') ? 'alta-consultorioId-error' : null
+                "
+              >
+                <option value="">Elegí una sede</option>
+                @for (sede of sedes.sedes(); track sede.id) {
+                  <option [value]="sede.id">{{ sede.name }}</option>
+                }
+              </select>
+              @if (mostrarError('consultorioId')) {
+                <p class="campo__error" id="alta-consultorioId-error">
+                  Elegí en qué sede va a trabajar.
+                </p>
+              }
+            </div>
+          }
+        </div>
+      </div>
     </fieldset>
 
     <div class="campo campo--ancho">
