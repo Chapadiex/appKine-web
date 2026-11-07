@@ -2,7 +2,8 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/com
 import { inject } from '@angular/core';
 import { catchError, from, of, switchMap, tap, throwError } from 'rxjs';
 
-import { ProblemType } from '../../api/generated/model/problem-type';
+import type { ProblemType } from '../../api/generated/model/problem-type';
+import { PROBLEMAS_DEL_CONTRATO } from '../models/problemas-del-contrato';
 import { ServicioNoDisponibleStore } from '../services/servicio-no-disponible.store';
 
 /**
@@ -70,9 +71,7 @@ export type AkineProblemType = UltimoSegmento<`${ProblemType}`>;
  * {@link AkineHttpError.problemType} devuelve `null` y la pantalla cae en su rama generica,
  * que es el comportamiento seguro.
  */
-const PROBLEMAS_CONOCIDOS: ReadonlySet<string> = new Set(
-  Object.values(ProblemType).map(ultimoSegmento),
-);
+const PROBLEMAS_CONOCIDOS: ReadonlySet<string> = new Set(PROBLEMAS_DEL_CONTRATO);
 
 function ultimoSegmento(uri: string): string {
   return uri.split('/').pop() ?? '';
