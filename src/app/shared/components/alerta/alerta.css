@@ -27,10 +27,10 @@
 }
 
 .alerta--info {
-  --alerta-color: var(--color-acento);
-  --alerta-borde: var(--color-borde);
-  --alerta-fondo: var(--color-acento-claro);
-  --alerta-texto: var(--color-texto);
+  --alerta-color: var(--color-info);
+  --alerta-borde: var(--color-info);
+  --alerta-fondo: var(--color-info-fondo);
+  --alerta-texto: var(--color-info-texto);
 }
 
 .alerta--exito {

@@ -425,8 +425,38 @@ h3 {
   font-weight: var(--peso-semi);
 }
 
+/*
+ * Cargando: texto + indicador (norma: estado = texto + icono). El aro gira; con movimiento reducido
+ * queda quieto y el texto sigue diciendo que se espera.
+ */
 .estado--cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
   color: var(--color-texto-suave);
+}
+
+.estado--cargando::before {
+  content: '';
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: var(--borde-medio) solid var(--color-borde);
+  border-top-color: var(--color-acento);
+  border-radius: 50%;
+  animation: estado-girar 0.8s linear infinite;
+}
+
+@keyframes estado-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado--cargando::before {
+    animation: none;
+  }
 }
 
 .estado--ok {
@@ -479,20 +509,27 @@ h3 {
   cursor: not-allowed;
 }
 
+/*
+ * Secundaria: contorno de control y texto corriente, no azul (norma 08/11/2026). Con borde y texto
+ * en `--color-enlace` competia con la primaria: dos botones azules lado a lado se leian como dos
+ * acciones principales. El azul queda para la UNICA accion con relleno ("la regla del azul que
+ * actua"); el contorno `--color-borde-control` sigue a 3:1 (WCAG 1.4.11) en los dos temas.
+ */
 .boton--secundario {
-  border-color: var(--color-enlace);
+  border-color: var(--color-borde-control);
   background: var(--color-superficie);
-  color: var(--color-enlace);
+  color: var(--color-texto);
 }
 
 .boton--secundario:hover:not(:disabled) {
+  border-color: var(--color-texto-suave);
   background: var(--color-hover);
 }
 
 /* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */
 .boton--secundario:disabled {
   border-color: var(--color-borde);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   color: var(--color-texto-suave);
 }
 
@@ -972,6 +1009,7 @@ a.enlace {
 }
 
 .boton-texto:hover:not(:disabled) {
+  background: var(--color-hover);
   color: var(--color-texto);
   text-decoration: underline;
 }
@@ -1167,11 +1205,26 @@ form > .acciones {
   font-size: var(--tipo-sm);
 }
 
-/* Accion destructiva fuera de un menu ("Descartar el lote"): contorno, texto de peligro. */
+/*
+ * Accion destructiva fuera de un menu ("Descartar el lote"): contorno y texto de peligro. El hover
+ * es propio: sin el, heredaba el de `.boton` y se pintaba de azul de accion con texto rojo.
+ */
 .boton--peligro {
   border-color: var(--color-peligro);
   background: var(--color-superficie);
   color: var(--color-peligro-texto);
+}
+
+.boton--peligro:hover:not(:disabled) {
+  border-color: var(--color-peligro);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.boton--peligro:disabled {
+  border-color: var(--color-borde);
+  background: var(--color-superficie-secundaria);
+  color: var(--color-texto-suave);
 }
 
 /* Titulo de una seccion dentro de un formulario en grilla: ocupa la fila entera. */

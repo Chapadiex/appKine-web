@@ -113,13 +113,13 @@ components:
     textColor: "{colors.accion-texto}"
   boton-secundario:
     backgroundColor: "{colors.superficie}"
-    textColor: "{colors.enlace}"
+    textColor: "{colors.texto}"
     typography: "{typography.label}"
     rounded: "{rounded.md}"
     padding: "0.5rem 1.25rem"
     height: "2.5rem"
   boton-secundario-hover:
-    backgroundColor: "{colors.superficie-sutil}"
+    backgroundColor: "{colors.hover}"
   boton-chico:
     padding: "0 0.75rem"
     height: "2rem"
@@ -195,8 +195,8 @@ components:
   tabla-fila-seleccionada:
     backgroundColor: "{colors.acento-claro}"
   paginacion-actual:
-    backgroundColor: "{colors.accion-fondo}"
-    textColor: "{colors.accion-texto}"
+    backgroundColor: "{colors.seleccion}"
+    textColor: "{colors.texto-fuerte}"
     rounded: "{rounded.md}"
     height: "2rem"
   nav-enlace:
@@ -604,7 +604,9 @@ Firmes y compactos, con una sola voz fuerte por pantalla.
 - **Hover / Focus:** el relleno pasa a Azul Profundo en 0.15s; un botón deshabilitado no reacciona al
   puntero. Foco con el anillo global de 3 px.
 - **Disabled:** relleno y borde Gris Inactivo, cursor bloqueado; el porqué va escrito al lado.
-- **Secondary** (`.boton--secundario`): fondo blanco, borde y texto en `enlace`; hover a Gris Niebla.
+- **Secondary** (`.boton--secundario`): fondo blanco, contorno Gris Control y texto Tinta Pizarra;
+  hover a Celeste Hover. Neutra a propósito: dos botones azules se leían como dos primarias.
+- **Destructive** (`.boton--peligro`): contorno rojo y texto de peligro; hover con el tinte de peligro.
 - **Chico** (`.boton--chico`): 32 px de alto para la acción principal de una fila o de un pie.
 - **Tertiary** (`.boton-texto`): solo texto en Pizarra Media, 13 px, 32 px de alto; subraya en hover.
 
@@ -682,7 +684,7 @@ misma fila, contra el borde derecho.
   un botón cuadrado de 32 px con contorno de control que abre un popover de 12rem con ítems de 32 px;
   lo destructivo va adentro, en texto de peligro y con confirmación.
 - **Pie:** "Mostrando 1–10 de 87 · Filas por página · ‹ 1 2 3 … 9 ›" en 14 px Pizarra Media; la
-  página actual con relleno azul, las flechas con contorno de control, 10 filas por defecto.
+  página actual con fondo de selección, borde de acento y peso 700 (no compite con la primaria), las flechas con contorno de control, 10 filas por defecto.
 - **Vacío:** `app-estado-vacio` en lugar de la tabla, centrado, con borde punteado, una frase y la
   acción que lo resuelve.
 
@@ -700,7 +702,7 @@ una acción irreversible ni la instrucción de un paso obligatorio. Una ayuda nu
 ### Alertas y avisos
 
 - **Alerta en el lugar** (`app-alerta`): fondo tintado del estado, borde de 1 px del color del estado
-  (Línea Fría en la informativa), ícono del estado a 18 px, título en 500 y acciones chicas debajo.
+  (la informativa con los tokens `info`), ícono del estado a 18 px, título en 500 y acciones chicas debajo.
 - **Aviso global** (`app-avisos`): superficie blanca con borde fino, ícono del color del estado,
   capa flotante, entrada de 6 px hacia abajo en 0.18s y cierre propio; sin animación si la persona
   pidió movimiento reducido.

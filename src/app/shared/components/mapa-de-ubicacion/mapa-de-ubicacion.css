@@ -20,7 +20,7 @@
   overflow: hidden;
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .mapa-de-ubicacion--compacto .mapa-de-ubicacion__marco {
@@ -47,7 +47,7 @@
 /* --- Ajustes sobre Leaflet ------------------------------------------------------------ */
 
 .mapa-de-ubicacion .leaflet-container {
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   font: inherit;
 }
 
@@ -115,12 +115,12 @@
 
 .mapa-de-ubicacion .leaflet-bar a:hover,
 .mapa-de-ubicacion .leaflet-bar a:focus-visible {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   color: var(--color-texto-fuerte);
 }
 
 .mapa-de-ubicacion .leaflet-bar a.leaflet-disabled {
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   color: var(--color-deshabilitado);
 }
 

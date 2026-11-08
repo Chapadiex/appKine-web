@@ -18,6 +18,11 @@
   border: 0;
 }
 
+.estado-vacio__icono {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xl);
+}
+
 .estado-vacio__titulo {
   margin: 0;
   color: var(--color-texto-fuerte);

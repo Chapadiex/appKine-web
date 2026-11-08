@@ -84,7 +84,7 @@
 
 .filtros-barra__boton:hover,
 .filtros-barra__boton[aria-expanded='true'] {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 /* Cuantos filtros avanzados estan aplicados: el estado no se esconde con el panel. */
@@ -109,7 +109,7 @@
   margin-top: var(--esp-4);
   padding: var(--esp-6);
   border-radius: var(--radio-lg);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .filtros-barra__avanzados[hidden] {

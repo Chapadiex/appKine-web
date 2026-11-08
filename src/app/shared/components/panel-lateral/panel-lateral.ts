@@ -66,7 +66,13 @@ const PRIMER_CAMPO =
           }
           <ng-content select="[panel-subtitulo]" />
         </div>
-        <button type="button" class="panel-lateral__cerrar" (click)="cerrar.emit()">
+        <button
+          type="button"
+          class="panel-lateral__cerrar"
+          aria-label="Cerrar el panel"
+          title="Cerrar el panel"
+          (click)="cerrar.emit()"
+        >
           <app-icono nombre="cerrar" />
           <span class="visualmente-oculto">Cerrar el panel</span>
         </button>

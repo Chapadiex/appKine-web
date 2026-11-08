@@ -77,7 +77,13 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
               </button>
             }
           </div>
-          <button type="button" class="aviso__cerrar" (click)="store.cerrar(aviso.id)">
+          <button
+            type="button"
+            class="aviso__cerrar"
+            aria-label="Cerrar el aviso"
+            title="Cerrar el aviso"
+            (click)="store.cerrar(aviso.id)"
+          >
             <app-icono nombre="cerrar" />
             <span class="visualmente-oculto">Cerrar el aviso</span>
           </button>

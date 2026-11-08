@@ -84,7 +84,7 @@
 }
 
 .nav__cabecera:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 .nav__rotulo {
@@ -136,14 +136,14 @@
 }
 
 .nav__enlace:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   color: var(--color-marca-texto);
 }
 
 /* La actual: fondo, color Y peso (WCAG 1.4.1); `aria-current` la dice al lector de pantalla. */
 .nav__enlace--actual,
 .nav__enlace--actual:hover {
-  background: var(--color-marca-superficie-activa);
+  background: var(--color-seleccion);
   color: var(--color-acento);
   font-weight: var(--peso-medio);
 }

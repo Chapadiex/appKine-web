@@ -79,7 +79,7 @@
 }
 
 .panel-lateral__cerrar:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   color: var(--color-texto);
 }
 
