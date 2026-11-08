@@ -217,6 +217,13 @@
                           >
                             Editar
                           </button>
+                          <!--
+                            El calendario trabaja sobre la sede del contexto: en otra fila
+                            mostraria el horario de la sede equivocada.
+                          -->
+                          @if (esLaDelContexto(sede.id)) {
+                            <a routerLink="/horarios/calendario">Horario general</a>
+                          }
                           <button type="button" (click)="abrirPanel(sede, 'baja')">
                             Dar de baja
                           </button>
