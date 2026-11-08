@@ -854,11 +854,41 @@ a.enlace {
  */
 .marca-estado {
   display: inline-block;
+  white-space: nowrap;
   padding: var(--esp-1) var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-pastilla);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-semi);
+}
+
+/*
+ * Ícono de severidad (norma §3: color + texto + ícono). Un glifo y no un SVG: no suma peso al
+ * bundle. El texto alternativo vacío (`/ ''`) lo saca del nombre accesible: la palabra ya lo dice.
+ */
+.marca-estado::before {
+  margin-right: var(--esp-2);
+  font-weight: var(--peso-fuerte);
+}
+
+.marca-estado--activa::before {
+  content: '✓' / '';
+}
+
+.marca-estado--suspendida::before {
+  content: '!' / '';
+}
+
+.marca-estado--revocada::before {
+  content: '✕' / '';
+}
+
+.marca-estado--info::before {
+  content: 'i' / '';
+}
+
+.marca-estado--neutra::before {
+  content: '–' / '';
 }
 
 .marca-estado--activa {
