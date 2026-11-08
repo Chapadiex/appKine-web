@@ -602,6 +602,80 @@ a.enlace {
   max-width: 100%;
 }
 
+/*
+ * El desplegable de los `select` (08/11/2026). La lista que abre el navegador no tomaba ningun
+ * estilo: fondo y resaltado del sistema operativo, distintos del resto de la aplicacion y del
+ * tema elegido. `appearance: base-select` la vuelve estilable en Chromium; los navegadores que no
+ * lo soportan se quedan con la lista nativa, que sigue funcionando igual. Los `select` multiples
+ * o con `size` son listas abiertas, no desplegables: quedan afuera.
+ */
+@supports (appearance: base-select) {
+  select:not([multiple], [size]),
+  select:not([multiple], [size])::picker(select) {
+    appearance: base-select;
+  }
+
+  select:not([multiple], [size]) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--esp-3);
+  }
+
+  /* Chevron fino, como el resto de los iconos: el triangulo lleno por defecto desentona. */
+  select:not([multiple], [size])::picker-icon {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    margin-inline-start: auto;
+    margin-block-start: -0.25rem;
+    border: solid var(--color-texto-suave);
+    border-width: 0 1.5px 1.5px 0;
+    rotate: 45deg;
+    transition: rotate 0.15s ease;
+  }
+
+  select:not([multiple], [size]):open::picker-icon {
+    margin-block-start: 0.25rem;
+    rotate: 225deg;
+  }
+
+  ::picker(select) {
+    margin-block: var(--esp-2);
+    padding: var(--esp-2);
+    max-height: min(20rem, 60vh);
+    border: var(--borde-fino) solid var(--color-borde);
+    border-radius: var(--radio-md);
+    background: var(--color-superficie);
+    color: var(--color-texto);
+    box-shadow: var(--sombra-flotante);
+  }
+
+  select option {
+    padding: var(--esp-3) var(--esp-4);
+    border-radius: var(--radio-sm);
+    color: var(--color-texto);
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background: var(--color-hover);
+    outline: none;
+  }
+
+  select option:checked {
+    background: var(--color-seleccion);
+    font-weight: var(--peso-semi);
+  }
+
+  select option::checkmark {
+    color: var(--color-acento);
+  }
+
+  select option:disabled {
+    color: var(--color-texto-suave);
+  }
+}
+
 .campo input:focus-visible,
 .campo select:focus-visible,
 .campo textarea:focus-visible {
