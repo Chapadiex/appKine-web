@@ -125,10 +125,13 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
 
     // --- El feriado en el calendario de la sede ---
     await navegar(page, '/horarios/calendario');
+    await page.getByRole('tab', { name: 'Feriados' }).click();
     await page.getByLabel('Desde').fill(f);
     await page.getByLabel('Hasta (exclusivo)').fill(sumarDias(f, 1));
     await page.getByRole('button', { name: 'Consultar' }).click();
     await expect(page.getByRole('row').filter({ hasText: feriado!.nombre })).toBeVisible();
+    // La politica esta en la primera pestaña.
+    await page.getByRole('tab', { name: 'Resumen y política' }).click();
     await expect(page.getByLabel('La sede cierra los feriados de su calendario')).toBeChecked();
 
     // --- La agenda lo refleja ---

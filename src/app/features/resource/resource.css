@@ -74,23 +74,54 @@
 }
 
 /*
- * Calendario de la sede (rediseño del 08/11/2026): el editor del horario a la izquierda y lo que
- * ya rige —resumen, politica, feriados— apilado a la derecha. Una columna cuando no entran dos.
+ * Calendario de la sede (rediseño del 08/11/2026): tres pestañas dentro de la pantalla
+ * —resumen y politica, horario general, feriados—. Las pestañas de `app-pestanas` son rutas;
+ * estas son paneles de una misma pagina, con el patron ARIA de tabs.
  */
+.calendario-pestanas {
+  display: flex;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-6);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  overflow-x: auto;
+}
+.calendario-pestanas__pestana {
+  min-height: 2.75rem;
+  padding: 0 var(--esp-5);
+  border: 0;
+  border-bottom: var(--borde-medio) solid transparent;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.calendario-pestanas__pestana[aria-selected='true'] {
+  border-bottom-color: var(--color-acento);
+  color: var(--color-acento);
+}
+.calendario-pestanas__pestana:hover {
+  color: var(--color-texto);
+}
+
+/* Resumen y politica, lado a lado; una debajo de la otra cuando no entran. */
 .calendario-sede {
   display: grid;
-  /* 36rem: lo que pide un dia con sus dos horas y "+ Corte al mediodia" sin pisarse. */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 36rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
   gap: var(--esp-6);
   align-items: start;
 }
-.calendario-sede > .tarjeta,
-.calendario-sede__lateral > .tarjeta {
+.calendario-sede[hidden] {
+  display: none;
+}
+.calendario-sede > .tarjeta {
   margin: 0;
 }
-.calendario-sede__lateral {
-  display: grid;
-  gap: var(--esp-6);
+
+/* El editor del horario no necesita la pantalla entera: mas ancho, las horas quedan lejos del dia. */
+.calendario-panel {
+  max-width: 52rem;
 }
 .calendario-sede__acciones {
   display: flex;

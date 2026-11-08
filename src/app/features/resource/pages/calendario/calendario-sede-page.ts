@@ -87,6 +87,15 @@ const DIAS_PROPUESTOS = 365;
  * La `version` se muestra igual, porque es lo unico que permite notar que alguien mas la
  * cambio.
  */
+type PestanaDelCalendario = 'resumen' | 'horario' | 'feriados';
+
+/** Pestañas de la pantalla, en orden: lo que rige, cómo se carga el horario, y los feriados. */
+const PESTANAS: readonly { readonly id: PestanaDelCalendario; readonly rotulo: string }[] = [
+  { id: 'resumen', rotulo: 'Resumen y política' },
+  { id: 'horario', rotulo: 'Horario general' },
+  { id: 'feriados', rotulo: 'Feriados' },
+];
+
 @Component({
   selector: 'app-calendario-sede-page',
   imports: [
@@ -232,6 +241,17 @@ export class CalendarioSedePage {
   protected readonly diasAbiertos = computed(
     () => new Set(this.franjasGuardadas().map((franja) => franja.diaSemana)).size,
   );
+
+  protected readonly pestanas = PESTANAS;
+  protected readonly pestana = signal<PestanaDelCalendario>('resumen');
+
+  /** Flechas entre las pestañas: cambia a la vecina y lleva el foco a la elegida. */
+  protected cambiarPestana(desde: PestanaDelCalendario, paso: 1 | -1): void {
+    const indice = PESTANAS.findIndex((pestana) => pestana.id === desde);
+    const destino = PESTANAS[(indice + paso + PESTANAS.length) % PESTANAS.length].id;
+    this.pestana.set(destino);
+    document.getElementById(`calendario-pestana-${destino}`)?.focus();
+  }
 
   /** El horario guardado, franja por franja. */
   protected readonly horarioGuardado = computed(() =>
