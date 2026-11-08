@@ -78,7 +78,7 @@ describe('CasoDetallePage', () => {
       );
     }
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+    expect(texto(fixture)).toContain('Declará el motivo del acceso');
 
     TestBed.inject(VisitaClinica).declarar('Interconsulta');
     await estabilizar(fixture);

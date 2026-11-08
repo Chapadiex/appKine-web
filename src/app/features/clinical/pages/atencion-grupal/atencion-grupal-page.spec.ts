@@ -359,7 +359,7 @@ describe('AtencionGrupalPage', () => {
       'justificacion-de-acceso-requerida',
     );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+    expect(texto(fixture)).toContain('Declará el motivo del acceso');
 
     escribir(fixture, '#motivo-acceso-grupal', 'Cubro a la profesional');
     boton(fixture, /Declarar y seguir/).click();
@@ -546,7 +546,7 @@ describe('AtencionGrupalPage', () => {
     boton(fixture, /^Iniciar atención/).click();
     problema(http.expectOne(atencionDe(MARIA)), 403, 'justificacion-de-acceso-requerida');
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+    expect(texto(fixture)).toContain('Declará el motivo del acceso');
 
     // Sin motivo no sale nada.
     boton(fixture, /Declarar y seguir/).click();

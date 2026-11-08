@@ -43,10 +43,12 @@
       </p>
     </app-alerta>
   } @else if (ofertas()!.length === 0) {
-    <p class="estado estado--vacio">
-      Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
-      grupal: se crea en Servicios.
-    </p>
+    <app-alerta tipo="advertencia">
+      <p>
+        Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
+        grupal: se crea en Servicios.
+      </p>
+    </app-alerta>
   }
 
   <!--

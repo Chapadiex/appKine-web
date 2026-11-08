@@ -112,7 +112,7 @@
   @if (clases() !== null) {
     @if (total() === 0) {
       <app-estado-vacio titulo="No hay clases esta semana" texto="Probá con otra semana.">
-        <a class="boton" *akinePermiso="PERMISO_CLASE_MANAGE" [routerLink]="RUTA_NUEVA_CLASE">
+        <a class="boton boton--secundario" *akinePermiso="PERMISO_CLASE_MANAGE" [routerLink]="RUTA_NUEVA_CLASE">
           Programar clase
         </a>
       </app-estado-vacio>
@@ -157,7 +157,9 @@
                 <td>
                   <span
                     class="marca-estado"
-                    [class.marca-estado--activa]="clase.estado === 'PROGRAMADA'"
+                    [class.marca-estado--info]="clase.estado === 'PROGRAMADA'"
+                    [class.marca-estado--activa]="clase.estado === 'REALIZADA'"
+                    [class.marca-estado--suspendida]="clase.estado === 'EN_CURSO'"
                     [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
                   >
                     {{ textoDeEstado(clase.estado) }}

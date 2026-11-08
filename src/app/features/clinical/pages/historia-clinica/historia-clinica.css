@@ -106,7 +106,7 @@ button.timeline__boton {
 }
 
 button.timeline__boton:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 button.timeline__boton:focus-visible {
@@ -117,7 +117,7 @@ button.timeline__boton:focus-visible {
 /* El elegido se marca por el borde Y por aria-pressed: el color solo no alcanza (WCAG 1.4.1). */
 .timeline__boton--elegido {
   border-left-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   font-weight: var(--peso-medio);
 }
 
@@ -131,7 +131,7 @@ button.timeline__boton:focus-visible {
   justify-self: start;
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
-  background: var(--color-superficie-codigo);
+  background: var(--color-superficie-secundaria);
   color: var(--color-texto);
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-semi);
@@ -360,7 +360,7 @@ button.timeline__boton:focus-visible {
   padding: var(--esp-3) var(--esp-5);
   border-left: var(--borde-acento) solid var(--color-acento);
   border-radius: var(--radio-sm);
-  background: var(--color-acento-claro);
+  background: var(--color-info-fondo);
 }
 
 /* Dos bloques de texto lado a lado cuando entran (diagnostico y objetivo, objetivos e indicaciones). */
