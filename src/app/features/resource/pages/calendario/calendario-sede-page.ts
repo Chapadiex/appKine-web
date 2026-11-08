@@ -15,6 +15,11 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import {
+  ETIQUETA_PESTANAS_DEL_CALENDARIO,
+  PESTANAS_DEL_CALENDARIO,
+} from '../../models/pestanas-de-horarios';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
   ParametrosDeHorarios,
   SIN_PARAMETROS,
   leerParametrosDeHorarios,
@@ -89,13 +94,6 @@ const DIAS_PROPUESTOS = 365;
  */
 type PestanaDelCalendario = 'resumen' | 'horario' | 'feriados';
 
-/** Pestañas de la pantalla, en orden: lo que rige, cómo se carga el horario, y los feriados. */
-const PESTANAS: readonly { readonly id: PestanaDelCalendario; readonly rotulo: string }[] = [
-  { id: 'resumen', rotulo: 'Resumen y política' },
-  { id: 'horario', rotulo: 'Horario general' },
-  { id: 'feriados', rotulo: 'Feriados' },
-];
-
 @Component({
   selector: 'app-calendario-sede-page',
   imports: [
@@ -112,6 +110,7 @@ const PESTANAS: readonly { readonly id: PestanaDelCalendario; readonly rotulo: s
     HorarioSemanal,
     SemanaDibujada,
     NgTemplateOutlet,
+    Pestanas,
   ],
   templateUrl: './calendario-sede-page.html',
   styleUrl: '../../resource.css',
@@ -242,16 +241,11 @@ export class CalendarioSedePage {
     () => new Set(this.franjasGuardadas().map((franja) => franja.diaSemana)).size,
   );
 
-  protected readonly pestanas = PESTANAS;
-  protected readonly pestana = signal<PestanaDelCalendario>('resumen');
-
-  /** Flechas entre las pestañas: cambia a la vecina y lleva el foco a la elegida. */
-  protected cambiarPestana(desde: PestanaDelCalendario, paso: 1 | -1): void {
-    const indice = PESTANAS.findIndex((pestana) => pestana.id === desde);
-    const destino = PESTANAS[(indice + paso + PESTANAS.length) % PESTANAS.length].id;
-    this.pestana.set(destino);
-    document.getElementById(`calendario-pestana-${destino}`)?.focus();
-  }
+  /** Pestañas de la pantalla: cada una es una ruta (`horarios.routes.ts`) con su panel. */
+  protected readonly pestanasDelCalendario = PESTANAS_DEL_CALENDARIO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DEL_CALENDARIO;
+  protected readonly pestana: PestanaDelCalendario =
+    inject(ActivatedRoute).snapshot.data?.['pestana'] ?? 'resumen';
 
   /** El horario guardado, franja por franja. */
   protected readonly horarioGuardado = computed(() =>

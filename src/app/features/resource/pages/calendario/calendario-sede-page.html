@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Horario general y feriados de la sede">
+<app-cabecera-de-pagina titulo="Calendario de la sede">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       El horario general de <b>{{ nombreDeLaSede() }}</b
@@ -9,6 +9,13 @@
     <p>Ningún profesional puede tener franjas fuera del horario general de su sede.</p>
   </app-ayuda>
 </app-cabecera-de-pagina>
+
+<!--
+  Pestañas (08/11/2026): primero lo que rige —el horario guardado y la politica—, despues la carga
+  del horario, los feriados con su periodo y los cierres y aperturas, que son otra pantalla. Cada
+  una es una ruta: la barra lateral marca "Calendario de la sede" en las cuatro.
+-->
+<app-pestanas [pestanas]="pestanasDelCalendario" [etiqueta]="etiquetaDePestanas" />
 
 <!--
   Rediseño del 08/11/2026: el horario general a la izquierda, que es lo que se viene a cargar, y a
@@ -94,41 +101,7 @@
     }
 
     @case ('listo') {
-      <!--
-        Pestañas (08/11/2026): primero lo que rige —el horario guardado y la politica—, después
-        la carga del horario y por ultimo los feriados con su periodo. Los paneles quedan en el DOM
-        con `hidden`: los formularios no pierden lo escrito al cambiar de pestaña.
-      -->
-      <div
-        class="calendario-pestanas"
-        role="tablist"
-        aria-label="Secciones del calendario de la sede"
-      >
-        @for (item of pestanas; track item.id) {
-          <button
-            type="button"
-            role="tab"
-            class="calendario-pestanas__pestana"
-            [id]="'calendario-pestana-' + item.id"
-            [attr.aria-controls]="'calendario-panel-' + item.id"
-            [attr.aria-selected]="pestana() === item.id"
-            [attr.tabindex]="pestana() === item.id ? 0 : -1"
-            (click)="pestana.set(item.id)"
-            (keydown.arrowRight)="cambiarPestana(item.id, 1)"
-            (keydown.arrowLeft)="cambiarPestana(item.id, -1)"
-          >
-            {{ item.rotulo }}
-          </button>
-        }
-      </div>
-
-      <div
-        id="calendario-panel-resumen"
-        role="tabpanel"
-        aria-labelledby="calendario-pestana-resumen"
-        class="calendario-sede"
-        [hidden]="pestana() !== 'resumen'"
-      >
+      <div class="calendario-sede" [hidden]="pestana !== 'resumen'">
         <section class="tarjeta" aria-labelledby="titulo-horario-configurado">
           <h2 id="titulo-horario-configurado">Horario configurado</h2>
           @if (resumenGuardado().length === 0) {
@@ -136,9 +109,7 @@
               La sede no declaro horario general. Eso no significa que este cerrada.
             </p>
             @if (puedeGestionar()) {
-              <button type="button" class="boton" (click)="pestana.set('horario')">
-                Configurar el horario
-              </button>
+              <a class="boton" [routerLink]="rutas.calendarioHorario">Configurar el horario</a>
             }
           } @else {
             <div class="calendario-sede__resumen">
@@ -248,13 +219,7 @@
         </section>
       </div>
 
-      <div
-        id="calendario-panel-horario"
-        role="tabpanel"
-        aria-labelledby="calendario-pestana-horario"
-        class="calendario-panel"
-        [hidden]="pestana() !== 'horario'"
-      >
+      <div class="calendario-panel" [hidden]="pestana !== 'horario'">
         <section class="tarjeta" aria-labelledby="titulo-horario-general">
           <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
             <h2 id="titulo-horario-general">Horario general de la sede</h2>
@@ -360,12 +325,7 @@
         </section>
       </div>
 
-      <div
-        id="calendario-panel-feriados"
-        role="tabpanel"
-        aria-labelledby="calendario-pestana-feriados"
-        [hidden]="pestana() !== 'feriados'"
-      >
+      <div [hidden]="pestana !== 'feriados'">
         <section class="tarjeta" aria-labelledby="titulo-feriados">
           <h2 id="titulo-feriados">Feriados del periodo</h2>
 

@@ -37,6 +37,9 @@
   }
 </app-cabecera-de-pagina>
 
+<!-- Desde el 08/11/2026 es una pestaña del calendario de la sede. -->
+<app-pestanas [pestanas]="pestanasDelCalendario" [etiqueta]="etiquetaDePestanas" />
+
 <div
   class="excepciones-columnas"
   [class.excepciones-columnas--con-alta]="estado().tipo === 'listo' && altaAbierta()"

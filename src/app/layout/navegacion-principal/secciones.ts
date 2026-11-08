@@ -188,13 +188,9 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_COLABORADOR_READ],
       },
       {
+        // Cierres y aperturas es una pestaña del calendario desde el 08/11/2026.
         etiqueta: 'Calendario de la sede',
         ruta: `${RUTA_HORARIOS}/calendario`,
-        permisos: [PERMISO_COLABORADOR_READ],
-      },
-      {
-        etiqueta: 'Cierres y aperturas',
-        ruta: `${RUTA_HORARIOS}/excepciones`,
         permisos: [PERMISO_COLABORADOR_READ],
       },
     ],

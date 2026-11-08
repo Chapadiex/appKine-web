@@ -73,38 +73,7 @@
   margin-bottom: 0;
 }
 
-/*
- * Calendario de la sede (rediseño del 08/11/2026): tres pestañas dentro de la pantalla
- * —resumen y politica, horario general, feriados—. Las pestañas de `app-pestanas` son rutas;
- * estas son paneles de una misma pagina, con el patron ARIA de tabs.
- */
-.calendario-pestanas {
-  display: flex;
-  gap: var(--esp-2);
-  margin-bottom: var(--esp-6);
-  border-bottom: var(--borde-fino) solid var(--color-borde);
-  overflow-x: auto;
-}
-.calendario-pestanas__pestana {
-  min-height: 2.75rem;
-  padding: 0 var(--esp-5);
-  border: 0;
-  border-bottom: var(--borde-medio) solid transparent;
-  background: transparent;
-  color: var(--color-texto-suave);
-  font: inherit;
-  font-weight: var(--peso-medio);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.calendario-pestanas__pestana[aria-selected='true'] {
-  border-bottom-color: var(--color-acento);
-  color: var(--color-acento);
-}
-.calendario-pestanas__pestana:hover {
-  color: var(--color-texto);
-}
-
+/* Calendario de la sede (rediseño del 08/11/2026). */
 /* Resumen y politica, lado a lado; una debajo de la otra cuando no entran. */
 .calendario-sede {
   display: grid;
