@@ -8,14 +8,14 @@
     </p>
     <p>Ningún profesional puede tener franjas fuera del horario general de su sede.</p>
   </app-ayuda>
-</app-cabecera-de-pagina>
 
-<!--
-  Pestañas (08/11/2026): primero lo que rige —el horario guardado y la politica—, despues la carga
-  del horario, los feriados con su periodo y los cierres y aperturas, que son otra pantalla. Cada
-  una es una ruta: la barra lateral marca "Calendario de la sede" en las cuatro.
--->
-<app-pestanas [pestanas]="pestanasDelCalendario" [etiqueta]="etiquetaDePestanas" />
+  <!--
+    Pestañas (08/11/2026): primero lo que rige —el horario guardado y la politica—, despues la carga
+    del horario, los feriados con su periodo y los cierres y aperturas, que son otra pantalla. Cada
+    una es una ruta: la barra lateral marca "Calendario de la sede" en las cuatro.
+  -->
+  <app-pestanas [pestanas]="pestanasDelCalendario" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
 
 <!--
   Rediseño del 08/11/2026: el horario general a la izquierda, que es lo que se viene a cargar, y a

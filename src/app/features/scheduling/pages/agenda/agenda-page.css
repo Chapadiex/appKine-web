@@ -4,27 +4,10 @@
  * texto, el color acompana.
  */
 
-/* --- Cabecera: las pestañas en la fila del titulo (formato compacto, 06/11) --- */
+/* --- Cabecera: las pestañas van en la fila del titulo, como en toda la aplicacion --- */
 
 .agenda-cabecera {
   margin-bottom: var(--esp-5);
-}
-
-/*
- * Encoge y parte sus pestañas antes que ensanchar la pagina. El selector doble le gana al
- * flex-shrink: 0 que la cabecera pone a todo lo que acompaña al titulo.
- */
-.agenda-cabecera .agenda-cabecera__pestanas {
-  flex: 1 1 auto;
-  align-self: flex-end;
-  min-width: 0;
-  margin-left: var(--esp-6);
-}
-
-/* En la fila del titulo no hay linea de base: solo el subrayado de la actual. El nav es de
-   app-pestanas, otra vista: sin ::ng-deep la regla no lo alcanza. */
-.agenda-cabecera__pestanas ::ng-deep .pestanas {
-  box-shadow: none;
 }
 
 /*

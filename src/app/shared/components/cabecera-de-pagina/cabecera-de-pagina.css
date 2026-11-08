@@ -22,7 +22,7 @@
   grid-template-columns:
     minmax(min(12rem, 40%), max-content) max-content minmax(0, 1fr)
     minmax(0, max-content);
-  grid-template-areas: 'titulo contexto . principal';
+  grid-template-areas: 'titulo contexto pestanas principal';
   align-items: center;
   min-height: 2.5rem;
 }
@@ -96,15 +96,35 @@
   justify-content: flex-end;
 }
 
-/* Segunda fila: las pantallas hermanas, pegadas a la primera. */
-.cabecera-pagina > app-pestanas,
-.cabecera-pagina > akine-pestanas {
-  display: block;
-  margin-top: var(--esp-3);
+/*
+ * Las pantallas hermanas, centradas en el hueco entre el titulo y la accion principal (08/11/2026).
+ * En la fila del titulo no hay linea de base: solo el subrayado de la actual.
+ */
+.cabecera-pagina__pestanas {
+  grid-area: pestanas;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  margin-inline: var(--esp-6);
 }
 
 .cabecera-pagina .pestanas {
   margin-bottom: 0;
+  box-shadow: none;
+}
+
+/* El selector triple le gana al de la hoja encapsulada de app-pestanas. */
+.cabecera-pagina .cabecera-pagina__pestanas .pestanas__lista {
+  justify-content: center;
+}
+
+/* Con contexto y pestañas a la vez no entran las cuatro regiones: las pestañas bajan. */
+@container cabecera-pagina (max-width: 72rem) {
+  .cabecera-pagina__fila:has(.cabecera-pagina__contexto:not(:empty)) {
+    grid-template-areas:
+      'titulo contexto . principal'
+      'pestanas pestanas pestanas pestanas';
+  }
 }
 
 /*
@@ -116,7 +136,12 @@
     grid-template-columns: minmax(min(10rem, 50%), 1fr) minmax(0, max-content);
     grid-template-areas:
       'titulo principal'
-      'contexto contexto';
+      'contexto contexto'
+      'pestanas pestanas';
+  }
+
+  .cabecera-pagina__pestanas {
+    margin: var(--esp-3) 0 0;
   }
 
   .cabecera-pagina__contexto {
@@ -135,7 +160,8 @@
     grid-template-areas:
       'titulo'
       'principal'
-      'contexto';
+      'contexto'
+      'pestanas';
   }
 
   .cabecera-pagina__principal {
