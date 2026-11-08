@@ -7,6 +7,12 @@ import { ErrorAtencion, traducirErrorAtencion } from '../../models/atencion-erro
 import { ClinicalApi } from '../../services/clinical-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ORGANIZACION,
+  pestanasDeOrganizacion,
+} from '../../../../core/models/pestanas-de-organizacion';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -28,11 +34,15 @@ export const VENTANA_MAXIMA = 3650;
  */
 @Component({
   selector: 'app-politica-de-enmienda-page',
-  imports: [CabeceraDePagina, Ayuda, Alerta],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta],
   templateUrl: './politica-de-enmienda-page.html',
   styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
 })
 export class PoliticaDeEnmiendaPage {
+  /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
+
   private readonly api = inject(ClinicalApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

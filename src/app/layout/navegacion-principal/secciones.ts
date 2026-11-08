@@ -1,13 +1,11 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
-  PERMISO_AUDITORIA_READ,
   PERMISO_CAJA_OPERATE,
   PERMISO_CATALOGO_READ,
   PERMISO_CLASE_READ,
   PERMISO_COBRO_REGISTER,
   PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
-  PERMISO_CONSULTORIO_MANAGE,
   PERMISO_CONVENIO_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
@@ -32,6 +30,12 @@ export interface Seccion {
    * `permisos`, la seccion se ve con solo tener contexto.
    */
   readonly permisos?: readonly string[];
+
+  /**
+   * Otras rutas que se ven como esta seccion: pantallas que son pestañas suyas pero viven bajo otra
+   * raiz (la politica de enmienda es de `/atencion` y se llega desde Organizacion).
+   */
+  readonly tambien?: readonly string[];
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -199,7 +203,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     etiqueta: 'Configuración',
     icono: 'configuracion',
     secciones: [
-      { etiqueta: 'Organización', ruta: '/organizacion' },
+      // Suscripcion, auditoria y politica de enmienda son pestañas de Organizacion (08/11/2026).
+      {
+        etiqueta: 'Organización',
+        ruta: '/organizacion',
+        tambien: ['/atencion/politica-de-enmienda'],
+      },
       { etiqueta: 'Sedes', ruta: '/organizacion/sedes' },
       {
         etiqueta: 'Colaboradores',
@@ -210,17 +219,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Alta manual de colaborador',
         ruta: '/organizacion/colaboradores/manual/nuevo',
         permisos: [PERMISO_COLABORADOR_MANAGE],
-      },
-      { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' },
-      {
-        etiqueta: 'Auditoría',
-        ruta: '/organizacion/auditoria',
-        permisos: [PERMISO_AUDITORIA_READ],
-      },
-      {
-        etiqueta: 'Política de enmienda',
-        ruta: '/atencion/politica-de-enmienda',
-        permisos: [PERMISO_CONSULTORIO_MANAGE],
       },
     ],
   },
@@ -254,10 +252,14 @@ export const RUTA_INICIO = '/agenda';
 export function seccionDe(url: string, secciones: readonly Seccion[]): Seccion | null {
   const camino = url.split(/[?#]/)[0] ?? '';
   let elegida: Seccion | null = null;
+  let largo = -1;
   for (const seccion of secciones) {
-    const coincide = camino === seccion.ruta || camino.startsWith(`${seccion.ruta}/`);
-    if (coincide && (elegida === null || seccion.ruta.length > elegida.ruta.length)) {
-      elegida = seccion;
+    for (const ruta of [seccion.ruta, ...(seccion.tambien ?? [])]) {
+      const coincide = camino === ruta || camino.startsWith(`${ruta}/`);
+      if (coincide && ruta.length > largo) {
+        elegida = seccion;
+        largo = ruta.length;
+      }
     }
   }
   return elegida;
