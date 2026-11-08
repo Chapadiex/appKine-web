@@ -112,6 +112,8 @@
   align-items: center;
   gap: var(--esp-4);
   padding: var(--esp-2) var(--esp-3);
+  /* Es un control (abre el calendario): necesita su contorno de 3:1 (WCAG 1.4.11). */
+  border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
   color: var(--color-texto-fuerte);
   font-weight: var(--peso-semi);

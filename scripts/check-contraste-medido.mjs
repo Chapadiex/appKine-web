@@ -167,11 +167,16 @@ if (matchers.length < PROYECTOS.length || !alcanzado) {
 
 // 6. Ningun `outline: none` sin reemplazo ---------------------------------------------------------
 //
-// Quitar el anillo de foco deja al teclado sin saber donde esta (WCAG 2.4.7). La unica excepcion
+// Quitar el anillo de foco deja al teclado sin saber donde esta (WCAG 2.4.7). Hay dos excepciones. Una
 // es el `main` del layout: es el destino del skip link, tiene `tabindex="-1"` y el Tab no lo
-// alcanza nunca, asi que no hay indicador que mostrar.
+// alcanza nunca, asi que no hay indicador que mostrar. La otra es el select de una pastilla de
+// filtro de la agenda: el anillo lo dibuja la pastilla entera con `:focus-within`, y el del select
+// quedaria doble adentro.
 
-const OUTLINE_PERMITIDO = new Set(['src/app/app.css::.contenido:focus']);
+const OUTLINE_PERMITIDO = new Set([
+  'src/app/app.css::.contenido:focus',
+  'src/app/features/scheduling/pages/agenda/agenda-page.css::.pastilla-filtro select:focus-visible',
+]);
 
 function hojas(directorio) {
   return readdirSync(join(raizRepo, directorio), { withFileTypes: true }).flatMap((entrada) => {
