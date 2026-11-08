@@ -67,20 +67,38 @@
    * --color-borde-control queda en #808A99 (3,2:1 sobre el fondo #F5F6F8 de la pagina); los bordes decorativos si son los del canvas.
    */
 
+  /*
+   * Norma global de diseño UI/UX (08/11/2026, DESIGN.md "Paleta"). Los valores de la norma
+   * se mapean a los roles que ya existian; los roles nuevos (secundaria, encabezado de tabla,
+   * seleccion, hover, info y los estados del turno) se agregan. Ajustes a la norma, medidos:
+   * - peligro en claro #b91c1c y no #DC2626: el rojo de la norma da 4,46:1 sobre la pagina.
+   * - enlace y foco en oscuro #93c5fd y no #60A5FA: sobre la seleccion #244A70 daba 3,6:1.
+   * - borde-control queda en #808a99 / #8494a3: el #D5DEE8 de la norma es un separador (1,3:1).
+   */
+
   /* --- Superficies -------------------------------------------------------------------- */
+  /* Nivel 4 (contenido): paneles, tarjetas, campos. */
   --color-superficie: #ffffff;
-  --color-superficie-sutil: #f5f6f8;
-  --color-superficie-atenuada: #f8f9fb;
-  --color-superficie-codigo: #eef1f4;
+  /* Fondo de la pagina: el contenido se despega de el por tono. */
+  --color-superficie-sutil: #f4f6f9;
+  /* Nivel 3 (herramientas): barra de filtros, panel avanzado, fila de baja, fila-panel. */
+  --color-superficie-secundaria: #e9eff5;
+  --color-superficie-atenuada: #e9eff5;
+  --color-superficie-codigo: #e9eff5;
+  --color-tabla-encabezado: #edf2f7;
+  /* Interaccion: hover de fila, de item de menu, de boton secundario. */
+  --color-hover: #eff6ff;
+  /* Seleccion activa: entrada actual de la navegacion, fila con panel abierto, filtro elegido. */
+  --color-seleccion: #dbeafe;
 
   /* --- Texto -------------------------------------------------------------------------- */
-  --color-texto: #1f2933;
-  --color-texto-fuerte: #1f2933;
-  --color-texto-suave: #5f6b7a;
+  --color-texto: #182230;
+  --color-texto-fuerte: #182230;
+  --color-texto-suave: #526174;
 
   /* --- Bordes ------------------------------------------------------------------------- */
-  --color-borde: #e1e5ea;
-  --color-borde-sutil: #eef1f4;
+  --color-borde: #d5dee8;
+  --color-borde-sutil: #e4eaf1;
   /* Borde de un control operable: es el unico borde que WCAG 1.4.11 obliga a 3:1. */
   --color-borde-control: #808a99;
   --color-deshabilitado: #6b7684;
@@ -88,28 +106,44 @@
   /* --- Marca y acciones --------------------------------------------------------------- */
   /* La barra lateral es blanca: "marca" es ahora la superficie de navegacion, no un color. */
   --color-marca-fondo: #ffffff;
-  --color-marca-texto: #1f2933;
+  --color-marca-texto: #182230;
   --color-marca-texto-suave: #3b4754;
-  --color-marca-superficie-activa: #eaf1fb;
-  --color-acento: #1d5fbf;
-  --color-acento-claro: #eaf1fb;
-  --color-accion-fondo: #1d5fbf;
-  --color-accion-fondo-hover: #164a96;
+  --color-marca-superficie-activa: var(--color-seleccion);
+  --color-acento: #2563eb;
+  --color-acento-claro: var(--color-seleccion);
+  --color-accion-fondo: #2563eb;
+  --color-accion-fondo-hover: #1d4ed8;
   --color-accion-texto: #ffffff;
-  --color-enlace: #1d5fbf;
-  --color-foco: #1d5fbf;
-  --color-foco-sobre-marca: #1d5fbf;
+  --color-enlace: #1d4ed8;
+  --color-foco: #2563eb;
+  --color-foco-sobre-marca: #2563eb;
 
   /* --- Estados ------------------------------------------------------------------------ */
-  --color-exito: #1e7b45;
-  --color-exito-fondo: #e6f4ec;
-  --color-exito-texto: #155c33;
-  --color-aviso: #8a5200;
-  --color-aviso-fondo: #fff3e0;
-  --color-aviso-texto: #7a4800;
-  --color-peligro: #a32820;
-  --color-peligro-fondo: #fcebea;
-  --color-peligro-texto: #8e2a2a;
+  /* Trio por severidad: fuerte (borde, icono), fondo (tinte) y texto (AA sobre el fondo). */
+  --color-exito: #15803d;
+  --color-exito-fondo: #dcfce7;
+  --color-exito-texto: #14532d;
+  --color-aviso: #b45309;
+  --color-aviso-fondo: #fef3c7;
+  --color-aviso-texto: #78350f;
+  --color-peligro: #b91c1c;
+  --color-peligro-fondo: #fee2e2;
+  --color-peligro-texto: #7f1d1d;
+  --color-info: #2563eb;
+  --color-info-fondo: #dbeafe;
+  --color-info-texto: #1e3a8a;
+
+  /*
+   * Estados del dominio de la agenda (norma §3). Son fondos: el texto encima es
+   * --color-texto y el borde el fuerte de su severidad. Reservado y Confirmado NO son lo mismo:
+   * difieren en color, en palabra y en el patron del borde (punteado = todavia no confirmado).
+   */
+  --color-estado-disponible: #dcfce7;
+  --color-estado-reservado: #dbeafe;
+  --color-estado-confirmado: #bbf7d0;
+  --color-estado-pendiente: #fef3c7;
+  --color-estado-cancelado: #fee2e2;
+  --color-estado-bloqueado: #e2e8f0;
 
   /* --- Desborde ---------------------------------------------------------------------- */
   /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
@@ -186,88 +220,110 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) {
-    --color-superficie: #0f1a26;
-    --color-superficie-sutil: #17242f;
-    --color-superficie-atenuada: #131e29;
-    --color-superficie-codigo: #1b2a38;
+    --color-superficie: #1d2a36;
+    --color-superficie-sutil: #101820;
+    --color-superficie-secundaria: #263746;
+    --color-superficie-atenuada: #263746;
+    --color-superficie-codigo: #263746;
+    --color-tabla-encabezado: #304152;
+    --color-hover: #30465b;
+    --color-seleccion: #244a70;
 
-    --color-texto: #e6edf3;
-    --color-texto-fuerte: #f4f8fb;
-    --color-texto-suave: #a3b3c2;
+    --color-texto: #f1f5f9;
+    --color-texto-fuerte: #f8fafc;
+    --color-texto-suave: #b8c7d5;
 
-    --color-borde: #2e3d4c;
-    --color-borde-sutil: #24313d;
+    --color-borde: #405365;
+    --color-borde-sutil: #33475a;
     --color-borde-control: #8494a3;
-    /* Mas claro que el #6a7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
+    /* Mas claro que el #6b7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
        2.84:1 contra la superficie y a 3.06:1 contra el texto del boton. */
     --color-deshabilitado: #778593;
 
-    --color-marca-fondo: #17242f;
-    --color-marca-texto: #e6edf3;
-    --color-marca-texto-suave: #b9cde0;
-    /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
-    --color-marca-superficie-activa: #22313f;
-    --color-acento: #5aa2e5;
-    --color-acento-claro: #17304a;
-    --color-accion-fondo: #4f9ae0;
-    --color-accion-fondo-hover: #6aabe8;
-    --color-accion-texto: #06121c;
-    --color-enlace: #7fb6ea;
-    --color-foco: #7fb6ea;
-    --color-foco-sobre-marca: #7fb6ea;
+    --color-marca-fondo: #1d2a36;
+    --color-marca-texto: #f1f5f9;
+    --color-marca-texto-suave: #c9d6e2;
+    --color-acento: #60a5fa;
+    --color-accion-fondo: #60a5fa;
+    --color-accion-fondo-hover: #93c5fd;
+    --color-accion-texto: #101820;
+    --color-enlace: #93c5fd;
+    --color-foco: #93c5fd;
+    --color-foco-sobre-marca: #93c5fd;
 
-    --color-exito: #4cc38a;
-    --color-exito-fondo: #10291d;
-    --color-exito-texto: #7ee0ae;
-    --color-aviso: #d9a441;
-    --color-aviso-fondo: #2a1f0c;
-    --color-aviso-texto: #f0c674;
-    --color-peligro: #f2777a;
-    --color-peligro-fondo: #2b1416;
-    --color-peligro-texto: #ffb3b3;
+    --color-exito: #4ade80;
+    --color-exito-fondo: #174936;
+    --color-exito-texto: #bbf7d0;
+    --color-aviso: #fbbf24;
+    --color-aviso-fondo: #684c16;
+    --color-aviso-texto: #fde68a;
+    --color-peligro: #f87171;
+    --color-peligro-fondo: #692d35;
+    --color-peligro-texto: #fecaca;
+    --color-info: #93c5fd;
+    --color-info-fondo: #1d4268;
+    --color-info-texto: #bfdbfe;
+
+    --color-estado-disponible: #174936;
+    --color-estado-reservado: #1d4268;
+    --color-estado-confirmado: #166534;
+    --color-estado-pendiente: #684c16;
+    --color-estado-cancelado: #692d35;
+    --color-estado-bloqueado: #354352;
   }
 }
 
 :root[data-tema='oscuro'] {
-  --color-superficie: #0f1a26;
-  --color-superficie-sutil: #17242f;
-  --color-superficie-atenuada: #131e29;
-  --color-superficie-codigo: #1b2a38;
+  --color-superficie: #1d2a36;
+  --color-superficie-sutil: #101820;
+  --color-superficie-secundaria: #263746;
+  --color-superficie-atenuada: #263746;
+  --color-superficie-codigo: #263746;
+  --color-tabla-encabezado: #304152;
+  --color-hover: #30465b;
+  --color-seleccion: #244a70;
 
-  --color-texto: #e6edf3;
-  --color-texto-fuerte: #f4f8fb;
-  --color-texto-suave: #a3b3c2;
+  --color-texto: #f1f5f9;
+  --color-texto-fuerte: #f8fafc;
+  --color-texto-suave: #b8c7d5;
 
-  --color-borde: #2e3d4c;
-  --color-borde-sutil: #24313d;
+  --color-borde: #405365;
+  --color-borde-sutil: #33475a;
   --color-borde-control: #8494a3;
-  /* Mas claro que el #6a7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
+  /* Mas claro que el #6b7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
      2.84:1 contra la superficie y a 3.06:1 contra el texto del boton. */
   --color-deshabilitado: #778593;
 
-  --color-marca-fondo: #17242f;
-  --color-marca-texto: #e6edf3;
-  --color-marca-texto-suave: #b9cde0;
-  /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
-  --color-marca-superficie-activa: #22313f;
-  --color-acento: #5aa2e5;
-  --color-acento-claro: #17304a;
-  --color-accion-fondo: #4f9ae0;
-  --color-accion-fondo-hover: #6aabe8;
-  --color-accion-texto: #06121c;
-  --color-enlace: #7fb6ea;
-  --color-foco: #7fb6ea;
-  --color-foco-sobre-marca: #7fb6ea;
+  --color-marca-fondo: #1d2a36;
+  --color-marca-texto: #f1f5f9;
+  --color-marca-texto-suave: #c9d6e2;
+  --color-acento: #60a5fa;
+  --color-accion-fondo: #60a5fa;
+  --color-accion-fondo-hover: #93c5fd;
+  --color-accion-texto: #101820;
+  --color-enlace: #93c5fd;
+  --color-foco: #93c5fd;
+  --color-foco-sobre-marca: #93c5fd;
 
-  --color-exito: #4cc38a;
-  --color-exito-fondo: #10291d;
-  --color-exito-texto: #7ee0ae;
-  --color-aviso: #d9a441;
-  --color-aviso-fondo: #2a1f0c;
-  --color-aviso-texto: #f0c674;
-  --color-peligro: #f2777a;
-  --color-peligro-fondo: #2b1416;
-  --color-peligro-texto: #ffb3b3;
+  --color-exito: #4ade80;
+  --color-exito-fondo: #174936;
+  --color-exito-texto: #bbf7d0;
+  --color-aviso: #fbbf24;
+  --color-aviso-fondo: #684c16;
+  --color-aviso-texto: #fde68a;
+  --color-peligro: #f87171;
+  --color-peligro-fondo: #692d35;
+  --color-peligro-texto: #fecaca;
+  --color-info: #93c5fd;
+  --color-info-fondo: #1d4268;
+  --color-info-texto: #bfdbfe;
+
+  --color-estado-disponible: #174936;
+  --color-estado-reservado: #1d4268;
+  --color-estado-confirmado: #166534;
+  --color-estado-pendiente: #684c16;
+  --color-estado-cancelado: #692d35;
+  --color-estado-bloqueado: #354352;
 }
 
 /* Los controles nativos (select, scrollbar, calendario) siguen al tema elegido, no al sistema. */
@@ -430,7 +486,7 @@ h3 {
 }
 
 .boton--secundario:hover:not(:disabled) {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 /* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */
@@ -702,7 +758,7 @@ a.enlace {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--color-superficie-atenuada);
+  background: var(--color-tabla-encabezado);
   color: var(--color-marca-texto-suave);
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-medio);
@@ -710,7 +766,7 @@ a.enlace {
 }
 
 .tabla tbody tr:hover > td {
-  background: var(--color-superficie-atenuada);
+  background: var(--color-hover);
 }
 
 /* --- Filas y marcas de estado de una tabla --------------------------------------------- */
@@ -731,7 +787,7 @@ a.enlace {
 
 /* Fila que aloja un panel de edicion o de confirmacion desplegado bajo su registro. */
 .fila-panel > td {
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   padding: var(--esp-6);
 }
 
@@ -784,6 +840,18 @@ a.enlace {
   border-color: var(--color-peligro);
   background: var(--color-peligro-fondo);
   color: var(--color-peligro-texto);
+}
+
+/* Informativo (en curso, reservado) y neutro (bloqueado, sin dato): completan la escala. */
+.marca-estado--info {
+  border-color: var(--color-info);
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
+}
+
+.marca-estado--neutra {
+  background: var(--color-estado-bloqueado);
+  color: var(--color-texto);
 }
 
 /* --- Responsive ----------------------------------------------------------------------- */
@@ -1116,7 +1184,7 @@ form > .acciones {
 
 /* La fila de la tabla cuyo panel lateral esta abierto: se sigue viendo que se edita. */
 .fila--seleccionada > * {
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 /* Columna de acciones: acotada y contra el borde derecho. */
