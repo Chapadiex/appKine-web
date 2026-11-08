@@ -2,35 +2,35 @@
 name: AKINE
 description: Gestión clínica, administrativa y económica de centros de kinesiología; una interfaz de mostrador sobria, densa y medida.
 colors:
-  acento: "#1d5fbf"
-  accion-fondo: "#1d5fbf"
-  accion-fondo-hover: "#164a96"
+  acento: "#2563eb"
+  accion-fondo: "#2563eb"
+  accion-fondo-hover: "#1d4ed8"
   accion-texto: "#ffffff"
-  enlace: "#1d5fbf"
-  foco: "#1d5fbf"
-  acento-claro: "#eaf1fb"
-  marca-superficie-activa: "#eaf1fb"
+  enlace: "#1d4ed8"
+  foco: "#2563eb"
+  acento-claro: "#dbeafe"
+  marca-superficie-activa: "#dbeafe"
   superficie: "#ffffff"
-  superficie-sutil: "#f5f6f8"
-  superficie-atenuada: "#f8f9fb"
-  superficie-codigo: "#eef1f4"
-  texto: "#1f2933"
-  texto-fuerte: "#1f2933"
-  texto-suave: "#5f6b7a"
+  superficie-sutil: "#f4f6f9"
+  superficie-atenuada: "#e9eff5"
+  superficie-codigo: "#e9eff5"
+  texto: "#182230"
+  texto-fuerte: "#182230"
+  texto-suave: "#526174"
   marca-texto-suave: "#3b4754"
-  borde: "#e1e5ea"
-  borde-sutil: "#eef1f4"
+  borde: "#d5dee8"
+  borde-sutil: "#e9eff5"
   borde-control: "#808a99"
   deshabilitado: "#6b7684"
-  exito: "#1e7b45"
-  exito-fondo: "#e6f4ec"
-  exito-texto: "#155c33"
-  aviso: "#8a5200"
-  aviso-fondo: "#fff3e0"
-  aviso-texto: "#7a4800"
-  peligro: "#a32820"
-  peligro-fondo: "#fcebea"
-  peligro-texto: "#8e2a2a"
+  exito: "#15803d"
+  exito-fondo: "#dcfce7"
+  exito-texto: "#14532d"
+  aviso: "#b45309"
+  aviso-fondo: "#fef3c7"
+  aviso-texto: "#78350f"
+  peligro: "#b91c1c"
+  peligro-fondo: "#fee2e2"
+  peligro-texto: "#7f1d1d"
 typography:
   headline:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
@@ -245,8 +245,8 @@ components:
 > primitivas), `src/styles.css`, `src/app/app.css`, `src/app/layout/` y `src/app/shared/components/`.
 > Las claves del frontmatter son los tokens de `src/design-system.css` sin el prefijo de grupo:
 > `colors.acento` es `--color-acento`, `rounded.md` es `--radio-md`; el espaciado conserva su
-> nombre (`spacing.esp-4` es `--esp-4`). El frontmatter lleva el tema claro; el oscuro vive en
-> `.impeccable/design.json` (`colorMeta.<token>.dark`).
+> nombre (`spacing.esp-4` es `--esp-4`). El frontmatter lleva el tema claro; el oscuro está en la tabla de la
+> sección "Norma global de diseño UI/UX".
 
 ## Overview
 
@@ -271,12 +271,125 @@ global y el contraste de los dos temas lo mide el CI en un navegador real.
 
 **Key Characteristics:**
 
-- Un solo azul de acción (#1d5fbf) sobre una base de grises fríos; verde, ámbar y rojo solo para estado.
+- Un solo azul de acción (#2563eb) sobre una base de grises fríos; verde, ámbar y rojo solo para estado.
 - Roboto en tres pesos (400, 500, 700) y Roboto Mono para códigos, servidas desde el bundle.
 - Cuerpo de 14 px, controles de 40 px, radio de 8 px en todo control y contenedor.
 - Plano en reposo: profundidad por tono; sombra solo en lo que flota.
 - Una cabecera de pantalla única, un buscador más un embudo, tablas ordenables y paginadas.
 - Tema claro y oscuro definidos solo con tokens, elegidos por el sistema o por la persona.
+
+## Norma global de diseño UI/UX (regla permanente, 08/11/2026)
+
+Obligatoria para toda pantalla, módulo y componente, existente o futuro, **aunque el
+requerimiento no mencione el diseño**. Una implementación con problemas evidentes de jerarquía,
+contraste, distribución, alineación, legibilidad o temas **no está terminada**. No reemplaza al resto
+de este documento: lo ordena. El objetivo no es cambiar colores sino que se distinga qué es
+navegación, qué herramienta, qué contenido y qué acción.
+
+### Paleta (tokens semánticos)
+
+| Rol | Token | Claro | Oscuro |
+|---|---|---|---|
+| Fondo principal | `--color-superficie-sutil` | #f4f6f9 | #101820 |
+| Paneles y tarjetas | `--color-superficie` | #ffffff | #1d2a36 |
+| Superficie secundaria | `--color-superficie-secundaria` | #e9eff5 | #263746 |
+| Encabezado de tabla | `--color-tabla-encabezado` | #edf2f7 | #304152 |
+| Texto principal | `--color-texto` | #182230 | #f1f5f9 |
+| Texto secundario | `--color-texto-suave` | #526174 | #b8c7d5 |
+| Bordes y separadores | `--color-borde` | #d5dee8 | #405365 |
+| Borde de control (3:1) | `--color-borde-control` | #808a99 | #8494a3 |
+| Acción principal | `--color-accion-fondo` | #2563eb | #60a5fa |
+| Texto sobre acción | `--color-accion-texto` | #ffffff | #101820 |
+| Enlace y foco | `--color-enlace` / `--color-foco` | #1d4ed8 / #2563eb | #93c5fd |
+| Selección activa | `--color-seleccion` | #dbeafe | #244a70 |
+| Hover | `--color-hover` | #eff6ff | #30465b |
+
+**Ajustes a la propuesta de la norma, medidos:** el rojo de error #DC2626 da 4,46:1 sobre el fondo
+de página y pasó a #b91c1c; el enlace y el foco oscuros #60A5FA daban 3,6:1 sobre la selección y
+pasaron a #93c5fd; el borde #D5DEE8 es un separador (1,3:1) y no puede dibujar un control, que sigue
+con `--color-borde-control`. **Nada de hexadecimales en los componentes**: todo sale de tokens.
+
+### Estados
+
+Cada estado se reconoce por **color + texto + ícono** y, cuando corresponde, un **patrón** (borde
+punteado, rayado). Nunca solo por el color. Son los estados **reales del dominio**: Reservado y
+Confirmado no se pintan igual.
+
+| Estado | Token (fondo) | Claro | Oscuro | Borde / palabra |
+|---|---|---|---|---|
+| Disponible | `--color-estado-disponible` | #dcfce7 | #174936 | `--color-exito` |
+| Reservado | `--color-estado-reservado` | #dbeafe | #1d4268 | `--color-info`, punteado |
+| Confirmado | `--color-estado-confirmado` | #bbf7d0 | #166534 | `--color-exito`, sólido |
+| Pendiente | `--color-estado-pendiente` | #fef3c7 | #684c16 | `--color-aviso` |
+| Cancelado | `--color-estado-cancelado` | #fee2e2 | #692d35 | `--color-peligro` |
+| Bloqueado | `--color-estado-bloqueado` | #e2e8f0 | #354352 | `--color-borde-control`, rayado |
+
+Severidad (alertas, marcas, mensajes): `--color-{exito,aviso,peligro,info}` (fuerte: borde e ícono),
+`-fondo` (tinte) y `-texto` (AA sobre el tinte). Error #b91c1c / #f87171, advertencia #b45309 /
+#fbbf24, información #2563eb / #93c5fd. Las marcas `.marca-estado--{activa,suspendida,revocada,
+info,neutra}` cubren la severidad genérica; las del dominio (turno) viven en su feature.
+
+### Jerarquía obligatoria: cinco niveles
+
+1. **Navegación** — barra lateral, barra superior y ubicación (ruta, sede, perfil).
+2. **Contexto** — `app-cabecera-de-pagina`: título, "?", contexto y la acción principal.
+3. **Herramientas** — búsqueda, filtros, selectores, navegación temporal y vistas, agrupadas por
+   relación; el panel avanzado va sobre `--color-superficie-secundaria`.
+4. **Contenido** — tablas, calendarios, formularios, fichas y detalles sobre `--color-superficie`.
+5. **Estados y acciones** — marcas, alertas, botones y resultados.
+
+Se distinguen por contraste, tamaño, peso, espaciado y agrupación, no por más bordes ni más tarjetas.
+
+### Botones
+
+**Primaria** (`.boton`): la acción principal, una por pantalla. **Secundaria** (`.boton--secundario`):
+"Consultar", "Filtrar", "Exportar". **Terciaria** (`.boton-texto`): navegación y opciones de baja
+prioridad. **Destructiva** (`.boton--peligro`, o dentro del menú "⋯" en texto de peligro y con
+confirmación). Un ícono sin texto lleva `aria-label` y `title`.
+
+### Distribución
+
+Aprovechar ancho y alto en proporción, sin vacíos injustificados ni controles anchos con poco dato.
+Formularios en la grilla de 12 con campos agrupados por significado, obligatorios marcados y error
+junto al campo; nunca una tarjeta por dato. Sin scroll horizontal de página ni scroll anidado.
+Tablas de gestión con buscador y embudo, orden, paginación de 10 con selector, vacío y carga,
+acciones identificables y encabezado diferenciado. Pestañas, acordeones, paneles y asistentes sólo
+cuando simplifican.
+
+### Agenda
+
+Herramientas separadas en grupos: fechas, vista (día/semana/mes), agrupación (profesional/box),
+búsqueda de paciente, filtros avanzados y las acciones ("Nuevo turno", "Bloquear"). El calendario
+ocupa la mayor parte del espacio y distingue libres, ocupados, confirmados, pendientes, cancelados,
+bloqueos y fuera de horario, la selección actual y la hora actual; las líneas horarias se ven sin
+dominar. Bloque de turno: **horario → paciente → prestación → estado → profesional o box**, sin
+superposiciones; lo truncado se consulta. Crear, modificar, cancelar y bloquear se comportan igual
+en todas partes.
+
+### Temas
+
+Claro y oscuro son obligatorios y salen de los mismos tokens: misma estructura y jerarquía,
+superficies diferenciadas, activo y seleccionado reconocibles, hover y foco visibles, controles
+delimitados. WCAG AA: texto 4,5:1, texto grande 3:1, indicadores de componente 3:1.
+`npm run a11y:contraste` mide los dos temas.
+
+### Revisión obligatoria antes de dar una pantalla por terminada
+
+1. Alineación y distribución.
+2. Navegación, controles y contenido diferenciados.
+3. Espacio usado en proporción.
+4. Colores con significado consistente.
+5. Los reutilizables se comportan igual.
+6. Funciona en claro y en oscuro.
+7. Sin desplazamiento horizontal inesperado.
+8. Botones, filtros, formularios y tablas comprensibles.
+9. Estados de carga, vacío, error y éxito representados.
+10. Funcionamiento real comprobado, no sólo la compilación.
+
+Se verifica **en ejecución**, en escritorio (1440 px) y en teléfono (375 px), en los dos temas. **No
+se declara validada visualmente una pantalla que no se miró corriendo.** Reutilizar antes de crear:
+ni componentes, ni estilos, ni lógica duplicados; lo que es del sistema se arregla en el sistema, no
+con un estilo local. Sin bibliotecas nuevas.
 
 ## Colors
 
@@ -285,13 +398,13 @@ saturado y tres colores de estado que nunca se usan como decoración.
 
 ### Primary
 
-- **Azul de Acción** (#1d5fbf, `acento`, `accion-fondo`, `enlace`, `foco`): el relleno del botón
+- **Azul de Acción** (#2563eb, `acento`, `accion-fondo`, `enlace`, `foco`): el relleno del botón
   principal, la página actual de la paginación, el contador del embudo, el subrayado de la pestaña
   actual, el texto de la entrada actual de la barra lateral, los enlaces y el anillo de foco. Es el
   mismo azul en cuatro roles en claro, y son cuatro tokens porque en oscuro se separan (ver abajo).
-- **Azul Profundo** (#164a96, `accion-fondo-hover`): el relleno del botón principal bajo el puntero
+- **Azul Profundo** (#1d4ed8, `accion-fondo-hover`): el relleno del botón principal bajo el puntero
   y el color de un enlace en hover.
-- **Celeste de Selección** (#eaf1fb, `acento-claro`, `marca-superficie-activa`): el fondo de la
+- **Celeste de Selección** (#dbeafe, `acento-claro`, `marca-superficie-activa`): el fondo de la
   entrada actual de la barra lateral, de la fila de tabla cuyo panel lateral está abierto, del filtro
   rápido elegido y de la alerta informativa. Nunca un fondo de página.
 - **Blanco de Acción** (#ffffff, `accion-texto`): el texto sobre cualquier relleno de acción.
@@ -300,18 +413,19 @@ saturado y tres colores de estado que nunca se usan como decoración.
 
 - **Blanco Papel** (#ffffff, `superficie`): tarjetas, campos, botones secundarios, menús, paneles
   y la barra lateral.
-- **Gris Niebla** (#f5f6f8, `superficie-sutil`): el fondo de la página (`body`), el hover de botones
-  secundarios y de ítems de menú, y el panel de filtros avanzados.
-- **Gris Velado** (#f8f9fb, `superficie-atenuada`): el encabezado de tabla, el hover de fila y la
-  fila de un registro dado de baja.
-- **Gris Pizarra Claro** (#eef1f4, `superficie-codigo`): el fondo de un código o una ruta en mono.
-- **Tinta Pizarra** (#1f2933, `texto`, `texto-fuerte`): el texto corriente y los títulos. En claro
+- **Gris Niebla** (#f4f6f9, `superficie-sutil`): el fondo de la página (`body`). Nunca un hover.
+- **Gris Herramienta** (#e9eff5, `superficie-secundaria`, alias `superficie-atenuada` y
+  `superficie-codigo`): el nivel de herramientas (panel de filtros avanzados, fila-panel), la fila
+  de un registro dado de baja y el fondo de un código.
+- **Gris Encabezado** (#edf2f7, `tabla-encabezado`): el encabezado de tabla.
+- **Celeste Hover** (#eff6ff, `hover`): hover de fila, de ítem de menú y de botón secundario.
+- **Tinta Pizarra** (#182230, `texto`, `texto-fuerte`): el texto corriente y los títulos. En claro
   valen lo mismo; en oscuro el fuerte es más claro que el corriente.
-- **Pizarra Media** (#5f6b7a, `texto-suave`): texto secundario, ayudas de campo, conteos,
+- **Pizarra Media** (#526174, `texto-suave`): texto secundario, ayudas de campo, conteos,
   resúmenes de pie de tabla e íconos de navegación. Es el token más usado del sistema.
 - **Pizarra Oscura** (#3b4754, `marca-texto-suave`): las entradas de la barra lateral y el rótulo de
   los encabezados de tabla.
-- **Línea Fría** (#e1e5ea, `borde`) y **Línea Tenue** (#eef1f4, `borde-sutil`): bordes decorativos
+- **Línea Fría** (#d5dee8, `borde`) y **Línea Tenue** (#e9eff5, `borde-sutil`): bordes decorativos
   de tarjetas, paneles y separadores; la tenue separa las filas de una tabla.
 - **Gris Control** (#808a99, `borde-control`): el contorno de todo control operable (campo, botón del
   embudo, menú de fila, "?", flechas de paginación, filtros rápidos) y el indicador de desborde de
@@ -321,11 +435,11 @@ saturado y tres colores de estado que nunca se usan como decoración.
 
 ### Estado
 
-- **Verde Vigente** (#1e7b45 / fondo #e6f4ec / texto #155c33, `exito*`): estado vigente o activo,
+- **Verde Vigente** (#15803d / fondo #dcfce7 / texto #14532d, `exito*`): estado vigente o activo,
   operación exitosa.
-- **Ámbar Reversible** (#8a5200 / fondo #fff3e0 / texto #7a4800, `aviso*`): estado suspendido o
+- **Ámbar Reversible** (#b45309 / fondo #fef3c7 / texto #78350f, `aviso*`): estado suspendido o
   reversible, advertencia, servicio no disponible.
-- **Rojo Terminal** (#a32820 / fondo #fcebea / texto #8e2a2a, `peligro*`): estado revocado o
+- **Rojo Terminal** (#b91c1c / fondo #fee2e2 / texto #7f1d1d, `peligro*`): estado revocado o
   terminal, error, campo inválido, acción destructiva dentro de un menú.
 
 Cada estado tiene tres tokens: el color fuerte va en bordes e íconos, el fondo tiñe la superficie y
@@ -333,12 +447,12 @@ el texto es la versión oscura que llega a AA sobre ese fondo.
 
 ### Tema oscuro
 
-El oscuro no es un filtro: redefine los mismos tokens con valores propios (superficie #0f1a26,
-página #17242f, texto #e6edf3) en dos bloques idénticos, uno para "sistema" y otro para "oscuro"
+El oscuro no es un filtro: redefine los mismos tokens con valores propios (paneles #1d2a36,
+página #101820, texto #f1f5f9) en dos bloques idénticos, uno para "sistema" y otro para "oscuro"
 elegido en Preferencias (`data-tema` en `<html>`). La inversión es asimétrica a propósito: el relleno
-de acción pasa a un azul claro (#4f9ae0) con texto casi negro (#06121c), los enlaces y el foco a
-#7fb6ea, y la entrada activa de la barra lateral se separa aclarando (#22313f) en vez de oscurecer.
-Los valores completos están en `colorMeta.<token>.dark` del sidecar.
+de acción pasa a un azul claro (#60a5fa) con texto casi negro (#101820), los enlaces y el foco a
+#93c5fd, y la selección se separa aclarando (#244a70) en vez de oscurecer.
+Los valores están en la tabla de la Norma global (arriba) y en `src/design-system.css`.
 
 ### Named Rules
 
@@ -439,7 +553,7 @@ estira a 1.100 px.
 ## Elevation & Depth
 
 Híbrido con predominio tonal. En reposo todo es plano: la página es Gris Niebla, las superficies son
-blancas, el encabezado de tabla y el hover de fila bajan a Gris Velado. La sombra aparece solo en lo
+blancas, el encabezado de tabla baja a Gris Encabezado y el hover de fila toma Celeste Hover. La sombra aparece solo en lo
 que se despega de la página y siempre con desplazamiento y desenfoque suave, en un negro o un azul
 pizarra muy transparentes.
 
@@ -559,7 +673,7 @@ misma fila, contra el borde derecho.
 - **Contenedor:** `.tabla-scroll` desplaza la tabla (nunca la página), usa el alto disponible con el
   encabezado fijo y es enfocable con nombre propio. El desborde horizontal se anuncia con una barra
   de 4 px en el borde lateral del lado escondido.
-- **Encabezado:** fondo Gris Velado, rótulo de 12 px en 500 y Pizarra Oscura, sin cortes de línea.
+- **Encabezado:** fondo Gris Encabezado, rótulo de 12 px en 500 y Pizarra Oscura, sin cortes de línea.
   Las columnas ordenables (`th[appOrdenable]`) llevan un botón del tamaño del rótulo con el ícono de
   orden tenue, pleno cuando la columna está ordenada.
 - **Filas:** celdas de 14 px con relleno de 12 px y separación de 1 px Línea Tenue; hover en Gris
@@ -633,4 +747,4 @@ acciones fijo. La fila de la tabla que lo abrió queda marcada.
   carga el bundle.
 - **Don't** le pongas `overflow` ni `max-height` a la cabecera de pantalla ni a las pestañas: dibuja
   una barra de desplazamiento en cada pantalla.
-- **Don't** dibujes un control con `--color-borde` (#e1e5ea): un control lleva `--color-borde-control`.
+- **Don't** dibujes un control con `--color-borde` (#d5dee8): un control lleva `--color-borde-control`.

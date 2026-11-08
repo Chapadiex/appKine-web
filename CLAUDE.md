@@ -184,6 +184,14 @@ Nunca editar el cliente generado a mano. Nunca asumir commit atómico con el bac
 - **Signals para el estado.** Zoneless + OnPush: mutar no re-renderiza.
 - **`shared/` sin reglas de dominio.**
 - Accesibilidad AA en cada pantalla nueva.
+- **Norma global de diseño UI/UX (regla permanente, 08/11/2026): toda pantalla nueva o tocada la
+  cumple**, aunque el pedido no hable de diseño. Está en `DESIGN.md`, sección "Norma global de diseño
+  UI/UX": paleta por tokens (ningún `#hex` fuera de `src/design-system.css`), estados con color +
+  texto + ícono, cinco niveles de jerarquía, una sola acción primaria, grilla de 12 en formularios,
+  tablas con buscador, embudo, orden y paginación de 10, y los dos temas. Antes de cerrar se pasa la
+  revisión de diez puntos de esa sección **en ejecución**, en claro y en oscuro, a 1440 y a 375 px,
+  sin desborde horizontal. Una pantalla con problemas evidentes de jerarquía, contraste, distribución
+  o temas no está terminada.
 - Datos sintéticos únicamente. Jamás datos reales de pacientes.
 - Sin secretos en el bundle.
 - `main` siempre desplegable. Trabajo incompleto detrás de feature flag.
