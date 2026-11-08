@@ -36,6 +36,7 @@ import { SessionService } from '../../../core/services/session.service';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../shared/components/icono/icono';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { enlaceComoLlegar } from '../../../shared/utils/enlaces-de-mapa';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
@@ -62,7 +63,8 @@ import {
   fechaHoraEnZona,
   nombreDeEstado,
   nombreDeEstadoOperativo,
-  simboloDeEstadoOperativo,
+  claseDeTonoOperativo,
+  iconoDeEstadoOperativo,
   textoDeEvento,
   textoDeReprogramado,
   textoDeUltimoMovimiento,
@@ -104,9 +106,9 @@ const QUEDO_VIEJO: ReadonlySet<AccionSugerida> = new Set<AccionSugerida>([
 @Component({
   selector: 'app-detalle-de-turno-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Alerta, Ayuda, ListaDeHorarios, PanelLateral, PermisoDirective],
+  imports: [Alerta, Ayuda, Icono, ListaDeHorarios, PanelLateral, PermisoDirective],
   templateUrl: './detalle-de-turno-panel.html',
-  styleUrl: './flujo.css',
+  styleUrls: ['./flujo.css', '../estados-de-turno.css'],
 })
 export class DetalleDeTurnoPanel implements OnInit {
   private readonly api = inject(SchedulingApi);
@@ -133,7 +135,8 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly MOTIVOS_DE_CANCELACION = MOTIVOS_DE_CANCELACION;
   protected readonly MOTIVOS_DE_REPROGRAMACION = MOTIVOS_DE_REPROGRAMACION;
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
   protected readonly textoDeEvento = textoDeEvento;
   protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly textoDeUltimoMovimiento = textoDeUltimoMovimiento;

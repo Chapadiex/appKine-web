@@ -1,0 +1,60 @@
+/*
+ * Los estados del turno con los tokens de estado de agenda de la norma de diseno (§7). Una sola hoja
+ * para la grilla de la agenda, la lista angosta, la vista mes, la recepcion, la serie y el detalle.
+ *
+ * Mapeo (estado operativo -> fondo / borde / estilo / icono, en etiquetas-de-turno.ts):
+ *   RESERVADO   -> estado-reservado  / info    / punteado / reloj
+ *   CONFIRMADO  -> estado-confirmado / exito   / solido   / tilde
+ *   PRESENTE    -> estado-pendiente  / aviso   / solido   / persona
+ *   EN_ATENCION -> estado-pendiente  / aviso   / solido   / flecha
+ *   ATENDIDO    -> estado-bloqueado  / texto-suave / solido / circulo con tilde
+ *   AUSENTE     -> estado-cancelado  / peligro / solido   / advertencia
+ *   RETIRADO    -> estado-cancelado  / peligro / solido   / salir
+ *   CANCELADO   -> estado-cancelado  / peligro / de puntos / circulo con cruz (y nombre tachado en la grilla)
+ * Las clases solo declaran variables (--tono-*); cada componente decide donde las pinta.
+ */
+
+/* La marca de estado del turno: pastilla con su fondo, su borde, su icono y su palabra. */
+.marca-turno {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  border-style: var(--tono-estilo, solid);
+  border-color: var(--tono-borde, var(--color-borde-control));
+  background: var(--tono-fondo, var(--color-superficie));
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+.turno--reservado {
+  --tono-fondo: var(--color-estado-reservado);
+  --tono-borde: var(--color-info);
+  --tono-estilo: dashed;
+}
+
+.turno--confirmado {
+  --tono-fondo: var(--color-estado-confirmado);
+  --tono-borde: var(--color-exito);
+}
+
+.turno--presente,
+.turno--en-atencion {
+  --tono-fondo: var(--color-estado-pendiente);
+  --tono-borde: var(--color-aviso);
+}
+
+.turno--atendido {
+  --tono-fondo: var(--color-estado-bloqueado);
+  --tono-borde: var(--color-texto-suave);
+}
+
+.turno--ausente,
+.turno--retirado,
+.turno--cancelado {
+  --tono-fondo: var(--color-estado-cancelado);
+  --tono-borde: var(--color-peligro);
+}
+
+.turno--cancelado {
+  --tono-estilo: dotted;
+}

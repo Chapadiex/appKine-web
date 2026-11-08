@@ -87,8 +87,10 @@
       @switch (vista()) {
         @case ('resumen') {
           <p class="flujo__dato estado-turno">
-            <span aria-hidden="true">{{ simboloDeEstadoOperativo(estado()) }}</span>
-            {{ nombreDeEstadoOperativo(estado()) }}
+            <span [class]="'marca-estado marca-turno ' + claseDeTonoOperativo(estado())"
+              ><app-icono [nombre]="iconoDeEstadoOperativo(estado())" />
+              {{ nombreDeEstadoOperativo(estado()) }}</span
+            >
           </p>
           @if (textoDeReprogramado(operativo()?.reprogramaciones); as marca) {
             <p class="flujo__dato">

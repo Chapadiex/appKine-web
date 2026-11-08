@@ -505,16 +505,8 @@ test.describe('Contraste de color', () => {
       await page.goto(`/agenda?fecha=${FECHA}`);
       await expect(page.getByRole('button', { name: /^09:00 a 09:45/ })).toBeVisible();
 
-      await auditarContraste(page, 'agenda operativa del dia', {
-        queAxeNoMide: [
-          {
-            selector: '.turno__estado > span[aria-hidden="true"]',
-            porque:
-              'el simbolo del estado es un solo caracter, y axe no decide sobre un texto tan ' +
-              'corto (`shortTextContent`): lo devuelve como `incomplete`.',
-          },
-        ],
-      });
+      // El estado lleva un icono SVG (no un caracter suelto): axe lo mide entero, sin excepciones.
+      await auditarContraste(page, 'agenda operativa del dia');
     });
 
     test('el panel de nuevo turno, con paciente y horario elegidos', async ({ page }) => {

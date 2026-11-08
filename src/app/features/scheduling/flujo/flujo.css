@@ -86,7 +86,7 @@ summary {
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .flujo__resumen-titulo {
@@ -151,7 +151,7 @@ summary {
 
 .candidato:hover,
 .candidato:focus-visible {
-  background: var(--color-acento-claro);
+  background: var(--color-hover);
 }
 
 .candidato__nombre {
@@ -213,7 +213,7 @@ summary {
 .horario[aria-pressed='true'] {
   border-color: var(--color-acento);
   box-shadow: inset 0 0 0 1px var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 .horario__hora {

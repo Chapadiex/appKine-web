@@ -221,7 +221,10 @@
           <li>
             <button
               type="button"
-              class="agenda-lista__turno"
+              [class]="
+                'agenda-lista__turno ' +
+                claseDeTonoOperativo(turno.turno?.operativo?.estadoOperativo)
+              "
               (click)="flujo.verTurno(turno.turno?.id ?? 0)"
             >
               <span class="agenda-lista__hora"
@@ -231,21 +234,19 @@
               <span class="ayuda"
                 >{{ turno.turno?.ofertaNombre }} · {{ turno.profesionalNombre }}</span
               >
-              <span class="ayuda">
-                <span aria-hidden="true">{{
-                  simboloDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)
-                }}</span>
+              <span class="turno__estado">
+                <app-icono [nombre]="iconoDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)" />
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
               @if (reprogramado(turno.turno); as marca) {
                 <span class="turno__marca"><span aria-hidden="true">↻</span> {{ marca }}</span>
               }
               @if (turno.fueraDeDisponibilidad) {
-                <span class="turno__reubicar"><span aria-hidden="true">⚠</span> A reubicar</span>
+                <span class="turno__reubicar"><app-icono nombre="advertencia" /> A reubicar</span>
               }
               @if (chocaConClase(turno)) {
                 <span class="turno__reubicar"
-                  ><span aria-hidden="true">⚠</span> Choca con una clase</span
+                  ><app-icono nombre="advertencia" /> Choca con una clase</span
                 >
               }
             </button>
@@ -279,14 +280,17 @@
                   >
                   <span class="mes__estados">
                     @for (conteo of dia.porEstado; track conteo.estado) {
-                      <span [title]="nombreDeEstadoOperativo(conteo.estado)"
-                        >{{ simboloDeEstadoOperativo(conteo.estado) }} {{ conteo.cantidad }}</span
+                      <span
+                        [class]="'mes__estado ' + claseDeTonoOperativo(conteo.estado)"
+                        [title]="nombreDeEstadoOperativo(conteo.estado)"
+                        ><app-icono [nombre]="iconoDeEstadoOperativo(conteo.estado)" />
+                        {{ conteo.cantidad }}</span
                       >
                     }
                   </span>
                 }
                 @if (dia.bloqueos > 0) {
-                  <span class="mes__bloqueo">Bloqueado</span>
+                  <span class="mes__bloqueo"><app-icono nombre="candado" /> Bloqueado</span>
                 }
               </button>
             } @else {
@@ -300,8 +304,8 @@
     </div>
     <p class="mes__leyenda ayuda">
       @for (valor of ESTADOS; track valor) {
-        <span
-          ><span aria-hidden="true">{{ simboloDeEstadoOperativo(valor) }}</span>
+        <span [class]="'mes__estado ' + claseDeTonoOperativo(valor)"
+          ><app-icono [nombre]="iconoDeEstadoOperativo(valor)" />
           {{ nombreDeEstadoOperativo(valor) }}</span
         >
       }
@@ -380,6 +384,7 @@
                 <button
                   type="button"
                   class="grilla__celda"
+                  [class.grilla__celda--en-punto]="celda.inicioMin % 60 === 0"
                   [style.top.px]="arriba(celda.inicioMin)"
                   [style.height.px]="(celda.finMin - celda.inicioMin) * PX_POR_MINUTO"
                   (click)="nuevoTurnoEn(columna, celda)"
@@ -388,9 +393,10 @@
                     Nuevo turno {{ columna.fecha }} a las {{ horaDeMinuto(celda.inicioMin) }},
                     {{ columna.titulo }}
                   </span>
-                  <span class="grilla__celda-hora" aria-hidden="true">{{
-                    horaDeMinuto(celda.inicioMin)
-                  }}</span>
+                  <span class="grilla__celda-hora" aria-hidden="true"
+                    >{{ horaDeMinuto(celda.inicioMin) }} · <span class="grilla__celda-libre">Libre</span
+                    ><span class="grilla__celda-dar">Dar turno</span></span
+                  >
                 </button>
               }
             </ng-container>
@@ -402,6 +408,14 @@
                     type="button"
                     [class]="claseDeEstado(evento)"
                     [class.turno--sobreturno]="evento.turno?.turno?.operativo?.sobreturno"
+                    [class.turno--seleccionado]="
+                      turnoAbierto() !== null && evento.turno?.turno?.id === turnoAbierto()
+                    "
+                    [attr.aria-current]="
+                      turnoAbierto() !== null && evento.turno?.turno?.id === turnoAbierto()
+                        ? 'true'
+                        : null
+                    "
                     [style.top.px]="arriba(evento.inicioMin)"
                     [style.height.px]="alto(evento.inicioMin, evento.finMin)"
                     [style.left.%]="(evento.carril * 100) / evento.carriles"
@@ -412,9 +426,11 @@
                     <span class="turno__hora">
                       {{ hora(evento.turno?.turno?.inicio) }} a {{ hora(evento.turno?.turno?.fin) }}
                       <span class="turno__estado">
-                        <span aria-hidden="true">{{
-                          simboloDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
-                        }}</span>
+                        <app-icono
+                          [nombre]="
+                            iconoDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
+                          "
+                        />
                         <span class="turno__estado-texto">{{
                           nombreDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
                         }}</span>
@@ -436,12 +452,12 @@
                     }
                     @if (evento.turno?.fueraDeDisponibilidad) {
                       <span class="turno__reubicar"
-                        ><span aria-hidden="true">⚠</span> A reubicar</span
+                        ><app-icono nombre="advertencia" /> A reubicar</span
                       >
                     }
                     @if (chocaConClase(evento.turno)) {
                       <span class="turno__reubicar"
-                        ><span aria-hidden="true">⚠</span> Choca con una clase</span
+                        ><app-icono nombre="advertencia" /> Choca con una clase</span
                       >
                     }
                   </button>
@@ -480,8 +496,11 @@
                     [style.height.px]="alto(evento.inicioMin, evento.finMin)"
                     [title]="descripcion(evento)"
                   >
-                    <span class="turno__persona">{{ evento.titulo }}</span>
-                    <span class="turno__linea">{{ evento.detalle }}</span>
+                    <span class="evento__rotulo">
+                      <app-icono nombre="candado" />
+                      <span class="turno__persona">{{ evento.titulo }}</span>
+                    </span>
+                    <span class="turno__linea evento__rotulo">{{ evento.detalle }}</span>
                     <a
                       *akinePermiso="PERMISO_AGENDA_EXCEPCIONES"
                       class="evento__enlace"
@@ -552,7 +571,7 @@
       <button
         *akinePermiso="PERMISO_TURNO_MANAGE"
         type="button"
-        class="boton boton--chico"
+        class="boton boton--secundario boton--chico"
         (click)="nuevoTurno()"
       >
         Crear turno

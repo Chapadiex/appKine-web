@@ -136,12 +136,10 @@
                 <td>{{ fila.numero }}</td>
                 <td>{{ fechaHora(turno.inicio) }}</td>
                 <td>
-                  <span
-                    class="marca-estado"
-                    [class.marca-estado--activa]="turno.estado === 'CONFIRMADO'"
-                    [class.marca-estado--suspendida]="turno.estado === 'AUSENTE'"
-                    [class.marca-estado--revocada]="turno.estado === 'CANCELADO'"
-                    >{{ nombreDeEstado(turno.estado) }}</span
+                  <span [class]="'marca-estado marca-turno ' + claseDeTonoOperativo(turno.estado)"
+                    ><app-icono [nombre]="iconoDeEstadoOperativo(turno.estado)" />{{
+                      nombreDeEstado(turno.estado)
+                    }}</span
                   >
                   @if (detalleDeEstado(turno.estado); as detalle) {
                     <span class="celda-secundaria">{{ detalle }}</span>

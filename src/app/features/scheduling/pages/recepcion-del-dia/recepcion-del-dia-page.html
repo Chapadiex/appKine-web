@@ -254,11 +254,13 @@
                 que significa queda para el lector de pantalla y en el `title`: leer la misma
                 definicion en cada fila del dia era lo que estiraba la tabla.
               -->
+                  <!-- Norma §7: fondo y borde del estado (Reservado punteado, Confirmado solido) e icono. -->
                   <span
-                    class="marca-estado"
-                    [class.marca-estado--revocada]="cancelado(turno)"
+                    [class]="'marca-estado marca-turno ' + claseDeTonoOperativo(turno.estado)"
                     [title]="detalleDeEstado(turno.estado)"
-                    >{{ nombreDeEstado(turno.estado) }}</span
+                    ><app-icono [nombre]="iconoDeEstadoOperativo(turno.estado)" />{{
+                      nombreDeEstado(turno.estado)
+                    }}</span
                   ><span class="visualmente-oculto">: {{ detalleDeEstado(turno.estado) }}</span>
 
                   @if (cancelado(turno) && turno.motivoCancelacion) {
@@ -350,8 +352,7 @@
                         <button
                           principal
                           type="button"
-                          class="boton boton--chico"
-                          [class.boton--secundario]="acciones[0].secundaria"
+                          class="boton boton--secundario boton--chico"
                           [disabled]="enVuelo() === turno.id"
                           (click)="acciones[0].ejecutar(); enfocarMenu($event)"
                         >

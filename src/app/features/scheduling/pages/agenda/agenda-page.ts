@@ -48,9 +48,10 @@ import {
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
 import {
+  claseDeTonoOperativo,
   eraA,
+  iconoDeEstadoOperativo,
   nombreDeEstadoOperativo,
-  simboloDeEstadoOperativo,
   textoDeReprogramado,
 } from '../../models/etiquetas-de-turno';
 import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
@@ -135,7 +136,7 @@ const A_REUBICAR = 'A_REUBICAR';
     RouterLink,
   ],
   templateUrl: './agenda-page.html',
-  styleUrl: './agenda-page.css',
+  styleUrls: ['./agenda-page.css', '../../estados-de-turno.css'],
 })
 export class AgendaPage {
   private readonly api = inject(SchedulingApi);
@@ -179,7 +180,14 @@ export class AgendaPage {
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+
+  /** El turno cuyo detalle esta abierto: la tarjeta queda marcada como seleccion actual. */
+  protected readonly turnoAbierto = computed(() => {
+    const solicitud = this.flujo.solicitud();
+    return solicitud?.tipo === 'detalle' ? solicitud.turnoId : null;
+  });
   protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly diaCorto = diaCorto;
   protected readonly PX_POR_MINUTO = PX_POR_MINUTO;
@@ -987,8 +995,7 @@ export class AgendaPage {
   }
 
   protected claseDeEstado(evento: EventoDeGrilla): string {
-    const estado = evento.turno?.turno?.operativo?.estadoOperativo ?? '';
-    return `turno turno--${estado.toLowerCase().replace('_', '-')}`;
+    return `turno ${claseDeTonoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)}`;
   }
 
   // -------------------------------------------------------------------------------------

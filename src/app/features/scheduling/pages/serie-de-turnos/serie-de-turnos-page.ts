@@ -16,11 +16,14 @@ import { SelectorDeHorario } from '../../components/selector-de-horario/selector
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { fechaEnPalabras, sumarDias } from '../../models/etiquetas-de-agenda';
 import {
+  claseDeTonoOperativo,
   detalleDeEstado,
   fechaHoraEnZona,
+  iconoDeEstadoOperativo,
   nombreDeEstado,
   textoDeEstado,
 } from '../../models/etiquetas-de-turno';
@@ -105,6 +108,7 @@ type Pedido =
   selector: 'app-serie-de-turnos-page',
   imports: [
     CabeceraDePagina,
+    Icono,
     ColumnaOrdenable,
     EstadoVacio,
     PieDeTabla,
@@ -118,7 +122,7 @@ type Pedido =
     PanelLateral,
   ],
   templateUrl: './serie-de-turnos-page.html',
-  styleUrl: '../../agenda.css',
+  styleUrls: ['../../agenda.css', '../../estados-de-turno.css'],
 })
 export class SerieDeTurnosPage {
   private readonly api = inject(SeriesApi);
@@ -140,6 +144,8 @@ export class SerieDeTurnosPage {
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly textoDeEstado = textoDeEstado;
   protected readonly nombreDeEstado = nombreDeEstado;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
   protected readonly detalleDeEstado = detalleDeEstado;
   protected readonly textoDeAlcance = textoDeAlcance;
   protected readonly textoDeDias = textoDeDias;
