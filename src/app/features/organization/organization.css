@@ -89,7 +89,7 @@
 
 .opcion:hover {
   border-color: var(--color-acento);
-  background: var(--color-marca-superficie-activa);
+  background: var(--color-hover);
 }
 
 .opcion__textos {
@@ -105,7 +105,7 @@
 /* El ultimo elegido: fondo celeste y la leyenda en texto (el color solo no alcanza). */
 .opcion--ultima {
   border-color: var(--color-acento);
-  background: var(--color-marca-superficie-activa);
+  background: var(--color-seleccion);
 }
 
 .opcion__ultima {
@@ -321,7 +321,7 @@
  */
 .nota-invitaciones {
   border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .nota-invitaciones p {
@@ -342,7 +342,7 @@
   height: 0.375rem;
   margin-top: var(--esp-3);
   border-radius: var(--esp-2);
-  background: var(--color-superficie-codigo);
+  background: var(--color-superficie-secundaria);
 }
 
 .medidor__barra {
@@ -371,7 +371,7 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-medio);
@@ -483,12 +483,12 @@
 .auditoria-detalle__despues {
   padding: var(--esp-2) var(--esp-3);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   color: var(--color-texto);
 }
 
 .fila--seleccionada {
-  background: var(--color-superficie-sutil);
+  background: var(--color-seleccion);
 }
 
 /* Sedes (refactor UX/UI del 28/10/2026): nombre con un dato institucional de referencia. */
@@ -628,4 +628,9 @@
   .interruptor input::after {
     transition: none;
   }
+}
+
+/* Auditoria: los campos del criterio y la barra de busqueda de abajo no se tocan. */
+.grilla-campos:has(+ app-filtros) {
+  margin-bottom: var(--esp-6);
 }

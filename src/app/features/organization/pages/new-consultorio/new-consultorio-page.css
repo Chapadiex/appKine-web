@@ -155,7 +155,7 @@
   padding: var(--esp-6) var(--esp-7);
   border: 0;
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .bloque__titulo {
@@ -182,7 +182,7 @@
 .resumen {
   padding: var(--esp-6) var(--esp-7);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .resumen__titulo {
@@ -262,7 +262,7 @@
 .duracion input:checked + span {
   border-color: var(--color-acento);
   box-shadow: inset 0 0 0 1px var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   font-weight: var(--peso-medio);
 }
 

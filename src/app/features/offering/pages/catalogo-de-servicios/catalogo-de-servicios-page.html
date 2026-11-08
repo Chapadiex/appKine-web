@@ -93,7 +93,7 @@
         <app-alerta tipo="error" titulo="No pudimos leer el catálogo de servicios">
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
           </p>
         </app-alerta>
       }
@@ -115,7 +115,7 @@
               texto="Los servicios son la base de las ofertas de cada sede."
             >
               @if (puedeAdministrar()) {
-                <button type="button" class="boton" (click)="abrirAlta()">
+                <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
                   Dar de alta el primer servicio
                 </button>
               }
@@ -180,12 +180,12 @@
                     </td>
                     <td>
                       @if (servicio.estado === 'INACTIVO') {
-                        <span class="marca-estado">Dado de baja</span>
+                        <span class="marca-estado marca-estado--revocada">Dado de baja</span>
                         @if (servicio.deactivationReason) {
                           <p class="ayuda ayuda--fija">{{ servicio.deactivationReason }}</p>
                         }
                       } @else {
-                        <span class="marca-estado">Activo</span>
+                        <span class="marca-estado marca-estado--activa">Activo</span>
                       }
                     </td>
                     @if (puedeAdministrar()) {

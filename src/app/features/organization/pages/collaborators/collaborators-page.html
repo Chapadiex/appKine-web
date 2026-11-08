@@ -68,7 +68,7 @@
           titulo="Todavía no elegiste un contexto de trabajo."
           texto="Los colaboradores son de una organización concreta, así que hay que indicar cual."
         >
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
         </app-estado-vacio>
       }
 
@@ -77,9 +77,9 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
             }
           </p>
         </app-alerta>
@@ -102,7 +102,7 @@
           >
             <a
               *akinePermiso="permisoManage"
-              class="boton"
+              class="boton boton--secundario"
               routerLink="/organizacion/colaboradores/nuevo"
               >Vincular colaborador</a
             >

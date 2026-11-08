@@ -86,7 +86,7 @@
  * esta pantalla existe para no aplanar.
  */
 .fila--atenuada {
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
 }
 
 /*
@@ -198,7 +198,7 @@
 }
 
 .duracion-propia:disabled {
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
   cursor: not-allowed;
 }
 
@@ -230,6 +230,7 @@
  */
 .columnas-de-trabajo {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--esp-7);
   align-items: start;
 }
@@ -261,4 +262,9 @@
 /* Sin permiso para agregar queda una sola tarjeta: ocupa el ancho entero. */
 .columnas-de-trabajo > :only-child {
   grid-column: 1 / -1;
+}
+
+/* Una marca de estado no se parte en dos renglones: "Activa y / vigente" deja de leerse como una. */
+.tabla .marca-estado {
+  white-space: nowrap;
 }

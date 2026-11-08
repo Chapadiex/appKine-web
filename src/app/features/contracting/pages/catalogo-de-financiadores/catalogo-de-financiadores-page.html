@@ -75,7 +75,7 @@
         <app-alerta tipo="error" titulo="No pudimos leer el catálogo">
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
           </p>
         </app-alerta>
       }
@@ -154,7 +154,7 @@
                           <span class="visualmente-oculto">{{ entrada.nombre }}</span>
                         </button>
                       } @else {
-                        <span class="marca-estado">No agregado</span>
+                        <span class="marca-estado marca-estado--neutra">No agregado</span>
                       }
                     </td>
                   </tr>

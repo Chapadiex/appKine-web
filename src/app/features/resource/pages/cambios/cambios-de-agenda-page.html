@@ -31,7 +31,7 @@
         <app-alerta tipo="error" titulo="No pudimos leer los profesionales de la sede">
           <p>{{ mensaje }}</p>
           <p class="alerta__acciones">
-            <button type="button" class="boton" (click)="cargarProfesionales()">
+            <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
               Reintentar la lista de profesionales
             </button>
           </p>
@@ -148,9 +148,9 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
             } @else {
-              <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="consultar()">Reintentar</button>
             }
           </p>
         </app-alerta>

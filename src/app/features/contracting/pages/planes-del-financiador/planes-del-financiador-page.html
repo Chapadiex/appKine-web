@@ -141,7 +141,7 @@
 
       @case ('sin-contexto') {
         <app-estado-vacio titulo="Todavía no elegiste un consultorio.">
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
         </app-estado-vacio>
       }
 
@@ -150,9 +150,9 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
             }
           </p>
         </app-alerta>
@@ -167,7 +167,7 @@
             @if (!financiadorInactivo()) {
               <button
                 type="button"
-                class="boton"
+                class="boton boton--secundario"
                 *akinePermiso="permisoManage"
                 (click)="abrirAlta()"
               >

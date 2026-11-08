@@ -168,7 +168,7 @@
 
 .alta-manual__servicio--elegido {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 .alta-manual__servicio input {
@@ -203,7 +203,7 @@
   padding: var(--esp-4) var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
 }
 .alta-manual__sedes {
   display: flex;
@@ -223,7 +223,7 @@
 }
 .alta-manual__sede--elegida {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-enlace);
 }
 .alta-manual__todas {
@@ -282,7 +282,7 @@
   margin: var(--esp-7) calc(-1 * var(--esp-7)) calc(-1 * var(--esp-7));
   padding: var(--esp-5) var(--esp-7);
   border-top: var(--borde-fino) solid var(--color-borde);
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
 }
 
 .alta-manual__lateral {
@@ -317,7 +317,7 @@
   width: 3rem;
   height: 3rem;
   border-radius: 50%;
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
   font-weight: var(--peso-semi);
 }

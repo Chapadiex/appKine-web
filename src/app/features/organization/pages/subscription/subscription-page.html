@@ -65,7 +65,15 @@
               [class.marca-estado--activa]="estadoSuscripcion() === 'ACTIVA'"
               [class.marca-estado--suspendida]="estadoSuscripcion() === 'SUSPENDIDA'"
               [class.marca-estado--revocada]="estadoSuscripcion() === 'CANCELADA'"
-              >{{ suscripcion()?.status }}</span
+              >{{
+                estadoSuscripcion() === 'ACTIVA'
+                  ? 'Activa'
+                  : estadoSuscripcion() === 'SUSPENDIDA'
+                    ? 'Suspendida'
+                    : estadoSuscripcion() === 'CANCELADA'
+                      ? 'Cancelada'
+                      : suscripcion()?.status
+              }}</span
             >
             <span class="plan-actual__alta">
               Alta de la suscripción: {{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}
@@ -78,9 +86,9 @@
             <p>{{ mensajeError() }}</p>
             <p class="alerta__acciones">
               @if (faltaContexto()) {
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
               } @else {
-                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+                <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
               }
             </p>
           </app-alerta>

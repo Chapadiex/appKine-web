@@ -88,9 +88,9 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
             }
           </p>
         </app-alerta>
@@ -102,7 +102,7 @@
             titulo="Este centro todavía no hizo ningún pedido"
             texto="Lo que falte en el catalogo comun se le pide a la plataforma desde acá."
           >
-            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+            <button *akinePermiso="permisoManage" type="button" class="boton boton--secundario" (click)="abrirAlta()">
               Hacer el primer pedido
             </button>
           </app-estado-vacio>
@@ -160,7 +160,15 @@
                       {{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}
                     </td>
                     <td>
-                      <span class="marca-estado">{{ etiquetaDeEstado(solicitud) }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="solicitud.estado === 'APROBADA'"
+                        [class.marca-estado--revocada]="solicitud.estado === 'RECHAZADA'"
+                        [class.marca-estado--suspendida]="
+                          solicitud.estado !== 'APROBADA' && solicitud.estado !== 'RECHAZADA'
+                        "
+                        >{{ etiquetaDeEstado(solicitud) }}</span
+                      >
                       @if (solicitud.resolucionNota) {
                         <p class="ayuda ayuda--fija">{{ solicitud.resolucionNota }}</p>
                       }

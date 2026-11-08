@@ -133,9 +133,9 @@
             <p>{{ mensajeError() }}</p>
             <p class="alerta__acciones">
               @if (faltaContexto()) {
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
               } @else {
-                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+                <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
               }
             </p>
           </app-alerta>
@@ -159,7 +159,7 @@
               <button
                 *akinePermiso="permisoManage"
                 type="button"
-                class="boton"
+                class="boton boton--secundario"
                 (click)="abrirAlta()"
               >
                 Dar de alta un concepto del centro
@@ -202,14 +202,14 @@
                       </td>
                       <td>
                         @if (concepto.estado === 'INACTIVO') {
-                          <span class="marca-estado">Dado de baja</span>
+                          <span class="marca-estado marca-estado--revocada">Dado de baja</span>
                           @if (concepto.deactivationReason) {
                             <p class="ayuda ayuda--fija">{{ concepto.deactivationReason }}</p>
                           }
                         } @else if (concepto.vigente) {
-                          <span class="marca-estado">Activo y vigente</span>
+                          <span class="marca-estado marca-estado--activa">Activo y vigente</span>
                         } @else {
-                          <span class="marca-estado">Activo, sin vigencia hoy</span>
+                          <span class="marca-estado marca-estado--info">Activo, sin vigencia hoy</span>
                           <p class="ayuda ayuda--fija">
                             @if (formatearInstante(concepto.validFrom); as desde) {
                               Rige desde {{ desde }}.
@@ -484,7 +484,7 @@
               <p>{{ errorAccion() }}</p>
               @if (hayQueRecargar()) {
                 <p class="alerta__acciones">
-                  <button type="button" class="boton" (click)="cargar()">
+                  <button type="button" class="boton boton--secundario" (click)="cargar()">
                     Recargar el listado
                   </button>
                 </p>

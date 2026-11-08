@@ -46,9 +46,9 @@
     <p>{{ mensaje }}</p>
     <p class="alerta__acciones">
       @if (faltaContexto()) {
-        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        <a class="boton boton--secundario" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
       } @else {
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
     </p>
   </app-alerta>
@@ -78,7 +78,12 @@
       </app-ayuda>
     </div>
 
-    <form [formGroup]="formularioElegibilidad" (ngSubmit)="consultarElegibilidad()" novalidate>
+    <form
+      class="formulario-consulta"
+      [formGroup]="formularioElegibilidad"
+      (ngSubmit)="consultarElegibilidad()"
+      novalidate
+    >
       @if (errorDeElegibilidad(); as mensaje) {
         <app-alerta tipo="error" titulo="No pudimos consultar qué le falta">
           <p>{{ mensaje }}</p>
@@ -143,7 +148,11 @@
       </div>
 
       <p class="acciones">
-        <button type="submit" class="boton" [disabled]="consultandoElegibilidad()">
+        <button
+          type="submit"
+          class="boton boton--secundario"
+          [disabled]="consultandoElegibilidad()"
+        >
           {{ consultandoElegibilidad() ? 'Consultando...' : 'Consultar' }}
         </button>
       </p>

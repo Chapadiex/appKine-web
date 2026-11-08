@@ -157,9 +157,9 @@
             <p>{{ mensajeError() }}</p>
             <p class="alerta__acciones">
               @if (faltaContexto()) {
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
               } @else {
-                <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+                <button type="button" class="boton boton--secundario" (click)="consultar()">Reintentar</button>
               }
             </p>
           </app-alerta>
@@ -187,7 +187,7 @@
               @if (!altaAbierta()) {
                 <button
                   type="button"
-                  class="boton"
+                  class="boton boton--secundario"
                   *akinePermiso="permisoManage"
                   (click)="abrirAlta()"
                 >
@@ -373,7 +373,7 @@
                   <button
                     id="alta-excepcion-sustituir"
                     type="button"
-                    class="boton"
+                    class="boton boton--secundario"
                     [disabled]="enviando()"
                     (click)="sustituir()"
                   >
