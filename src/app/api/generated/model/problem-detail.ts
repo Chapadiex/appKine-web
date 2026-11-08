@@ -7,6 +7,8 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { FranjaFueraDeHorarioResponse } from './franja-fuera-de-horario-response';
+import { ProblemDetailFranjasFueraDeHorarioInner } from './problem-detail-franjas-fuera-de-horario-inner';
 
 
 export interface ProblemDetail { 
@@ -71,6 +73,14 @@ export interface ProblemDetail {
      * BLOQUEO, AUSENCIA o CIERRE_DE_SEDE: el cierre.
      */
     excepcionEnConflictoId?: number;
+    /**
+     * franjas-de-profesionales-fuera-del-horario: las franjas de profesionales que el horario nuevo de la sede deja afuera. No se guardo nada: reenviar con franjasFueraDelHorario RECORTAR o CONSERVAR.
+     */
+    franjasDeProfesionales?: Array<FranjaFueraDeHorarioResponse>;
+    /**
+     * franja-fuera-del-horario-de-sede: cada franja pedida que no entra en el horario de la sede, con el horario de la sede para su dia.
+     */
+    franjasFueraDeHorario?: Array<ProblemDetailFranjasFueraDeHorarioInner>;
     instance?: string;
     /**
      * En una clase: el instructor (principal o adicional) que choca.

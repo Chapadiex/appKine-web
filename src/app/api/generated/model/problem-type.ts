@@ -120,6 +120,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_BLOQUE_SOLAPADO = 'https://akine.app/problems/bloque-solapado',
 
+    HTTPS___AKINE_APP_PROBLEMS_FRANJA_FUERA_DEL_HORARIO_DE_SEDE = 'https://akine.app/problems/franja-fuera-del-horario-de-sede',
+
+    HTTPS___AKINE_APP_PROBLEMS_FRANJAS_DE_PROFESIONALES_FUERA_DEL_HORARIO = 'https://akine.app/problems/franjas-de-profesionales-fuera-del-horario',
+
     HTTPS___AKINE_APP_PROBLEMS_BLOQUE_INACTIVO = 'https://akine.app/problems/bloque-inactivo',
 
     HTTPS___AKINE_APP_PROBLEMS_BLOQUE_ALREADY_INACTIVE = 'https://akine.app/problems/bloque-already-inactive',
