@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 
 /** Una pestana: un enlace a una pantalla hermana de la seccion. */
 export interface Pestana {
@@ -42,4 +42,19 @@ export class Pestanas {
 
   /** `aria-label` del `nav`. Ej: "Pantallas de la agenda". */
   readonly etiqueta = input.required<string>();
+
+  /*
+   * Solo cuenta el camino: `exact: true` comparaba tambien los parametros, y `/agenda?fecha=...`
+   * dejaba sin marcar la pestaña Agenda en cuanto se movia la fecha (08/11/2026).
+   */
+  protected readonly COINCIDENCIA_EXACTA: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    matrixParams: 'ignored',
+    fragment: 'ignored',
+  };
+  protected readonly COINCIDENCIA_PARCIAL: IsActiveMatchOptions = {
+    ...this.COINCIDENCIA_EXACTA,
+    paths: 'subset',
+  };
 }

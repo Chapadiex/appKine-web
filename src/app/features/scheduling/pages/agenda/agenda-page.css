@@ -26,6 +26,11 @@
   background: var(--color-superficie-secundaria);
 }
 
+/*
+ * Una fila: el buscador toma el espacio que sobra y los grupos de fecha y de vista conservan su
+ * ancho. Si no entra, lo que baja es un grupo entero, nunca la mitad de uno, y nunca hay scroll
+ * horizontal.
+ */
 .agenda-barra__fila {
   display: flex;
   flex-wrap: wrap;
@@ -33,33 +38,31 @@
   gap: var(--esp-4) var(--esp-6);
 }
 
-/* Ocupa lo que sobra y se parte por dentro: lo que baja de linea es un control, no la fila entera. */
-.agenda-barra__derecha {
+.agenda-barra__fecha,
+.agenda-barra__vista {
   display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex: none;
   align-items: center;
   gap: var(--esp-4);
 }
 
-@media (max-width: 47.99rem) {
-  .agenda-barra__derecha {
-    justify-content: flex-start;
-  }
+.agenda-barra__vista:empty {
+  display: none;
+}
 
+@media (max-width: 47.99rem) {
   .agenda-buscar {
-    flex: 1 1 9rem;
+    flex-basis: 100%;
   }
 }
 
-/* Todos los controles de la barra tienen el mismo alto y el mismo contorno (3:1, WCAG 1.4.11). */
+/* Todos los controles de la barra tienen el mismo alto (40 px) y el mismo contorno (3:1, WCAG 1.4.11). */
 .agenda-nav__boton,
 .segmento button,
 .agenda-filtros-boton,
 .agenda-buscar input,
 .pastilla-filtro select {
-  min-height: 2rem;
+  min-height: 2.5rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   background: var(--color-superficie);
   color: var(--color-texto);
@@ -86,7 +89,7 @@
 }
 
 .agenda-nav__boton {
-  min-width: 2rem;
+  min-width: 2.5rem;
   border-radius: var(--radio-sm);
 }
 
@@ -110,7 +113,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--esp-4);
-  min-height: 2rem;
+  min-height: 2.5rem;
   padding: 0 var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
@@ -186,8 +189,14 @@
   border-radius: var(--radio-sm);
 }
 
-.agenda-filtros-boton[aria-expanded='true'] {
+/* Desplegado, o plegado con filtros aplicados: borde de enlace, para que se note que hay algo. */
+.agenda-filtros-boton[aria-expanded='true'],
+.agenda-filtros-boton--activo {
   border-color: var(--color-enlace);
+}
+
+.agenda-filtros-boton--activo {
+  color: var(--color-enlace);
 }
 
 .agenda-filtros-boton__contador {
@@ -206,8 +215,8 @@
 
 .agenda-buscar {
   position: relative;
-  flex: 0 1 13rem;
-  min-width: 9rem;
+  flex: 1 1 14rem;
+  min-width: 12rem;
   display: inline-flex;
   align-items: center;
 }

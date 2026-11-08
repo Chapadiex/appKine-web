@@ -230,6 +230,30 @@ button.slot--libre:focus-visible {
 }
 
 /*
+ * El dia de la recepcion, en una barra de herramientas como la de la agenda (08/11/2026): superficie
+ * secundaria y controles de 40 px, debajo de la cabecera.
+ */
+.recepcion__dia {
+  display: flex;
+  margin-bottom: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  gap: var(--esp-4);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.recepcion__dia .navegador-fecha__boton {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radio-sm);
+}
+
+.recepcion__dia input[type='date'] {
+  height: 2.5rem;
+  border-radius: var(--radio-sm);
+}
+
+/*
  * La grilla del buscador: un renglón por día, la fecha a la izquierda y los horarios a la derecha.
  * Es la grilla de la agenda, no la de un formulario (UX-14 §2): se queda.
  */

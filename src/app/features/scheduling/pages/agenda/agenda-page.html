@@ -31,37 +31,56 @@
 
 <!-- La barra de la agenda: que dia se mira, como, y que se filtra. -->
 <section class="agenda-barra" aria-label="Fecha, vista y filtros">
+  <!--
+    Una sola fila (08/11/2026), en el orden de uso: buscar paciente, moverse de fecha, el periodo,
+    como se agrupa y, al final, los filtros, plegados hasta que se piden.
+  -->
   <div class="agenda-barra__fila">
-    <div class="agenda-nav" role="group" aria-label="Fecha de la agenda">
-      <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
-        <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
-      </button>
-      <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
-      <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
-        <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
-      </button>
-    </div>
-
-    <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente, y recibe el clic. -->
-    <div class="agenda-fecha">
-      <span class="agenda-fecha__rotulo" aria-hidden="true">{{ rotuloDeFecha() }}</span>
-      <app-icono nombre="calendario" />
-      <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
+    <div class="agenda-buscar">
+      <app-icono nombre="buscar" />
+      <label class="visualmente-oculto" for="agenda-paciente">Paciente</label>
       <input
-        #selectorDeFecha
-        id="agenda-fecha"
-        type="date"
-        class="agenda-fecha__input"
-        [value]="fechaVisible()"
-        (click)="abrirCalendario(selectorDeFecha)"
-        (change)="irAFecha($any($event.target).value)"
+        id="agenda-paciente"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar paciente o DNI"
+        [value]="paciente()"
+        (input)="paciente.set($any($event.target).value)"
       />
     </div>
-    @if (cargando()) {
-      <span class="ayuda agenda-fecha__estado" role="status">Actualizando…</span>
-    }
 
-    <div class="agenda-barra__derecha">
+    <div class="agenda-barra__fecha">
+      <div class="agenda-nav" role="group" aria-label="Fecha de la agenda">
+        <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
+          <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
+        </button>
+        <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
+        <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
+          <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
+        </button>
+      </div>
+
+      <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente, y recibe el clic. -->
+      <div class="agenda-fecha">
+        <span class="agenda-fecha__rotulo" aria-hidden="true">{{ rotuloDeFecha() }}</span>
+        <app-icono nombre="calendario" />
+        <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
+        <input
+          #selectorDeFecha
+          id="agenda-fecha"
+          type="date"
+          class="agenda-fecha__input"
+          [value]="fechaVisible()"
+          (click)="abrirCalendario(selectorDeFecha)"
+          (change)="irAFecha($any($event.target).value)"
+        />
+      </div>
+      @if (cargando()) {
+        <span class="ayuda agenda-fecha__estado" role="status">Actualizando…</span>
+      }
+    </div>
+
+    <div class="agenda-barra__vista">
       @if (!angosta()) {
         <div class="segmento" role="group" aria-label="Período">
           <button
@@ -105,36 +124,24 @@
           </div>
         }
       }
-
-      <div class="agenda-buscar">
-        <app-icono nombre="buscar" />
-        <label class="visualmente-oculto" for="agenda-paciente">Paciente</label>
-        <input
-          id="agenda-paciente"
-          type="search"
-          autocomplete="off"
-          placeholder="Paciente o DNI"
-          [value]="paciente()"
-          (input)="paciente.set($any($event.target).value)"
-        />
-      </div>
-
-      <button
-        type="button"
-        class="agenda-filtros-boton"
-        aria-controls="agenda-filtros"
-        [attr.aria-expanded]="filtrosAbiertos()"
-        (click)="filtrosAbiertos.set(!filtrosAbiertos())"
-      >
-        <app-icono nombre="filtro" />
-        Filtros
-        @if (filtrosActivos().length > 0) {
-          <span class="agenda-filtros-boton__contador"
-            >{{ filtrosActivos().length }}<span class="visualmente-oculto"> activos</span></span
-          >
-        }
-      </button>
     </div>
+
+    <button
+      type="button"
+      class="agenda-filtros-boton"
+      [class.agenda-filtros-boton--activo]="filtrosActivos().length > 0"
+      aria-controls="agenda-filtros"
+      [attr.aria-expanded]="filtrosAbiertos()"
+      (click)="filtrosAbiertos.set(!filtrosAbiertos())"
+    >
+      <app-icono nombre="filtro" />
+      Filtros
+      @if (filtrosActivos().length > 0) {
+        <span class="agenda-filtros-boton__contador"
+          >{{ filtrosActivos().length }}<span class="visualmente-oculto"> activos</span></span
+        >
+      }
+    </button>
   </div>
 
   <div id="agenda-filtros" class="agenda-barra__filtros" [hidden]="!filtrosAbiertos()">
@@ -232,7 +239,9 @@
                 >{{ turno.turno?.ofertaNombre }} · {{ turno.profesionalNombre }}</span
               >
               <span class="turno__estado">
-                <app-icono [nombre]="iconoDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)" />
+                <app-icono
+                  [nombre]="iconoDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)"
+                />
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
               @if (reprogramado(turno.turno); as marca) {
@@ -391,7 +400,8 @@
                     {{ columna.titulo }}
                   </span>
                   <span class="grilla__celda-hora" aria-hidden="true"
-                    >{{ horaDeMinuto(celda.inicioMin) }} · <span class="grilla__celda-libre">Libre</span
+                    >{{ horaDeMinuto(celda.inicioMin) }} ·
+                    <span class="grilla__celda-libre">Libre</span
                     ><span class="grilla__celda-dar">Dar turno</span></span
                   >
                 </button>

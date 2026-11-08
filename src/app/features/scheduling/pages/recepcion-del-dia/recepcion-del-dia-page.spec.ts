@@ -439,8 +439,8 @@ describe('RecepcionDelDiaPage', () => {
     expect(fila.querySelector('.filtros-barra__boton')?.textContent).toContain('Filtros');
     expect(fila.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
     expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–4 de 4');
-    // El dia y "Actualizar" son de la cabecera, no de la toolbar de la tabla.
-    expect(raiz.querySelector('.cabecera-pagina__contexto #recepcion-fecha')).not.toBeNull();
+    // El dia y "Actualizar" van en su barra, debajo de la cabecera, no en la toolbar de la tabla.
+    expect(raiz.querySelector('.recepcion__dia #recepcion-fecha')).not.toBeNull();
 
     // La prestacion es un filtro avanzado: cuenta en el boton y achica la lista.
     const prestacion = raiz.querySelector('#recepcion-prestacion') as HTMLSelectElement;

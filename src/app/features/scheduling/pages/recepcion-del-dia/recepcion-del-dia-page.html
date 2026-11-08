@@ -12,46 +12,6 @@
     </p>
   </app-ayuda>
 
-  <!-- El selector compacto del canvas: [‹] [fecha] [›] [Hoy], en la fila del titulo. -->
-  <div cabeceraContexto class="navegador-fecha" role="group" aria-label="Día de la recepción">
-    <button
-      type="button"
-      class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      title="Día anterior"
-      (click)="moverDia(-1)"
-    >
-      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Día anterior</span>
-    </button>
-    <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
-    <input
-      id="recepcion-fecha"
-      name="recepcion-fecha"
-      type="date"
-      [value]="dia()"
-      (change)="cambiarDia($any($event.target).value)"
-    />
-    <button
-      type="button"
-      class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      title="Día siguiente"
-      (click)="moverDia(1)"
-    >
-      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Día siguiente</span>
-    </button>
-    <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
-    <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
-    <button type="button" class="navegador-fecha__boton" (click)="cargar()">
-      Actualizar la lista
-    </button>
-    <!--
-      Impeccable 29/10: la lista se relee sola al volver a la pestaña y cada minuto mientras se ve
-      (otro puesto llama pacientes). La hora de la ultima lectura dice cuan fresca es.
-    -->
-    @if (actualizadaA(); as hora) {
-      <span class="navegador-fecha__lectura">Actualizada {{ hora }}</span>
-    }
-  </div>
-
   <!--
     "Nuevo turno" abre el flujo unico sobre esta pantalla, con el dia que se esta mirando. DP-43
     (U-24): la atencion sin turno es otra pantalla, la clinica.
@@ -70,6 +30,49 @@
 
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
+
+<!--
+El dia, debajo de la cabecera (08/11/2026): la fila del titulo es la misma que la de la agenda
+—titulo, pestañas y accion principal— y el selector compacto [‹] [fecha] [›] [Hoy] baja aca.
+-->
+<div class="navegador-fecha recepcion__dia" role="group" aria-label="Día de la recepción">
+  <button
+    type="button"
+    class="navegador-fecha__boton navegador-fecha__boton--flecha"
+    title="Día anterior"
+    (click)="moverDia(-1)"
+  >
+    <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Día anterior</span>
+  </button>
+  <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
+  <input
+    id="recepcion-fecha"
+    name="recepcion-fecha"
+    type="date"
+    [value]="dia()"
+    (change)="cambiarDia($any($event.target).value)"
+  />
+  <button
+    type="button"
+    class="navegador-fecha__boton navegador-fecha__boton--flecha"
+    title="Día siguiente"
+    (click)="moverDia(1)"
+  >
+    <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Día siguiente</span>
+  </button>
+  <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+  <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
+  <button type="button" class="navegador-fecha__boton" (click)="cargar()">
+    Actualizar la lista
+  </button>
+  <!--
+    Impeccable 29/10: la lista se relee sola al volver a la pestaña y cada minuto mientras se ve
+    (otro puesto llama pacientes). La hora de la ultima lectura dice cuan fresca es.
+  -->
+  @if (actualizadaA(); as hora) {
+    <span class="navegador-fecha__lectura">Actualizada {{ hora }}</span>
+  }
+</div>
 
 @if (!puedeOperar()) {
   <p class="estado estado--vacio">

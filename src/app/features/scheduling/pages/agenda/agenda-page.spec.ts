@@ -561,15 +561,15 @@ describe('AgendaPage', () => {
       expect(activas()).toBe(0);
     });
 
-    it('el botón Filtros pliega y despliega la fila de filtros', async () => {
+    it('la fila de filtros arranca plegada y el botón Filtros la despliega', async () => {
       const fixture = await montar();
       leida().flush(AGENDA);
       await asentar(fixture);
       const fila = () => raiz(fixture).querySelector('#agenda-filtros') as HTMLElement;
-      expect(fila().hidden).toBe(false);
+      expect(fila().hidden).toBe(true);
       (raiz(fixture).querySelector('.agenda-filtros-boton') as HTMLButtonElement).click();
       await asentar(fixture);
-      expect(fila().hidden).toBe(true);
+      expect(fila().hidden).toBe(false);
     });
 
     it('el filtro de estado no vuelve a pedir, salvo Cancelado que hay que leerlo', async () => {

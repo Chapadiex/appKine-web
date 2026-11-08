@@ -214,8 +214,11 @@ export class AgendaPage {
   private readonly duracionesPropias = signal<ReadonlyMap<number, number>>(new Map());
   private pedidoDeDuraciones?: Subscription;
   protected readonly angosta = signal(false);
-  /** La fila de filtros (profesional, prestacion, estado) se ve; el boton Filtros la pliega. */
-  protected readonly filtrosAbiertos = signal(true);
+  /**
+   * La fila de filtros (profesional, prestacion, estado) arranca plegada y la abre el boton Filtros
+   * (08/11/2026). Plegarla no borra lo elegido: el boton cuenta los filtros activos.
+   */
+  protected readonly filtrosAbiertos = signal(false);
   /** "Proximo dia con turnos": buscando, y si no encontro ninguno en la ventana que se miro. */
   protected readonly buscandoProximo = signal(false);
   protected readonly sinProximo = signal(false);

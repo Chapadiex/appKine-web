@@ -118,7 +118,22 @@
   justify-content: center;
 }
 
-/* Con contexto y pestañas a la vez no entran las cuatro regiones: las pestañas bajan. */
+/*
+ * Si no entran en la fila del titulo, las pestañas bajan enteras a la suya antes que partirse en
+ * dos lineas. Con controles de contexto la fila se llena antes.
+ */
+@container cabecera-pagina (max-width: 64rem) {
+  .cabecera-pagina__fila {
+    grid-template-areas:
+      'titulo contexto . principal'
+      'pestanas pestanas pestanas pestanas';
+  }
+
+  .cabecera-pagina__pestanas {
+    margin: var(--esp-3) 0 0;
+  }
+}
+
 @container cabecera-pagina (max-width: 72rem) {
   .cabecera-pagina__fila:has(.cabecera-pagina__contexto:not(:empty)) {
     grid-template-areas:
