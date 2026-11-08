@@ -26,7 +26,12 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { etiquetaDeTipoDeFeriado } from '../../models/tipos-de-feriado';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
-import { EditorDeFranjas } from '../../../../shared/components/editor-de-franjas/editor-de-franjas';
+import { NgTemplateOutlet } from '@angular/common';
+import { HorarioSemanal } from '../../../../shared/components/horario-semanal/horario-semanal';
+import {
+  SemanaDibujada,
+  horarioRedactado,
+} from '../../../../shared/components/horario-semanal/semana-dibujada';
 import { etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
 import { rangoHorario } from '../../../../shared/utils/horas-de-pared';
 import {
@@ -95,7 +100,9 @@ const DIAS_PROPUESTOS = 365;
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
-    EditorDeFranjas,
+    HorarioSemanal,
+    SemanaDibujada,
+    NgTemplateOutlet,
   ],
   templateUrl: './calendario-sede-page.html',
   styleUrl: '../../resource.css',
@@ -217,7 +224,16 @@ export class CalendarioSedePage {
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
-  /** El horario guardado, redactado: lo que ve quien no puede editarlo. */
+  /** El horario guardado, agrupado por dias iguales: "Lunes a viernes: 09:00 a 18:00". */
+  protected readonly franjasGuardadas = computed(() =>
+    normalizar(this.politica()?.horarioGeneral ?? []),
+  );
+  protected readonly resumenGuardado = computed(() => horarioRedactado(this.franjasGuardadas()));
+  protected readonly diasAbiertos = computed(
+    () => new Set(this.franjasGuardadas().map((franja) => franja.diaSemana)).size,
+  );
+
+  /** El horario guardado, franja por franja. */
   protected readonly horarioGuardado = computed(() =>
     (this.politica()?.horarioGeneral ?? []).map(
       (franja) =>

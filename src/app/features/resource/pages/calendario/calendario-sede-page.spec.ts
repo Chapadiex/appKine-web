@@ -571,6 +571,8 @@ function escribir(
   }
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));
+  // Las horas del horario general son `<select>`, que avisan con `change`.
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }
 

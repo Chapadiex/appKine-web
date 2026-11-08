@@ -74,14 +74,64 @@
 }
 
 /*
- * Horario general y feriados de la sede, lado a lado (diseno del canvas): dos columnas en
- * escritorio, una debajo de la otra cuando no entran. Cada `.tarjeta` conserva su propio margen.
+ * Calendario de la sede (rediseño del 08/11/2026): el editor del horario a la izquierda y lo que
+ * ya rige —resumen, politica, feriados— apilado a la derecha. Una columna cuando no entran dos.
  */
-.calendario-columnas {
+.calendario-sede {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-  gap: var(--esp-8);
+  /* 36rem: lo que pide un dia con sus dos horas y "+ Corte al mediodia" sin pisarse. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 36rem), 1fr));
+  gap: var(--esp-6);
   align-items: start;
+}
+.calendario-sede > .tarjeta,
+.calendario-sede__lateral > .tarjeta {
+  margin: 0;
+}
+.calendario-sede__lateral {
+  display: grid;
+  gap: var(--esp-6);
+}
+.calendario-sede__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-top: var(--esp-6);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+.calendario-sede__acciones .ayuda {
+  margin: 0;
+}
+.calendario-sede__guardar {
+  margin-left: auto;
+}
+.calendario-sede__resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-5) var(--esp-8);
+}
+.calendario-sede__resumen app-semana-dibujada {
+  flex: 1 1 14rem;
+  max-width: 21rem;
+}
+.calendario-sede__lineas {
+  margin: 0 0 var(--esp-3);
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+}
+.calendario-sede__politica {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+}
+.calendario-sede__tipo {
+  margin-left: 0;
 }
 
 /*
