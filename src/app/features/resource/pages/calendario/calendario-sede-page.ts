@@ -10,6 +10,9 @@ import { formatearInstante } from '../../../../shared/utils/instantes';
 import { avisoDeHorarioDeSede, notaDeListaRecortada } from '../../models/turnos-afectados';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { FeriadoResponse } from '../../../../api/generated/model/feriado-response';
+import { FranjaFueraDeHorarioResponse } from '../../../../api/generated/model/franja-fuera-de-horario-response';
+import { UpdateCalendarioRequestFranjasFueraDelHorarioEnum as FranjasFuera } from '../../../../api/generated/model/update-calendario-request';
+import { FranjasFueraDelHorario } from '../../components/franjas-fuera-del-horario/franjas-fuera-del-horario';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -96,6 +99,7 @@ const DIAS_PROPUESTOS = 365;
     RouterLink,
     PermisoDirective,
     EditorDeFranjas,
+    FranjasFueraDelHorario,
   ],
   templateUrl: './calendario-sede-page.html',
   styleUrl: '../../resource.css',
@@ -214,6 +218,18 @@ export class CalendarioSedePage {
     const impacto = this.impactoHorario();
     return impacto === null ? null : notaDeListaRecortada(impacto);
   });
+  /**
+   * Regla del 08/11/2026 (0.162.0): el horario de cada profesional queda dentro del de la sede.
+   * `aviso` es el 409 que devolvió un horario que deja franjas afuera, con el horario que se quiso
+   * guardar, a la espera de la decisión; `resultado`, lo que quedó afuera después de guardar
+   * conservándolas. Los dos se limpian con el próximo guardado.
+   */
+  protected readonly franjasFuera = signal<{
+    readonly modo: 'aviso' | 'resultado';
+    readonly franjas: readonly FranjaFueraDeHorarioResponse[];
+    readonly horario: FranjaSemanal[];
+  } | null>(null);
+
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
@@ -444,7 +460,31 @@ export class CalendarioSedePage {
     this.enviarHorario([]);
   }
 
-  private enviarHorario(horarioGeneral: FranjaSemanal[]): void {
+  /** El aviso de franjas afuera: guardar el mismo horario recortándolas. */
+  protected recortarFranjasFuera(): void {
+    this.decidirFranjasFuera(FranjasFuera.RECORTAR);
+  }
+
+  /** El aviso de franjas afuera: guardar el mismo horario sin tocarlas, para ajustarlas a mano. */
+  protected conservarFranjasFuera(): void {
+    this.decidirFranjasFuera(FranjasFuera.CONSERVAR);
+  }
+
+  protected cancelarFranjasFuera(): void {
+    this.franjasFuera.set(null);
+  }
+
+  private decidirFranjasFuera(decision: FranjasFuera): void {
+    const aviso = this.franjasFuera();
+    if (aviso?.modo === 'aviso') {
+      this.enviarHorario(aviso.horario, decision);
+    }
+  }
+
+  private enviarHorario(
+    horarioGeneral: FranjaSemanal[],
+    franjasFueraDelHorario?: FranjasFuera,
+  ): void {
     // Misma guarda que `guardar()`: los botones viven detras del permiso, pero Enter no.
     if (!this.puedeGestionar()) {
       return;
@@ -458,11 +498,24 @@ export class CalendarioSedePage {
     this.limpiarAvisosDeHorario();
 
     this.calendario
-      .updateCalendarioSede({ consultorioId, updateCalendarioRequest: { horarioGeneral } })
+      .updateCalendarioSede({
+        consultorioId,
+        updateCalendarioRequest: { horarioGeneral, franjasFueraDelHorario },
+      })
       .subscribe({
         next: (respuesta) => {
           this.guardandoHorario.set(false);
           this.intentosHorario.set(0);
+          const fuera = respuesta.franjasFueraDelHorario ?? [];
+          const recortadas = fuera.filter((franja) => franja.accion !== 'CONSERVADA');
+          const conservadas = fuera.filter((franja) => franja.accion === 'CONSERVADA');
+          if (conservadas.length > 0) {
+            this.franjasFuera.set({
+              modo: 'resultado',
+              franjas: conservadas,
+              horario: horarioGeneral,
+            });
+          }
           // Igual que en `guardar()`: la lista de feriados del PUT viene vacia y no se pisa.
           this.politica.set({ ...respuesta, feriados: this.politica()?.feriados ?? [] });
           // El backend devuelve el horario ordenado por dia y hora: el editor queda como quedo
@@ -471,6 +524,13 @@ export class CalendarioSedePage {
           if (horarioGeneral.length === 0) {
             this.avisos.exito('Horario general borrado', {
               descripcion: 'La sede ya no tiene horario general declarado.',
+            });
+          } else if (recortadas.length > 0) {
+            this.avisos.exito('Horario general guardado', {
+              descripcion:
+                recortadas.length === 1
+                  ? 'Se recortó una franja de un profesional al nuevo horario.'
+                  : `Se recortaron ${recortadas.length} franjas de profesionales al nuevo horario.`,
             });
           } else {
             this.avisos.exito('Horario general guardado', {
@@ -482,6 +542,19 @@ export class CalendarioSedePage {
         },
         error: (error: unknown) => {
           this.guardandoHorario.set(false);
+          // No es un error: es el aviso. No se guardó nada y la decisión es del usuario.
+          if (
+            error instanceof AkineHttpError &&
+            error.problemType === 'franjas-de-profesionales-fuera-del-horario'
+          ) {
+            const franjas = error.extension('franjasDeProfesionales');
+            this.franjasFuera.set({
+              modo: 'aviso',
+              franjas: Array.isArray(franjas) ? (franjas as FranjaFueraDeHorarioResponse[]) : [],
+              horario: horarioGeneral,
+            });
+            return;
+          }
           let mensaje = traducirErrorExcepcion(error).mensaje;
           if (error instanceof AkineHttpError) {
             this.erroresFranja.set(erroresDeFranjasDelServidor(error.erroresPorCampo));
@@ -501,6 +574,7 @@ export class CalendarioSedePage {
     this.errorHorario.set(null);
     this.erroresFranja.set(new Map());
     this.impactoHorario.set(null);
+    this.franjasFuera.set(null);
   }
 }
 

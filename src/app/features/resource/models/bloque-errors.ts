@@ -39,6 +39,11 @@ export type CausaBloque =
   | 'no-encontrado'
   /** 409 bloque-solapado: se pisa con otro bloque activo. Trae {@link BloqueEnConflicto}. */
   | 'solapado'
+  /**
+   * 409 franja-fuera-del-horario-de-sede (0.162.0): la franja se sale del horario general de la
+   * sede. Trae {@link FranjaFueraDeSede} por cada dia que no entra.
+   */
+  | 'fuera-de-horario-sede'
   /** 409 bloque-inactivo: esta dado de baja y no admite ediciones. */
   | 'bloque-inactivo'
   /** 409 bloque-already-inactive: la baja ya estaba hecha. Hay que recargar. */
@@ -88,6 +93,97 @@ export interface BloqueEnConflicto {
 export interface ErrorBloque extends MensajeTraducido<CausaBloque> {
   /** Solo en `solapado`. `null` en cualquier otra causa. */
   readonly conflicto: BloqueEnConflicto | null;
+  /** Solo en `fuera-de-horario-sede`: cada dia pedido que no entra. Vacia en cualquier otra causa. */
+  readonly fueraDeHorario?: readonly FranjaFueraDeSede[];
+}
+
+/**
+ * Un dia pedido que no entra en el horario de la sede (regla del 08/11/2026), con el horario de
+ * la sede ese dia: es la referencia para corregir la franja. Vacio: la sede no abre ese dia.
+ */
+export interface FranjaFueraDeSede {
+  readonly diaSemana: number;
+  readonly horarioDeSede: readonly { readonly horaDesde: string; readonly horaHasta: string }[];
+}
+
+/**
+ * El horario de la sede de los dias que no entran, con los dias del mismo horario juntos: "Lunes a
+ * viernes la sede abre de 09:00 a 22:30. Sabado no abre." Un lote de seis dias da dos frases y no
+ * seis.
+ */
+export function redactarHorarioDeSede(fuera: readonly FranjaFueraDeSede[]): string {
+  const porHorario = new Map<string, number[]>();
+  for (const franja of fuera) {
+    const horario = enUnaFrase(franja.horarioDeSede);
+    porHorario.set(horario, [...(porHorario.get(horario) ?? []), franja.diaSemana]);
+  }
+  return [...porHorario.entries()]
+    .map(([horario, dias], indice) => {
+      const quien = indice === 0 ? `${diasJuntos(dias)} la sede` : diasJuntos(dias);
+      return `${quien} ${horario}.`;
+    })
+    .join(' ');
+}
+
+function enUnaFrase(horario: FranjaFueraDeSede['horarioDeSede']): string {
+  if (horario.length === 0) {
+    return 'no abre';
+  }
+  const tramos = horario.map((tramo) => `de ${rangoHorario(tramo.horaDesde, tramo.horaHasta)}`);
+  return `abre ${tramos.length === 1 ? tramos[0] : `${tramos.slice(0, -1).join(', ')} y ${tramos.at(-1)}`}`;
+}
+
+/** "Lunes a viernes", "Martes y jueves", "Sabado": corridos consecutivos con "a". */
+function diasJuntos(dias: readonly number[]): string {
+  const ordenados = [...new Set(dias)].sort((a, b) => a - b);
+  const tramos: string[] = [];
+  for (let i = 0; i < ordenados.length;) {
+    let fin = i;
+    while (fin + 1 < ordenados.length && ordenados[fin + 1] === ordenados[fin] + 1) {
+      fin++;
+    }
+    const desde = etiquetaDeDia(ordenados[i]).toLowerCase();
+    tramos.push(
+      fin - i >= 2
+        ? `${desde} a ${etiquetaDeDia(ordenados[fin]).toLowerCase()}`
+        : ordenados
+            .slice(i, fin + 1)
+            .map((dia) => etiquetaDeDia(dia).toLowerCase())
+            .join(', '),
+    );
+    i = fin + 1;
+  }
+  const texto =
+    tramos.length === 1 ? tramos[0] : `${tramos.slice(0, -1).join(', ')} y ${tramos.at(-1)}`;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function franjasFueraDe(error: AkineHttpError): FranjaFueraDeSede[] {
+  const crudas = error.extension('franjasFueraDeHorario');
+  if (!Array.isArray(crudas)) {
+    return [];
+  }
+  return crudas.flatMap((cruda: unknown) => {
+    if (typeof cruda !== 'object' || cruda === null) {
+      return [];
+    }
+    const fila = cruda as { diaSemana?: unknown; horarioDeSede?: unknown };
+    if (typeof fila.diaSemana !== 'number') {
+      return [];
+    }
+    const horario = Array.isArray(fila.horarioDeSede) ? fila.horarioDeSede : [];
+    return [
+      {
+        diaSemana: fila.diaSemana,
+        horarioDeSede: horario.flatMap((tramo: unknown) => {
+          const t = tramo as { horaDesde?: unknown; horaHasta?: unknown } | null;
+          return typeof t?.horaDesde === 'string' && typeof t.horaHasta === 'string'
+            ? [{ horaDesde: t.horaDesde, horaHasta: t.horaHasta }]
+            : [];
+        }),
+      },
+    ];
+  });
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
@@ -233,6 +329,16 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
       }
       const conflicto = conflictoDe(error);
       return { ...base(mensajeDeSolapamiento(conflicto), 'solapado'), conflicto };
+    }
+    case 'franja-fuera-del-horario-de-sede': {
+      // Regla del 08/11/2026: el horario del profesional queda dentro del de la sede. El mensaje
+      // dice el horario de la sede de cada dia que no entra: es lo que hace falta para corregirla.
+      const fuera = franjasFueraDe(error);
+      const mensaje =
+        fuera.length === 0
+          ? conDetalle(error, 'El horario tiene que quedar dentro del horario de la sede.')
+          : `Fuera del horario de la sede. ${redactarHorarioDeSede(fuera)}`;
+      return { ...base(mensaje, 'fuera-de-horario-sede'), fueraDeHorario: fuera };
     }
     case 'bloque-inactivo':
       return base(MENSAJE_BLOQUE_INACTIVO, 'bloque-inactivo');

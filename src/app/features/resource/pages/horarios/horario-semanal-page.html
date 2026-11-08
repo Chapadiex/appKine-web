@@ -324,7 +324,7 @@
             @for (dia of diasParaPastillas; track dia.numero) {
               <label
                 class="pastilla pastilla--dia"
-                [class.pastilla--conflicto]="diaEnConflicto() === dia.numero"
+                [class.pastilla--conflicto]="diasEnConflicto().has(dia.numero)"
               >
                 <input
                   type="checkbox"
