@@ -144,7 +144,7 @@
 .nav__enlace--actual,
 .nav__enlace--actual:hover {
   background: var(--color-seleccion);
-  color: var(--color-acento);
+  color: var(--color-enlace);
   font-weight: var(--peso-medio);
 }
 

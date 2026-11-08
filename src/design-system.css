@@ -73,6 +73,8 @@
    * seleccion, hover, info y los estados del turno) se agregan. Ajustes a la norma, medidos:
    * - peligro en claro #b91c1c y no #DC2626: el rojo de la norma da 4,46:1 sobre la pagina.
    * - enlace y foco en oscuro #93c5fd y no #60A5FA: sobre la seleccion #244A70 daba 3,6:1.
+   * - acento (texto y trazo de lo actual) #1d4ed8 / #93c5fd: sobre la seleccion el azul de
+   *   accion daba 4,25:1 en claro y 3,6:1 en oscuro. La accion conserva #2563eb / #60a5fa.
    * - borde-control queda en #808a99 / #8494a3: el #D5DEE8 de la norma es un separador (1,3:1).
    */
 
@@ -109,7 +111,7 @@
   --color-marca-texto: #182230;
   --color-marca-texto-suave: #3b4754;
   --color-marca-superficie-activa: var(--color-seleccion);
-  --color-acento: #2563eb;
+  --color-acento: #1d4ed8;
   --color-acento-claro: var(--color-seleccion);
   --color-accion-fondo: #2563eb;
   --color-accion-fondo-hover: #1d4ed8;
@@ -243,7 +245,7 @@
     --color-marca-fondo: #1d2a36;
     --color-marca-texto: #f1f5f9;
     --color-marca-texto-suave: #c9d6e2;
-    --color-acento: #60a5fa;
+    --color-acento: #93c5fd;
     --color-accion-fondo: #60a5fa;
     --color-accion-fondo-hover: #93c5fd;
     --color-accion-texto: #101820;
@@ -297,7 +299,7 @@
   --color-marca-fondo: #1d2a36;
   --color-marca-texto: #f1f5f9;
   --color-marca-texto-suave: #c9d6e2;
-  --color-acento: #60a5fa;
+  --color-acento: #93c5fd;
   --color-accion-fondo: #60a5fa;
   --color-accion-fondo-hover: #93c5fd;
   --color-accion-texto: #101820;
