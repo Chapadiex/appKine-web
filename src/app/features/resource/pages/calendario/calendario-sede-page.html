@@ -84,191 +84,197 @@
     }
 
     @case ('listo') {
-      <section class="tarjeta" aria-labelledby="titulo-politica">
-        <h2 id="titulo-politica">Política de la sede</h2>
-
-        @if (politica(); as actual) {
-          <p class="ayuda ayuda--fija">
-            Calendario nacional en uso: <b>{{ actual.pais }}</b
-            >. El país no se cambia desde acá.
-          </p>
-
-          @if (actual.existePersistida === false) {
-            <p class="ayuda">
-              Nadie edito nunca la politica de esta sede: lo que se muestra son los valores por
-              defecto. La fila se crea la primera vez que guardes.
+      <!-- Lo que se viene a cargar va primero: debajo de la politica quedaba fuera de la vista. -->
+      <section class="tarjeta" aria-labelledby="titulo-horario-general">
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+          <h2 id="titulo-horario-general">Horario general de la sede</h2>
+          <app-ayuda titulo="Horario general de la sede">
+            <p>
+              Los días y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningún turno se
+              ofrece ni se reserva fuera de este horario, aunque el profesional tenga
+              disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no se
+              limita nada.
             </p>
+          </app-ayuda>
+        </div>
+
+        @if (puedeGestionar()) {
+          <form
+            id="form-horario-general"
+            [formGroup]="formularioHorarioGrupo"
+            (ngSubmit)="guardarHorario()"
+            novalidate
+          >
+            @if (errorHorario(); as mensaje) {
+              <app-alerta tipo="error" titulo="No pudimos guardar el horario general">
+                <p>{{ mensaje }}</p>
+              </app-alerta>
+            }
+
+            <app-editor-de-franjas
+              idBase="calendario-horario"
+              [franjas]="formularioHorario"
+              [mostrarErrores]="intentosHorario() > 0"
+              [erroresDelServidor]="erroresFranja()"
+            />
+
+            @if (hayCambiosEnHorario()) {
+              <p class="ayuda">Hay cambios sin guardar en el horario.</p>
+            }
+
+            <div class="acciones">
+              <button type="submit" class="boton" [disabled]="guardandoHorario()">
+                Guardar el horario
+              </button>
+              @if (horarioGuardado().length > 0) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="guardandoHorario()"
+                  (click)="borrarHorario()"
+                >
+                  Borrar el horario general
+                </button>
+              }
+            </div>
+
+            <p class="ayuda">
+              Guardar reemplaza el horario entero por el de arriba. Si quitas todas las franjas y
+              guardas, el horario se borra.
+            </p>
+          </form>
+        } @else {
+          @if (horarioGuardado().length === 0) {
+            <p class="estado estado--vacio">
+              La sede no declaro horario general. Eso no significa que este cerrada.
+            </p>
+          } @else {
+            <ul>
+              @for (linea of horarioGuardado(); track $index) {
+                <li>{{ linea }}</li>
+              }
+            </ul>
+          }
+          @if (modoLectura()) {
+            <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
           }
         }
 
-        <form id="form-politica" [formGroup]="formularioPolitica" (ngSubmit)="guardar()" novalidate>
-          <!-- Error del guardado: arriba del formulario, a la vista (UX-12). -->
-          @if (errorPolitica(); as mensaje) {
-            <app-alerta tipo="error" titulo="No pudimos guardar la política de feriados">
-              <p>{{ mensaje }}</p>
-            </app-alerta>
+        <!--
+          Consecuencia del ultimo guardado que no entra en un aviso global: la lista de turnos
+          que quedaron fuera del horario y el camino a la agenda. Queda a la vista hasta el
+          proximo guardado.
+        -->
+        <div aria-live="polite">
+          @if (avisoImpactoHorario(); as aviso) {
+            <div class="aviso-apertura" role="status">
+              <p>
+                <b>{{ aviso }}</b>
+                <a class="enlace" routerLink="/agenda">Ir a la agenda</a>
+              </p>
+              @if (turnosImpactoHorario().length > 0) {
+                <ul class="lista-datos" aria-label="Turnos fuera del horario">
+                  @for (turno of turnosImpactoHorario(); track turno.turnoId) {
+                    <li>{{ formatearInstante(turno.inicio) ?? 'Sin fecha' }}</li>
+                  }
+                </ul>
+              }
+              @if (notaImpactoHorario(); as nota) {
+                <p class="ayuda ayuda--fija">{{ nota }}</p>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="calendario-columnas">
+        <section class="tarjeta" aria-labelledby="titulo-politica">
+          <h2 id="titulo-politica">Política de la sede</h2>
+
+          @if (politica(); as actual) {
+            <p class="ayuda ayuda--fija">
+              Calendario nacional en uso: <b>{{ actual.pais }}</b
+              >. El país no se cambia desde acá.
+            </p>
+
+            @if (actual.existePersistida === false) {
+              <p class="ayuda">
+                Nadie edito nunca la politica de esta sede: lo que se muestra son los valores por
+                defecto. La fila se crea la primera vez que guardes.
+              </p>
+            }
           }
 
-          <label class="opcion-casilla">
-            <input
-              id="calendario-cierra"
-              type="checkbox"
-              formControlName="cierraPorFeriado"
-              aria-describedby="calendario-cierra-ayuda"
-            />
-            La sede cierra los feriados de su calendario
-          </label>
+          <form
+            id="form-politica"
+            [formGroup]="formularioPolitica"
+            (ngSubmit)="guardar()"
+            novalidate
+          >
+            <!-- Error del guardado: arriba del formulario, a la vista (UX-12). -->
+            @if (errorPolitica(); as mensaje) {
+              <app-alerta tipo="error" titulo="No pudimos guardar la política de feriados">
+                <p>{{ mensaje }}</p>
+              </app-alerta>
+            }
 
-          <p class="ayuda" id="calendario-cierra-ayuda">
-            Con la casilla marcada, los feriados de la lista de abajo se descuentan del horario de
-            todos los profesionales de la sede.
-          </p>
+            <label class="opcion-casilla">
+              <input
+                id="calendario-cierra"
+                type="checkbox"
+                formControlName="cierraPorFeriado"
+                aria-describedby="calendario-cierra-ayuda"
+              />
+              La sede cierra los feriados de su calendario
+            </label>
 
-          <!--
+            <p class="ayuda" id="calendario-cierra-ayuda">
+              Con la casilla marcada, los feriados de la lista de abajo se descuentan del horario de
+              todos los profesionales de la sede.
+            </p>
+
+            <!--
             La consecuencia de apagar el interruptor, dicha con palabras. Un switch pelado deja
             al administrador adivinando que acaba de cambiar, y este cambio alcanza a todos los
             feriados y a todos los profesionales, hacia adelante y hacia atras.
           -->
-          @if (quedaAbiertoEnFeriados()) {
-            <div class="aviso-apertura">
-              <p>
-                <b>La sede pasa a atender los feriados.</b> El horario habitual de cada profesional
-                se va a aplicar también esos días, salvo que exista un <b>cierre explicito</b> que
-                los tape.
-              </p>
-              <p class="ayuda">
-                Vale para todos los feriados del calendario, no solo para los de este periodo, y
-                también para los que ya pasaron.
-              </p>
-              <p class="ayuda">
-                Si lo que queres es abrir <b>un</b> feriado puntual, no apagues esto: carga una
-                apertura de sede para ese día en Cierres y aperturas.
-              </p>
+            @if (quedaAbiertoEnFeriados()) {
+              <div class="aviso-apertura">
+                <p>
+                  <b>La sede pasa a atender los feriados.</b> El horario habitual de cada
+                  profesional se va a aplicar también esos días, salvo que exista un
+                  <b>cierre explicito</b> que los tape.
+                </p>
+                <p class="ayuda">
+                  Vale para todos los feriados del calendario, no solo para los de este periodo, y
+                  también para los que ya pasaron.
+                </p>
+                <p class="ayuda">
+                  Si lo que queres es abrir <b>un</b> feriado puntual, no apagues esto: carga una
+                  apertura de sede para ese día en Cierres y aperturas.
+                </p>
+              </div>
+            }
+
+            @if (hayCambioSinGuardar()) {
+              <p class="ayuda">Hay un cambio sin guardar.</p>
+            }
+
+            <div class="acciones" *akinePermiso="permisoManage">
+              <button type="submit" class="boton" [disabled]="guardando()">
+                Guardar la politica
+              </button>
             </div>
-          }
 
-          @if (hayCambioSinGuardar()) {
-            <p class="ayuda">Hay un cambio sin guardar.</p>
-          }
-
-          <div class="acciones" *akinePermiso="permisoManage">
-            <button type="submit" class="boton" [disabled]="guardando()">
-              Guardar la politica
-            </button>
-          </div>
-
-          <!--
+            <!--
             Modo lectura. La casilla de arriba queda deshabilitada -sigue mostrando la politica,
             que es el dato- y aca se dice por que no se puede tocar. Sin este parrafo, una
             casilla gris sin boton al lado se lee como una pantalla rota.
           -->
-          @if (modoLectura()) {
-            <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
-          }
-        </form>
-      </section>
-
-      <div class="calendario-columnas">
-        <section class="tarjeta" aria-labelledby="titulo-horario-general">
-          <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-            <h2 id="titulo-horario-general">Horario general de la sede</h2>
-            <app-ayuda titulo="Horario general de la sede">
-              <p>
-                Los días y horas en que la sede esta abierta. <b>Limita la agenda</b>: ningún turno
-                se ofrece ni se reserva fuera de este horario, aunque el profesional tenga
-                disponibilidad, y no abre nada que el profesional no tenga. Sin horario general no
-                se limita nada.
-              </p>
-            </app-ayuda>
-          </div>
-
-          @if (puedeGestionar()) {
-            <form
-              id="form-horario-general"
-              [formGroup]="formularioHorarioGrupo"
-              (ngSubmit)="guardarHorario()"
-              novalidate
-            >
-              @if (errorHorario(); as mensaje) {
-                <app-alerta tipo="error" titulo="No pudimos guardar el horario general">
-                  <p>{{ mensaje }}</p>
-                </app-alerta>
-              }
-
-              <app-editor-de-franjas
-                idBase="calendario-horario"
-                [franjas]="formularioHorario"
-                [mostrarErrores]="intentosHorario() > 0"
-                [erroresDelServidor]="erroresFranja()"
-              />
-
-              @if (hayCambiosEnHorario()) {
-                <p class="ayuda">Hay cambios sin guardar en el horario.</p>
-              }
-
-              <div class="acciones">
-                <button type="submit" class="boton" [disabled]="guardandoHorario()">
-                  Guardar el horario
-                </button>
-                @if (horarioGuardado().length > 0) {
-                  <button
-                    type="button"
-                    class="boton boton--secundario"
-                    [disabled]="guardandoHorario()"
-                    (click)="borrarHorario()"
-                  >
-                    Borrar el horario general
-                  </button>
-                }
-              </div>
-
-              <p class="ayuda">
-                Guardar reemplaza el horario entero por el de arriba. Si quitas todas las franjas y
-                guardas, el horario se borra.
-              </p>
-            </form>
-          } @else {
-            @if (horarioGuardado().length === 0) {
-              <p class="estado estado--vacio">
-                La sede no declaro horario general. Eso no significa que este cerrada.
-              </p>
-            } @else {
-              <ul>
-                @for (linea of horarioGuardado(); track $index) {
-                  <li>{{ linea }}</li>
-                }
-              </ul>
-            }
             @if (modoLectura()) {
               <p class="ayuda ayuda--fija">{{ textoModoLectura }}</p>
             }
-          }
-
-          <!--
-            Consecuencia del ultimo guardado que no entra en un aviso global: la lista de turnos
-            que quedaron fuera del horario y el camino a la agenda. Queda a la vista hasta el
-            proximo guardado.
-          -->
-          <div aria-live="polite">
-            @if (avisoImpactoHorario(); as aviso) {
-              <div class="aviso-apertura" role="status">
-                <p>
-                  <b>{{ aviso }}</b>
-                  <a class="enlace" routerLink="/agenda">Ir a la agenda</a>
-                </p>
-                @if (turnosImpactoHorario().length > 0) {
-                  <ul class="lista-datos" aria-label="Turnos fuera del horario">
-                    @for (turno of turnosImpactoHorario(); track turno.turnoId) {
-                      <li>{{ formatearInstante(turno.inicio) ?? 'Sin fecha' }}</li>
-                    }
-                  </ul>
-                }
-                @if (notaImpactoHorario(); as nota) {
-                  <p class="ayuda ayuda--fija">{{ nota }}</p>
-                }
-              </div>
-            }
-          </div>
+          </form>
         </section>
 
         <section class="tarjeta" aria-labelledby="titulo-feriados">
