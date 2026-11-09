@@ -77,7 +77,7 @@ describe('traducirErrorOffering', () => {
     // servidor, porque hoy ningun endpoint dice si quien mira tiene rol de plataforma. Si el
     // mensaje no explicara eso, el usuario leeria el 403 como un error suyo.
     const { mensaje } = traducirErrorOffering(problema(403, 'forbidden'), 'servicio');
-    expect(mensaje).toContain('rol de plataforma');
+    expect(mensaje).toContain('No tenés permiso');
     expect(mensaje).toContain('ofertas');
   });
 

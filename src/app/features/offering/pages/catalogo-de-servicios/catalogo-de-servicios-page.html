@@ -1,18 +1,20 @@
 <app-cabecera-de-pagina titulo="Catálogo de servicios">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, evaluación postural.
-      Es el catalogo comun de AKINE y lo ven todos los centros. Como lo presta tu sede —con que
-      nombre, duración, precio y desde cuando— se define en las ofertas.
+      Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, yoga. Como lo presta
+      tu sede —con que nombre, duración, precio y desde cuando— se define en las ofertas.
     </p>
-    <p class="ayuda-contextual__subtitulo">Este catalogo lo administra AKINE, no tu centro</p>
+    <p class="ayuda-contextual__subtitulo">Servicios de AKINE y servicios del centro</p>
     <p>
-      Cualquiera puede <b>consultarlo</b>: es la lista de la que se elige al crear una oferta. Dar
-      de alta, editar o dar de baja un servicio, en cambio, exige <b>rol de plataforma</b>.
+      Los marcados <b>AKINE</b> son el catálogo común: los ven todos los centros y los administra la
+      plataforma. Los marcados <b>Del centro</b> los dio de alta tu centro y los ve solo tu
+      organización.
       @if (puedeAdministrar()) {
-        Tu cuenta lo tiene: lo que cambies acá lo ven todos los centros.
+        Tu cuenta tiene rol de plataforma: lo que des de alta acá lo ven todos los centros.
+      } @else if (puedeGestionarDelCentro()) {
+        Podés dar de alta servicios propios y editarlos o darlos de baja.
       } @else if (rolConsultado()) {
-        Tu cuenta no lo tiene, por eso esas acciones no aparecen en esta pantalla.
+        Tu cuenta solo puede consultarlo.
       }
     </p>
     <p>
@@ -21,7 +23,7 @@
       la duración, el precio y la vigencia con la que cada servicio se presta acá.
     </p>
   </app-ayuda>
-  @if (puedeAdministrar()) {
+  @if (puedeCrear()) {
     <div cabeceraAcciones>
       <button type="button" class="boton" (click)="abrirAlta()">
         <app-icono nombre="agregar" />
@@ -114,7 +116,7 @@
               titulo="Todavía no hay servicios activos en el catálogo"
               texto="Los servicios son la base de las ofertas de cada sede."
             >
-              @if (puedeAdministrar()) {
+              @if (puedeCrear()) {
                 <button type="button" class="boton" (click)="abrirAlta()">
                   Dar de alta el primer servicio
                 </button>
@@ -125,13 +127,14 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catálogo de servicios">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Servicios del catalogo global, con su código, naturaleza, modalidad por defecto,
+                Servicios del catalogo, con su código, origen, naturaleza, modalidad por defecto,
                 valores clínicos por defecto, estado y acciones.
               </caption>
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="origen">Origen</th>
                   <th
                     scope="col"
                     class="tabla__col--secundaria"
@@ -146,7 +149,7 @@
                   </th>
                   <th scope="col" class="tabla__col--secundaria">Valores clínicos por defecto</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
-                  @if (puedeAdministrar()) {
+                  @if (puedeCrear()) {
                     <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                   }
                 </tr>
@@ -164,6 +167,9 @@
                       }
                     </th>
                     <td>{{ servicio.codigo }}</td>
+                    <td>
+                      <span class="etiqueta">{{ etiquetaDeAlcance(servicio) }}</span>
+                    </td>
                     <td class="tabla__col--secundaria">
                       {{ etiquetaDeNaturaleza(servicio.naturaleza) }}
                     </td>
@@ -188,9 +194,9 @@
                         <span class="marca-estado">Activo</span>
                       }
                     </td>
-                    @if (puedeAdministrar()) {
+                    @if (puedeCrear()) {
                       <td class="tabla__acciones">
-                        @if (servicio.estado === 'ACTIVO') {
+                        @if (servicio.estado === 'ACTIVO' && puedeMutar(servicio)) {
                           <app-acciones-de-fila [de]="servicio.nombre ?? ''">
                             <button
                               principal
@@ -230,8 +236,14 @@
 -->
 @if (altaAbierta()) {
   <app-panel-lateral
-    titulo="Nuevo servicio del catálogo global"
-    subtitulo="Lo que cargues acá lo ven todos los centros"
+    [titulo]="
+      puedeAdministrar() ? 'Nuevo servicio del catálogo global' : 'Nuevo servicio del centro'
+    "
+    [subtitulo]="
+      puedeAdministrar()
+        ? 'Lo que cargues acá lo ven todos los centros'
+        : 'Lo ve solo tu organización. Después creá su oferta en la sede.'
+    "
     (cerrar)="cerrarPanel()"
   >
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>

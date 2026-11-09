@@ -227,3 +227,51 @@ export function nombreDeClase(clase: Clase | null | undefined): string {
 function dos(n: number): string {
   return String(n).padStart(2, '0');
 }
+
+/** Dias de la semana de una serie de clases, ISO-8601: lunes = 1 .. domingo = 7. */
+export const DIAS_DE_LA_SEMANA: readonly {
+  readonly valor: number;
+  readonly corto: string;
+  readonly nombre: string;
+}[] = [
+  { valor: 1, corto: 'Lu', nombre: 'lunes' },
+  { valor: 2, corto: 'Ma', nombre: 'martes' },
+  { valor: 3, corto: 'Mi', nombre: 'miércoles' },
+  { valor: 4, corto: 'Ju', nombre: 'jueves' },
+  { valor: 5, corto: 'Vi', nombre: 'viernes' },
+  { valor: 6, corto: 'Sá', nombre: 'sábado' },
+  { valor: 7, corto: 'Do', nombre: 'domingo' },
+];
+
+const MOTIVOS_DE_OMISION: Readonly<Record<string, string>> = {
+  PASADO: 'La fecha ya pasó',
+  FERIADO: 'Feriado',
+  OFERTA_NO_VIGENTE: 'La oferta no rige ese día',
+  HORARIO_NO_DISPONIBLE: 'El profesional no atiende o hay un cierre',
+  RECURSO_OCUPADO: 'Profesional o box ocupado',
+  CAPACIDAD: 'El cupo no entra',
+  CLAVE_REUSADA: 'Ya había otra clase con esta serie',
+};
+
+/** Por que una fecha de la serie no se programo, en palabras de la pantalla. */
+export function textoDeMotivoDeOmision(motivo: string | undefined): string {
+  return (motivo && MOTIVOS_DE_OMISION[motivo]) || 'No se pudo programar';
+}
+
+/** `2026-12-08` → `martes 08/12/2026`, para listar las fechas de una serie. */
+export function fechaDeSerie(fecha: string | undefined): string {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha ?? '');
+  if (partes === null) {
+    return fecha ?? '';
+  }
+  const [, anio, mes, dia] = partes;
+  // Mediodia UTC: el dia de la semana no depende de la zona del navegador.
+  const diaSemana = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia), 12)).getUTCDay();
+  const nombre = DIAS_DE_LA_SEMANA[(diaSemana + 6) % 7].nombre;
+  return `${nombre} ${dia}/${mes}/${anio}`;
+}
+
+/** El detalle del servidor solo suma algo cuando el motivo no se explica solo. */
+export function detalleDeOmisionUtil(motivo: string | undefined): boolean {
+  return motivo !== 'PASADO' && motivo !== 'FERIADO';
+}

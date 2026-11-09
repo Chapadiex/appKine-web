@@ -337,6 +337,7 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/evento-relacionado-de-agenda.ts
 model/excepcion-response.ts
+model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
@@ -469,6 +470,7 @@ model/producto.ts
 model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
+model/programar-serie-de-clases.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
@@ -533,6 +535,7 @@ model/seccion-omitida-response.ts
 model/seccion-response.ts
 model/seleccion-de-cobertura-response.ts
 model/select-context-request.ts
+model/serie-de-clases.ts
 model/serie-de-indicador-de-reporte.ts
 model/serie-de-reporte.ts
 model/serie-de-turnos-page.ts

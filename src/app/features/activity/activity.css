@@ -203,3 +203,83 @@
 .clase__nota {
   margin: 0 0 var(--esp-6);
 }
+
+/*
+ * Pastillas del alta de clase (modo y dias de la semana): radios y casillas nativas con aspecto de
+ * boton. Mismas reglas que las de horarios en `resource.css`; no se importa CSS entre features.
+ */
+.pastillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+/* El modo (una clase o todas las semanas) separado de los campos que siguen. */
+.modo-de-clase {
+  margin-bottom: var(--esp-6);
+}
+
+/* Rotulo de un grupo de casillas: el mismo peso que el label de un campo. */
+.campo__rotulo {
+  margin: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pastilla {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pastilla input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pastilla:hover {
+  border-color: var(--color-acento);
+}
+
+.pastilla:has(input:checked) {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.pastilla:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.pastilla--dia {
+  min-width: 2.75rem;
+  padding: 0 var(--esp-3);
+}
+
+/* Fechas de una serie que no se programaron: fecha y motivo en una linea, el detalle debajo. */
+.serie-omitidas {
+  margin: var(--esp-3) 0 0;
+  padding-left: var(--esp-6);
+}
+
+.serie-omitidas li + li {
+  margin-top: var(--esp-2);
+}

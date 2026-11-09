@@ -12,6 +12,7 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { provideApi } from '../../../../api/generated/provide-api';
 import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 const KINE = {
   id: 1,
@@ -56,6 +57,8 @@ describe('CatalogoDeServiciosPage', () => {
    * las mutaciones, que solo se muestran con ese rol. El store real tiene su propio spec.
    */
   const esAdmin = signal(true);
+  /** `catalogo:manage` en el contexto: administra los servicios propios del centro (0.163.0). */
+  const gestionaCatalogo = signal(false);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -72,6 +75,13 @@ describe('CatalogoDeServiciosPage', () => {
             resolver: () => of(esAdmin()),
           },
         },
+        {
+          provide: PermissionsStore,
+          useValue: {
+            tiene: (permiso: string) => permiso === 'catalogo:manage' && gestionaCatalogo(),
+            asegurarCargados: () => undefined,
+          },
+        },
       ],
     }).compileComponents();
 
@@ -80,6 +90,7 @@ describe('CatalogoDeServiciosPage', () => {
 
   afterEach(() => {
     esAdmin.set(true);
+    gestionaCatalogo.set(false);
     vi.useRealTimers();
     httpMock.verify();
   });
@@ -97,7 +108,7 @@ describe('CatalogoDeServiciosPage', () => {
     );
     expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
 
-    expect(anfitrion.textContent).toContain('Tu cuenta lo tiene');
+    expect(anfitrion.textContent).toContain('Tu cuenta tiene rol de plataforma');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
     // Editar a la vista y la baja, destructiva, en el menu "⋯" de cada fila.
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
@@ -135,8 +146,38 @@ describe('CatalogoDeServiciosPage', () => {
     );
     expect(encabezados).not.toContain('Acciones');
 
-    expect(anfitrion.textContent).toContain('Tu cuenta no lo tiene');
+    expect(anfitrion.textContent).toContain('Tu cuenta solo puede consultarlo');
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
+  });
+
+  it('con catalogo:manage el centro da de alta servicios propios y solo toca los suyos', async () => {
+    esAdmin.set(false);
+    gestionaCatalogo.set(true);
+    const fixture = TestBed.createComponent(CatalogoDeServiciosPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(esListado())
+      .flush([
+        KINE,
+        { ...PILATES, id: 3, nombre: 'Yoga', codigo: 'YOGA', alcance: 'ORGANIZACION' },
+      ]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const botones = [...anfitrion.querySelectorAll('button')].map((boton) =>
+      (boton.textContent ?? '').trim(),
+    );
+    expect(botones).toContain('Nuevo servicio');
+    // El global no se toca desde el centro; el propio si.
+    const filas = [...anfitrion.querySelectorAll('tbody tr')];
+    expect(filas[0].querySelectorAll('button').length).toBe(0);
+    expect(filas[1].textContent).toContain('Del centro');
+    expect(filas[1].querySelectorAll('button').length).toBeGreaterThan(0);
+
+    (anfitrion.querySelector('[cabeceraAcciones] button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(anfitrion.textContent).toContain('Nuevo servicio del centro');
   });
 
   it('el filtro de estado recarga con su parametro y una lista vacía no es un error', async () => {
