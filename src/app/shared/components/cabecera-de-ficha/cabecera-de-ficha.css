@@ -1,18 +1,34 @@
 /*
- * Cabecera de una ficha en dos filas (08/11/2026): identificacion arriba, navegacion y acciones
- * abajo. Sin `overflow` horizontal: un nombre largo se corta con "…" y las pestañas o las acciones
- * bajan de linea antes que ensanchar la pagina.
+ * Cabecera de una ficha en dos filas (08/11/2026). Arriba el nombre; abajo, en la misma fila, el
+ * documento y el estado a la izquierda y las pestañas con las acciones a su derecha. La linea de
+ * abajo separa la cabecera del contenido. Sin `overflow` horizontal: un nombre largo se corta con
+ * "…" y, si no entran, las pestañas bajan a su propia fila antes que ensanchar la pagina.
  */
 .cabecera-ficha {
   display: block;
   margin-bottom: var(--esp-6);
+  container: cabecera-ficha / inline-size;
 }
 
+.cabecera-ficha__grilla {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-areas:
+    'nombre nombre'
+    'datos navegacion';
+  align-items: center;
+  gap: var(--esp-2) var(--esp-7);
+  padding-bottom: var(--esp-3);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+/* Sus dos lineas se ubican en la grilla de la cabecera, no en una caja propia. */
 .cabecera-ficha__identidad {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-2);
-  min-width: 0;
+  display: contents;
+}
+
+.cabecera-ficha__identidad > .cabecera-ficha__linea:first-child {
+  grid-area: nombre;
 }
 
 .cabecera-ficha__linea {
@@ -43,6 +59,7 @@
 
 /* Documento y estado: segundo nivel, mas chico y suave que el nombre. */
 .cabecera-ficha__linea--datos {
+  grid-area: datos;
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
 }
@@ -68,20 +85,15 @@
   font-weight: var(--peso-semi);
 }
 
-/*
- * Segunda fila: pestañas a la izquierda y acciones a la derecha, centradas en el mismo eje. La
- * linea de abajo separa la cabecera del contenido; el subrayado de la pestaña actual se apoya en
- * ella.
- */
+/* Al lado del documento: pestañas y, contra el borde derecho, las acciones, en el mismo eje. */
 .cabecera-ficha__navegacion {
+  grid-area: navegacion;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--esp-3) var(--esp-6);
-  margin-top: var(--esp-5);
-  padding-bottom: var(--esp-3);
-  border-bottom: var(--borde-fino) solid var(--color-borde);
+  min-width: 0;
 }
 
 .cabecera-ficha__navegacion > app-pestanas {
@@ -106,6 +118,21 @@
 
 .cabecera-ficha__acciones:empty {
   display: none;
+}
+
+/* Si no entran al lado del documento, las pestañas y las acciones bajan a su propia fila. */
+@container cabecera-ficha (max-width: 68rem) {
+  .cabecera-ficha__grilla {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'nombre'
+      'datos'
+      'navegacion';
+  }
+
+  .cabecera-ficha__navegacion {
+    margin-top: var(--esp-3);
+  }
 }
 
 /* Telefono: el nombre puede usar dos lineas antes que cortarse a la mitad. */
