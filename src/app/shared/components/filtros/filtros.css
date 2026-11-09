@@ -163,9 +163,20 @@
   background: var(--color-superficie);
 }
 
+/*
+ * Limpiar y Aplicar en la misma fila que los filtros, contra el borde derecho y a la altura de los
+ * controles (09/11/2026). Si no entran, bajan juntos a la linea siguiente.
+ */
+.filtros-barra--separada .filtros-barra__avanzados {
+  align-items: flex-end;
+}
+
 .filtros-barra--separada .filtros-barra__limpiar {
-  gap: var(--esp-4);
+  flex: 1 0 auto;
+  justify-content: flex-end;
   align-items: center;
+  gap: var(--esp-4);
+  min-height: 2.5rem;
 }
 
 /* Los filtros rapidos con conteo, en su fila de la barra separada: centrados (08/11/2026). */
