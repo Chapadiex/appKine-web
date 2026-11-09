@@ -269,16 +269,17 @@
               [elegido]="horario()"
               (elegir)="elegirHorario($event)"
             />
-            <div class="flujo__fila">
+            <!-- Otras salidas, como pastillas centradas debajo de los horarios (08/11/2026). -->
+            <div class="flujo__pastillas">
               @if (truncado()) {
-                <button type="button" class="boton-texto" (click)="verMas()">
+                <button type="button" class="pastilla-accion" (click)="verMas()">
                   Ver más horarios
                 </button>
               }
-              <button type="button" class="boton-texto" (click)="verAgendaCompleta()">
+              <button type="button" class="pastilla-accion" (click)="verAgendaCompleta()">
                 Ver agenda completa
               </button>
-              <button type="button" class="boton-texto" (click)="irAProgramarVarias()">
+              <button type="button" class="pastilla-accion" (click)="irAProgramarVarias()">
                 Programar varias sesiones
               </button>
             </div>

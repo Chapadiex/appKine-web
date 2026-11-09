@@ -442,3 +442,37 @@ a.flujo__secundario {
   width: auto;
   margin: 0;
 }
+
+/* --- Pastillas de accion: salidas secundarias, centradas (08/11/2026) --- */
+
+.flujo__pastillas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--esp-3);
+}
+
+.pastilla-accion {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.pastilla-accion:hover {
+  border-color: var(--color-acento);
+  background: var(--color-hover);
+}
+
+.pastilla-accion:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
