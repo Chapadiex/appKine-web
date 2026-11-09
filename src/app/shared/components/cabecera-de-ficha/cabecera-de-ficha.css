@@ -1,21 +1,64 @@
 /*
- * Lo propio de una ficha dentro de la cabecera de pantalla: el documento y las marcas de perfil.
- * El resto (fila, pestañas) es el de toda cabecera.
+ * Cabecera de una ficha en dos filas (08/11/2026): identificacion arriba, navegacion y acciones
+ * abajo. Sin `overflow` horizontal: un nombre largo se corta con "…" y las pestañas o las acciones
+ * bajan de linea antes que ensanchar la pagina.
  */
+.cabecera-ficha {
+  display: block;
+  margin-bottom: var(--esp-6);
+}
+
+.cabecera-ficha__identidad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.cabecera-ficha__linea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-4);
+  min-width: 0;
+}
+
+/* El nombre manda: el tamaño de titulo de toda la app, en una linea, y cede el ancho con "…". */
+.cabecera-ficha__nombre {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-semi);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cabecera-ficha__linea > :not(.cabecera-ficha__nombre) {
+  flex-shrink: 0;
+}
+
+/* Documento y estado: segundo nivel, mas chico y suave que el nombre. */
+.cabecera-ficha__linea--datos {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
 .cabecera-ficha__dato {
   color: var(--color-texto);
   font-variant-numeric: tabular-nums;
 }
 
-/* En una hermana, la persona al lado del titulo: un nombre largo se corta antes que desbordar. */
-.cabecera-ficha__persona {
-  overflow: hidden;
-  min-width: 0;
-  max-width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.cabecera-ficha__dato + .cabecera-ficha__dato::before {
+  content: '·';
+  margin-right: var(--esp-4);
+  color: var(--color-texto-suave);
 }
 
+/* El tipo de persona: pastilla compacta con el tinte de acento (los dos temas lo redefinen). */
 .cabecera-ficha__perfil {
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
@@ -23,4 +66,59 @@
   color: var(--color-texto-fuerte);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-semi);
+}
+
+/*
+ * Segunda fila: pestañas a la izquierda y acciones a la derecha, centradas en el mismo eje. La
+ * linea de abajo separa la cabecera del contenido; el subrayado de la pestaña actual se apoya en
+ * ella.
+ */
+.cabecera-ficha__navegacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-6);
+  margin-top: var(--esp-5);
+  padding-bottom: var(--esp-3);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.cabecera-ficha__navegacion > app-pestanas {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.cabecera-ficha__navegacion .pestanas {
+  margin-bottom: 0;
+  box-shadow: none;
+}
+
+.cabecera-ficha__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-4);
+  margin-left: auto;
+}
+
+.cabecera-ficha__acciones:empty {
+  display: none;
+}
+
+/* Telefono: el nombre puede usar dos lineas antes que cortarse a la mitad. */
+@media (max-width: 30rem) {
+  .cabecera-ficha__nombre {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .cabecera-ficha__acciones {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
 }
