@@ -125,13 +125,23 @@ export class AvisosStore {
   }
 
   private publicar(tipo: TipoDeAviso, titulo: string, opciones: OpcionesDeAviso = {}): number {
+    // Sin duplicados: el mismo aviso de una misma operacion (doble clic, dos respuestas iguales)
+    // no se apila; el que esta a la vista vuelve a contar su tiempo.
+    const descripcion = opciones.descripcion ?? null;
+    const repetido = this.lista().find(
+      (otro) => otro.tipo === tipo && otro.titulo === titulo && otro.descripcion === descripcion,
+    );
+    if (repetido !== undefined) {
+      this.programar(repetido);
+      return repetido.id;
+    }
     const accion = opciones.accion ?? null;
     const porDefecto = tipo === 'error' && accion !== null ? null : DURACION_POR_DEFECTO[tipo];
     const aviso: Aviso = {
       id: this.siguienteId++,
       tipo,
       titulo,
-      descripcion: opciones.descripcion ?? null,
+      descripcion,
       accion,
       otraAccion: opciones.otraAccion ?? null,
       duracion: opciones.duracion === undefined ? porDefecto : opciones.duracion,

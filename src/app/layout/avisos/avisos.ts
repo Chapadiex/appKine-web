@@ -31,8 +31,8 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
  *
  * <p><b>Accesible.</b> Cada aviso dice su severidad con icono y con texto (oculto para la vista,
  * leido por el lector), no solo con color. El contenedor existe antes del primer aviso: los exitos
- * e informaciones se anuncian por su region `polite`; las advertencias y los errores, con
- * `role="alert"`. Pasar el puntero o el foco pausa el cierre automatico.
+ * e informaciones se anuncian por su region `polite` y llevan `role="status"`; las advertencias y
+ * los errores, `role="alert"`. Pasar el puntero o el foco pausa el cierre automatico.
  */
 @Component({
   selector: 'app-avisos',
@@ -50,7 +50,7 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
       @for (aviso of store.avisos(); track aviso.id) {
         <div
           class="aviso aviso--{{ aviso.tipo }}"
-          [attr.role]="aviso.tipo === 'error' || aviso.tipo === 'advertencia' ? 'alert' : null"
+          [attr.role]="aviso.tipo === 'error' || aviso.tipo === 'advertencia' ? 'alert' : 'status'"
           (mouseenter)="store.pausar(aviso.id)"
           (mouseleave)="store.reanudar(aviso.id)"
           (focusin)="store.pausar(aviso.id)"

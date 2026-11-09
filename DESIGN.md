@@ -2,241 +2,241 @@
 name: AKINE
 description: Gestión clínica, administrativa y económica de centros de kinesiología; una interfaz de mostrador sobria, densa y medida.
 colors:
-  acento: "#2563eb"
-  accion-fondo: "#2563eb"
-  accion-fondo-hover: "#1d4ed8"
-  accion-texto: "#ffffff"
-  enlace: "#1d4ed8"
-  foco: "#2563eb"
-  acento-claro: "#dbeafe"
-  marca-superficie-activa: "#dbeafe"
-  superficie: "#ffffff"
-  superficie-sutil: "#f4f6f9"
-  superficie-atenuada: "#e9eff5"
-  superficie-codigo: "#e9eff5"
-  texto: "#182230"
-  texto-fuerte: "#182230"
-  texto-suave: "#526174"
-  marca-texto-suave: "#3b4754"
-  borde: "#d5dee8"
-  borde-sutil: "#e9eff5"
-  borde-control: "#808a99"
-  deshabilitado: "#6b7684"
-  exito: "#15803d"
-  exito-fondo: "#dcfce7"
-  exito-texto: "#14532d"
-  aviso: "#b45309"
-  aviso-fondo: "#fef3c7"
-  aviso-texto: "#78350f"
-  peligro: "#b91c1c"
-  peligro-fondo: "#fee2e2"
-  peligro-texto: "#7f1d1d"
+  acento: '#2563eb'
+  accion-fondo: '#2563eb'
+  accion-fondo-hover: '#1d4ed8'
+  accion-texto: '#ffffff'
+  enlace: '#1d4ed8'
+  foco: '#2563eb'
+  acento-claro: '#dbeafe'
+  marca-superficie-activa: '#dbeafe'
+  superficie: '#ffffff'
+  superficie-sutil: '#f4f6f9'
+  superficie-atenuada: '#e9eff5'
+  superficie-codigo: '#e9eff5'
+  texto: '#182230'
+  texto-fuerte: '#182230'
+  texto-suave: '#526174'
+  marca-texto-suave: '#3b4754'
+  borde: '#d5dee8'
+  borde-sutil: '#e9eff5'
+  borde-control: '#808a99'
+  deshabilitado: '#6b7684'
+  exito: '#15803d'
+  exito-fondo: '#dcfce7'
+  exito-texto: '#14532d'
+  aviso: '#b45309'
+  aviso-fondo: '#fef3c7'
+  aviso-texto: '#78350f'
+  peligro: '#b91c1c'
+  peligro-fondo: '#fee2e2'
+  peligro-texto: '#7f1d1d'
 typography:
   headline:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "1.25rem"
+    fontSize: '1.25rem'
     fontWeight: 700
     lineHeight: 1.3
   title-lg:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "1.125rem"
+    fontSize: '1.125rem'
     fontWeight: 700
     lineHeight: 1.3
   title:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "1rem"
+    fontSize: '1rem'
     fontWeight: 500
     lineHeight: 1.5
-    letterSpacing: "-0.01em"
+    letterSpacing: '-0.01em'
   body-md:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.9375rem"
+    fontSize: '0.9375rem'
     fontWeight: 400
     lineHeight: 1.5
   body:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.875rem"
+    fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: 1.5
   label:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.875rem"
+    fontSize: '0.875rem'
     fontWeight: 500
     lineHeight: 1.2
   label-sm:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.8125rem"
+    fontSize: '0.8125rem'
     fontWeight: 500
     lineHeight: 1.5
   label-xs:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.75rem"
+    fontSize: '0.75rem'
     fontWeight: 500
     lineHeight: 1.5
   caption:
     fontFamily: "Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif"
-    fontSize: "0.8125rem"
+    fontSize: '0.8125rem'
     fontWeight: 400
     lineHeight: 1.5
   mono:
     fontFamily: "'Roboto Mono', ui-monospace, Menlo, Consolas, monospace"
-    fontSize: "0.8125rem"
+    fontSize: '0.8125rem'
     fontWeight: 500
     lineHeight: 1.5
 rounded:
-  sm: "6px"
-  md: "8px"
-  lg: "10px"
-  pastilla: "999px"
+  sm: '6px'
+  md: '8px'
+  lg: '10px'
+  pastilla: '999px'
 spacing:
-  esp-1: "0.125rem"
-  esp-2: "0.25rem"
-  esp-3: "0.375rem"
-  esp-4: "0.5rem"
-  esp-5: "0.75rem"
-  esp-6: "1rem"
-  esp-7: "1.25rem"
-  esp-8: "1.5rem"
-  esp-9: "2rem"
+  esp-1: '0.125rem'
+  esp-2: '0.25rem'
+  esp-3: '0.375rem'
+  esp-4: '0.5rem'
+  esp-5: '0.75rem'
+  esp-6: '1rem'
+  esp-7: '1.25rem'
+  esp-8: '1.5rem'
+  esp-9: '2rem'
 components:
   boton:
-    backgroundColor: "{colors.accion-fondo}"
-    textColor: "{colors.accion-texto}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1.25rem"
-    height: "2.5rem"
+    backgroundColor: '{colors.accion-fondo}'
+    textColor: '{colors.accion-texto}'
+    typography: '{typography.label}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1.25rem'
+    height: '2.5rem'
   boton-hover:
-    backgroundColor: "{colors.accion-fondo-hover}"
+    backgroundColor: '{colors.accion-fondo-hover}'
   boton-deshabilitado:
-    backgroundColor: "{colors.deshabilitado}"
-    textColor: "{colors.accion-texto}"
+    backgroundColor: '{colors.deshabilitado}'
+    textColor: '{colors.accion-texto}'
   boton-secundario:
-    backgroundColor: "{colors.superficie}"
-    textColor: "{colors.texto}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 1.25rem"
-    height: "2.5rem"
+    backgroundColor: '{colors.superficie}'
+    textColor: '{colors.texto}'
+    typography: '{typography.label}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 1.25rem'
+    height: '2.5rem'
   boton-secundario-hover:
-    backgroundColor: "{colors.hover}"
+    backgroundColor: '{colors.hover}'
   boton-chico:
-    padding: "0 0.75rem"
-    height: "2rem"
+    padding: '0 0.75rem'
+    height: '2rem'
   boton-texto:
-    backgroundColor: "transparent"
-    textColor: "{colors.texto-suave}"
-    typography: "{typography.caption}"
-    rounded: "{rounded.sm}"
-    padding: "0 0.5rem"
-    height: "2rem"
+    backgroundColor: 'transparent'
+    textColor: '{colors.texto-suave}'
+    typography: '{typography.caption}'
+    rounded: '{rounded.sm}'
+    padding: '0 0.5rem'
+    height: '2rem'
   campo:
-    backgroundColor: "{colors.superficie}"
-    textColor: "{colors.texto}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0.5rem 0.625rem"
-    height: "2.5rem"
+    backgroundColor: '{colors.superficie}'
+    textColor: '{colors.texto}'
+    typography: '{typography.body}'
+    rounded: '{rounded.md}'
+    padding: '0.5rem 0.625rem'
+    height: '2.5rem'
   filtros-boton:
-    backgroundColor: "{colors.superficie}"
-    textColor: "{colors.texto}"
-    typography: "{typography.label}"
-    rounded: "{rounded.md}"
-    padding: "0 1rem"
-    height: "2.5rem"
+    backgroundColor: '{colors.superficie}'
+    textColor: '{colors.texto}'
+    typography: '{typography.label}'
+    rounded: '{rounded.md}'
+    padding: '0 1rem'
+    height: '2.5rem'
   filtros-contador:
-    backgroundColor: "{colors.accion-fondo}"
-    textColor: "{colors.accion-texto}"
-    typography: "{typography.label-xs}"
-    rounded: "{rounded.pastilla}"
-    height: "1.25rem"
+    backgroundColor: '{colors.accion-fondo}'
+    textColor: '{colors.accion-texto}'
+    typography: '{typography.label-xs}'
+    rounded: '{rounded.pastilla}'
+    height: '1.25rem'
   filtro-rapido-elegido:
-    backgroundColor: "{colors.acento-claro}"
-    textColor: "{colors.texto-fuerte}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pastilla}"
-    padding: "0.25rem 0.75rem"
-    height: "2rem"
+    backgroundColor: '{colors.acento-claro}'
+    textColor: '{colors.texto-fuerte}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pastilla}'
+    padding: '0.25rem 0.75rem'
+    height: '2rem'
   marca-estado-activa:
-    backgroundColor: "{colors.exito-fondo}"
-    textColor: "{colors.exito-texto}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.pastilla}"
-    padding: "0.125rem 0.5rem"
+    backgroundColor: '{colors.exito-fondo}'
+    textColor: '{colors.exito-texto}'
+    typography: '{typography.label-sm}'
+    rounded: '{rounded.pastilla}'
+    padding: '0.125rem 0.5rem'
   marca-estado-suspendida:
-    backgroundColor: "{colors.aviso-fondo}"
-    textColor: "{colors.aviso-texto}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.pastilla}"
-    padding: "0.125rem 0.5rem"
+    backgroundColor: '{colors.aviso-fondo}'
+    textColor: '{colors.aviso-texto}'
+    typography: '{typography.label-sm}'
+    rounded: '{rounded.pastilla}'
+    padding: '0.125rem 0.5rem'
   marca-estado-revocada:
-    backgroundColor: "{colors.peligro-fondo}"
-    textColor: "{colors.peligro-texto}"
-    typography: "{typography.label-sm}"
-    rounded: "{rounded.pastilla}"
-    padding: "0.125rem 0.5rem"
+    backgroundColor: '{colors.peligro-fondo}'
+    textColor: '{colors.peligro-texto}'
+    typography: '{typography.label-sm}'
+    rounded: '{rounded.pastilla}'
+    padding: '0.125rem 0.5rem'
   pestana:
-    textColor: "{colors.texto-suave}"
-    typography: "{typography.label}"
-    padding: "0.375rem 0.75rem"
+    textColor: '{colors.texto-suave}'
+    typography: '{typography.label}'
+    padding: '0.375rem 0.75rem'
   pestana-actual:
-    textColor: "{colors.texto-fuerte}"
+    textColor: '{colors.texto-fuerte}'
   tabla-encabezado:
-    backgroundColor: "{colors.superficie-atenuada}"
-    textColor: "{colors.marca-texto-suave}"
-    typography: "{typography.label-xs}"
-    padding: "0.75rem"
+    backgroundColor: '{colors.superficie-atenuada}'
+    textColor: '{colors.marca-texto-suave}'
+    typography: '{typography.label-xs}'
+    padding: '0.75rem'
   tabla-celda:
-    textColor: "{colors.texto}"
-    typography: "{typography.body}"
-    padding: "0.75rem"
+    textColor: '{colors.texto}'
+    typography: '{typography.body}'
+    padding: '0.75rem'
   tabla-fila-hover:
-    backgroundColor: "{colors.superficie-atenuada}"
+    backgroundColor: '{colors.superficie-atenuada}'
   tabla-fila-seleccionada:
-    backgroundColor: "{colors.acento-claro}"
+    backgroundColor: '{colors.acento-claro}'
   paginacion-actual:
-    backgroundColor: "{colors.seleccion}"
-    textColor: "{colors.texto-fuerte}"
-    rounded: "{rounded.md}"
-    height: "2rem"
+    backgroundColor: '{colors.seleccion}'
+    textColor: '{colors.texto-fuerte}'
+    rounded: '{rounded.md}'
+    height: '2rem'
   nav-enlace:
-    textColor: "{colors.marca-texto-suave}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "0 0.75rem"
-    height: "2.125rem"
+    textColor: '{colors.marca-texto-suave}'
+    typography: '{typography.body}'
+    rounded: '{rounded.md}'
+    padding: '0 0.75rem'
+    height: '2.125rem'
   nav-enlace-actual:
-    backgroundColor: "{colors.marca-superficie-activa}"
-    textColor: "{colors.acento}"
+    backgroundColor: '{colors.marca-superficie-activa}'
+    textColor: '{colors.acento}'
   ayuda-boton:
-    backgroundColor: "{colors.superficie}"
-    textColor: "{colors.texto-suave}"
-    rounded: "{rounded.pastilla}"
-    size: "1.5rem"
+    backgroundColor: '{colors.superficie}'
+    textColor: '{colors.texto-suave}'
+    rounded: '{rounded.pastilla}'
+    size: '1.5rem'
   tarjeta:
-    backgroundColor: "{colors.superficie}"
-    rounded: "{rounded.md}"
-    padding: "1.25rem 1.5rem"
+    backgroundColor: '{colors.superficie}'
+    rounded: '{rounded.md}'
+    padding: '1.25rem 1.5rem'
   alerta-error:
-    backgroundColor: "{colors.peligro-fondo}"
-    textColor: "{colors.peligro-texto}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
+    backgroundColor: '{colors.peligro-fondo}'
+    textColor: '{colors.peligro-texto}'
+    rounded: '{rounded.md}'
+    padding: '0.75rem 1rem'
   alerta-advertencia:
-    backgroundColor: "{colors.aviso-fondo}"
-    textColor: "{colors.aviso-texto}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
+    backgroundColor: '{colors.aviso-fondo}'
+    textColor: '{colors.aviso-texto}'
+    rounded: '{rounded.md}'
+    padding: '0.75rem 1rem'
   alerta-info:
-    backgroundColor: "{colors.acento-claro}"
-    textColor: "{colors.texto}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
+    backgroundColor: '{colors.acento-claro}'
+    textColor: '{colors.texto}'
+    rounded: '{rounded.md}'
+    padding: '0.75rem 1rem'
   alerta-exito:
-    backgroundColor: "{colors.exito-fondo}"
-    textColor: "{colors.exito-texto}"
-    rounded: "{rounded.md}"
-    padding: "0.75rem 1rem"
+    backgroundColor: '{colors.exito-fondo}'
+    textColor: '{colors.exito-texto}'
+    rounded: '{rounded.md}'
+    padding: '0.75rem 1rem'
 ---
 
 # Design System: AKINE
@@ -288,21 +288,21 @@ navegación, qué herramienta, qué contenido y qué acción.
 
 ### Paleta (tokens semánticos)
 
-| Rol | Token | Claro | Oscuro |
-|---|---|---|---|
-| Fondo principal | `--color-superficie-sutil` | #f4f6f9 | #101820 |
-| Paneles y tarjetas | `--color-superficie` | #ffffff | #1d2a36 |
-| Superficie secundaria | `--color-superficie-secundaria` | #e9eff5 | #263746 |
-| Encabezado de tabla | `--color-tabla-encabezado` | #edf2f7 | #304152 |
-| Texto principal | `--color-texto` | #182230 | #f1f5f9 |
-| Texto secundario | `--color-texto-suave` | #526174 | #b8c7d5 |
-| Bordes y separadores | `--color-borde` | #d5dee8 | #405365 |
-| Borde de control (3:1) | `--color-borde-control` | #808a99 | #8494a3 |
-| Acción principal | `--color-accion-fondo` | #2563eb | #60a5fa |
-| Texto sobre acción | `--color-accion-texto` | #ffffff | #101820 |
-| Enlace y foco | `--color-enlace` / `--color-foco` | #1d4ed8 / #2563eb | #93c5fd |
-| Selección activa | `--color-seleccion` | #dbeafe | #244a70 |
-| Hover | `--color-hover` | #eff6ff | #30465b |
+| Rol                    | Token                             | Claro             | Oscuro  |
+| ---------------------- | --------------------------------- | ----------------- | ------- |
+| Fondo principal        | `--color-superficie-sutil`        | #f4f6f9           | #101820 |
+| Paneles y tarjetas     | `--color-superficie`              | #ffffff           | #1d2a36 |
+| Superficie secundaria  | `--color-superficie-secundaria`   | #e9eff5           | #263746 |
+| Encabezado de tabla    | `--color-tabla-encabezado`        | #edf2f7           | #304152 |
+| Texto principal        | `--color-texto`                   | #182230           | #f1f5f9 |
+| Texto secundario       | `--color-texto-suave`             | #526174           | #b8c7d5 |
+| Bordes y separadores   | `--color-borde`                   | #d5dee8           | #405365 |
+| Borde de control (3:1) | `--color-borde-control`           | #808a99           | #8494a3 |
+| Acción principal       | `--color-accion-fondo`            | #2563eb           | #60a5fa |
+| Texto sobre acción     | `--color-accion-texto`            | #ffffff           | #101820 |
+| Enlace y foco          | `--color-enlace` / `--color-foco` | #1d4ed8 / #2563eb | #93c5fd |
+| Selección activa       | `--color-seleccion`               | #dbeafe           | #244a70 |
+| Hover                  | `--color-hover`                   | #eff6ff           | #30465b |
 
 **Ajustes a la propuesta de la norma, medidos:** el rojo de error #DC2626 da 4,46:1 sobre el fondo
 de página y pasó a #b91c1c; el enlace y el foco oscuros #60A5FA daban 3,6:1 sobre la selección y
@@ -315,14 +315,14 @@ Cada estado se reconoce por **color + texto + ícono** y, cuando corresponde, un
 punteado, rayado). Nunca solo por el color. Son los estados **reales del dominio**: Reservado y
 Confirmado no se pintan igual.
 
-| Estado | Token (fondo) | Claro | Oscuro | Borde / palabra |
-|---|---|---|---|---|
-| Disponible | `--color-estado-disponible` | #dcfce7 | #174936 | `--color-exito` |
-| Reservado | `--color-estado-reservado` | #dbeafe | #1d4268 | `--color-info`, punteado |
-| Confirmado | `--color-estado-confirmado` | #bbf7d0 | #166534 | `--color-exito`, sólido |
-| Pendiente | `--color-estado-pendiente` | #fef3c7 | #684c16 | `--color-aviso` |
-| Cancelado | `--color-estado-cancelado` | #fee2e2 | #692d35 | `--color-peligro` |
-| Bloqueado | `--color-estado-bloqueado` | #e2e8f0 | #354352 | `--color-borde-control`, rayado |
+| Estado     | Token (fondo)               | Claro   | Oscuro  | Borde / palabra                 |
+| ---------- | --------------------------- | ------- | ------- | ------------------------------- |
+| Disponible | `--color-estado-disponible` | #dcfce7 | #174936 | `--color-exito`                 |
+| Reservado  | `--color-estado-reservado`  | #dbeafe | #1d4268 | `--color-info`, punteado        |
+| Confirmado | `--color-estado-confirmado` | #bbf7d0 | #166534 | `--color-exito`, sólido         |
+| Pendiente  | `--color-estado-pendiente`  | #fef3c7 | #684c16 | `--color-aviso`                 |
+| Cancelado  | `--color-estado-cancelado`  | #fee2e2 | #692d35 | `--color-peligro`               |
+| Bloqueado  | `--color-estado-bloqueado`  | #e2e8f0 | #354352 | `--color-borde-control`, rayado |
 
 Severidad (alertas, marcas, mensajes): `--color-{exito,aviso,peligro,info}` (fuerte: borde e ícono),
 `-fondo` (tinte) y `-texto` (AA sobre el tinte). Error #b91c1c / #f87171, advertencia #b45309 /
@@ -429,7 +429,7 @@ saturado y tres colores de estado que nunca se usan como decoración.
   de tarjetas, paneles y separadores; la tenue separa las filas de una tabla.
 - **Gris Control** (#808a99, `borde-control`): el contorno de todo control operable (campo, botón del
   embudo, menú de fila, "?", flechas de paginación, filtros rápidos) y el indicador de desborde de
-  una tabla. Es la única desviación deliberada del canvas *AKINE · Pantallas*, que usaba #d5dbe2.
+  una tabla. Es la única desviación deliberada del canvas _AKINE · Pantallas_, que usaba #d5dbe2.
 - **Gris Inactivo** (#6b7684, `deshabilitado`): el relleno del botón deshabilitado y el texto de un
   ítem deshabilitado.
 
@@ -703,9 +703,35 @@ una acción irreversible ni la instrucción de un paso obligatorio. Una ayuda nu
 
 - **Alerta en el lugar** (`app-alerta`): fondo tintado del estado, borde de 1 px del color del estado
   (la informativa con los tokens `info`), ícono del estado a 18 px, título en 500 y acciones chicas debajo.
-- **Aviso global** (`app-avisos`): superficie blanca con borde fino, ícono del color del estado,
-  capa flotante, entrada de 6 px hacia abajo en 0.18s y cierre propio; sin animación si la persona
-  pidió movimiento reducido.
+- **Aviso global** (`app-avisos`, el único "toast" de la aplicación): capa flotante, entrada de 6 px
+  hacia abajo en 0.18s y cierre propio; sin animación si la persona pidió movimiento reducido.
+
+#### Norma global de avisos (regla permanente, 08/11/2026)
+
+Vale para todos los módulos, actuales y futuros. Ninguna pantalla dibuja avisos propios: todos se
+publican con `AvisosStore` (`exito`, `info`, `advertencia`, `error`) y los dibuja `app-avisos`.
+
+| Tipo          | Color                     | Cuándo                                                            |
+| ------------- | ------------------------- | ----------------------------------------------------------------- |
+| `exito`       | Verde (`--color-exito*`)  | La operación salió bien                                           |
+| `advertencia` | Ámbar (`--color-aviso*`)  | Algo requiere atención, sin que la operación haya fallado         |
+| `error`       | Rojo (`--color-peligro*`) | La operación falló o el servidor la rechazó                       |
+| `info`        | Azul (`--color-info*`)    | Información neutral ("ya estaba dado de baja, no se cambió nada") |
+
+- **El color es el resultado, no la acción.** "Turno cancelado" es verde (salió bien); "No se pudo
+  cancelar el turno" es rojo; "Se actualizó la disponibilidad" es verde.
+- **Todo el aviso lleva el color**: fondo suave (`*-fondo`), borde e ícono fuertes (el token base) y
+  textos, acción y cierre en `*-texto`. Los dos temas redefinen esos tokens; ningún aviso fija un color.
+- **Uniformes**: mismo tamaño, padding, tipografía, borde, ícono y posición: arriba a la derecha,
+  debajo de la barra superior (a todo el ancho en el teléfono). Como mucho tres a la vista.
+- **Cierre**: siempre se pueden cerrar a mano. Solos se van a los 4,5 s (éxito), 5 s (info), 8 s
+  (advertencia) y 10 s (error); un error con acción ("Reintentar") queda hasta que se cierra. La
+  duración se cambia con `duracion`, y pasar el puntero o el foco pausa la cuenta.
+- **Sin duplicados**: el mismo tipo, título y descripción no se apila; el que está a la vista vuelve
+  a contar su tiempo.
+- **Breves**: un título que diga qué pasó, y una descripción solo si agrega información.
+- **Accesibles**: la severidad también va en texto (oculto para la vista); éxito e info llevan
+  `role="status"` dentro de una región `polite`, advertencia y error `role="alert"`.
 
 ### Panel lateral
 
