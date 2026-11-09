@@ -193,21 +193,31 @@ summary {
   padding: 0;
 }
 
+/*
+ * Un horario libre, con los colores de "disponible" de la grilla de Disponibilidad (08/11/2026):
+ * borde de exito y fondo de estado disponible, y el texto centrado.
+ */
 .horario {
   display: block;
   width: 100%;
   padding: var(--esp-4) var(--esp-5);
-  background: var(--color-superficie);
-  border: var(--borde-fino) solid var(--color-borde-control);
+  background: var(--color-estado-disponible);
+  border: var(--borde-fino) solid var(--color-exito);
   border-radius: var(--radio-md);
-  color: inherit;
+  color: var(--color-texto-fuerte);
   font: inherit;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
 .horario:hover {
-  border-color: var(--color-acento);
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.horario:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
 }
 
 .horario[aria-pressed='true'] {
