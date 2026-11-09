@@ -722,8 +722,8 @@ publican con `AvisosStore` (`exito`, `info`, `advertencia`, `error`) y los dibuj
   cancelar el turno" es rojo; "Se actualizó la disponibilidad" es verde.
 - **Todo el aviso lleva el color**: fondo suave (`*-fondo`), borde e ícono fuertes (el token base) y
   textos, acción y cierre en `*-texto`. Los dos temas redefinen esos tokens; ningún aviso fija un color.
-- **Uniformes**: mismo tamaño, padding, tipografía, borde, ícono y posición: arriba a la derecha,
-  debajo de la barra superior (a todo el ancho en el teléfono). Como mucho tres a la vista.
+- **Uniformes**: mismo tamaño, padding, tipografía, borde, ícono y posición: abajo a la derecha
+  (a todo el ancho en el teléfono), el más nuevo contra el borde. Como mucho tres a la vista.
 - **Cierre**: siempre se pueden cerrar a mano. Solos se van a los 4,5 s (éxito), 5 s (info), 8 s
   (advertencia) y 10 s (error); un error con acción ("Reintentar") queda hasta que se cierra. La
   duración se cambia con `duracion`, y pasar el puntero o el foco pausa la cuenta.

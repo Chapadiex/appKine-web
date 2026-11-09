@@ -20,10 +20,11 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
 };
 
 /**
- * Avisos globales ("toasts"), arriba a la derecha y debajo de la barra superior.
+ * Avisos globales ("toasts"), abajo a la derecha (decision del 08/11/2026).
  *
- * <p><b>Arriba y no abajo.</b> Los formularios largos y los paneles laterales tienen la barra de
- * acciones pegada al pie: un aviso abajo la taparia, o quedaria tapado por ella.
+ * <p><b>Abajo y no arriba.</b> Arriba a la derecha tapaban las acciones de la cabecera de la
+ * pantalla ("Nuevo turno", "Bloquear"). Abajo pueden quedar sobre la barra de acciones de un panel
+ * lateral: duran unos segundos, se cierran a mano y el mas nuevo queda pegado al borde.
  *
  * <p><b>Capa superior.</b> El contenedor es un `popover="manual"`: vive en la capa superior, por
  * encima de la pagina. Un panel lateral (`dialog` modal) que se abre despues lo taparia, asi que
@@ -110,9 +111,6 @@ export class Avisos {
       }
       const host = this.elemento.nativeElement;
       const nuevo = avisos.at(-1)?.id ?? 0;
-      if (nuevo !== this.ultimo) {
-        this.ubicarDebajoDeLaCabecera(host);
-      }
       if (avisos.length === 0) {
         if (host.matches(':popover-open')) {
           host.hidePopover();
@@ -125,20 +123,5 @@ export class Avisos {
       }
       this.ultimo = nuevo;
     });
-  }
-
-  /**
-   * Debajo de la cabecera de la pantalla y no sobre ella (08/11/2026): arriba a la derecha estan
-   * sus acciones ("Nuevo turno", "Bloquear"), y un aviso encima las tapaba. Se mide al llegar cada
-   * aviso; si la cabecera ya no se ve (se desplazo la pagina), queda debajo de la barra superior.
-   */
-  private ubicarDebajoDeLaCabecera(host: HTMLElement): void {
-    const cabecera = document.querySelector('main .cabecera-pagina, main .cabecera-ficha');
-    const abajo = cabecera?.getBoundingClientRect().bottom ?? 0;
-    if (abajo > 0) {
-      host.style.setProperty('--avisos-arriba', `${Math.round(abajo)}px`);
-    } else {
-      host.style.removeProperty('--avisos-arriba');
-    }
   }
 }
