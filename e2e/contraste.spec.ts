@@ -515,7 +515,7 @@ test.describe('Contraste de color', () => {
       await page.goto(`/agenda?fecha=${FECHA}`);
       await page.getByRole('button', { name: 'Nuevo turno', exact: true }).click();
       const panel = page.getByRole('dialog', { name: 'Nuevo turno' });
-      await panel.getByLabel('Buscar paciente').fill(PERSONA_CON_PERFIL.apellido);
+      await panel.getByLabel('Paciente').fill(PERSONA_CON_PERFIL.apellido);
       await panel.locator('.candidato').click();
       await panel.getByRole('button', { name: 'Primer disponible' }).click();
       await expect(panel.getByRole('button', { name: 'Confirmar turno' })).toBeEnabled();

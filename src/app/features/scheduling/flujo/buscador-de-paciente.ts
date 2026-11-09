@@ -40,12 +40,12 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
     @if (!creando()) {
       <div class="flujo">
         <div class="campo">
-          <label for="flujo-paciente">Buscar paciente</label>
+          <label for="flujo-paciente">Paciente <span aria-hidden="true">*</span></label>
           <input
             id="flujo-paciente"
             type="search"
             autocomplete="off"
-            placeholder="Nombre, apellido, DNI o teléfono"
+            placeholder="Buscar por nombre, apellido, DNI o teléfono"
             (input)="buscar($any($event.target).value)"
           />
         </div>

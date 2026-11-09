@@ -119,7 +119,7 @@ describe('NuevoTurnoPanel', () => {
       expect(raiz(fixture).querySelector('#flujo-oferta')).toBeNull();
       expect(boton(fixture, 'Cambiar')).toBeUndefined();
       expect(texto(fixture)).toContain('Perez, Ana');
-      expect(texto(fixture)).toContain('Kinesiologia · 45 min');
+      expect(texto(fixture)).toContain('Kinesiologia45 minutos');
       expect(texto(fixture)).toContain('Pendientes: 3');
       expect(select(fixture, '#flujo-contexto').value).toBe('plan:5');
       // El responsable del caso sale de la lectura del contexto: "cualquiera" sigue a un click.
@@ -134,7 +134,7 @@ describe('NuevoTurnoPanel', () => {
       expect(raiz(fixture).querySelector('#flujo-paciente')).not.toBeNull();
       expect(raiz(fixture).querySelector('#flujo-oferta')).not.toBeNull();
       expect(raiz(fixture).querySelector('#flujo-faltante')?.textContent).toContain(
-        'Falta elegir el paciente.',
+        'Seleccioná un paciente y un horario.',
       );
       expect(confirmar(fixture).disabled).toBe(true);
     });

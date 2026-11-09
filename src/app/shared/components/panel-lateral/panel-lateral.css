@@ -31,6 +31,11 @@
   width: min(46rem, 100vw);
 }
 
+/* El nuevo turno: paciente, prestacion y tres columnas de horarios sin apretarse (08/11/2026). */
+.panel-lateral--grande {
+  width: min(54rem, 100vw);
+}
+
 .panel-lateral::backdrop {
   background: rgb(15 23 42 / 0.32);
 }
@@ -149,7 +154,8 @@
 
 @media (max-width: 40rem) {
   .panel-lateral,
-  .panel-lateral--amplio {
+  .panel-lateral--amplio,
+  .panel-lateral--grande {
     width: 100vw;
     border-left: 0;
   }
