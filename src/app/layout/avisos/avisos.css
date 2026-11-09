@@ -1,11 +1,12 @@
 /*
-  Avisos globales: arriba a la derecha, debajo de la barra superior, en la capa superior. `inset`,
-  `margin`, `border` y `background` anulan el centrado y el recuadro que el navegador le da a todo
-  `[popover]`.
+  Avisos globales: arriba a la derecha y en la capa superior, debajo de la cabecera de la pantalla
+  (`--avisos-arriba`, que mide el host) o, si no se ve, de la barra superior. `inset`, `margin`,
+  `border` y `background` anulan el centrado y el recuadro que el navegador le da a todo `[popover]`.
 */
 :host {
   position: fixed;
-  inset: calc(var(--alto-barra-superior) + var(--esp-5)) var(--esp-6) auto auto;
+  inset: calc(var(--avisos-arriba, var(--alto-barra-superior)) + var(--esp-5)) var(--esp-6) auto
+    auto;
   z-index: 50;
   width: min(24rem, calc(100vw - 2 * var(--esp-6)));
   max-height: none;
@@ -140,7 +141,8 @@
 /* En el telefono, a lo ancho de la pantalla. */
 @media (max-width: 40rem) {
   :host {
-    inset: calc(var(--alto-barra-superior) + var(--esp-4)) var(--esp-4) auto var(--esp-4);
+    inset: calc(var(--avisos-arriba, var(--alto-barra-superior)) + var(--esp-4)) var(--esp-4) auto
+      var(--esp-4);
     width: auto;
   }
 }

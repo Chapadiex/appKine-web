@@ -110,6 +110,9 @@ export class Avisos {
       }
       const host = this.elemento.nativeElement;
       const nuevo = avisos.at(-1)?.id ?? 0;
+      if (nuevo !== this.ultimo) {
+        this.ubicarDebajoDeLaCabecera(host);
+      }
       if (avisos.length === 0) {
         if (host.matches(':popover-open')) {
           host.hidePopover();
@@ -122,5 +125,20 @@ export class Avisos {
       }
       this.ultimo = nuevo;
     });
+  }
+
+  /**
+   * Debajo de la cabecera de la pantalla y no sobre ella (08/11/2026): arriba a la derecha estan
+   * sus acciones ("Nuevo turno", "Bloquear"), y un aviso encima las tapaba. Se mide al llegar cada
+   * aviso; si la cabecera ya no se ve (se desplazo la pagina), queda debajo de la barra superior.
+   */
+  private ubicarDebajoDeLaCabecera(host: HTMLElement): void {
+    const cabecera = document.querySelector('main .cabecera-pagina, main .cabecera-ficha');
+    const abajo = cabecera?.getBoundingClientRect().bottom ?? 0;
+    if (abajo > 0) {
+      host.style.setProperty('--avisos-arriba', `${Math.round(abajo)}px`);
+    } else {
+      host.style.removeProperty('--avisos-arriba');
+    }
   }
 }
