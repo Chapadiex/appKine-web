@@ -72,7 +72,23 @@ let siguienteId = 0;
     @if (!sinAvanzados()) {
       <div class="filtros-barra__avanzados" [id]="idPanel" [hidden]="!abiertos()">
         <ng-content />
-        @if (limpiable() && activos() > 0) {
+        @if (separada()) {
+          <div class="filtros-barra__limpiar">
+            @if (limpiable()) {
+              <button
+                type="button"
+                class="boton-texto"
+                [disabled]="activos() === 0"
+                (click)="limpiar.emit()"
+              >
+                Limpiar
+              </button>
+            }
+            <button type="button" class="boton boton--chico" (click)="abiertos.set(false)">
+              Aplicar
+            </button>
+          </div>
+        } @else if (limpiable() && activos() > 0) {
           <div class="filtros-barra__limpiar">
             <button
               type="button"
@@ -86,9 +102,16 @@ let siguienteId = 0;
       </div>
     }
   `,
-  host: { class: 'filtros-barra' },
+  host: { class: 'filtros-barra', '[class.filtros-barra--separada]': 'separada()' },
 })
 export class Filtros {
+  /**
+   * Barra de herramientas propia, entre la cabecera y el contenido, y no pegada a la tabla
+   * (pantallas de Atencion, 08/11/2026). Los filtros avanzados cierran con Aplicar y Limpiar.
+   * Se aplican al elegirlos: Aplicar pliega el panel, no hay nada pendiente que confirmar.
+   */
+  readonly separada = input(false, { transform: booleanAttribute });
+
   /** Cuantos filtros avanzados estan fuera de su valor por defecto. */
   readonly activos = input(0);
 

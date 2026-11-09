@@ -17,12 +17,93 @@
   </app-ayuda>
 
   <!--
-    ‹ Hoy › corre la ventana entera, en la fila del titulo (UX-14 §3). Aparece con la oferta: sin
-    ella no hay agenda que mover.
+    Las pantallas hermanas de la seccion (UX-01): recepcion del dia y series. Pestanas y no
+    enlaces sueltos: responden "que mas hay aca", y se ven iguales desde las tres.
   -->
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<!--
+  UX-14 §3: una sola tarjeta. Arriba, en una fila, lo que define la consulta y se usa todos los
+  dias -oferta, fechas y profesional-; abajo, la grilla ocupando el resto de la pantalla.
+-->
+<app-filtros separada sinAvanzados>
+  <div class="campo" filtro-principal>
+    <label for="agenda-oferta">Prestación</label>
+    <select
+      id="agenda-oferta"
+      name="agenda-oferta"
+      aria-describedby="agenda-oferta-ayuda"
+      (change)="elegirOferta($any($event.target).value)"
+    >
+      <option value="">Elegí una prestación</option>
+      @for (oferta of ofertas(); track oferta.id) {
+        <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
+      }
+    </select>
+    <p class="visualmente-oculto" id="agenda-oferta-ayuda">
+      Solo las ofertas activas de esta sede se pueden agendar.
+    </p>
+  </div>
+
+  <div class="campo" filtro-frecuente>
+    <label for="agenda-desde">Desde</label>
+    <input
+      id="agenda-desde"
+      name="agenda-desde"
+      type="date"
+      [value]="desde()"
+      (change)="cambiarDesde($any($event.target).value)"
+    />
+  </div>
+
+  <div class="campo" filtro-frecuente>
+    <label for="agenda-hasta">Hasta (sin incluir)</label>
+    <input
+      id="agenda-hasta"
+      name="agenda-hasta"
+      type="date"
+      [value]="hasta()"
+      (change)="cambiarHasta($any($event.target).value)"
+      aria-describedby="agenda-hasta-ayuda"
+    />
+    <p class="visualmente-oculto" id="agenda-hasta-ayuda">
+      El último día no se incluye. La ventana se consulta de a 62 días como máximo; si pedís más, la
+      recortamos y te avisamos.
+    </p>
+  </div>
+
+  <div class="campo" filtro-frecuente>
+    <label for="agenda-profesional">Profesional</label>
+    <select
+      id="agenda-profesional"
+      name="agenda-profesional"
+      [disabled]="profesionales().length === 0"
+      (change)="elegirProfesional($any($event.target).value)"
+    >
+      <option value="">Todos los habilitados</option>
+      @for (profesional of profesionales(); track profesional.membershipId) {
+        <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo" filtro-frecuente>
+    <label for="agenda-franja">Franja</label>
+    <select
+      id="agenda-franja"
+      name="agenda-franja"
+      (change)="elegirFranja($any($event.target).value)"
+    >
+      <option value="TODO">Todo el día</option>
+      <option value="MANANA">Mañana</option>
+      <option value="TARDE">Tarde</option>
+    </select>
+  </div>
+  <!-- ‹ Hoy › corre la ventana entera. Aparece con la oferta: sin ella no hay agenda que mover. -->
   @if (ofertaId() !== null) {
     <div
-      cabeceraContexto
+      filtro-frecuente
       class="navegador-fecha"
       role="group"
       aria-label="Mover la ventana de fechas"
@@ -51,94 +132,9 @@
       <span class="navegador-fecha__etiqueta">{{ etiquetaDeVentana() }}</span>
     </div>
   }
+</app-filtros>
 
-  <!--
-    Las pantallas hermanas de la seccion (UX-01): recepcion del dia y series. Pestanas y no
-    enlaces sueltos: responden "que mas hay aca", y se ven iguales desde las tres.
-  -->
-  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
-</app-cabecera-de-pagina>
-
-<!--
-  UX-14 §3: una sola tarjeta. Arriba, en una fila, lo que define la consulta y se usa todos los
-  dias -oferta, fechas y profesional-; abajo, la grilla ocupando el resto de la pantalla.
--->
 <section class="tarjeta" aria-label="Turnos disponibles">
-  <app-filtros sinAvanzados>
-    <div class="campo" filtro-principal>
-      <label for="agenda-oferta">Prestación</label>
-      <select
-        id="agenda-oferta"
-        name="agenda-oferta"
-        aria-describedby="agenda-oferta-ayuda"
-        (change)="elegirOferta($any($event.target).value)"
-      >
-        <option value="">Elegí una prestación</option>
-        @for (oferta of ofertas(); track oferta.id) {
-          <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
-        }
-      </select>
-      <p class="visualmente-oculto" id="agenda-oferta-ayuda">
-        Solo las ofertas activas de esta sede se pueden agendar.
-      </p>
-    </div>
-
-    <div class="campo" filtro-frecuente>
-      <label for="agenda-desde">Desde</label>
-      <input
-        id="agenda-desde"
-        name="agenda-desde"
-        type="date"
-        [value]="desde()"
-        (change)="cambiarDesde($any($event.target).value)"
-      />
-    </div>
-
-    <div class="campo" filtro-frecuente>
-      <label for="agenda-hasta">Hasta (sin incluir)</label>
-      <input
-        id="agenda-hasta"
-        name="agenda-hasta"
-        type="date"
-        [value]="hasta()"
-        (change)="cambiarHasta($any($event.target).value)"
-        aria-describedby="agenda-hasta-ayuda"
-      />
-      <p class="visualmente-oculto" id="agenda-hasta-ayuda">
-        El último día no se incluye. La ventana se consulta de a 62 días como máximo; si pedís más,
-        la recortamos y te avisamos.
-      </p>
-    </div>
-
-    <div class="campo" filtro-frecuente>
-      <label for="agenda-profesional">Profesional</label>
-      <select
-        id="agenda-profesional"
-        name="agenda-profesional"
-        [disabled]="profesionales().length === 0"
-        (change)="elegirProfesional($any($event.target).value)"
-      >
-        <option value="">Todos los habilitados</option>
-        @for (profesional of profesionales(); track profesional.membershipId) {
-          <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
-        }
-      </select>
-    </div>
-
-    <div class="campo" filtro-frecuente>
-      <label for="agenda-franja">Franja</label>
-      <select
-        id="agenda-franja"
-        name="agenda-franja"
-        (change)="elegirFranja($any($event.target).value)"
-      >
-        <option value="TODO">Todo el día</option>
-        <option value="MANANA">Mañana</option>
-        <option value="TARDE">Tarde</option>
-      </select>
-    </div>
-  </app-filtros>
-
   <div aria-live="polite">
     @if (avisoDeRecorte(); as aviso) {
       <p class="estado estado--vacio">{{ aviso }}</p>

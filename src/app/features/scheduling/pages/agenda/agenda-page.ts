@@ -36,6 +36,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -129,6 +130,7 @@ const A_REUBICAR = 'A_REUBICAR';
     Ayuda,
     CabeceraDePagina,
     EstadoVacio,
+    Filtros,
     Icono,
     NgTemplateOutlet,
     Pestanas,
@@ -214,11 +216,6 @@ export class AgendaPage {
   private readonly duracionesPropias = signal<ReadonlyMap<number, number>>(new Map());
   private pedidoDeDuraciones?: Subscription;
   protected readonly angosta = signal(false);
-  /**
-   * La fila de filtros (profesional, prestacion, estado) arranca plegada y la abre el boton Filtros
-   * (08/11/2026). Plegarla no borra lo elegido: el boton cuenta los filtros activos.
-   */
-  protected readonly filtrosAbiertos = signal(false);
   /** "Proximo dia con turnos": buscando, y si no encontro ninguno en la ventana que se miro. */
   protected readonly buscandoProximo = signal(false);
   protected readonly sinProximo = signal(false);

@@ -31,55 +31,109 @@
   <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
-<!--
-El dia, debajo de la cabecera (08/11/2026): la fila del titulo es la misma que la de la agenda
-—titulo, pestañas y accion principal— y el selector compacto [‹] [fecha] [›] [Hoy] baja aca.
--->
-<div class="navegador-fecha recepcion__dia" role="group" aria-label="Día de la recepción">
-  <button
-    type="button"
-    class="navegador-fecha__boton navegador-fecha__boton--flecha"
-    title="Día anterior"
-    (click)="moverDia(-1)"
-  >
-    <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Día anterior</span>
-  </button>
-  <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
-  <input
-    id="recepcion-fecha"
-    name="recepcion-fecha"
-    type="date"
-    [value]="dia()"
-    (change)="cambiarDia($any($event.target).value)"
-  />
-  <button
-    type="button"
-    class="navegador-fecha__boton navegador-fecha__boton--flecha"
-    title="Día siguiente"
-    (click)="moverDia(1)"
-  >
-    <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Día siguiente</span>
-  </button>
-  <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
-  <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
-  <button type="button" class="navegador-fecha__boton" (click)="cargar()">
-    Actualizar la lista
-  </button>
-  <!--
-    Impeccable 29/10: la lista se relee sola al volver a la pestaña y cada minuto mientras se ve
-    (otro puesto llama pacientes). La hora de la ultima lectura dice cuan fresca es.
-  -->
-  @if (actualizadaA(); as hora) {
-    <span class="navegador-fecha__lectura">Actualizada {{ hora }}</span>
-  }
-</div>
-
 @if (!puedeOperar()) {
   <p class="estado estado--vacio">
     Solo podés mirar la lista. Registrar llegadas y mover la recepción necesita permiso de gestion
     de turnos en esta sede.
   </p>
 }
+
+<!--
+  Barra de herramientas (08/11/2026), afuera de la tarjeta y tambien con error: la busqueda, el
+  dia, el estado de la recepcion con sus cuentas y el contador; la prestacion, detras de "Filtros".
+-->
+<app-filtros
+  separada
+  [activos]="filtrosAvanzadosActivos()"
+  [resultados]="cargando() ? null : tabla.total()"
+  [unidad]="['turno', 'turnos']"
+  limpiable
+  (limpiar)="prestacion.set('')"
+>
+  <div class="campo" filtro-principal>
+    <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
+    <div class="campo-busqueda">
+      <app-icono class="campo-busqueda__icono" nombre="buscar" />
+      <input
+        id="recepcion-busqueda"
+        name="recepcion-busqueda"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar paciente o documento"
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <!-- El dia y "Actualizar la lista", en la barra de herramientas al lado de la busqueda. -->
+  <div
+    filtro-frecuente
+    class="navegador-fecha recepcion__dia"
+    role="group"
+    aria-label="Día de la recepción"
+  >
+    <button
+      type="button"
+      class="navegador-fecha__boton navegador-fecha__boton--flecha"
+      title="Día anterior"
+      (click)="moverDia(-1)"
+    >
+      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Día anterior</span>
+    </button>
+    <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
+    <input
+      id="recepcion-fecha"
+      name="recepcion-fecha"
+      type="date"
+      [value]="dia()"
+      (change)="cambiarDia($any($event.target).value)"
+    />
+    <button
+      type="button"
+      class="navegador-fecha__boton navegador-fecha__boton--flecha"
+      title="Día siguiente"
+      (click)="moverDia(1)"
+    >
+      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Día siguiente</span>
+    </button>
+    <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+    <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
+    <button type="button" class="navegador-fecha__boton" (click)="cargar()">
+      Actualizar la lista
+    </button>
+    <!--
+    Impeccable 29/10: la lista se relee sola al volver a la pestaña y cada minuto mientras se ve
+    (otro puesto llama pacientes). La hora de la ultima lectura dice cuan fresca es.
+  -->
+    @if (actualizadaA(); as hora) {
+      <span class="navegador-fecha__lectura">Actualizada {{ hora }}</span>
+    }
+  </div>
+
+  <app-filtros-rapidos
+    filtro-frecuente
+    class="filtros-barra__frecuente--fila"
+    etiqueta="Filtrar por estado de la recepción"
+    [opciones]="opcionesDeRecepcion()"
+    [(valor)]="filtroDeRecepcion"
+  />
+
+  <div class="campo">
+    <label for="recepcion-prestacion">Prestación</label>
+    <select
+      id="recepcion-prestacion"
+      name="recepcion-prestacion"
+      [value]="prestacion()"
+      (change)="prestacion.set($any($event.target).value)"
+    >
+      <option value="">Todas</option>
+      @for (nombre of prestaciones(); track nombre) {
+        <option [value]="nombre">{{ nombre }}</option>
+      }
+    </select>
+  </div>
+</app-filtros>
 
 <!--
   UX-12: el resultado de cada transicion es un aviso global (lo dibuja el shell). Aca solo queda
@@ -100,59 +154,7 @@ El dia, debajo de la cabecera (08/11/2026): la fila del titulo es la misma que l
     </p>
   </app-alerta>
 } @else {
-  <!--
-    UX-14 §1 y §3: la busqueda, el filtro frecuente (el estado de la recepcion, con sus cuentas) y
-    el contador en una sola fila, pegada a la tabla y en la misma tarjeta; la prestacion, detras de
-    "Filtros". El dia y "Actualizar" viven en la cabecera.
-  -->
   <section class="tarjeta" aria-label="Turnos del día">
-    <app-filtros
-      [activos]="filtrosAvanzadosActivos()"
-      [resultados]="cargando() ? null : tabla.total()"
-      [unidad]="['turno', 'turnos']"
-      limpiable
-      (limpiar)="prestacion.set('')"
-    >
-      <div class="campo" filtro-principal>
-        <label class="visualmente-oculto" for="recepcion-busqueda">Paciente o documento</label>
-        <div class="campo-busqueda">
-          <app-icono class="campo-busqueda__icono" nombre="buscar" />
-          <input
-            id="recepcion-busqueda"
-            name="recepcion-busqueda"
-            type="search"
-            autocomplete="off"
-            placeholder="Buscar paciente o documento"
-            [value]="busqueda()"
-            (input)="busqueda.set($any($event.target).value)"
-          />
-        </div>
-      </div>
-
-      <app-filtros-rapidos
-        filtro-frecuente
-        class="filtros-barra__frecuente--fila"
-        etiqueta="Filtrar por estado de la recepción"
-        [opciones]="opcionesDeRecepcion()"
-        [(valor)]="filtroDeRecepcion"
-      />
-
-      <div class="campo">
-        <label for="recepcion-prestacion">Prestación</label>
-        <select
-          id="recepcion-prestacion"
-          name="recepcion-prestacion"
-          [value]="prestacion()"
-          (change)="prestacion.set($any($event.target).value)"
-        >
-          <option value="">Todas</option>
-          @for (nombre of prestaciones(); track nombre) {
-            <option [value]="nombre">{{ nombre }}</option>
-          }
-        </select>
-      </div>
-    </app-filtros>
-
     <!--
       Lo que el mostrador mira sin leer la tabla: el dia en palabras, cuantos esperan en la sala y
       en que zona estan las horas.
@@ -178,17 +180,20 @@ El dia, debajo de la cabecera (08/11/2026): la fila del titulo es la misma que l
       <p class="estado estado--cargando">Leyendo los turnos del día…</p>
     } @else if (!hayTurnos()) {
       <app-estado-vacio
+        icono="calendario"
         titulo="No hay turnos este día"
         texto="Este día no tiene ningún turno agendado en esta sede. Probá con otra fecha."
       >
         @if (puedeOperar()) {
-          <button type="button" class="boton boton--secundario" (click)="nuevoTurno()">
+          <button type="button" class="boton" (click)="nuevoTurno()">
+            <app-icono nombre="agregar" />
             Nuevo turno
           </button>
         }
       </app-estado-vacio>
     } @else if (tabla.total() === 0) {
       <app-estado-vacio
+        icono="buscar"
         titulo="No encontramos turnos"
         texto="Ningún turno del día coincide con esa búsqueda o filtro."
       >

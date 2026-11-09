@@ -4,39 +4,10 @@
  * texto, el color acompana.
  */
 
-/* --- Cabecera: las pestañas van en la fila del titulo, como en toda la aplicacion --- */
-
-.agenda-cabecera {
-  margin-bottom: var(--esp-5);
-}
-
 /*
- * --- Barra de herramientas (nivel 3 de la norma): fecha, vista, agrupacion, busqueda y filtros ---
- * Superficie secundaria, sin borde ni sombra: se lee como herramienta y no como contenido. Los
- * controles adentro son superficie con contorno de control (3:1).
+ * --- Barra de herramientas: la de toda Atencion (`app-filtros separada`, 08/11/2026) ---
+ * Aca solo lo propio de la agenda: los grupos de fecha y de vista y el alto de sus controles.
  */
-
-.agenda-barra {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-4);
-  margin-bottom: var(--esp-4);
-  padding: var(--esp-4) var(--esp-5);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie-secundaria);
-}
-
-/*
- * Una fila: el buscador toma el espacio que sobra y los grupos de fecha y de vista conservan su
- * ancho. Si no entra, lo que baja es un grupo entero, nunca la mitad de uno, y nunca hay scroll
- * horizontal.
- */
-.agenda-barra__fila {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-6);
-}
 
 .agenda-barra__fecha,
 .agenda-barra__vista {
@@ -50,18 +21,10 @@
   display: none;
 }
 
-@media (max-width: 47.99rem) {
-  .agenda-buscar {
-    flex-basis: 100%;
-  }
-}
-
 /* Todos los controles de la barra tienen el mismo alto (40 px) y el mismo contorno (3:1, WCAG 1.4.11). */
 .agenda-nav__boton,
 .segmento button,
-.agenda-filtros-boton,
-.agenda-buscar input,
-.pastilla-filtro select {
+.agenda-buscar input {
   min-height: 2.5rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   background: var(--color-superficie);
@@ -77,8 +40,7 @@
 }
 
 .agenda-nav__boton,
-.segmento button,
-.agenda-filtros-boton {
+.segmento button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -98,8 +60,7 @@
 }
 
 .agenda-nav__boton:hover,
-.segmento button:hover,
-.agenda-filtros-boton:hover {
+.segmento button:hover {
   background: var(--color-hover);
 }
 
@@ -178,46 +139,15 @@
 }
 
 /* Elegido y desplegado: fondo de seleccion, texto de enlace y peso (no solo color, WCAG 1.4.1). */
-.segmento button[aria-pressed='true'],
-.agenda-filtros-boton[aria-expanded='true'] {
+.segmento button[aria-pressed='true'] {
   background: var(--color-seleccion);
   color: var(--color-enlace);
   font-weight: var(--peso-semi);
 }
 
-.agenda-filtros-boton {
-  border-radius: var(--radio-sm);
-}
-
-/* Desplegado, o plegado con filtros aplicados: borde de enlace, para que se note que hay algo. */
-.agenda-filtros-boton[aria-expanded='true'],
-.agenda-filtros-boton--activo {
-  border-color: var(--color-enlace);
-}
-
-.agenda-filtros-boton--activo {
-  color: var(--color-enlace);
-}
-
-.agenda-filtros-boton__contador {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.125rem;
-  height: 1.125rem;
-  padding: 0 var(--esp-2);
-  border-radius: var(--radio-pastilla);
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-semi);
-}
-
 .agenda-buscar {
   position: relative;
-  flex: 1 1 14rem;
-  min-width: 12rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
 }
 
@@ -237,124 +167,6 @@
 .agenda-buscar input:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
-}
-
-/*
- * Filtros: rotulo suave al lado y el select como control propio, con contorno de control (3:1,
- * WCAG 1.4.11) y el anillo de foco global. Activo: borde de enlace y fondo de seleccion.
- */
-.agenda-barra__filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-6);
-}
-
-.agenda-barra__filtros[hidden] {
-  display: none;
-}
-
-.pastilla-filtro {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-3);
-}
-
-.pastilla-filtro label {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-medio);
-}
-
-.pastilla-filtro select {
-  /* Del ancho de lo elegido, no del nombre mas largo de la lista. */
-  field-sizing: content;
-  max-width: 14rem;
-  padding: 0 var(--esp-4);
-  border-radius: var(--radio-sm);
-  font-weight: var(--peso-medio);
-  cursor: pointer;
-}
-
-.pastilla-filtro select:hover {
-  background: var(--color-hover);
-}
-
-.pastilla-filtro select:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-.pastilla-filtro--activa select {
-  border-color: var(--color-enlace);
-  background: var(--color-seleccion);
-}
-
-.agenda-limpiar {
-  font-weight: var(--peso-semi);
-}
-
-/* --- Dia sin turnos: una franja con icono, explicacion y acciones --- */
-
-.agenda-sin-turnos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-5) var(--esp-7);
-  padding: var(--esp-7) var(--esp-8);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-}
-
-.agenda-sin-turnos__icono {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radio-md);
-  background: var(--color-seleccion);
-  color: var(--color-enlace);
-  font-size: 1.25rem;
-}
-
-.agenda-sin-turnos__texto {
-  flex: 1 1 18rem;
-  min-width: 0;
-}
-
-.agenda-sin-turnos__texto p {
-  margin: 0;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-  text-wrap: pretty;
-}
-
-.agenda-sin-turnos__texto .agenda-sin-turnos__titulo {
-  margin-bottom: var(--esp-2);
-  color: var(--color-texto-fuerte);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
-}
-
-.agenda-sin-turnos__texto .agenda-sin-turnos__aviso {
-  margin-top: var(--esp-3);
-  color: var(--color-texto);
-  font-weight: var(--peso-medio);
-}
-
-.agenda-sin-turnos__acciones {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-5);
-}
-
-.agenda-sin-turnos__proximo {
-  border-color: var(--color-borde-control);
-  color: var(--color-texto);
 }
 
 .agenda-vacia {
@@ -464,7 +276,6 @@
   position: relative;
   border-left: var(--borde-fino) solid var(--color-borde);
 }
-
 
 /* Fuera de la franja de atencion: rayado tenue, y lo dice. No se puede reservar. */
 .grilla__fuera {

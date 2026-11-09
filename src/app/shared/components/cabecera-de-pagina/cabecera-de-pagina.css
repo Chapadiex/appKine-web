@@ -119,10 +119,32 @@
 }
 
 /*
+ * Sin controles de contexto, las pestañas se centran en la fila entera y no en el hueco que dejan
+ * el titulo y las acciones: asi arrancan en el mismo punto en todas las pantallas hermanas, aunque
+ * el titulo o las acciones cambien de largo (Atencion, 08/11/2026). Cada costado mide al menos lo
+ * que pide su contenido.
+ */
+@container cabecera-pagina (min-width: 66.01rem) {
+  .cabecera-pagina__fila:has(> .cabecera-pagina__contexto:empty):has(.pestanas) {
+    grid-template-columns: minmax(max-content, 1fr) max-content minmax(max-content, 1fr);
+    grid-template-areas: 'titulo pestanas principal';
+  }
+
+  .cabecera-pagina__fila:has(> .cabecera-pagina__contexto:empty):has(.pestanas)
+    .cabecera-pagina__principal {
+    justify-self: end;
+  }
+
+  .cabecera-pagina .cabecera-pagina__pestanas .pestanas__lista {
+    flex-wrap: nowrap;
+  }
+}
+
+/*
  * Si no entran en la fila del titulo, las pestañas bajan enteras a la suya antes que partirse en
  * dos lineas. Con controles de contexto la fila se llena antes.
  */
-@container cabecera-pagina (max-width: 64rem) {
+@container cabecera-pagina (max-width: 66rem) {
   .cabecera-pagina__fila {
     grid-template-areas:
       'titulo contexto . principal'

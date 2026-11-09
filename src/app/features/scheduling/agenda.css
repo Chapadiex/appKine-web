@@ -77,7 +77,8 @@
 .slot {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: var(--esp-1);
   min-width: 8.5rem;
   padding: var(--esp-4) var(--esp-5);
@@ -86,7 +87,7 @@
   background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
-  text-align: left;
+  text-align: center;
 }
 
 .slot__hora {
@@ -230,25 +231,16 @@ button.slot--libre:focus-visible {
 }
 
 /*
- * El dia de la recepcion, en una barra de herramientas como la de la agenda (08/11/2026): superficie
- * secundaria y controles de 40 px, debajo de la cabecera.
+ * El navegador de fecha en la barra de herramientas de Atencion (08/11/2026): controles de 40 px,
+ * como el resto de la barra.
  */
-.recepcion__dia {
-  display: flex;
-  margin-bottom: var(--esp-4);
-  padding: var(--esp-4) var(--esp-5);
-  gap: var(--esp-4);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie-secundaria);
-}
-
-.recepcion__dia .navegador-fecha__boton {
+.filtros-barra--separada .navegador-fecha__boton {
   min-width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radio-sm);
 }
 
-.recepcion__dia input[type='date'] {
+.filtros-barra--separada .navegador-fecha input[type='date'] {
   height: 2.5rem;
   border-radius: var(--radio-sm);
 }
