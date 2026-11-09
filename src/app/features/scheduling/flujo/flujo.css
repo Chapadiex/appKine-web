@@ -93,6 +93,104 @@ summary {
   font-weight: var(--peso-medio);
 }
 
+/*
+ * --- Detalle del turno (rediseño del 08/11/2026) ---
+ * Datos en grupos con icono, y despues secciones separadas por una linea: observaciones,
+ * seguimiento, gestion y cancelacion. Una sola columna de scroll, la del panel.
+ */
+
+/* El estado, debajo del nombre en la cabecera del panel. */
+.flujo__estado-cabecera {
+  margin: var(--esp-3) 0 0;
+}
+
+.flujo__datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin: 0;
+}
+
+.flujo__grupo {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--esp-4);
+}
+
+.flujo__grupo dt {
+  display: flex;
+  padding-top: 0.125rem;
+  color: var(--color-texto-suave);
+}
+
+.flujo__grupo dd {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  overflow-wrap: anywhere;
+}
+
+.flujo__secundario {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+a.flujo__secundario {
+  align-self: flex-start;
+  color: var(--color-enlace);
+}
+
+.flujo__seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+/* Sin ningun boton (estado o permisos), seguimiento y gestion no se dibujan. */
+.flujo__seccion:not(:has(button, a, textarea, p)) {
+  display: none;
+}
+
+.flujo__seccion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+.flujo__seccion-titulo {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.flujo__vacio {
+  color: var(--color-texto-suave);
+}
+
+/* Las acciones de una seccion: dos columnas parejas, una en un panel angosto. */
+.flujo__acciones-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  gap: var(--esp-4);
+}
+
+.flujo__acciones-grilla > .boton {
+  width: 100%;
+}
+
+.flujo__seccion--peligro > .boton {
+  width: 100%;
+}
+
 .flujo__fila {
   display: flex;
   flex-wrap: wrap;

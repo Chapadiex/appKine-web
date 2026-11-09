@@ -147,7 +147,6 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly turno = signal<TurnoDelDia | null>(null);
   protected readonly cargando = signal(true);
   protected readonly vista = signal<Vista>('resumen');
-  protected readonly masAcciones = signal(false);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
   private pedidoDeLectura: Subscription | null = null;
@@ -383,8 +382,28 @@ export class DetalleDeTurnoPanel implements OnInit {
       case 'trasladar':
         return 'Cambiar de sede';
       default:
-        return 'Turno';
+        return 'Detalle del turno';
     }
+  });
+
+  /** Cuanto dura el turno, "45 min" o "1 h 30 min". Solo de lectura: sale del inicio y el fin. */
+  protected readonly duracion = computed(() => {
+    const turno = this.turno();
+    if (turno === null) {
+      return '';
+    }
+    const minutos = Math.round(
+      (Date.parse(turno.fin ?? '') - Date.parse(turno.inicio ?? '')) / 60_000,
+    );
+    if (!Number.isFinite(minutos) || minutos <= 0) {
+      return '';
+    }
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    if (horas === 0) {
+      return `${minutos} min`;
+    }
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
   });
 
   protected readonly cuando = computed(() => {
@@ -497,7 +516,6 @@ export class DetalleDeTurnoPanel implements OnInit {
 
   protected abrir(vista: Vista): void {
     this.error.set(null);
-    this.masAcciones.set(false);
     this.observacion.set('');
     this.vista.set(vista);
     if (vista === 'historial') {

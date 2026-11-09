@@ -207,7 +207,6 @@ test.describe('Flujo unico de turnos', () => {
       timeZone: ZONA,
     }).format(inicio);
     const dialogo = await abrirTurnoEnLaAgenda(page, fechaLocal(ZONA), hora);
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Marcar ausente' }).click();
     await dialogo.getByRole('button', { name: 'Registrar la ausencia' }).click();
     await expect(dialogo.locator('.estado-turno')).toContainText('Ausente');
@@ -346,7 +345,6 @@ test.describe('Flujo unico de turnos', () => {
     await entrarComoAdministradora(page, sembrada);
 
     const dialogo = await abrirTurnoEnLaAgenda(page, dia, '11:00');
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
     await dialogo.locator('.horario').first().click();
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
@@ -397,7 +395,6 @@ test.describe('Flujo unico de turnos', () => {
     await entrarComoAdministradora(page, sembrada);
 
     const dialogo = await abrirTurnoEnLaAgenda(page, dia, '21:00');
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Cancelar turno' }).click();
     await dialogo.getByRole('button', { name: 'Cancelar turno' }).click();
     await expect(avisos(page).getByText(/Turno cancelado/)).toBeVisible();
