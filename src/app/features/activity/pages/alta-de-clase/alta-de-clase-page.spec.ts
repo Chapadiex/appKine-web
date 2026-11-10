@@ -173,6 +173,52 @@ describe('AltaDeClasePage', () => {
     expect(textoDe(fixture)).not.toContain('Box fuera de servicio');
   });
 
+  it('todas las semanas: manda días, rango y horario, y deja a la vista las fechas que no salieron', async () => {
+    const fixture = await montar([
+      { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },
+    ]);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    (anfitrion.querySelector('input[value="semanal"]') as HTMLInputElement).click();
+    escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
+    await asentar(fixture);
+    const enviar = anfitrion.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+    // Sin días ni fecha hasta no sale nada a la red.
+    enviar.click();
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Elegí al menos un día.');
+    httpMock.expectNone(`${PROGRAMAR}/serie`);
+
+    (anfitrion.querySelector('#clase-dia-4') as HTMLInputElement).click();
+    (anfitrion.querySelector('#clase-dia-2') as HTMLInputElement).click();
+    escribir(fixture, '#clase-fecha', '2026-12-01');
+    escribir(fixture, '#clase-hasta', '2026-12-31');
+    await asentar(fixture);
+    enviar.click();
+
+    const pedido = httpMock.expectOne(`${PROGRAMAR}/serie`);
+    expect(pedido.request.body).toMatchObject({
+      desde: '2026-12-01',
+      hasta: '2026-12-31',
+      diasSemana: [2, 4],
+      horaInicio: '09:00',
+      horaFin: '09:45',
+    });
+    pedido.flush({
+      programadas: [{ id: 1 }, { id: 2 }],
+      omitidas: [
+        { fecha: '2026-12-08', motivo: 'FERIADO', detalle: 'Feriado: la sede no atiende' },
+      ],
+    });
+    await asentar(fixture);
+
+    expect(textoDe(fixture)).toContain('1 fecha no se pudo programar');
+    expect(textoDe(fixture)).toContain('Feriado (1): martes 08/12/2026');
+    expect(textoDe(fixture)).toContain('Feriado');
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
   it('un 400 del cupo se marca junto al campo y el cartel sólo dice lo que no se marca', async () => {
     const fixture = await montar([
       { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },

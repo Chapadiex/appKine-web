@@ -337,6 +337,7 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/evento-relacionado-de-agenda.ts
 model/excepcion-response.ts
+model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
@@ -344,6 +345,7 @@ model/fila-importacion-arancel-response.ts
 model/finalizar-plan-tratamiento-request.ts
 model/financiador-response.ts
 model/franja-de-agenda.ts
+model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
@@ -376,6 +378,7 @@ model/inscripcion.ts
 model/instructor-adicional.ts
 model/instructores-de-clase.ts
 model/integrante-del-equipo.ts
+model/intervalo-horario-response.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
 model/invitacion-token-request.ts
@@ -460,12 +463,14 @@ model/prepago-de-recepcion.ts
 model/presentacion-item.ts
 model/presentacion.ts
 model/previsualizacion-de-serie.ts
+model/problem-detail-franjas-fuera-de-horario-inner.ts
 model/problem-detail.ts
 model/problem-type.ts
 model/producto.ts
 model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
+model/programar-serie-de-clases.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
@@ -530,6 +535,7 @@ model/seccion-omitida-response.ts
 model/seccion-response.ts
 model/seleccion-de-cobertura-response.ts
 model/select-context-request.ts
+model/serie-de-clases.ts
 model/serie-de-indicador-de-reporte.ts
 model/serie-de-reporte.ts
 model/serie-de-turnos-page.ts

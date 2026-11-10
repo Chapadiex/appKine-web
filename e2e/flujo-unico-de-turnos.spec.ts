@@ -1,6 +1,6 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 
-import { navegar } from './support/agenda-real';
+import { diaDelPanel, diasHabilesSinFeriado, navegar } from './support/agenda-real';
 import { ZONA_DE_HOY } from './support/centro-de-hoy';
 import {
   HistoriaSembrada,
@@ -39,6 +39,8 @@ test.describe('Flujo unico de turnos', () => {
   let casoId: number;
   let planId: number;
   let dia: string;
+  /** Feriados de la sede entre `dia` y dos semanas despues: lo que la serie tiene que esquivar. */
+  let feriados: ReadonlySet<string>;
 
   interface Turno {
     readonly id: number;
@@ -165,7 +167,7 @@ test.describe('Flujo unico de turnos', () => {
       'GET',
       ruta(`/calendario?desde=${fechaLocal(ZONA, 3)}&hasta=${fechaLocal(ZONA, 20)}`),
     );
-    const feriados = new Set(calendario.feriados.map((f) => f.fecha));
+    feriados = new Set(calendario.feriados.map((f) => f.fecha));
     dia = fechaLocal(ZONA, 3);
     while (feriados.has(dia)) {
       dia = sumarDias(dia, 1);
@@ -306,13 +308,18 @@ test.describe('Flujo unico de turnos', () => {
     // La cantidad sale de lo que le queda al plan.
     await expect(varias.getByText('Pendientes:')).toBeVisible();
     await expect(varias.getByLabel('Cantidad de sesiones')).toHaveValue('4');
+    // Dos dias habiles sin feriado, una semana despues: el panel excluye la ocurrencia que cae en
+    // feriado y confirma una sola, con otro aviso. Con "Lun" y "Jue" fijos, el 23/11/2026 lo hizo.
+    const [primera, segunda] = diasHabilesSinFeriado(sumarDias(dia, 7), feriados, 2);
     await varias.getByLabel('Horario preferido').fill('15:00');
-    await varias.getByLabel('Fecha inicial').fill(sumarDias(dia, 7));
+    await varias.getByLabel('Fecha inicial').fill(primera);
     await varias.getByLabel('Cantidad de sesiones').fill('2');
-    await varias.getByLabel('Lun', { exact: true }).check();
-    await varias.getByLabel('Jue', { exact: true }).check();
+    await varias.getByLabel(diaDelPanel(primera), { exact: true }).check();
+    await varias.getByLabel(diaDelPanel(segunda), { exact: true }).check();
     await varias.getByRole('button', { name: 'Buscar disponibilidad' }).click();
-    await expect(varias.getByRole('table')).toBeVisible();
+    const propuestas = varias.getByRole('table').locator('tbody tr');
+    await expect(propuestas).toHaveCount(2);
+    await expect(propuestas.getByText(/se omite|Excluida|No disponible/)).toHaveCount(0);
     await varias.getByRole('button', { name: /^Confirmar/ }).click();
     await expect(avisos(page).getByText(/2 turnos|sesiones programadas/i)).toBeVisible();
 

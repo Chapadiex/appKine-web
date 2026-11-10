@@ -303,6 +303,16 @@
             proximo guardado.
           -->
           <div aria-live="polite">
+            @if (franjasFuera(); as fuera) {
+              <app-franjas-fuera-del-horario
+                [franjas]="fuera.franjas"
+                [modo]="fuera.modo"
+                [ocupado]="guardandoHorario()"
+                (recortar)="recortarFranjasFuera()"
+                (conservar)="conservarFranjasFuera()"
+                (cancelar)="cancelarFranjasFuera()"
+              />
+            }
             @if (avisoImpactoHorario(); as aviso) {
               <div class="aviso-apertura" role="status">
                 <p>

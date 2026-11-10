@@ -2,14 +2,79 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una clase es un evento grupal único sobre una oferta grupal, con su cupo. No genera un turno
-      por persona: las inscripciones se hacen después, desde el detalle de la clase. Cada clase se
-      programa por separado. El box se puede elegir; si no se elige y la oferta lo necesita, el
-      sistema toma uno libre.
+      por persona: las inscripciones se hacen después, desde el detalle de la clase. El box se puede
+      elegir; si no se elige y la oferta lo necesita, el sistema toma uno libre.
+    </p>
+    <p>
+      <b>Todas las semanas</b> programa la misma clase en los días elegidos, entre la fecha desde y
+      la hasta. Cada fecha se revisa como una clase suelta: si un día cae feriado o el box está
+      ocupado, ese día no se programa y te decimos por qué; los demás sí.
     </p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
+  <div class="pastillas modo-de-clase" role="radiogroup" aria-label="Cuántas clases">
+    <label class="pastilla">
+      <input
+        type="radio"
+        name="modo-de-clase"
+        value="una"
+        [checked]="modo() === 'una'"
+        (change)="cambiarModo('una')"
+      />
+      <span>Una clase</span>
+    </label>
+    <label class="pastilla">
+      <input
+        type="radio"
+        name="modo-de-clase"
+        value="semanal"
+        [checked]="modo() === 'semanal'"
+        (change)="cambiarModo('semanal')"
+      />
+      <span>Todas las semanas</span>
+    </label>
+  </div>
+
+  <!-- Fechas de la serie que no se programaron: se quedan a la vista para resolverlas a mano. -->
+  @if (resultadoDeSerie(); as serie) {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      [titulo]="
+        (serie.omitidas?.length ?? 0) +
+        ((serie.omitidas?.length ?? 0) === 1
+          ? ' fecha no se pudo programar'
+          : ' fechas no se pudieron programar')
+      "
+      id="serie-resultado"
+      tabindex="-1"
+    >
+      <p>
+        @if ((serie.programadas?.length ?? 0) === 0) {
+          No se programó ninguna clase.
+        } @else {
+          Se programaron {{ serie.programadas?.length }}.
+        }
+        Las fechas de abajo quedaron afuera; podés programarlas una por una con otro horario o box.
+      </p>
+      <ul class="serie-omitidas">
+        @for (grupo of omitidasPorMotivo(); track grupo.motivo) {
+          <li>
+            <b>{{ textoDeMotivoDeOmision(grupo.motivo) }}</b> ({{ grupo.fechas.length }}):
+            {{ grupo.fechas.join(', ') }}
+            @if (grupo.detalle && detalleDeOmisionUtil(grupo.motivo)) {
+              <p class="ayuda ayuda--fija">{{ grupo.detalle }}</p>
+            }
+          </li>
+        }
+      </ul>
+      <p class="alerta__acciones">
+        <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Ver las clases</a>
+      </p>
+    </app-alerta>
+  }
   <!-- Error general de la operacion: arriba del formulario, a la vista mientras se corrige. -->
   @if (error(); as fallo) {
     @if (conflicto() === null) {
@@ -93,6 +158,11 @@
         }
       </select>
       <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
+      @if (ofertaElegida(); as oferta) {
+        <p class="ayuda ayuda--fija">
+          <a [routerLink]="rutaDeHabilitaciones(oferta.id)">Elegir quiénes dictan esta oferta</a>
+        </p>
+      }
     </div>
   }
 
@@ -111,8 +181,37 @@
     </app-alerta>
   }
 
+  @if (modo() === 'semanal') {
+    <div class="campo campo--ancho">
+      <p class="campo__rotulo" id="clase-dias-rotulo">Días de la semana</p>
+      <div
+        class="pastillas"
+        role="group"
+        aria-labelledby="clase-dias-rotulo"
+        [attr.aria-describedby]="faltaDia() ? 'clase-dias-error' : null"
+      >
+        @for (dia of DIAS_DE_LA_SEMANA; track dia.valor) {
+          <label class="pastilla pastilla--dia">
+            <input
+              type="checkbox"
+              [id]="'clase-dia-' + dia.valor"
+              [checked]="diasElegidos().has(dia.valor)"
+              [attr.aria-invalid]="faltaDia() ? 'true' : null"
+              (change)="alternarDia(dia.valor)"
+            />
+            <span aria-hidden="true">{{ dia.corto }}</span>
+            <span class="visualmente-oculto">{{ dia.nombre }}</span>
+          </label>
+        }
+      </div>
+      @if (faltaDia()) {
+        <p class="campo__error" id="clase-dias-error">Elegí al menos un día.</p>
+      }
+    </div>
+  }
+
   <div class="campo">
-    <label for="clase-fecha">Fecha</label>
+    <label for="clase-fecha">{{ modo() === 'semanal' ? 'Desde' : 'Fecha' }}</label>
     <input
       id="clase-fecha"
       type="date"
@@ -124,6 +223,26 @@
       <p class="campo__error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
     }
   </div>
+  @if (modo() === 'semanal') {
+    <div class="campo">
+      <label for="clase-hasta">Hasta</label>
+      <input
+        id="clase-hasta"
+        type="date"
+        formControlName="hasta"
+        [min]="formulario.controls.fecha.value"
+        [attr.aria-invalid]="hastaInvalido() ? 'true' : null"
+        [attr.aria-describedby]="hastaInvalido() ? 'clase-hasta-error' : 'clase-hasta-ayuda'"
+      />
+      @if (hastaInvalido()) {
+        <p class="campo__error" id="clase-hasta-error">
+          Elegí hasta cuándo; no puede ser antes de la fecha desde.
+        </p>
+      } @else {
+        <p class="ayuda" id="clase-hasta-ayuda">Incluye ese día. Hasta un año.</p>
+      }
+    </div>
+  }
   <div class="campo">
     <label for="clase-inicio">Hora de inicio</label>
     <input
@@ -242,7 +361,9 @@
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">
     <button type="submit" class="boton" [disabled]="enviando()">
-      {{ enviando() ? 'Programando…' : 'Programar clase' }}
+      {{
+        enviando() ? 'Programando…' : modo() === 'semanal' ? 'Programar clases' : 'Programar clase'
+      }}
     </button>
     <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Cancelar</a>
   </div>

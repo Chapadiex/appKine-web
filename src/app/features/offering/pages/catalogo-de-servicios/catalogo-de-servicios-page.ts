@@ -20,6 +20,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, Subscription, catchError, debounceTime, of } from 'rxjs';
 
 import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateServicioRequest } from '../../../../api/generated/model/create-servicio-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -58,30 +60,26 @@ type TipoAccion = 'editar' | 'baja';
 const ESPERA_DE_BUSQUEDA = 250;
 
 /**
- * Catalogo global de Servicios (M27, AKINE-02.06).
+ * Catalogo de Servicios (M27, AKINE-02.06; servicios propios desde el contrato 0.163.0).
  *
  * <p>Un `Servicio` es <b>que existe como concepto</b> —"kinesiologia respiratoria"—, no como lo
  * presta un centro concreto. Eso ultimo es la Oferta, y vive en la otra pantalla de esta misma
- * feature. Es la regla maestra 14 y es el objetivo entero de la etapa: si las dos cosas se
- * mezclan, el precio de un centro termina siendo el precio de todos.
+ * feature. Es la regla maestra 14: si las dos cosas se mezclan, el precio de un centro termina
+ * siendo el precio de todos.
  *
- * <p>El catalogo es <b>puramente global</b>: un `Servicio` no tiene organizacion (diseno 1). No
- * hay dos poblaciones como en el catalogo clinico, asi que no hay ninguna columna de alcance:
- * todas las filas son de la plataforma.
+ * <p><b>Dos poblaciones desde 0.163.0</b> (ADR-0025 del backend): el catalogo global de AKINE, que
+ * ven todos los centros, y los servicios propios del centro (`alcance: ORGANIZACION`), que ve solo
+ * su organizacion. La tabla los distingue con una columna de origen.
  *
  * <h2>Quien puede administrar esto</h2>
  *
- * <p>Leer el catalogo alcanza con estar autenticado. <b>Mutarlo exige rol de plataforma</b>, y
- * desde A-7 el frontend lo sabe: `PlatformRoleStore` pregunta una vez por sesion a
- * `GET /me/platform-role`. Las acciones de alta, edicion y baja se muestran <b>solo</b> a quien
- * tiene ese rol; a los demas la nota de arriba les dice por que no estan y los manda a las
- * ofertas de la sede, que es lo que su centro si administra.
+ * <p>Leer alcanza con estar autenticado. El <b>global</b> lo muta el rol de plataforma
+ * (`PlatformRoleStore`). Los <b>propios</b>, quien tenga `catalogo:manage` en el contexto
+ * (`PermissionsStore`): la administradora del centro da de alta su "Yoga" sin esperar a AKINE.
+ * El alcance del alta no se elige: lo decide el backend segun quien llama, y la pantalla solo
+ * ajusta los textos.
  *
- * <p>Hasta A-7 la pantalla hacia lo contrario —mostrar las acciones a todos y dejar que el
- * `403` del servidor fuera la respuesta— porque ocultarlas sin saber el rol era adivinar, y
- * adivinar en contra le escondia el boton a la unica persona que tenia que apretarlo.
- *
- * <p><b>Ocultar es UX, no seguridad</b> (AGENT.md 1): el backend verifica el rol en cada
+ * <p><b>Ocultar es UX, no seguridad</b> (AGENT.md 1): el backend verifica rol y permiso en cada
  * request. Por eso el manejo del `403` (`rechazadoPorRol`) se queda: un rol revocado a mitad
  * de sesion, o una consulta del rol que fallo y se resolvio como "no", siguen terminando en una
  * explicacion y no en un error mudo.
@@ -123,8 +121,30 @@ export class CatalogoDeServiciosPage {
   private readonly injector = inject(Injector);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
 
-  /** `true` solo si la cuenta tiene rol de plataforma. Ver el javadoc de la clase. */
+  private readonly permisos = inject(PermissionsStore);
+
+  /** `true` solo si la cuenta tiene rol de plataforma: administra el catalogo global. */
   protected readonly puedeAdministrar = this.rolDePlataforma.esAdminDePlataforma;
+
+  /** `true` si administra los servicios propios de su centro (`catalogo:manage`). */
+  protected readonly puedeGestionarDelCentro = computed(
+    () => !this.puedeAdministrar() && this.permisos.tiene(PERMISO_CATALOGO_MANAGE),
+  );
+
+  /** Alguna de las dos: muestra "Nuevo servicio" y la columna de acciones. */
+  protected readonly puedeCrear = computed(
+    () => this.puedeAdministrar() || this.puedeGestionarDelCentro(),
+  );
+
+  /** Si quien mira puede editar o dar de baja ESTE servicio: el global o uno propio. */
+  protected puedeMutar(servicio: ServicioResponse): boolean {
+    return servicio.alcance === 'ORGANIZACION'
+      ? this.puedeGestionarDelCentro()
+      : this.puedeAdministrar();
+  }
+
+  protected readonly etiquetaDeAlcance = (servicio: ServicioResponse): string =>
+    servicio.alcance === 'ORGANIZACION' ? 'Del centro' : 'AKINE';
 
   /**
    * `true` cuando ya se sabe la respuesta —incluida una consulta fallida, que el store resuelve
@@ -162,6 +182,7 @@ export class CatalogoDeServiciosPage {
       codigo: (servicio) => servicio.codigo,
       naturaleza: (servicio) => this.etiquetaDeNaturaleza(servicio.naturaleza),
       modalidad: (servicio) => this.etiquetaDeModalidad(servicio.modalidadDefault),
+      origen: (servicio) => this.etiquetaDeAlcance(servicio),
       estado: (servicio) => servicio.estado,
     },
   });
@@ -254,6 +275,7 @@ export class CatalogoDeServiciosPage {
 
   constructor() {
     this.cargar();
+    this.permisos.asegurarCargados();
 
     this.rolDePlataforma
       .resolver()
@@ -432,12 +454,14 @@ export class CatalogoDeServiciosPage {
     this.causaAccion.set(null);
 
     this.api.crearServicio(cuerpo).subscribe({
-      next: () => {
+      next: (creado) => {
         this.cerrarPanel();
         this.avisos.exito('Servicio agregado al catálogo', {
           descripcion:
-            `${cuerpo.nombre}. Lo ven todos los centros; para ofrecerlo en una sede, creá su ` +
-            'oferta.',
+            creado.alcance === 'ORGANIZACION'
+              ? `${cuerpo.nombre}. Lo ve solo tu centro; para ofrecerlo en una sede, creá su oferta.`
+              : `${cuerpo.nombre}. Lo ven todos los centros; para ofrecerlo en una sede, creá su ` +
+                'oferta.',
         });
         this.cargar();
       },

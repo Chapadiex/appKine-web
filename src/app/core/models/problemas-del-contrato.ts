@@ -115,6 +115,8 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'financiador-codigo-taken',
   'financiador-cuit-taken',
   'financiador-inactivo',
+  'franja-fuera-del-horario-de-sede',
+  'franjas-de-profesionales-fuera-del-horario',
   'financiador-nombre-taken',
   'forbidden',
   'geocodificador-no-disponible',
