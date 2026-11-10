@@ -108,11 +108,19 @@
       </p>
     </app-alerta>
   } @else if (ofertas()!.length === 0) {
-    <app-alerta tipo="advertencia">
-      <p>
-        Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
-        grupal: se crea en Servicios.
-      </p>
+    <app-alerta tipo="advertencia" titulo="Esta sede todavía no tiene actividades grupales">
+      <p>Una clase necesita tres cosas cargadas antes, cada una en su pantalla:</p>
+      <ol class="pasos-previos">
+        <li><a [routerLink]="RUTA_ESPACIOS">El lugar</a>: un box o salón con su capacidad.</li>
+        <li>
+          <a [routerLink]="RUTA_CATALOGO_DE_SERVICIOS">La actividad</a>: un servicio de modalidad
+          grupal, por ejemplo Yoga.
+        </li>
+        <li>
+          <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">La oferta de la sede</a>: ese servicio publicado
+          acá, con quiénes lo dictan.
+        </li>
+      </ol>
     </app-alerta>
   }
 
@@ -142,6 +150,11 @@
     @if (invalido('ofertaId')) {
       <p class="campo__error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
     }
+    <p class="ayuda ayuda--fija">
+      ¿No está la actividad?
+      <a [routerLink]="RUTA_CATALOGO_DE_SERVICIOS">Darla de alta</a> y
+      <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">publicarla en la sede</a>.
+    </p>
   </div>
   <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
     <label for="clase-titulo">Título (opcional)</label>
@@ -160,7 +173,8 @@
       <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
       @if (ofertaElegida(); as oferta) {
         <p class="ayuda ayuda--fija">
-          <a [routerLink]="rutaDeHabilitaciones(oferta.id)">Elegir quiénes dictan esta oferta</a>
+          <a [routerLink]="rutaDeHabilitaciones(oferta.id)">Elegir quiénes dictan esta oferta</a> ·
+          <a [routerLink]="RUTA_HORARIOS">Cargar su horario</a>
         </p>
       }
     </div>
@@ -322,6 +336,9 @@
       <p class="ayuda" id="clase-espacio-ayuda">
         Un box elegido tiene que estar habilitado y libre: si no lo esta, la clase no se programa en
         otro.
+      </p>
+      <p class="ayuda ayuda--fija">
+        ¿No está el lugar? <a [routerLink]="RUTA_ESPACIOS">Cargar un box</a> con su capacidad.
       </p>
       @if (errorDelServidor('espacioId'); as mensaje) {
         <p class="campo__error" id="clase-espacio-error">{{ mensaje }}</p>

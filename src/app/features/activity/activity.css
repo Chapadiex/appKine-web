@@ -290,3 +290,13 @@
 .serie-omitidas li + li {
   margin-top: var(--esp-2);
 }
+
+/* Lo que falta cargar antes de la primera clase, en orden. */
+.pasos-previos {
+  margin: var(--esp-3) 0 0;
+  padding-left: var(--esp-6);
+}
+
+.pasos-previos li + li {
+  margin-top: var(--esp-2);
+}

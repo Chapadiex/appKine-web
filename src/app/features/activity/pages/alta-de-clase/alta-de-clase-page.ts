@@ -35,6 +35,7 @@ import {
   textoDeMotivoDeOmision,
 } from '../../models/clases';
 import { SerieDeClases } from '../../../../api/generated/model/serie-de-clases';
+import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { RUTA_CLASES, rutaDeClase } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -113,6 +114,11 @@ export class AltaDeClasePage {
   /** Quien dicta la oferta: sus habilitaciones, en Servicios (no se importa de otra feature). */
   protected readonly rutaDeHabilitaciones = (ofertaId: number | undefined): string =>
     `/servicios/ofertas/${ofertaId}/habilitaciones`;
+  /** Lo que una clase necesita antes de programarse, cada cosa en su pantalla. */
+  protected readonly RUTA_CATALOGO_DE_SERVICIOS = '/servicios/catalogo';
+  protected readonly RUTA_OFERTAS_DE_LA_SEDE = '/servicios/ofertas';
+  protected readonly RUTA_ESPACIOS = '/espacios';
+  protected readonly RUTA_HORARIOS = RUTA_HORARIOS;
 
   /** Una clase suelta, o la misma clase todas las semanas en los dias elegidos. */
   protected readonly modo = signal<'una' | 'semanal'>('una');
