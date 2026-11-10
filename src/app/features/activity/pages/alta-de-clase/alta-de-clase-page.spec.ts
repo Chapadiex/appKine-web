@@ -310,8 +310,13 @@ describe('AltaDeClasePage', () => {
 
   it('valida antes de mandar: oferta obligatoria y fin posterior al inicio', async () => {
     const fixture = await montar([]);
-    expect(textoDe(fixture)).toContain('no tiene ofertas grupales activas');
+    expect(textoDe(fixture)).toContain('todavía no tiene actividades grupales');
     const raiz = fixture.nativeElement as HTMLElement;
+    // Sin ofertas, la pantalla dice dónde se carga cada cosa que falta.
+    const destinos = [...raiz.querySelectorAll('.pasos-previos a')].map((a) =>
+      a.getAttribute('href'),
+    );
+    expect(destinos).toEqual(['/espacios', '/servicios/catalogo', '/servicios/ofertas']);
     (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(textoDe(fixture)).toContain('Elegí la oferta de la clase');
