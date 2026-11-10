@@ -10,8 +10,8 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  width: min(34rem, 100vw);
-  max-width: 100vw;
+  width: min(34rem, 100%);
+  max-width: 100%;
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
@@ -28,12 +28,12 @@
 }
 
 .panel-lateral--amplio {
-  width: min(46rem, 100vw);
+  width: min(46rem, 100%);
 }
 
 /* El nuevo turno: paciente, prestacion y tres columnas de horarios sin apretarse (08/11/2026). */
 .panel-lateral--grande {
-  width: min(54rem, 100vw);
+  width: min(54rem, 100%);
 }
 
 .panel-lateral::backdrop {
@@ -156,7 +156,7 @@
   .panel-lateral,
   .panel-lateral--amplio,
   .panel-lateral--grande {
-    width: 100vw;
+    width: 100%;
     border-left: 0;
   }
 
