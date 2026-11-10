@@ -10,8 +10,8 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  width: min(34rem, 100vw);
-  max-width: 100vw;
+  width: min(34rem, 100%);
+  max-width: 100%;
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
@@ -28,7 +28,7 @@
 }
 
 .panel-lateral--amplio {
-  width: min(46rem, 100vw);
+  width: min(46rem, 100%);
 }
 
 .panel-lateral::backdrop {
@@ -150,7 +150,7 @@
 @media (max-width: 40rem) {
   .panel-lateral,
   .panel-lateral--amplio {
-    width: 100vw;
+    width: 100%;
     border-left: 0;
   }
 
