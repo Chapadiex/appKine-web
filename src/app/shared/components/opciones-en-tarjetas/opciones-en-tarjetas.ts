@@ -49,16 +49,19 @@ let siguienteId = 0;
     >
       <legend class="opciones-en-tarjetas__leyenda"><ng-content select="[leyenda]" /></legend>
       <div class="opciones-en-tarjetas__grilla">
-        @for (opcion of opciones(); track opcion.valor) {
+        @for (opcion of opciones(); track opcion.valor; let i = $index) {
           <label
             class="opcion-en-tarjeta"
             [class.opcion-en-tarjeta--elegida]="valor() === opcion.valor"
           >
+            <!-- El nombre es la etiqueta; la explicación se lee aparte, como descripción. -->
             <input
               type="radio"
               class="visualmente-oculto"
               [name]="nombre"
               [value]="opcion.valor"
+              [attr.aria-labelledby]="nombre + '-' + i"
+              [attr.aria-describedby]="nombre + '-' + i + '-detalle'"
               [checked]="valor() === opcion.valor"
               [disabled]="deshabilitado()"
               (change)="elegir(opcion.valor)"
@@ -68,8 +71,12 @@ let siguienteId = 0;
               <app-icono class="opcion-en-tarjeta__icono" [nombre]="icono" />
             }
             <span class="opcion-en-tarjeta__textos">
-              <span class="opcion-en-tarjeta__etiqueta">{{ opcion.etiqueta }}</span>
-              <span class="opcion-en-tarjeta__descripcion">{{ opcion.descripcion }}</span>
+              <span class="opcion-en-tarjeta__etiqueta" [id]="nombre + '-' + i">{{
+                opcion.etiqueta
+              }}</span>
+              <span class="opcion-en-tarjeta__descripcion" [id]="nombre + '-' + i + '-detalle'">{{
+                opcion.descripcion
+              }}</span>
             </span>
             <span class="opcion-en-tarjeta__marca" aria-hidden="true">
               @if (valor() === opcion.valor) {
