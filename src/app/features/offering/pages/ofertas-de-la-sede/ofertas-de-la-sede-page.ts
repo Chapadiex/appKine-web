@@ -13,6 +13,7 @@ import {
   inject,
   signal,
   untracked,
+  input,
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -295,6 +296,13 @@ export class OfertasDeLaSedePage {
    */
   protected readonly servicios = signal<readonly ServicioResponse[]>([]);
 
+  /**
+   * `?nuevaOferta=<servicioId>`: viene del aviso "Servicio creado" del catálogo (10/11/2026). Abre
+   * el alta con ese servicio elegido, una sola vez y cuando la lista de servicios ya lo trae.
+   */
+  readonly nuevaOferta = input<string | undefined>();
+  private altaPedidaAtendida = false;
+
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
@@ -386,6 +394,19 @@ export class OfertasDeLaSedePage {
         this.reiniciar();
         this.cargar();
         this.cargarServicios();
+      });
+    });
+
+    effect(() => {
+      const pedido = Number(this.nuevaOferta());
+      const servicio = this.serviciosOfertables().find((candidato) => candidato.id === pedido);
+      if (this.altaPedidaAtendida || servicio === undefined) {
+        return;
+      }
+      this.altaPedidaAtendida = true;
+      untracked(() => {
+        this.abrirAlta();
+        this.formularioAlta.controls.servicioId.setValue(String(pedido));
       });
     });
   }

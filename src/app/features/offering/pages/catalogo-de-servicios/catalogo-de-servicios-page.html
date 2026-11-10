@@ -234,320 +234,299 @@
   Alta, edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). El alta era una tarjeta
   encima del listado y la edicion una fila de la tabla; ahora el listado queda quieto.
 -->
-@if (altaAbierta()) {
+@if (modoFormulario(); as modo) {
+  <!--
+    Alta y edición en un solo formulario (10/11/2026): identificar → clasificar → seguimiento
+    clínico → guardar. En la edición el código se muestra fijo. docs/ux/servicio-formulario.md.
+  -->
+  @let servicio = servicioEnPanel();
+  @let prefijo = modo === 'alta' ? 'alta-servicio' : 'editar-servicio';
+  @let formulario = modo === 'alta' ? formularioAlta : formularioEdicion;
   <app-panel-lateral
+    ancho="amplio"
     [titulo]="
-      puedeAdministrar() ? 'Nuevo servicio del catálogo global' : 'Nuevo servicio del centro'
+      modo === 'editar'
+        ? 'Editar servicio'
+        : puedeAdministrar()
+          ? 'Nuevo servicio del catálogo global'
+          : 'Nuevo servicio'
     "
     [subtitulo]="
-      puedeAdministrar()
-        ? 'Lo que cargues acá lo ven todos los centros'
-        : 'Lo ve solo tu organización. Después creá su oferta en la sede.'
+      modo === 'editar'
+        ? (servicio?.nombre ?? '') + ' · código ' + (servicio?.codigo ?? '')
+        : puedeAdministrar()
+          ? 'Lo que cargues acá lo ven todos los centros.'
+          : 'Creá un servicio para tu organización. Después podrás configurarlo en cada sede.'
     "
-    (cerrar)="cerrarPanel()"
+    (cerrar)="pedirCierre()"
   >
-    <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
-      <!-- Error general del alta: arriba del formulario (UX-12). El duplicado va junto al campo. -->
+    <form
+      class="formulario-servicio"
+      [formGroup]="formulario"
+      (ngSubmit)="modo === 'alta' ? enviarAlta() : enviarEdicion()"
+      novalidate
+    >
       @if (errorAccion() && !duplicado()) {
-        <app-alerta tipo="error" titulo="No pudimos dar de alta el servicio">
+        <app-alerta
+          tipo="error"
+          [titulo]="
+            modo === 'alta' ? 'No pudimos crear el servicio' : 'No pudimos guardar los cambios'
+          "
+        >
           <p>{{ errorAccion() }}</p>
+          @if (modo === 'editar' && (hayQueRecargar() || rechazadoPorRol())) {
+            <p class="alerta__acciones">
+              @if (hayQueRecargar()) {
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Recargar el listado
+                </button>
+              }
+              @if (rechazadoPorRol()) {
+                <a class="boton boton--secundario" routerLink="/servicios/ofertas">
+                  Ir a las ofertas de la sede
+                </a>
+              }
+            </p>
+          }
         </app-alerta>
       }
 
-      <div class="campo campo--2">
-        <label for="alta-servicio-codigo">Código</label>
-        <input
-          id="alta-servicio-codigo"
-          type="text"
-          formControlName="codigo"
-          autocomplete="off"
-          [attr.aria-invalid]="mostrarErrorAlta('codigo') || duplicado() ? 'true' : null"
-          [attr.aria-describedby]="
-            duplicado()
-              ? 'alta-servicio-duplicado'
-              : mostrarErrorAlta('codigo')
-                ? 'alta-servicio-codigo-error'
-                : 'alta-servicio-codigo-ayuda'
-          "
-        />
-        @if (mostrarErrorAlta('codigo')) {
-          <p class="campo__error" id="alta-servicio-codigo-error" role="alert">
-            El código es obligatorio.
-          </p>
+      <!-- 1. Información del servicio -->
+      <h3 class="formulario-servicio__seccion">
+        <app-icono nombre="servicios" />
+        Información del servicio
+      </h3>
+
+      <div class="campo formulario-servicio__codigo">
+        <label [for]="prefijo + '-codigo'">Código</label>
+        @if (modo === 'alta') {
+          <input
+            [id]="prefijo + '-codigo'"
+            type="text"
+            formControlName="codigo"
+            autocomplete="off"
+            spellcheck="false"
+            [attr.maxlength]="largoMaximo.codigo"
+            [attr.aria-invalid]="errorDe('codigo') || duplicado() ? 'true' : null"
+            [attr.aria-describedby]="
+              duplicado()
+                ? prefijo + '-duplicado'
+                : errorDe('codigo')
+                  ? prefijo + '-codigo-error'
+                  : prefijo + '-codigo-ayuda'
+            "
+          />
+          @if (errorDe('codigo'); as mensaje) {
+            <p class="campo__error" [id]="prefijo + '-codigo-error'" role="alert">{{ mensaje }}</p>
+          } @else {
+            <p class="ayuda ayuda--fija" [id]="prefijo + '-codigo-ayuda'">
+              Identificador único. No podrá modificarse después.
+            </p>
+          }
         } @else {
-          <p class="ayuda ayuda--fija" id="alta-servicio-codigo-ayuda">
-            Clave estable: <b>no se renombra</b> después.
-          </p>
+          <input
+            [id]="prefijo + '-codigo'"
+            type="text"
+            [value]="servicio?.codigo ?? ''"
+            readonly
+            [attr.aria-describedby]="prefijo + '-codigo-ayuda'"
+          />
+          <p class="ayuda ayuda--fija" [id]="prefijo + '-codigo-ayuda'">No se puede modificar.</p>
         }
       </div>
 
-      <div class="campo campo--4">
-        <label for="alta-servicio-nombre">Nombre</label>
+      <div class="campo formulario-servicio__nombre">
+        <label [for]="prefijo + '-nombre'">Nombre del servicio</label>
         <input
-          id="alta-servicio-nombre"
+          [id]="prefijo + '-nombre'"
           type="text"
           formControlName="nombre"
           autocomplete="off"
-          [attr.aria-invalid]="mostrarErrorAlta('nombre') || duplicado() ? 'true' : null"
+          placeholder="Ej.: Entrenamiento funcional"
+          [attr.maxlength]="largoMaximo.nombre"
+          [attr.aria-invalid]="errorDe('nombre') || duplicado() ? 'true' : null"
           [attr.aria-describedby]="
             duplicado()
-              ? 'alta-servicio-duplicado'
-              : mostrarErrorAlta('nombre')
-                ? 'alta-servicio-nombre-error'
+              ? prefijo + '-duplicado'
+              : errorDe('nombre')
+                ? prefijo + '-nombre-error'
                 : null
           "
         />
-        @if (mostrarErrorAlta('nombre')) {
-          <p class="campo__error" id="alta-servicio-nombre-error" role="alert">
-            El nombre es obligatorio.
-          </p>
+        @if (errorDe('nombre'); as mensaje) {
+          <p class="campo__error" [id]="prefijo + '-nombre-error'" role="alert">{{ mensaje }}</p>
+        } @else if (modo === 'editar') {
+          <p class="ayuda ayuda--fija">Renombrar no cambia lo que ya quedó registrado.</p>
         }
       </div>
 
       <!-- Código o nombre en uso: pegado a los dos campos que lo producen (UX-12). -->
       @if (duplicado()) {
         <app-alerta
-          class="campo--ancho"
           tipo="advertencia"
-          titulo="Ya hay un servicio con ese código o nombre"
-          id="alta-servicio-duplicado"
+          [titulo]="
+            modo === 'alta'
+              ? 'Ya hay un servicio con ese código o nombre'
+              : 'Ya hay un servicio con ese nombre'
+          "
+          [id]="prefijo + '-duplicado'"
         >
           <p>{{ errorAccion() }}</p>
         </app-alerta>
       }
 
-      <div class="campo campo--4">
-        <label for="alta-servicio-naturaleza">Naturaleza</label>
-        <select
-          id="alta-servicio-naturaleza"
-          formControlName="naturaleza"
-          [attr.aria-invalid]="mostrarErrorAlta('naturaleza') ? 'true' : null"
-          aria-describedby="alta-servicio-naturaleza-ayuda"
-        >
-          <option value="">Elegí una naturaleza</option>
-          @for (opcion of naturalezas; track opcion.valor) {
-            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
-          }
-        </select>
-        @if (mostrarErrorAlta('naturaleza')) {
-          <p class="campo__error" role="alert">La naturaleza es obligatoria.</p>
-        }
-        <p class="ayuda" id="alta-servicio-naturaleza-ayuda">
-          Solo <b>clasifica</b>: no impone ningún comportamiento clínico (RN-M06-005).
-        </p>
-      </div>
-
-      <div class="campo campo--4">
-        <label for="alta-servicio-modalidad">Modalidad por defecto</label>
-        <select
-          id="alta-servicio-modalidad"
-          formControlName="modalidadDefault"
-          [attr.aria-invalid]="mostrarErrorAlta('modalidadDefault') ? 'true' : null"
-          aria-describedby="alta-servicio-modalidad-ayuda"
-        >
-          <option value="">Elegí una modalidad</option>
-          @for (opcion of modalidades; track opcion.valor) {
-            <option [value]="opcion.valor">{{ opcion.etiqueta }} — {{ opcion.ayuda }}</option>
-          }
-        </select>
-        @if (mostrarErrorAlta('modalidadDefault')) {
-          <p class="campo__error" role="alert">La modalidad por defecto es obligatoria.</p>
-        }
-        <p class="ayuda" id="alta-servicio-modalidad-ayuda">
-          Es la <b>propuesta</b> al crear una oferta de este servicio. La oferta la puede cambiar.
-        </p>
-      </div>
-
       <div class="campo campo--ancho">
-        <label for="alta-servicio-descripcion">Descripción (opcional)</label>
-        <input
-          id="alta-servicio-descripcion"
-          type="text"
+        <label [for]="prefijo + '-descripcion'">Descripción (opcional)</label>
+        <textarea
+          [id]="prefijo + '-descripcion'"
           formControlName="descripcion"
-          autocomplete="off"
-        />
+          rows="2"
+          placeholder="Ej.: Sesiones de acondicionamiento físico y movilidad."
+          [attr.maxlength]="largoMaximo.descripcion"
+          [attr.aria-invalid]="errorDe('descripcion') ? 'true' : null"
+          [attr.aria-describedby]="prefijo + '-descripcion-largo'"
+        ></textarea>
+        <p
+          class="ayuda ayuda--fija formulario-servicio__contador"
+          [id]="prefijo + '-descripcion-largo'"
+        >
+          @if (errorDe('descripcion'); as mensaje) {
+            <span class="campo__error">{{ mensaje }}</span>
+          } @else if (modo === 'editar') {
+            <span>Vaciar el campo deja el servicio sin descripción.</span>
+          }
+          <span class="formulario-servicio__largo">
+            {{ formulario.controls.descripcion.value.length }}/{{ largoMaximo.descripcion }}
+          </span>
+        </p>
       </div>
 
-      <h3 class="formulario__seccion">
-        Valores clínicos por defecto
-        <span class="formulario__seccion-nota">Cada centro los puede cambiar en su oferta</span>
+      <!-- 2. Clasificación y modalidad -->
+      <h3 class="formulario-servicio__seccion">
+        <app-icono nombre="capas" />
+        Clasificación y modalidad
       </h3>
 
-      <div class="campo">
-        <label class="opcion-casilla" for="alta-servicio-caso">
-          <input
-            id="alta-servicio-caso"
-            type="checkbox"
-            formControlName="requiereCasoClinicoDefault"
-          />
-          Por defecto, requiere caso clínico
-        </label>
-      </div>
-
-      <div class="campo">
-        <label class="opcion-casilla" for="alta-servicio-registro">
-          <input
-            id="alta-servicio-registro"
-            type="checkbox"
-            formControlName="generaRegistroClinicoDefault"
-          />
-          Por defecto, genera registro clínico
-        </label>
-      </div>
-
-      <p class="acciones">
-        <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
-        </button>
-        <button
-          type="button"
-          class="boton boton--secundario"
-          (click)="cerrarPanel()"
-          [disabled]="enviando()"
-        >
-          Cancelar
-        </button>
-      </p>
-    </form>
-  </app-panel-lateral>
-}
-
-@if (servicioEnPanel(); as servicio) {
-  @if (panel()?.tipo === 'editar') {
-    <app-panel-lateral
-      [titulo]="'Editar ' + servicio.nombre"
-      [subtitulo]="'Código ' + servicio.codigo"
-      (cerrar)="cerrarPanel()"
-    >
-      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
-        @if (errorAccion() && !duplicado()) {
-          <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
-            <p>{{ errorAccion() }}</p>
-            @if (hayQueRecargar() || rechazadoPorRol()) {
-              <p class="alerta__acciones">
-                @if (hayQueRecargar()) {
-                  <button type="button" class="boton boton--secundario" (click)="cargar()">
-                    Recargar el listado
-                  </button>
-                }
-                @if (rechazadoPorRol()) {
-                  <a class="boton boton--secundario" routerLink="/servicios/ofertas">
-                    Ir a las ofertas de la sede
-                  </a>
-                }
-              </p>
-            }
-          </app-alerta>
-        }
-
-        <div class="campo campo--4">
-          <label for="editar-servicio-nombre">Nombre</label>
-          <input
-            id="editar-servicio-nombre"
-            type="text"
-            formControlName="nombre"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorEdicion('nombre') || duplicado() ? 'true' : null"
-            [attr.aria-describedby]="duplicado() ? 'editar-servicio-duplicado' : null"
-          />
-          @if (mostrarErrorEdicion('nombre')) {
-            <p class="campo__error" role="alert">El nombre es obligatorio.</p>
-          } @else {
-            <p class="ayuda ayuda--fija">
-              Renombrar no cambia lo que ya quedo registrado: el código
-              <b>{{ servicio.codigo }}</b> es la clave estable y no se edita.
+      <app-opciones-en-tarjetas
+        [id]="prefijo + '-naturaleza'"
+        formControlName="naturaleza"
+        [opciones]="opcionesDeNaturaleza"
+        [error]="errorDe('naturaleza')"
+      >
+        <span leyenda>
+          ¿Qué tipo de servicio es?
+          <app-ayuda titulo="Tipo de servicio">
+            <p>
+              Sólo <b>clasifica</b> el servicio: por sí sola no activa ningún comportamiento clínico
+              (RN-M06-005).
             </p>
-          }
-        </div>
+          </app-ayuda>
+        </span>
+      </app-opciones-en-tarjetas>
 
-        @if (duplicado()) {
-          <app-alerta
-            class="campo--ancho"
-            tipo="advertencia"
-            titulo="Ya hay un servicio con ese nombre"
-            id="editar-servicio-duplicado"
-          >
-            <p>{{ errorAccion() }}</p>
-          </app-alerta>
+      <app-opciones-en-tarjetas
+        [id]="prefijo + '-modalidad'"
+        formControlName="modalidadDefault"
+        [opciones]="opcionesDeModalidad"
+        [error]="errorDe('modalidadDefault')"
+      >
+        <span leyenda>¿Cómo se realiza el servicio?</span>
+        @if (formulario.controls.modalidadDefault.value === 'GRUPAL') {
+          <p class="ayuda">La capacidad máxima se configura al crear la oferta en cada sede.</p>
         }
+        @if (modo === 'editar') {
+          <p class="ayuda">Es la propuesta para las ofertas nuevas: no cambia las ya creadas.</p>
+        }
+      </app-opciones-en-tarjetas>
 
-        <div class="campo">
-          <label for="editar-servicio-naturaleza">Naturaleza</label>
-          <select id="editar-servicio-naturaleza" formControlName="naturaleza">
-            @for (opcion of naturalezas; track opcion.valor) {
-              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-            }
-          </select>
-        </div>
+      <!-- 3. Seguimiento clínico -->
+      <h3 class="formulario-servicio__seccion">
+        <app-icono nombre="pacientes" />
+        Seguimiento clínico
+      </h3>
+      <p class="formulario-servicio__nota">
+        Se proponen por defecto y se pueden ajustar en la oferta de cada sede.
+      </p>
 
-        <div class="campo">
-          <label for="editar-servicio-modalidad">Modalidad por defecto</label>
-          <select
-            id="editar-servicio-modalidad"
-            formControlName="modalidadDefault"
-            aria-describedby="editar-servicio-modalidad-ayuda"
-          >
-            @for (opcion of modalidades; track opcion.valor) {
-              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-            }
-          </select>
-          <p class="ayuda" id="editar-servicio-modalidad-ayuda">
-            <b>No toca ninguna oferta ya creada</b>: es la propuesta para las próximas.
+      <label class="casilla-con-detalle" [for]="prefijo + '-caso'">
+        <input
+          [id]="prefijo + '-caso'"
+          type="checkbox"
+          formControlName="requiereCasoClinicoDefault"
+        />
+        <span>
+          <span class="casilla-con-detalle__titulo">Requiere un caso clínico</span>
+          <span class="casilla-con-detalle__detalle">
+            Vincula la atención con un proceso clínico del paciente.
+          </span>
+        </span>
+      </label>
+
+      <label class="casilla-con-detalle" [for]="prefijo + '-registro'">
+        <input
+          [id]="prefijo + '-registro'"
+          type="checkbox"
+          formControlName="generaRegistroClinicoDefault"
+        />
+        <span>
+          <span class="casilla-con-detalle__titulo">Genera un registro clínico</span>
+          <span class="casilla-con-detalle__detalle">
+            Permite documentar la atención en la historia clínica.
+          </span>
+        </span>
+      </label>
+
+      <!-- Pie fijo. Con cambios sin guardar, cerrar pregunta acá mismo. -->
+      @if (confirmandoDescarte()) {
+        <div
+          class="acciones acciones--pie formulario-servicio__descartar"
+          role="alertdialog"
+          [attr.aria-labelledby]="prefijo + '-descartar-titulo'"
+        >
+          <p class="formulario-servicio__descartar-texto">
+            <b [id]="prefijo + '-descartar-titulo'">¿Descartar cambios?</b>
+            Los datos ingresados todavía no se guardaron.
           </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="confirmandoDescarte.set(false)"
+          >
+            Seguir editando
+          </button>
+          <button type="button" class="boton boton--peligro" (click)="cerrarPanel()">
+            Descartar cambios
+          </button>
         </div>
-
-        <div class="campo campo--ancho">
-          <label for="editar-servicio-descripcion">Descripción</label>
-          <input
-            id="editar-servicio-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-          <p class="ayuda">Vaciar el campo deja el servicio sin descripción.</p>
-        </div>
-
-        <h3 class="formulario__seccion">Valores clínicos por defecto</h3>
-
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-servicio-caso">
-            <input
-              id="editar-servicio-caso"
-              type="checkbox"
-              formControlName="requiereCasoClinicoDefault"
-            />
-            Por defecto, requiere caso clínico
-          </label>
-        </div>
-
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-servicio-registro">
-            <input
-              id="editar-servicio-registro"
-              type="checkbox"
-              formControlName="generaRegistroClinicoDefault"
-            />
-            Por defecto, genera registro clínico
-          </label>
-        </div>
-
+      } @else {
         <p class="acciones">
-          <button type="submit" class="boton" [disabled]="enviando()">
-            {{ enviando() ? 'Guardando...' : 'Guardar cambios' }}
+          <button
+            type="submit"
+            class="boton"
+            [disabled]="enviando()"
+            [attr.aria-busy]="enviando() ? 'true' : null"
+          >
+            @if (enviando()) {
+              Guardando…
+            } @else {
+              {{ modo === 'alta' ? 'Crear servicio' : 'Guardar cambios' }}
+            }
           </button>
           <button
             type="button"
             class="boton boton--secundario"
-            (click)="cerrarPanel()"
+            (click)="pedirCierre()"
             [disabled]="enviando()"
           >
             Cancelar
           </button>
         </p>
-      </form>
-    </app-panel-lateral>
-  }
+      }
+    </form>
+  </app-panel-lateral>
+}
 
+@if (servicioEnPanel(); as servicio) {
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + servicio.nombre" (cerrar)="cerrarPanel()">
       @if (errorAccion(); as mensaje) {
