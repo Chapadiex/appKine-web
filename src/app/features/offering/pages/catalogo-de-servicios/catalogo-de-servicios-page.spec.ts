@@ -177,7 +177,7 @@ describe('CatalogoDeServiciosPage', () => {
 
     (anfitrion.querySelector('[cabeceraAcciones] button') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(anfitrion.textContent).toContain('Nuevo servicio del centro');
+    expect(anfitrion.textContent).toContain('Creá un servicio para tu organización');
   });
 
   it('el filtro de estado recarga con su parametro y una lista vacía no es un error', async () => {
@@ -245,7 +245,7 @@ describe('CatalogoDeServiciosPage', () => {
     enviar(fixture, 'form[novalidate]');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El código es obligatorio',
+      'Ingresá el código del servicio.',
     );
 
     escribir(fixture, '#alta-servicio-codigo', 'EVP');
@@ -511,7 +511,7 @@ describe('CatalogoDeServiciosPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El nombre es obligatorio',
+      'Ingresá el nombre del servicio.',
     );
   });
 
@@ -527,7 +527,7 @@ describe('CatalogoDeServiciosPage', () => {
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'El nombre es obligatorio',
+      'Ingresá el nombre del servicio.',
     );
   });
 
@@ -709,12 +709,21 @@ function elegir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector(selector) as HTMLSelectElement | null;
-  if (campo === null) {
-    throw new Error(`No existe el selector ${selector}`);
+  const lista = fixture.nativeElement.querySelector(selector);
+  if (lista instanceof HTMLSelectElement) {
+    lista.value = valor;
+    lista.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    return;
   }
-  campo.value = valor;
-  campo.dispatchEvent(new Event('change'));
+  // Naturaleza y modalidad son tarjetas de opción (radios) desde el 10/11/2026.
+  const opcion = fixture.nativeElement.querySelector<HTMLInputElement>(
+    `${selector} input[type="radio"][value="${valor}"]`,
+  );
+  if (opcion === null) {
+    throw new Error(`No existe la opción ${valor} en ${selector}`);
+  }
+  opcion.click();
   fixture.detectChanges();
 }
 
