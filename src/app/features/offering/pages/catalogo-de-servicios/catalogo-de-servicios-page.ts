@@ -455,7 +455,10 @@ export class CatalogoDeServiciosPage {
         ? this.formularioAlta.controls
         : this.formularioEdicion.controls;
     const control = controles[campo];
-    if (control === undefined || control.valid || !(control.touched || this.intentos() > 0)) {
+    // El código se sugiere desde el nombre: pasar por él vacío no es un error hasta enviar o
+    // hasta que el usuario lo escriba y lo deje vacío.
+    const tocado = campo === 'codigo' ? control?.touched && control.dirty : control?.touched;
+    if (control === undefined || control.valid || !(tocado || this.intentos() > 0)) {
       return null;
     }
     const largo = control.getError('maxlength') as { requiredLength: number } | undefined;
