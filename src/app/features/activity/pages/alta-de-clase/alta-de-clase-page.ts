@@ -402,7 +402,7 @@ export class AltaDeClasePage {
             this.avisos.exito(
               `${programadas} ${programadas === 1 ? 'clase programada' : 'clases programadas'}`,
               {
-                descripcion: [oferta, `del ${valor.fecha} al ${valor.hasta}`]
+                descripcion: [oferta, `del ${diaYMes(valor.fecha)} al ${diaYMes(valor.hasta)}`]
                   .filter(Boolean)
                   .join(' · '),
               },
@@ -537,4 +537,10 @@ export function sumarMinutos(hora: string, minutos: number): string {
   }
   const total = Math.min(h * 60 + m + minutos, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** `2026-11-09` → `09/11`: en el aviso de la serie el año sobra. */
+function diaYMes(fecha: string): string {
+  const partes = /^\d{4}-(\d{2})-(\d{2})$/.exec(fecha);
+  return partes === null ? fecha : `${partes[2]}/${partes[1]}`;
 }
