@@ -60,9 +60,10 @@
         [attr.aria-invalid]="mostrarError('name') || errorEnElNombre()"
         [attr.aria-describedby]="descritoNombre()"
       />
-      <p class="ayuda" id="espacio-name-ayuda">
+      <!-- Recibe el foco al abrir: abierta, la ayuda tapaba la fila de abajo. El ejemplo ya está en el placeholder. -->
+      <span class="visualmente-oculto" id="espacio-name-ayuda">
         "Box 3", "Gimnasio planta baja". Distinto de los otros espacios vigentes de esta sede.
-      </p>
+      </span>
       @if (mostrarError('name')) {
         <p class="campo__error" id="espacio-name-error">El espacio necesita un nombre.</p>
       }
