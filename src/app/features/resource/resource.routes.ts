@@ -37,7 +37,7 @@ export const routes: Routes = [
     path: 'disponibilidad',
     loadComponent: () =>
       import('./pages/disponibilidad/disponibilidad-page').then((m) => m.DisponibilidadPage),
-    title: 'AKINE - Espacios en servicio',
+    title: 'AKINE - Espacios habilitados por período',
     // Sin `ancho`, aunque tenga una tabla: son tres columnas cortas -nombre, tipo, capacidad-
     // y a 1216px quedaban separadas por medio metro de blanco, con la vista saltando de una a
     // otra. El ancho de tabla existe para las tablas que no entran, no para todas.
