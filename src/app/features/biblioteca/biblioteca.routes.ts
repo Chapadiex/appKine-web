@@ -22,7 +22,8 @@ export const routes: Routes = [
   {
     path: ':libroId',
     canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE)],
-    loadComponent: () => import('./pages/libro/libro-page').then((m) => m.LibroPage),
+    loadComponent: () =>
+      import('./pages/libro-detalle/libro-detalle-page').then((m) => m.LibroDetallePage),
     title: 'AKINE - Biblioteca',
   },
 ];
