@@ -21,7 +21,11 @@
 <section class="tarjeta clases" aria-label="Clases">
   <!-- Periodo y vista: ‹ rango › Hoy a la izquierda, Semana · Lista · Mes a la derecha. -->
   <div class="clases-barra">
-    <div class="navegador-semana" role="group" [attr.aria-label]="unidadDelPeriodo() + ' visible'">
+    <div
+      class="navegador-semana clases-barra__periodo"
+      role="group"
+      [attr.aria-label]="unidadDelPeriodo() + ' visible'"
+    >
       <button
         type="button"
         class="navegador-semana__boton"
@@ -35,7 +39,8 @@
       <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente. -->
       <div class="clases-barra__fecha">
         <app-icono nombre="calendario" />
-        <span aria-hidden="true">{{ rotuloDelPeriodo() }}</span>
+        <span class="clases-barra__rotulo" aria-hidden="true">{{ rotuloDelPeriodo() }}</span>
+        <span class="clases-barra__rotulo-corto" aria-hidden="true">{{ rotuloCorto() }}</span>
         <label class="visualmente-oculto" for="clases-fecha"
           >{{ rotuloDelPeriodo() }}. Ir a otra fecha</label
         >
