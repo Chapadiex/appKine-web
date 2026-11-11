@@ -458,9 +458,10 @@ button.mes-dia:focus-visible {
   outline-offset: calc(-1 * var(--foco-grosor));
 }
 
+/* Fuera del mes: el mismo fondo y el numero apagado, para que no compita con los dias propios. */
 .mes-dia--fuera {
-  background: var(--color-superficie-atenuada);
   color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
   cursor: default;
 }
 

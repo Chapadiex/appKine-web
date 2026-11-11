@@ -44,6 +44,7 @@ let siguienteId = 0;
     <fieldset
       class="opciones-en-tarjetas"
       [class.opciones-en-tarjetas--dos]="columnas() === 2"
+      [class.opciones-en-tarjetas--cuatro]="columnas() === 4"
       [attr.aria-invalid]="error() ? 'true' : null"
       [attr.aria-describedby]="error() ? idError : null"
     >
@@ -95,8 +96,11 @@ let siguienteId = 0;
 })
 export class OpcionesEnTarjetas implements ControlValueAccessor {
   readonly opciones = input.required<readonly OpcionEnTarjeta[]>();
-  /** 1 = una tarjeta por fila; 2 = dos por fila mientras entren (en un teléfono, una). */
-  readonly columnas = input<1 | 2>(2);
+  /**
+   * 1 = una tarjeta por fila; 2 = dos por fila mientras entren; 4 = las cuatro en una fila con
+   * lugar, dos por fila en un panel angosto (en un teléfono, una).
+   */
+  readonly columnas = input<1 | 2 | 4>(2);
   /** Mensaje de error del grupo; `null` sin error. */
   readonly error = input<string | null>(null);
 
