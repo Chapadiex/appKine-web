@@ -268,7 +268,8 @@
 
 .dia-clases__vacio {
   margin: 0;
-  padding: var(--esp-5);
+  /* Mismo arranque que la primera tarjeta de las otras columnas. */
+  padding: calc(var(--esp-4) + var(--esp-4)) var(--esp-5);
   font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
 }
