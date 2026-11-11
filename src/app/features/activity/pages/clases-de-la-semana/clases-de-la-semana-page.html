@@ -202,7 +202,8 @@
               >
                 <h2 class="dia-clases__cabecera" [id]="'dia-' + dia.fecha">
                   <span class="dia-clases__nombre">
-                    {{ nombreDelDia(dia.fecha) }}
+                    <span aria-hidden="true">{{ nombreCorto(dia.fecha) }}</span>
+                    <span class="visualmente-oculto">{{ nombreDelDia(dia.fecha) }}</span>
                     <span class="dia-clases__fecha">{{ diaYMes(dia.fecha) }}</span>
                     @if (dia.fecha === hoy()) {
                       <span class="dia-clases__hoy">Hoy</span>

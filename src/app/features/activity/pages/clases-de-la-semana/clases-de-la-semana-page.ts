@@ -442,6 +442,11 @@ export class ClasesDeLaSemanaPage {
     return nombre.charAt(0).toUpperCase() + nombre.slice(1);
   }
 
+  /** "Lun", "Mar", "Mié"... para que las siete cabeceras midan lo mismo. */
+  protected nombreCorto(fecha: string): string {
+    return this.nombreDelDia(fecha).slice(0, 3);
+  }
+
   protected numeroDelDia(fecha: string): string {
     return String(Number(fecha.slice(8, 10)));
   }

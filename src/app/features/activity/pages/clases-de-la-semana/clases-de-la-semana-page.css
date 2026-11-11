@@ -231,11 +231,24 @@
   color: var(--color-texto-fuerte);
 }
 
+/*
+ * Siempre dos lineas fijas —"Lun 09/11 Hoy" y "2 clases"—, con el nombre corto: las siete
+ * cabeceras miden lo mismo y las tarjetas arrancan a la misma altura en todas las columnas.
+ */
+.semana-clases .dia-clases__cabecera {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0;
+  padding: var(--esp-3) var(--esp-5);
+}
+
 .dia-clases__nombre {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--esp-3);
+  white-space: nowrap;
 }
 
 .dia-clases__fecha,
