@@ -23,10 +23,21 @@ individual o grupal y proponer sus valores clínicos por defecto. Después, ofre
 
 ## 3. Jerarquía propuesta
 
-1. **Información del servicio:** Código (30 %) + Nombre (70 %), ayuda del código; Descripción (área de dos líneas con contador).
-2. **Clasificación y modalidad:** naturaleza en 4 tarjetas (2 × 2), modalidad en 2 tarjetas; si es grupal, nota de capacidad.
-3. **Seguimiento clínico:** una casilla por fila, título + qué implica.
+Compactada el 10/11/2026 a pedido del usuario: el formulario entero entra en el panel amplio sin
+desplazarse en un escritorio de 1366 × 768 (583 px de formulario, antes 953).
+
+1. **Información del servicio:** Código (30 %) + Nombre (70 %) en una fila; la aclaración del código
+   detrás de su "?". Descripción en un renglón que crece con el texto (`field-sizing: content`),
+   con el contador en la fila del rótulo.
+2. **Clasificación y modalidad:** las cuatro naturalezas en una fila (dos por fila en un teléfono),
+   con un resumen breve y la explicación completa en el "?" de "Naturaleza"; Individual y Grupal
+   en otra. La nota de capacidad y la de edición pasan al "?" de "Modalidad".
+3. **Seguimiento clínico:** las dos casillas en una fila de 40 px; qué implica cada una, detrás de su
+   "?" y como descripción accesible. "Se proponen por defecto…" va en el "?" del título.
 4. **Pie fijo:** Cancelar · Crear servicio / Guardar cambios.
+
+Espaciado del panel en este formulario: 16 px arriba y 20 a los costados, 8–12 px entre campos,
+títulos de sección en `--tipo-sm` sin línea separadora.
 
 ## 4. Flujo
 
@@ -46,7 +57,7 @@ Selects → tarjetas de opción (radios nativos); orden; textos; un solo formula
 
 ## 7. Progresivo
 
-La nota de capacidad aparece sólo con "Grupal". La explicación de que la naturaleza sólo clasifica
+La nota de capacidad y la explicación de que la naturaleza sólo clasifica
 (RN-M06-005) va detrás del "?".
 
 ## 8. Componentes reutilizables
