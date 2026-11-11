@@ -3,7 +3,7 @@
 .opciones-en-tarjetas {
   grid-column: 1 / -1;
   min-width: 0;
-  margin: 0 0 var(--esp-6);
+  margin: 0 0 var(--esp-5);
   padding: 0;
   border: 0;
   /* Contenedor propio: dos columnas sólo mientras cada tarjeta tenga lugar para su texto. */
@@ -17,7 +17,7 @@
   margin-bottom: var(--esp-3);
   padding: 0;
   font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-semi);
 }
 
 .opciones-en-tarjetas__grilla {
@@ -26,9 +26,17 @@
   gap: var(--esp-4);
 }
 
-@container (min-width: 28rem) {
-  .opciones-en-tarjetas--dos .opciones-en-tarjetas__grilla {
+@container (min-width: 22rem) {
+  .opciones-en-tarjetas:is(.opciones-en-tarjetas--dos, .opciones-en-tarjetas--cuatro)
+    .opciones-en-tarjetas__grilla {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Cuatro por fila desde 36rem: en el panel amplio (46rem) cada tarjeta deja ~10rem de texto. */
+@container (min-width: 36rem) {
+  .opciones-en-tarjetas--cuatro .opciones-en-tarjetas__grilla {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -37,7 +45,6 @@
   display: flex;
   align-items: flex-start;
   gap: var(--esp-4);
-  min-height: 3.25rem;
   padding: var(--esp-4) var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
@@ -85,6 +92,20 @@
   min-width: 0;
 }
 
+/*
+ * Con cuatro por fila la tilde va a la esquina y el texto usa todo el ancho de la tarjeta: al
+ * costado le robaba un cuarto y la explicación partía en tres renglones.
+ */
+.opciones-en-tarjetas--cuatro .opcion-en-tarjeta__marca {
+  position: absolute;
+  top: var(--esp-4);
+  right: var(--esp-4);
+}
+
+.opciones-en-tarjetas--cuatro .opcion-en-tarjeta__etiqueta {
+  padding-right: var(--esp-7);
+}
+
 .opcion-en-tarjeta__etiqueta {
   font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
@@ -93,7 +114,7 @@
 
 .opcion-en-tarjeta__descripcion {
   font-size: var(--tipo-xs);
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--color-texto-suave);
 }
 
@@ -103,8 +124,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: 50%;
   background: var(--color-superficie);

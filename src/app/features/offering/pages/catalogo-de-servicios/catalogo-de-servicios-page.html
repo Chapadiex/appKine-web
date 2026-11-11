@@ -291,14 +291,26 @@
         </app-alerta>
       }
 
-      <!-- 1. Información del servicio -->
+      <!-- 1. Información del servicio: código 30 %, nombre 70 %; descripción en una línea que crece. -->
       <h3 class="formulario-servicio__seccion">
         <app-icono nombre="servicios" />
         Información del servicio
       </h3>
 
       <div class="campo formulario-servicio__codigo">
-        <label [for]="prefijo + '-codigo'">Código</label>
+        <div class="formulario-servicio__rotulo">
+          <label [for]="prefijo + '-codigo'">Código</label>
+          <app-ayuda titulo="Código">
+            <p>
+              @if (modo === 'alta') {
+                Identificador único del servicio. Se sugiere desde el nombre y
+                <b>no podrá modificarse después</b>.
+              } @else {
+                El código no se puede modificar.
+              }
+            </p>
+          </app-ayuda>
+        </div>
         @if (modo === 'alta') {
           <input
             [id]="prefijo + '-codigo'"
@@ -319,7 +331,7 @@
           @if (errorDe('codigo'); as mensaje) {
             <p class="campo__error" [id]="prefijo + '-codigo-error'" role="alert">{{ mensaje }}</p>
           } @else {
-            <p class="ayuda ayuda--fija" [id]="prefijo + '-codigo-ayuda'">
+            <p class="ayuda" [id]="prefijo + '-codigo-ayuda'">
               Identificador único. No podrá modificarse después.
             </p>
           }
@@ -331,7 +343,7 @@
             readonly
             [attr.aria-describedby]="prefijo + '-codigo-ayuda'"
           />
-          <p class="ayuda ayuda--fija" [id]="prefijo + '-codigo-ayuda'">No se puede modificar.</p>
+          <p class="ayuda" [id]="prefijo + '-codigo-ayuda'">No se puede modificar.</p>
         }
       </div>
 
@@ -350,13 +362,17 @@
               ? prefijo + '-duplicado'
               : errorDe('nombre')
                 ? prefijo + '-nombre-error'
-                : null
+                : modo === 'editar'
+                  ? prefijo + '-nombre-ayuda'
+                  : null
           "
         />
         @if (errorDe('nombre'); as mensaje) {
           <p class="campo__error" [id]="prefijo + '-nombre-error'" role="alert">{{ mensaje }}</p>
         } @else if (modo === 'editar') {
-          <p class="ayuda ayuda--fija">Renombrar no cambia lo que ya quedó registrado.</p>
+          <p class="ayuda" [id]="prefijo + '-nombre-ayuda'">
+            Renombrar no cambia lo que ya quedó registrado.
+          </p>
         }
       </div>
 
@@ -376,32 +392,44 @@
       }
 
       <div class="campo campo--ancho">
-        <label [for]="prefijo + '-descripcion'">Descripción (opcional)</label>
+        <!-- El contador va en la fila del rótulo: no suma un renglón debajo del área. -->
+        <div class="formulario-servicio__rotulo">
+          <label [for]="prefijo + '-descripcion'">Descripción (opcional)</label>
+          <span
+            class="formulario-servicio__largo"
+            [id]="prefijo + '-descripcion-largo'"
+            aria-live="polite"
+          >
+            {{ formulario.controls.descripcion.value.length }}/{{ largoMaximo.descripcion }}
+          </span>
+        </div>
         <textarea
           [id]="prefijo + '-descripcion'"
           formControlName="descripcion"
-          rows="2"
+          rows="1"
           placeholder="Ej.: Sesiones de acondicionamiento físico y movilidad."
           [attr.maxlength]="largoMaximo.descripcion"
           [attr.aria-invalid]="errorDe('descripcion') ? 'true' : null"
-          [attr.aria-describedby]="prefijo + '-descripcion-largo'"
+          [attr.aria-describedby]="
+            errorDe('descripcion')
+              ? prefijo + '-descripcion-error'
+              : modo === 'editar'
+                ? prefijo + '-descripcion-largo ' + prefijo + '-descripcion-ayuda'
+                : prefijo + '-descripcion-largo'
+          "
         ></textarea>
-        <p
-          class="ayuda ayuda--fija formulario-servicio__contador"
-          [id]="prefijo + '-descripcion-largo'"
-        >
-          @if (errorDe('descripcion'); as mensaje) {
-            <span class="campo__error">{{ mensaje }}</span>
-          } @else if (modo === 'editar') {
-            <span>Vaciar el campo deja el servicio sin descripción.</span>
-          }
-          <span class="formulario-servicio__largo">
-            {{ formulario.controls.descripcion.value.length }}/{{ largoMaximo.descripcion }}
-          </span>
-        </p>
+        @if (errorDe('descripcion'); as mensaje) {
+          <p class="campo__error" [id]="prefijo + '-descripcion-error'" role="alert">
+            {{ mensaje }}
+          </p>
+        } @else if (modo === 'editar') {
+          <p class="ayuda" [id]="prefijo + '-descripcion-ayuda'">
+            Vaciar el campo deja el servicio sin descripción.
+          </p>
+        }
       </div>
 
-      <!-- 2. Clasificación y modalidad -->
+      <!-- 2. Clasificación y modalidad: las cuatro naturalezas en una fila, las dos modalidades en otra. -->
       <h3 class="formulario-servicio__seccion">
         <app-icono nombre="capas" />
         Clasificación y modalidad
@@ -411,15 +439,23 @@
         [id]="prefijo + '-naturaleza'"
         formControlName="naturaleza"
         [opciones]="opcionesDeNaturaleza"
+        [columnas]="4"
         [error]="errorDe('naturaleza')"
       >
         <span leyenda>
-          ¿Qué tipo de servicio es?
-          <app-ayuda titulo="Tipo de servicio">
+          Naturaleza
+          <app-ayuda titulo="Naturaleza del servicio">
             <p>
               Sólo <b>clasifica</b> el servicio: por sí sola no activa ningún comportamiento clínico
               (RN-M06-005).
             </p>
+            <ul>
+              @for (opcion of naturalezas; track opcion.valor) {
+                <li>
+                  <b>{{ opcion.etiqueta }}:</b> {{ opcion.ayuda }}
+                </li>
+              }
+            </ul>
           </app-ayuda>
         </span>
       </app-opciones-en-tarjetas>
@@ -430,51 +466,62 @@
         [opciones]="opcionesDeModalidad"
         [error]="errorDe('modalidadDefault')"
       >
-        <span leyenda>¿Cómo se realiza el servicio?</span>
-        @if (formulario.controls.modalidadDefault.value === 'GRUPAL') {
-          <p class="ayuda">La capacidad máxima se configura al crear la oferta en cada sede.</p>
-        }
-        @if (modo === 'editar') {
-          <p class="ayuda">Es la propuesta para las ofertas nuevas: no cambia las ya creadas.</p>
-        }
+        <span leyenda>
+          Modalidad
+          <app-ayuda titulo="Modalidad">
+            <p>Cómo se realiza el servicio: una persona por turno, o varias en el mismo turno.</p>
+            <p>La capacidad máxima de lo grupal se configura al crear la oferta en cada sede.</p>
+            @if (modo === 'editar') {
+              <p>Es la propuesta para las ofertas nuevas: no cambia las ya creadas.</p>
+            }
+          </app-ayuda>
+        </span>
       </app-opciones-en-tarjetas>
 
-      <!-- 3. Seguimiento clínico -->
+      <!-- 3. Seguimiento clínico: las dos casillas en una fila; qué implica cada una, detrás del "?". -->
       <h3 class="formulario-servicio__seccion">
         <app-icono nombre="pacientes" />
         Seguimiento clínico
+        <app-ayuda titulo="Seguimiento clínico">
+          <p>Se proponen por defecto y se pueden ajustar en la oferta de cada sede.</p>
+        </app-ayuda>
       </h3>
-      <p class="formulario-servicio__nota">
-        Se proponen por defecto y se pueden ajustar en la oferta de cada sede.
-      </p>
 
-      <label class="casilla-con-detalle" [for]="prefijo + '-caso'">
-        <input
-          [id]="prefijo + '-caso'"
-          type="checkbox"
-          formControlName="requiereCasoClinicoDefault"
-        />
-        <span>
-          <span class="casilla-con-detalle__titulo">Requiere un caso clínico</span>
-          <span class="casilla-con-detalle__detalle">
-            Vincula la atención con un proceso clínico del paciente.
-          </span>
+      <div class="casilla-compacta">
+        <label [for]="prefijo + '-caso'">
+          <input
+            [id]="prefijo + '-caso'"
+            type="checkbox"
+            formControlName="requiereCasoClinicoDefault"
+            [attr.aria-describedby]="prefijo + '-caso-detalle'"
+          />
+          Requiere caso clínico
+        </label>
+        <app-ayuda titulo="Requiere caso clínico">
+          <p>Vincula la atención con un proceso clínico del paciente.</p>
+        </app-ayuda>
+        <span class="visualmente-oculto" [id]="prefijo + '-caso-detalle'">
+          Vincula la atención con un proceso clínico del paciente.
         </span>
-      </label>
+      </div>
 
-      <label class="casilla-con-detalle" [for]="prefijo + '-registro'">
-        <input
-          [id]="prefijo + '-registro'"
-          type="checkbox"
-          formControlName="generaRegistroClinicoDefault"
-        />
-        <span>
-          <span class="casilla-con-detalle__titulo">Genera un registro clínico</span>
-          <span class="casilla-con-detalle__detalle">
-            Permite documentar la atención en la historia clínica.
-          </span>
+      <div class="casilla-compacta">
+        <label [for]="prefijo + '-registro'">
+          <input
+            [id]="prefijo + '-registro'"
+            type="checkbox"
+            formControlName="generaRegistroClinicoDefault"
+            [attr.aria-describedby]="prefijo + '-registro-detalle'"
+          />
+          Genera registro clínico
+        </label>
+        <app-ayuda titulo="Genera registro clínico">
+          <p>Permite documentar la atención en la historia clínica.</p>
+        </app-ayuda>
+        <span class="visualmente-oculto" [id]="prefijo + '-registro-detalle'">
+          Permite documentar la atención en la historia clínica.
         </span>
-      </label>
+      </div>
 
       <!-- Pie fijo. Con cambios sin guardar, cerrar pregunta acá mismo. -->
       @if (confirmandoDescarte()) {
