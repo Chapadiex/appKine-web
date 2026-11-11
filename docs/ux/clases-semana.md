@@ -40,9 +40,12 @@ dónde y cuánto lugar queda**, y llegar en un clic a una clase para inscribir o
 
 ## 5. Decisiones
 
-- **Color por actividad, no por estado.** La actividad es la oferta (`ofertaId`): seis tonos
-  con su versión oscura, asignados por el id para que no cambien de una semana a otra. El color
-  acompaña: el nombre de la actividad siempre está escrito.
+- **Color por clase, no por estado** (pedido del usuario el 11/11/2026). "Yoga martes y jueves" y
+  "Yoga lunes y miércoles" son la misma oferta pero dos clases: cada una tiene su color, igual en
+  todos sus días. Ocho tonos con su versión oscura, repartidos en fila entre los títulos que llegan
+  ordenados alfabéticamente: hasta ocho clases distintas en pantalla nunca comparten color. Un hash
+  del título habría sido estable entre semanas, pero hacía chocar justo a esas dos. El color acompaña: el nombre siempre está escrito, y en la semana y el mes se le
+  sacan los días del título porque ya los dice la columna.
 - **El estado se lee en texto** en cada tarjeta. La cancelada además se tacha y se atenúa.
 - **La clase completa** se marca en la ocupación ("Completa"), no sólo con color.
 - **Sin resumen al pie** del boceto: repetía los conteos que ya están en cada día y en la barra

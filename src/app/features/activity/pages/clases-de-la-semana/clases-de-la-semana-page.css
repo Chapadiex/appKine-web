@@ -1,7 +1,7 @@
 /* Clases: semana, lista y mes (10/11/2026, docs/ux/clases-semana.md). */
 
 /*
- * Seis tonos de actividad, con su version oscura. Solo pintan la franja de la tarjeta y el punto:
+ * Ocho tonos de clase, con su version oscura. Cada clase (su titulo) toma uno. Solo pintan la franja de la tarjeta y el punto:
  * nunca texto, y el nombre de la actividad siempre esta escrito al lado (WCAG 1.4.1). Contra la
  * superficie todos pasan 3:1 (WCAG 1.4.11).
  */
@@ -12,6 +12,8 @@
   --actividad-4: #b85a0a;
   --actividad-5: #b03a73;
   --actividad-6: #7a6a12;
+  --actividad-7: #4655c8;
+  --actividad-8: #a3472a;
 
   container: clases / inline-size;
 }
@@ -24,6 +26,8 @@
     --actividad-4: #f0a35e;
     --actividad-5: #ee8cbc;
     --actividad-6: #d2bb55;
+    --actividad-7: #9aa6f5;
+    --actividad-8: #f0937a;
   }
 }
 
@@ -34,6 +38,8 @@
   --actividad-4: #f0a35e;
   --actividad-5: #ee8cbc;
   --actividad-6: #d2bb55;
+  --actividad-7: #9aa6f5;
+  --actividad-8: #f0937a;
 }
 
 .clase-tarjeta--tono-1,
@@ -59,6 +65,14 @@
 .clase-tarjeta--tono-6,
 .clase-punto--tono-6 {
   --tono: var(--actividad-6);
+}
+.clase-tarjeta--tono-7,
+.clase-punto--tono-7 {
+  --tono: var(--actividad-7);
+}
+.clase-tarjeta--tono-8,
+.clase-punto--tono-8 {
+  --tono: var(--actividad-8);
 }
 
 /* Periodo a la izquierda, vista a la derecha; si no entran, la vista baja. */
