@@ -1,8 +1,6 @@
 import { Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../core/models/permisos';
-import { permissionGuard } from '../../core/guards/permission.guard';
 
 /**
  * Rutas de la feature `resource` (espacios y boxes, M04, etapa AKINE-02.02).
@@ -24,24 +22,17 @@ import { permissionGuard } from '../../core/guards/permission.guard';
  *
  * <p><b>La disponibilidad tampoco.</b> Es la misma lectura, en otra forma.
  *
- * <p><b>El alta si exige `consultorio:manage`</b>: es una pantalla que no tiene ningun sentido
- * en modo lectura -no hay nada que ver, solo un formulario que siempre iba a terminar en `403`-.
- * El guard es UX; la autoridad sigue siendo el backend, que reevalua rol, grants y alcance en
- * cada request y rechaza igual a quien llegue por URL directa.
+ * <p><b>El alta si exige `consultorio:manage`</b>: su boton va detras de `*akinePermiso` y abre
+ * un panel lateral del listado. Es UX; la autoridad sigue siendo el backend, que reevalua rol,
+ * grants y alcance en cada request.
  */
 export const routes: Routes = [
   // El alta y la disponibilidad antes que el listado: hoy son paths distintos y el orden no
   // cambiaria nada, pero el dia que exista un `espacios/:id` la ruta parametrica se comeria las
   // dos sin que nadie lo note.
-  {
-    path: 'nuevo',
-    canActivate: [permissionGuard(PERMISO_CONSULTORIO_MANAGE)],
-    loadComponent: () =>
-      import('./pages/new-espacio/new-espacio-page').then((m) => m.NewEspacioPage),
-    title: 'AKINE - Dar de alta un espacio',
-    // Sin `ancho`: el defecto de lectura es el correcto para un formulario. Un renglon de 90
-    // caracteres se lee mejor, y aca no hay ninguna tabla que ensanchar.
-  },
+  // El alta es un panel lateral del listado desde el 10/11/2026: la ruta vieja lleva al listado
+  // para que un marcador o un enlace guardado no termine en el comodin.
+  { path: 'nuevo', redirectTo: '', pathMatch: 'full' },
   {
     path: 'disponibilidad',
     loadComponent: () =>

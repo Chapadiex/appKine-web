@@ -26,10 +26,10 @@
     <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
       Ver espacios en servicio
     </a>
-    <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
       <app-icono nombre="agregar" />
       Dar de alta un espacio
-    </a>
+    </button>
   </div>
 </app-cabecera-de-pagina>
 
@@ -119,9 +119,9 @@
             titulo="Todavía no hay espacios en esta sede"
             texto="Dá de alta el primer box, gimnasio o sala para poder ofrecerlo en la agenda."
           >
-            <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+            <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
               Dar de alta el primer espacio
-            </a>
+            </button>
           </app-estado-vacio>
         } @else if (espaciosDeLaPagina().length === 0) {
           <app-estado-vacio
@@ -274,6 +274,17 @@
     }
   </div>
 </section>
+
+<!-- Alta en un panel lateral (10/11/2026), como la edición: el listado queda a la vista. -->
+@if (altaAbierta()) {
+  <app-panel-lateral
+    titulo="Nuevo espacio"
+    [subtitulo]="'En ' + nombreDeLaSede() + '. Lo único obligatorio es el nombre.'"
+    (cerrar)="cerrarAlta(false)"
+  >
+    <app-alta-de-espacio (listo)="cerrarAlta(true)" (cancelar)="cerrarAlta(false)" />
+  </app-panel-lateral>
+}
 
 <!--
   Edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes vivian en una fila de
