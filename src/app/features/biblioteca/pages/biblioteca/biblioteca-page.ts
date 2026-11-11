@@ -182,13 +182,13 @@ export class BibliotecaPage {
     this.destroyRef.onDestroy(() => this.cancelarBusquedaPendiente());
   }
 
-  /** Relee la pagina actual en sitio, sin pasar por `cargando`. */
   protected alSubir(): void {
     this.dialogo.set(null);
     this.avisos.exito('Libro en cola para procesar');
     this.recargar();
   }
 
+  /** Relee la pagina actual en sitio, sin pasar por `cargando`. */
   recargar(): void {
     this.leer(false).subscribe();
   }

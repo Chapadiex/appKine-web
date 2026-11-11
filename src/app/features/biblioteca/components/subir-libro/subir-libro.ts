@@ -2,6 +2,7 @@ import { HttpEvent, HttpEventType } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   input,
@@ -9,7 +10,9 @@ import {
   signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { LibroResponse } from '../../../../api/generated/model/libro-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -23,7 +26,8 @@ import { BibliotecaApi } from '../../services/biblioteca-api';
  *
  * <p>Reusa `app-panel-lateral` (dialog modal nativo: foco en el primer campo, Escape, foco de
  * vuelta). El tamano no se valida aca: el maximo lo fija cada despliegue y un 413 se traduce.
- * Mientras sube, todo queda bloqueado para evitar el doble envio y no se puede cerrar.
+ * Mientras sube, el envio queda bloqueado para evitar el doble envio; Cancelar, la X y Escape
+ * abortan la peticion y devuelven el formulario editable con lo cargado.
  */
 @Component({
   selector: 'app-subir-libro',
@@ -35,6 +39,8 @@ import { BibliotecaApi } from '../../services/biblioteca-api';
 export class SubirLibro {
   private readonly api = inject(BibliotecaApi);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly destroyRef = inject(DestroyRef);
+  private envio: Subscription | null = null;
 
   readonly modo = input.required<'subir' | 'reemplazar'>();
   readonly libro = input<LibroResponse | null>(null);
@@ -73,9 +79,13 @@ export class SubirLibro {
   }
 
   protected pedirCierre(): void {
-    if (!this.enviando()) {
-      this.cancelar.emit();
+    if (this.enviando()) {
+      this.envio?.unsubscribe();
+      this.envio = null;
+      this.enviando.set(false);
+      return;
     }
+    this.cancelar.emit();
   }
 
   protected faltaDeclaracion(): boolean {
@@ -123,7 +133,7 @@ export class SubirLibro {
             },
             archivo,
           );
-    eventos$.subscribe({
+    this.envio = eventos$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (evento) => this.alEvento(evento),
       error: (causa: unknown) => {
         this.enviando.set(false);
@@ -137,9 +147,10 @@ export class SubirLibro {
       this.progreso.set(
         evento.total ? Math.min(100, Math.floor((evento.loaded / evento.total) * 100)) : null,
       );
-    } else if (evento.type === HttpEventType.Response && evento.body) {
+    } else if (evento.type === HttpEventType.Response) {
+      this.envio = null;
       this.enviando.set(false);
-      this.listo.emit(evento.body);
+      this.listo.emit(evento.body ?? {});
     }
   }
 }
