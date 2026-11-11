@@ -47,8 +47,8 @@ const VISTAS: readonly { readonly valor: VistaDeClases; readonly etiqueta: strin
   { valor: 'mes', etiqueta: 'Mes' },
 ];
 
-/** Seis tonos de actividad (activity.css). Mas actividades repiten tono: el nombre siempre esta escrito. */
-const TONOS_DE_ACTIVIDAD = 6;
+/** Ocho tonos de clase (la hoja de la pantalla). Mas clases repiten tono: el nombre siempre esta escrito. */
+const TONOS_DE_CLASE = 8;
 
 /** Cuantas clases se nombran en un dia del mes antes de resumir con "+N mas". */
 const CLASES_POR_DIA_DEL_MES = 3;
@@ -189,6 +189,20 @@ export class ClasesDeLaSemanaPage {
   protected readonly unidadDelPeriodo = computed(() =>
     this.vistaActual() === 'mes' ? 'Mes' : 'Semana',
   );
+
+  /**
+   * Un tono por clase (11/11/2026): "Yoga martes y jueves" y "Yoga lunes y miercoles" son la misma
+   * oferta pero dos clases, y el color es lo que las une a traves de los dias y las separa entre si.
+   * Los titulos de lo que llego, en orden alfabetico, toman los tonos en fila: hasta ocho clases
+   * distintas en pantalla nunca comparten color. Un hash del titulo seria estable entre semanas pero
+   * hacia chocar justo a esas dos.
+   */
+  private readonly tonos = computed(() => {
+    const titulos = [...new Set((this.clases() ?? []).map((c) => nombreDeClase(c)))].sort((a, b) =>
+      a.localeCompare(b, 'es'),
+    );
+    return new Map(titulos.map((titulo, i) => [titulo, (i % TONOS_DE_CLASE) + 1]));
+  });
 
   // --- Filtros: busqueda, estado y, detras del embudo, profesional, actividad y lugar ---------
 
@@ -435,9 +449,9 @@ export class ClasesDeLaSemanaPage {
     return clase.estado === 'PROGRAMADA' && this.capacidad(clase) > 0 && lugaresLibres(clase) === 0;
   }
 
-  /** Tono 1..6 de la actividad: por `ofertaId`, asi no cambia de una semana a otra. */
+  /** Tono de la clase: el mismo en todos sus dias. */
   protected tono(clase: Clase): number {
-    return ((clase.ofertaId ?? 0) % TONOS_DE_ACTIVIDAD) + 1;
+    return this.tonos().get(nombreDeClase(clase)) ?? 1;
   }
 
   /** "Lunes", "Martes"... del encabezado de cada dia. */

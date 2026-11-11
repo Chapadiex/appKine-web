@@ -304,6 +304,26 @@ describe('ClasesDeLaSemanaPage', () => {
     expect(nombres).toEqual(['Yoga', 'Clase de los sábados']);
   });
 
+  it('cada clase tiene su color en todos sus días, distinto del de las demás', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    const dia = (n: number) => ({
+      inicio: `2026-10-1${n}T21:00:00Z`,
+      fin: `2026-10-1${n}T22:00:00Z`,
+    });
+    esperarClases().flush([
+      { ...CLASE, id: 1, titulo: 'Yoga martes y jueves', ...dia(3) },
+      { ...CLASE, id: 2, titulo: 'Yoga lunes y miércoles', ...dia(4) },
+      { ...CLASE, id: 3, titulo: 'Yoga martes y jueves', ...dia(5) },
+    ]);
+    await asentar(fixture);
+    const tonos = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.clase-tarjeta'),
+    ).map((t) => Array.from(t.classList).find((c) => c.startsWith('clase-tarjeta--tono-')));
+    expect(tonos[0]).toBe(tonos[2]);
+    expect(tonos[1]).not.toBe(tonos[0]);
+  });
+
   it('un error de lectura se muestra y se reintenta', async () => {
     otorgar(httpMock, PERMISO_CLASE_READ);
     const fixture = montar();
