@@ -216,9 +216,12 @@ export class ClasesDeLaSemanaPage {
 
   protected readonly filtrosActivos = computed(
     () =>
-      [this.filtroDeProfesional(), this.filtroDeActividad(), this.filtroDeLugar()].filter(
-        (valor) => valor !== '',
-      ).length,
+      [
+        this.filtroDeEstado() === 'todas' ? '' : this.filtroDeEstado(),
+        this.filtroDeProfesional(),
+        this.filtroDeActividad(),
+        this.filtroDeLugar(),
+      ].filter((valor) => valor !== '').length,
   );
 
   protected readonly opcionesDeEstado = computed<readonly FiltroRapido[]>(() => {
@@ -417,6 +420,7 @@ export class ClasesDeLaSemanaPage {
   }
 
   protected limpiarAvanzados(): void {
+    this.filtroDeEstado.set('todas');
     this.filtroDeProfesional.set('');
     this.filtroDeActividad.set('');
     this.filtroDeLugar.set('');
