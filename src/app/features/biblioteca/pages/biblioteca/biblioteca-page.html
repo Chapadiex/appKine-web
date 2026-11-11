@@ -91,6 +91,19 @@
           }
         </select>
       </div>
+      <!-- LibroResponse no trae la fecha de alta: no hay columna que ordenar. El orden por
+           "Agregado" (creadoEn) se pide con este control, que cicla como los encabezados. -->
+      <div class="campo campo--medio">
+        <span class="biblioteca__rotulo-orden" id="biblioteca-orden-agregado">Fecha de alta</span>
+        <button
+          type="button"
+          class="boton boton--secundario boton--chico"
+          aria-describedby="biblioteca-orden-agregado"
+          (click)="orden.ordenarPor('creadoEn')"
+        >
+          {{ textoOrdenAgregado() }}
+        </button>
+      </div>
     </app-filtros>
 
     @if (errorDeAccion(); as fallo) {

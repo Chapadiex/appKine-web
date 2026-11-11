@@ -112,6 +112,17 @@ export class BibliotecaPage {
     this.consultarDesdeElPrincipio(),
   );
 
+  /** Estado del orden por fecha de alta (`creadoEn`), que no tiene columna en la tabla. */
+  protected readonly textoOrdenAgregado = computed(() => {
+    const actual = this.orden.orden();
+    if (actual?.columna !== 'creadoEn') {
+      return 'Ordenar por agregado';
+    }
+    return actual.direccion === 'asc'
+      ? 'Agregado: más viejos primero'
+      : 'Agregado: más nuevos primero';
+  });
+
   /** Error de una accion de fila (reprocesar, activar...), sobre la tabla. */
   protected readonly errorDeAccion = signal<ErrorBiblioteca | null>(null);
   protected readonly accionEnCurso = signal(false);

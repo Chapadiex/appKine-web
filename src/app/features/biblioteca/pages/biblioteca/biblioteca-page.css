@@ -30,3 +30,8 @@
   display: block;
   margin-block-end: var(--esp-5);
 }
+
+.biblioteca__rotulo-orden {
+  display: block;
+  font-weight: var(--peso-semi);
+}
