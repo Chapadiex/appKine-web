@@ -192,7 +192,9 @@
                         <a principal class="accion-texto" [routerLink]="['/biblioteca', libro.id]"
                           >Ver detalle</a
                         >
-                        @if (libro.reemplazaLibroId === undefined && !tieneReemplazoEnCurso(libro)) {
+                        @if (
+                          libro.reemplazaLibroId === undefined && !tieneReemplazoEnCurso(libro)
+                        ) {
                           <button
                             type="button"
                             [disabled]="accionEnCurso()"
@@ -218,7 +220,9 @@
                           >
                             Activar
                           </button>
-                        } @else if (libro.reemplazaLibroId === undefined && !tieneReemplazoEnCurso(libro)) {
+                        } @else if (
+                          libro.reemplazaLibroId === undefined && !tieneReemplazoEnCurso(libro)
+                        ) {
                           <button
                             type="button"
                             [disabled]="accionEnCurso()"

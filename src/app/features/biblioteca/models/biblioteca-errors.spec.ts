@@ -21,6 +21,8 @@ describe('traducirErrorBiblioteca', () => {
     ['libro-duplicado', 409, 'duplicado', false],
     ['libro-archivo-no-aceptado', 400, 'archivo-no-aceptado', false],
     ['libro-en-proceso', 409, 'en-proceso', false],
+    ['consulta-ocupada', 503, 'ocupada', false],
+    ['asistente-no-disponible', 503, 'asistente-no-disponible', false],
     ['concurrent-modification', 409, 'version-vieja', true],
     ['validation-error', 400, 'datos-invalidos', false],
   ])('%s se traduce a su causa', (tipo, status, causa, recargar) => {

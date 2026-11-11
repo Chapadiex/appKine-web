@@ -21,6 +21,8 @@ import { BibliotecaBusquedaRequest } from '../model/biblioteca-busqueda-request'
 // @ts-ignore
 import { BibliotecaBusquedaResponse } from '../model/biblioteca-busqueda-response';
 // @ts-ignore
+import { ConsultaRequest } from '../model/consulta-request';
+// @ts-ignore
 import { LibroDatosRequest } from '../model/libro-datos-request';
 // @ts-ignore
 import { LibroDetalleResponse } from '../model/libro-detalle-response';
@@ -39,6 +41,7 @@ import {
     BibliotecaServiceInterface,
     ActivarLibroRequestParams,
     BuscarEnBibliotecaRequestParams,
+    ConsultarBibliotecaRequestParams,
     DesactivarLibroRequestParams,
     EditarLibroRequestParams,
     EliminarLibroRequestParams,
@@ -191,6 +194,83 @@ export class BibliotecaService extends BaseService implements BibliotecaServiceI
             {
                 context: localVarHttpContext,
                 body: bibliotecaBusquedaRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Preguntar a la biblioteca
+     * Responde la pregunta con un modelo de lenguaje local, usando solo los pasajes de la biblioteca de la organizacion. Requiere &#x60;biblioteca:consultar&#x60; y los interruptores &#x60;akine.biblioteca.enabled&#x60; y &#x60;akine.biblioteca.consulta.enabled&#x60;. Nada se guarda.  La respuesta 200 es un stream &#x60;text/event-stream&#x60;. Cada evento lleva su nombre en &#x60;event:&#x60; y un JSON en &#x60;data:&#x60;:  - &#x60;espera&#x60; (&#x60;ConsultaEventoEspera&#x60;): la consulta esta en la cola; cada vez que cambia la posicion. - &#x60;fuentes&#x60; (&#x60;ConsultaEventoFuentes&#x60;): una vez, antes del texto, solo con material. - &#x60;texto&#x60; (&#x60;ConsultaEventoTexto&#x60;): fragmentos de la respuesta, en orden. - &#x60;fin&#x60; (&#x60;ConsultaEventoFin&#x60;): la respuesta termino. Sin material, antes llega un unico &#x60;texto&#x60; con el aviso fijo y el modelo no se llama. - &#x60;error&#x60; (&#x60;ConsultaEventoError&#x60;): el modelo fallo o se cumplieron los 90 s; el texto parcial queda. &#x60;type&#x60; es &#x60;asistente-no-disponible&#x60;.  Las lineas que empiezan con &#x60;:&#x60; son comentarios de latido y se ignoran.
+     * @endpoint post /api/v1/organizations/{orgId}/biblioteca/consultas
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public consultarBiblioteca(requestParameters: ConsultarBibliotecaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/event-stream' | 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<string>;
+    public consultarBiblioteca(requestParameters: ConsultarBibliotecaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/event-stream' | 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<string>>;
+    public consultarBiblioteca(requestParameters: ConsultarBibliotecaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/event-stream' | 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<string>>;
+    public consultarBiblioteca(requestParameters: ConsultarBibliotecaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/event-stream' | 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling consultarBiblioteca.');
+        }
+        const consultaRequest = requestParameters?.consultaRequest;
+        if (consultaRequest === null || consultaRequest === undefined) {
+            throw new Error('Required parameter consultaRequest was null or undefined when calling consultarBiblioteca.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'text/event-stream',
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/biblioteca/consultas`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<string>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: consultaRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

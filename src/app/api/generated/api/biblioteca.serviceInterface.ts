@@ -13,6 +13,7 @@ import { Observable }                                        from 'rxjs';
 
 import { BibliotecaBusquedaRequest } from '../model/models';
 import { BibliotecaBusquedaResponse } from '../model/models';
+import { ConsultaRequest } from '../model/models';
 import { LibroDatosRequest } from '../model/models';
 import { LibroDetalleResponse } from '../model/models';
 import { LibroPageResponse } from '../model/models';
@@ -31,6 +32,11 @@ export interface ActivarLibroRequestParams {
 export interface BuscarEnBibliotecaRequestParams {
     orgId: number;
     bibliotecaBusquedaRequest: BibliotecaBusquedaRequest;
+}
+
+export interface ConsultarBibliotecaRequestParams {
+    orgId: number;
+    consultaRequest: ConsultaRequest;
 }
 
 export interface DesactivarLibroRequestParams {
@@ -106,6 +112,14 @@ export interface BibliotecaServiceInterface {
 * @param requestParameters
      */
     buscarEnBiblioteca(requestParameters: BuscarEnBibliotecaRequestParams, extraHttpRequestParams?: any): Observable<BibliotecaBusquedaResponse>;
+
+    /**
+     * Preguntar a la biblioteca
+     * Responde la pregunta con un modelo de lenguaje local, usando solo los pasajes de la biblioteca de la organizacion. Requiere &#x60;biblioteca:consultar&#x60; y los interruptores &#x60;akine.biblioteca.enabled&#x60; y &#x60;akine.biblioteca.consulta.enabled&#x60;. Nada se guarda.  La respuesta 200 es un stream &#x60;text/event-stream&#x60;. Cada evento lleva su nombre en &#x60;event:&#x60; y un JSON en &#x60;data:&#x60;:  - &#x60;espera&#x60; (&#x60;ConsultaEventoEspera&#x60;): la consulta esta en la cola; cada vez que cambia la posicion. - &#x60;fuentes&#x60; (&#x60;ConsultaEventoFuentes&#x60;): una vez, antes del texto, solo con material. - &#x60;texto&#x60; (&#x60;ConsultaEventoTexto&#x60;): fragmentos de la respuesta, en orden. - &#x60;fin&#x60; (&#x60;ConsultaEventoFin&#x60;): la respuesta termino. Sin material, antes llega un unico &#x60;texto&#x60; con el aviso fijo y el modelo no se llama. - &#x60;error&#x60; (&#x60;ConsultaEventoError&#x60;): el modelo fallo o se cumplieron los 90 s; el texto parcial queda. &#x60;type&#x60; es &#x60;asistente-no-disponible&#x60;.  Las lineas que empiezan con &#x60;:&#x60; son comentarios de latido y se ignoran.
+     * @endpoint post /api/v1/organizations/{orgId}/biblioteca/consultas
+* @param requestParameters
+     */
+    consultarBiblioteca(requestParameters: ConsultarBibliotecaRequestParams, extraHttpRequestParams?: any): Observable<string>;
 
     /**
      * Dar de baja un libro sin borrarlo

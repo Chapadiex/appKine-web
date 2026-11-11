@@ -245,6 +245,12 @@ model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consulta-evento-error.ts
+model/consulta-evento-espera.ts
+model/consulta-evento-fin.ts
+model/consulta-evento-fuentes.ts
+model/consulta-evento-texto.ts
+model/consulta-request.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
@@ -351,6 +357,7 @@ model/financiador-response.ts
 model/franja-de-agenda.ts
 model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
+model/fuente-de-consulta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
 model/guardar-borrador.ts
@@ -576,6 +583,7 @@ model/tratamiento.ts
 model/turno-a-cancelar-en-lote.ts
 model/turno-afectado-por-disponibilidad-response.ts
 model/turno-de-calendario.ts
+model/turno-de-consulta-request.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
 model/turno.ts

@@ -13,6 +13,8 @@ export type CausaBiblioteca =
   | 'archivo-no-aceptado'
   | 'demasiado-grande'
   | 'en-proceso'
+  | 'ocupada'
+  | 'asistente-no-disponible'
   | 'version-vieja'
   | 'datos-invalidos'
   | 'sin-permiso'
@@ -73,6 +75,18 @@ export function traducirErrorBiblioteca(error: unknown): ErrorBiblioteca {
       return {
         mensaje: 'Hay un procesamiento o reemplazo en curso: esperá a que termine.',
         causa: 'en-proceso',
+        recargar: false,
+      };
+    case 'consulta-ocupada':
+      return {
+        mensaje: 'Hay otras consultas en curso. Probá de nuevo en unos segundos.',
+        causa: 'ocupada',
+        recargar: false,
+      };
+    case 'asistente-no-disponible':
+      return {
+        mensaje: 'El asistente no está disponible en este momento.',
+        causa: 'asistente-no-disponible',
         recargar: false,
       };
     case 'concurrent-modification':

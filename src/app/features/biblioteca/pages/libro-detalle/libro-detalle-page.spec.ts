@@ -52,10 +52,12 @@ describe('LibroDetallePage', () => {
     fixture.detectChanges();
 
     vi.advanceTimersByTime(RELECTURA_MS);
-    httpMock.expectOne(LIBRO_URL).flush(
-      { type: 'https://akine.app/problems/libro-no-encontrado', status: 404 },
-      { status: 404, statusText: 'Not Found' },
-    );
+    httpMock
+      .expectOne(LIBRO_URL)
+      .flush(
+        { type: 'https://akine.app/problems/libro-no-encontrado', status: 404 },
+        { status: 404, statusText: 'Not Found' },
+      );
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;

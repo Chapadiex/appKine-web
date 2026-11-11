@@ -472,6 +472,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_LIBRO_ARCHIVO_NO_ACEPTADO = 'https://akine.app/problems/libro-archivo-no-aceptado',
 
-    HTTPS___AKINE_APP_PROBLEMS_LIBRO_EN_PROCESO = 'https://akine.app/problems/libro-en-proceso'
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_EN_PROCESO = 'https://akine.app/problems/libro-en-proceso',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTA_OCUPADA = 'https://akine.app/problems/consulta-ocupada',
+
+    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_NO_DISPONIBLE = 'https://akine.app/problems/asistente-no-disponible'
 }
 

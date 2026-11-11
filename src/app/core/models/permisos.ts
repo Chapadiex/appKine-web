@@ -277,3 +277,12 @@ export const PERMISO_PASE_ADJUST = 'pase:adjust';
  * menu son UX, la autoridad es el backend.
  */
 export const PERMISO_BIBLIOTECA_MANAGE = 'biblioteca:manage';
+
+/**
+ * Consultar la biblioteca del centro con el asistente (contrato 0.165.0). Copiado de
+ * `knowledge.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Gobierna
+ * `/consulta`: el guard y la entrada del menu son UX, la autoridad es el backend.
+ */
+export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';
