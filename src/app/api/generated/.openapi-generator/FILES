@@ -21,6 +21,8 @@ api/auditoria.service.ts
 api/auditoria.serviceInterface.ts
 api/autorizaciones.service.ts
 api/autorizaciones.serviceInterface.ts
+api/biblioteca.service.ts
+api/biblioteca.serviceInterface.ts
 api/caja.service.ts
 api/caja.serviceInterface.ts
 api/calendario-de-sede.service.ts
@@ -189,6 +191,9 @@ model/baja-de-entrada-clinica-request.ts
 model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/baja-de-producto.ts
+model/biblioteca-busqueda-request.ts
+model/biblioteca-busqueda-response.ts
+model/biblioteca-pasaje-response.ts
 model/bloque-response.ts
 model/bloqueo-en-agenda.ts
 model/bloques-creados-response.ts
@@ -384,6 +389,11 @@ model/invitacion-token-request.ts
 model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
+model/libro-datos-request.ts
+model/libro-detalle-response.ts
+model/libro-fragmento-sospechoso-response.ts
+model/libro-page-response.ts
+model/libro-response.ts
 model/limit-usage-response.ts
 model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts

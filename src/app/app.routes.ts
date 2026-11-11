@@ -15,6 +15,7 @@ import { routes as rutasHorarios } from './features/resource/horarios.routes';
 import { routes as rutasCatalog } from './features/catalog/catalog.routes';
 import { routes as rutasOffering } from './features/offering/offering.routes';
 import { routes as rutasContracting } from './features/contracting/contracting.routes';
+import { routes as rutasBiblioteca } from './features/biblioteca/biblioteca.routes';
 import { routes as rutasBilling } from './features/billing/billing.routes';
 import { routes as rutasPerson } from './features/person/person.routes';
 import { routes as rutasScheduling } from './features/scheduling/scheduling.routes';
@@ -342,6 +343,14 @@ export const routes: Routes = [
     path: 'presentaciones',
     canActivate: [authGuard],
     children: rutasPresentaciones,
+  },
+
+  // Biblioteca del centro (libros PDF y busqueda). `permissionGuard(biblioteca:manage)` lo pone
+  // `biblioteca.routes.ts`; las pantallas cargan con `loadComponent`.
+  {
+    path: 'biblioteca',
+    canActivate: [authGuard, contextGuard],
+    children: rutasBiblioteca,
   },
 
   // Egresos y pagos de la sede (M22, AKINE-07.05 + F-5). Rutas propias dentro de `billing`;

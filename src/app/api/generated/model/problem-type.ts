@@ -462,6 +462,16 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_FUERA_DE_VENTANA = 'https://akine.app/problems/enmienda-fuera-de-ventana',
 
-    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta'
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta',
+
+    HTTPS___AKINE_APP_PROBLEMS_BIBLIOTECA_DESHABILITADA = 'https://akine.app/problems/biblioteca-deshabilitada',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_NO_ENCONTRADO = 'https://akine.app/problems/libro-no-encontrado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_DUPLICADO = 'https://akine.app/problems/libro-duplicado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_ARCHIVO_NO_ACEPTADO = 'https://akine.app/problems/libro-archivo-no-aceptado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_EN_PROCESO = 'https://akine.app/problems/libro-en-proceso'
 }
 
