@@ -108,6 +108,50 @@ describe('ConsultaPage', () => {
     ]);
   });
 
+  it('elModeloQueRespondeSinMaterialSeTrataComoSinMaterial', async () => {
+    secuencia = () =>
+      eventos(
+        { tipo: 'fuentes', fuentes: [FUENTE] },
+        { tipo: 'texto', texto: 'No encontré material en la biblioteca ' },
+        { tipo: 'texto', texto: 'para responder eso.' },
+        { tipo: 'fin', sinMaterial: false, camino: 'x' },
+      );
+    await preguntar('primera');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Fuentes');
+    await preguntar('segunda');
+    expect(pedidos[1].historial).toEqual([]);
+  });
+
+  it('elErrorConservaElTextoRecibido', async () => {
+    secuencia = () =>
+      eventos(
+        { tipo: 'fuentes', fuentes: [FUENTE] },
+        { tipo: 'texto', texto: 'Respuesta parcial' },
+        { tipo: 'error', type: 'x/asistente-no-disponible' },
+      );
+    await preguntar('¿qué?');
+    const texto = (fixture.nativeElement as HTMLElement).textContent;
+    expect(texto).toContain('Respuesta parcial');
+    expect(texto).toContain('El asistente no está disponible en este momento.');
+  });
+
+  it('conElTurnoDejaDeMostrarLaCola', async () => {
+    const abierta = new Subject<EventoConsulta>();
+    secuencia = () => abierta;
+    await preguntar('hola');
+    const el = fixture.nativeElement as HTMLElement;
+    abierta.next({ tipo: 'espera', posicion: 1 });
+    fixture.detectChanges();
+    expect(el.textContent).toContain('En cola');
+    abierta.next({ tipo: 'fuentes', fuentes: [FUENTE] });
+    fixture.detectChanges();
+    expect(el.textContent).not.toContain('En cola');
+    expect(el.textContent).toContain('Buscando en la biblioteca…');
+    abierta.next({ tipo: 'texto', texto: 'Hola' });
+    fixture.detectChanges();
+    expect(el.textContent).not.toContain('Buscando en la biblioteca…');
+  });
+
   it('cambiarDeCentroAbortaYVaciaLaCharla', async () => {
     const abierta = new Subject<EventoConsulta>();
     secuencia = () => abierta;

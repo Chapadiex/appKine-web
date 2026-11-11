@@ -28,6 +28,8 @@ const MAX_PREGUNTA = 600;
 const MAX_TURNOS = 6;
 const AVISO_FIJO =
   'Respuestas orientativas basadas sólo en la bibliografía cargada por el centro. No reemplazan el criterio profesional.';
+/** Respuesta fija sin material (R11): el modelo también puede devolverla, y se trata igual. */
+const SIN_MATERIAL = 'No encontré material en la biblioteca para responder eso.';
 
 export interface MensajeDeCharla {
   readonly rol: 'usuario' | 'asistente';
@@ -191,7 +193,13 @@ export class ConsultaPage {
         this.cambiarUltimo((m) => ({ ...m, estado: 'en-cola', posicion: evento.posicion }));
         break;
       case 'fuentes':
-        this.cambiarUltimo((m) => ({ ...m, fuentes: evento.fuentes }));
+        // Ya tiene el turno: deja "En cola…" y vuelve a "Buscando…" hasta el primer texto.
+        this.cambiarUltimo((m) => ({
+          ...m,
+          estado: 'esperando',
+          posicion: undefined,
+          fuentes: evento.fuentes,
+        }));
         break;
       case 'texto':
         this.cambiarUltimo((m) => ({
@@ -201,7 +209,11 @@ export class ConsultaPage {
         }));
         break;
       case 'fin':
-        this.cambiarUltimo((m) => ({ ...m, estado: 'listo', sinMaterial: evento.sinMaterial }));
+        this.cambiarUltimo((m) => ({
+          ...m,
+          estado: 'listo',
+          sinMaterial: evento.sinMaterial || m.texto.trim() === SIN_MATERIAL,
+        }));
         this.anuncio.set('Respuesta lista');
         break;
       case 'error':
@@ -225,7 +237,13 @@ export class ConsultaPage {
   }
 
   private terminarConError(mensaje: string): void {
-    this.cambiarUltimo((m) => ({ ...m, estado: 'error', texto: mensaje, fuentes: [] }));
+    // El texto ya recibido queda; el aviso va después.
+    this.cambiarUltimo((m) => ({
+      ...m,
+      estado: 'error',
+      texto: m.texto ? `${m.texto}\n\n${mensaje}` : mensaje,
+      fuentes: [],
+    }));
     this.anuncio.set('Error en la respuesta');
   }
 }
