@@ -86,15 +86,9 @@ export function esGlobal(concepto: CatalogoConceptoResponse): boolean {
 /** `aria-label` de las pestanas del catalogo clinico. */
 export const ETIQUETA_PESTANAS_DE_CATALOGO = 'Tipo de catálogo';
 
-/**
- * Una pestana por tipo (`/catalogo/:tipo`) y, al final, los pedidos a la plataforma: desde el
- * 11/11/2026 no estan en el menu y se llega solo por aca.
- */
-export const PESTANAS_DE_CATALOGO: readonly Pestana[] = [
-  ...TIPOS_DE_CATALOGO.map((tipo) => ({
-    etiqueta: tipo.plural,
-    ruta: `/catalogo/${tipo.slug}`,
-    exacta: true,
-  })),
-  { etiqueta: 'Pedidos', ruta: '/catalogo/solicitudes', exacta: true },
-];
+/** Una pestana por tipo: cada una es una ruta propia (`/catalogo/:tipo`). */
+export const PESTANAS_DE_CATALOGO: readonly Pestana[] = TIPOS_DE_CATALOGO.map((tipo) => ({
+  etiqueta: tipo.plural,
+  ruta: `/catalogo/${tipo.slug}`,
+  exacta: true,
+}));

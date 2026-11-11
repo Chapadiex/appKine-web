@@ -17,12 +17,10 @@
       </p>
       <p>
         Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-        organización y los administras desde esta misma tabla. Si necesitas que algo entre al
-        catalogo comun, pedilo a la plataforma desde Solicitudes.
+        organización y los administras desde esta misma tabla.
       </p>
     </app-ayuda>
     <div cabeceraAcciones>
-      <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">Pedir un alta</a>
       <ng-container *akinePermiso="permisoManage">
         <button type="button" class="boton" (click)="abrirAlta()">
           <app-icono nombre="agregar" />
@@ -236,10 +234,7 @@
                               Ver vigencias
                             </a>
                           }
-                          <span class="ayuda">
-                            La mantiene AKINE.
-                            <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
-                          </span>
+                          <span class="ayuda">La mantiene AKINE.</span>
                         } @else if (concepto.estado === 'ACTIVO' && puedeGestionar()) {
                           <app-acciones-de-fila [de]="concepto.name ?? concepto.codigo ?? ''">
                             <button

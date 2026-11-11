@@ -68,7 +68,6 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
       '/contratacion/financiadores',
       '/contratacion/arancel-efectivo',
       '/catalogo/especialidades',
-      '/catalogo/solicitudes',
     ]) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }

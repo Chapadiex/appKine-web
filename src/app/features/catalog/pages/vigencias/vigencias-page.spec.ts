@@ -192,7 +192,6 @@ describe('VigenciasPage', () => {
         'button:not(.filtros-barra__boton):not(.tabla__orden):not(.ayuda-contextual__boton):not(.ayuda-contextual__cerrar)',
       ).length,
     ).toBe(0);
-    expect(anfitrion.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
   });
 
   it('el alta exige código, nombre y práctica, y omite lo opcional que quedo vacío', async () => {
