@@ -35,7 +35,7 @@
 
 /* Cuatro por fila desde 36rem: en el panel amplio (46rem) cada tarjeta deja ~10rem de texto. */
 @container (min-width: 36rem) {
-  .opciones-en-tarjetas--cuatro .opciones-en-tarjetas__grilla {
+  .opciones-en-tarjetas.opciones-en-tarjetas--cuatro .opciones-en-tarjetas__grilla {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
