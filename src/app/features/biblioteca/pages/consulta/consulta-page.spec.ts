@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 
 import { ConsultaRequest } from '../../../../api/generated/model/consulta-request';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -89,5 +89,39 @@ describe('ConsultaPage', () => {
     }
     expect(pedidos[3].historial?.length).toBe(6);
     expect(pedidos[4].historial?.length).toBe(6);
+  });
+
+  it('historialExcluyeSinMaterialYErrores', async () => {
+    const ok = () =>
+      eventos({ tipo: 'texto', texto: 'ok' }, { tipo: 'fin', sinMaterial: false, camino: 'x' });
+    secuencia = () =>
+      eventos({ tipo: 'texto', texto: 'nada' }, { tipo: 'fin', sinMaterial: true, camino: 'x' });
+    await preguntar('sin material');
+    secuencia = () => eventos({ tipo: 'error', type: 'x/asistente-no-disponible' });
+    await preguntar('con error');
+    secuencia = ok;
+    await preguntar('buena');
+    await preguntar('final');
+    expect(pedidos[3].historial).toEqual([
+      { rol: 'usuario', texto: 'buena' },
+      { rol: 'asistente', texto: 'ok' },
+    ]);
+  });
+
+  it('cambiarDeCentroAbortaYVaciaLaCharla', async () => {
+    const abierta = new Subject<EventoConsulta>();
+    secuencia = () => abierta;
+    await preguntar('hola');
+    expect(abierta.observed).toBe(true);
+    TestBed.inject(TenantContextStore).select({
+      organizationId: 2,
+      organizationName: 'Otro',
+      consultorioId: 4,
+      consultorioName: 'Sede 2',
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(abierta.observed).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('hola');
   });
 });

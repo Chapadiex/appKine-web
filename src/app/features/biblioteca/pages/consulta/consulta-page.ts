@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -77,6 +78,18 @@ export class ConsultaPage {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.abortar());
+    // Cambiar de centro corta la charla: ni el texto en curso ni el historial viajan al nuevo.
+    let organizacion: number | null | undefined;
+    effect(() => {
+      const actual = this.tenantContext.organizationId();
+      untracked(() => {
+        if (organizacion !== undefined && organizacion !== actual) {
+          this.nuevaCharla();
+          this.deshabilitada.set(false);
+        }
+        organizacion = actual;
+      });
+    });
     // Desplazamiento al último mensaje mientras llega el texto.
     effect(() => {
       this.mensajes();
@@ -109,22 +122,14 @@ export class ConsultaPage {
       return;
     }
     const pregunta = this.texto().trim();
-    const historial = this.mensajes()
-      .filter((m) => m.estado === 'listo')
-      .slice(-MAX_TURNOS)
-      .map((m) => ({
-        rol:
-          m.rol === 'usuario'
-            ? TurnoDeConsultaRequestRolEnum.USUARIO
-            : TurnoDeConsultaRequestRolEnum.ASISTENTE,
-        texto: m.texto,
-      }));
+    const historial = this.historialDePares();
     this.mensajes.update((actuales) => [
       ...actuales,
       { rol: 'usuario', texto: pregunta, fuentes: [], estado: 'listo' },
       { rol: 'asistente', texto: '', fuentes: [], estado: 'esperando' },
     ]);
     this.texto.set('');
+    this.anuncio.set('');
     this.abortar();
     this.suscripcion = this.api.consultar(orgId, { pregunta, historial }).subscribe({
       next: (evento) => this.aplicar(evento),
@@ -150,6 +155,22 @@ export class ConsultaPage {
       return `En cola, sos el N.º ${m.posicion}.`;
     }
     return m.estado === 'esperando' ? 'Buscando en la biblioteca…' : m.texto;
+  }
+
+  /** Sólo pares usuario+asistente cuya respuesta terminó bien y con material: los últimos 3. */
+  private historialDePares(): { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] {
+    const ms = this.mensajes();
+    const turnos: { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] = [];
+    for (let i = 0; i + 1 < ms.length; i += 2) {
+      const [u, a] = [ms[i], ms[i + 1]];
+      if (a.estado === 'listo' && !a.sinMaterial) {
+        turnos.push(
+          { rol: TurnoDeConsultaRequestRolEnum.USUARIO, texto: u.texto },
+          { rol: TurnoDeConsultaRequestRolEnum.ASISTENTE, texto: a.texto },
+        );
+      }
+    }
+    return turnos.slice(-MAX_TURNOS);
   }
 
   private abortar(): void {
