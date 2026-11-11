@@ -1,11 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 
-import { ConsultaEventoError } from '../../../api/generated/model/consulta-evento-error';
-import { ConsultaEventoEspera } from '../../../api/generated/model/consulta-evento-espera';
-import { ConsultaEventoFin } from '../../../api/generated/model/consulta-evento-fin';
-import { ConsultaEventoFuentes } from '../../../api/generated/model/consulta-evento-fuentes';
-import { ConsultaEventoTexto } from '../../../api/generated/model/consulta-evento-texto';
 import { ConsultaRequest } from '../../../api/generated/model/consulta-request';
 import { FuenteDeConsultaResponse } from '../../../api/generated/model/fuente-de-consulta-response';
 import { environment } from '../../../../environments/environment';
@@ -40,20 +35,34 @@ export class ConsultaApi {
     return new Observable<EventoConsulta>((suscriptor) => {
       const aborto = new AbortController();
 
+      // Un fallo de refrescar() es de la sesion, no de la conexion: se propaga tal cual.
+      let falloDeSesion: { error: unknown } | null = null;
+
       const correr = async (): Promise<void> => {
         let respuesta = await this.pedir(orgId, pedido, aborto.signal);
         if (respuesta.status === 401) {
-          await firstValueFrom(this.sesion.refrescar());
+          try {
+            await firstValueFrom(this.sesion.refrescar());
+          } catch (error) {
+            falloDeSesion = { error };
+            throw error;
+          }
           respuesta = await this.pedir(orgId, pedido, aborto.signal);
         }
         if (!respuesta.ok || !respuesta.body) {
           throw await errorDeRespuesta(respuesta);
         }
+        let terminado = false;
         for await (const { evento, datos } of leerEventosSse(respuesta.body)) {
           const emitido = aEvento(evento, datos);
           if (emitido) {
+            terminado ||= emitido.tipo === 'fin' || emitido.tipo === 'error';
             suscriptor.next(emitido);
           }
+        }
+        // Sin `fin` ni `error` el corte fue de la red o de un proxy, no de la respuesta.
+        if (!terminado) {
+          throw errorDeConexion();
         }
         suscriptor.complete();
       };
@@ -62,8 +71,9 @@ export class ConsultaApi {
         if (aborto.signal.aborted) {
           return;
         }
+        const propio = falloDeSesion as { error: unknown } | null;
         suscriptor.error(
-          error instanceof AkineHttpError ? error : new AkineHttpError(0, null, true),
+          propio ? propio.error : error instanceof AkineHttpError ? error : errorDeConexion(),
         );
       });
 
@@ -87,29 +97,58 @@ export class ConsultaApi {
   }
 }
 
+function errorDeConexion(): AkineHttpError {
+  return new AkineHttpError(0, null, true);
+}
+
+const NOMBRES_CONOCIDOS = new Set(['espera', 'fuentes', 'texto', 'fin', 'error']);
+
+/**
+ * El evento tipado, o `null` si el nombre no se conoce (se ignora). Un evento conocido con JSON
+ * roto o de forma inesperada lanza: perder un `fin` o un `error` dejaria la pantalla cargando.
+ */
 function aEvento(nombre: string, datos: string): EventoConsulta | null {
-  let cuerpo: unknown;
-  try {
-    cuerpo = JSON.parse(datos);
-  } catch {
+  if (!NOMBRES_CONOCIDOS.has(nombre)) {
     return null;
+  }
+  let cuerpo: Record<string, unknown>;
+  try {
+    const analizado: unknown = JSON.parse(datos);
+    if (typeof analizado !== 'object' || analizado === null) {
+      throw new Error('forma');
+    }
+    cuerpo = analizado as Record<string, unknown>;
+  } catch {
+    throw errorDeConexion();
   }
   switch (nombre) {
     case 'espera':
-      return { tipo: 'espera', posicion: (cuerpo as ConsultaEventoEspera).posicion };
+      if (typeof cuerpo['posicion'] === 'number') {
+        return { tipo: 'espera', posicion: cuerpo['posicion'] };
+      }
+      break;
     case 'fuentes':
-      return { tipo: 'fuentes', fuentes: (cuerpo as ConsultaEventoFuentes).fuentes };
+      if (Array.isArray(cuerpo['fuentes'])) {
+        return { tipo: 'fuentes', fuentes: cuerpo['fuentes'] as FuenteDeConsultaResponse[] };
+      }
+      break;
     case 'texto':
-      return { tipo: 'texto', texto: (cuerpo as ConsultaEventoTexto).texto };
-    case 'fin': {
-      const fin = cuerpo as ConsultaEventoFin;
-      return { tipo: 'fin', sinMaterial: fin.sinMaterial, camino: fin.camino };
-    }
+      if (typeof cuerpo['texto'] === 'string') {
+        return { tipo: 'texto', texto: cuerpo['texto'] };
+      }
+      break;
+    case 'fin':
+      if (typeof cuerpo['sinMaterial'] === 'boolean' && typeof cuerpo['camino'] === 'string') {
+        return { tipo: 'fin', sinMaterial: cuerpo['sinMaterial'], camino: cuerpo['camino'] };
+      }
+      break;
     case 'error':
-      return { tipo: 'error', type: (cuerpo as ConsultaEventoError).type };
-    default:
-      return null;
+      if (typeof cuerpo['type'] === 'string') {
+        return { tipo: 'error', type: cuerpo['type'] };
+      }
+      break;
   }
+  throw errorDeConexion();
 }
 
 /** El mismo `AkineHttpError` que produce `errorInterceptor` para una respuesta no 2xx. */

@@ -25,4 +25,17 @@ describe('leerEventosSse', () => {
     const eventos = await leer(stream('event: texto\ndata: {"te', 'xto":"Hola"}\n\n'));
     expect(eventos).toEqual([{ evento: 'texto', datos: '{"texto":"Hola"}' }]);
   });
+
+  it('caracterUtf8PartidoEntreTrozos', async () => {
+    const bytes = new TextEncoder().encode('event: texto\ndata: {"texto":"canción"}\n\n');
+    const corte = bytes.indexOf(0xc3) + 1; // el "ó" son dos bytes: se parte entre ellos
+    const cuerpo = new ReadableStream<Uint8Array>({
+      start(controlador) {
+        controlador.enqueue(bytes.slice(0, corte));
+        controlador.enqueue(bytes.slice(corte));
+        controlador.close();
+      },
+    });
+    expect(await leer(cuerpo)).toEqual([{ evento: 'texto', datos: '{"texto":"canción"}' }]);
+  });
 });
