@@ -52,11 +52,14 @@ describe('ClasesDeLaSemanaPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  function montar(semana?: string) {
+  function montar(semana?: string, vista?: string) {
     elegirSede();
     const fixture = TestBed.createComponent(ClasesDeLaSemanaPage);
     if (semana !== undefined) {
       fixture.componentRef.setInput('semana', semana);
+    }
+    if (vista !== undefined) {
+      fixture.componentRef.setInput('vista', vista);
     }
     fixture.detectChanges();
     return fixture;
@@ -84,26 +87,23 @@ describe('ClasesDeLaSemanaPage', () => {
 
       const texto = textoDe(fixture);
       expect(texto).toContain('Semana del lunes 12/10 al domingo 18/10');
-      // Patron de listado (UX-14): contador en la barra de la tabla, pie estandar, todo en una tarjeta.
+      // La semana es la vista por defecto: siete dias en columnas, con su cantidad.
       const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelectorAll('.dia-clases')).toHaveLength(7);
       expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('1 clase');
-      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
-        'Mostrando 1–1 de 1',
-      );
-      expect(raiz.querySelector('section.tarjeta .tabla')).not.toBeNull();
       expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.tabla')).toBeNull();
       expect(texto).toContain('18:00 a 19:00');
       expect(texto).toContain('Pilates reformer');
       expect(texto).toContain('Lic. Diaz');
       expect(texto).toContain('Sala grande');
       // Los nombres vienen en la clase: no se releen las ofertas.
       httpMock.expectNone((p) => p.url.endsWith('/ofertas'));
-      expect(texto).toContain('8 de 8 lugares ocupados — completa');
+      expect(texto).toContain('8 de 8 lugares ocupados');
+      expect(texto).toContain('Completa');
+      expect(texto).toContain('Programada');
       expect(texto).toContain('Programar clase');
-      expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(1);
-      expect(
-        (fixture.nativeElement as HTMLElement).querySelector('a[href="/clases/70"]'),
-      ).not.toBeNull();
+      expect(raiz.querySelector('a.clase-tarjeta[href="/clases/70"]')).not.toBeNull();
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
@@ -133,7 +133,7 @@ describe('ClasesDeLaSemanaPage', () => {
     await asentar(fixture);
     expect(textoDe(fixture)).not.toContain('Yoga suave');
 
-    clickear(fixture, 'Esta semana');
+    clickear(fixture, 'Hoy');
     await asentar(fixture);
     esperarClases().flush([{ ...CLASE, titulo: 'Yoga suave', estado: 'CANCELADA' }]);
     await asentar(fixture);
@@ -157,9 +157,9 @@ describe('ClasesDeLaSemanaPage', () => {
     );
   });
 
-  it('los filtros rápidos cuentan por estado sobre la semana entera y filtran la tabla', async () => {
+  it('los filtros rápidos cuentan por estado sobre la semana entera y filtran', async () => {
     otorgar(httpMock, PERMISO_CLASE_READ);
-    const fixture = montar('2026-10-01');
+    const fixture = montar('2026-10-14');
     esperarClases().flush([
       { ...CLASE, id: 1, titulo: 'Yoga suave' },
       { ...CLASE, id: 2, titulo: 'Pilates mat' },
@@ -187,9 +187,9 @@ describe('ClasesDeLaSemanaPage', () => {
     ).toContain('1 clase');
   });
 
-  it('pagina de a 10 y, sin coincidencias, ofrece limpiar los filtros', async () => {
+  it('la lista pagina de a 10 y, sin coincidencias, ofrece limpiar los filtros', async () => {
     otorgar(httpMock, PERMISO_CLASE_READ);
-    const fixture = montar('2026-10-01');
+    const fixture = montar('2026-10-14', 'lista');
     esperarClases().flush(
       Array.from({ length: 12 }, (_, i) => ({ ...CLASE, id: i + 1, titulo: `Clase ${i + 1}` })),
     );
@@ -211,6 +211,83 @@ describe('ClasesDeLaSemanaPage', () => {
     clickear(fixture, 'Limpiar filtros');
     await asentar(fixture);
     expect(raiz.querySelectorAll('tbody tr')).toHaveLength(10);
+  });
+
+  it(
+    'la lista conserva la tabla con orden, cupo y enlace a la clase',
+    async () => {
+      otorgar(httpMock, PERMISO_CLASE_READ);
+      const fixture = montar('2026-10-14', 'lista');
+      esperarClases().flush([CLASE]);
+      await asentar(fixture);
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelectorAll('tbody tr')).toHaveLength(1);
+      expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toContain(
+        'Mostrando 1–1 de 1',
+      );
+      expect(textoDe(fixture)).toContain('8 de 8 lugares ocupados — completa');
+      expect(raiz.querySelector('a[href="/clases/70"]')).not.toBeNull();
+      await esperarSinViolaciones(fixture.nativeElement);
+    },
+    TIMEOUT_AXE,
+  );
+
+  it(
+    'el mes pide seis semanas, resume cada día y abre la semana del día',
+    async () => {
+      otorgar(httpMock, PERMISO_CLASE_READ);
+      const fixture = montar('2026-10-14', 'mes');
+      const pedido = esperarClases();
+      // Octubre 2026 empieza un jueves: el calendario arranca el lunes 28/09 y cubre 42 dias.
+      expect(decodeURIComponent(pedido.request.params.get('desde') ?? '')).toBe(
+        '2026-09-28T03:00:00.000Z',
+      );
+      expect(decodeURIComponent(pedido.request.params.get('hasta') ?? '')).toBe(
+        '2026-11-09T03:00:00.000Z',
+      );
+      pedido.flush(
+        Array.from({ length: 4 }, (_, i) => ({ ...CLASE, id: i + 1, titulo: `Clase ${i + 1}` })),
+      );
+      await asentar(fixture);
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(textoDe(fixture)).toContain('Octubre de 2026');
+      expect(textoDe(fixture)).toContain('4 clases');
+      expect(textoDe(fixture)).toContain('+1 más');
+      await esperarSinViolaciones(fixture.nativeElement);
+
+      const dia = raiz.querySelector('button[aria-label^="miércoles 14/10"]') as HTMLButtonElement;
+      dia.click();
+      fixture.detectChanges();
+      await asentar(fixture);
+      expect(decodeURIComponent(esperarClases().request.params.get('desde') ?? '')).toBe(
+        '2026-10-12T03:00:00.000Z',
+      );
+      expect(textoDe(fixture)).toContain('Semana del lunes 12/10 al domingo 18/10');
+    },
+    TIMEOUT_AXE,
+  );
+
+  it('filtra por profesional con las opciones de lo que llegó', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    esperarClases().flush([
+      { ...CLASE, id: 1, titulo: 'Yoga suave', profesionalId: 5, profesionalNombre: 'Ana' },
+      { ...CLASE, id: 2, titulo: 'Pilates mat', profesionalId: 6, profesionalNombre: 'Beto' },
+    ]);
+    await asentar(fixture);
+    const select = (fixture.nativeElement as HTMLElement).querySelector(
+      '#clases-profesional',
+    ) as HTMLSelectElement;
+    expect(Array.from(select.options).map((o) => o.textContent?.trim())).toEqual([
+      'Todos',
+      'Ana',
+      'Beto',
+    ]);
+    select.value = '6';
+    select.dispatchEvent(new Event('change'));
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Pilates mat');
+    expect(textoDe(fixture)).not.toContain('Yoga suave');
   });
 
   it('un error de lectura se muestra y se reintenta', async () => {
