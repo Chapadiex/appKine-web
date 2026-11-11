@@ -1,0 +1,73 @@
+<form class="busqueda" novalidate (submit)="$event.preventDefault(); buscar()">
+  <div class="campo campo--12">
+    <label for="probar-busqueda-consulta">Pregunta</label>
+    <textarea
+      id="probar-busqueda-consulta"
+      rows="4"
+      [attr.maxlength]="maximo"
+      [formControl]="consulta"
+      aria-describedby="probar-busqueda-contador"
+      (input)="alEscribir()"
+    ></textarea>
+    <p id="probar-busqueda-contador" class="busqueda__contador">{{ largo() }} / {{ maximo }}</p>
+  </div>
+  <div class="acciones">
+    <button type="submit" class="boton" [disabled]="buscando()">Buscar</button>
+  </div>
+</form>
+
+<div aria-live="polite">
+  @if (buscando()) {
+    <p role="status">Buscando…</p>
+  }
+
+  @if (error(); as problema) {
+    <app-alerta tipo="error" titulo="No pudimos buscar">
+      <p>{{ problema.mensaje }}</p>
+    </app-alerta>
+  }
+
+  @if (resultado(); as r) {
+    <div class="busqueda__encabezado">
+      <h3 class="busqueda__titulo">
+        @if (r.alcanza) {
+          La biblioteca tiene material para esta pregunta
+        } @else {
+          La biblioteca no alcanza para esta pregunta
+        }
+      </h3>
+      <app-ayuda titulo="Qué es el corte">
+        <p>
+          El corte es el puntaje mínimo para que un pasaje cuente como respaldo. La biblioteca
+          alcanza cuando al menos dos pasajes lo superan.
+        </p>
+      </app-ayuda>
+    </div>
+
+    @if (r.camino === 'PALABRAS') {
+      <p class="busqueda__nota">
+        Búsqueda por palabras: el modelo no está disponible o los libros todavía se están indexando
+      </p>
+    }
+
+    @if (pasajes().length === 0) {
+      <p>No se encontró nada en la biblioteca</p>
+    } @else {
+      <ol class="busqueda__lista">
+        @for (p of pasajes(); track $index) {
+          <li class="pasaje" [class.pasaje--debajo]="!p.superaCorte">
+            <div class="pasaje__cabecera">
+              <a [routerLink]="['/biblioteca', p.libroId]">{{ p.titulo }}</a>
+              <span>{{ rotuloDePaginas(p.paginaDesde, p.paginaHasta) }}</span>
+              <span class="pasaje__puntaje">{{ p.puntaje?.toFixed(2) }}</span>
+              @if (!p.superaCorte) {
+                <span class="pasaje__etiqueta">debajo del corte</span>
+              }
+            </div>
+            <p class="pasaje__texto">{{ p.texto }}</p>
+          </li>
+        }
+      </ol>
+    }
+  }
+</div>

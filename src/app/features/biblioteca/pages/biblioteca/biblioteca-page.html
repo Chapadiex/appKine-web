@@ -290,4 +290,12 @@
     (cancelar)="dialogo.set(null)"
   />
 }
-<!-- Tarea 5: acá se monta el app-panel-lateral de búsqueda con `panelBusquedaAbierto()`. -->
+@if (panelBusquedaAbierto()) {
+  <app-panel-lateral
+    titulo="Probar búsqueda"
+    ancho="amplio"
+    (cerrar)="panelBusquedaAbierto.set(false)"
+  >
+    <app-probar-busqueda />
+  </app-panel-lateral>
+}

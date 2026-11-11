@@ -30,6 +30,7 @@ import {
   FILAS_POR_PAGINA_INICIAL,
   Paginacion,
 } from '../../../../shared/components/paginacion/paginacion';
+import { ProbarBusqueda } from '../../components/probar-busqueda/probar-busqueda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
@@ -83,6 +84,7 @@ export type DialogoDeBiblioteca =
     Alerta,
     PanelLateral,
     SubirLibro,
+    ProbarBusqueda,
     RouterLink,
   ],
   templateUrl: './biblioteca-page.html',
