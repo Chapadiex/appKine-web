@@ -88,16 +88,16 @@
     </div>
 
     <div class="campo">
-      <label for="padron-filtro-perfil">Perfil clínico</label>
+      <label for="padron-filtro-tipo">Tipo de persona</label>
       <select
-        id="padron-filtro-perfil"
-        name="padron-filtro-perfil"
-        [value]="filtroPerfil()"
-        (change)="cambiarPerfil($any($event.target).value)"
+        id="padron-filtro-tipo"
+        name="padron-filtro-tipo"
+        [value]="filtroTipo()"
+        (change)="cambiarTipo($any($event.target).value)"
       >
-        <option value="TODOS">Todas</option>
-        <option value="CON_PERFIL">Solo pacientes</option>
-        <option value="SIN_PERFIL">Solo personas sin perfil</option>
+        @for (tipo of tiposDePersona; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
       </select>
     </div>
   </app-filtros>
