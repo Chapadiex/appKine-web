@@ -305,11 +305,13 @@ describe('PadronDePersonasPage', () => {
   it('los filtros recargan con su parametro y vuelven a la primera página', async () => {
     const fixture = await montar();
 
-    elegir(fixture, '#padron-filtro-perfil', 'CON_PERFIL');
+    // Un solo selector para el mostrador; el backend recibe perfil y actividad por separado.
+    elegir(fixture, '#padron-filtro-tipo', 'AMBAS');
     const filtrada = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.url === PERSONAS && peticion.params.get('perfil') === 'CON_PERFIL',
     );
+    expect(filtrada.request.params.get('actividad')).toBe('CON_ACTIVIDAD');
     // El estado sigue en su defecto: los dos filtros son independientes.
     expect(filtrada.request.params.get('estado')).toBe('ACTIVO');
     expect(filtrada.request.params.get('page')).toBe('0');
@@ -328,6 +330,7 @@ describe('PadronDePersonasPage', () => {
     );
     expect(decodeURIComponent(ordenada.request.params.get('sort')!)).toBe('apellido,asc');
     expect(ordenada.request.params.get('perfil')).toBe('CON_PERFIL');
+    expect(ordenada.request.params.get('actividad')).toBe('CON_ACTIVIDAD');
     ordenada.flush({ ...PAGINA, content: [PACIENTE], totalElements: 1 });
   });
 
