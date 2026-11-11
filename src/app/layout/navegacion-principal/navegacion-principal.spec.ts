@@ -169,12 +169,10 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual([
-      'Atención',
-      'Servicios y catálogo',
-      'Espacios y horarios',
-      'Configuración',
-    ]);
+    // Sin catalogo:read, Servicios y catalogo queda con una sola seccion: enlace directo (11/11/2026).
+    expect(rotulos(fixture)).toEqual(['Atención', 'Espacios y horarios', 'Configuración']);
+    expect(enlaces(fixture)).toContain('Catálogo de servicios');
+    expect(enlaces(fixture)).not.toContain('Ofertas de la sede');
     expect(enlaces(fixture)).toContain('Agenda');
     expect(enlaces(fixture)).toContain('Buscar disponibilidad');
     expect(enlaces(fixture)).not.toContain('Padrón');
@@ -195,7 +193,6 @@ describe('NavegacionPrincipal', () => {
     expect(rotulos(fixture)).toEqual([
       'Atención',
       'Actividades',
-      'Servicios y catálogo',
       'Espacios y horarios',
       'Configuración',
     ]);

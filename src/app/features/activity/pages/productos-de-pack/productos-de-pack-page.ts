@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { publicarMigas } from '../../../../core/services/migas.store';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -102,6 +103,12 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
   styleUrl: '../../activity.css',
 })
 export class ProductosDePackPage {
+  /** Fuera del menu desde el 11/11/2026: se llega desde la oferta que cobra por pack. */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Productos de pack y abonos' },
+  ]);
+
   private readonly api = inject(PasesApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenant = inject(TenantContextStore);

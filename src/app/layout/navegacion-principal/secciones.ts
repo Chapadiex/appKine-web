@@ -9,13 +9,11 @@ import {
   PERMISO_CONVENIO_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
-  PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
-import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 
@@ -131,7 +129,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     secciones: [
       { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
       { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
-      { etiqueta: 'Productos de pack', ruta: RUTA_PRODUCTOS, permisos: [PERMISO_PRODUCTO_READ] },
     ],
   },
   {
@@ -150,13 +147,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'servicios',
     secciones: [
       { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
-      { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
       { etiqueta: 'Catálogo clínico', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
-      {
-        etiqueta: 'Pedidos al catálogo',
-        ruta: '/catalogo/solicitudes',
-        permisos: [PERMISO_CATALOGO_READ],
-      },
     ],
   },
   {

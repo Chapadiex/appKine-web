@@ -27,8 +27,6 @@
       Publicar un servicio en la sede
     </button>
   </div>
-
-  <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Ofertas cargadas en esta sede">
@@ -270,6 +268,9 @@
                           <a [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']">
                             Prácticas
                           </a>
+                          @if (oferta.esquemaCobro === 'POR_PACK') {
+                            <a routerLink="/productos">Productos de pack</a>
+                          }
                           <ng-container *akinePermiso="permisoManage">
                             @if (oferta.modalidad === 'GRUPAL') {
                               <a [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']">
