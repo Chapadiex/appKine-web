@@ -264,33 +264,55 @@
 }
 
 /*
- * Formulario de servicio del catálogo, alta y edición (10/11/2026). Tres bloques con título,
- * separados por espacio y una línea sutil, sin tarjetas: identificar, clasificar, seguimiento.
+ * Formulario de servicio del catálogo, alta y edición (10/11/2026). Compacto para que entre entero
+ * en el panel amplio sin desplazarse en un escritorio de 768 px: tres bloques con un título chico y
+ * sin líneas entre ellos, código y nombre en una fila, la descripción en un renglón que crece, las
+ * naturalezas en una fila de cuatro y las casillas clínicas en otra de dos. Lo explicativo va
+ * detrás del "?" o aparece al entrar al campo; nada se borró.
  */
+
+/* El panel de este formulario respira menos: 16 px arriba, 20 a los costados y un pie más bajo. */
+::ng-deep .panel-lateral:has(form.formulario-servicio) .panel-lateral__cabecera {
+  padding-inline: var(--esp-7);
+}
+
+::ng-deep .panel-lateral:has(form.formulario-servicio) .panel-lateral__subtitulo {
+  margin-top: var(--esp-1);
+}
+
+::ng-deep .panel-lateral__cuerpo:has(> form.formulario-servicio) {
+  padding: var(--esp-6) var(--esp-7) 0;
+}
+
+::ng-deep .panel-lateral__cuerpo > form.formulario-servicio > .acciones:last-child {
+  margin: var(--esp-4) calc(-1 * var(--esp-7)) calc(-1 * var(--esp-7));
+  padding: var(--esp-5) var(--esp-7);
+}
+
 .formulario-servicio__seccion {
   display: flex;
   grid-column: 1 / -1;
   align-items: center;
   gap: var(--esp-3);
-  margin: var(--esp-6) 0 var(--esp-5);
-  padding-top: var(--esp-6);
-  border-top: var(--borde-fino) solid var(--color-borde);
+  margin: var(--esp-4) 0 var(--esp-4);
   color: var(--color-texto-fuerte);
-  font-size: var(--tipo-base);
+  font-size: var(--tipo-sm);
   font-weight: var(--peso-fuerte);
 }
 
 .formulario-servicio__seccion:first-of-type {
   margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
 }
 
 .formulario-servicio__seccion app-icono {
   color: var(--color-texto-suave);
 }
 
-/* Código 1/3 y nombre 2/3 en la misma fila; en un teléfono, uno debajo del otro. */
+form.formulario-servicio > .campo {
+  margin-bottom: var(--esp-5);
+}
+
+/* Código 30 % y nombre 70 % en la misma fila; en un teléfono, uno debajo del otro. */
 form.formulario-servicio > .campo.formulario-servicio__codigo {
   grid-column: span 4;
 }
@@ -305,59 +327,77 @@ form.formulario-servicio > .campo.formulario-servicio__nombre {
   }
 }
 
-.formulario-servicio textarea {
-  min-height: 3.75rem;
-  max-height: 10rem;
-  resize: vertical;
+/* Rótulo con su "?" o su contador en la misma línea, sin sumar un renglón. */
+.formulario-servicio__rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 1.25rem;
 }
 
-.formulario-servicio__contador {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--esp-4);
+/* Un renglón de entrada; crece con el texto hasta ~5 y después se desplaza. */
+.formulario-servicio textarea {
+  min-height: 2.5rem;
+  max-height: 7.5rem;
+  field-sizing: content;
+  resize: vertical;
 }
 
 .formulario-servicio__largo {
   margin-left: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
   font-variant-numeric: tabular-nums;
 }
 
-.formulario-servicio__nota {
-  grid-column: 1 / -1;
-  margin: calc(-1 * var(--esp-3)) 0 var(--esp-5);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-}
-
-/* Una opción booleana por fila: el control alineado con su título y lo que implica debajo. */
-.casilla-con-detalle {
+/* Casilla en una fila de 40 px, con lo que implica detrás del "?". Dos por fila. */
+.casilla-compacta {
   display: flex;
-  grid-column: 1 / -1;
-  align-items: flex-start;
+  grid-column: span 6;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2.5rem;
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+}
+
+.casilla-compacta:has(input:checked) {
+  border-color: var(--color-enlace);
+}
+
+.casilla-compacta:has(input:focus-visible) {
+  outline: var(--borde-medio) solid var(--color-foco);
+  outline-offset: 2px;
+}
+
+.casilla-compacta label {
+  display: flex;
+  flex: 1;
+  align-items: center;
   gap: var(--esp-4);
-  margin-bottom: var(--esp-5);
-  cursor: pointer;
-}
-
-.casilla-con-detalle input {
-  flex: none;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin: 0.125rem 0 0;
-}
-
-.casilla-con-detalle__titulo {
-  display: block;
+  min-height: 2.5rem;
   color: var(--color-texto-fuerte);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
+  cursor: pointer;
 }
 
-.casilla-con-detalle__detalle {
-  display: block;
-  margin-top: var(--esp-1);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
+.casilla-compacta input {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+}
+
+@container (max-width: 26rem) {
+  .casilla-compacta {
+    grid-column: 1 / -1;
+  }
+
+  .casilla-compacta + .casilla-compacta {
+    margin-top: var(--esp-4);
+  }
 }
 
 /* La pregunta de descartar ocupa el pie: texto a la izquierda, decisión a la derecha. */
