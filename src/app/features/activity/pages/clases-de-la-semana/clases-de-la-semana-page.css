@@ -75,68 +75,38 @@
   --tono: var(--actividad-8);
 }
 
-/* Periodo a la izquierda, vista a la derecha; si no entran, la vista baja. */
-.clases-barra {
+/*
+ * Barra de herramientas en una fila, como la de la agenda: el fondo y el panel los pone
+ * `app-filtros separada`; aca, los grupos propios y el alto de 40 px de todos los controles.
+ */
+.clases-barra__periodo {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-4) var(--esp-6);
-  margin-bottom: var(--esp-5);
+  gap: var(--esp-2);
 }
 
-/* El rango en palabras es el boton del calendario: el input lo cubre, transparente. */
+.clases-barra .navegador-semana__boton,
+.clases-barra__fecha,
+.segmento-vista button {
+  min-height: 2.5rem;
+  border-radius: var(--radio-sm);
+}
+
+/* El periodo en palabras es el boton del calendario: el input lo cubre, transparente. */
 .clases-barra__fecha {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--esp-4);
-  min-height: 2.5rem;
+  margin-left: var(--esp-2);
   padding: 0 var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
+  background: var(--color-superficie);
   color: var(--color-texto-fuerte);
   font-size: var(--tipo-sm);
-  font-weight: var(--peso-fuerte);
+  font-weight: var(--peso-medio);
   white-space: nowrap;
-}
-
-.clases-barra__periodo {
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-.clases-barra__rotulo-corto {
-  display: none;
-}
-
-/* En un telefono: ‹ 09/11 – 15/11 › Hoy en una linea, y la vista debajo a todo el ancho. */
-@container clases (max-width: 36rem) {
-  .clases-barra__periodo {
-    width: 100%;
-  }
-
-  .clases-barra__fecha {
-    flex: 1;
-    justify-content: center;
-    min-width: 0;
-  }
-
-  .clases-barra__rotulo {
-    display: none;
-  }
-
-  .clases-barra__rotulo-corto {
-    display: inline;
-  }
-
-  .segmento-vista {
-    width: 100%;
-  }
-
-  .segmento-vista button {
-    flex: 1;
-  }
 }
 
 .clases-barra__fecha app-icono {
@@ -161,12 +131,21 @@
   cursor: pointer;
 }
 
+.clases-barra__rotulo-corto {
+  display: none;
+}
+
+/* Los filtros rapidos por estado, en el panel: a todo el ancho, arriba de los desplegables. */
+.clases-barra__estados {
+  flex-basis: 100%;
+}
+
 .segmento-vista {
   display: inline-flex;
+  flex: none;
 }
 
 .segmento-vista button {
-  min-height: 2.5rem;
   padding: 0 var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-control);
   background: var(--color-superficie);
@@ -181,25 +160,53 @@
   margin-left: calc(-1 * var(--borde-fino));
 }
 
-.segmento-vista button:first-child {
-  border-radius: var(--radio-md) 0 0 var(--radio-md);
+.segmento-vista button:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
-.segmento-vista button:last-child {
-  border-radius: 0 var(--radio-md) var(--radio-md) 0;
+.segmento-vista button:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .segmento-vista button:hover {
   background: var(--color-superficie-sutil);
 }
 
-/* Elegida: fondo de accion y peso, no solo color (WCAG 1.4.1). */
+/* Elegida, como en la agenda: fondo de seleccion, texto de enlace y peso (no solo color). */
 .segmento-vista button[aria-pressed='true'] {
   position: relative;
-  border-color: var(--color-accion-fondo);
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
+  border-color: var(--color-enlace);
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
   font-weight: var(--peso-fuerte);
+}
+
+/* En un telefono: ‹ Hoy › 09/11 – 15/11 en una linea y la vista debajo, a todo el ancho. */
+@container clases (max-width: 36rem) {
+  .clases-barra__periodo,
+  .segmento-vista {
+    width: 100%;
+  }
+
+  .clases-barra__fecha {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .clases-barra__rotulo {
+    display: none;
+  }
+
+  .clases-barra__rotulo-corto {
+    display: inline;
+  }
+
+  .segmento-vista button {
+    flex: 1;
+  }
 }
 
 /* --- Semana ------------------------------------------------------------------------------- */

@@ -91,7 +91,7 @@ describe('ClasesDeLaSemanaPage', () => {
       const raiz = fixture.nativeElement as HTMLElement;
       expect(raiz.querySelectorAll('.dia-clases')).toHaveLength(7);
       expect(raiz.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe('1 clase');
-      expect(raiz.querySelector('section.tarjeta app-filtros')).not.toBeNull();
+      expect(raiz.querySelector('.clases > app-filtros.clases-barra')).not.toBeNull();
       expect(raiz.querySelector('.tabla')).toBeNull();
       expect(texto).toContain('18:00 a 19:00');
       expect(texto).toContain('Pilates reformer');
