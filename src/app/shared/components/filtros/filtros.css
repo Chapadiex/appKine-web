@@ -76,10 +76,20 @@
   flex-basis: 100%;
 }
 
+/*
+ * Limpiar en la misma fila que los filtros, contra el borde derecho y a la altura de los controles
+ * (10/11/2026): en su propia línea dejaba un renglón vacío debajo. Si no entra, baja solo.
+ */
 .filtros-barra__limpiar {
   display: flex;
-  flex: 1 0 100%;
+  flex: 1 0 auto;
+  align-items: center;
   justify-content: flex-end;
+  min-height: 2.5rem;
+}
+
+.filtros-barra__avanzados:has(> .filtros-barra__limpiar) {
+  align-items: flex-end;
 }
 
 .filtros-barra__boton:hover,
