@@ -87,6 +87,44 @@
   white-space: nowrap;
 }
 
+.clases-barra__periodo {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.clases-barra__rotulo-corto {
+  display: none;
+}
+
+/* En un telefono: ‹ 09/11 – 15/11 › Hoy en una linea, y la vista debajo a todo el ancho. */
+@container clases (max-width: 36rem) {
+  .clases-barra__periodo {
+    width: 100%;
+  }
+
+  .clases-barra__fecha {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .clases-barra__rotulo {
+    display: none;
+  }
+
+  .clases-barra__rotulo-corto {
+    display: inline;
+  }
+
+  .segmento-vista {
+    width: 100%;
+  }
+
+  .segmento-vista button {
+    flex: 1;
+  }
+}
+
 .clases-barra__fecha app-icono {
   color: var(--color-texto-suave);
 }

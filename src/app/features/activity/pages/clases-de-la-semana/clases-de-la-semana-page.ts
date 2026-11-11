@@ -175,6 +175,13 @@ export class ClasesDeLaSemanaPage {
     return `Semana del ${diaEnPalabras(this.lunes())} al ${diaEnPalabras(this.domingo())}`;
   });
 
+  /** El rango en un telefono: "09/11 – 15/11"; el mes ya es corto. */
+  protected readonly rotuloCorto = computed(() =>
+    this.vistaActual() === 'mes'
+      ? this.rotuloDelPeriodo()
+      : `${this.diaYMes(this.lunes())} – ${this.diaYMes(this.domingo())}`,
+  );
+
   protected readonly unidadDelPeriodo = computed(() =>
     this.vistaActual() === 'mes' ? 'Mes' : 'Semana',
   );
