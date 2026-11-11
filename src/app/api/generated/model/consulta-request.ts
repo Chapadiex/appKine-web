@@ -18,6 +18,10 @@ export interface ConsultaRequest {
      * Turnos previos, del mas viejo al mas nuevo; hasta 6
      */
     historial?: Array<TurnoDeConsultaRequest>;
+    /**
+     * Libros de las fuentes de la respuesta anterior, solo en una repregunta o al profundizar. Solo reordenan los resultados dentro de la organizacion, y solo si la consulta continua la charla: una que nombra su propio tema los ignora
+     */
+    librosPreferidos?: Array<number>;
     pregunta: string;
 }
 

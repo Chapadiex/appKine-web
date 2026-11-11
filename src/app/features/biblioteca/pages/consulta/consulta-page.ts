@@ -13,6 +13,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { OpcionDeAclaracionResponse } from '../../../../api/generated/model/opcion-de-aclaracion-response';
 import { FuenteDeConsultaResponse } from '../../../../api/generated/model/fuente-de-consulta-response';
 import { TurnoDeConsultaRequestRolEnum } from '../../../../api/generated/model/turno-de-consulta-request';
 import { PERMISO_BIBLIOTECA_MANAGE } from '../../../../core/models/permisos';
@@ -26,6 +27,8 @@ import { ConsultaApi, EventoConsulta } from '../../services/consulta-api';
 
 const MAX_PREGUNTA = 600;
 const MAX_TURNOS = 6;
+const MAX_LIBROS_PREFERIDOS = 10;
+const PREGUNTA_PROFUNDIZAR = 'Más detalle sobre lo anterior';
 const AVISO_FIJO =
   'Respuestas orientativas basadas sólo en la bibliografía cargada por el centro. No reemplazan el criterio profesional.';
 /** Respuesta fija sin material (R11): el modelo también puede devolverla, y se trata igual. */
@@ -38,6 +41,12 @@ export interface MensajeDeCharla {
   readonly estado: 'esperando' | 'en-cola' | 'escribiendo' | 'listo' | 'error';
   readonly posicion?: number;
   readonly sinMaterial?: boolean;
+  readonly etapa?: 'buscando' | 'redactando';
+  /** Repregunta del servidor: sus opciones son botones y nunca entra al historial. */
+  readonly aclaracion?: boolean;
+  readonly opciones?: readonly OpcionDeAclaracionResponse[];
+  /** Respuesta a "Profundizar": no ofrece profundizar de nuevo. */
+  readonly profunda?: boolean;
 }
 
 /**
@@ -124,19 +133,68 @@ export class ConsultaPage {
       return;
     }
     const pregunta = this.texto().trim();
-    const historial = this.historialDePares();
+    this.texto.set('');
+    this.lanzar(orgId, pregunta, this.mensajes());
+  }
+
+  /** Una opción de la repregunta arranca una pregunta nueva: sin historial ni libros preferidos. */
+  protected elegirOpcion(opcion: OpcionDeAclaracionResponse): void {
+    const orgId = this.tenantContext.organizationId();
+    if (this.enCurso() || this.deshabilitada() || orgId === null) {
+      return;
+    }
+    this.lanzar(orgId, opcion.pregunta, []);
+  }
+
+  /** Pide más detalle de la respuesta en la posición indicada, con la charla hasta ella. */
+  protected profundizar(indice: number): void {
+    const orgId = this.tenantContext.organizationId();
+    if (this.enCurso() || this.deshabilitada() || orgId === null) {
+      return;
+    }
+    this.lanzar(orgId, PREGUNTA_PROFUNDIZAR, this.mensajes().slice(0, indice + 1), true);
+  }
+
+  protected puedeProfundizar(m: MensajeDeCharla): boolean {
+    return (
+      m.rol === 'asistente' &&
+      m.estado === 'listo' &&
+      m.fuentes.length > 0 &&
+      !m.sinMaterial &&
+      !m.aclaracion &&
+      !m.profunda
+    );
+  }
+
+  /**
+   * Envía la pregunta con el historial de los mensajes previos y, si lo hay, los libros de la
+   * última respuesta buena como librosPreferidos (R1). Lo que ya está en pantalla se conserva.
+   */
+  private lanzar(
+    orgId: number,
+    pregunta: string,
+    previos: readonly MensajeDeCharla[],
+    profunda = false,
+  ): void {
+    const historial = this.historialDePares(previos);
+    const libros = this.librosDeLaUltimaRespuesta(previos, historial.length > 0);
     this.mensajes.update((actuales) => [
       ...actuales,
       { rol: 'usuario', texto: pregunta, fuentes: [], estado: 'listo' },
-      { rol: 'asistente', texto: '', fuentes: [], estado: 'esperando' },
+      { rol: 'asistente', texto: '', fuentes: [], estado: 'esperando', profunda },
     ]);
-    this.texto.set('');
     this.anuncio.set('');
     this.abortar();
-    this.suscripcion = this.api.consultar(orgId, { pregunta, historial }).subscribe({
-      next: (evento) => this.aplicar(evento),
-      error: (error: unknown) => this.fallar(error),
-    });
+    this.suscripcion = this.api
+      .consultar(orgId, {
+        pregunta,
+        historial,
+        ...(libros.length > 0 ? { librosPreferidos: libros } : {}),
+      })
+      .subscribe({
+        next: (evento) => this.aplicar(evento),
+        error: (error: unknown) => this.fallar(error),
+      });
   }
 
   protected nuevaCharla(): void {
@@ -156,16 +214,20 @@ export class ConsultaPage {
     if (m.estado === 'en-cola') {
       return `En cola, sos el N.º ${m.posicion}.`;
     }
-    return m.estado === 'esperando' ? 'Buscando en la biblioteca…' : m.texto;
+    if (m.estado === 'esperando') {
+      return m.etapa === 'redactando' ? 'Redactando…' : 'Buscando en la biblioteca…';
+    }
+    return m.texto;
   }
 
   /** Sólo pares usuario+asistente cuya respuesta terminó bien y con material: los últimos 3. */
-  private historialDePares(): { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] {
-    const ms = this.mensajes();
+  private historialDePares(
+    ms: readonly MensajeDeCharla[],
+  ): { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] {
     const turnos: { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] = [];
     for (let i = 0; i + 1 < ms.length; i += 2) {
       const [u, a] = [ms[i], ms[i + 1]];
-      if (a.estado === 'listo' && !a.sinMaterial) {
+      if (a.estado === 'listo' && !a.sinMaterial && !a.aclaracion) {
         turnos.push(
           { rol: TurnoDeConsultaRequestRolEnum.USUARIO, texto: u.texto },
           { rol: TurnoDeConsultaRequestRolEnum.ASISTENTE, texto: a.texto },
@@ -173,6 +235,25 @@ export class ConsultaPage {
       }
     }
     return turnos.slice(-MAX_TURNOS);
+  }
+
+  /** Libros distintos de las fuentes de la última respuesta buena, hasta 10; sólo con historial. */
+  private librosDeLaUltimaRespuesta(
+    ms: readonly MensajeDeCharla[],
+    hayHistorial: boolean,
+  ): number[] {
+    if (!hayHistorial) {
+      return [];
+    }
+    let ultima: MensajeDeCharla | undefined;
+    for (let i = 0; i + 1 < ms.length; i += 2) {
+      const a = ms[i + 1];
+      if (a.estado === 'listo' && !a.sinMaterial && !a.aclaracion) {
+        ultima = a;
+      }
+    }
+    const ids = new Set((ultima?.fuentes ?? []).map((f) => f.libroId));
+    return [...ids].slice(0, MAX_LIBROS_PREFERIDOS);
   }
 
   private abortar(): void {
@@ -206,6 +287,23 @@ export class ConsultaPage {
           ...m,
           estado: 'escribiendo',
           texto: m.texto + evento.texto,
+        }));
+        break;
+      case 'etapa':
+        this.cambiarUltimo((m) =>
+          m.estado === 'escribiendo'
+            ? m
+            : { ...m, estado: 'esperando', posicion: undefined, etapa: evento.etapa },
+        );
+        break;
+      case 'aclaracion':
+        this.cambiarUltimo((m) => ({
+          ...m,
+          estado: 'escribiendo',
+          texto: evento.texto,
+          opciones: evento.opciones,
+          aclaracion: true,
+          posicion: undefined,
         }));
         break;
       case 'fin':

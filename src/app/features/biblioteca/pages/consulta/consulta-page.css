@@ -84,3 +84,12 @@
   font-size: var(--tipo-sm);
   color: var(--color-texto-suave);
 }
+.consulta__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  margin-top: var(--esp-2);
+}
+.consulta__profundizar {
+  margin-top: var(--esp-2);
+}

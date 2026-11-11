@@ -24,13 +24,27 @@
     } @else if (mensajes().length === 0) {
       <app-estado-vacio titulo="Preguntá algo sobre la bibliografía del centro." />
     } @else {
-      @for (m of mensajes(); track $index) {
+      @for (m of mensajes(); track $index; let i = $index) {
         <div
           class="consulta__burbuja"
           [class.consulta__burbuja--usuario]="m.rol === 'usuario'"
           [class.consulta__burbuja--error]="m.estado === 'error'"
         >
           <p class="consulta__texto">{{ textoDeMensaje(m) }}</p>
+          @if (m.aclaracion && m.estado === 'listo' && m.opciones?.length) {
+            <div class="consulta__opciones" role="group" aria-label="Opciones">
+              @for (o of m.opciones; track $index) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enCurso()"
+                  (click)="elegirOpcion(o)"
+                >
+                  {{ o.etiqueta }}
+                </button>
+              }
+            </div>
+          }
           @if (
             m.estado === 'listo' && m.rol === 'asistente' && m.fuentes.length > 0 && !m.sinMaterial
           ) {
@@ -50,6 +64,16 @@
                 }
               </ul>
             </details>
+          }
+          @if (puedeProfundizar(m)) {
+            <button
+              type="button"
+              class="boton boton--secundario consulta__profundizar"
+              [disabled]="enCurso()"
+              (click)="profundizar(i)"
+            >
+              Profundizar
+            </button>
           }
         </div>
       }

@@ -245,8 +245,10 @@ model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consulta-evento-aclaracion.ts
 model/consulta-evento-error.ts
 model/consulta-evento-espera.ts
+model/consulta-evento-etapa.ts
 model/consulta-evento-fin.ts
 model/consulta-evento-fuentes.ts
 model/consulta-evento-texto.ts
@@ -436,6 +438,7 @@ model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts
 model/oferta-response.ts
+model/opcion-de-aclaracion-response.ts
 model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts

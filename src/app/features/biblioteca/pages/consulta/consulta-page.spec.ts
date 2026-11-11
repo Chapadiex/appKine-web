@@ -168,4 +168,84 @@ describe('ConsultaPage', () => {
     expect(abierta.observed).toBe(false);
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('hola');
   });
+
+  it('aclaracionMuestraBotonesYUnClicPregunta', async () => {
+    secuencia = () =>
+      eventos(
+        { tipo: 'texto', texto: 'No encontré material en la biblioteca para responder eso.' },
+        { tipo: 'fin', sinMaterial: true, camino: 'x' },
+      );
+    await preguntar('primera sin material');
+    secuencia = () =>
+      eventos(
+        {
+          tipo: 'aclaracion',
+          texto: '¿Qué buscás sobre lumbalgia?',
+          opciones: [
+            { etiqueta: '¿Qué es lumbalgia?', pregunta: 'qué es lumbalgia' },
+            { etiqueta: 'Ejercicios para lumbalgia', pregunta: 'ejercicios para lumbalgia' },
+          ],
+        },
+        { tipo: 'fin', sinMaterial: false, camino: 'aclaracion' },
+      );
+    await preguntar('lumbalgia');
+    const el = fixture.nativeElement as HTMLElement;
+    const botones = Array.from(el.querySelectorAll('.consulta__opciones button'));
+    expect(botones.map((b) => b.textContent?.trim())).toEqual([
+      '¿Qué es lumbalgia?',
+      'Ejercicios para lumbalgia',
+    ]);
+    secuencia = () => of();
+    (botones[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(pedidos.at(-1)).toEqual({ pregunta: 'ejercicios para lumbalgia', historial: [] });
+    expect(pedidos.at(-1)?.librosPreferidos).toBeUndefined();
+  });
+
+  it('etapaCambiaElEstado', async () => {
+    const abierta = new Subject<EventoConsulta>();
+    secuencia = () => abierta;
+    await preguntar('hola');
+    const el = fixture.nativeElement as HTMLElement;
+    abierta.next({ tipo: 'espera', posicion: 2 });
+    fixture.detectChanges();
+    expect(el.textContent).toContain('En cola');
+    abierta.next({ tipo: 'etapa', etapa: 'buscando' });
+    fixture.detectChanges();
+    expect(el.textContent).not.toContain('En cola');
+    expect(el.textContent).toContain('Buscando en la biblioteca…');
+    abierta.next({ tipo: 'etapa', etapa: 'redactando' });
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Redactando…');
+    expect(el.textContent).not.toContain('Buscando en la biblioteca…');
+  });
+
+  it('profundizarMandaElHistorialDeEsaRespuesta', async () => {
+    const ok = () =>
+      eventos(
+        { tipo: 'fuentes', fuentes: [FUENTE, { ...FUENTE, libroId: 7 }, { ...FUENTE, libroId: 7 }] },
+        { tipo: 'texto', texto: 'resp' },
+        { tipo: 'fin', sinMaterial: false, camino: 'x' },
+      );
+    secuencia = ok;
+    await preguntar('primera');
+    await preguntar('segunda');
+    const el = fixture.nativeElement as HTMLElement;
+    const botones = el.querySelectorAll('.consulta__profundizar');
+    expect(botones.length).toBe(2);
+    (botones[0] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(pedidos.at(-1)).toEqual({
+      pregunta: 'Más detalle sobre lo anterior',
+      historial: [
+        { rol: 'usuario', texto: 'primera' },
+        { rol: 'asistente', texto: 'resp' },
+      ],
+      librosPreferidos: [1, 7],
+    });
+    // La respuesta profunda no ofrece profundizar otra vez.
+    expect(el.querySelectorAll('.consulta__profundizar').length).toBe(2);
+  });
 });

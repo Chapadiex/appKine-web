@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
 
 import { ConsultaRequest } from '../../../api/generated/model/consulta-request';
+import { OpcionDeAclaracionResponse } from '../../../api/generated/model/opcion-de-aclaracion-response';
 import { FuenteDeConsultaResponse } from '../../../api/generated/model/fuente-de-consulta-response';
 import { environment } from '../../../../environments/environment';
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
@@ -14,6 +15,8 @@ export type EventoConsulta =
   | { tipo: 'espera'; posicion: number }
   | { tipo: 'fuentes'; fuentes: FuenteDeConsultaResponse[] }
   | { tipo: 'texto'; texto: string }
+  | { tipo: 'aclaracion'; texto: string; opciones: OpcionDeAclaracionResponse[] }
+  | { tipo: 'etapa'; etapa: 'buscando' | 'redactando' }
   | { tipo: 'fin'; sinMaterial: boolean; camino: string }
   | { tipo: 'error'; type: string };
 
@@ -101,7 +104,7 @@ function errorDeConexion(): AkineHttpError {
   return new AkineHttpError(0, null, true);
 }
 
-const NOMBRES_CONOCIDOS = new Set(['espera', 'fuentes', 'texto', 'fin', 'error']);
+const NOMBRES_CONOCIDOS = new Set(['espera', 'fuentes', 'texto', 'aclaracion', 'etapa', 'fin', 'error']);
 
 /**
  * El evento tipado, o `null` si el nombre no se conoce (se ignora). Un evento conocido con JSON
@@ -135,6 +138,30 @@ function aEvento(nombre: string, datos: string): EventoConsulta | null {
     case 'texto':
       if (typeof cuerpo['texto'] === 'string') {
         return { tipo: 'texto', texto: cuerpo['texto'] };
+      }
+      break;
+    case 'aclaracion':
+      if (typeof cuerpo['texto'] === 'string' && Array.isArray(cuerpo['opciones'])) {
+        const opciones = cuerpo['opciones'] as unknown[];
+        const validas = opciones.every(
+          (o) =>
+            typeof o === 'object' &&
+            o !== null &&
+            typeof (o as Record<string, unknown>)['etiqueta'] === 'string' &&
+            typeof (o as Record<string, unknown>)['pregunta'] === 'string',
+        );
+        if (validas) {
+          return {
+            tipo: 'aclaracion',
+            texto: cuerpo['texto'],
+            opciones: opciones as OpcionDeAclaracionResponse[],
+          };
+        }
+      }
+      break;
+    case 'etapa':
+      if (cuerpo['etapa'] === 'buscando' || cuerpo['etapa'] === 'redactando') {
+        return { tipo: 'etapa', etapa: cuerpo['etapa'] };
       }
       break;
     case 'fin':
