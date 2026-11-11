@@ -1,10 +1,6 @@
-import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import {
-  ETIQUETA_PESTANAS_DE_SERVICIOS,
-  PESTANAS_DE_SERVICIOS,
-} from '../../models/pestanas-de-offering';
+import {} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -99,7 +95,6 @@ const ESPERA_DE_BUSQUEDA = 250;
     CabeceraDePagina,
 
     Alerta,
-    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -117,8 +112,6 @@ const ESPERA_DE_BUSQUEDA = 250;
   styleUrl: '../../offering.css',
 })
 export class CatalogoDeServiciosPage {
-  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
-  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -526,10 +519,13 @@ export class CatalogoDeServiciosPage {
             : {
                 accion: {
                   etiqueta: 'Crear oferta',
-                  ejecutar: () =>
-                    void this.router.navigate(['/servicios/ofertas'], {
-                      queryParams: { nuevaOferta: idDelCentro },
-                    }),
+                  ejecutar: () => {
+                    this.router
+                      .navigate(['/servicios/ofertas'], {
+                        queryParams: { nuevaOferta: idDelCentro },
+                      })
+                      .catch(() => undefined);
+                  },
                 },
                 duracion: 10_000,
               }),

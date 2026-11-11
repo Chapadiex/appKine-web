@@ -31,8 +31,6 @@
       </button>
     </div>
   }
-
-  <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Servicios del catálogo">
@@ -198,12 +196,15 @@
                       <td class="tabla__acciones">
                         @if (servicio.estado === 'ACTIVO' && puedeMutar(servicio)) {
                           <app-acciones-de-fila [de]="servicio.nombre ?? ''">
-                            <button
+                            <a
                               principal
-                              type="button"
                               class="boton boton--secundario boton--chico"
-                              (click)="abrirPanel(servicio, 'editar')"
+                              routerLink="/servicios/ofertas"
+                              [queryParams]="{ servicio: servicio.id }"
                             >
+                              En la sede
+                            </a>
+                            <button type="button" (click)="abrirPanel(servicio, 'editar')">
                               Editar
                             </button>
                             <button
@@ -214,6 +215,14 @@
                               Dar de baja
                             </button>
                           </app-acciones-de-fila>
+                        } @else if (servicio.estado === 'ACTIVO') {
+                          <a
+                            class="boton boton--secundario boton--chico"
+                            routerLink="/servicios/ofertas"
+                            [queryParams]="{ servicio: servicio.id }"
+                          >
+                            En la sede
+                          </a>
                         }
                       </td>
                     }

@@ -1,14 +1,5 @@
 import { Pestana } from '../../../shared/components/pestanas/pestanas';
 
-/** `aria-label` de las pestanas de primer nivel: catalogo de servicios y ofertas de la sede. */
-export const ETIQUETA_PESTANAS_DE_SERVICIOS = 'Servicios y ofertas';
-
-/** Las dos pantallas hermanas de la seccion Servicios. */
-export const PESTANAS_DE_SERVICIOS: readonly Pestana[] = [
-  { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo', exacta: true },
-  { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas', exacta: true },
-];
-
 /** `aria-label` de las pestanas de configuracion de una oferta. */
 export const ETIQUETA_PESTANAS_DE_OFERTA = 'Configuración de la oferta';
 

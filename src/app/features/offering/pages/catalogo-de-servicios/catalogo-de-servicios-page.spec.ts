@@ -110,18 +110,21 @@ describe('CatalogoDeServiciosPage', () => {
 
     expect(anfitrion.textContent).toContain('Tu cuenta tiene rol de plataforma');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
-    // Editar a la vista y la baja, destructiva, en el menu "⋯" de cada fila.
+    // "En la sede" a la vista (11/11/2026); Editar y la baja, destructiva, en el menu "⋯".
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
     expect(acciones).toEqual([
-      'Editar',
       'Más acciones de Kinesiologia respiratoria',
-      'Dar de baja',
       'Editar',
+      'Dar de baja',
       'Más acciones de Pilates',
+      'Editar',
       'Dar de baja',
     ]);
+    expect(
+      anfitrion.querySelector('tbody a[href^="/servicios/ofertas?servicio="]')?.textContent,
+    ).toContain('En la sede');
 
     // Y hay salida hacia lo que el centro SI administra.
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
