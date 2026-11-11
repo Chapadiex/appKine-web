@@ -336,9 +336,9 @@
 }
 
 .clase-estado--en_curso {
-  border-color: var(--color-enlace);
-  background: var(--color-acento-claro);
-  color: var(--color-enlace);
+  border-color: var(--color-aviso);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
 }
 
 .clase-estado--realizada {
