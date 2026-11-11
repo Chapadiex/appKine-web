@@ -2,7 +2,9 @@ import { Component, DestroyRef, computed, effect, inject, signal, untracked } fr
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 
+import { CatalogoClinicoService } from '../../../../api/generated/api/catalogo-clinico.service';
 import { InvitacionesService } from '../../../../api/generated/api/invitaciones.service';
 import { ServiciosYOfertasService } from '../../../../api/generated/api/servicios-y-ofertas.service';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
@@ -10,6 +12,8 @@ import { CreateAltaManualRequest } from '../../../../api/generated/model/create-
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { BuscadorConAlta } from '../../../../shared/components/buscador-con-alta/buscador-con-alta';
+import { PROFESIONES_SUGERIDAS } from '../../models/profesiones';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
 import { traducirErrorColaborador } from '../../models/colaborador-errors';
@@ -23,7 +27,7 @@ interface ServicioElegido {
 /** Alta preparada por el administrador; la cuenta y los vínculos nacen al aceptar la invitación. */
 @Component({
   selector: 'app-manual-collaborator-page',
-  imports: [ReactiveFormsModule, RouterLink, Alerta],
+  imports: [ReactiveFormsModule, RouterLink, Alerta, BuscadorConAlta],
   templateUrl: './manual-collaborator-page.html',
   styleUrl: './manual-collaborator-page.css',
 })
@@ -32,11 +36,22 @@ export class ManualCollaboratorPage {
   private readonly tenant = inject(TenantContextStore);
   private readonly invitaciones = inject(InvitacionesService);
   private readonly ofertasApi = inject(ServiciosYOfertasService);
+  private readonly catalogo = inject(CatalogoClinicoService);
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly sedes = inject(SedesDelContexto);
+  protected readonly profesionesSugeridas = PROFESIONES_SUGERIDAS;
+
+  /**
+   * Especialidades del catalogo clinico (las de AKINE y las del centro), para sugerir. El contrato
+   * guarda texto: una que no este se agrega escribiendola, sin tocar el catalogo (11/11/2026).
+   */
+  protected readonly especialidadesDelCatalogo = signal<readonly string[]>([]);
+  /** Las elegidas, en el orden en que se sumaron, y cual es la principal. */
+  protected readonly especialidades = signal<readonly string[]>([]);
+  protected readonly principal = signal<string | null>(null);
   protected readonly roles = ROLES_DE_VINCULO;
   protected readonly paso = signal<Paso>(1);
   protected readonly sedesElegidas = signal<readonly number[]>([]);
@@ -61,8 +76,6 @@ export class ManualCollaboratorPage {
     profesion: [''],
     matricula: [''],
     jurisdiccion: [''],
-    especialidadPrincipal: [''],
-    especialidadesAdicionales: [''],
     fechaIncorporacion: [''],
     recibeTurnos: [true],
     instructorDeActividades: [false],
@@ -114,7 +127,10 @@ export class ManualCollaboratorPage {
         this.serviciosElegidos.set([]);
         this.ofertasPorSede.set(new Map());
         this.error.set(null);
+        this.especialidades.set([]);
+        this.principal.set(null);
         this.sedes.asegurarCargadas();
+        this.cargarEspecialidades();
       });
     });
   }
@@ -228,11 +244,8 @@ export class ManualCollaboratorPage {
       profesion: valores.profesion.trim(),
       matricula: valores.matricula.trim(),
       jurisdiccion: valores.jurisdiccion.trim(),
-      especialidadPrincipal: valores.especialidadPrincipal.trim(),
-      especialidadesAdicionales: valores.especialidadesAdicionales
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
+      especialidadPrincipal: this.principal() ?? '',
+      especialidadesAdicionales: this.especialidades().filter((e) => e !== this.principal()),
       sedeIds: this.esAdminOrganizacion() ? [] : [...this.sedesElegidas()],
       servicios: this.esProfesional() ? [...this.serviciosElegidos()] : [],
       fechaIncorporacion: valores.fechaIncorporacion || undefined,
@@ -302,6 +315,44 @@ export class ManualCollaboratorPage {
             return nuevo;
           });
         },
+      });
+  }
+
+  /** La primera que se suma queda como principal; las demas, adicionales. */
+  protected agregarEspecialidad(nombre: string): void {
+    const limpio = nombre.trim();
+    const repetida = this.especialidades().some((e) => e.toLowerCase() === limpio.toLowerCase());
+    if (limpio === '' || repetida) {
+      return;
+    }
+    this.especialidades.update((lista) => [...lista, limpio]);
+    if (this.principal() === null) {
+      this.principal.set(limpio);
+    }
+  }
+
+  protected quitarEspecialidad(nombre: string): void {
+    const restantes = this.especialidades().filter((e) => e !== nombre);
+    this.especialidades.set(restantes);
+    if (this.principal() === nombre) {
+      this.principal.set(restantes[0] ?? null);
+    }
+  }
+
+  private cargarEspecialidades(): void {
+    this.catalogo
+      .searchCatalogo({
+        tipo: 'especialidades',
+        estado: 'ACTIVO',
+        alcance: 'TODOS',
+        page: 0,
+        size: 100,
+        sort: 'nombre,asc',
+      })
+      .pipe(catchError(() => of(null)))
+      .subscribe((pagina) => {
+        const nombres = (pagina?.content ?? []).map((c) => c.name ?? '').filter(Boolean);
+        this.especialidadesDelCatalogo.set([...new Set(nombres)]);
       });
   }
 }
