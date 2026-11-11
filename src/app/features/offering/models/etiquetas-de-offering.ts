@@ -30,7 +30,7 @@ export interface OpcionEnumerada<T extends string> {
   readonly valor: T;
   readonly etiqueta: string;
   readonly ayuda: string;
-  /** Una línea para la tarjeta de opción del formulario de servicio (10/11/2026). */
+  /** Lo breve para la tarjeta de opción del formulario de servicio; el detalle es `ayuda`. */
   readonly resumen: string;
 }
 
@@ -39,25 +39,25 @@ export const NATURALEZAS = [
     valor: ServicioResponseNaturalezaEnum.CLINICO,
     etiqueta: 'Clínico',
     ayuda: 'Diagnóstico o tratamiento de una condición.',
-    resumen: 'Diagnóstico o tratamiento de una condición.',
+    resumen: 'Diagnóstico o tratamiento.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.TERAPEUTICO,
     etiqueta: 'Terapéutico',
     ayuda: 'Intervención sostenida sobre una condición ya diagnosticada.',
-    resumen: 'Tratamiento sostenido de una condición ya diagnosticada.',
+    resumen: 'Tratamiento sostenido.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.PREVENTIVO,
     etiqueta: 'Preventivo',
     ayuda: 'Busca evitar que aparezca o reaparezca un problema.',
-    resumen: 'Evita que aparezca o reaparezca un problema.',
+    resumen: 'Evita que aparezca un problema.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.BIENESTAR,
     etiqueta: 'Bienestar',
     ayuda: 'Actividad de salud general, sin objetivo clínico.',
-    resumen: 'Actividad de salud general, sin objetivo clínico.',
+    resumen: 'Salud general, sin fin clínico.',
   },
 ] as const satisfies readonly OpcionEnumerada<NaturalezaDeServicio>[];
 

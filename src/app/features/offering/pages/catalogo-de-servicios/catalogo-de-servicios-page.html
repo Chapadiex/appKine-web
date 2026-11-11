@@ -331,9 +331,10 @@
           @if (errorDe('codigo'); as mensaje) {
             <p class="campo__error" [id]="prefijo + '-codigo-error'" role="alert">{{ mensaje }}</p>
           } @else {
-            <p class="ayuda" [id]="prefijo + '-codigo-ayuda'">
+            <!-- Lo mismo que el "?": abierta al entrar al campo tapaba la descripción. -->
+            <span class="visualmente-oculto" [id]="prefijo + '-codigo-ayuda'">
               Identificador único. No podrá modificarse después.
-            </p>
+            </span>
           }
         } @else {
           <input
@@ -343,7 +344,7 @@
             readonly
             [attr.aria-describedby]="prefijo + '-codigo-ayuda'"
           />
-          <p class="ayuda" [id]="prefijo + '-codigo-ayuda'">No se puede modificar.</p>
+          <span class="visualmente-oculto" [id]="prefijo + '-codigo-ayuda'">No se puede modificar.</span>
         }
       </div>
 
