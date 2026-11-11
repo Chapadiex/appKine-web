@@ -172,7 +172,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'horarios',
     secciones: [
       { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
-      { etiqueta: 'Espacios en servicio', ruta: '/espacios/disponibilidad' },
       {
         etiqueta: 'Horarios de profesionales',
         ruta: RUTA_HORARIOS,
