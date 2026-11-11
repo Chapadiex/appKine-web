@@ -282,5 +282,12 @@
   </app-panel-lateral>
 }
 
-<!-- Tarea 3: acá se monta <app-subir-libro> con `dialogo()`. -->
+@if (dialogo(); as abierto) {
+  <app-subir-libro
+    [modo]="abierto.modo"
+    [libro]="abierto.modo === 'reemplazar' ? abierto.libro : null"
+    (listo)="alSubir()"
+    (cancelar)="dialogo.set(null)"
+  />
+}
 <!-- Tarea 5: acá se monta el app-panel-lateral de búsqueda con `panelBusquedaAbierto()`. -->

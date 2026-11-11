@@ -36,6 +36,7 @@ import {
   CamposDeSort,
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
+import { SubirLibro } from '../../components/subir-libro/subir-libro';
 import { ErrorBiblioteca, traducirErrorBiblioteca } from '../../models/biblioteca-errors';
 import {
   ESTADOS_DE_LIBRO,
@@ -81,6 +82,7 @@ export type DialogoDeBiblioteca =
     EstadoVacio,
     Alerta,
     PanelLateral,
+    SubirLibro,
     RouterLink,
   ],
   templateUrl: './biblioteca-page.html',
@@ -181,6 +183,12 @@ export class BibliotecaPage {
   }
 
   /** Relee la pagina actual en sitio, sin pasar por `cargando`. */
+  protected alSubir(): void {
+    this.dialogo.set(null);
+    this.avisos.exito('Libro en cola para procesar');
+    this.recargar();
+  }
+
   recargar(): void {
     this.leer(false).subscribe();
   }

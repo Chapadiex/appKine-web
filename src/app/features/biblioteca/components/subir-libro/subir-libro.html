@@ -1,0 +1,122 @@
+<app-panel-lateral [titulo]="titulo()" (cerrar)="pedirCierre()">
+  <form [formGroup]="formulario" novalidate (submit)="$event.preventDefault(); enviar()">
+    @if (error(); as problema) {
+      <app-alerta tipo="error" titulo="No pudimos subir el archivo">
+        <p>{{ problema.mensaje }}</p>
+        @if (problema.causa === 'duplicado' && problema.libroId !== undefined) {
+          <p>
+            <a [routerLink]="['/biblioteca', problema.libroId]">Ver el libro</a>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    @if (esReemplazo()) {
+      <p class="subir-libro__nota">
+        El libro anterior sigue disponible hasta que el nuevo termine de procesarse.
+      </p>
+    }
+
+    <div class="campo campo--12">
+      <label for="subir-libro-archivo">Archivo PDF</label>
+      <input
+        #selector
+        id="subir-libro-archivo"
+        type="file"
+        accept="application/pdf,.pdf"
+        [disabled]="enviando()"
+        [attr.aria-invalid]="intento() && archivo() === null"
+        [attr.aria-describedby]="
+          intento() && archivo() === null ? 'subir-libro-archivo-error' : null
+        "
+        (change)="elegirArchivo(selector)"
+      />
+      @if (intento() && archivo() === null) {
+        <p id="subir-libro-archivo-error" class="campo__error">Elegí el PDF que querés subir.</p>
+      }
+    </div>
+
+    @if (!esReemplazo()) {
+      <div class="campo campo--12">
+        <label for="subir-libro-titulo">Título</label>
+        <input
+          id="subir-libro-titulo"
+          type="text"
+          maxlength="300"
+          formControlName="titulo"
+          [attr.aria-invalid]="faltaTitulo()"
+          [attr.aria-describedby]="faltaTitulo() ? 'subir-libro-titulo-error' : null"
+        />
+        @if (faltaTitulo()) {
+          <p id="subir-libro-titulo-error" class="campo__error">Ingresá el título del libro.</p>
+        }
+      </div>
+      <div class="campo campo--12">
+        <label for="subir-libro-autores"
+          >Autores <span class="campo__opcional">(opcional)</span></label
+        >
+        <input id="subir-libro-autores" type="text" maxlength="500" formControlName="autores" />
+      </div>
+      <div class="campo campo--6">
+        <label for="subir-libro-edicion"
+          >Edición <span class="campo__opcional">(opcional)</span></label
+        >
+        <input id="subir-libro-edicion" type="text" maxlength="100" formControlName="edicion" />
+      </div>
+      <div class="campo campo--6">
+        <label for="subir-libro-area">Área <span class="campo__opcional">(opcional)</span></label>
+        <input id="subir-libro-area" type="text" maxlength="100" formControlName="area" />
+      </div>
+    }
+
+    <div class="campo campo--12">
+      <label class="subir-libro__casilla" for="subir-libro-declaracion">
+        <input
+          id="subir-libro-declaracion"
+          type="checkbox"
+          formControlName="declaracion"
+          [attr.aria-invalid]="faltaDeclaracion()"
+          [attr.aria-describedby]="faltaDeclaracion() ? 'subir-libro-declaracion-error' : null"
+          (change)="declarado.set(formulario.controls.declaracion.value)"
+        />
+        Declaro que el centro tiene derecho a usar este material
+      </label>
+      @if (faltaDeclaracion()) {
+        <p id="subir-libro-declaracion-error" class="campo__error">
+          Tenés que declarar que el centro tiene derecho a usar este material.
+        </p>
+      }
+    </div>
+
+    @if (enviando()) {
+      <div class="subir-libro__progreso">
+        <p id="subir-libro-texto" role="status">
+          @if (progreso() === null) {
+            Subiendo…
+          } @else {
+            Subiendo… {{ progreso() }} %
+          }
+        </p>
+        <progress
+          max="100"
+          aria-labelledby="subir-libro-texto"
+          [attr.value]="progreso()"
+        ></progress>
+      </div>
+    }
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="enviando()">
+        {{ esReemplazo() ? 'Reemplazar' : 'Subir' }}
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="enviando()"
+        (click)="pedirCierre()"
+      >
+        Cancelar
+      </button>
+    </div>
+  </form>
+</app-panel-lateral>
