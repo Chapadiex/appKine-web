@@ -4,7 +4,6 @@ import { Type } from '@angular/core';
 
 import { DisponibilidadPage } from './pages/disponibilidad/disponibilidad-page';
 import { EspaciosPage } from './pages/espacios/espacios-page';
-import { NewEspacioPage } from './pages/new-espacio/new-espacio-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { SessionService } from '../../core/services/session.service';
@@ -43,8 +42,8 @@ describe('Rutas de /espacios', () => {
     router = TestBed.inject(Router);
   });
 
-  it('cada una de las tres resuelve a su pantalla', async () => {
-    expect(await componenteDe('/espacios/nuevo')).toBe(NewEspacioPage);
+  it('cada una de las tres resuelve a su pantalla; el alta vieja, al listado (es un panel)', async () => {
+    expect(await componenteDe('/espacios/nuevo')).toBe(EspaciosPage);
     expect(await componenteDe('/espacios/disponibilidad')).toBe(DisponibilidadPage);
     expect(await componenteDe('/espacios')).toBe(EspaciosPage);
   });

@@ -1,9 +1,9 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
-import { NewEspacioPage } from './new-espacio-page';
+import { AltaDeEspacio } from './alta-de-espacio';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -22,18 +22,17 @@ const ESPACIOS = '/api/v1/organizations/1/consultorios/3/espacios';
  * `validFrom` seria directamente un instante invalido: el backend responde `400` sobre un
  * formulario que el usuario dejo correctamente en blanco.
  */
-describe('NewEspacioPage', () => {
+describe('AltaDeEspacio', () => {
   let httpMock: HttpTestingController;
   let tenantContext: TenantContextStore;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NewEspacioPage],
+      imports: [AltaDeEspacio],
       providers: [
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
-        // El alta bien hecha vuelve al listado (UX-12): la ruta tiene que existir.
-        provideRouter([{ path: 'espacios', children: [] }]),
+        provideRouter([]),
         provideApi(''),
       ],
     }).compileComponents();
@@ -52,7 +51,7 @@ describe('NewEspacioPage', () => {
       consultorioName: 'Sede Centro',
     });
 
-    const fixture = TestBed.createComponent(NewEspacioPage);
+    const fixture = TestBed.createComponent(AltaDeEspacio);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -113,7 +112,9 @@ describe('NewEspacioPage', () => {
       consultorioName: 'Sede Centro',
     });
 
-    const fixture = TestBed.createComponent(NewEspacioPage);
+    const fixture = TestBed.createComponent(AltaDeEspacio);
+    let listo = 0;
+    fixture.componentInstance.listo.subscribe(() => listo++);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -131,11 +132,11 @@ describe('NewEspacioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // Pantalla propia de alta (UX-12): vuelve al listado y el resultado va al aviso global.
+    // El resultado va al aviso global y el panel avisa que terminó, para que el listado se relea.
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.titulo).toBe('Espacio dado de alta');
     expect(aviso?.descripcion).toContain('Box 9');
-    expect(TestBed.inject(Router).url).toBe('/espacios');
+    expect(listo).toBe(1);
   });
 });
 

@@ -1,6 +1,16 @@
-import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { CreateEspacioRequest } from '../../../../api/generated/model/create-espacio-request';
 import { EspaciosService } from '../../../../api/generated/api/espacios.service';
@@ -13,12 +23,9 @@ import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
-import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Estado del alta. Los cuatro casos exigen pantalla distinta (ADR-0005). */
 type EstadoAlta =
@@ -28,7 +35,8 @@ type EstadoAlta =
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaEspacio };
 
 /**
- * Alta de un espacio en la sede activa (M04, RF-M04-001, AKINE-02.02).
+ * Alta de un espacio en la sede activa (M04, RF-M04-001, AKINE-02.02), en el panel lateral del
+ * listado (10/11/2026): era una pantalla aparte y el listado se perdía de vista.
  *
  * <p>Consume `POST /organizations/{orgId}/consultorios/{consultorioId}/espacios`, que exige
  * `consultorio:manage` <b>sobre esa sede</b>. La sede es la del contexto de trabajo: no se
@@ -59,22 +67,20 @@ type EstadoAlta =
  * enviarse bajo la B: el formulario se descarta entero con el cambio de contexto.
  */
 @Component({
-  selector: 'app-new-espacio-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
-  templateUrl: './new-espacio-page.html',
+  selector: 'app-alta-de-espacio',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, RouterLink, Alerta],
+  templateUrl: './alta-de-espacio.html',
   styleUrl: '../../resource.css',
 })
-export class NewEspacioPage {
-  /** Ruta de navegacion de la barra superior (UX-13). */
-  private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
-    { etiqueta: 'Dar de alta' },
-  ]);
+export class AltaDeEspacio {
+  /** Se cerró con el espacio creado, o para revisar el listado: el listado se relee. */
+  readonly listo = output<void>();
+  readonly cancelar = output<void>();
 
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
   private readonly avisos = inject(AvisosStore);
-  private readonly router = inject(Router);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -186,9 +192,9 @@ export class NewEspacioPage {
       next: (espacio) => {
         const nombre = espacio.name ?? cuerpo.name;
         this.estado.set({ tipo: 'ok', nombre });
-        // Pantalla propia de alta (UX-12): vuelve al listado y publica el aviso, que sobrevive a
-        // la navegacion porque vive en el shell. La aclaracion de la fecha futura solo suma si
-        // se cargo un inicio: es cuando la fila va a figurar "activo pero todavía sin servicio".
+        // El aviso vive en el shell y el listado se relee al cerrar el panel. La aclaracion de la
+        // fecha futura solo suma si se cargo un inicio: es cuando la fila va a figurar "activo
+        // pero todavía sin servicio".
         this.avisos.exito('Espacio dado de alta', {
           descripcion:
             cuerpo.validFrom === undefined
@@ -196,9 +202,7 @@ export class NewEspacioPage {
               : `${nombre} · ${this.nombreDeLaSede()}. Si su inicio es futuro, figura sin ` +
                 'servicio hasta esa fecha.',
         });
-        this.router
-          .navigateByUrl('/espacios')
-          .catch((error: unknown) => console.error('No se pudo abrir el listado', error));
+        this.listo.emit();
       },
       error: (error: unknown) => this.fallar(error),
     });

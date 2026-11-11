@@ -722,3 +722,21 @@ textarea:disabled {
   margin-top: var(--esp-4);
   font-size: var(--tipo-sm);
 }
+
+/*
+ * Alta de un espacio en el panel lateral (10/11/2026). El panel ya es angosto: cada campo ocupa
+ * lo que declara, sin el doble que la grilla da a los formularios angostos. Nombre 8 + tipo 4,
+ * capacidad 4 + observación 8, y las dos fechas de la vigencia a la mitad. En un teléfono, uno
+ * debajo del otro.
+ */
+form.formulario-espacio > .campo,
+.formulario-espacio .grilla-campos > .campo {
+  grid-column: span var(--ancho-campo, 3);
+}
+
+@container (max-width: 26rem) {
+  form.formulario-espacio > .campo,
+  .formulario-espacio .grilla-campos > .campo {
+    grid-column: 1 / -1;
+  }
+}

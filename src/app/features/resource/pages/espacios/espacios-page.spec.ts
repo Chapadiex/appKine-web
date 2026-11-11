@@ -213,9 +213,14 @@ describe('EspaciosPage', () => {
     expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
       'Todavía no hay espacios en esta sede',
     );
+    const alta = host.querySelector<HTMLButtonElement>('app-estado-vacio button');
+    expect(alta?.textContent?.trim()).toBe('Dar de alta el primer espacio');
+    // El alta se abre en el panel lateral, sin salir del listado.
+    alta?.click();
+    fixture.detectChanges();
     expect(
-      host.querySelector('app-estado-vacio a[href="/espacios/nuevo"]')?.textContent?.trim(),
-    ).toBe('Dar de alta el primer espacio');
+      host.querySelector('app-panel-lateral app-alta-de-espacio #espacio-name'),
+    ).not.toBeNull();
     expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
       '0 espacios',
     );
@@ -689,7 +694,7 @@ describe('EspaciosPage', () => {
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
     expect(botonPorTexto(fixture, 'Editar')).toBeNull();
     expect(botonPorTexto(fixture, 'Dar de baja')).toBeNull();
-    expect(fixture.nativeElement.querySelector('a[href="/espacios/nuevo"]')).toBeNull();
+    expect(botonPorTexto(fixture, 'Dar de alta un espacio')).toBeNull();
   });
 
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y los dos espacios. */
