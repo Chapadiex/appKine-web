@@ -123,6 +123,66 @@
 .alta-manual__campo-doble {
   grid-column: span 2;
 }
+.alta-manual__campo-triple {
+  grid-column: 1 / -1;
+}
+
+/* Especialidades elegidas (11/11/2026): una pastilla por cada una; la principal, marcada. */
+.alta-manual__especialidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  margin: var(--esp-4) 0 0;
+  padding: 0;
+  border: 0;
+}
+.alta-manual__especialidad {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  padding: var(--esp-1) var(--esp-2) var(--esp-1) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  font-size: var(--tipo-sm);
+}
+.alta-manual__especialidad label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: 0;
+  font-weight: var(--peso-normal);
+  cursor: pointer;
+}
+.alta-manual__especialidad input[type='radio'] {
+  width: auto;
+  margin: 0;
+}
+.alta-manual__especialidad--principal {
+  border-color: var(--color-enlace);
+  background: var(--color-acento-claro);
+}
+.alta-manual__marca-principal {
+  color: var(--color-enlace);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-fuerte);
+}
+.alta-manual__quitar {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-base);
+  cursor: pointer;
+}
+.alta-manual__quitar:hover {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
 .alta-manual__principal .campo input,
 .alta-manual__principal .campo select {
   width: 100%;
