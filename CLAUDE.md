@@ -277,6 +277,16 @@ Reglas innegociables del QA:
 
 ## 7. Estado actual
 
+### 11/11/2026 — biblioteca del centro (M30) en la rama `akine-biblioteca-web`
+
+Pantallas `/biblioteca` y `/biblioteca/:libroId` (subir, reemplazar, reprocesar, activar, desactivar,
+eliminar, detalle con pedazos sospechosos y "Probar búsqueda"), cliente **0.164.0**. Espera al backend de
+la rama `akine-biblioteca-rag` de `appKine-api`, que no está en `main`: hasta que entre, `api:check`
+falla en local contra el contrato hermano. Probada el 11/11 contra ese backend (base `akine_rag`,
+configuraciones `akine-api-rag` y `akine-web-rag` de `.claude/launch.json`, puertos 8098 y 4298), con el
+modelo de embeddings de prueba y con la biblioteca apagada. Bundle inicial 446,09 kB (tope 448). El nginx
+de la imagen acepta 101 MB sólo en la ruta de libros.
+
 ### Estado al 22/10/2026, sobre `4fabeff`
 
 > Esta subsección **supersede** a la del 19/10 en tests, E2E, PR y pendiente. Medido el 22/10 sobre
