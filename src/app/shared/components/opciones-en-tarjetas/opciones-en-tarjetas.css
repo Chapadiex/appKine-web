@@ -26,7 +26,7 @@
   gap: var(--esp-4);
 }
 
-@container (min-width: 22rem) {
+@container (min-width: 20rem) {
   .opciones-en-tarjetas:is(.opciones-en-tarjetas--dos, .opciones-en-tarjetas--cuatro)
     .opciones-en-tarjetas__grilla {
     grid-template-columns: repeat(2, minmax(0, 1fr));
