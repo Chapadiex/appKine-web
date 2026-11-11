@@ -11,14 +11,14 @@
 .biblioteca__motivo,
 .biblioteca__reemplazo {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--tipo-sm);
   font-weight: var(--peso-normal);
   color: var(--color-texto-suave);
 }
 
 .biblioteca__progreso {
   margin-left: var(--esp-2);
-  font-size: 0.85rem;
+  font-size: var(--tipo-sm);
   color: var(--color-texto-suave);
 }
 

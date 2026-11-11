@@ -75,7 +75,7 @@ describe('BibliotecaPage', () => {
     httpMock.expectNone((p) => p.url === LIBROS);
   });
 
-  it('una fila de reemplazo pendiente no ofrece reemplazar ni desactivar', () => {
+  it('una fila de reemplazo pendiente ni su original ofrecen reemplazar ni desactivar', () => {
     const fixture = montar();
     pedido().flush(
       pagina([
@@ -89,8 +89,8 @@ describe('BibliotecaPage', () => {
     const filas = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('tbody tr'),
     );
-    expect(filas[0].textContent).toContain('Reemplazar archivo');
-    expect(filas[0].textContent).toContain('Desactivar');
+    expect(filas[0].textContent).not.toContain('Reemplazar archivo');
+    expect(filas[0].textContent).not.toContain('Desactivar');
     expect(filas[1].textContent).not.toContain('Reemplazar archivo');
     expect(filas[1].textContent).not.toContain('Desactivar');
   });

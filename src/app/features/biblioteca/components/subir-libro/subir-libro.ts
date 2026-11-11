@@ -48,6 +48,8 @@ export class SubirLibro {
   /** El libro creado (subir) o el libro con el reemplazo en cola (reemplazar). */
   readonly listo = output<LibroResponse>();
   readonly cancelar = output<void>();
+  /** Se aborto una subida en vuelo: el libro pudo quedar creado, la lista debe releerse. */
+  readonly abortado = output<void>();
 
   protected readonly formulario = new FormGroup({
     titulo: new FormControl('', {
@@ -83,6 +85,7 @@ export class SubirLibro {
       this.envio?.unsubscribe();
       this.envio = null;
       this.enviando.set(false);
+      this.abortado.emit();
       return;
     }
     this.cancelar.emit();

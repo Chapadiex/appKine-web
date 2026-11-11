@@ -12,7 +12,7 @@
 
 .detalle__datos dt {
   color: var(--color-texto-suave);
-  font-size: 0.85rem;
+  font-size: var(--tipo-sm);
 }
 
 .detalle__datos dd {

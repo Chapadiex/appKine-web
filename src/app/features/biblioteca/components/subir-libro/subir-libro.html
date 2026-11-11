@@ -90,7 +90,8 @@
 
     @if (enviando()) {
       <div class="subir-libro__progreso">
-        <p id="subir-libro-texto" role="status">
+        <p class="visualmente-oculto" role="status">Subiendo…</p>
+        <p id="subir-libro-texto" aria-hidden="true">
           @if (progreso() === null) {
             Subiendo…
           } @else {
@@ -99,7 +100,8 @@
         </p>
         <progress
           max="100"
-          aria-labelledby="subir-libro-texto"
+          aria-label="Progreso de la subida"
+          [attr.aria-valuetext]="progreso() === null ? null : progreso() + ' %'"
           [attr.value]="progreso()"
         ></progress>
       </div>

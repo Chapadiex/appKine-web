@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Observable, catchError, of, tap } from 'rxjs';
 
 import { LibroDetalleResponse } from '../../../../api/generated/model/libro-detalle-response';
@@ -38,7 +39,7 @@ type EstadoDeDetalle =
 @Component({
   selector: 'app-libro-detalle-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CabeceraDePagina, Ayuda, Alerta],
+  imports: [CabeceraDePagina, Ayuda, Alerta, RouterLink],
   templateUrl: './libro-detalle-page.html',
   styleUrl: './libro-detalle-page.css',
 })
@@ -70,7 +71,9 @@ export class LibroDetallePage {
     const d = this.detalle();
     const total = d?.fragmentos ?? 0;
     const conVector = d?.fragmentosConVector ?? 0;
-    return total > 0 && conVector < total ? Math.round((conVector / total) * 100) : null;
+    return total > 0 && conVector < total
+      ? Math.min(99, Math.floor((conVector / total) * 100))
+      : null;
   });
 
   protected readonly editando = signal(false);
@@ -109,6 +112,11 @@ export class LibroDetallePage {
       () => this.leer(false),
     );
   }
+
+  protected readonly noEncontrado = computed(() => {
+    const actual = this.estado();
+    return actual.tipo === 'error' && actual.error.causa === 'no-encontrado';
+  });
 
   protected reintentar(): void {
     this.estado.set({ tipo: 'cargando' });
@@ -197,7 +205,11 @@ export class LibroDetallePage {
       catchError((error: unknown) => {
         if (mia === this.secuencia) {
           const traducido = traducirErrorBiblioteca(error);
-          if (esConsulta || traducido.causa === 'deshabilitada') {
+          if (
+            esConsulta ||
+            traducido.causa === 'deshabilitada' ||
+            traducido.causa === 'no-encontrado'
+          ) {
             this.estado.set({ tipo: 'error', error: traducido });
           }
         }

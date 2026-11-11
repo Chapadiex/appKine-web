@@ -45,6 +45,19 @@ export class ProbarBusqueda {
   protected readonly resultado = signal<BibliotecaBusquedaResponse | null>(null);
   protected readonly error = signal<ErrorBiblioteca | null>(null);
   protected readonly pasajes = computed(() => this.resultado()?.pasajes ?? []);
+  /** Unica region viva: un resumen corto, no la lista entera. */
+  protected readonly resumenVivo = computed(() => {
+    if (this.buscando()) {
+      return 'Buscando…';
+    }
+    const r = this.resultado();
+    if (r === null) {
+      return '';
+    }
+    const n = this.pasajes().length;
+    const pasajes = `${n} ${n === 1 ? 'pasaje' : 'pasajes'}`;
+    return `${pasajes}; la biblioteca ${r.alcanza ? 'alcanza' : 'no alcanza'} para esta pregunta`;
+  });
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.busqueda?.unsubscribe());

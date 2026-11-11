@@ -171,6 +171,9 @@ export class BibliotecaPage {
         this.busqueda.set('');
         this.area.set('');
         this.estadoElegido.set('');
+        this.errorDeAccion.set(null);
+        this.porEliminar.set(null);
+        this.dialogo.set(null);
         this.orden.reiniciar();
         this.consultarDesdeElPrincipio();
       });
@@ -201,6 +204,17 @@ export class BibliotecaPage {
     }
     const titulo = this.titulos().get(libro.reemplazaLibroId);
     return titulo ? `Reemplazo de «${titulo}»` : 'Reemplazo de otro libro';
+  }
+
+  /** El original con un reemplazo en curso (otra fila de la pagina lo apunta) no se toca. */
+  protected tieneReemplazoEnCurso(libro: LibroResponse): boolean {
+    return this.libros().some((otro) => otro.reemplazaLibroId === libro.id);
+  }
+
+  protected alCancelarDialogo(): void {
+    this.dialogo.set(null);
+    // El libro pudo quedar creado aunque se haya cancelado la subida.
+    this.recargar();
   }
 
   protected puedeReprocesar(libro: LibroResponse): boolean {

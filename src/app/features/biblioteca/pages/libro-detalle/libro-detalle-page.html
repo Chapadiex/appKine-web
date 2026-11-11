@@ -3,7 +3,7 @@
     <span [class]="claseDeEstado(l.estado)">{{ estadoEnPalabras(l.estado) }}</span>
   }
   <div cabeceraAcciones class="acciones-fila">
-    @if (libro() && !editando()) {
+    @if (libro() && !editando() && libro()?.reemplazaLibroId === undefined) {
       <button type="button" class="boton boton--secundario" (click)="abrirEdicion()">
         Editar datos
       </button>
@@ -19,7 +19,11 @@
     <app-alerta tipo="error" titulo="No pudimos leer el libro">
       <p>{{ mensajeDeError() }}</p>
       <p class="alerta__acciones">
-        <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+        @if (noEncontrado()) {
+          <a class="boton" routerLink="/biblioteca">Volver a la biblioteca</a>
+        } @else {
+          <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+        }
       </p>
     </app-alerta>
   }

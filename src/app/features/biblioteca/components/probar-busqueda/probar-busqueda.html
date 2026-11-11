@@ -16,9 +16,11 @@
   </div>
 </form>
 
-<div aria-live="polite">
+<p class="visualmente-oculto" role="status">{{ resumenVivo() }}</p>
+
+<div>
   @if (buscando()) {
-    <p role="status">Buscando…</p>
+    <p>Buscando…</p>
   }
 
   @if (error(); as problema) {

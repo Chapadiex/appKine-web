@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { RELECTURA_MS } from '../../models/relectura';
 import { LibroDetallePage } from './libro-detalle-page';
 
 const LIBRO_URL = '/api/v1/organizations/1/biblioteca/libros/10';
@@ -32,7 +33,36 @@ describe('LibroDetallePage', () => {
     });
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    httpMock.verify();
+    vi.useRealTimers();
+  });
+
+  it('un 404 durante la relectura corta el sondeo y ofrece Volver a la biblioteca', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(LibroDetallePage);
+    fixture.componentRef.setInput('libroId', '10');
+    fixture.detectChanges();
+    httpMock.expectOne(LIBRO_URL).flush({
+      libro: { id: 10, titulo: 'Original', estado: 'PROCESANDO', version: 1 },
+      fragmentos: 4,
+      fragmentosConVector: 1,
+      sospechosos: [],
+    });
+    fixture.detectChanges();
+
+    vi.advanceTimersByTime(RELECTURA_MS);
+    httpMock.expectOne(LIBRO_URL).flush(
+      { type: 'https://akine.app/problems/libro-no-encontrado', status: 404 },
+      { status: 404, statusText: 'Not Found' },
+    );
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('Volver a la biblioteca');
+    vi.advanceTimersByTime(RELECTURA_MS * 2);
+    httpMock.expectNone(LIBRO_URL);
+  });
 
   it('ante un 409 concurrent-modification conserva lo tipeado y ofrece Recargar', () => {
     const fixture = TestBed.createComponent(LibroDetallePage);
