@@ -1,0 +1,273 @@
+<app-cabecera-de-pagina titulo="Biblioteca">
+  <app-ayuda titulo="Sobre la biblioteca">
+    <p>
+      Los libros PDF que cargás acá alimentan la sugerencia de tratamiento y la evaluación de
+      evolución: el sistema busca en ellos y cita de dónde sacó cada respuesta.
+    </p>
+    <p>
+      Los pedazos sospechosos (texto que parece una instrucción dirigida al sistema) quedan fuera de
+      la búsqueda.
+    </p>
+  </app-ayuda>
+  @if (estado().tipo === 'listo') {
+    <span class="biblioteca__subtitulo">{{ subtitulo() }}</span>
+  }
+
+  <div cabeceraAcciones class="acciones-fila">
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="deshabilitada()"
+      (click)="panelBusquedaAbierto.set(true)"
+    >
+      Probar búsqueda
+    </button>
+    <button
+      type="button"
+      class="boton"
+      [disabled]="deshabilitada()"
+      (click)="dialogo.set({ modo: 'subir' })"
+    >
+      Subir libro
+    </button>
+  </div>
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Libros de la biblioteca">
+  @if (deshabilitada()) {
+    <app-estado-vacio
+      titulo="La biblioteca no está habilitada"
+      texto="El administrador de la plataforma tiene que activarla en este entorno."
+    />
+  } @else {
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="estado().tipo === 'listo' ? total() : null"
+      [unidad]="['libro', 'libros']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="biblioteca-busqueda"
+          >Buscar por título o autor</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="biblioteca-busqueda"
+            name="biblioteca-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por título o autor"
+            [value]="busqueda()"
+            (input)="alEscribirBusqueda($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="campo campo--medio">
+        <label for="biblioteca-area">Área</label>
+        <input
+          id="biblioteca-area"
+          name="biblioteca-area"
+          type="text"
+          autocomplete="off"
+          [value]="area()"
+          (change)="cambiarArea($any($event.target).value)"
+        />
+      </div>
+      <div class="campo campo--medio">
+        <label for="biblioteca-estado">Estado</label>
+        <select
+          id="biblioteca-estado"
+          name="biblioteca-estado"
+          (change)="cambiarEstado($any($event.target).value)"
+        >
+          <option value="" [selected]="estadoElegido() === ''">Todos</option>
+          @for (opcion of estadosDeLibro; track opcion) {
+            <option [value]="opcion" [selected]="opcion === estadoElegido()">
+              {{ estadoEnPalabras(opcion) }}
+            </option>
+          }
+        </select>
+      </div>
+    </app-filtros>
+
+    @if (errorDeAccion(); as fallo) {
+      <app-alerta class="biblioteca__alerta" tipo="error" titulo="No pudimos completar la acción">
+        <p>{{ fallo.mensaje }}</p>
+      </app-alerta>
+    }
+
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando libros&hellip;</p>
+      }
+
+      @case ('error') {
+        <app-alerta tipo="error" titulo="No pudimos leer la biblioteca">
+          <p>{{ mensajeDeError() }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="consultar()">Reintentar</button>
+          </p>
+        </app-alerta>
+      }
+
+      @case ('listo') {
+        @if (libros().length === 0) {
+          @if (hayFiltros()) {
+            <app-estado-vacio
+              titulo="Ningún libro coincide con la búsqueda."
+              texto="Probá con otra búsqueda o con otros filtros."
+            >
+              <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+                Limpiar filtros
+              </button>
+            </app-estado-vacio>
+          } @else {
+            <app-estado-vacio
+              titulo="Todavía no hay libros en la biblioteca."
+              texto="Subí un PDF para que el sistema pueda consultarlo."
+            />
+          }
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Libros de la biblioteca">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Libros de la biblioteca del centro
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="titulo">Título</th>
+                  <th scope="col" class="tabla__col--secundaria">Edición</th>
+                  <th scope="col" class="tabla__col--secundaria">Área</th>
+                  <th scope="col" class="tabla__col--secundaria">Páginas</th>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (libro of libros(); track libro.id) {
+                  <tr>
+                    <td>
+                      <a class="biblioteca__titulo" [routerLink]="['/biblioteca', libro.id]">{{
+                        libro.titulo
+                      }}</a>
+                      @if (libro.autores) {
+                        <span class="biblioteca__autor">{{ libro.autores }}</span>
+                      }
+                      @if (rotuloDeReemplazo(libro); as rotulo) {
+                        <span class="biblioteca__reemplazo">{{ rotulo }}</span>
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria">{{ libro.edicion || '-' }}</td>
+                    <td class="tabla__col--secundaria">{{ libro.area || '-' }}</td>
+                    <td class="tabla__col--secundaria">{{ libro.paginas ?? '-' }}</td>
+                    <td>
+                      <span [class]="claseDeEstado(libro.estado)">{{
+                        estadoEnPalabras(libro.estado)
+                      }}</span>
+                      @if (libro.estado === 'PROCESANDO' && libro.progreso !== undefined) {
+                        <span class="biblioteca__progreso">{{ libro.progreso }} %</span>
+                      }
+                      @if (libro.estado === 'ERROR' && libro.motivoError) {
+                        <span class="biblioteca__motivo">{{ libro.motivoError }}</span>
+                      }
+                    </td>
+                    <td class="tabla__acciones">
+                      <app-acciones-de-fila [de]="libro.titulo ?? 'el libro'">
+                        <a principal class="accion-texto" [routerLink]="['/biblioteca', libro.id]"
+                          >Ver detalle</a
+                        >
+                        @if (libro.reemplazaLibroId === undefined) {
+                          <button
+                            type="button"
+                            [disabled]="accionEnCurso()"
+                            (click)="abrirReemplazo(libro)"
+                          >
+                            Reemplazar archivo
+                          </button>
+                        }
+                        @if (puedeReprocesar(libro)) {
+                          <button
+                            type="button"
+                            [disabled]="accionEnCurso()"
+                            (click)="reprocesar(libro)"
+                          >
+                            Reprocesar
+                          </button>
+                        }
+                        @if (libro.estado === 'INACTIVO') {
+                          <button
+                            type="button"
+                            [disabled]="accionEnCurso()"
+                            (click)="alternarActivo(libro)"
+                          >
+                            Activar
+                          </button>
+                        } @else if (libro.reemplazaLibroId === undefined) {
+                          <button
+                            type="button"
+                            [disabled]="accionEnCurso()"
+                            (click)="alternarActivo(libro)"
+                          >
+                            Desactivar
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          [disabled]="accionEnCurso()"
+                          (click)="porEliminar.set(libro)"
+                        >
+                          Eliminar
+                        </button>
+                      </app-acciones-de-fila>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <app-paginacion
+            etiqueta="Páginas de libros"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="total()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
+        }
+      }
+    }
+  }
+</section>
+
+@if (porEliminar(); as libro) {
+  <app-panel-lateral titulo="Eliminar libro" (cerrar)="porEliminar.set(null)">
+    <p>
+      ¿Eliminás «<strong>{{ libro.titulo }}</strong
+      >»?
+    </p>
+    <p class="biblioteca__aviso-borrado">
+      Se borra el archivo y sus pedazos; no se puede deshacer.
+    </p>
+    <div class="acciones">
+      <button
+        type="button"
+        class="boton boton--peligro"
+        [disabled]="accionEnCurso()"
+        (click)="confirmarEliminar()"
+      >
+        Eliminar libro
+      </button>
+      <button type="button" class="boton boton--secundario" (click)="porEliminar.set(null)">
+        Cancelar
+      </button>
+    </div>
+  </app-panel-lateral>
+}
+
+<!-- Tarea 3: acá se monta <app-subir-libro> con `dialogo()`. -->
+<!-- Tarea 5: acá se monta el app-panel-lateral de búsqueda con `panelBusquedaAbierto()`. -->
