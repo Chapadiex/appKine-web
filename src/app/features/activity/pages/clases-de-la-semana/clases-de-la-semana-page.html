@@ -223,7 +223,7 @@
                           [class.clase-tarjeta--cancelada]="clase.estado === 'CANCELADA'"
                           [routerLink]="['/clases', clase.id]"
                         >
-                          <span class="clase-tarjeta__nombre">{{ nombre(clase) }}</span>
+                          <span class="clase-tarjeta__nombre">{{ nombreSinDias(clase) }}</span>
                           <span class="clase-tarjeta__dato">
                             <app-icono nombre="horarios" />{{ rango(clase) }}
                           </span>
@@ -359,7 +359,7 @@
                           [class.mes-dia__clase--cancelada]="clase.estado === 'CANCELADA'"
                         >
                           <span class="mes-dia__hora">{{ inicio(clase) }}</span>
-                          {{ nombre(clase) }}
+                          {{ nombreSinDias(clase) }}
                         </span>
                       }
                       @if (dia.clases.length > CLASES_POR_DIA_DEL_MES) {

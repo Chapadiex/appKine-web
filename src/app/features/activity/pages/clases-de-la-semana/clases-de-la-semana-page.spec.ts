@@ -290,6 +290,20 @@ describe('ClasesDeLaSemanaPage', () => {
     expect(textoDe(fixture)).not.toContain('Yoga suave');
   });
 
+  it('la tarjeta no repite los días del título: los dice la columna', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    esperarClases().flush([
+      { ...CLASE, id: 1, titulo: 'Yoga martes y jueves' },
+      { ...CLASE, id: 2, titulo: 'Clase de los sábados' },
+    ]);
+    await asentar(fixture);
+    const nombres = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.clase-tarjeta__nombre'),
+    ).map((n) => n.textContent?.trim());
+    expect(nombres).toEqual(['Yoga', 'Clase de los sábados']);
+  });
+
   it('un error de lectura se muestra y se reintenta', async () => {
     otorgar(httpMock, PERMISO_CLASE_READ);
     const fixture = montar();

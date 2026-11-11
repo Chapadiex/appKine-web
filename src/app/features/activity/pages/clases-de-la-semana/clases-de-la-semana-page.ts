@@ -53,6 +53,10 @@ const TONOS_DE_ACTIVIDAD = 6;
 /** Cuantas clases se nombran en un dia del mes antes de resumir con "+N mas". */
 const CLASES_POR_DIA_DEL_MES = 3;
 
+/** Dias de la semana al final de un titulo: " martes y jueves", " lunes, miércoles y viernes". */
+const DIAS_AL_FINAL =
+  /(?:\s*(?:,|\by\b|\be\b)?\s*\b(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bados?|domingos?)\b)+\s*$/i;
+
 interface DiaDeClases {
   readonly fecha: string;
   readonly clases: readonly Clase[];
@@ -440,6 +444,17 @@ export class ClasesDeLaSemanaPage {
   protected nombreDelDia(fecha: string): string {
     const nombre = diaEnPalabras(fecha).split(' ')[0] ?? '';
     return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  }
+
+  /**
+   * En la semana y el mes la columna ya dice el dia y el color agrupa la actividad: "Yoga martes y
+   * jueves" se lee "Yoga". La lista conserva el titulo entero.
+   */
+  protected nombreSinDias(clase: Clase): string {
+    const completo = nombreDeClase(clase);
+    const corto = completo.replace(DIAS_AL_FINAL, '').trim();
+    // "Clase de los sábados" no se corta: el dia es parte del nombre.
+    return corto === '' || /\b(?:de|del|los|las|el)$/i.test(corto) ? completo : corto;
   }
 
   /** "Lun", "Mar", "Mié"... para que las siete cabeceras midan lo mismo. */
