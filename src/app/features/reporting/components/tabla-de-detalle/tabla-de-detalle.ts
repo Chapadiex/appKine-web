@@ -53,11 +53,6 @@ type Fila = readonly string[];
       display: block;
     }
 
-    /* Encabezado atenuado, como el canvas. */
-    .tabla thead th {
-      background: var(--color-superficie-atenuada);
-    }
-
     /* Importes por fila (rentabilidad y caja por servicio, DP-39): alineados para compararlos. */
     .tabla td.importe {
       text-align: right;

@@ -54,6 +54,7 @@ import { ListEspaciosRequestParams } from '../../../../api/generated/api/espacio
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { AltaDeEspacio } from '../../components/alta-de-espacio/alta-de-espacio';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
@@ -113,6 +114,7 @@ type TipoAccion = 'editar' | 'baja';
     PanelLateral,
     AccionesDeFila,
     EstadoVacio,
+    AltaDeEspacio,
   ],
   templateUrl: './espacios-page.html',
   styleUrl: '../../resource.css',
@@ -169,6 +171,9 @@ export class EspaciosPage {
   protected readonly orden = ordenDeServidor<CamposDeSort<ListEspaciosRequestParams['sort']>>(() =>
     this.recargarDesdeElPrincipio(),
   );
+
+  /** Panel del alta (10/11/2026: antes, pantalla aparte). Excluye al de una fila. */
+  protected readonly altaAbierta = signal(false);
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
   protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
@@ -366,6 +371,7 @@ export class EspaciosPage {
     }
 
     this.cerrarPanel();
+    this.altaAbierta.set(false);
     this.panel.set({ id, tipo });
 
     if (tipo === 'editar') {
@@ -381,6 +387,19 @@ export class EspaciosPage {
       // render que dispara el signal que se acaba de escribir- y en zoneless ese render es
       // asincrono, asi que una microtarea corre antes y no encuentra nada que enfocar.
       afterNextRender(() => this.enfocar('#editar-espacio-name'), { injector: this.injector });
+    }
+  }
+
+  protected abrirAlta(): void {
+    this.cerrarPanel();
+    this.altaAbierta.set(true);
+  }
+
+  /** Cerrado el alta con un espacio creado (o para revisar tras un corte): se relee el listado. */
+  protected cerrarAlta(releer: boolean): void {
+    this.altaAbierta.set(false);
+    if (releer) {
+      this.cargar();
     }
   }
 

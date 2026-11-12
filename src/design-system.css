@@ -67,20 +67,40 @@
    * --color-borde-control queda en #808A99 (3,2:1 sobre el fondo #F5F6F8 de la pagina); los bordes decorativos si son los del canvas.
    */
 
+  /*
+   * Norma global de diseño UI/UX (08/11/2026, DESIGN.md "Paleta"). Los valores de la norma
+   * se mapean a los roles que ya existian; los roles nuevos (secundaria, encabezado de tabla,
+   * seleccion, hover, info y los estados del turno) se agregan. Ajustes a la norma, medidos:
+   * - peligro en claro #b91c1c y no #DC2626: el rojo de la norma da 4,46:1 sobre la pagina.
+   * - enlace y foco en oscuro #93c5fd y no #60A5FA: sobre la seleccion #244A70 daba 3,6:1.
+   * - acento (texto y trazo de lo actual) #1d4ed8 / #93c5fd: sobre la seleccion el azul de
+   *   accion daba 4,25:1 en claro y 3,6:1 en oscuro. La accion conserva #2563eb / #60a5fa.
+   * - borde-control queda en #808a99 / #8494a3: el #D5DEE8 de la norma es un separador (1,3:1).
+   */
+
   /* --- Superficies -------------------------------------------------------------------- */
+  /* Nivel 4 (contenido): paneles, tarjetas, campos. */
   --color-superficie: #ffffff;
-  --color-superficie-sutil: #f5f6f8;
-  --color-superficie-atenuada: #f8f9fb;
-  --color-superficie-codigo: #eef1f4;
+  /* Fondo de la pagina: el contenido se despega de el por tono. */
+  --color-superficie-sutil: #f4f6f9;
+  /* Nivel 3 (herramientas): barra de filtros, panel avanzado, fila de baja, fila-panel. */
+  --color-superficie-secundaria: #e9eff5;
+  --color-superficie-atenuada: #e9eff5;
+  --color-superficie-codigo: #e9eff5;
+  --color-tabla-encabezado: #edf2f7;
+  /* Interaccion: hover de fila, de item de menu, de boton secundario. */
+  --color-hover: #eff6ff;
+  /* Seleccion activa: entrada actual de la navegacion, fila con panel abierto, filtro elegido. */
+  --color-seleccion: #dbeafe;
 
   /* --- Texto -------------------------------------------------------------------------- */
-  --color-texto: #1f2933;
-  --color-texto-fuerte: #1f2933;
-  --color-texto-suave: #5f6b7a;
+  --color-texto: #182230;
+  --color-texto-fuerte: #182230;
+  --color-texto-suave: #526174;
 
   /* --- Bordes ------------------------------------------------------------------------- */
-  --color-borde: #e1e5ea;
-  --color-borde-sutil: #eef1f4;
+  --color-borde: #d5dee8;
+  --color-borde-sutil: #e4eaf1;
   /* Borde de un control operable: es el unico borde que WCAG 1.4.11 obliga a 3:1. */
   --color-borde-control: #808a99;
   --color-deshabilitado: #6b7684;
@@ -88,29 +108,44 @@
   /* --- Marca y acciones --------------------------------------------------------------- */
   /* La barra lateral es blanca: "marca" es ahora la superficie de navegacion, no un color. */
   --color-marca-fondo: #ffffff;
-  --color-marca-texto: #1f2933;
+  --color-marca-texto: #182230;
   --color-marca-texto-suave: #3b4754;
-  --color-marca-superficie-activa: #eaf1fb;
-  --color-marca-borde: #1d5fbf;
-  --color-acento: #1d5fbf;
-  --color-acento-claro: #eaf1fb;
-  --color-accion-fondo: #1d5fbf;
-  --color-accion-fondo-hover: #164a96;
+  --color-marca-superficie-activa: var(--color-seleccion);
+  --color-acento: #1d4ed8;
+  --color-acento-claro: var(--color-seleccion);
+  --color-accion-fondo: #2563eb;
+  --color-accion-fondo-hover: #1d4ed8;
   --color-accion-texto: #ffffff;
-  --color-enlace: #1d5fbf;
-  --color-foco: #1d5fbf;
-  --color-foco-sobre-marca: #1d5fbf;
+  --color-enlace: #1d4ed8;
+  --color-foco: #2563eb;
+  --color-foco-sobre-marca: #2563eb;
 
   /* --- Estados ------------------------------------------------------------------------ */
-  --color-exito: #1e7b45;
-  --color-exito-fondo: #e6f4ec;
-  --color-exito-texto: #155c33;
-  --color-aviso: #8a5200;
-  --color-aviso-fondo: #fff3e0;
-  --color-aviso-texto: #7a4800;
-  --color-peligro: #a32820;
-  --color-peligro-fondo: #fcebea;
-  --color-peligro-texto: #8e2a2a;
+  /* Trio por severidad: fuerte (borde, icono), fondo (tinte) y texto (AA sobre el fondo). */
+  --color-exito: #15803d;
+  --color-exito-fondo: #dcfce7;
+  --color-exito-texto: #14532d;
+  --color-aviso: #b45309;
+  --color-aviso-fondo: #fef3c7;
+  --color-aviso-texto: #78350f;
+  --color-peligro: #b91c1c;
+  --color-peligro-fondo: #fee2e2;
+  --color-peligro-texto: #7f1d1d;
+  --color-info: #2563eb;
+  --color-info-fondo: #dbeafe;
+  --color-info-texto: #1e3a8a;
+
+  /*
+   * Estados del dominio de la agenda (norma §3). Son fondos: el texto encima es
+   * --color-texto y el borde el fuerte de su severidad. Reservado y Confirmado NO son lo mismo:
+   * difieren en color, en palabra y en el patron del borde (punteado = todavia no confirmado).
+   */
+  --color-estado-disponible: #dcfce7;
+  --color-estado-reservado: #dbeafe;
+  --color-estado-confirmado: #bbf7d0;
+  --color-estado-pendiente: #fef3c7;
+  --color-estado-cancelado: #fee2e2;
+  --color-estado-bloqueado: #e2e8f0;
 
   /* --- Desborde ---------------------------------------------------------------------- */
   /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
@@ -195,90 +230,110 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) {
-    --color-superficie: #0f1a26;
-    --color-superficie-sutil: #17242f;
-    --color-superficie-atenuada: #131e29;
-    --color-superficie-codigo: #1b2a38;
+    --color-superficie: #1d2a36;
+    --color-superficie-sutil: #101820;
+    --color-superficie-secundaria: #263746;
+    --color-superficie-atenuada: #263746;
+    --color-superficie-codigo: #263746;
+    --color-tabla-encabezado: #304152;
+    --color-hover: #30465b;
+    --color-seleccion: #244a70;
 
-    --color-texto: #e6edf3;
-    --color-texto-fuerte: #f4f8fb;
-    --color-texto-suave: #a3b3c2;
+    --color-texto: #f1f5f9;
+    --color-texto-fuerte: #f8fafc;
+    --color-texto-suave: #b8c7d5;
 
-    --color-borde: #2e3d4c;
-    --color-borde-sutil: #24313d;
+    --color-borde: #405365;
+    --color-borde-sutil: #33475a;
     --color-borde-control: #8494a3;
-    /* Mas claro que el #6a7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
+    /* Mas claro que el #6b7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
        2.84:1 contra la superficie y a 3.06:1 contra el texto del boton. */
     --color-deshabilitado: #778593;
 
-    --color-marca-fondo: #17242f;
-    --color-marca-texto: #e6edf3;
-    --color-marca-texto-suave: #b9cde0;
-    /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
-    --color-marca-superficie-activa: #22313f;
-    --color-marca-borde: #7fb6ea;
-    --color-acento: #5aa2e5;
-    --color-acento-claro: #17304a;
-    --color-accion-fondo: #4f9ae0;
-    --color-accion-fondo-hover: #6aabe8;
-    --color-accion-texto: #06121c;
-    --color-enlace: #7fb6ea;
-    --color-foco: #7fb6ea;
-    --color-foco-sobre-marca: #7fb6ea;
+    --color-marca-fondo: #1d2a36;
+    --color-marca-texto: #f1f5f9;
+    --color-marca-texto-suave: #c9d6e2;
+    --color-acento: #93c5fd;
+    --color-accion-fondo: #60a5fa;
+    --color-accion-fondo-hover: #93c5fd;
+    --color-accion-texto: #101820;
+    --color-enlace: #93c5fd;
+    --color-foco: #93c5fd;
+    --color-foco-sobre-marca: #93c5fd;
 
-    --color-exito: #4cc38a;
-    --color-exito-fondo: #10291d;
-    --color-exito-texto: #7ee0ae;
-    --color-aviso: #d9a441;
-    --color-aviso-fondo: #2a1f0c;
-    --color-aviso-texto: #f0c674;
-    --color-peligro: #f2777a;
-    --color-peligro-fondo: #2b1416;
-    --color-peligro-texto: #ffb3b3;
+    --color-exito: #4ade80;
+    --color-exito-fondo: #174936;
+    --color-exito-texto: #bbf7d0;
+    --color-aviso: #fbbf24;
+    --color-aviso-fondo: #684c16;
+    --color-aviso-texto: #fde68a;
+    --color-peligro: #f87171;
+    --color-peligro-fondo: #692d35;
+    --color-peligro-texto: #fecaca;
+    --color-info: #93c5fd;
+    --color-info-fondo: #1d4268;
+    --color-info-texto: #bfdbfe;
+
+    --color-estado-disponible: #174936;
+    --color-estado-reservado: #1d4268;
+    --color-estado-confirmado: #166534;
+    --color-estado-pendiente: #684c16;
+    --color-estado-cancelado: #692d35;
+    --color-estado-bloqueado: #354352;
   }
 }
 
 :root[data-tema='oscuro'] {
-  --color-superficie: #0f1a26;
-  --color-superficie-sutil: #17242f;
-  --color-superficie-atenuada: #131e29;
-  --color-superficie-codigo: #1b2a38;
+  --color-superficie: #1d2a36;
+  --color-superficie-sutil: #101820;
+  --color-superficie-secundaria: #263746;
+  --color-superficie-atenuada: #263746;
+  --color-superficie-codigo: #263746;
+  --color-tabla-encabezado: #304152;
+  --color-hover: #30465b;
+  --color-seleccion: #244a70;
 
-  --color-texto: #e6edf3;
-  --color-texto-fuerte: #f4f8fb;
-  --color-texto-suave: #a3b3c2;
+  --color-texto: #f1f5f9;
+  --color-texto-fuerte: #f8fafc;
+  --color-texto-suave: #b8c7d5;
 
-  --color-borde: #2e3d4c;
-  --color-borde-sutil: #24313d;
+  --color-borde: #405365;
+  --color-borde-sutil: #33475a;
   --color-borde-control: #8494a3;
-  /* Mas claro que el #6a7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
+  /* Mas claro que el #6b7684 de modo claro: sobre fondo oscuro ese mismo gris caia a
      2.84:1 contra la superficie y a 3.06:1 contra el texto del boton. */
   --color-deshabilitado: #778593;
 
-  --color-marca-fondo: #17242f;
-  --color-marca-texto: #e6edf3;
-  --color-marca-texto-suave: #b9cde0;
-  /* La barra ya es oscura: el item activo se separa ACLARANDO, no oscureciendo. */
-  --color-marca-superficie-activa: #22313f;
-  --color-marca-borde: #7fb6ea;
-  --color-acento: #5aa2e5;
-  --color-acento-claro: #17304a;
-  --color-accion-fondo: #4f9ae0;
-  --color-accion-fondo-hover: #6aabe8;
-  --color-accion-texto: #06121c;
-  --color-enlace: #7fb6ea;
-  --color-foco: #7fb6ea;
-  --color-foco-sobre-marca: #7fb6ea;
+  --color-marca-fondo: #1d2a36;
+  --color-marca-texto: #f1f5f9;
+  --color-marca-texto-suave: #c9d6e2;
+  --color-acento: #93c5fd;
+  --color-accion-fondo: #60a5fa;
+  --color-accion-fondo-hover: #93c5fd;
+  --color-accion-texto: #101820;
+  --color-enlace: #93c5fd;
+  --color-foco: #93c5fd;
+  --color-foco-sobre-marca: #93c5fd;
 
-  --color-exito: #4cc38a;
-  --color-exito-fondo: #10291d;
-  --color-exito-texto: #7ee0ae;
-  --color-aviso: #d9a441;
-  --color-aviso-fondo: #2a1f0c;
-  --color-aviso-texto: #f0c674;
-  --color-peligro: #f2777a;
-  --color-peligro-fondo: #2b1416;
-  --color-peligro-texto: #ffb3b3;
+  --color-exito: #4ade80;
+  --color-exito-fondo: #174936;
+  --color-exito-texto: #bbf7d0;
+  --color-aviso: #fbbf24;
+  --color-aviso-fondo: #684c16;
+  --color-aviso-texto: #fde68a;
+  --color-peligro: #f87171;
+  --color-peligro-fondo: #692d35;
+  --color-peligro-texto: #fecaca;
+  --color-info: #93c5fd;
+  --color-info-fondo: #1d4268;
+  --color-info-texto: #bfdbfe;
+
+  --color-estado-disponible: #174936;
+  --color-estado-reservado: #1d4268;
+  --color-estado-confirmado: #166534;
+  --color-estado-pendiente: #684c16;
+  --color-estado-cancelado: #692d35;
+  --color-estado-bloqueado: #354352;
 }
 
 /* Los controles nativos (select, scrollbar, calendario) siguen al tema elegido, no al sistema. */
@@ -307,11 +362,6 @@
 :focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
-}
-
-/* Sobre la barra de marca el anillo cambia de color: `--color-foco` ahi no se ve. */
-.barra-lateral :focus-visible {
-  outline-color: var(--color-foco-sobre-marca);
 }
 
 /* --- Tipografia de pagina ------------------------------------------------------------- */
@@ -385,8 +435,38 @@ h3 {
   font-weight: var(--peso-semi);
 }
 
+/*
+ * Cargando: texto + indicador (norma: estado = texto + icono). El aro gira; con movimiento reducido
+ * queda quieto y el texto sigue diciendo que se espera.
+ */
 .estado--cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
   color: var(--color-texto-suave);
+}
+
+.estado--cargando::before {
+  content: '';
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: var(--borde-medio) solid var(--color-borde);
+  border-top-color: var(--color-acento);
+  border-radius: 50%;
+  animation: estado-girar 0.8s linear infinite;
+}
+
+@keyframes estado-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado--cargando::before {
+    animation: none;
+  }
 }
 
 .estado--ok {
@@ -439,20 +519,27 @@ h3 {
   cursor: not-allowed;
 }
 
+/*
+ * Secundaria: contorno de control y texto corriente, no azul (norma 08/11/2026). Con borde y texto
+ * en `--color-enlace` competia con la primaria: dos botones azules lado a lado se leian como dos
+ * acciones principales. El azul queda para la UNICA accion con relleno ("la regla del azul que
+ * actua"); el contorno `--color-borde-control` sigue a 3:1 (WCAG 1.4.11) en los dos temas.
+ */
 .boton--secundario {
-  border-color: var(--color-enlace);
+  border-color: var(--color-borde-control);
   background: var(--color-superficie);
-  color: var(--color-enlace);
+  color: var(--color-texto);
 }
 
 .boton--secundario:hover:not(:disabled) {
-  background: var(--color-superficie-sutil);
+  border-color: var(--color-texto-suave);
+  background: var(--color-hover);
 }
 
 /* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */
 .boton--secundario:disabled {
   border-color: var(--color-borde);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   color: var(--color-texto-suave);
 }
 
@@ -492,7 +579,9 @@ a.enlace {
  * minimo automatico es el ancho intrinseco del control: un `select` con una opcion larga (el
  * nombre de un financiador, una practica) empujaba la PAGINA a 470-670 px en un telefono de 375.
  */
+/* `position: relative`: ancla la ayuda a demanda (ver "Ayuda de campo a demanda", mas abajo). */
 .campo {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--esp-2);
@@ -522,6 +611,85 @@ a.enlace {
   max-width: 100%;
 }
 
+/*
+ * El desplegable de los `select` (08/11/2026). La lista que abre el navegador no tomaba ningun
+ * estilo: fondo y resaltado del sistema operativo, distintos del resto de la aplicacion y del
+ * tema elegido. `appearance: base-select` la vuelve estilable en Chromium; los navegadores que no
+ * lo soportan se quedan con la lista nativa, que sigue funcionando igual. Los `select` multiples
+ * o con `size` son listas abiertas, no desplegables: quedan afuera.
+ */
+@supports (appearance: base-select) {
+  select:not([multiple], [size]),
+  select:not([multiple], [size])::picker(select) {
+    appearance: base-select;
+  }
+
+  select:not([multiple], [size]) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--esp-3);
+  }
+
+  /* Chevron fino, como el resto de los iconos: el triangulo lleno por defecto desentona. */
+  select:not([multiple], [size])::picker-icon {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    margin-inline-start: auto;
+    margin-block-start: -0.25rem;
+    border: solid var(--color-texto-suave);
+    border-width: 0 1.5px 1.5px 0;
+    rotate: 45deg;
+    transition: rotate 0.15s ease;
+  }
+
+  select:not([multiple], [size]):open::picker-icon {
+    margin-block-start: 0.25rem;
+    rotate: 225deg;
+  }
+
+  ::picker(select) {
+    margin-block: var(--esp-2);
+    padding: var(--esp-2);
+    max-height: min(20rem, 60vh);
+    border: var(--borde-fino) solid var(--color-borde);
+    border-radius: var(--radio-md);
+    background: var(--color-superficie);
+    color: var(--color-texto);
+    box-shadow: var(--sombra-flotante);
+  }
+
+  select option {
+    padding: var(--esp-3) var(--esp-4);
+    border-radius: var(--radio-sm);
+    color: var(--color-texto);
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    background: var(--color-hover);
+  }
+
+  /* El teclado recorre las opciones: el anillo del sistema, adentro de la opcion (WCAG 2.4.7). */
+  select option:focus-visible {
+    outline: var(--foco-grosor) solid var(--color-foco);
+    outline-offset: calc(-1 * var(--foco-grosor));
+  }
+
+  select option:checked {
+    background: var(--color-seleccion);
+    font-weight: var(--peso-semi);
+  }
+
+  select option::checkmark {
+    color: var(--color-acento);
+  }
+
+  select option:disabled {
+    color: var(--color-texto-suave);
+  }
+}
+
 .campo input:focus-visible,
 .campo select:focus-visible,
 .campo textarea:focus-visible {
@@ -541,7 +709,6 @@ a.enlace {
 /* El textarea ocupa el ancho y crece solo para abajo: horizontal desborda la tarjeta. */
 .campo textarea {
   width: 100%;
-  box-sizing: border-box;
   line-height: var(--linea-base);
   resize: vertical;
 }
@@ -625,24 +792,18 @@ a.enlace {
  * incumplimiento de WCAG 2.1.1 (Teclado, nivel A), y ninguna auditoria de axe lo detecta
  * porque depende del layout, que jsdom no calcula.
  */
-.tabla-scroll {
-  overflow-x: auto;
-}
-
 /*
  * Alto de la tabla (UX-14): usa el alto disponible y, si las filas no entran, se desplaza ELLA
  * con el encabezado fijo -no la pagina entera-, asi el paginado sigue a la vista. Con 10 filas por
  * pagina casi nunca llega al tope.
+ *
+ * `position: relative` y el borde: ver el indicador de desborde, mas abajo.
  */
 .tabla-scroll {
+  position: relative;
   max-height: max(18rem, calc(100dvh - var(--alto-barra-superior) - 15rem));
-  overflow-y: auto;
-}
-
-.tabla thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  overflow: auto;
+  border-inline: var(--borde-acento) solid transparent;
 }
 
 /* Foco visible en la region desplazable: si se puede tabular hasta ella, tiene que verse
@@ -679,12 +840,8 @@ a.enlace {
  * va posicionado adentro. Sin eso, un `.visualmente-oculto` dentro de una celda —el nombre largo de
  * un enlace "Abrir"— se ubicaba contra la pagina y no contra el scroll, escapaba del recorte y le
  * daba a la PAGINA un scroll horizontal (841 px en un telefono de 375, medido en egresos).
+ * Las dos declaraciones viven en la regla `.tabla-scroll` de arriba.
  */
-.tabla-scroll {
-  position: relative;
-  border-inline: var(--borde-acento) solid transparent;
-}
-
 @supports (animation-timeline: scroll()) {
   .tabla-scroll {
     animation: tabla-desborde linear both;
@@ -725,7 +882,10 @@ a.enlace {
 
 /* Encabezado chico y en mayusculas: se lee como rotulo de columna, no como un dato mas. */
 .tabla thead th {
-  background: var(--color-superficie-atenuada);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-tabla-encabezado);
   color: var(--color-marca-texto-suave);
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-medio);
@@ -733,7 +893,7 @@ a.enlace {
 }
 
 .tabla tbody tr:hover > td {
-  background: var(--color-superficie-atenuada);
+  background: var(--color-hover);
 }
 
 /* --- Filas y marcas de estado de una tabla --------------------------------------------- */
@@ -754,7 +914,7 @@ a.enlace {
 
 /* Fila que aloja un panel de edicion o de confirmacion desplegado bajo su registro. */
 .fila-panel > td {
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   padding: var(--esp-6);
 }
 
@@ -792,6 +952,35 @@ a.enlace {
   font-weight: var(--peso-semi);
 }
 
+/*
+ * Ícono de severidad (norma §3: color + texto + ícono). Un glifo y no un SVG: no suma peso al
+ * bundle. El texto alternativo vacío (`/ ''`) lo saca del nombre accesible: la palabra ya lo dice.
+ */
+.marca-estado::before {
+  margin-right: var(--esp-2);
+  font-weight: var(--peso-fuerte);
+}
+
+.marca-estado--activa::before {
+  content: '✓' / '';
+}
+
+.marca-estado--suspendida::before {
+  content: '!' / '';
+}
+
+.marca-estado--revocada::before {
+  content: '✕' / '';
+}
+
+.marca-estado--info::before {
+  content: 'i' / '';
+}
+
+.marca-estado--neutra::before {
+  content: '–' / '';
+}
+
 .marca-estado--activa {
   border-color: var(--color-exito);
   background: var(--color-exito-fondo);
@@ -810,7 +999,17 @@ a.enlace {
   color: var(--color-peligro-texto);
 }
 
-/* --- Paginacion ----------------------------------------------------------------------- */
+/* Informativo (en curso, reservado) y neutro (bloqueado, sin dato): completan la escala. */
+.marca-estado--info {
+  border-color: var(--color-info);
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
+}
+
+.marca-estado--neutra {
+  background: var(--color-estado-bloqueado);
+  color: var(--color-texto);
+}
 
 /* --- Responsive ----------------------------------------------------------------------- */
 
@@ -843,37 +1042,8 @@ a.enlace {
   box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
 }
 
-.pestanas__lista {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--esp-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pestanas__enlace {
-  display: inline-block;
-  padding: var(--esp-3) var(--esp-5);
-  border-bottom: var(--borde-medio) solid transparent;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.pestanas__enlace:hover {
-  color: var(--color-texto);
-  border-bottom-color: var(--color-borde-control);
-}
-
-/* La actual se marca con subrayado Y peso, no solo con color (WCAG 1.4.1). */
-.pestanas__enlace--actual {
-  color: var(--color-texto-fuerte);
-  font-weight: var(--peso-semi);
-  border-bottom-color: var(--color-acento);
-}
+/* La lista y los enlaces viven en `shared/components/pestanas/pestanas.css`: solo los pinta esa
+   plantilla, que va en chunks diferidos. `.pestanas` queda aca porque otras hojas lo ajustan. */
 
 /* --- Titulo con ayuda contextual (UX-01) ----------------------------------------------- */
 
@@ -884,12 +1054,9 @@ a.enlace {
 .titulo-con-ayuda {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--esp-4);
   margin-bottom: var(--esp-7);
-}
-
-.titulo-con-ayuda {
-  flex-wrap: wrap;
 }
 
 /* Titulo de seccion con su "?": mismo ritmo que el h2 suelto de una tarjeta. */
@@ -962,6 +1129,7 @@ a.enlace {
 }
 
 .boton-texto:hover:not(:disabled) {
+  background: var(--color-hover);
   color: var(--color-texto);
   text-decoration: underline;
 }
@@ -1011,8 +1179,8 @@ form:not(.formulario--libre) fieldset {
 /*
  * Grilla de 12 columnas (UX-14). Cada campo ocupa lo que pide su dato: 3 columnas por defecto
  * (cuatro por fila), 2 para fecha, hora o numero, 4 para un email, la fila entera para texto
- * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--corto` = 2,
- * `--medio` = 3, `--largo` = 6, `--ancho` = 12). Lo que no es un campo ocupa la fila entera.
+ * libre. Otro ancho se pide con `.campo--2`, `--3`, `--4`, `--6`, `--8`, `--12` (o `--ancho` = 12;
+ * los alias `--corto`, `--medio` y `--largo` se borraron el 07/11/2026: ninguna plantilla los usaba). Lo que no es un campo ocupa la fila entera.
  * Los anchos por tipo de dato van en `:where()` (especificidad cero): la clase explicita siempre
  * gana. Sin eso `.campo--4` sobre un numero quedaba en 2 y su etiqueta partia en dos renglones.
  *
@@ -1167,10 +1335,6 @@ form:not(.formulario--libre),
  * tapa (el "Guardar ahora" debajo de las notas de la atencion) le llega a la ayuda, el campo pierde
  * el foco y hay que volver a hacer clic. Por eso una ayuda a demanda no lleva enlaces ni botones.
  */
-.campo {
-  position: relative;
-}
-
 .campo > .ayuda:not(.ayuda--fija) {
   display: none;
 }
@@ -1226,11 +1390,26 @@ form > .acciones {
   font-size: var(--tipo-sm);
 }
 
-/* Accion destructiva fuera de un menu ("Descartar el lote"): contorno, texto de peligro. */
+/*
+ * Accion destructiva fuera de un menu ("Descartar el lote"): contorno y texto de peligro. El hover
+ * es propio: sin el, heredaba el de `.boton` y se pintaba de azul de accion con texto rojo.
+ */
 .boton--peligro {
   border-color: var(--color-peligro);
   background: var(--color-superficie);
   color: var(--color-peligro-texto);
+}
+
+.boton--peligro:hover:not(:disabled) {
+  border-color: var(--color-peligro);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.boton--peligro:disabled {
+  border-color: var(--color-borde);
+  background: var(--color-superficie-secundaria);
+  color: var(--color-texto-suave);
 }
 
 /* Titulo de una seccion dentro de un formulario en grilla: ocupa la fila entera. */
@@ -1243,7 +1422,7 @@ form > .acciones {
 
 /* La fila de la tabla cuyo panel lateral esta abierto: se sigue viendo que se edita. */
 .fila--seleccionada > * {
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 /* Columna de acciones: acotada y contra el borde derecho. */

@@ -414,6 +414,76 @@ describe('CalendarioSedePage', () => {
       expect(fixture.nativeElement.querySelector('a[href="/agenda"]')).not.toBeNull();
     });
 
+    it('si el horario nuevo deja franjas de profesionales afuera avisa y recorta con el mismo horario (0.162.0)', async () => {
+      const fixture = await montar(CON_HORARIO);
+
+      escribir(fixture, '#calendario-horario-hasta-0', '13:00');
+      enviar(fixture, '#form-horario-general');
+
+      httpMock
+        .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+        .flush(
+          {
+            type: 'https://akine.app/problems/franjas-de-profesionales-fuera-del-horario',
+            detail: 'prosa del backend',
+            franjasDeProfesionales: [
+              {
+                bloqueId: 12,
+                membershipId: 7,
+                profesionalNombre: 'Ana Sintetica',
+                diaSemana: 1,
+                horaDesde: '08:00',
+                horaHasta: '14:00',
+                resultantes: [{ horaDesde: '09:00', horaHasta: '13:00' }],
+              },
+            ],
+          },
+          { status: 409, statusText: 'Conflict' },
+        );
+      await estabilizar(fixture);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('Una franja de profesionales queda fuera del horario nuevo.');
+      expect(contenido).toContain('Ana Sintetica');
+      expect(contenido).toContain('quedaría de 09:00 a 13:00');
+      expect(contenido).not.toContain('No pudimos guardar el horario general');
+      expect(
+        fixture.nativeElement.querySelector('a[href="/horarios?membershipId=7"]'),
+      ).not.toBeNull();
+
+      botonConTexto(fixture, 'Recortarlas al nuevo horario').click();
+      fixture.detectChanges();
+
+      const put = httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === CALENDARIO,
+      );
+      expect(put.request.body).toEqual({
+        horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '13:00' }],
+        franjasFueraDelHorario: 'RECORTAR',
+      });
+      put.flush({
+        ...POLITICA,
+        feriados: [],
+        horarioGeneral: [{ diaSemana: 1, horaDesde: '09:00', horaHasta: '13:00' }],
+        franjasFueraDelHorario: [
+          {
+            bloqueId: 12,
+            membershipId: 7,
+            diaSemana: 1,
+            horaDesde: '08:00',
+            horaHasta: '14:00',
+            resultantes: [{ horaDesde: '09:00', horaHasta: '13:00' }],
+            accion: 'RECORTADA',
+          },
+        ],
+      });
+      await estabilizar(fixture);
+
+      expect(titulosDeAvisos()).toEqual(['Horario general guardado']);
+      expect(texto(fixture)).not.toContain('queda fuera del horario nuevo');
+    });
+
     it('borrar manda una lista vacía, que no es lo mismo que omitir el campo', async () => {
       const fixture = await montar(CON_HORARIO);
 
@@ -571,6 +641,8 @@ function escribir(
   }
   campo.value = valor;
   campo.dispatchEvent(new Event('input'));
+  // Las horas del horario general son `<select>`, que avisan con `change`.
+  campo.dispatchEvent(new Event('change'));
   fixture.detectChanges();
 }
 

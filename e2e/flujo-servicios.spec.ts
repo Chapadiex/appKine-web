@@ -46,18 +46,18 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await navegar(plataforma, '/servicios/catalogo');
       await plataforma.getByRole('button', { name: 'Nuevo servicio' }).click();
       await plataforma.getByLabel('Código', { exact: true }).fill(`E2E_SRV_${sufijo}`);
-      await plataforma.getByLabel('Nombre', { exact: true }).fill(nombreDelServicio);
-      await plataforma.getByLabel('Naturaleza').selectOption('TERAPEUTICO');
-      await plataforma.getByLabel('Modalidad por defecto').selectOption('INDIVIDUAL');
+      await plataforma.getByLabel('Nombre del servicio', { exact: true }).fill(nombreDelServicio);
+      await plataforma.getByRole('radio', { name: /^Terapéutico/ }).check();
+      await plataforma.getByRole('radio', { name: /^Individual/ }).check();
       const altaDelServicio = respuestaDe(plataforma, 'POST', /\/servicios$/);
-      await plataforma.getByRole('button', { name: 'Dar de alta', exact: true }).click();
+      await plataforma.getByRole('button', { name: 'Crear servicio', exact: true }).click();
       const servicio = await altaDelServicio;
       expect(servicio.status(), await servicio.text()).toBe(201);
       servicioId = ((await servicio.json()) as { id: number }).id;
       await expect(
         plataforma
           .getByRole('region', { name: 'Notificaciones', exact: true })
-          .getByText('Servicio agregado al catálogo'),
+          .getByText('Servicio creado'),
       ).toBeVisible();
 
       // --- El centro arma su oferta sobre ese servicio ---

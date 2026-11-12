@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+/*
+  Dos columnas 60/40: direccion a la izquierda, mapa a la derecha. Lo que el padre proyecta
+  arriba y abajo queda en la misma columna, asi que el paso 1 del alta se lee como una sola
+  pantalla y no como tres bloques apilados. Bajo 44rem (un panel lateral, un telefono) se apila: a 1280 px de ventana el contenido mide ~830.
+*/
+.ubicacion {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--esp-7);
+  align-items: start;
+}
+
+.ubicacion__columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-7);
+  min-width: 0;
+}
+
+.ubicacion--compacta,
+.ubicacion--compacta .ubicacion__columna {
+  gap: var(--esp-6);
+}
+
+@container (max-width: 44rem) {
+  .ubicacion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ubicacion--compacta {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bloque {
+  min-width: 0;
+  margin: 0;
+  padding: var(--esp-6) var(--esp-7);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.bloque__titulo {
+  margin: 0 0 var(--esp-2);
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+.bloque__ayuda {
+  margin: 0 0 var(--esp-5);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.ubicacion__buscar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-6);
+  margin-top: var(--esp-4);
+}
+
+.ubicacion__nota {
+  margin: 0;
+}
+
+.ubicacion__candidatos {
+  margin-top: var(--esp-5);
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.ubicacion__candidatos-titulo {
+  margin: 0 0 var(--esp-4);
+  font-weight: var(--peso-medio);
+}
+
+.ubicacion__lista {
+  margin: 0 0 var(--esp-4);
+  padding: 0;
+  list-style: none;
+}
+
+.ubicacion__lista li + li {
+  margin-top: var(--esp-3);
+}
+
+.ubicacion__candidato {
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ubicacion__candidato:hover {
+  border-color: var(--color-acento);
+  background: var(--color-hover);
+}
+
+.ubicacion__coordenadas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--esp-6);
+  margin-top: var(--esp-5);
+}
+
+.ubicacion__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-top: var(--esp-2);
+}
+
+/* Accion secundaria con aspecto de enlace (quitar el punto, descartar candidatos). */
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.enlace-boton:hover {
+  text-decoration: underline;
+}

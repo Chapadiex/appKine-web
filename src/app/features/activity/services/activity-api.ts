@@ -25,6 +25,8 @@ import {
 import { Participante } from '../../../api/generated/model/participante';
 import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { ProgramarClase } from '../../../api/generated/model/programar-clase';
+import { ProgramarSerieDeClases } from '../../../api/generated/model/programar-serie-de-clases';
+import { SerieDeClases } from '../../../api/generated/model/serie-de-clases';
 import { ReprogramarClase } from '../../../api/generated/model/reprogramar-clase';
 import { ResultadoDeCancelacion } from '../../../api/generated/model/resultado-de-cancelacion';
 import { ResultadoDeInscripcion } from '../../../api/generated/model/resultado-de-inscripcion';
@@ -78,6 +80,22 @@ export class ActivityApi {
   /** Exige `clase:manage`. `idempotencyKey` hace que un reintento no cree una segunda clase. */
   programar(consultorioId: number, ofertaId: number, cuerpo: ProgramarClase): Observable<Clase> {
     return this.clases.programar({ consultorioId, ofertaId, programarClase: cuerpo });
+  }
+
+  /**
+   * Clases semanales: una por fecha del rango que cae en los dias pedidos. No es todo o nada: las
+   * fechas que no se pudieron programar vuelven en `omitidas` con su motivo.
+   */
+  programarSerie(
+    consultorioId: number,
+    ofertaId: number,
+    cuerpo: ProgramarSerieDeClases,
+  ): Observable<SerieDeClases> {
+    return this.clases.programarSerieDeClases({
+      consultorioId,
+      ofertaId,
+      programarSerieDeClases: cuerpo,
+    });
   }
 
   /** Conserva la clase y sus inscriptos. Control optimista por `version`. */

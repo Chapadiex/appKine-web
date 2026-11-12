@@ -1,16 +1,29 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
+import { UpdateOrganizationRequest } from '../../../../api/generated/model/update-organization-request';
+import { AvisosStore } from '../../../../core/services/avisos.store';
+import { PERMISO_TENANT_UPDATE } from '../../../../core/models/permisos';
+import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { validadorDeCuit } from '../../../../shared/utils/cuit';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ORGANIZACION,
+  pestanasDeOrganizacion,
+} from '../../../../core/models/pestanas-de-organizacion';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 /** Una fila de la seccion Configuracion. */
 interface AccesoDeConfiguracion {
@@ -51,13 +64,48 @@ type EstadoOrganizacion =
  */
 @Component({
   selector: 'app-organization-page',
-  imports: [CabeceraDePagina, Ayuda, Icono, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    Icono,
+    RouterLink,
+    Alerta,
+    ReactiveFormsModule,
+    PanelLateral,
+    PermisoDirective,
+  ],
   templateUrl: './organization-page.html',
   styleUrls: ['../../organization.css', './organization-page.css'],
 })
 export class OrganizationPage {
+  /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
+
   private readonly organizaciones = inject(OrganizacionesService);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly avisos = inject(AvisosStore);
+
+  protected readonly permisoEditar = PERMISO_TENANT_UPDATE;
+
+  /** Panel de datos fiscales abierto. */
+  protected readonly editandoFiscal = signal(false);
+  protected readonly guardandoFiscal = signal(false);
+  protected readonly errorFiscal = signal<string | null>(null);
+  /** Errores por campo del ultimo `400` (`taxId` cuando el CUIT no cierra). */
+  protected readonly erroresFiscal = signal<Readonly<Record<string, string>>>({});
+  private readonly intentosFiscal = signal(0);
+
+  /**
+   * Datos fiscales (05/11/2026). PATCH con la misma regla que las sedes: lo que no cambia se
+   * omite, lo vaciado viaja como cadena vacia y borra.
+   */
+  protected readonly formularioFiscal = inject(FormBuilder).nonNullable.group({
+    legalName: [''],
+    taxId: ['', [validadorDeCuit]],
+    fiscalAddressLine: [''],
+  });
 
   /**
    * Las configuraciones del centro, cada una con su accion.
@@ -124,8 +172,96 @@ export class OrganizationPage {
     effect(() => {
       // Dependencia explicita: cualquier cambio de contexto invalida lo que hay en pantalla.
       this.tenantContext.contextEpoch();
-      untracked(() => this.cargar());
+      untracked(() => {
+        this.cerrarEdicionFiscal();
+        this.cargar();
+      });
     });
+  }
+
+  protected abrirEdicionFiscal(): void {
+    const organizacion = this.organizacion();
+    if (organizacion === null) {
+      return;
+    }
+    this.formularioFiscal.reset({
+      legalName: organizacion.legalName ?? '',
+      taxId: organizacion.taxId ?? '',
+      fiscalAddressLine: organizacion.fiscalAddressLine ?? '',
+    });
+    this.errorFiscal.set(null);
+    this.erroresFiscal.set({});
+    this.intentosFiscal.set(0);
+    this.editandoFiscal.set(true);
+  }
+
+  protected cerrarEdicionFiscal(): void {
+    this.editandoFiscal.set(false);
+    this.guardandoFiscal.set(false);
+  }
+
+  protected mostrarErrorFiscal(campo: 'taxId'): boolean {
+    const control = this.formularioFiscal.controls[campo];
+    const delServidor = this.erroresFiscal()[campo] !== undefined;
+    return (control.invalid || delServidor) && (control.touched || this.intentosFiscal() > 0);
+  }
+
+  /**
+   * Guarda los tres datos fiscales. Un 409 de concurrencia se resuelve releyendo: el panel no
+   * conoce la version nueva y no la adivina.
+   */
+  protected guardarFiscal(): void {
+    this.intentosFiscal.update((valor) => valor + 1);
+    const organizacion = this.organizacion();
+    const orgId = this.tenantContext.organizationId();
+    if (organizacion === null || orgId === null || organizacion.version === undefined) {
+      return;
+    }
+    if (this.formularioFiscal.invalid) {
+      this.formularioFiscal.markAllAsTouched();
+      return;
+    }
+
+    const valores = this.formularioFiscal.getRawValue();
+    const cambios: UpdateOrganizationRequest = { version: organizacion.version };
+    for (const campo of ['legalName', 'taxId', 'fiscalAddressLine'] as const) {
+      const actual = valores[campo].trim();
+      if (actual !== (organizacion[campo] ?? '')) {
+        cambios[campo] = actual;
+      }
+    }
+    if (Object.keys(cambios).length === 1) {
+      this.cerrarEdicionFiscal();
+      return;
+    }
+
+    this.guardandoFiscal.set(true);
+    this.errorFiscal.set(null);
+    this.erroresFiscal.set({});
+    this.organizaciones
+      .updateOrganization({ orgId, updateOrganizationRequest: cambios })
+      .subscribe({
+        next: (actualizada) => {
+          this.estado.set({ tipo: 'listo', organizacion: actualizada });
+          this.cerrarEdicionFiscal();
+          this.avisos.exito('Datos fiscales guardados', {
+            descripcion: 'Las sedes sin datos propios ya usan estos.',
+          });
+        },
+        error: (error: unknown) => {
+          this.guardandoFiscal.set(false);
+          if (error instanceof AkineHttpError) {
+            this.erroresFiscal.set(error.erroresPorCampo);
+            this.errorFiscal.set(
+              error.status === 409
+                ? 'Alguien cambió la organización mientras editabas. Cerrá el panel, recargá y volvé a intentar.'
+                : (error.mensajeSinCampos(() => true) ?? error.message),
+            );
+            return;
+          }
+          this.errorFiscal.set('No pudimos guardar los datos fiscales. Volvé a intentar.');
+        },
+      });
   }
 
   protected cargar(): void {

@@ -14,9 +14,21 @@
  */
 export interface UpdateOrganizationRequest { 
     /**
+     * Domicilio fiscal del tenant, en una linea. Cadena vacia lo borra
+     */
+    fiscalAddressLine?: string;
+    /**
+     * Razon social del tenant (V140). La heredan las sedes sin datos fiscales propios. Omitirla la deja; cadena vacia la borra
+     */
+    legalName?: string;
+    /**
      * Nuevo nombre del centro. Omitirlo o enviarlo vacio lo deja como esta
      */
     name?: string;
+    /**
+     * Identificacion fiscal del tenant. Si tiene forma de CUIT (11 digitos, guiones opcionales) el digito verificador tiene que ser correcto: si no, 400 con errors.taxId. Cualquier otro formato se acepta como texto. Cadena vacia la borra
+     */
+    taxId?: string;
     /**
      * Nueva zona horaria IANA de la organizacion: decide el dia de hoy en todo lo que se hace sin sede (DP-43). Omitirla o enviarla vacia la deja como esta; un offset fijo o una abreviatura es 400
      */

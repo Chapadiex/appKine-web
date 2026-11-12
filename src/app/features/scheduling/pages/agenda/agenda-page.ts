@@ -1,4 +1,4 @@
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,7 +21,11 @@ import { AgendaOperativa } from '../../../../api/generated/model/agenda-operativ
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { RecursoLibre } from '../../../../api/generated/model/recurso-libre';
 import { TurnoDeCalendario } from '../../../../api/generated/model/turno-de-calendario';
-import { PERMISO_AGENDA_EXCEPCIONES, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_AGENDA_EXCEPCIONES,
+  PERMISO_AGENDA_HORARIO,
+  PERMISO_TURNO_MANAGE,
+} from '../../../../core/models/permisos';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
@@ -45,9 +49,10 @@ import {
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
 import {
+  claseDeTonoOperativo,
   eraA,
+  iconoDeEstadoOperativo,
   nombreDeEstadoOperativo,
-  simboloDeEstadoOperativo,
   textoDeReprogramado,
 } from '../../models/etiquetas-de-turno';
 import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
@@ -66,6 +71,7 @@ import {
   turnosQueChocanConClase,
 } from '../../models/grilla-de-agenda';
 import {
+  DIAS_POR_PEDIDO,
   DiaDelMes,
   primerDiaDelMes,
   rotuloDeMes,
@@ -126,12 +132,13 @@ const A_REUBICAR = 'A_REUBICAR';
     EstadoVacio,
     Filtros,
     Icono,
+    NgTemplateOutlet,
     Pestanas,
     PermisoDirective,
     RouterLink,
   ],
   templateUrl: './agenda-page.html',
-  styleUrl: './agenda-page.css',
+  styleUrls: ['./agenda-page.css', '../../estados-de-turno.css'],
 })
 export class AgendaPage {
   private readonly api = inject(SchedulingApi);
@@ -167,12 +174,22 @@ export class AgendaPage {
 
   protected readonly PERMISO_TURNO_MANAGE = PERMISO_TURNO_MANAGE;
   protected readonly PERMISO_AGENDA_EXCEPCIONES = PERMISO_AGENDA_EXCEPCIONES;
+  protected readonly PERMISO_AGENDA_HORARIO = PERMISO_AGENDA_HORARIO;
+  protected readonly DIAS_POR_PEDIDO = DIAS_POR_PEDIDO;
+  protected readonly rutaDeHorarios = RUTA_HORARIOS;
   protected readonly ESTADOS = ESTADOS;
   protected readonly A_REUBICAR = A_REUBICAR;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+
+  /** El turno cuyo detalle esta abierto: la tarjeta queda marcada como seleccion actual. */
+  protected readonly turnoAbierto = computed(() => {
+    const solicitud = this.flujo.solicitud();
+    return solicitud?.tipo === 'detalle' ? solicitud.turnoId : null;
+  });
   protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly diaCorto = diaCorto;
   protected readonly PX_POR_MINUTO = PX_POR_MINUTO;
@@ -199,6 +216,10 @@ export class AgendaPage {
   private readonly duracionesPropias = signal<ReadonlyMap<number, number>>(new Map());
   private pedidoDeDuraciones?: Subscription;
   protected readonly angosta = signal(false);
+  /** "Proximo dia con turnos": buscando, y si no encontro ninguno en la ventana que se miro. */
+  protected readonly buscandoProximo = signal(false);
+  protected readonly sinProximo = signal(false);
+  private pedidoDeProximo?: Subscription;
   /** Ahora, para la linea de la hora y las celdas que ya pasaron. */
   private readonly ahora = signal(new Date());
 
@@ -420,6 +441,7 @@ export class AgendaPage {
     destroyRef.onDestroy(() => {
       this.pedido?.unsubscribe();
       this.pedidoDeDuraciones?.unsubscribe();
+      this.pedidoDeProximo?.unsubscribe();
     });
 
     // La URL manda al entrar o al navegar; adentro de la pantalla se reescribe con replaceState.
@@ -745,6 +767,62 @@ export class AgendaPage {
     }
   }
 
+  /** El rotulo de la fecha abre el calendario del navegador; donde no hay showPicker, el input lo abre solo. */
+  protected abrirCalendario(input: HTMLInputElement): void {
+    try {
+      input.showPicker?.();
+    } catch {
+      // Sin gesto de usuario o en un navegador viejo: el clic ya llego al input.
+    }
+  }
+
+  /**
+   * Va al primer dia siguiente que tenga turnos, con los mismos filtros. Mira una ventana (lo que la
+   * agenda operativa admite en un pedido); si no hay nada, lo dice y no se mueve.
+   */
+  protected irAlProximoDiaConTurnos(): void {
+    const consultorioId = this.tenant.consultorioId();
+    if (consultorioId === null || this.buscandoProximo()) {
+      return;
+    }
+    // Desde el dia siguiente al que se mira; en la semana, desde el lunes que sigue.
+    const desde =
+      this.vistaEfectiva() === 'semana' ? this.finDeVentana() : sumarDias(this.fechaVisible(), 1);
+    this.pedidoDeProximo?.unsubscribe();
+    this.buscandoProximo.set(true);
+    this.sinProximo.set(false);
+    this.pedidoDeProximo = this.api
+      .agendaOperativa(consultorioId, {
+        desde,
+        hasta: sumarDias(desde, DIAS_POR_PEDIDO),
+        profesionalId: this.profesionalId() ?? undefined,
+        incluirCancelados: this.estadoElegido() === 'CANCELADO',
+      })
+      .subscribe({
+        next: (agenda) => {
+          this.buscandoProximo.set(false);
+          const zona = agenda.timezone ?? this.timezone();
+          const dias = (agenda.turnos ?? [])
+            .filter(this.filtroDeTurno())
+            .map((t) => diaEnZona(t.turno?.inicio, zona))
+            .filter((dia) => dia !== '' && dia >= desde)
+            .sort();
+          if (dias.length === 0) {
+            this.sinProximo.set(true);
+            return;
+          }
+          this.fechaProvisoria = false;
+          this.fechaVisible.set(dias[0]);
+          this.vistaElegida.set('dia');
+          this.alCambiarVentana();
+        },
+        error: () => {
+          this.buscandoProximo.set(false);
+          this.sinProximo.set(true);
+        },
+      });
+  }
+
   protected elegirVista(vista: VistaDeAgenda): void {
     this.vistaElegida.set(vista);
     this.alCambiarVentana();
@@ -796,6 +874,7 @@ export class AgendaPage {
   }
 
   private alCambiarVentana(): void {
+    this.sinProximo.set(false);
     this.escribirUrl();
     this.cargar();
   }
@@ -916,8 +995,7 @@ export class AgendaPage {
   }
 
   protected claseDeEstado(evento: EventoDeGrilla): string {
-    const estado = evento.turno?.turno?.operativo?.estadoOperativo ?? '';
-    return `turno turno--${estado.toLowerCase().replace('_', '-')}`;
+    return `turno ${claseDeTonoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)}`;
   }
 
   // -------------------------------------------------------------------------------------

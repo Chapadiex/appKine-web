@@ -67,14 +67,17 @@
 }
 
 .paginacion__paso:hover:not(:disabled) {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
-.paginacion__paso[aria-current='page'] {
-  border-color: var(--color-accion-fondo);
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
-  font-weight: var(--peso-semi);
+/* La actual es "donde estoy", no una accion: seleccion con borde de acento y peso, no relleno azul
+   (el relleno azul queda para la accion principal de la pantalla). */
+.paginacion__paso[aria-current='page'],
+.paginacion__paso[aria-current='page']:hover:not(:disabled) {
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-fuerte);
 }
 
 .paginacion__paso--flecha {

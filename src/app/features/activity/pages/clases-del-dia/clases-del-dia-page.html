@@ -92,6 +92,7 @@
                     <span
                       class="marca-estado"
                       [class.marca-estado--activa]="clase.estado === 'REALIZADA'"
+                      [class.marca-estado--info]="clase.estado === 'PROGRAMADA'"
                       [class.marca-estado--suspendida]="clase.estado === 'EN_CURSO'"
                       [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
                       >{{ etiquetaDeEstado(clase.estado) }}</span

@@ -22,7 +22,7 @@
 
 .tabla__orden:hover {
   color: var(--color-texto-fuerte);
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 .tabla__icono-orden {

@@ -1,0 +1,95 @@
+.consulta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+.consulta__aviso {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+.consulta__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  min-height: 12rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.consulta__burbuja {
+  align-self: flex-start;
+  max-width: min(46rem, 90%);
+  padding: var(--esp-3);
+  border: 1px solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+.consulta__burbuja--usuario {
+  align-self: flex-end;
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
+  border-color: var(--color-marca-borde);
+}
+.consulta__burbuja--error {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+  border-color: var(--color-peligro);
+}
+.consulta__texto {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.consulta__fuentes {
+  margin-top: var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+.consulta__fuentes summary {
+  cursor: pointer;
+  font-weight: var(--peso-semi);
+}
+.consulta__fuentes ul {
+  margin: var(--esp-2) 0 0;
+  padding-left: var(--esp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+.consulta__paginas {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+}
+.consulta__extracto {
+  margin: var(--esp-1) 0 0;
+  color: var(--color-texto-suave);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.consulta__caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+.consulta__caja textarea {
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.consulta__pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.consulta__contador {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+.consulta__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  margin-top: var(--esp-2);
+}
+.consulta__profundizar {
+  margin-top: var(--esp-2);
+}

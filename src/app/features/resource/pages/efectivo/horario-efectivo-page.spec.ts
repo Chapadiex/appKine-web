@@ -213,10 +213,10 @@ describe('HorarioEfectivoPage', () => {
     // Dentro del dia, no en la barra de navegacion de arriba: ese enlace tambien apunta a
     // excepciones y es el que aparece primero en el documento.
     const enlace = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
-      '.dia-efectivo a[href^="/horarios/excepciones"]',
+      '.dia-efectivo a[href^="/horarios/calendario/cierres"]',
     );
     expect(enlace?.getAttribute('href')).toBe(
-      `/horarios/excepciones?membershipId=${PROFESIONAL}&desde=2026-09-02&hasta=2026-09-03`,
+      `/horarios/calendario/cierres?membershipId=${PROFESIONAL}&desde=2026-09-02&hasta=2026-09-03`,
     );
   });
 

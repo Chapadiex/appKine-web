@@ -43,7 +43,12 @@ import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-erro
 import { modoLectura, textoDeModoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
-import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
+import {
+  BloqueEnConflicto,
+  CausaBloque,
+  FranjaFueraDeSede,
+  traducirErrorBloque,
+} from '../../models/bloque-errors';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
@@ -366,8 +371,16 @@ export class HorarioSemanalPage {
     return enConflicto !== null && enConflicto.id !== null && enConflicto.id === bloque.id;
   }
 
-  /** Solapamiento con otro bloque (UX-12): va pegado al día y las horas, no arriba. */
-  protected readonly solapado = computed(() => this.causaAccion() === 'solapado');
+  /**
+   * Solapamiento con otro bloque (UX-12), o franja fuera del horario de la sede (0.162.0): los dos
+   * van pegados al día y las horas, no arriba, porque se corrigen ahí.
+   */
+  protected readonly solapado = computed(
+    () => this.causaAccion() === 'solapado' || this.causaAccion() === 'fuera-de-horario-sede',
+  );
+
+  /** Los días del último 409 `franja-fuera-del-horario-de-sede`; solo valen con esa causa. */
+  private readonly fueraDeHorario = signal<readonly FranjaFueraDeSede[]>([]);
 
   /** Errores que solo se resuelven releyendo el horario. */
   protected readonly hayQueRecargar = computed(() => {
@@ -590,8 +603,14 @@ export class HorarioSemanalPage {
     return this.faltanDias() ? 'alta-bloque-dias-error' : null;
   }
 
-  /** El dia del 409 de solapamiento, para marcar su pastilla. */
-  protected readonly diaEnConflicto = computed(() => this.conflicto()?.diaSemana ?? null);
+  /** Los días del 409 de solapamiento o de fuera de horario de la sede, para marcar sus pastillas. */
+  protected readonly diasEnConflicto = computed<ReadonlySet<number>>(() => {
+    if (this.causaAccion() === 'fuera-de-horario-sede') {
+      return new Set(this.fueraDeHorario().map((franja) => franja.diaSemana));
+    }
+    const dia = this.conflicto()?.diaSemana;
+    return new Set(dia === undefined || dia === null ? [] : [dia]);
+  });
 
   /**
    * El unico mensaje de la fila de horas: hora invalida, fin antes del inicio, o el 409 de
@@ -1071,6 +1090,7 @@ export class HorarioSemanalPage {
     this.errorAccion.set(traducido.mensaje);
     this.causaAccion.set(traducido.causa);
     this.conflicto.set(traducido.conflicto);
+    this.fueraDeHorario.set(traducido.fueraDeHorario ?? []);
 
     if (traducido.causa === 'bloque-inactivo') {
       // Un bloque dado de baja no admite ediciones: el formulario se apaga en vez de dejar al

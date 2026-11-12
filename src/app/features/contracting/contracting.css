@@ -124,7 +124,7 @@
   padding: var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-sutil);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .errores-de-planilla {
@@ -166,7 +166,8 @@
   border-top: var(--borde-fino) solid var(--color-borde);
 }
 
-.tarjeta--tabla .paginacion-pie {
+/* El pie vive dentro de `app-pie-de-tabla`: sin ::ng-deep la regla no lo alcanza. */
+.tarjeta--tabla ::ng-deep .paginacion-pie {
   margin: 0;
   padding: var(--esp-4) var(--esp-6);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
@@ -279,7 +280,7 @@
 .importacion__formato {
   padding: var(--esp-6);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .importacion__formato .ejemplo-planilla {

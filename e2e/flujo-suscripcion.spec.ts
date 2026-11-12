@@ -153,7 +153,7 @@ test.describe('Suscripcion contra el backend real', () => {
       await expect(banner).toContainText(`Motivo: ${motivo}`);
       await expect(banner).toContainText('solo lectura');
       await expect(detalle).toContainText(suspendida.planName);
-      await expect(detalle).toContainText('SUSPENDIDA');
+      await expect(detalle).toContainText('Suspendida');
       await expect(sedes.locator('.limite__valor')).not.toHaveText('1 de 1');
 
       // Y es solo lectura de verdad: el alta de una sede se rechaza con el tipo declarado.

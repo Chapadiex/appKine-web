@@ -55,9 +55,13 @@
           <p>{{ mensajeDeCarga() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -69,7 +73,7 @@
             titulo="Esta oferta no tiene tarifas de honorario todavía"
             texto="Sin tarifa, sus clases no entran en ninguna liquidación."
           >
-            <button type="button" class="boton" (click)="abrirAlta()">
+            <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
               Cargar la primera tarifa
             </button>
           </app-estado-vacio>
@@ -101,7 +105,20 @@
                     <th scope="row" class="importe">{{ importe(tarifa) }}</th>
                     <td>{{ ventana(tarifa) }}</td>
                     <td>
-                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--revocada]="situacionDeLaFila.resumen.startsWith('Dad')"
+                        [class.marca-estado--activa]="
+                          !situacionDeLaFila.atenuada &&
+                          !situacionDeLaFila.resumen.startsWith('Todav')
+                        "
+                        [class.marca-estado--info]="
+                          !situacionDeLaFila.resumen.startsWith('Dad') &&
+                          (situacionDeLaFila.atenuada ||
+                            situacionDeLaFila.resumen.startsWith('Todav'))
+                        "
+                        >{{ situacionDeLaFila.resumen }}</span
+                      >
                       @if (tarifa.estado === 'INACTIVO' && tarifa.deactivationReason) {
                         <p class="ayuda ayuda--fija">{{ tarifa.deactivationReason }}</p>
                       }

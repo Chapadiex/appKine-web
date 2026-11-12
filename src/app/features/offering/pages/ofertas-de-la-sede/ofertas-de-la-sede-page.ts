@@ -1,8 +1,5 @@
-import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
-import {
-  ETIQUETA_PESTANAS_DE_SERVICIOS,
-  PESTANAS_DE_SERVICIOS,
-} from '../../models/pestanas-de-offering';
+import {} from '../../models/pestanas-de-offering';
+import { publicarMigas } from '../../../../core/services/migas.store';
 import {
   Component,
   ElementRef,
@@ -13,6 +10,7 @@ import {
   inject,
   signal,
   untracked,
+  input,
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -135,7 +133,6 @@ type Heredable = '' | 'true' | 'false';
     AccionesDeFila,
     Alerta,
     FiltrosRapidos,
-    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -152,8 +149,12 @@ type Heredable = '' | 'true' | 'false';
   styleUrl: '../../offering.css',
 })
 export class OfertasDeLaSedePage {
-  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
-  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
+  /** Fuera del menu desde el 11/11/2026: la ruta de navegacion lleva de vuelta al catalogo. */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+    { etiqueta: 'Ofertas de la sede' },
+  ]);
+
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -295,6 +296,22 @@ export class OfertasDeLaSedePage {
    */
   protected readonly servicios = signal<readonly ServicioResponse[]>([]);
 
+  /**
+   * `?nuevaOferta=<servicioId>`: viene del aviso "Servicio creado" del catálogo (10/11/2026). Abre
+   * el alta con ese servicio elegido, una sola vez y cuando la lista de servicios ya lo trae.
+   */
+  readonly nuevaOferta = input<string | undefined>();
+  private altaPedidaAtendida = false;
+
+  /**
+   * `?servicio=<servicioId>`: viene del boton "En la sede" de cada servicio del catalogo
+   * (11/11/2026), desde que esta pantalla salio del menu. Lista solo las ofertas de ese servicio
+   * y, si la sede todavia no lo ofrece, abre el alta con el servicio elegido.
+   */
+  readonly servicio = input<string | undefined>();
+  private servicioPedidoAplicado = false;
+  private servicioPedidoAtendido = false;
+
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
@@ -384,10 +401,50 @@ export class OfertasDeLaSedePage {
       this.tenantContext.contextEpoch();
       untracked(() => {
         this.reiniciar();
+        this.aplicarServicioPedido();
         this.cargar();
         this.cargarServicios();
       });
     });
+
+    effect(() => {
+      const pedido = Number(this.servicio());
+      const estado = this.estado();
+      const servicio = this.serviciosOfertables().find((candidato) => candidato.id === pedido);
+      if (this.servicioPedidoAtendido || estado.tipo !== 'listo' || servicio === undefined) {
+        return;
+      }
+      this.servicioPedidoAtendido = true;
+      if (estado.pagina.length === 0) {
+        untracked(() => {
+          this.abrirAlta();
+          this.formularioAlta.controls.servicioId.setValue(String(pedido));
+        });
+      }
+    });
+
+    effect(() => {
+      const pedido = Number(this.nuevaOferta());
+      const servicio = this.serviciosOfertables().find((candidato) => candidato.id === pedido);
+      if (this.altaPedidaAtendida || servicio === undefined) {
+        return;
+      }
+      this.altaPedidaAtendida = true;
+      untracked(() => {
+        this.abrirAlta();
+        this.formularioAlta.controls.servicioId.setValue(String(pedido));
+      });
+    });
+  }
+
+  /** El `?servicio=` de la URL, una sola vez: despues el filtro lo maneja el usuario. */
+  private aplicarServicioPedido(): void {
+    const pedido = Number(this.servicio());
+    if (this.servicioPedidoAplicado || !Number.isInteger(pedido) || pedido <= 0) {
+      return;
+    }
+    this.servicioPedidoAplicado = true;
+    this.filtroServicio.set(pedido);
   }
 
   protected cargar(): void {

@@ -288,7 +288,6 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
     const busqueda = page.waitForResponse(
       (r) => r.url().includes('/disponibilidad/busqueda') && r.request().method() === 'POST',
     );
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
     const { horarios } = (await (await busqueda).json()) as {
       horarios: { desde: string; hasta: string }[];

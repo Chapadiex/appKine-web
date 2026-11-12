@@ -10,6 +10,11 @@ import { errorInterceptor } from '../../../../core/interceptors/error.intercepto
 import { provideApi } from '../../../../api/generated/provide-api';
 
 const RUTA_ALTA = '/api/v1/organizations/1/consultorios';
+const RUTA_ORGANIZACION = '/api/v1/organizations/1';
+
+/** CUIT con digito verificador correcto segun el modulo 11 (y el mismo con el digito mal). */
+const CUIT_VALIDO = '20-12345678-6';
+const CUIT_INVALIDO = '20-12345678-5';
 
 /**
  * Spec del alta de sede (M01, AKINE-02.01).
@@ -56,10 +61,9 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 3);
 
-    // Paso 3: se envia y el request se pierde en el camino (status 0 = nunca llego).
+    // Paso 4: se envia y el request se pierde en el camino (status 0 = nunca llego).
     enviar(fixture);
     const primero = httpMock.expectOne(RUTA_ALTA);
     const clave = primero.request.headers.get('Idempotency-Key');
@@ -79,12 +83,11 @@ describe('NewConsultorioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    // Ahora el usuario corrige el nombre: es otra alta, no un reintento. Reusar la clave
+    // Ahora el usuario agrega un contacto: es otra alta, no un reintento. Reusar la clave
     // daria 409 idempotency-key-conflict y dejaria el formulario trabado para siempre.
-    volverAlPaso(fixture, 'Configuración inicial');
+    volverAlPaso(fixture, 'Datos de la sede');
     escribir(fixture, '#sede-contactEmail', 'sede.norte@ejemplo.test');
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
     const tercero = httpMock.expectOne(RUTA_ALTA);
     expect(tercero.request.headers.get('Idempotency-Key')).not.toBe(clave);
 
@@ -116,11 +119,9 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    escribir(fixture, '#sede-slotMinutes', '30');
+    escribir(fixture, '#sede-slotMinutes', '45');
     escribir(fixture, '#sede-slotMinutes', '');
-    enviar(fixture);
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
 
     const alta = httpMock.expectOne(RUTA_ALTA);
     expect(alta.request.body).toEqual({ name: 'Sede Norte' });
@@ -137,9 +138,7 @@ describe('NewConsultorioPage', () => {
     const fixture = montar();
 
     escribir(fixture, '#sede-name', 'Sede Norte');
-    enviar(fixture);
-    enviar(fixture);
-    enviar(fixture);
+    enviar(fixture, 4);
 
     httpMock.expectOne(RUTA_ALTA).flush(
       {
@@ -168,20 +167,18 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
+      enviar(fixture, 2);
       escribir(fixture, '#sede-boxNombre', 'Box 1');
       escribir(fixture, '#sede-boxCapacidad', '2');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-1', '14:00');
+      // Abrir el lunes propone 09:00 a 18:00; el corte lo parte en 09-13 y 14-18.
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
       escribir(fixture, '#sede-horario-hasta-1', '24:00');
       enviar(fixture);
 
       // La confirmacion dice lo que se va a crear, medianoche incluida.
       expect(texto(fixture)).toContain('Box 1 (capacidad 2)');
-      expect(texto(fixture)).toContain('Lunes: 14:00 a medianoche (24:00)');
+      expect(texto(fixture)).toContain('Lunes: 09:00 a 13:00 y 14:00 a medianoche (24:00)');
 
       enviar(fixture);
       const alta = httpMock.expectOne(RUTA_ALTA);
@@ -206,32 +203,24 @@ describe('NewConsultorioPage', () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
+      enviar(fixture, 2);
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
       escribir(fixture, '#sede-horario-desde-1', '12:00');
-      escribir(fixture, '#sede-horario-hasta-1', '18:00');
       enviar(fixture);
 
-      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('Paso 3 de 4');
       expect(texto(fixture)).toContain('Se pisa con otra franja del mismo día');
     });
 
-    it('un 400 sobre una franja vuelve al paso 2 y marca esa franja, no un cartel generico', async () => {
+    it('un 400 sobre una franja vuelve al paso 3 y marca esa franja, no un cartel generico', async () => {
       const fixture = montar();
 
       escribir(fixture, '#sede-name', 'Sede Norte');
-      enviar(fixture);
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-0', '09:00');
-      escribir(fixture, '#sede-horario-hasta-0', '13:00');
-      agregarFranja(fixture);
-      escribir(fixture, '#sede-horario-desde-1', '14:00');
-      escribir(fixture, '#sede-horario-hasta-1', '18:00');
-      enviar(fixture);
-      enviar(fixture);
+      enviar(fixture, 2);
+      marcar(fixture, '#sede-horario-abre-1');
+      pulsar(fixture, 'Corte al mediodía');
+      enviar(fixture, 2);
 
       httpMock.expectOne(RUTA_ALTA).flush(
         {
@@ -244,7 +233,7 @@ describe('NewConsultorioPage', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(texto(fixture)).toContain('Paso 2 de 3');
+      expect(texto(fixture)).toContain('Paso 3 de 4');
       const error = fixture.nativeElement.querySelector('#sede-horario-error-1');
       expect(error?.textContent).toContain('La hora de cierre tiene que ser HH:mm');
       expect(fixture.nativeElement.querySelector('#sede-horario-error-0')).toBeNull();
@@ -254,8 +243,125 @@ describe('NewConsultorioPage', () => {
     });
   });
 
+  describe('ubicación, visibilidad y datos fiscales (M03, 05/11/2026)', () => {
+    it('la dirección en partes, el punto escrito a mano y la agenda apagada viajan en el alta', async () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      escribir(fixture, '#sede-alias', 'Norte');
+      escribir(fixture, '#sede-phone', '+54 11 4321-9876');
+      marcar(fixture, '#sede-agendaHabilitada');
+      enviar(fixture);
+      escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
+      escribir(fixture, '#sede-ubicacion-numero', '1234');
+      escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
+      escribir(fixture, '#sede-ubicacion-codigoPostal', 'C1426');
+      escribir(fixture, '#sede-ubicacion-latitud', '-34.5593');
+      escribir(fixture, '#sede-ubicacion-longitud', '-58.4526');
+      enviar(fixture, 2);
+
+      // La confirmacion dice donde esta y que todavia no recibe turnos.
+      expect(texto(fixture)).toContain('Av. Cabildo 1234, CABA, C1426');
+      expect(texto(fixture)).toContain('ajustada a mano');
+      expect(texto(fixture)).toContain('Sin agenda por ahora');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        alias: 'Norte',
+        phone: '+54 11 4321-9876',
+        pais: 'AR',
+        ciudad: 'CABA',
+        calle: 'Av. Cabildo',
+        numero: '1234',
+        codigoPostal: 'C1426',
+        ubicacion: { latitud: -34.5593, longitud: -58.4526, origen: 'MANUAL' },
+        agendaHabilitada: false,
+      });
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const [aviso] = TestBed.inject(AvisosStore).avisos();
+      expect(aviso?.descripcion).toContain('Todavía no recibe turnos');
+    });
+
+    it('una dirección sin punto se guarda igual y queda pendiente de verificar', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
+      escribir(fixture, '#sede-ubicacion-calle', 'Av. Cabildo');
+      escribir(fixture, '#sede-ubicacion-ciudad', 'CABA');
+      enviar(fixture, 2);
+
+      expect(texto(fixture)).toContain('Ubicación pendiente de verificar');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        pais: 'AR',
+        ciudad: 'CABA',
+        calle: 'Av. Cabildo',
+      });
+      expect(alta.request.body).not.toHaveProperty('ubicacion');
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+    });
+
+    it('una latitud sin longitud no deja avanzar del paso 2', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture);
+      escribir(fixture, '#sede-ubicacion-latitud', '-34.5');
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Paso 2 de 4');
+      expect(texto(fixture)).toContain('Latitud y longitud van juntas');
+    });
+
+    it('los datos fiscales propios exigen un CUIT que cierre, y por defecto se heredan', () => {
+      const fixture = montar();
+
+      escribir(fixture, '#sede-name', 'Sede Norte');
+      enviar(fixture, 2);
+
+      // Heredados: el paso 3 muestra los de la organizacion sin pedir nada.
+      expect(texto(fixture)).toContain('CUIT: 30-71094127-7');
+
+      marcar(fixture, '#sede-datosFiscalesPropios');
+      escribir(fixture, '#sede-legalName', 'Sede Norte SRL');
+      escribir(fixture, '#sede-taxId', CUIT_INVALIDO);
+      enviar(fixture);
+
+      expect(texto(fixture)).toContain('Paso 3 de 4');
+      expect(texto(fixture)).toContain('El CUIT no es válido');
+
+      escribir(fixture, '#sede-taxId', CUIT_VALIDO);
+      enviar(fixture);
+      expect(texto(fixture)).toContain('Propios de la sede');
+
+      enviar(fixture);
+      const alta = httpMock.expectOne(RUTA_ALTA);
+      expect(alta.request.body).toEqual({
+        name: 'Sede Norte',
+        datosFiscalesPropios: true,
+        legalName: 'Sede Norte SRL',
+        taxId: CUIT_VALIDO,
+      });
+      alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
+    });
+  });
+
+  /** Monta la pantalla y responde la lectura de la organizacion que hace al arrancar. */
   function montar() {
     const fixture = TestBed.createComponent(NewConsultorioPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(RUTA_ORGANIZACION)
+      .flush({ id: 1, name: 'Belgrano', version: 1, taxId: '30-71094127-7' });
     fixture.detectChanges();
     return fixture;
   }
@@ -270,31 +376,43 @@ function escribir(
   selector: string,
   valor: string,
 ) {
-  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement | HTMLSelectElement>(selector);
   if (campo === null) {
     throw new Error(`No existe el campo ${selector}`);
   }
   campo.value = valor;
-  campo.dispatchEvent(new Event('input'));
+  // Las horas del horario son desplegables: el formulario escucha `change`, no `input`.
+  campo.dispatchEvent(new Event(campo instanceof HTMLSelectElement ? 'change' : 'input'));
   fixture.detectChanges();
 }
 
-function agregarFranja(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
-  const boton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((candidato) =>
-    candidato.textContent?.includes('Agregar una franja'),
-  );
+function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement>(selector);
+  if (campo === null) {
+    throw new Error(`No existe el campo ${selector}`);
+  }
+  campo.click();
+  fixture.detectChanges();
+}
+
+function pulsar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, rotulo: string) {
+  const boton = Array.from(
+    fixture.nativeElement.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((candidato) => candidato.textContent?.includes(rotulo));
   if (boton === undefined) {
-    throw new Error('No existe el botón para agregar una franja');
+    throw new Error(`No existe el botón ${rotulo}`);
   }
   boton.click();
   fixture.detectChanges();
 }
 
 /** El unico `form` de la pantalla avanza de paso o envia, segun en cual este. */
-function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }) {
-  const formulario = fixture.nativeElement.querySelector<HTMLFormElement>('form');
-  formulario?.dispatchEvent(new Event('submit'));
-  fixture.detectChanges();
+function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, veces = 1) {
+  for (let i = 0; i < veces; i++) {
+    const formulario = fixture.nativeElement.querySelector<HTMLFormElement>('form');
+    formulario?.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+  }
 }
 
 /** Vuelve a un paso ya hecho desde el indicador de pasos, como lo haria el usuario. */

@@ -24,7 +24,8 @@ import { PersonaPageResponse } from '../../../../api/generated/model/persona-pag
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdatePersonaRequest } from '../../../../api/generated/model/update-persona-request';
-import { FiltroEstadoPersona, FiltroPerfil, PersonApi } from '../../services/person-api';
+import { FiltroEstadoPersona, PersonApi } from '../../services/person-api';
+import { TIPOS_DE_PERSONA, TipoDePersona, filtrosDeTipo } from '../../models/tipo-de-persona';
 import { fechaDeNacimientoPosible } from '../../models/fecha-de-nacimiento';
 import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models/person-errors';
 import {
@@ -200,11 +201,13 @@ export class PadronDePersonasPage {
 
   protected readonly texto = signal('');
   protected readonly filtroEstado = signal<FiltroEstadoPersona>('ACTIVO');
-  protected readonly filtroPerfil = signal<FiltroPerfil>('TODOS');
+  /** Pacientes de kinesiología, de actividades o las dos cosas: perfil y actividad en el backend. */
+  protected readonly filtroTipo = signal<TipoDePersona>('TODAS');
+  protected readonly tiposDePersona = TIPOS_DE_PERSONA;
 
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(
-    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== 'TODAS'),
   );
   /** Hay algo elegido: busqueda o filtros del embudo. Separa "no hay nadie" de "no coincide". */
   protected readonly hayFiltros = computed(
@@ -314,8 +317,8 @@ export class PadronDePersonasPage {
     this.cargar();
   }
 
-  protected cambiarPerfil(valor: string): void {
-    this.filtroPerfil.set(valor as FiltroPerfil);
+  protected cambiarTipo(valor: string): void {
+    this.filtroTipo.set(valor as TipoDePersona);
     this.pagina.set(0);
     this.cargar();
   }
@@ -324,7 +327,7 @@ export class PadronDePersonasPage {
   protected limpiarFiltros(): void {
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
-    this.filtroPerfil.set('TODOS');
+    this.filtroTipo.set('TODAS');
     this.pagina.set(0);
     this.cargar();
   }
@@ -346,7 +349,7 @@ export class PadronDePersonasPage {
       .buscar({
         texto: this.texto(),
         estado: this.filtroEstado(),
-        perfil: this.filtroPerfil(),
+        ...filtrosDeTipo(this.filtroTipo()),
         pagina: this.pagina(),
         tamano: this.porPagina(),
         sort: this.orden.sort(),
@@ -612,7 +615,7 @@ export class PadronDePersonasPage {
     this.cerrarPaneles();
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
-    this.filtroPerfil.set('TODOS');
+    this.filtroTipo.set('TODAS');
     this.pagina.set(0);
     this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();

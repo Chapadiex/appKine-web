@@ -77,6 +77,8 @@ const HAY_POPOVER = typeof HTMLElement.prototype.showPopover === 'function';
       #boton
       type="button"
       class="acciones-de-fila__boton"
+      [attr.aria-label]="'Más acciones de ' + de()"
+      [title]="'Más acciones de ' + de()"
       [attr.aria-expanded]="abierta()"
       [attr.aria-controls]="idPanel"
       (click)="alternar()"

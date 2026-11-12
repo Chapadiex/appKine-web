@@ -168,8 +168,13 @@ describe('App (layout)', () => {
 
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
+    // La navegacion se monta despues de la primera pintura, con un import().
+    await import('./layout/navegacion-principal/navegacion-principal');
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     const html = fixture.nativeElement as HTMLElement;
+    expect(html.querySelector('app-navegacion-principal')).not.toBeNull();
     const enfocables = html.querySelectorAll('a[href], button, input, select, textarea');
 
     expect(enfocables.length).toBeGreaterThan(1);

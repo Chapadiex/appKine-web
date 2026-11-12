@@ -73,7 +73,7 @@ describe('Rutas de /horarios', () => {
 
   it('las cuatro URLs son las que estan escritas, y salen de la misma raiz', () => {
     expect(RUTA_HORARIOS).toBe('/horarios');
-    expect(RUTA_HORARIOS_EXCEPCIONES).toBe('/horarios/excepciones');
+    expect(RUTA_HORARIOS_EXCEPCIONES).toBe('/horarios/calendario/cierres');
     expect(RUTA_HORARIOS_CALENDARIO).toBe('/horarios/calendario');
     expect(RUTA_HORARIOS_EFECTIVO).toBe('/horarios/efectivo');
     expect(RUTA_HORARIOS_CAMBIOS).toBe('/horarios/cambios');
@@ -84,6 +84,8 @@ describe('Rutas de /horarios', () => {
       semanal: RUTA_HORARIOS,
       excepciones: RUTA_HORARIOS_EXCEPCIONES,
       calendario: RUTA_HORARIOS_CALENDARIO,
+      calendarioHorario: `${RUTA_HORARIOS_CALENDARIO}/horario`,
+      calendarioFeriados: `${RUTA_HORARIOS_CALENDARIO}/feriados`,
       efectivo: RUTA_HORARIOS_EFECTIVO,
       cambios: RUTA_HORARIOS_CAMBIOS,
     });
@@ -92,7 +94,10 @@ describe('Rutas de /horarios', () => {
   it('cada una de las cuatro resuelve a su pantalla', async () => {
     expect(await componenteDe(RUTA_HORARIOS)).toBe(HorarioSemanalPage);
     expect(await componenteDe(RUTA_HORARIOS_EXCEPCIONES)).toBe(ExcepcionesPage);
+    // La direccion vieja de los cierres sigue llegando: hay enlaces guardados.
+    expect(await componenteDe('/horarios/excepciones')).toBe(ExcepcionesPage);
     expect(await componenteDe(RUTA_HORARIOS_CALENDARIO)).toBe(CalendarioSedePage);
+    expect(await componenteDe(`${RUTA_HORARIOS_CALENDARIO}/feriados`)).toBe(CalendarioSedePage);
     expect(await componenteDe(RUTA_HORARIOS_EFECTIVO)).toBe(HorarioEfectivoPage);
     expect(await componenteDe(RUTA_HORARIOS_CAMBIOS)).toBe(CambiosDeAgendaPage);
   });

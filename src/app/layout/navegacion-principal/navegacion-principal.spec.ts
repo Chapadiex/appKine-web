@@ -7,6 +7,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
 import {
+  PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
   PERMISO_PACIENTE_READ,
   PERMISO_TURNO_READ,
@@ -58,6 +59,7 @@ describe('NavegacionPrincipal', () => {
           { path: 'pacientes', component: Pagina },
           { path: 'horarios', component: Pagina },
           { path: 'organizacion', component: Pagina },
+          { path: 'organizacion/colaboradores/manual/nuevo', component: Pagina },
           { path: 'plataforma/solicitudes', component: Pagina },
         ]),
         { provide: SessionService, useValue: { estado, restaurando } },
@@ -136,6 +138,26 @@ describe('NavegacionPrincipal', () => {
     expect(enlaces(fixture)).toContain('Horarios de profesionales');
   });
 
+  it('muestra el alta manual en Configuración solo con permiso de gestión', async () => {
+    conContexto();
+    const fixture = montar();
+    responderPermisos([PERMISO_COLABORADOR_READ]);
+    fixture.detectChanges();
+    expect(enlaces(fixture)).not.toContain('Alta manual de colaborador');
+
+    TestBed.inject(PermissionsStore).cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [PERMISO_COLABORADOR_READ, PERMISO_COLABORADOR_MANAGE],
+    });
+    fixture.detectChanges();
+    expect(enlaces(fixture)).toContain('Alta manual de colaborador');
+
+    await router.navigateByUrl('/organizacion/colaboradores/manual/nuevo');
+    fixture.detectChanges();
+    expect(desplegados(fixture)).toEqual(['Configuración']);
+    expect(marcados(fixture)).toEqual(['Alta manual de colaborador']);
+  });
+
   /**
    * Un grupo sin secciones visibles no deja una cabecera huerfana, y uno con una sola seccion no se
    * despliega: su enlace va directo. Sin permisos quedan Atencion (Agenda y Buscar disponibilidad, que
@@ -147,12 +169,11 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual([
-      'Atención',
-      'Servicios y catálogo',
-      'Espacios y horarios',
-      'Configuración',
-    ]);
+    // Sin catalogo:read ni permisos de horarios, Servicios y catalogo y Espacios y horarios quedan con una sola seccion: enlace directo (11/11/2026).
+    expect(rotulos(fixture)).toEqual(['Atención', 'Configuración']);
+    expect(enlaces(fixture)).toContain('Espacios y boxes');
+    expect(enlaces(fixture)).toContain('Catálogo de servicios');
+    expect(enlaces(fixture)).not.toContain('Ofertas de la sede');
     expect(enlaces(fixture)).toContain('Agenda');
     expect(enlaces(fixture)).toContain('Buscar disponibilidad');
     expect(enlaces(fixture)).not.toContain('Padrón');
@@ -170,13 +191,7 @@ describe('NavegacionPrincipal', () => {
       .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual([
-      'Atención',
-      'Actividades',
-      'Servicios y catálogo',
-      'Espacios y horarios',
-      'Configuración',
-    ]);
+    expect(rotulos(fixture)).toEqual(['Atención', 'Actividades', 'Configuración']);
   });
 
   /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */

@@ -1,0 +1,40 @@
+/*
+ * Lista y enlaces de las pestanas. Vivian en `src/design-system.css` y bajaron aca el 07/11/2026
+ * para sacarlos del CSS inicial: solo los usa esta plantilla. `.pestanas` (el `nav`) sigue global
+ * porque `cabecera-de-pagina.css` y `agenda-page.css` lo ajustan desde afuera.
+ *
+ * Especificidad: la encapsulacion le suma un atributo a cada regla. El `:hover` no fija `color` a
+ * proposito: en la hoja global `a:not(.boton):hover` (0,2,1) le ganaba a `.pestanas__enlace:hover`
+ * (0,2,0), asi que el color al pasar el mouse siempre fue `--color-accion-fondo-hover`. Ponerlo
+ * aca, con el atributo, lo habria cambiado.
+ */
+.pestanas__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pestanas__enlace {
+  display: inline-block;
+  padding: var(--esp-3) var(--esp-5);
+  border-bottom: var(--borde-medio) solid transparent;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pestanas__enlace:hover {
+  border-bottom-color: var(--color-borde-control);
+}
+
+/* La actual se marca con subrayado Y peso, no solo con color (WCAG 1.4.1). */
+.pestanas__enlace--actual {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+  border-bottom-color: var(--color-acento);
+}

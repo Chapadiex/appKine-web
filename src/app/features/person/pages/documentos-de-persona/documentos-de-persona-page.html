@@ -85,9 +85,13 @@
       <p>{{ mensaje }}</p>
       <p class="alerta__acciones">
         @if (faltaContexto()) {
-          <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          <a class="boton boton--secundario" href="/seleccionar-contexto"
+            >Elegir contexto de trabajo</a
+          >
         } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
         }
       </p>
     </app-alerta>
@@ -97,7 +101,12 @@
       texto="Es un caso normal: los documentos se cargan cuando el paciente los trae."
     >
       @if (!fichaCerrada()) {
-        <button type="button" class="boton" (click)="abrirSubida()" *akinePermiso="permisoManage">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="abrirSubida()"
+          *akinePermiso="permisoManage"
+        >
           Subir el primer documento
         </button>
       }

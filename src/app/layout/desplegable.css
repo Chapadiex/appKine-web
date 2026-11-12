@@ -34,7 +34,7 @@
 
 .disparador:hover,
 .disparador[aria-expanded='true'] {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   box-shadow: inset 0 0 0 var(--borde-fino) var(--color-borde-control);
 }
 
@@ -106,7 +106,7 @@
 }
 
 .desplegable__item:hover:not(:disabled) {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   color: var(--color-texto-fuerte);
 }
 

@@ -5,9 +5,12 @@ import { PERMISO_COLABORADOR_READ } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import {
   SEGMENTO_CALENDARIO,
+  SEGMENTO_CALENDARIO_FERIADOS,
+  SEGMENTO_CALENDARIO_HORARIO,
   SEGMENTO_CAMBIOS,
   SEGMENTO_EFECTIVO,
   SEGMENTO_EXCEPCIONES,
+  SEGMENTO_EXCEPCIONES_VIEJO,
 } from './models/rutas-de-horarios';
 
 /**
@@ -62,9 +65,17 @@ import {
 const LECTURA = [permissionGuard(PERMISO_COLABORADOR_READ)];
 const AMPLIO = { [DATA_ANCHO]: ANCHO_AMPLIO };
 
-function hija(path: string, loadComponent: Route['loadComponent'], title: string): Route {
-  return { path, canActivate: LECTURA, loadComponent, title, data: AMPLIO };
+function hija(
+  path: string,
+  loadComponent: Route['loadComponent'],
+  title: string,
+  data: Route['data'] = {},
+): Route {
+  return { path, canActivate: LECTURA, loadComponent, title, data: { ...AMPLIO, ...data } };
 }
+
+const calendario: Route['loadComponent'] = () =>
+  import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage);
 
 export const routes: Routes = [
   // Las rutas fijas de las pantallas hermanas de esta etapa —excepciones, horario efectivo,
@@ -81,11 +92,15 @@ export const routes: Routes = [
     () => import('./pages/efectivo/horario-efectivo-page').then((m) => m.HorarioEfectivoPage),
     'AKINE - Horario efectivo del profesional',
   ),
-  hija(
-    SEGMENTO_CALENDARIO,
-    () => import('./pages/calendario/calendario-sede-page').then((m) => m.CalendarioSedePage),
-    'AKINE - Horario general y feriados de la sede',
-  ),
+  // Las pestañas del calendario de la sede: la misma pantalla, abierta en otro panel.
+  hija(SEGMENTO_CALENDARIO, calendario, 'AKINE - Calendario de la sede', { pestana: 'resumen' }),
+  hija(SEGMENTO_CALENDARIO_HORARIO, calendario, 'AKINE - Horario general de la sede', {
+    pestana: 'horario',
+  }),
+  hija(SEGMENTO_CALENDARIO_FERIADOS, calendario, 'AKINE - Feriados de la sede', {
+    pestana: 'feriados',
+  }),
+  { path: SEGMENTO_EXCEPCIONES_VIEJO, redirectTo: SEGMENTO_EXCEPCIONES },
   hija(
     SEGMENTO_CAMBIOS,
     () => import('./pages/cambios/cambios-de-agenda-page').then((m) => m.CambiosDeAgendaPage),

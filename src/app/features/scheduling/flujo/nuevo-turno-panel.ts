@@ -53,6 +53,7 @@ import { diaEnZona } from '../models/semana';
 import { SchedulingApi } from '../services/scheduling-api';
 import { BuscadorDePaciente } from './buscador-de-paciente';
 import { ListaDeHorarios } from './lista-de-horarios';
+import { Icono } from '../../../shared/components/icono/icono';
 
 /** Cuantos horarios se piden de entrada: alcanza para elegir sin navegar una agenda. */
 const HORARIOS_INICIALES = 12;
@@ -86,6 +87,7 @@ interface OpcionDeContexto {
   imports: [
     Alerta,
     BuscadorDePaciente,
+    Icono,
     ListaDeHorarios,
     NgTemplateOutlet,
     PanelLateral,
@@ -226,26 +228,46 @@ export class NuevoTurnoPanel implements OnInit {
   /** El plan ya tiene todo programado: no se ofrecen horarios que el backend va a rechazar. */
   protected readonly planAgotado = computed(() => this.sesionesDeLaPrestacion()?.pendientes === 0);
 
+  /**
+   * Lo que falta para confirmar, en el pie y en neutro: es una indicacion, no un error (rediseño
+   * del 08/11/2026). Paciente y horario, los dos datos que se piden siempre, van juntos.
+   */
   protected readonly faltante = computed(() => {
     if (this.persona() === null) {
-      return 'Falta elegir el paciente.';
+      return this.horario() === null
+        ? 'Seleccioná un paciente y un horario.'
+        : 'Seleccioná un paciente.';
     }
     if (this.ofertaId() === null) {
-      return 'Falta elegir la prestación.';
+      return 'Seleccioná una prestación.';
     }
     if (this.planAgotado()) {
       return 'Ese plan no tiene sesiones pendientes para esta prestación.';
     }
     if (this.horario() === null) {
-      return 'Falta elegir un horario.';
+      return 'Seleccioná un horario.';
     }
     if (this.validacion()?.estado === 'NO_DISPONIBLE') {
       return 'Ese horario no se puede reservar.';
     }
     if (this.horario()?.profesionalId === undefined && this.requiereProfesional()) {
-      return 'Falta elegir quién atiende.';
+      return 'Seleccioná quién atiende.';
     }
     return '';
+  });
+
+  /** La segunda linea del pie: quien, con quien y cuanto dura. Sin repetir la fecha. */
+  protected readonly detalleDelPie = computed(() => {
+    const persona = this.persona();
+    const oferta = this.ofertaElegida();
+    const minutos = oferta ? this.minutosDe(oferta) : undefined;
+    return [
+      persona ? `${persona.apellido}, ${persona.nombre}` : '',
+      this.nombreDelProfesional(),
+      minutos ? `${minutos} min` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
   });
 
   protected readonly requiereProfesional = computed(

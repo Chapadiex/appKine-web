@@ -83,15 +83,25 @@
   flex-basis: 100%;
 }
 
+/*
+ * Limpiar en la misma fila que los filtros, contra el borde derecho y a la altura de los controles
+ * (10/11/2026): en su propia línea dejaba un renglón vacío debajo. Si no entra, baja solo.
+ */
 .filtros-barra__limpiar {
   display: flex;
-  flex: 1 0 100%;
+  flex: 1 0 auto;
+  align-items: center;
   justify-content: flex-end;
+  min-height: 2.5rem;
+}
+
+.filtros-barra__avanzados:has(> .filtros-barra__limpiar) {
+  align-items: flex-end;
 }
 
 .filtros-barra__boton:hover,
 .filtros-barra__boton[aria-expanded='true'] {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 /* Cuantos filtros avanzados estan aplicados: el estado no se esconde con el panel. */
@@ -116,7 +126,7 @@
   margin-top: var(--esp-4);
   padding: var(--esp-6);
   border-radius: var(--radio-lg);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .filtros-barra__avanzados[hidden] {
@@ -126,4 +136,67 @@
 .filtros-barra__avanzados > .campo {
   flex: 0 1 14rem;
   margin-bottom: 0;
+}
+
+/*
+ * Barra de herramientas separada (Atencion, 08/11/2026): su propio bloque entre la cabecera y el
+ * contenido, en superficie secundaria (nivel 3 de la norma). Los controles van alineados al
+ * centro y miden 40 px; los grupos se separan mas que los controles de un mismo grupo.
+ */
+.filtros-barra--separada {
+  margin-bottom: var(--esp-6);
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.filtros-barra--separada > .filtros-barra__fila {
+  align-items: center;
+  gap: var(--esp-4) var(--esp-6);
+}
+
+/* La busqueda toma lo que sobra, pero cede antes que los grupos de controles bajen de fila. */
+.filtros-barra--separada .filtros-barra__principal {
+  flex-basis: 12rem;
+  min-width: min(100%, 12rem);
+  max-width: none;
+}
+
+.filtros-barra--separada .filtros-barra__boton {
+  border-radius: var(--radio-sm);
+}
+
+/* Desplegado o con filtros aplicados: se nota sin abrirlo. */
+.filtros-barra--separada .filtros-barra__boton[aria-expanded='true'],
+.filtros-barra--separada .filtros-barra__boton:has(.filtros-barra__contador) {
+  border-color: var(--color-enlace);
+  background: var(--color-seleccion);
+  color: var(--color-enlace);
+}
+
+/* El panel avanzado, adentro de la barra: superficie y contorno, para que se lea como otra capa. */
+.filtros-barra--separada .filtros-barra__avanzados {
+  border: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+}
+
+/*
+ * Limpiar y Aplicar en la misma fila que los filtros, contra el borde derecho y a la altura de los
+ * controles (09/11/2026). Si no entran, bajan juntos a la linea siguiente.
+ */
+.filtros-barra--separada .filtros-barra__avanzados {
+  align-items: flex-end;
+}
+
+.filtros-barra--separada .filtros-barra__limpiar {
+  flex: 1 0 auto;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: 2.5rem;
+}
+
+/* Los filtros rapidos con conteo, en su fila de la barra separada: centrados (08/11/2026). */
+.filtros-barra--separada .filtros-barra__frecuente--fila .filtros-rapidos {
+  justify-content: center;
 }

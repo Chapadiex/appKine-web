@@ -213,9 +213,14 @@ describe('EspaciosPage', () => {
     expect(host.querySelector('app-estado-vacio')?.textContent).toContain(
       'Todavía no hay espacios en esta sede',
     );
+    const alta = host.querySelector<HTMLButtonElement>('app-estado-vacio button');
+    expect(alta?.textContent?.trim()).toBe('Dar de alta el primer espacio');
+    // El alta se abre en el panel lateral, sin salir del listado.
+    alta?.click();
+    fixture.detectChanges();
     expect(
-      host.querySelector('app-estado-vacio a[href="/espacios/nuevo"]')?.textContent?.trim(),
-    ).toBe('Dar de alta el primer espacio');
+      host.querySelector('app-panel-lateral app-alta-de-espacio #espacio-name'),
+    ).not.toBeNull();
     expect(host.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
       '0 espacios',
     );
@@ -689,7 +694,196 @@ describe('EspaciosPage', () => {
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
     expect(botonPorTexto(fixture, 'Editar')).toBeNull();
     expect(botonPorTexto(fixture, 'Dar de baja')).toBeNull();
-    expect(fixture.nativeElement.querySelector('a[href="/espacios/nuevo"]')).toBeNull();
+    expect(botonPorTexto(fixture, 'Dar de alta un espacio')).toBeNull();
+  });
+
+  it('un espacio sin nombre, fechas ni versión se muestra con lo que hay y no se edita a ciegas', async () => {
+    // Datos mínimos: lo que una fila vieja o un backend a medio migrar puede devolver.
+    const sinDatos = { id: 20, estado: 'ACTIVO', enServicio: true };
+    const bajaSinDatos = { id: 21, name: 'Box 8', estado: 'INACTIVO', enServicio: false };
+    const fixture = await montarCon({
+      content: [sinDatos, bajaSinDatos],
+      page: 0,
+      size: 10,
+      totalElements: 2,
+      totalPages: 1,
+    });
+    const host: HTMLElement = fixture.nativeElement;
+
+    const [fila, filaDeBaja] = [...host.querySelectorAll('tbody tr')];
+    expect(fila?.textContent).toContain('Desde el -');
+    expect(fila?.textContent).toContain('Sin fin previsto');
+    // Una baja sin fecha ni motivo no inventa ninguno de los dos.
+    expect(filaDeBaja?.textContent).not.toContain('Baja del');
+    expect(filaDeBaja?.textContent).not.toContain('Motivo:');
+
+    abrir(fixture, 'Editar');
+    expect(host.querySelector('app-panel-lateral')?.textContent).toContain('Editar el espacio');
+    expect(host.querySelector('.seccion-plegable__resumen')?.textContent).toContain(
+      'sin fin previsto',
+    );
+    expect(campo(fixture, '#editar-espacio-name')).toBe('');
+    expect(campo(fixture, '#editar-espacio-capacidad')).toBe('');
+
+    // Sin `version` no se manda nada: un 0 pisaría el cambio de otra persona.
+    escribir(fixture, '#editar-espacio-name', 'Sala');
+    enviar(fixture, 'form');
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('No pudimos leer la versión de este espacio');
+  });
+
+  it('la baja de un espacio sin nombre avisa sin nombrarlo', async () => {
+    const fixture = await montarCon({
+      content: [{ id: 20, estado: 'ACTIVO', enServicio: true, version: 1 }],
+      page: 0,
+      size: 10,
+      totalElements: 1,
+      totalPages: 1,
+    });
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-espacio-reason', 'Se desarma');
+    enviar(fixture, 'form');
+    httpMock.expectOne(`${LISTADO}/20/deactivate`).flush({ id: 20, estado: 'INACTIVO' });
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.descripcion?.startsWith('Sigue en el listado')).toBe(true);
+  });
+
+  it('el PATCH manda el nombre nuevo, la capacidad y las fechas cambiadas, y nada del tipo sin cargar', async () => {
+    // Sin nombre ni tipo de origen: el nombre escrito es un cambio; el tipo sin tocar, no.
+    const sinNombre = {
+      id: 23,
+      estado: 'ACTIVO',
+      enServicio: true,
+      capacidad: 1,
+      validFrom: '2026-01-05T09:00:00Z',
+      version: 4,
+    };
+    const fixture = await montarCon({
+      content: [sinNombre],
+      page: 0,
+      size: 10,
+      totalElements: 1,
+      totalPages: 1,
+    });
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', 'Sala');
+    escribir(fixture, '#editar-espacio-capacidad', '3');
+    escribir(fixture, '#editar-espacio-validFrom', '2026-02-01T09:00');
+    escribir(fixture, '#editar-espacio-validUntil', '2027-03-01T09:00');
+    enviar(fixture, 'form');
+
+    // Un segundo envío mientras viaja el primero no duplica el PATCH.
+    enviar(fixture, 'form');
+    const peticion = httpMock.expectOne(
+      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
+    );
+    const cuerpo = peticion.request.body as Record<string, unknown>;
+    expect(cuerpo).toMatchObject({ version: 4, name: 'Sala', capacidad: 3 });
+    expect(typeof cuerpo['validFrom']).toBe('string');
+    expect(typeof cuerpo['validUntil']).toBe('string');
+    expect('tipo' in cuerpo).toBe(false);
+    expect('notes' in cuerpo).toBe(false);
+    expect('clearValidUntil' in cuerpo).toBe(false);
+
+    // La respuesta sin nombre igual se avisa como guardada.
+    peticion.flush({ id: 23, version: 5 });
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion ?? null).toBeNull();
+  });
+
+  it('la vigencia plegada resume el fin, y quitarlo deshabilita el campo hasta', async () => {
+    const fixture = await montar();
+    abrir(fixture, 'Editar');
+    const host: HTMLElement = fixture.nativeElement;
+
+    expect(host.querySelector('.seccion-plegable__resumen')?.textContent).toContain('hasta el');
+    const hasta = host.querySelector<HTMLInputElement>('#editar-espacio-validUntil')!;
+    expect(hasta.disabled).toBe(false);
+
+    marcar(fixture, '#editar-espacio-clear');
+    expect(hasta.disabled).toBe(true);
+  });
+
+  it('si tras una versión vieja no se puede releer el espacio, el panel queda con el aviso', async () => {
+    const fixture = await montar();
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-espacio-name', 'Box 1 bis');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
+      .flush(
+        { type: 'https://akine.app/problems/concurrent-modification' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    httpMock
+      .expectOne(`${LISTADO}/10`)
+      .flush(null, { status: 500, statusText: 'Internal Server Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // No se relee el listado y no se pierde lo escrito.
+    httpMock.expectNone(esListado());
+    expect(texto(fixture)).toContain('Alguien mas modifico este espacio');
+    expect(campo(fixture, '#editar-espacio-name')).toBe('Box 1 bis');
+  });
+
+  it('el alta en el panel: cancelar no relee el listado; crear sí, y cierra el panel', async () => {
+    const fixture = await montar();
+    const host: HTMLElement = fixture.nativeElement;
+
+    botonPorTexto(fixture, 'Dar de alta un espacio')!.click();
+    fixture.detectChanges();
+    const cancelar = [...host.querySelectorAll<HTMLButtonElement>('app-alta-de-espacio button')]
+      .filter((b) => (b.textContent ?? '').trim() === 'Cancelar')
+      .at(0);
+    cancelar!.click();
+    fixture.detectChanges();
+    httpMock.expectNone(esListado());
+    expect(host.querySelector('app-alta-de-espacio')).toBeNull();
+
+    botonPorTexto(fixture, 'Dar de alta un espacio')!.click();
+    fixture.detectChanges();
+    escribir(fixture, '#espacio-name', 'Box 5');
+    enviar(fixture, 'app-alta-de-espacio form');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .flush({ id: 30, name: 'Box 5' });
+    httpMock.expectOne(esListado()).flush(PAGINA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('app-alta-de-espacio')).toBeNull();
+  });
+
+  it('el filtro "Todos" sin resultados dice que no hay nada con ese filtro', async () => {
+    const fixture = await montar();
+    const selector = fixture.nativeElement.querySelector(
+      '#filtro-estado-espacio',
+    ) as HTMLSelectElement;
+    selector.value = 'TODOS';
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.url === LISTADO && peticion.params.get('estado') === 'TODOS',
+      )
+      .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto(fixture)).toContain('No hay espacios que mostrar con este filtro.');
   });
 
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y los dos espacios. */

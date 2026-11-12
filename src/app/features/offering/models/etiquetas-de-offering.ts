@@ -30,28 +30,34 @@ export interface OpcionEnumerada<T extends string> {
   readonly valor: T;
   readonly etiqueta: string;
   readonly ayuda: string;
+  /** Lo breve para la tarjeta de opción del formulario de servicio; el detalle es `ayuda`. */
+  readonly resumen: string;
 }
 
 export const NATURALEZAS = [
   {
     valor: ServicioResponseNaturalezaEnum.CLINICO,
-    etiqueta: 'Clinico',
-    ayuda: 'Diagnostico o tratamiento de una condicion.',
+    etiqueta: 'Clínico',
+    ayuda: 'Diagnóstico o tratamiento de una condición.',
+    resumen: 'Diagnóstico o tratamiento.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.TERAPEUTICO,
-    etiqueta: 'Terapeutico',
-    ayuda: 'Intervencion sostenida sobre una condicion ya diagnosticada.',
+    etiqueta: 'Terapéutico',
+    ayuda: 'Intervención sostenida sobre una condición ya diagnosticada.',
+    resumen: 'Tratamiento sostenido.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.PREVENTIVO,
     etiqueta: 'Preventivo',
     ayuda: 'Busca evitar que aparezca o reaparezca un problema.',
+    resumen: 'Evita que aparezca un problema.',
   },
   {
     valor: ServicioResponseNaturalezaEnum.BIENESTAR,
     etiqueta: 'Bienestar',
     ayuda: 'Actividad de salud general, sin objetivo clínico.',
+    resumen: 'Salud general, sin fin clínico.',
   },
 ] as const satisfies readonly OpcionEnumerada<NaturalezaDeServicio>[];
 
@@ -60,11 +66,13 @@ export const MODALIDADES = [
     valor: OfertaResponseModalidadEnum.INDIVIDUAL,
     etiqueta: 'Individual',
     ayuda: 'Una persona por turno.',
+    resumen: 'Una persona por turno.',
   },
   {
     valor: OfertaResponseModalidadEnum.GRUPAL,
     etiqueta: 'Grupal',
     ayuda: 'Varias personas en el mismo turno. Exige capacidad mayor a 1.',
+    resumen: 'Varias personas por turno.',
   },
 ] as const satisfies readonly OpcionEnumerada<ModalidadDeOferta>[];
 

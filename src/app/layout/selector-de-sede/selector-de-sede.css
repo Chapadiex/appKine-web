@@ -91,6 +91,12 @@
   white-space: nowrap;
 }
 
+/* La sede en la que se esta: fondo de seleccion, tilde y peso (no solo color). */
+.desplegable__item.sede__opcion--actual,
+.desplegable__item.sede__opcion--actual:hover:not(:disabled) {
+  background: var(--color-seleccion);
+}
+
 .sede__opcion--actual .sede__opcion-nombre {
   color: var(--color-texto-fuerte);
   font-weight: var(--peso-medio);

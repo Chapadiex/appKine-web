@@ -8,7 +8,7 @@
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-sutil);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
   font-size: var(--tipo-xs);
 }
 

@@ -18,3 +18,43 @@
   display: grid;
   gap: var(--esp-4);
 }
+
+/*
+ * Pantalla de error (vivia en `src/design-system.css`; bajo aca el 07/11/2026 para salir del CSS
+ * inicial: la usan solo el 404 y el 403, que son rutas diferidas). `h1` y `p` van sin la clase
+ * del contenedor a proposito: con el atributo de la encapsulacion quedan en (0,1,1), la misma
+ * especificidad que tenian `.pantalla-error h1` y `.pantalla-error p` globales. Toda la plantilla
+ * vive dentro de `.pantalla-error`.
+ */
+.pantalla-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-5);
+  max-width: 30rem;
+  margin: 4rem auto 0;
+}
+
+.pantalla-error__codigo {
+  color: var(--color-texto-suave);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+h1 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+  color: var(--color-marca-texto-suave);
+  line-height: 1.5;
+}
+
+.pantalla-error__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  padding-top: var(--esp-4);
+}

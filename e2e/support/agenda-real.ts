@@ -125,7 +125,7 @@ export function avisos(page: Page): Locator {
 /** Elige a la persona en el panel como lo hace el mostrador: escribiendo su apellido. */
 export async function elegirPersona(panel: Locator, persona: Persona): Promise<void> {
   const nombre = `${persona.apellido}, ${persona.nombre}`;
-  await panel.getByLabel('Buscar paciente').fill(persona.apellido);
+  await panel.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(persona.apellido);
   await panel.getByRole('button', { name: new RegExp(`^${nombre}`) }).click();
   await expect(panel.locator('.flujo__persona-elegida')).toContainText(nombre);
 }
@@ -251,6 +251,38 @@ export async function abrirProgramacion(
 /** Los dias del panel de la serie, por dia ISO: el 1 es el lunes. */
 const DIA_DEL_PANEL = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const;
 
+function diaIso(fecha: string): number {
+  return new Date(`${fecha}T00:00:00Z`).getUTCDay() || 7;
+}
+
+/** El rotulo del panel de la serie para el dia de la semana de `fecha`: "Lun", "Mar", ... */
+export function diaDelPanel(fecha: string): (typeof DIA_DEL_PANEL)[number] {
+  return DIA_DEL_PANEL[diaIso(fecha) - 1];
+}
+
+/**
+ * Los primeros `cantidad` dias habiles (lunes a viernes) desde `desde`, salteando los feriados.
+ *
+ * <p>Para una serie con "una ocurrencia por dia de la semana elegido": con dias consecutivos y
+ * la fecha inicial en el primero, el panel genera exactamente esas fechas, y ninguna cae en
+ * feriado. Elegir dias fijos ("Lun" y "Jue") es una bomba de tiempo: el 23/11/2026 (Soberania
+ * Nacional, trasladado al lunes) la hizo estallar, porque el panel excluye la ocurrencia en
+ * feriado y confirma una sola.
+ */
+export function diasHabilesSinFeriado(
+  desde: string,
+  feriados: ReadonlySet<string>,
+  cantidad: number,
+): string[] {
+  const dias: string[] = [];
+  for (let fecha = desde; dias.length < cantidad; fecha = sumarDias(fecha, 1)) {
+    if (diaIso(fecha) <= 5 && !feriados.has(fecha)) {
+      dias.push(fecha);
+    }
+  }
+  return dias;
+}
+
 /**
  * Completa la regla de la serie —una vez por semana, el dia de `fecha`, a `horaLocal`— y pide la
  * previsualizacion, que es del backend y todavia no crea nada.
@@ -261,11 +293,10 @@ export async function previsualizarSerie(
   horaLocal: string,
   cantidad: number,
 ): Promise<void> {
-  const diaIso = new Date(`${fecha}T00:00:00Z`).getUTCDay() || 7;
   await panel.getByLabel('Horario preferido').fill(horaLocal);
   await panel.getByLabel('Fecha inicial').fill(fecha);
   await panel.getByLabel('Cantidad de sesiones').fill(String(cantidad));
-  await panel.getByLabel(DIA_DEL_PANEL[diaIso - 1], { exact: true }).check();
+  await panel.getByLabel(diaDelPanel(fecha), { exact: true }).check();
   await panel.getByRole('button', { name: 'Buscar disponibilidad' }).click();
   await expect(panel.getByRole('table').locator('tbody tr')).toHaveCount(cantidad);
 }

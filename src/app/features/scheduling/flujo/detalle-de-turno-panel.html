@@ -1,4 +1,13 @@
 <app-panel-lateral [titulo]="titulo()" [subtitulo]="subtitulo()" (cerrar)="cerrar.emit()">
+  <!-- El estado, en la cabecera: es lo primero que se lee del turno (rediseño del 08/11/2026). -->
+  @if (turno() !== null) {
+    <p panel-subtitulo class="flujo__estado-cabecera estado-turno">
+      <span [class]="'marca-estado marca-turno ' + claseDeTonoOperativo(estado())"
+        ><app-icono [nombre]="iconoDeEstadoOperativo(estado())" />
+        {{ nombreDeEstadoOperativo(estado()) }}</span
+      >
+    </p>
+  }
   <div class="flujo">
     @if (error(); as fallo) {
       <app-alerta tipo="error" [titulo]="tituloDelError()">
@@ -46,37 +55,82 @@
     }
 
     @if (turno(); as actual) {
-      <div class="flujo__resumen">
-        <span class="flujo__resumen-titulo">{{ cuando() }}</span>
-        <span>{{ actual.ofertaNombre }}</span>
-        @if (operativo()?.profesionalNombre; as profesional) {
-          <span>{{ profesional }}</span>
-        }
-        @if (operativo()?.espacioNombre; as espacio) {
-          <span>{{ espacio }}</span>
+      <!--
+        Los datos del turno en grupos con icono: cuando, que, con quien y donde. Sin caja: la
+        separacion con lo que sigue la pone la linea de la seccion.
+      -->
+      <dl class="flujo__datos">
+        <div class="flujo__grupo">
+          <dt><app-icono nombre="calendario" /><span class="visualmente-oculto">Cuándo</span></dt>
+          <dd>
+            <span class="flujo__resumen-titulo">{{ cuando() }}</span>
+            @if (duracion(); as minutos) {
+              <span class="flujo__secundario">{{ minutos }}</span>
+            }
+          </dd>
+        </div>
+        <div class="flujo__grupo">
+          <dt>
+            <app-icono nombre="servicios" /><span class="visualmente-oculto">Prestación</span>
+          </dt>
+          <dd>
+            {{ actual.ofertaNombre }}
+            @if (cobertura(); as elegida) {
+              <span class="flujo__secundario">{{ elegida }}</span>
+            }
+          </dd>
+        </div>
+        @if (operativo()?.profesionalNombre || operativo()?.espacioNombre) {
+          <div class="flujo__grupo">
+            <dt>
+              <app-icono nombre="perfil" /><span class="visualmente-oculto">Quién atiende</span>
+            </dt>
+            <dd>
+              {{ operativo()?.profesionalNombre }}
+              @if (operativo()?.espacioNombre; as espacio) {
+                <span class="flujo__secundario">{{ espacio }}</span>
+              }
+            </dd>
+          </div>
         }
         @if (sede(); as nombreDeSede) {
-          <span>Sede {{ nombreDeSede }}</span>
-        }
-        @if (cobertura(); as elegida) {
-          <span>{{ elegida }}</span>
+          <div class="flujo__grupo">
+            <dt><app-icono nombre="sede" /><span class="visualmente-oculto">Dónde</span></dt>
+            <dd>
+              Sede {{ nombreDeSede }}
+              @if (comoLlegar(); as llegar) {
+                @if (llegar.direccion) {
+                  <span class="flujo__secundario">{{ llegar.direccion }}</span>
+                }
+                @if (llegar.enlace) {
+                  <a
+                    class="flujo__secundario"
+                    [href]="llegar.enlace"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Cómo llegar<span class="visualmente-oculto"> (se abre en otra pestaña)</span>
+                  </a>
+                }
+              }
+            </dd>
+          </div>
         }
         @if (operativo()?.numeroCaso; as caso) {
-          <span>
-            Caso {{ caso }}
-            @if (operativo()?.sesionNumero; as numero) {
-              · Sesión {{ numero }}/{{ operativo()?.sesionesPlanificadas }}
-            }
-          </span>
+          <div class="flujo__grupo">
+            <dt><app-icono nombre="capas" /><span class="visualmente-oculto">Caso</span></dt>
+            <dd>
+              Caso {{ caso }}
+              @if (operativo()?.sesionNumero; as numero) {
+                · Sesión {{ numero }}/{{ operativo()?.sesionesPlanificadas }}
+              }
+            </dd>
+          </div>
         }
-      </div>
+      </dl>
 
       @switch (vista()) {
         @case ('resumen') {
-          <p class="flujo__dato estado-turno">
-            <span aria-hidden="true">{{ simboloDeEstadoOperativo(estado()) }}</span>
-            {{ nombreDeEstadoOperativo(estado()) }}
-          </p>
           @if (textoDeReprogramado(operativo()?.reprogramaciones); as marca) {
             <p class="flujo__dato">
               <b>{{ marca }}</b>
@@ -106,7 +160,17 @@
           @if (operativo()?.turnoOrigenId; as origen) {
             <p class="flujo__dato"><b>Trasladado desde</b> el turno #{{ origen }}</p>
           }
-          <div class="flujo__observaciones">
+
+          <!-- Observaciones: su seccion, con el editar a la derecha del titulo. -->
+          <section class="flujo__seccion" aria-labelledby="flujo-observaciones-titulo">
+            <div class="flujo__seccion-cabecera">
+              <h3 id="flujo-observaciones-titulo" class="flujo__seccion-titulo">Observaciones</h3>
+              @if (!editandoObservaciones() && puedeOperar() && actual.version !== undefined) {
+                <button type="button" class="boton-texto" (click)="editarObservaciones()">
+                  Editar<span class="visualmente-oculto"> observaciones</span>
+                </button>
+              }
+            </div>
             @if (editandoObservaciones()) {
               <div class="campo">
                 <label for="flujo-observaciones">Observaciones</label>
@@ -136,17 +200,12 @@
                 </button>
               </div>
             } @else {
-              <p class="flujo__dato">
-                <b>Observaciones:</b>
+              <p class="flujo__dato" [class.flujo__vacio]="!operativo()?.observaciones">
                 {{ operativo()?.observaciones || 'Sin observaciones' }}
-                @if (puedeOperar() && actual.version !== undefined) {
-                  <button type="button" class="boton-texto" (click)="editarObservaciones()">
-                    Editar<span class="visualmente-oculto"> observaciones</span>
-                  </button>
-                }
               </p>
             }
-          </div>
+          </section>
+
           @if (avisoDePrepago(); as prepago) {
             <!-- E-8: se ve antes de la llegada. Avisa y no bloquea ninguna transicion (DP-06). -->
             <p class="flujo__dato">{{ prepago }}</p>
@@ -162,61 +221,73 @@
             </p>
           }
 
-          <!-- Acciones principales a la vista; el resto, en "Mas acciones" (TURNO - Tecnico §30). -->
-          @if (puedeOperar()) {
-            <div class="flujo__fila">
-              @if (vivo()) {
-                <button
-                  type="button"
-                  class="boton"
-                  [disabled]="enviando()"
-                  (click)="marcarPresente()"
-                >
-                  Paciente presente
-                </button>
-                @if (actual.estado === 'RESERVADO') {
+          <!--
+            Seguimiento: la asistencia y la atencion del turno, con la accion del momento como
+            principal (TURNO - Tecnico §30). Sin acciones posibles la seccion no se dibuja.
+          -->
+          <section class="flujo__seccion" aria-labelledby="flujo-seguimiento-titulo">
+            <h3 id="flujo-seguimiento-titulo" class="flujo__seccion-titulo">Seguimiento</h3>
+            <div class="flujo__acciones-grilla">
+              @if (puedeOperar()) {
+                @if (vivo()) {
                   <button
                     type="button"
-                    class="boton boton--secundario"
+                    class="boton"
                     [disabled]="enviando()"
-                    (click)="confirmarTurno()"
+                    (click)="marcarPresente()"
                   >
-                    Confirmar
+                    Paciente presente
+                  </button>
+                  @if (actual.estado === 'RESERVADO') {
+                    <button
+                      type="button"
+                      class="boton boton--secundario"
+                      [disabled]="enviando()"
+                      (click)="confirmarTurno()"
+                    >
+                      Confirmar
+                    </button>
+                  }
+                }
+                @if (cerrado()) {
+                  <button type="button" class="boton" (click)="buscarNuevoTurno()">
+                    Buscar nuevo turno
+                  </button>
+                }
+                @if (atendido()) {
+                  <button type="button" class="boton" (click)="programarProxima()">
+                    Programar próxima sesión
                   </button>
                 }
               }
-              @if (cerrado()) {
-                <button type="button" class="boton" (click)="buscarNuevoTurno()">
-                  Buscar nuevo turno
-                </button>
-              }
-              @if (atendido()) {
-                <button type="button" class="boton" (click)="programarProxima()">
-                  Programar próxima sesión
+              <ng-container *akinePermiso="PERMISO_SESION_REGISTER">
+                @if (vivo() || enElCentro() || enAtencion() || retirado()) {
+                  <button
+                    type="button"
+                    [class]="enElCentro() || enAtencion() ? 'boton' : 'boton boton--secundario'"
+                    (click)="iniciarAtencion()"
+                  >
+                    {{ enAtencion() ? 'Abrir la atención' : 'Iniciar atención' }}
+                  </button>
+                }
+                @if (atendido()) {
+                  <button type="button" class="boton boton--secundario" (click)="iniciarAtencion()">
+                    Ver la atención
+                  </button>
+                }
+              </ng-container>
+              @if (puedeMarcarAusente() && puedeOperar()) {
+                <button type="button" class="boton boton--secundario" (click)="abrir('ausente')">
+                  Marcar ausente
                 </button>
               }
             </div>
-          }
-          <div class="flujo__fila" *akinePermiso="PERMISO_SESION_REGISTER">
-            @if (vivo() || enElCentro() || enAtencion() || retirado()) {
-              <button
-                type="button"
-                [class]="enElCentro() || enAtencion() ? 'boton' : 'boton boton--secundario'"
-                (click)="iniciarAtencion()"
-              >
-                {{ enAtencion() ? 'Abrir la atención' : 'Iniciar atención' }}
-              </button>
-            }
-            @if (atendido()) {
-              <button type="button" class="boton boton--secundario" (click)="iniciarAtencion()">
-                Ver la atención
-              </button>
-            }
-          </div>
+          </section>
 
-          <details [open]="masAcciones()">
-            <summary>Más acciones</summary>
-            <div class="flujo__fila">
+          <!-- Gestion: mover, consultar e ir a lo relacionado, en una grilla de dos columnas. -->
+          <section class="flujo__seccion" aria-labelledby="flujo-gestion-titulo">
+            <h3 id="flujo-gestion-titulo" class="flujo__seccion-titulo">Gestión</h3>
+            <div class="flujo__acciones-grilla">
               @if (puedeReprogramar() && puedeOperar()) {
                 <button
                   type="button"
@@ -229,11 +300,6 @@
                   Cambiar de sede
                 </button>
               }
-              @if (puedeCancelar() && puedeOperar()) {
-                <button type="button" class="boton boton--secundario" (click)="abrir('cancelar')">
-                  Cancelar turno
-                </button>
-              }
               @if (vivo() && !empezo()) {
                 <button
                   *akinePermiso="PERMISO_TURNO_SOBRETURNO"
@@ -242,11 +308,6 @@
                   (click)="agregarSobreturno()"
                 >
                   Agregar sobreturno
-                </button>
-              }
-              @if (puedeMarcarAusente() && puedeOperar()) {
-                <button type="button" class="boton boton--secundario" (click)="abrir('ausente')">
-                  Marcar ausente
                 </button>
               }
               <button type="button" class="boton boton--secundario" (click)="abrir('historial')">
@@ -298,7 +359,16 @@
                 </button>
               }
             </div>
-          </details>
+          </section>
+
+          <!-- Cancelar: aparte y en color de peligro. Se confirma en su vista, con el motivo. -->
+          @if (puedeCancelar() && puedeOperar()) {
+            <section class="flujo__seccion flujo__seccion--peligro" aria-label="Cancelación">
+              <button type="button" class="boton boton--peligro" (click)="abrir('cancelar')">
+                Cancelar turno
+              </button>
+            </section>
+          }
         }
 
         @case ('reprogramar') {

@@ -96,9 +96,9 @@ const MENSAJE_SIN_CONTEXTO =
  * catalogo se sigue pudiendo leer.
  */
 const MENSAJE_SIN_ROL_DE_PLATAFORMA =
-  'El catalogo de servicios lo administra AKINE, no cada centro: dar de alta, editar o dar de ' +
-  'baja un servicio exige rol de plataforma. Podés seguir consultandolo, y lo que si administra ' +
-  'tu centro son las ofertas de la sede, que es donde se define como se presta cada servicio.';
+  'No tenés permiso para cambiar este servicio. Los servicios de AKINE los administra la ' +
+  'plataforma; los de tu centro, quien tenga permiso para administrar su catálogo. Podés seguir ' +
+  'consultándolo, y las ofertas de la sede definen cómo se presta cada servicio.';
 
 const MENSAJE_SIN_PERMISO =
   'No podés modificar las ofertas de esta sede: hace falta administrarla. Pediselo a quien la ' +

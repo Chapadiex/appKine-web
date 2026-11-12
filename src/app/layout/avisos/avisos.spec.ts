@@ -32,7 +32,7 @@ describe('Avisos', () => {
     fixture.detectChanges();
 
     const aviso = html.querySelector('.aviso--exito')!;
-    expect(aviso.getAttribute('role')).toBeNull();
+    expect(aviso.getAttribute('role')).toBe('status');
     expect(aviso.textContent).toContain('Listo:');
     expect(aviso.textContent).toContain('Persona registrada correctamente');
   });

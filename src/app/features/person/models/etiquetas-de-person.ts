@@ -14,9 +14,9 @@ export type TipoDeDocumento = (typeof TIPOS_DE_DOCUMENTO)[number];
 
 const ETIQUETAS_DE_DOCUMENTO: Record<string, string> = {
   DNI: 'DNI',
-  LC: 'Libreta civica',
+  LC: 'Libreta cívica',
   LE: 'Libreta de enrolamiento',
-  CI: 'Cedula de identidad',
+  CI: 'Cédula de identidad',
   PASAPORTE: 'Pasaporte',
   OTRO: 'Otro documento',
 };

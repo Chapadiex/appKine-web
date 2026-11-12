@@ -245,14 +245,54 @@ describe('AgendaPage', () => {
       });
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('No hay turnos para este período');
-      expect(texto(fixture)).toContain('Tampoco hay horarios de atención cargados');
+      expect(texto(fixture)).toContain('No hay turnos para este día');
+      expect(texto(fixture)).toContain('ni horarios de atención cargados');
 
       clic(fixture, 'Crear turno');
       expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toMatchObject({
         tipo: 'nuevo',
         contexto: { origen: 'AGENDA', fecha: FECHA },
       });
+    });
+
+    it('"Próximo día con turnos" busca desde mañana y abre el primer día que tenga', async () => {
+      const fixture = await montar();
+      leida().flush({
+        timezone: ZONA,
+        profesionales: [{ membershipId: 31, nombre: 'Lopez, Maria' }],
+      });
+      await asentar(fixture);
+
+      clic(fixture, 'Próximo día con turnos →');
+      const busqueda = leida();
+      expect(busqueda.request.params.get('desde')).toBe('2030-03-07');
+      expect(busqueda.request.params.get('hasta')).toBe('2030-03-21');
+      busqueda.flush({
+        ...AGENDA,
+        turnos: [{ ...TURNO, turno: { ...TURNO.turno, inicio: local('10:00', '2030-03-11') } }],
+      });
+      leida().flush(AGENDA);
+      await asentar(fixture);
+
+      expect((raiz(fixture).querySelector('#agenda-fecha') as HTMLInputElement).value).toBe(
+        '2030-03-11',
+      );
+    });
+
+    it('"Próximo día con turnos" sin resultados lo dice y no se mueve', async () => {
+      const fixture = await montar();
+      leida().flush({
+        timezone: ZONA,
+        profesionales: [{ membershipId: 31, nombre: 'Lopez, Maria' }],
+      });
+      await asentar(fixture);
+
+      clic(fixture, 'Próximo día con turnos →');
+      leida().flush({ timezone: ZONA, turnos: [] });
+      await asentar(fixture);
+
+      expect(texto(fixture)).toContain('Tampoco hay turnos en los próximos 14 días');
+      expect((raiz(fixture).querySelector('#agenda-fecha') as HTMLInputElement).value).toBe(FECHA);
     });
 
     it('con horarios y sin turnos muestra la grilla y avisa abajo', async () => {
@@ -272,7 +312,7 @@ describe('AgendaPage', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('Esta sede no tiene boxes en servicio');
-      expect(texto(fixture)).not.toContain('Tampoco hay horarios');
+      expect(texto(fixture)).not.toContain('ni horarios de atención');
     });
 
     it('una sede sin profesionales lo dice', async () => {
@@ -494,10 +534,12 @@ describe('AgendaPage', () => {
   });
 
   describe('filtros', () => {
-    it('cada filtro activo se ve como chip y se quita desde ahí', async () => {
+    it('cada filtro activo suma al contador del botón Filtros y Limpiar los quita', async () => {
       const fixture = await montar();
       leida().flush(AGENDA);
       await asentar(fixture);
+      expect(activas(fixture)).toBe(0);
+      expect(limpiar(fixture).disabled).toBe(true);
 
       elegir(fixture, '#agenda-profesional', '31');
       leida().flush(AGENDA);
@@ -507,24 +549,28 @@ describe('AgendaPage', () => {
       elegir(fixture, '#agenda-estado', 'CONFIRMADO');
       await asentar(fixture);
 
-      const chips = () =>
-        Array.from(raiz(fixture).querySelectorAll<HTMLButtonElement>('.agenda-chip'));
-      expect(chips().map((c) => (c.textContent ?? '').trim())).toEqual([
-        expect.stringContaining('Profesional: Lopez, Maria'),
-        expect.stringContaining('Prestación: Kinesiologia'),
-        expect.stringContaining('Estado: Confirmado'),
-      ]);
+      expect(activas(fixture)).toBe(3);
 
-      chips()[2].click();
-      await asentar(fixture);
-      chips()[1].click();
-      await asentar(fixture);
-      chips()[0].click();
+      clic(fixture, 'Limpiar');
       const sinFiltros = leida();
       expect(sinFiltros.request.params.has('profesionalId')).toBe(false);
       sinFiltros.flush(AGENDA);
       await asentar(fixture);
-      expect(chips()).toEqual([]);
+      expect(activas(fixture)).toBe(0);
+    });
+
+    it('los filtros avanzados arrancan plegados, Filtros los despliega y Aplicar los pliega', async () => {
+      const fixture = await montar();
+      leida().flush(AGENDA);
+      await asentar(fixture);
+      const panel = () => raiz(fixture).querySelector('.filtros-barra__avanzados') as HTMLElement;
+      expect(panel().hidden).toBe(true);
+      (raiz(fixture).querySelector('.filtros-barra__boton') as HTMLButtonElement).click();
+      await asentar(fixture);
+      expect(panel().hidden).toBe(false);
+      clic(fixture, 'Aplicar');
+      await asentar(fixture);
+      expect(panel().hidden).toBe(true);
     });
 
     it('el filtro de estado no vuelve a pedir, salvo Cancelado que hay que leerlo', async () => {
@@ -576,11 +622,7 @@ describe('AgendaPage', () => {
       expect(turnos[0].getAttribute('title')).toContain(
         'A reubicar: quedó fuera de la disponibilidad',
       );
-      expect(
-        Array.from(raiz(fixture).querySelectorAll('.agenda-chip')).map((c) =>
-          (c.textContent ?? '').trim(),
-        ),
-      ).toEqual([expect.stringContaining('Estado: A reubicar')]);
+      expect(activas(fixture)).toBe(1);
     });
 
     it('un enlace con estado A reubicar lo respeta; uno inventado cae en todos', async () => {
@@ -624,9 +666,7 @@ describe('AgendaPage', () => {
       expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(1);
       httpMock.expectNone((r) => r.url === OPERATIVA);
 
-      const chip = raiz(fixture).querySelector<HTMLButtonElement>('.agenda-chip');
-      expect(chip?.textContent).toContain('Paciente: 30111');
-      chip?.click();
+      clic(fixture, 'Limpiar');
       await asentar(fixture);
       expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(2);
     });
@@ -679,7 +719,9 @@ describe('AgendaPage', () => {
       vigente.flush(DOS_COLUMNAS);
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('Profesional: Lopez, Maria');
+      expect((raiz(fixture).querySelector('#agenda-profesional') as HTMLSelectElement).value).toBe(
+        '31',
+      );
       // Las dos columnas se dibujan; solo la propia tiene celdas para dar un turno.
       const columnas = new Set(celdas(fixture).map((c) => c.textContent ?? ''));
       expect([...columnas].some((rotulo) => rotulo.includes('Gomez, Juan'))).toBe(false);
@@ -1014,6 +1056,20 @@ describe('AgendaPage', () => {
 
   function celdas(fixture: ComponentFixture<AgendaPage>): HTMLButtonElement[] {
     return Array.from(raiz(fixture).querySelectorAll<HTMLButtonElement>('.grilla__celda'));
+  }
+
+  /** Lo que dice el contador del boton Filtros: cuantos filtros hay aplicados (0 sin contador). */
+  function activas(fixture: ComponentFixture<AgendaPage>): number {
+    const contador = raiz(fixture).querySelector('.filtros-barra__contador');
+    return contador === null ? 0 : Number.parseInt(contador.textContent ?? '0', 10);
+  }
+
+  function limpiar(fixture: ComponentFixture<AgendaPage>): HTMLButtonElement {
+    const boton = Array.from(raiz(fixture).querySelectorAll('button')).find(
+      (b) => (b.textContent ?? '').trim() === 'Limpiar',
+    );
+    if (boton === undefined) throw new Error('No está el botón Limpiar');
+    return boton;
   }
 
   function botones(fixture: ComponentFixture<AgendaPage>): readonly string[] {

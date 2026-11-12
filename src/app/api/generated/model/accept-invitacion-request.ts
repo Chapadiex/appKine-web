@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PerfilDeInvitacion } from './perfil-de-invitacion';
 
 
 /**
@@ -29,6 +30,10 @@ export interface AcceptInvitacionRequest {
      * Contrasena elegida. Obligatoria solo si el invitado no tiene cuenta todavia. Misma politica que el registro
      */
     password?: string;
+    /**
+     * Correcciones al perfil precargado en un alta manual
+     */
+    perfil?: PerfilDeInvitacion;
     /**
      * Token recibido por correo
      */

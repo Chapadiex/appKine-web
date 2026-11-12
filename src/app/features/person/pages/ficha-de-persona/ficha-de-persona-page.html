@@ -12,9 +12,11 @@
     <p>{{ mensaje }}</p>
     <p class="alerta__acciones">
       @if (faltaContexto()) {
-        <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+        <a class="boton boton--secundario" href="/seleccionar-contexto"
+          >Elegir contexto de trabajo</a
+        >
       } @else {
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       }
     </p>
   </app-alerta>
@@ -135,7 +137,7 @@
     <!-- Secciones que aportaron los modulos que el usuario SI puede ver. -->
     @for (seccion of secciones(); track seccion.seccion) {
       <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
-        <div class="titulo-con-ayuda">
+        <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
           <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
           @if (seccion.seccion === seccionCoberturas) {
             <app-ayuda titulo="Coberturas en la ficha">

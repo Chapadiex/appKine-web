@@ -268,3 +268,21 @@ export const PERMISO_PASE_MANAGE = 'pase:manage';
  * no el mostrador (el ADMINISTRATIVO vende pero no corrige saldos).
  */
 export const PERMISO_PASE_ADJUST = 'pase:adjust';
+
+/**
+ * Administrar la biblioteca del centro (libros PDF y su busqueda, contrato 0.164.0). Copiado de
+ * `knowledge.domain.PermissionCodes`.
+ *
+ * <p>Es solo del ORG_ADMIN. Gobierna la pantalla `/biblioteca` entera: el guard y la entrada del
+ * menu son UX, la autoridad es el backend.
+ */
+export const PERMISO_BIBLIOTECA_MANAGE = 'biblioteca:manage';
+
+/**
+ * Consultar la biblioteca del centro con el asistente (contrato 0.165.0). Copiado de
+ * `knowledge.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Gobierna
+ * `/consulta`: el guard y la entrada del menu son UX, la autoridad es el backend.
+ */
+export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';

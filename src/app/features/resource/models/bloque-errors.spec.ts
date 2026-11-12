@@ -52,6 +52,29 @@ describe('traducirErrorBloque', () => {
    * <p>Ramificar por el codigo equivocado dejaria el unico error del modulo donde hay que
    * RECARGAR antes de reintentar cayendo en la rama generica, que solo dice "volve a intentar".
    */
+  it('la franja fuera del horario de la sede dice el horario de la sede de cada dia que no entra (0.162.0)', () => {
+    const traducido = traducirErrorBloque(
+      problema(409, 'franja-fuera-del-horario-de-sede', {
+        franjasFueraDeHorario: [
+          {
+            indice: 0,
+            diaSemana: 2,
+            horaDesde: '08:00',
+            horaHasta: '12:00',
+            horarioDeSede: [{ horaDesde: '09:00', horaHasta: '13:00' }],
+          },
+          { indice: 1, diaSemana: 6, horaDesde: '08:00', horaHasta: '12:00', horarioDeSede: [] },
+        ],
+      }),
+    );
+
+    expect(traducido.causa).toBe('fuera-de-horario-sede');
+    expect(traducido.fueraDeHorario?.map((franja) => franja.diaSemana)).toEqual([2, 6]);
+    expect(traducido.mensaje).toBe(
+      'Fuera del horario de la sede. Martes la sede abre de 09:00 a 13:00. Sabado no abre.',
+    );
+  });
+
   it('la versión vieja de un bloque llega como concurrent-modification y manda a recargar', () => {
     const traducido = traducirErrorBloque(problema(409, 'concurrent-modification'));
     expect(traducido.causa).toBe('concurrencia');

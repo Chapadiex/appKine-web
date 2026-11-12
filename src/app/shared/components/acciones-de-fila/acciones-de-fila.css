@@ -33,7 +33,7 @@
 
 .acciones-de-fila__boton:hover,
 .acciones-de-fila__boton[aria-expanded='true'] {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
   color: var(--color-texto-fuerte);
 }
 
@@ -76,7 +76,7 @@
 
 .acciones-de-fila__panel > button:hover:not(:disabled),
 .acciones-de-fila__panel > a:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 .acciones-de-fila__panel > button:disabled {

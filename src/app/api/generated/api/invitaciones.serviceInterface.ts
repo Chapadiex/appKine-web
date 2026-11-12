@@ -12,6 +12,7 @@ import { HttpHeaders }                                       from '@angular/comm
 import { Observable }                                        from 'rxjs';
 
 import { CancelInvitacionRequest } from '../model/models';
+import { CreateAltaManualRequest } from '../model/models';
 import { CreateInvitacionRequest } from '../model/models';
 import { InvitacionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -24,6 +25,11 @@ export interface CancelColaboradorInvitacionRequestParams {
     orgId: number;
     invitacionId: number;
     cancelInvitacionRequest: CancelInvitacionRequest;
+}
+
+export interface CreateAltaManualColaboradorRequestParams {
+    orgId: number;
+    createAltaManualRequest: CreateAltaManualRequest;
 }
 
 export interface CreateColaboradorInvitacionRequestParams {
@@ -53,6 +59,14 @@ export interface InvitacionesServiceInterface {
 * @param requestParameters
      */
     cancelColaboradorInvitacion(requestParameters: CancelColaboradorInvitacionRequestParams, extraHttpRequestParams?: any): Observable<InvitacionResponse>;
+
+    /**
+     * Preparar colaborador e invitarlo a completar su cuenta
+     * Guarda los datos de incorporacion junto a la invitacion. El acceso se crea cuando la persona acepta el enlace. Requiere colaborador:manage en cada sede elegida.
+     * @endpoint post /api/v1/organizations/{orgId}/colaborador-invitaciones/manual
+* @param requestParameters
+     */
+    createAltaManualColaborador(requestParameters: CreateAltaManualColaboradorRequestParams, extraHttpRequestParams?: any): Observable<InvitacionResponse>;
 
     /**
      * Invitar a alguien a colaborar

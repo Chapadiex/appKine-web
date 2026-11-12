@@ -13,7 +13,7 @@
 
 code {
   padding: var(--esp-1) var(--esp-3);
-  background: var(--color-superficie-codigo);
+  background: var(--color-superficie-secundaria);
   border-radius: var(--radio-sm);
   font-size: 0.875em;
 }

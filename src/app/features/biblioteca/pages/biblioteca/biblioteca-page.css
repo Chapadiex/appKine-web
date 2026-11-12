@@ -1,0 +1,37 @@
+.biblioteca__subtitulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-md);
+}
+
+.biblioteca__titulo {
+  font-weight: var(--peso-semi);
+}
+
+.biblioteca__autor,
+.biblioteca__motivo,
+.biblioteca__reemplazo {
+  display: block;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+  color: var(--color-texto-suave);
+}
+
+.biblioteca__progreso {
+  margin-left: var(--esp-2);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.biblioteca__aviso-borrado {
+  color: var(--color-texto-fuerte);
+}
+
+.biblioteca__alerta {
+  display: block;
+  margin-block-end: var(--esp-5);
+}
+
+.biblioteca__rotulo-orden {
+  display: block;
+  font-weight: var(--peso-semi);
+}

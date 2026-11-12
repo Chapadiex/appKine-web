@@ -1,0 +1,192 @@
+@if (sinSede()) {
+  <app-alerta tipo="advertencia" titulo="Falta elegir un consultorio">
+    <p>
+      Un espacio se crea dentro de una sede concreta y todavía no elegiste ninguna. Tu sesión sigue
+      abierta: solo falta indicar donde estas trabajando.
+    </p>
+    <p class="alerta__acciones">
+      <a class="boton boton--secundario" routerLink="/seleccionar-contexto">
+        Elegir un consultorio
+      </a>
+    </p>
+  </app-alerta>
+} @else {
+  <!--
+    Panel lateral del listado (10/11/2026): nombre y tipo en una fila, capacidad y observación en
+    otra; la ventana de vigencia, que casi siempre queda como viene, plegada. Lo explicativo de
+    cada campo aparece al entrar en él.
+  -->
+  <form class="formulario-espacio" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+    <!--
+      Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). El
+      nombre repetido va junto al campo.
+    -->
+    @if ((mensajeError() && !errorEnElNombre()) || espera.activa()) {
+      <app-alerta tipo="error" titulo="No pudimos dar de alta el espacio">
+        @if (mensajeError() && !errorEnElNombre()) {
+          <p>{{ mensajeError() }}</p>
+        }
+        @if (espera.activa()) {
+          <p>Demasiados intentos. Podés volver a intentar en {{ espera.segundos() }} segundos.</p>
+        }
+        <!--
+          Sin `Idempotency-Key` -y es lo que el contrato define para esta operacion- un corte de
+          red deja la duda de si el alta entro. Se dice que hay que releer, en vez de invitar a
+          reenviar a ciegas.
+        -->
+        @if (dudaPorRed()) {
+          <p>
+            El pedido pudo haber llegado igual antes de cortarse.
+            <b>Antes de volver a intentarlo, revisa el listado</b>: si el espacio ya esta, no lo
+            cargues de nuevo.
+          </p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="listo.emit()">
+              Revisar el listado
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    <div class="campo campo--8">
+      <label for="espacio-name">Nombre del espacio</label>
+      <input
+        id="espacio-name"
+        type="text"
+        formControlName="name"
+        autocomplete="off"
+        placeholder="Ej.: Box 3"
+        [attr.aria-invalid]="mostrarError('name') || errorEnElNombre()"
+        [attr.aria-describedby]="descritoNombre()"
+      />
+      <!-- Recibe el foco al abrir: abierta, la ayuda tapaba la fila de abajo. El ejemplo ya está en el placeholder. -->
+      <span class="visualmente-oculto" id="espacio-name-ayuda">
+        "Box 3", "Gimnasio planta baja". Distinto de los otros espacios vigentes de esta sede.
+      </span>
+      @if (mostrarError('name')) {
+        <p class="campo__error" id="espacio-name-error">El espacio necesita un nombre.</p>
+      }
+    </div>
+
+    <div class="campo campo--4">
+      <label for="espacio-tipo">Tipo de espacio</label>
+      <select id="espacio-tipo" formControlName="tipo" aria-describedby="espacio-tipo-ayuda">
+        @for (opcion of tipos; track opcion.valor) {
+          <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+      <p class="ayuda" id="espacio-tipo-ayuda">
+        Clasificación física. <b>No habilita ningún servicio</b>: eso se resuelve en la oferta.
+      </p>
+    </div>
+
+    <!-- Nombre en uso: pegado al campo que lo produjo (UX-12). -->
+    @if (errorEnElNombre()) {
+      <app-alerta
+        class="campo--ancho"
+        tipo="advertencia"
+        titulo="Ya hay un espacio con ese nombre"
+        id="espacio-name-conflicto"
+      >
+        <p>{{ mensajeError() }}</p>
+      </app-alerta>
+    }
+
+    <div class="campo campo--4">
+      <label for="espacio-capacidad">Capacidad</label>
+      <input
+        id="espacio-capacidad"
+        type="number"
+        min="1"
+        formControlName="capacidad"
+        [attr.aria-invalid]="mostrarError('capacidad')"
+        aria-describedby="espacio-capacidad-ayuda"
+      />
+      <p class="ayuda" id="espacio-capacidad-ayuda">
+        Personas simultáneas que admite. Un box individual admite 1; un gimnasio o una sala grupal,
+        varias.
+      </p>
+      @if (mostrarError('capacidad')) {
+        <p class="campo__error" id="espacio-capacidad-error">
+          La capacidad tiene que ser al menos 1.
+        </p>
+      }
+    </div>
+
+    <div class="campo campo--8">
+      <label for="espacio-notes">
+        Observación <span class="campo__opcional">(opcional)</span>
+      </label>
+      <input
+        id="espacio-notes"
+        type="text"
+        formControlName="notes"
+        placeholder="Ej.: tiene camilla eléctrica"
+        aria-describedby="espacio-notes-ayuda"
+      />
+      <p class="ayuda" id="espacio-notes-ayuda">
+        Nota operativa. <b>Nunca información clínica de un paciente.</b>
+      </p>
+    </div>
+
+    <details class="seccion-plegable">
+      <summary>
+        Ventana de vigencia
+        <span class="seccion-plegable__resumen">En servicio desde ahora, sin fin previsto</span>
+      </summary>
+
+      <p class="ayuda ayuda--fija" id="espacio-vigencia-ayuda">
+        Cuando el espacio <b>se ofrece para reservar</b>; es distinto de la baja.
+      </p>
+
+      <div class="grilla-campos">
+        <div class="campo campo--6">
+          <label for="espacio-validFrom">
+            En servicio desde <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="espacio-validFrom"
+            type="datetime-local"
+            formControlName="validFrom"
+            aria-describedby="espacio-validFrom-ayuda"
+          />
+          <p class="ayuda" id="espacio-validFrom-ayuda">
+            Vacío = desde ahora. Con una fecha futura queda
+            <b>activo pero todavía sin servicio</b>
+            hasta ese momento: es lo correcto, no un error.
+          </p>
+        </div>
+
+        <div class="campo campo--6">
+          <label for="espacio-validUntil">
+            En servicio hasta <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            id="espacio-validUntil"
+            type="datetime-local"
+            formControlName="validUntil"
+            aria-describedby="espacio-validUntil-ayuda"
+          />
+          <p class="ayuda" id="espacio-validUntil-ayuda">
+            Vacío = sin fin previsto. El fin es <b>exclusivo</b>: uno que termina el 30 a las 00:00
+            se ofrece hasta el 29 inclusive.
+          </p>
+        </div>
+      </div>
+    </details>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="bloqueado()">
+        @if (enviando()) {
+          Dando de alta&hellip;
+        } @else {
+          Dar de alta el espacio
+        }
+      </button>
+      <button type="button" class="boton boton--secundario" (click)="cancelar.emit()">
+        Cancelar
+      </button>
+    </div>
+  </form>
+}

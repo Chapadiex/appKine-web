@@ -1,0 +1,162 @@
+/*
+ * Mapa de ubicación (Leaflet + OpenStreetMap).
+ *
+ * La hoja de Leaflet viaja con el componente, no en `angular.json`: así queda en el chunk perezoso
+ * de quien lo use y el bundle inicial no la paga. La encapsulación es `None` porque Leaflet inyecta
+ * su DOM; por eso toda regla propia va bajo `.mapa-de-ubicacion`.
+ */
+@import 'leaflet/dist/leaflet.css';
+
+.mapa-de-ubicacion {
+  display: block;
+  /* En oscuro las teselas se invierten (abajo); en claro no se tocan. */
+  --mapa-filtro-teselas: none;
+}
+
+.mapa-de-ubicacion__marco {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.mapa-de-ubicacion--compacto .mapa-de-ubicacion__marco {
+  height: 180px;
+}
+
+.mapa-de-ubicacion__lienzo {
+  width: 100%;
+  height: 100%;
+}
+
+/* El aviso de carga o de error va sobre el lienzo, centrado; no cambia el alto del marco. */
+.mapa-de-ubicacion__aviso {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  pointer-events: none;
+}
+
+/* --- Ajustes sobre Leaflet ------------------------------------------------------------ */
+
+.mapa-de-ubicacion .leaflet-container {
+  background: var(--color-superficie-secundaria);
+  font: inherit;
+}
+
+/* El anillo de foco del sistema, también sobre el lienzo y el marcador (WCAG 2.4.7). */
+.mapa-de-ubicacion .leaflet-container:focus-visible,
+.mapa-de-ubicacion .leaflet-marker-icon:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.mapa-de-ubicacion .leaflet-tile {
+  filter: var(--mapa-filtro-teselas);
+}
+
+/* El marcador y los globos nunca se invierten: el pin lleva el color del acento de cada tema. */
+.mapa-de-ubicacion .leaflet-marker-pane,
+.mapa-de-ubicacion .leaflet-tooltip-pane {
+  filter: none;
+}
+
+/* El pin: un `divIcon` sin el fondo blanco ni el borde que Leaflet le pone a los suyos. */
+.mapa-de-ubicacion .mapa-de-ubicacion__pin {
+  background: none;
+  border: 0;
+  color: var(--color-acento);
+}
+
+.mapa-de-ubicacion .mapa-de-ubicacion__pin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+}
+
+.mapa-de-ubicacion .mapa-de-ubicacion__pin-cuerpo {
+  fill: currentColor;
+  stroke: var(--color-superficie);
+  stroke-width: 1.5;
+}
+
+.mapa-de-ubicacion .mapa-de-ubicacion__pin-centro {
+  fill: var(--color-superficie);
+}
+
+.mapa-de-ubicacion .leaflet-marker-draggable {
+  cursor: grab;
+}
+
+.mapa-de-ubicacion .leaflet-marker-draggable:active {
+  cursor: grabbing;
+}
+
+/* Controles y atribución con los tokens del sistema, legibles en los dos temas. */
+.mapa-de-ubicacion .leaflet-bar {
+  border: var(--borde-fino) solid var(--color-borde-control);
+  box-shadow: none;
+}
+
+.mapa-de-ubicacion .leaflet-bar a {
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border-bottom-color: var(--color-borde);
+}
+
+.mapa-de-ubicacion .leaflet-bar a:hover,
+.mapa-de-ubicacion .leaflet-bar a:focus-visible {
+  background: var(--color-hover);
+  color: var(--color-texto-fuerte);
+}
+
+.mapa-de-ubicacion .leaflet-bar a.leaflet-disabled {
+  background: var(--color-superficie-secundaria);
+  color: var(--color-deshabilitado);
+}
+
+/* La atribución de OpenStreetMap tiene que quedar visible: lo exige su licencia. */
+.mapa-de-ubicacion .leaflet-control-attribution {
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.mapa-de-ubicacion .leaflet-control-attribution a {
+  color: var(--color-acento);
+}
+
+.mapa-de-ubicacion .leaflet-tooltip {
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border-color: var(--color-borde);
+  border-radius: var(--radio-md);
+  font: inherit;
+  font-size: var(--tipo-sm);
+}
+
+/* --- Modo oscuro -------------------------------------------------------------------------- */
+
+/*
+ * Las teselas de OpenStreetMap son claras. Invertirlas y girar el matiz da un mapa oscuro con las
+ * calles legibles y el agua azul; se baja un poco el brillo y el contraste para que no encandile.
+ * Los mismos dos selectores que `design-system.css`: "sistema" en oscuro, y "oscuro" a mano.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .mapa-de-ubicacion {
+    --mapa-filtro-teselas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+  }
+}
+
+:root[data-tema='oscuro'] .mapa-de-ubicacion {
+  --mapa-filtro-teselas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
+}

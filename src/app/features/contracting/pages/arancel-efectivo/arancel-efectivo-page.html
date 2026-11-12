@@ -154,7 +154,9 @@
         <p>{{ mensaje }}</p>
         @if (faltaContexto()) {
           <p class="alerta__acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir un consultorio</a
+            >
           </p>
         }
       </app-alerta>

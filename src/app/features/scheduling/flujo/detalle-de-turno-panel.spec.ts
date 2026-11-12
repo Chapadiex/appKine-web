@@ -95,6 +95,11 @@ describe('DetalleDeTurnoPanel', () => {
 
   afterEach(() => {
     soltarReloj();
+    // La ficha de la sede (direccion y "Como llegar") se lee una vez por contexto al abrir el
+    // panel: se responde sin direccion para que no cambie lo que cada caso espera.
+    httpMock
+      .match((pedido) => /[/]organizations[/][0-9]+[/]consultorios[/][0-9]+$/.test(pedido.url))
+      .forEach((pedido) => pedido.flush({ id: 3, name: 'Belgrano' }));
     httpMock.verify();
   });
 
@@ -1514,7 +1519,11 @@ describe('DetalleDeTurnoPanel', () => {
 
     it('se editan con la versión leída, avisan y releen', async () => {
       const fixture = await abierto(conObservaciones('Trae estudios'));
-      expect(texto(fixture)).toContain('Observaciones: Trae estudios');
+      expect(
+        raiz(fixture)
+          .querySelector('[aria-labelledby="flujo-observaciones-titulo"] .flujo__dato')
+          ?.textContent?.trim(),
+      ).toBe('Trae estudios');
 
       clic(fixture, 'Editar observaciones');
       const campo = raiz(fixture).querySelector('#flujo-observaciones') as HTMLTextAreaElement;
@@ -1536,7 +1545,11 @@ describe('DetalleDeTurnoPanel', () => {
 
       expect(avisos()).toEqual(['Observaciones guardadas.']);
       expect(raiz(fixture).querySelector('#flujo-observaciones')).toBeNull();
-      expect(texto(fixture)).toContain('Observaciones: Trae estudios y la orden');
+      expect(
+        raiz(fixture)
+          .querySelector('[aria-labelledby="flujo-observaciones-titulo"] .flujo__dato')
+          ?.textContent?.trim(),
+      ).toBe('Trae estudios y la orden');
     });
 
     it('sin observaciones lo dice, y "Descartar" no manda nada', async () => {
