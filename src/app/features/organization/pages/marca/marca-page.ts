@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -137,6 +138,16 @@ export class MarcaPage {
   });
 
   constructor() {
+    // Vista previa en vivo: lo que se edita se ve en toda la aplicacion antes de guardar, y al
+    // salir de la pantalla sin guardar vuelve lo guardado.
+    effect(() => {
+      const colores = this.colores();
+      if (this.estado() === 'listo') {
+        this.store.previsualizar(colores);
+      }
+    });
+    inject(DestroyRef).onDestroy(() => this.store.previsualizar(null));
+
     effect(() => {
       // Cambiar de centro invalida lo que se estaba editando.
       this.tenant.contextEpoch();

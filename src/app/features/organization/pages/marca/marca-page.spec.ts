@@ -43,6 +43,7 @@ describe('MarcaPage', () => {
             marca: signal<MarcaResponse | null>(null),
             logosPorTema: signal({ claro: null, oscuro: null }),
             adoptar: adoptada,
+            previsualizar: () => undefined,
           },
         },
       ],

@@ -45,125 +45,134 @@
     <section class="tarjeta" aria-labelledby="titulo-colores">
       <h2 id="titulo-colores">Colores</h2>
 
-      <h3 class="marca__subtitulo" id="titulo-paletas">Empezá por una paleta</h3>
-      <ul class="paletas" aria-labelledby="titulo-paletas">
-        @for (paleta of paletas; track paleta.nombre) {
-          <li>
-            <button
-              type="button"
-              class="paleta"
-              [class.paleta--elegida]="esLaPaletaActual(paleta)"
-              [attr.aria-pressed]="esLaPaletaActual(paleta)"
-              (click)="usarPaleta(paleta)"
-            >
-              <span class="paleta__muestras" aria-hidden="true">
-                @for (color of muestrasDe(paleta); track $index) {
-                  <span class="paleta__muestra" [style.background]="color"></span>
+      <!-- Paletas en una columna a la izquierda; a la derecha, claro arriba y oscuro abajo. -->
+      <div class="colores">
+        <div class="colores__paletas">
+          <h3 class="marca__subtitulo" id="titulo-paletas">Paletas</h3>
+          <ul class="paletas" aria-labelledby="titulo-paletas">
+            @for (paleta of paletas; track paleta.nombre) {
+              <li>
+                <button
+                  type="button"
+                  class="paleta"
+                  [class.paleta--elegida]="esLaPaletaActual(paleta)"
+                  [attr.aria-pressed]="esLaPaletaActual(paleta)"
+                  (click)="usarPaleta(paleta)"
+                >
+                  <span class="paleta__muestras" aria-hidden="true">
+                    @for (color of muestrasDe(paleta); track $index) {
+                      <span class="paleta__muestra" [style.background]="color"></span>
+                    }
+                  </span>
+                  <span class="paleta__nombre">{{ paleta.nombre }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="temas">
+          @for (tema of temas; track tema.id) {
+            <fieldset class="tema">
+              <legend class="tema__titulo">{{ tema.titulo }}</legend>
+
+              <div class="tema__fila">
+                @for (campo of camposDeColor; track campo.id) {
+                  @let valor = colorEfectivo(tema.id, campo.id);
+                  @let idCampo = 'color-' + tema.id + '-' + campo.id;
+                  <div class="color">
+                    <div class="color__cabecera">
+                      <label class="color__etiqueta" [for]="idCampo + '-hex'">
+                        {{ campo.etiqueta }}
+                        <span class="color__uso" [id]="idCampo + '-nota'">{{ campo.uso }}</span>
+                      </label>
+                      @if (esPropio(tema.id, campo.id)) {
+                        <button
+                          type="button"
+                          class="enlace-boton"
+                          (click)="cambiarColor(tema.id, campo.id, null)"
+                        >
+                          Volver al de AKINE<span class="visualmente-oculto"
+                            >: {{ campo.etiqueta }}</span
+                          >
+                        </button>
+                      }
+                    </div>
+                    <div class="color__controles">
+                      <input
+                        class="color__selector"
+                        type="color"
+                        [value]="valor"
+                        [attr.aria-label]="campo.etiqueta + ', selector, ' + tema.titulo"
+                        (input)="cambiarColor(tema.id, campo.id, $any($event.target).value)"
+                      />
+                      <input
+                        class="color__hex"
+                        type="text"
+                        [id]="idCampo + '-hex'"
+                        [value]="valor"
+                        maxlength="7"
+                        spellcheck="false"
+                        autocomplete="off"
+                        [attr.aria-describedby]="idCampo + '-nota'"
+                        (change)="escribirColor(tema.id, campo.id, $any($event.target))"
+                      />
+                      <button
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        (click)="intensidad(tema.id, campo.id, -1)"
+                      >
+                        Más suave<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        (click)="intensidad(tema.id, campo.id, 1)"
+                      >
+                        Más fuerte<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
+                      </button>
+                    </div>
+                  </div>
                 }
-              </span>
-              <span class="paleta__nombre">{{ paleta.nombre }}</span>
-            </button>
-          </li>
-        }
-      </ul>
 
-      <div class="temas">
-        @for (tema of temas; track tema.id) {
-          <fieldset class="tema">
-            <legend class="tema__titulo">{{ tema.titulo }}</legend>
-
-            @for (campo of camposDeColor; track campo.id) {
-              @let valor = colorEfectivo(tema.id, campo.id);
-              @let idCampo = 'color-' + tema.id + '-' + campo.id;
-              <div class="color">
-                <label class="color__etiqueta" [for]="idCampo + '-hex'">{{ campo.etiqueta }}</label>
-                <div class="color__controles">
-                  <input
-                    class="color__selector"
-                    type="color"
-                    [value]="valor"
-                    [attr.aria-label]="campo.etiqueta + ', selector, ' + tema.titulo"
-                    (input)="cambiarColor(tema.id, campo.id, $any($event.target).value)"
-                  />
-                  <input
-                    class="color__hex"
-                    type="text"
-                    [id]="idCampo + '-hex'"
-                    [value]="valor"
-                    maxlength="7"
-                    spellcheck="false"
-                    autocomplete="off"
-                    [attr.aria-describedby]="idCampo + '-nota'"
-                    (change)="escribirColor(tema.id, campo.id, $any($event.target))"
-                  />
-                  <button
-                    type="button"
-                    class="boton boton--secundario boton--chico"
-                    (click)="intensidad(tema.id, campo.id, -1)"
-                  >
-                    Más suave<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="boton boton--secundario boton--chico"
-                    (click)="intensidad(tema.id, campo.id, 1)"
-                  >
-                    Más fuerte<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
-                  </button>
+                <!-- Vista previa sobre la superficie de ESTE tema, no la del tema en uso. -->
+                <div
+                  class="muestra"
+                  [class.muestra--oscura]="tema.id === 'oscuro'"
+                  [style.--m-principal]="colorEfectivo(tema.id, 'principal')"
+                  [style.--m-sobre-principal]="textoSobrePrincipal(tema.id)"
+                  [style.--m-acento]="colorEfectivo(tema.id, 'acento')"
+                  aria-hidden="true"
+                >
+                  <span class="muestra__boton">Guardar</span>
+                  <span class="muestra__enlace">Ver detalle</span>
+                  <span class="muestra__fila">Fila seleccionada</span>
                 </div>
-                <p class="color__nota" [id]="idCampo + '-nota'">
-                  @if (esPropio(tema.id, campo.id)) {
-                    {{ campo.uso }}
+              </div>
+
+              @for (aviso of avisosDe(tema.id); track aviso.campo) {
+                <div class="aviso-de-contraste" role="status">
+                  <app-icono nombre="advertencia" />
+                  <p>
+                    {{ aviso.texto }}
                     <button
                       type="button"
                       class="enlace-boton"
-                      (click)="cambiarColor(tema.id, campo.id, null)"
+                      (click)="cambiarColor(tema.id, aviso.campo, aviso.sugerido)"
                     >
-                      Volver al de AKINE
+                      Usar el tono sugerido
                     </button>
-                  } @else {
-                    {{ campo.uso }} Hoy es el de AKINE.
-                  }
-                </p>
-              </div>
-            }
-
-            <!-- Vista previa sobre la superficie de ESTE tema, no la del tema en uso. -->
-            <div
-              class="muestra"
-              [class.muestra--oscura]="tema.id === 'oscuro'"
-              [style.--m-principal]="colorEfectivo(tema.id, 'principal')"
-              [style.--m-sobre-principal]="textoSobrePrincipal(tema.id)"
-              [style.--m-acento]="colorEfectivo(tema.id, 'acento')"
-              aria-hidden="true"
-            >
-              <span class="muestra__boton">Guardar</span>
-              <span class="muestra__enlace">Ver detalle</span>
-              <span class="muestra__fila">Fila seleccionada</span>
-            </div>
-
-            @for (aviso of avisosDe(tema.id); track aviso.campo) {
-              <div class="aviso-de-contraste" role="status">
-                <app-icono nombre="advertencia" />
-                <p>
-                  {{ aviso.texto }}
-                  <button
-                    type="button"
-                    class="enlace-boton"
-                    (click)="cambiarColor(tema.id, aviso.campo, aviso.sugerido)"
-                  >
-                    Usar el tono sugerido
-                  </button>
-                </p>
-                <span
-                  class="aviso-de-contraste__sugerido"
-                  [style.background]="aviso.sugerido"
-                  aria-hidden="true"
-                ></span>
-              </div>
-            }
-          </fieldset>
-        }
+                  </p>
+                  <span
+                    class="aviso-de-contraste__sugerido"
+                    [style.background]="aviso.sugerido"
+                    aria-hidden="true"
+                  ></span>
+                </div>
+              }
+            </fieldset>
+          }
+        </div>
       </div>
     </section>
 
@@ -298,6 +307,11 @@
     </section>
 
     <div class="acciones">
+      @if (hayCambios()) {
+        <p class="marca__pendiente" role="status">
+          Estás viendo los cambios solo vos. Guardá para aplicarlos a todo el centro.
+        </p>
+      }
       <button type="submit" class="boton" [disabled]="guardando() || !hayCambios()">
         Guardar los cambios
       </button>

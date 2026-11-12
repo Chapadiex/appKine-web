@@ -25,26 +25,34 @@
   font-weight: var(--peso-medio);
 }
 
-/* --- Paletas --- */
+/* --- Colores: paletas en columna a la izquierda, los dos temas apilados a la derecha --- */
+
+.colores {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  gap: var(--esp-8);
+  align-items: start;
+}
 
 .paletas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-  gap: var(--esp-4);
-  margin: 0 0 var(--esp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Una paleta por renglon: la tira de colores y el nombre al lado. */
 .paleta {
   display: flex;
-  flex-direction: column;
-  gap: var(--esp-3);
+  align-items: center;
+  gap: var(--esp-4);
   width: 100%;
-  padding: var(--esp-4);
-  border: var(--borde-fino) solid var(--color-borde-control);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid transparent;
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: none;
   color: var(--color-texto);
   font: inherit;
   font-size: var(--tipo-sm);
@@ -58,15 +66,16 @@
 
 .paleta--elegida {
   border-color: var(--color-accion-fondo);
-  box-shadow: inset 0 0 0 var(--borde-fino) var(--color-accion-fondo);
   background: var(--color-seleccion);
   font-weight: var(--peso-medio);
 }
 
 .paleta__muestras {
   display: flex;
+  flex-shrink: 0;
   overflow: hidden;
-  height: 1.5rem;
+  width: 3.5rem;
+  height: 1.25rem;
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-sm);
 }
@@ -75,19 +84,18 @@
   flex: 1;
 }
 
-/* --- Los dos temas --- */
-
 .temas {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--esp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-7);
+  min-width: 0;
 }
 
 /* `.marca .tema`: le gana a la grilla que el sistema le pone a todo `fieldset` de formulario. */
 .marca .tema {
   display: flex;
   flex-direction: column;
-  gap: var(--esp-6);
+  gap: var(--esp-4);
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -96,14 +104,35 @@
 
 .tema__titulo {
   padding: 0;
-  font-size: var(--tipo-base);
+  font-size: var(--tipo-md);
   font-weight: var(--peso-fuerte);
+}
+
+/* Principal y acento lado a lado; debajo, la vista previa en una tira. */
+.tema__fila {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-4) var(--esp-7);
+  align-items: end;
+}
+
+.tema__fila > .muestra {
+  grid-column: 1 / -1;
+}
+
+.color__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-2) var(--esp-4);
 }
 
 .color {
   display: flex;
   flex-direction: column;
   gap: var(--esp-2);
+  min-width: 0;
 }
 
 .color__etiqueta {
@@ -111,17 +140,24 @@
   font-weight: var(--peso-medio);
 }
 
+.color__uso {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
 .color__controles {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--esp-4);
+  gap: var(--esp-3);
 }
 
 .color__selector {
   flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2rem;
   padding: var(--esp-1);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
@@ -129,14 +165,12 @@
   cursor: pointer;
 }
 
-.color__hex {
-  width: 7rem;
+.marca .color__hex {
+  width: 6rem;
   font-family: var(--fuente-mono);
 }
 
-.color__nota {
-  margin: 0;
-  color: var(--color-texto-suave);
+.color__cabecera .enlace-boton {
   font-size: var(--tipo-xs);
 }
 
@@ -156,8 +190,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--esp-6);
-  padding: var(--esp-6);
+  gap: var(--esp-5);
+  padding: var(--esp-4) var(--esp-5);
   border: var(--borde-fino) solid var(--ref-claro-borde);
   border-radius: var(--radio-md);
   background: var(--ref-claro-superficie);
@@ -275,8 +309,16 @@
   gap: var(--esp-4);
 }
 
+/* Cambios vistos solo en este navegador hasta guardar. */
+.marca__pendiente {
+  margin: 0 auto 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
 @media (max-width: 56rem) {
-  .temas,
+  .colores,
+  .tema__fila,
   .logos {
     grid-template-columns: minmax(0, 1fr);
   }

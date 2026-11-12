@@ -3,7 +3,7 @@ import { Injectable, Signal, computed, effect, inject, signal, untracked } from 
 
 import { MarcaDeLaOrganizacionService } from '../../api/generated/api/marca-de-la-organizacion.service';
 import { MarcaResponse } from '../../api/generated/model/marca-response';
-import { TemaDeMarca, tokensDeMarca } from '../models/color-de-marca';
+import { ColoresDeTema, TemaDeMarca, tokensDeMarca } from '../models/color-de-marca';
 import { PreferenciasStore } from './preferencias.store';
 import { SessionService } from './session.service';
 import { TenantContextStore } from './tenant-context.store';
@@ -95,27 +95,23 @@ export class MarcaStore {
   /** Pone en uso una marca ya leida o recien guardada; `null` vuelve a la de AKINE. */
   adoptar(marca: MarcaResponse | null): void {
     this.actual.set(marca);
-    this.pintar(marca);
+    this.pintar(coloresGuardados(marca));
     this.sincronizarLogo('claro', marca?.logoClaro?.sha256 ?? null);
     this.sincronizarLogo('oscuro', marca?.logoOscuro?.sha256 ?? null);
   }
 
-  private pintar(marca: MarcaResponse | null): void {
-    const claro = declaraciones(
-      tokensDeMarca(
-        { principal: marca?.colorPrincipalClaro ?? null, acento: marca?.colorAcentoClaro ?? null },
-        'claro',
-      ),
-    );
-    const oscuro = declaraciones(
-      tokensDeMarca(
-        {
-          principal: marca?.colorPrincipalOscuro ?? null,
-          acento: marca?.colorAcentoOscuro ?? null,
-        },
-        'oscuro',
-      ),
-    );
+  /**
+   * Pinta colores todavia sin guardar sobre toda la aplicacion, para verlos mientras se editan.
+   * Solo en este navegador: el resto del centro los ve recien al guardar. `null` vuelve a los
+   * guardados.
+   */
+  previsualizar(colores: Readonly<Record<TemaDeMarca, ColoresDeTema>> | null): void {
+    this.pintar(colores ?? coloresGuardados(this.actual()));
+  }
+
+  private pintar(colores: Readonly<Record<TemaDeMarca, ColoresDeTema>>): void {
+    const claro = declaraciones(tokensDeMarca(colores.claro, 'claro'));
+    const oscuro = declaraciones(tokensDeMarca(colores.oscuro, 'oscuro'));
     const css =
       `:root{${claro}}` +
       `@media (prefers-color-scheme: dark){:root:not([data-tema='claro']){${oscuro}}}` +
@@ -164,6 +160,19 @@ export class MarcaStore {
     }
     this.logos.update((logos) => ({ ...logos, [tema]: url }));
   }
+}
+
+function coloresGuardados(marca: MarcaResponse | null): Record<TemaDeMarca, ColoresDeTema> {
+  return {
+    claro: {
+      principal: marca?.colorPrincipalClaro ?? null,
+      acento: marca?.colorAcentoClaro ?? null,
+    },
+    oscuro: {
+      principal: marca?.colorPrincipalOscuro ?? null,
+      acento: marca?.colorAcentoOscuro ?? null,
+    },
+  };
 }
 
 function declaraciones(tokens: Record<string, string>): string {
