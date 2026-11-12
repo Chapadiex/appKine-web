@@ -42,7 +42,10 @@ export interface MensajeDeCharla {
   readonly posicion?: number;
   readonly sinMaterial?: boolean;
   readonly etapa?: 'buscando' | 'redactando';
-  /** Repregunta del servidor: sus opciones son botones y nunca entra al historial. */
+  /**
+   * Repregunta del servidor: sus opciones son botones. Entra al historial para que una respuesta
+   * tecleada conserve el tema, pero no aporta libros preferidos.
+   */
   readonly aclaracion?: boolean;
   readonly opciones?: readonly OpcionDeAclaracionResponse[];
   /** Respuesta a "Profundizar": no ofrece profundizar de nuevo. */
@@ -146,13 +149,13 @@ export class ConsultaPage {
     this.lanzar(orgId, opcion.pregunta, []);
   }
 
-  /** Pide más detalle de la respuesta en la posición indicada, con la charla hasta ella. */
+  /** Pide más detalle de la respuesta en la posición indicada, con sólo ese par en el historial. */
   protected profundizar(indice: number): void {
     const orgId = this.tenantContext.organizationId();
-    if (this.enCurso() || this.deshabilitada() || orgId === null) {
+    if (this.enCurso() || this.deshabilitada() || orgId === null || indice < 1) {
       return;
     }
-    this.lanzar(orgId, PREGUNTA_PROFUNDIZAR, this.mensajes().slice(0, indice + 1), true);
+    this.lanzar(orgId, PREGUNTA_PROFUNDIZAR, this.mensajes().slice(indice - 1, indice + 1), true);
   }
 
   protected puedeProfundizar(m: MensajeDeCharla): boolean {
@@ -220,24 +223,36 @@ export class ConsultaPage {
     return m.texto;
   }
 
-  /** Sólo pares usuario+asistente cuya respuesta terminó bien y con material: los últimos 3. */
+  /**
+   * Pares usuario+asistente que terminaron bien: con material, o una repregunta (su pregunta lleva el
+   * tema que una respuesta tecleada necesita). Los últimos 3.
+   */
   private historialDePares(
     ms: readonly MensajeDeCharla[],
   ): { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] {
-    const turnos: { rol: TurnoDeConsultaRequestRolEnum; texto: string }[] = [];
-    for (let i = 0; i + 1 < ms.length; i += 2) {
-      const [u, a] = [ms[i], ms[i + 1]];
-      if (a.estado === 'listo' && !a.sinMaterial && !a.aclaracion) {
-        turnos.push(
-          { rol: TurnoDeConsultaRequestRolEnum.USUARIO, texto: u.texto },
-          { rol: TurnoDeConsultaRequestRolEnum.ASISTENTE, texto: a.texto },
-        );
-      }
-    }
-    return turnos.slice(-MAX_TURNOS);
+    return this.paresDelHistorial(ms)
+      .flatMap(([u, a]) => [
+        { rol: TurnoDeConsultaRequestRolEnum.USUARIO, texto: u.texto },
+        { rol: TurnoDeConsultaRequestRolEnum.ASISTENTE, texto: a.texto },
+      ])
+      .slice(-MAX_TURNOS);
   }
 
-  /** Libros distintos de las fuentes de la última respuesta buena, hasta 10; sólo con historial. */
+  private paresDelHistorial(ms: readonly MensajeDeCharla[]): [MensajeDeCharla, MensajeDeCharla][] {
+    const pares: [MensajeDeCharla, MensajeDeCharla][] = [];
+    for (let i = 0; i + 1 < ms.length; i += 2) {
+      const a = ms[i + 1];
+      if (a.estado === 'listo' && !a.sinMaterial) {
+        pares.push([ms[i], a]);
+      }
+    }
+    return pares;
+  }
+
+  /**
+   * Libros distintos de las fuentes del último par del historial, hasta 10. Si ese par es una
+   * repregunta no hay libros: los de una respuesta anterior serían de otro tema.
+   */
   private librosDeLaUltimaRespuesta(
     ms: readonly MensajeDeCharla[],
     hayHistorial: boolean,
@@ -245,13 +260,7 @@ export class ConsultaPage {
     if (!hayHistorial) {
       return [];
     }
-    let ultima: MensajeDeCharla | undefined;
-    for (let i = 0; i + 1 < ms.length; i += 2) {
-      const a = ms[i + 1];
-      if (a.estado === 'listo' && !a.sinMaterial && !a.aclaracion) {
-        ultima = a;
-      }
-    }
+    const ultima = this.paresDelHistorial(ms).at(-1)?.[1];
     const ids = new Set((ultima?.fuentes ?? []).map((f) => f.libroId));
     return [...ids].slice(0, MAX_LIBROS_PREFERIDOS);
   }

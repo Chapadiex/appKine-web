@@ -220,10 +220,13 @@ describe('ConsultaPage', () => {
     expect(el.textContent).not.toContain('Buscando en la biblioteca…');
   });
 
-  it('profundizarMandaElHistorialDeEsaRespuesta', async () => {
+  it('profundizarMandaSoloElParDeEsaRespuesta', async () => {
     const ok = () =>
       eventos(
-        { tipo: 'fuentes', fuentes: [FUENTE, { ...FUENTE, libroId: 7 }, { ...FUENTE, libroId: 7 }] },
+        {
+          tipo: 'fuentes',
+          fuentes: [FUENTE, { ...FUENTE, libroId: 7 }, { ...FUENTE, libroId: 7 }],
+        },
         { tipo: 'texto', texto: 'resp' },
         { tipo: 'fin', sinMaterial: false, camino: 'x' },
       );
@@ -233,6 +236,15 @@ describe('ConsultaPage', () => {
     const el = fixture.nativeElement as HTMLElement;
     const botones = el.querySelectorAll('.consulta__profundizar');
     expect(botones.length).toBe(2);
+    // Profundizar la primera no arrastra la segunda, y viceversa.
+    (botones[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(pedidos.at(-1)?.historial).toEqual([
+      { rol: 'usuario', texto: 'segunda' },
+      { rol: 'asistente', texto: 'resp' },
+    ]);
     (botones[0] as HTMLButtonElement).click();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -247,5 +259,35 @@ describe('ConsultaPage', () => {
     });
     // La respuesta profunda no ofrece profundizar otra vez.
     expect(el.querySelectorAll('.consulta__profundizar').length).toBe(2);
+  });
+
+  it('unaRespuestaTecleadaALaRepreguntaLlevaSuPregunta', async () => {
+    secuencia = () =>
+      eventos(
+        { tipo: 'fuentes', fuentes: [{ ...FUENTE, libroId: 9 }] },
+        { tipo: 'texto', texto: 'resp' },
+        { tipo: 'fin', sinMaterial: false, camino: 'x' },
+      );
+    await preguntar('qué es manguito rotador');
+    secuencia = () =>
+      eventos(
+        {
+          tipo: 'aclaracion',
+          texto: '¿Qué buscás sobre lumbalgia?',
+          opciones: [
+            { etiqueta: 'Ejercicios para lumbalgia', pregunta: 'ejercicios para lumbalgia' },
+          ],
+        },
+        { tipo: 'fin', sinMaterial: false, camino: 'aclaracion' },
+      );
+    await preguntar('lumbalgia');
+    secuencia = () => of();
+    await preguntar('ejercicios');
+    expect(pedidos.at(-1)?.historial?.slice(-2)).toEqual([
+      { rol: 'usuario', texto: 'lumbalgia' },
+      { rol: 'asistente', texto: '¿Qué buscás sobre lumbalgia?' },
+    ]);
+    // Los libros de la respuesta sobre el manguito no viajan: el último par es la repregunta.
+    expect(pedidos.at(-1)?.librosPreferidos).toBeUndefined();
   });
 });
