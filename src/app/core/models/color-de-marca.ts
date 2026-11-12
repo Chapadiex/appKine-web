@@ -128,6 +128,14 @@ export function tokensDeMarca(colores: ColoresDeTema, tema: TemaDeMarca): Record
     tokens['--color-foco-sobre-marca'] = principal;
     tokens['--color-seleccion'] = `color-mix(in srgb, ${principal} 16%, var(--color-superficie))`;
     tokens['--color-hover'] = `color-mix(in srgb, ${principal} 7%, var(--color-superficie))`;
+    // La barra lateral y la barra superior se tiñen: el tinte deja el texto de siempre legible.
+    // Dentro de la barra lateral, hover y seleccion suben un escalon para despegarse del tinte.
+    tokens['--color-marca-fondo'] = `color-mix(in srgb, ${principal} 12%, var(--color-superficie))`;
+    tokens['--color-marca-hover'] = `color-mix(in srgb, ${principal} 20%, var(--color-superficie))`;
+    tokens['--color-marca-superficie-activa'] =
+      `color-mix(in srgb, ${principal} 28%, var(--color-superficie))`;
+    tokens['--color-cabecera-fondo'] =
+      `color-mix(in srgb, ${principal} 7%, var(--color-superficie))`;
   }
   if (esColor(acento)) {
     tokens['--color-acento'] = acento;

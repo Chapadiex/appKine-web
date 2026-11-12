@@ -72,6 +72,9 @@ describe('color de marca', () => {
     // Sobre amarillo el texto es el oscuro, no el blanco.
     expect(tokens['--color-accion-texto']).toBe('#101820');
     expect(tokens['--color-enlace']).toBe('#115e59');
+    // La barra lateral y la superior se tiñen con el principal, mezclado con la superficie.
+    expect(tokens['--color-marca-fondo']).toContain('#fde047 12%');
+    expect(tokens['--color-cabecera-fondo']).toContain('#fde047');
     expect(esColor(tokens['--color-acento'])).toBe(true);
   });
 });

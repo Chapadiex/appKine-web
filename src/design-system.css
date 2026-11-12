@@ -123,6 +123,9 @@
   --color-marca-texto: #182230;
   --color-marca-texto-suave: #3b4754;
   --color-marca-superficie-activa: var(--color-seleccion);
+  /* Hover de la barra lateral y fondo de la barra superior: la marca del centro los tiñe. */
+  --color-marca-hover: var(--color-hover);
+  --color-cabecera-fondo: var(--color-superficie);
   --color-acento: #1d4ed8;
   --color-acento-claro: var(--color-seleccion);
   --color-accion-fondo: #2563eb;
