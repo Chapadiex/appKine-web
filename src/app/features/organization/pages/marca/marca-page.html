@@ -1,0 +1,314 @@
+<app-cabecera-de-pagina titulo="Marca del centro">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los colores, el logo y los datos de contacto de tu centro. Los ven todas las personas que
+      trabajan en él, en la barra lateral, los botones y el pie de cada pantalla.
+    </p>
+    <p>
+      Verde, rojo y ámbar no cambian: significan lo mismo en todos los centros (confirmado, error,
+      pendiente).
+    </p>
+  </app-ayuda>
+  <app-pestanas
+    [pestanas]="pestanasDeOrganizacion()"
+    [etiqueta]="etiquetaDePestanasDeOrganizacion"
+  />
+</app-cabecera-de-pagina>
+
+<div aria-live="polite">
+  @switch (estado()) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Cargando la marca del centro&hellip;</p>
+    }
+    @case ('error') {
+      <app-alerta tipo="error" titulo="No pudimos leer la marca del centro">
+        <p>{{ mensajeDeCarga() }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
+    }
+  }
+</div>
+
+@if (estado() === 'listo') {
+  <form [formGroup]="contacto" (ngSubmit)="guardar()" novalidate class="marca">
+    @if (errorAlGuardar(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos guardar la marca">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    <!-- 1. Colores -->
+    <section class="tarjeta" aria-labelledby="titulo-colores">
+      <h2 id="titulo-colores">Colores</h2>
+
+      <h3 class="marca__subtitulo" id="titulo-paletas">Empezá por una paleta</h3>
+      <ul class="paletas" aria-labelledby="titulo-paletas">
+        @for (paleta of paletas; track paleta.nombre) {
+          <li>
+            <button
+              type="button"
+              class="paleta"
+              [class.paleta--elegida]="esLaPaletaActual(paleta)"
+              [attr.aria-pressed]="esLaPaletaActual(paleta)"
+              (click)="usarPaleta(paleta)"
+            >
+              <span class="paleta__muestras" aria-hidden="true">
+                @for (color of muestrasDe(paleta); track $index) {
+                  <span class="paleta__muestra" [style.background]="color"></span>
+                }
+              </span>
+              <span class="paleta__nombre">{{ paleta.nombre }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      <div class="temas">
+        @for (tema of temas; track tema.id) {
+          <fieldset class="tema">
+            <legend class="tema__titulo">{{ tema.titulo }}</legend>
+
+            @for (campo of camposDeColor; track campo.id) {
+              @let valor = colorEfectivo(tema.id, campo.id);
+              @let idCampo = 'color-' + tema.id + '-' + campo.id;
+              <div class="color">
+                <label class="color__etiqueta" [for]="idCampo + '-hex'">{{ campo.etiqueta }}</label>
+                <div class="color__controles">
+                  <input
+                    class="color__selector"
+                    type="color"
+                    [value]="valor"
+                    [attr.aria-label]="campo.etiqueta + ', selector, ' + tema.titulo"
+                    (input)="cambiarColor(tema.id, campo.id, $any($event.target).value)"
+                  />
+                  <input
+                    class="color__hex"
+                    type="text"
+                    [id]="idCampo + '-hex'"
+                    [value]="valor"
+                    maxlength="7"
+                    spellcheck="false"
+                    autocomplete="off"
+                    [attr.aria-describedby]="idCampo + '-nota'"
+                    (change)="escribirColor(tema.id, campo.id, $any($event.target))"
+                  />
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="intensidad(tema.id, campo.id, -1)"
+                  >
+                    Más suave<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="intensidad(tema.id, campo.id, 1)"
+                  >
+                    Más fuerte<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
+                  </button>
+                </div>
+                <p class="color__nota" [id]="idCampo + '-nota'">
+                  @if (esPropio(tema.id, campo.id)) {
+                    {{ campo.uso }}
+                    <button
+                      type="button"
+                      class="enlace-boton"
+                      (click)="cambiarColor(tema.id, campo.id, null)"
+                    >
+                      Volver al de AKINE
+                    </button>
+                  } @else {
+                    {{ campo.uso }} Hoy es el de AKINE.
+                  }
+                </p>
+              </div>
+            }
+
+            <!-- Vista previa sobre la superficie de ESTE tema, no la del tema en uso. -->
+            <div
+              class="muestra"
+              [class.muestra--oscura]="tema.id === 'oscuro'"
+              [style.--m-principal]="colorEfectivo(tema.id, 'principal')"
+              [style.--m-sobre-principal]="textoSobrePrincipal(tema.id)"
+              [style.--m-acento]="colorEfectivo(tema.id, 'acento')"
+              aria-hidden="true"
+            >
+              <span class="muestra__boton">Guardar</span>
+              <span class="muestra__enlace">Ver detalle</span>
+              <span class="muestra__fila">Fila seleccionada</span>
+            </div>
+
+            @for (aviso of avisosDe(tema.id); track aviso.campo) {
+              <div class="aviso-de-contraste" role="status">
+                <app-icono nombre="advertencia" />
+                <p>
+                  {{ aviso.texto }}
+                  <button
+                    type="button"
+                    class="enlace-boton"
+                    (click)="cambiarColor(tema.id, aviso.campo, aviso.sugerido)"
+                  >
+                    Usar el tono sugerido
+                  </button>
+                </p>
+                <span
+                  class="aviso-de-contraste__sugerido"
+                  [style.background]="aviso.sugerido"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            }
+          </fieldset>
+        }
+      </div>
+    </section>
+
+    <!-- 2. Logo -->
+    <section class="tarjeta marca__mitad" aria-labelledby="titulo-logo">
+      <h2 id="titulo-logo">Logo</h2>
+      <p class="ayuda ayuda--fija">
+        PNG, JPG o WebP de hasta 500 kB. Se guarda al subirlo. Sin logo para tema oscuro, se usa el
+        del claro.
+      </p>
+
+      @if (errorDeLogo(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos guardar el logo">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <div class="logos">
+        @for (tema of temas; track tema.id) {
+          @let url = urlDeLogo(tema.id);
+          <div class="logo">
+            <h3 class="logo__titulo">{{ tema.titulo }}</h3>
+            <div class="logo__lienzo" [class.logo__lienzo--oscuro]="tema.id === 'oscuro'">
+              @if (url) {
+                <img [src]="url" [alt]="'Logo actual para ' + tema.titulo" />
+              } @else {
+                <span>Sin logo</span>
+              }
+            </div>
+            <div class="logo__acciones">
+              <input
+                #archivo
+                class="visualmente-oculto"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                tabindex="-1"
+                [attr.aria-label]="'Archivo del logo para ' + tema.titulo"
+                (change)="subirLogo(tema.id, archivo)"
+              />
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                [disabled]="subiendoLogo()"
+                (click)="archivo.click()"
+              >
+                {{ url ? 'Reemplazar' : 'Subir logo'
+                }}<span class="visualmente-oculto">: {{ tema.titulo }}</span>
+              </button>
+              @if (tieneLogo(tema.id)) {
+                <button
+                  type="button"
+                  class="boton boton--secundario boton--chico"
+                  [disabled]="subiendoLogo()"
+                  (click)="quitarLogo(tema.id)"
+                >
+                  Quitar<span class="visualmente-oculto"> el logo de {{ tema.titulo }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- 3. Datos de contacto -->
+    <section class="tarjeta marca__mitad" aria-labelledby="titulo-contacto">
+      <h2 id="titulo-contacto">Datos de contacto</h2>
+      <p class="ayuda ayuda--fija">
+        Opcionales. Lo que cargues se muestra en el pie de cada pantalla.
+      </p>
+
+      <div class="grilla-12">
+        <div class="campo campo--6">
+          <label for="marca-telefono">Teléfono</label>
+          <input id="marca-telefono" type="tel" formControlName="telefono" maxlength="40" />
+        </div>
+
+        <div class="campo campo--6">
+          <label for="marca-email">Email</label>
+          <input
+            id="marca-email"
+            type="email"
+            formControlName="email"
+            maxlength="254"
+            [attr.aria-invalid]="conError('email')"
+            [attr.aria-describedby]="conError('email') ? 'marca-email-error' : null"
+          />
+          @if (conError('email')) {
+            <p class="campo__error" id="marca-email-error">
+              {{ erroresDeCampo()['email'] ?? 'Revisá el formato del email.' }}
+            </p>
+          }
+        </div>
+
+        <div class="campo campo--12">
+          <label for="marca-sitio">Sitio web</label>
+          <input
+            id="marca-sitio"
+            type="url"
+            formControlName="sitioWeb"
+            maxlength="200"
+            placeholder="https://"
+            [attr.aria-invalid]="conError('sitioWeb')"
+            [attr.aria-describedby]="conError('sitioWeb') ? 'marca-sitio-error' : null"
+          />
+          @if (conError('sitioWeb')) {
+            <p class="campo__error" id="marca-sitio-error">
+              {{ erroresDeCampo()['sitioWeb'] ?? 'Tiene que empezar con http:// o https://.' }}
+            </p>
+          }
+        </div>
+
+        <div class="campo campo--12">
+          <label for="marca-direccion">Dirección</label>
+          <input id="marca-direccion" type="text" formControlName="direccion" maxlength="240" />
+        </div>
+
+        <div class="campo campo--12">
+          <label for="marca-leyenda">Leyenda del pie</label>
+          <input
+            id="marca-leyenda"
+            type="text"
+            formControlName="leyenda"
+            maxlength="200"
+            aria-describedby="marca-leyenda-ayuda"
+          />
+          <p class="ayuda ayuda--fija" id="marca-leyenda-ayuda">
+            Una línea libre: horario de atención, matrícula, lema.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="guardando() || !hayCambios()">
+        Guardar los cambios
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="guardando() || !hayCambios()"
+        (click)="descartar()"
+      >
+        Descartar
+      </button>
+    </div>
+  </form>
+}

@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 
+import { MarcaStore } from '../../core/services/marca.store';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
 import {
@@ -52,6 +53,8 @@ describe('NavegacionPrincipal', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideApi(''),
+        // La marca del centro tiene su propio store: aca solo importa que sin logo se ve AKINE.
+        { provide: MarcaStore, useValue: { logoUrl: signal<string | null>(null) } },
         provideRouter([
           { path: 'agenda', component: Pagina },
           { path: 'agenda/recepcion', component: Pagina },

@@ -80,6 +80,18 @@
 
   /* --- Superficies -------------------------------------------------------------------- */
   /* Nivel 4 (contenido): paneles, tarjetas, campos. */
+  /*
+    Referencias fijas de los dos temas, iguales en claro y en oscuro: la pantalla de marca del
+    centro muestra como queda cada color sobre la superficie de CADA tema, no solo del actual.
+    Son copia de --color-superficie / --color-texto / --color-borde de cada tema.
+  */
+  --ref-claro-superficie: #ffffff;
+  --ref-claro-texto: #182230;
+  --ref-claro-borde: #d5dee8;
+  --ref-oscuro-superficie: #1d2a36;
+  --ref-oscuro-texto: #f1f5f9;
+  --ref-oscuro-borde: #405365;
+
   --color-superficie: #ffffff;
   /* Fondo de la pagina: el contenido se despega de el por tono. */
   --color-superficie-sutil: #f4f6f9;

@@ -77,6 +77,8 @@ api/invitaciones.service.ts
 api/invitaciones.serviceInterface.ts
 api/lista-de-espera.service.ts
 api/lista-de-espera.serviceInterface.ts
+api/marca-de-la-organizacion.service.ts
+api/marca-de-la-organizacion.serviceInterface.ts
 api/mediciones-de-sesion.service.ts
 api/mediciones-de-sesion.serviceInterface.ts
 api/mi-cuenta.service.ts
@@ -409,6 +411,8 @@ model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts
 model/lista-de-espera-page.ts
 model/login-request.ts
+model/logo-de-marca-response.ts
+model/marca-response.ts
 model/marcar-cobertura-principal-request.ts
 model/medicion-comparada.ts
 model/medicion-definicion-page-response.ts
@@ -608,6 +612,7 @@ model/update-convenio-request.ts
 model/update-espacio-request.ts
 model/update-excepcion-request.ts
 model/update-financiador-request.ts
+model/update-marca-request.ts
 model/update-medicion-definicion-request.ts
 model/update-oferta-request.ts
 model/update-orden-request.ts

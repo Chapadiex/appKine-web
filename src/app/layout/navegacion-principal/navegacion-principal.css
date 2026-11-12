@@ -60,6 +60,14 @@
   letter-spacing: 0.04em;
 }
 
+/* Logo del centro: entra en el alto de la marca sin deformarse, sea apaisado o cuadrado. */
+.marca__imagen {
+  max-width: 100%;
+  height: 2rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
 /*
   Cabecera de grupo: icono, nombre, punto si contiene la pantalla actual y flecha. Es un
   `summary`: el navegador lo hace operable con teclado y anuncia si esta desplegado.

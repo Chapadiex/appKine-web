@@ -1,0 +1,63 @@
+/*
+  Pie institucional. Una franja discreta al final de la columna de pagina: informa, no compite con
+  la pantalla. `margin-top: auto` en el host lo lleva al fondo cuando el contenido es corto.
+*/
+:host {
+  display: block;
+  margin-top: auto;
+}
+
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-8);
+  padding: var(--esp-5) var(--esp-8);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.pie__identidad {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-width: 0;
+}
+
+.pie__logo {
+  flex-shrink: 0;
+  max-width: 9rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
+.pie__nombre {
+  color: var(--color-texto);
+  font-weight: var(--peso-medio);
+}
+
+.pie__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie__datos li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pie__datos a {
+  color: var(--color-enlace);
+}
+
+@media (max-width: 40rem) {
+  .pie {
+    padding: var(--esp-5) var(--esp-6);
+  }
+}
