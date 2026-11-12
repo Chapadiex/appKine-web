@@ -95,43 +95,44 @@
   </section>
 }
 
-<section class="tarjeta" aria-label="Lista de espera de la sede" [attr.aria-busy]="cargando()">
-  <app-filtros
-    sinAvanzados
-    [resultados]="resultado() === null ? null : total()"
-    [unidad]="['paciente', 'pacientes']"
-  >
-    <div class="campo" filtro-principal>
-      <label for="espera-filtro-oferta">Prestación</label>
-      <select
-        id="espera-filtro-oferta"
-        [value]="ofertaId() ?? ''"
-        (change)="cambiarOferta($any($event.target).value)"
-      >
-        <option value="" [selected]="ofertaId() === null">Todas las prestaciones</option>
-        @for (oferta of ofertas(); track oferta.id) {
-          <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
-            {{ oferta.nombreComercial }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="campo" filtro-frecuente>
-      <label for="espera-filtro-estado">Estado</label>
-      <select
-        id="espera-filtro-estado"
-        [value]="filtroEstado()"
-        (change)="cambiarEstado($any($event.target).value)"
-      >
-        @for (estado of ESTADOS; track estado.valor) {
-          <option [value]="estado.valor" [selected]="estado.valor === filtroEstado()">
-            {{ estado.etiqueta }}
-          </option>
-        }
-      </select>
-    </div>
-  </app-filtros>
+<app-filtros
+  separada
+  sinAvanzados
+  [resultados]="resultado() === null ? null : total()"
+  [unidad]="['paciente', 'pacientes']"
+>
+  <div class="campo" filtro-principal>
+    <label for="espera-filtro-oferta">Prestación</label>
+    <select
+      id="espera-filtro-oferta"
+      [value]="ofertaId() ?? ''"
+      (change)="cambiarOferta($any($event.target).value)"
+    >
+      <option value="" [selected]="ofertaId() === null">Todas las prestaciones</option>
+      @for (oferta of ofertas(); track oferta.id) {
+        <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+          {{ oferta.nombreComercial }}
+        </option>
+      }
+    </select>
+  </div>
+  <div class="campo" filtro-frecuente>
+    <label for="espera-filtro-estado">Estado</label>
+    <select
+      id="espera-filtro-estado"
+      [value]="filtroEstado()"
+      (change)="cambiarEstado($any($event.target).value)"
+    >
+      @for (estado of ESTADOS; track estado.valor) {
+        <option [value]="estado.valor" [selected]="estado.valor === filtroEstado()">
+          {{ estado.etiqueta }}
+        </option>
+      }
+    </select>
+  </div>
+</app-filtros>
 
+<section class="tarjeta" aria-label="Lista de espera de la sede" [attr.aria-busy]="cargando()">
   @if (error(); as fallo) {
     <app-alerta tipo="error" titulo="No pudimos leer la lista de espera">
       <p>{{ fallo.mensaje }}</p>
@@ -152,17 +153,14 @@
       titulo="No hay nadie en la lista de espera"
       texto="Cuando un paciente no encuentra un horario que le sirva, anotalo acá para avisarle cuando se libere uno."
     >
-      <button
-        *akinePermiso="PERMISO_TURNO_MANAGE"
-        type="button"
-        class="boton boton--secundario"
-        (click)="agregar()"
-      >
+      <button *akinePermiso="PERMISO_TURNO_MANAGE" type="button" class="boton" (click)="agregar()">
+        <app-icono nombre="agregar" />
         Agregar a la lista
       </button>
     </app-estado-vacio>
   } @else if (entradas().length === 0) {
     <app-estado-vacio
+      icono="buscar"
       titulo="No encontramos pacientes"
       texto="Ninguna entrada de la lista coincide con estos filtros."
     >

@@ -35,3 +35,13 @@
   text-underline-offset: 0.25rem;
   font-weight: var(--peso-semi);
 }
+
+/*
+ * "La mantiene AKINE. Pedir un cambio" en la columna de acciones: sin ancho propio se partia en
+ * cinco renglones y estiraba cada fila al triple de su alto.
+ */
+.tabla__acciones > .ayuda {
+  display: block;
+  min-width: 11rem;
+  margin: 0;
+}

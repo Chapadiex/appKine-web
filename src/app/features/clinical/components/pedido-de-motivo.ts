@@ -14,11 +14,11 @@ import { VisitaClinica } from '../services/visita-clinica';
   selector: 'app-pedido-de-motivo',
   template: `
     <section class="tarjeta" aria-labelledby="titulo-justificacion">
-      <h2 id="titulo-justificacion">Declara el motivo del acceso</h2>
+      <h2 id="titulo-justificacion">Declará el motivo del acceso</h2>
       <p class="ayuda">
-        No figura que atiendas a esta persona en esta sede. Para ver {{ que() }} tenes que declarar
+        No figura que atiendas a esta persona en esta sede. Para ver {{ que() }} tenés que declarar
         el motivo. El motivo queda registrado junto con cada lectura que hagas en esta visita, y se
-        vuelve a pedir la proxima vez que entres.
+        vuelve a pedir la próxima vez que entres.
       </p>
 
       <form (submit)="$event.preventDefault(); justificar()">

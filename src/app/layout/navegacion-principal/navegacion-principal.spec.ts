@@ -169,12 +169,11 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual([
-      'Atención',
-      'Servicios y catálogo',
-      'Espacios y horarios',
-      'Configuración',
-    ]);
+    // Sin catalogo:read ni permisos de horarios, Servicios y catalogo y Espacios y horarios quedan con una sola seccion: enlace directo (11/11/2026).
+    expect(rotulos(fixture)).toEqual(['Atención', 'Configuración']);
+    expect(enlaces(fixture)).toContain('Espacios y boxes');
+    expect(enlaces(fixture)).toContain('Catálogo de servicios');
+    expect(enlaces(fixture)).not.toContain('Ofertas de la sede');
     expect(enlaces(fixture)).toContain('Agenda');
     expect(enlaces(fixture)).toContain('Buscar disponibilidad');
     expect(enlaces(fixture)).not.toContain('Padrón');
@@ -192,13 +191,7 @@ describe('NavegacionPrincipal', () => {
       .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual([
-      'Atención',
-      'Actividades',
-      'Servicios y catálogo',
-      'Espacios y horarios',
-      'Configuración',
-    ]);
+    expect(rotulos(fixture)).toEqual(['Atención', 'Actividades', 'Configuración']);
   });
 
   /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */

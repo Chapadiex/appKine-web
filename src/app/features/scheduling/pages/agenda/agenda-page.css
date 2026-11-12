@@ -4,67 +4,28 @@
  * texto, el color acompana.
  */
 
-/* --- Cabecera: las pestañas en la fila del titulo (formato compacto, 06/11) --- */
-
-.agenda-cabecera {
-  margin-bottom: var(--esp-5);
-}
-
 /*
- * Encoge y parte sus pestañas antes que ensanchar la pagina. El selector doble le gana al
- * flex-shrink: 0 que la cabecera pone a todo lo que acompaña al titulo.
+ * --- Barra de herramientas: la de toda Atencion (`app-filtros separada`, 08/11/2026) ---
+ * Aca solo lo propio de la agenda: los grupos de fecha y de vista y el alto de sus controles.
  */
-.agenda-cabecera .agenda-cabecera__pestanas {
-  flex: 1 1 auto;
-  align-self: flex-end;
-  min-width: 0;
-  margin-left: var(--esp-6);
-}
 
-/* En la fila del titulo no hay linea de base: solo el subrayado de la actual. El nav es de
-   app-pestanas, otra vista: sin ::ng-deep la regla no lo alcanza. */
-.agenda-cabecera__pestanas ::ng-deep .pestanas {
-  box-shadow: none;
-}
-
-/* --- Barra: fecha, vista y filtros en una tarjeta --- */
-
-.agenda-barra {
+.agenda-barra__fecha,
+.agenda-barra__vista {
   display: flex;
-  flex-direction: column;
-  gap: var(--esp-5);
-  margin-bottom: var(--esp-5);
-  padding: var(--esp-5) var(--esp-6);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  box-shadow: 0 1px 2px rgb(16 38 63 / 0.05);
-}
-
-.agenda-barra__fila {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-6);
-}
-
-/* Ocupa lo que sobra y se parte por dentro: lo que baja de linea es un control, no la fila entera. */
-.agenda-barra__derecha {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex: none;
   align-items: center;
   gap: var(--esp-4);
 }
 
-/* Todos los controles de la barra tienen el mismo alto y el mismo contorno (3:1, WCAG 1.4.11). */
+.agenda-barra__vista:empty {
+  display: none;
+}
+
+/* Todos los controles de la barra tienen el mismo alto (40 px) y el mismo contorno (3:1, WCAG 1.4.11). */
 .agenda-nav__boton,
 .segmento button,
-.agenda-filtros-boton,
-.agenda-buscar input,
-.pastilla-filtro {
-  min-height: 2rem;
+.agenda-buscar input {
+  min-height: 2.5rem;
   border: var(--borde-fino) solid var(--color-borde-control);
   background: var(--color-superficie);
   color: var(--color-texto);
@@ -79,8 +40,7 @@
 }
 
 .agenda-nav__boton,
-.segmento button,
-.agenda-filtros-boton {
+.segmento button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -91,7 +51,7 @@
 }
 
 .agenda-nav__boton {
-  min-width: 2rem;
+  min-width: 2.5rem;
   border-radius: var(--radio-sm);
 }
 
@@ -100,30 +60,34 @@
 }
 
 .agenda-nav__boton:hover,
-.segmento button:hover,
-.agenda-filtros-boton:hover {
-  background: var(--color-superficie-sutil);
+.segmento button:hover {
+  background: var(--color-hover);
 }
 
-/* La fecha en palabras es el boton del calendario: el input la cubre, transparente. */
+/*
+ * La fecha en palabras es el control del calendario: contorno de control y anillo de foco en la caja.
+ * El input la cubre, invisible, y recibe el clic. Declara el mismo contorno y el mismo foco que la
+ * caja dibuja: es el elemento operable, y asi lo mide el arnes de 1.4.11.
+ */
 .agenda-fecha {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--esp-4);
-  padding: var(--esp-2) var(--esp-3);
-  /* Es un control (abre el calendario): necesita su contorno de 3:1 (WCAG 1.4.11). */
+  min-height: 2.5rem;
+  padding: 0 var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
+  background: var(--color-superficie);
   color: var(--color-texto-fuerte);
   font-weight: var(--peso-semi);
 }
 
 .agenda-fecha:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
-.agenda-fecha:focus-within {
+.agenda-fecha:has(:focus-visible) {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
 }
@@ -142,9 +106,16 @@
   width: 100%;
   height: 100%;
   padding: 0;
-  border: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: transparent;
   opacity: 0;
   cursor: pointer;
+}
+
+.agenda-fecha__input:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
 }
 
 .agenda-fecha__estado {
@@ -167,41 +138,16 @@
   border-left: 0;
 }
 
-/* Elegido y desplegado: fondo de acento, texto de enlace y peso (no solo color, WCAG 1.4.1). */
-.segmento button[aria-pressed='true'],
-.agenda-filtros-boton[aria-expanded='true'] {
-  background: var(--color-acento-claro);
+/* Elegido y desplegado: fondo de seleccion, texto de enlace y peso (no solo color, WCAG 1.4.1). */
+.segmento button[aria-pressed='true'] {
+  background: var(--color-seleccion);
   color: var(--color-enlace);
-  font-weight: var(--peso-semi);
-}
-
-.agenda-filtros-boton {
-  border-radius: var(--radio-sm);
-}
-
-.agenda-filtros-boton[aria-expanded='true'] {
-  border-color: var(--color-enlace);
-}
-
-.agenda-filtros-boton__contador {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.125rem;
-  height: 1.125rem;
-  padding: 0 var(--esp-2);
-  border-radius: var(--radio-pastilla);
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
-  font-size: var(--tipo-2xs);
   font-weight: var(--peso-semi);
 }
 
 .agenda-buscar {
   position: relative;
-  flex: 0 1 13rem;
-  min-width: 9rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
 }
 
@@ -223,132 +169,12 @@
   outline-offset: var(--foco-offset);
 }
 
-/* Filtros en pastilla: el nombre suave y el valor fuerte, el select sin caja propia. */
-.agenda-barra__filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-}
-
-.agenda-barra__filtros[hidden] {
-  display: none;
-}
-
-.pastilla-filtro {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-3);
-  padding: 0 var(--esp-3) 0 var(--esp-5);
-  border-radius: var(--radio-pastilla);
-}
-
-.pastilla-filtro:focus-within {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-.pastilla-filtro--activa {
-  border-color: var(--color-enlace);
-  background: var(--color-acento-claro);
-}
-
-.pastilla-filtro label {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
-}
-
-.pastilla-filtro select {
-  /* Del ancho de lo elegido, no del nombre mas largo de la lista. */
-  field-sizing: content;
-  max-width: 14rem;
-  padding: var(--esp-2) 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-texto-fuerte);
-  font: inherit;
-  font-weight: var(--peso-semi);
-  cursor: pointer;
-}
-
-.pastilla-filtro select:focus-visible {
-  outline: none;
-}
-
-.agenda-limpiar {
-  font-weight: var(--peso-semi);
-}
-
-/* --- Dia sin turnos: una franja con icono, explicacion y acciones --- */
-
-.agenda-sin-turnos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-5) var(--esp-7);
-  padding: var(--esp-7) var(--esp-8);
-  border: var(--borde-fino) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  box-shadow: 0 1px 2px rgb(16 38 63 / 0.05);
-}
-
-.agenda-sin-turnos__icono {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radio-md);
-  background: var(--color-acento-claro);
-  color: var(--color-enlace);
-  font-size: 1.25rem;
-}
-
-.agenda-sin-turnos__texto {
-  flex: 1 1 18rem;
-  min-width: 0;
-}
-
-.agenda-sin-turnos__texto p {
-  margin: 0;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-  text-wrap: pretty;
-}
-
-.agenda-sin-turnos__texto .agenda-sin-turnos__titulo {
-  margin-bottom: var(--esp-2);
-  color: var(--color-texto-fuerte);
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-semi);
-}
-
-.agenda-sin-turnos__texto .agenda-sin-turnos__aviso {
-  margin-top: var(--esp-3);
-  color: var(--color-texto);
-  font-weight: var(--peso-medio);
-}
-
-.agenda-sin-turnos__acciones {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4) var(--esp-5);
-}
-
-.agenda-sin-turnos__proximo {
-  border-color: var(--color-borde-control);
-  color: var(--color-texto);
-}
-
 .agenda-vacia {
   margin: var(--esp-4) 0 0;
   color: var(--color-texto-suave);
 }
 
-/* --- Grilla --- */
+/* --- Grilla (nivel 4: contenido) --- */
 
 .grilla {
   --ancho-de-horas: 3rem;
@@ -360,7 +186,7 @@
   background: var(--color-superficie);
 }
 
-/* Siete columnas entran en un escritorio comun: el estado queda en su simbolo y en el nombre accesible. */
+/* Siete columnas entran en un escritorio comun: el estado queda en su icono y en el nombre accesible. */
 .grilla--semana {
   --ancho-minimo-de-columna: 6.5rem;
 }
@@ -370,8 +196,8 @@
 }
 
 .grilla:focus-visible {
-  outline: 2px solid var(--color-acento);
-  outline-offset: 2px;
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
 }
 
 .grilla__cabecera,
@@ -384,10 +210,14 @@
   min-width: fit-content;
 }
 
+/*
+ * Capas, de abajo hacia arriba: libres, lineas horarias, turnos, hora actual, columna de horas y
+ * cabecera. Las dos ultimas son pegajosas: sin el z-index mayor, un turno las taparia al desplazar.
+ */
 .grilla__cabecera {
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 6;
   background: var(--color-superficie);
   border-bottom: var(--borde-fino) solid var(--color-borde);
 }
@@ -408,13 +238,19 @@
   white-space: nowrap;
 }
 
+/* Hoy, en la semana: texto de enlace, peso y subrayado de acción. La seleccion queda para lo elegido. */
 .grilla__titulo--hoy {
-  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+  font-weight: var(--peso-fuerte);
+  box-shadow: inset 0 -3px 0 var(--color-accion-fondo);
 }
 
+/*
+ * Una linea por hora, visible sin dominar, sin un nodo por linea: 72 px son 60 minutos a 1,2 px por
+ * minuto. Donde hay horarios libres la marca la celda que empieza en punto.
+ */
 .grilla__cuerpo {
   position: relative;
-  /* Una linea por hora, sin un nodo por linea. 72 px son 60 minutos a 1,2 px por minuto. */
   background-image: linear-gradient(to bottom, var(--color-borde) 1px, transparent 1px);
   background-size: 100% 72px;
 }
@@ -422,7 +258,7 @@
 .grilla__horas {
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: 5;
   background: var(--color-superficie);
   border-right: var(--borde-fino) solid var(--color-borde);
 }
@@ -432,6 +268,7 @@
   right: 0.25rem;
   font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
   transform: translateY(0.0625rem);
 }
 
@@ -440,7 +277,7 @@
   border-left: var(--borde-fino) solid var(--color-borde);
 }
 
-/* Lo que no es franja de atencion se ve gris y rayado, y lo dice: no se puede reservar. */
+/* Fuera de la franja de atencion: rayado tenue, y lo dice. No se puede reservar. */
 .grilla__fuera {
   position: absolute;
   left: 0;
@@ -453,10 +290,8 @@
   color: var(--color-texto-suave);
   background: repeating-linear-gradient(
     135deg,
-    color-mix(in srgb, var(--color-texto-suave) 24%, var(--color-superficie)) 0,
-    color-mix(in srgb, var(--color-texto-suave) 24%, var(--color-superficie)) 8px,
-    color-mix(in srgb, var(--color-texto-suave) 14%, var(--color-superficie)) 8px,
-    color-mix(in srgb, var(--color-texto-suave) 14%, var(--color-superficie)) 16px
+    var(--color-superficie-secundaria) 0 6px,
+    var(--color-superficie) 6px 12px
   );
 }
 
@@ -464,6 +299,7 @@
 .grilla__aviso {
   position: absolute;
   right: 0;
+  z-index: 2;
   border-right: 3px dashed var(--color-aviso);
   pointer-events: none;
 }
@@ -484,44 +320,80 @@
   color: var(--color-aviso-texto);
 }
 
-/* Un horario libre se ve como tal: con su hora y la invitacion a darlo. */
+/*
+ * Horario libre (disponible): fondo de estado disponible, su hora y la palabra "Libre". Al pasar o
+ * con foco, la invitacion "Dar turno" y el contorno de accion: se elige de un clic.
+ */
 .grilla__celda {
   position: absolute;
   left: 0;
   right: 0;
   padding: 0 var(--esp-4);
-  background: transparent;
+  /* El tinte de disponible a media fuerza: que se distinga sin dominar la grilla. */
+  background: color-mix(in srgb, var(--color-estado-disponible) 55%, var(--color-superficie));
   border: 0;
-  border-top: var(--borde-fino) dashed var(--color-borde);
+  border-top: var(--borde-fino) solid var(--color-superficie);
   color: var(--color-texto-suave);
   text-align: left;
   font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
+}
+
+.grilla__celda--en-punto {
+  border-top-color: var(--color-borde);
 }
 
 .grilla__celda:hover,
 .grilla__celda:focus-visible {
-  background: var(--color-acento-claro);
+  z-index: 2;
+  background: var(--color-hover);
+  box-shadow: inset 0 0 0 2px var(--color-accion-fondo);
   color: var(--color-texto);
-  z-index: 1;
 }
 
-.grilla__celda:hover .grilla__celda-hora::after,
-.grilla__celda:focus-visible .grilla__celda-hora::after {
-  content: ' · Dar turno';
+.grilla__celda-dar,
+.grilla__celda:hover .grilla__celda-libre,
+.grilla__celda:focus-visible .grilla__celda-libre {
+  display: none;
 }
 
+.grilla__celda:hover .grilla__celda-dar,
+.grilla__celda:focus-visible .grilla__celda-dar {
+  display: inline;
+  font-weight: var(--peso-medio);
+  color: var(--color-enlace);
+}
+
+/* La hora actual: una linea de peligro con su punto a la izquierda, encima de los turnos. */
 .grilla__ahora {
   position: absolute;
   left: 0;
   right: 0;
   height: 2px;
   background: var(--color-peligro);
-  z-index: 2;
+  z-index: 4;
   pointer-events: none;
 }
 
-/* --- Tarjeta del turno --- */
+.grilla__ahora::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-peligro);
+}
+
+/*
+ * --- Tarjeta del turno ---
+ * Jerarquia: 1 horario, 2 paciente, 3 prestacion, 4 estado (icono y palabra, chico, a la derecha del
+ * horario para que se vea aun en un turno corto), 5 profesional o box. El estado pinta el fondo
+ * (`--color-estado-*`), el borde (el fuerte de su severidad) y el estilo del borde: Reservado punteado,
+ * Confirmado solido. Sobre el fondo de estado todo el texto va en `--color-texto` (AA en los dos temas).
+ */
 
 .turno,
 .evento {
@@ -531,18 +403,22 @@
   gap: 0;
   overflow: hidden;
   padding: var(--esp-1) var(--esp-3);
-  border: var(--borde-fino) solid var(--color-borde-control);
+  border: var(--borde-fino) var(--tono-estilo, solid) var(--tono-borde, var(--color-borde-control));
+  /* La barra izquierda siempre solida: lleva el color; el estilo del resto del borde, el estado. */
+  border-left: 4px solid var(--tono-borde, var(--color-borde-control));
   border-radius: var(--radio-sm);
-  background: var(--color-superficie);
+  background: var(--tono-fondo, var(--color-superficie));
   color: var(--color-texto);
   font: inherit;
   font-size: var(--tipo-xs);
   line-height: 1.25;
   text-align: left;
-  z-index: 1;
+  z-index: 3;
 }
 
+/* Un filo de superficie separa dos turnos seguidos sin achicarlos. */
 .turno {
+  box-shadow: 0 0 0 1px var(--color-superficie);
   cursor: pointer;
 }
 
@@ -554,25 +430,49 @@
 
 .turno:hover,
 .turno:focus-visible {
-  box-shadow: 0 4px 12px rgb(16 38 63 / 0.12);
-  z-index: 2;
+  box-shadow:
+    0 0 0 1px var(--color-superficie),
+    0 4px 12px rgb(16 38 63 / 0.12);
+  z-index: 4;
+}
+
+/*
+ * Seleccion actual: el turno cuyo detalle esta abierto. Anillo de accion por dentro (no lo recorta la
+ * columna de horas), ademas del aria-current. El fondo sigue siendo el de su estado.
+ */
+.turno--seleccionado {
+  outline: 3px solid var(--color-accion-fondo);
+  outline-offset: -3px;
+  z-index: 4;
 }
 
 .turno__hora {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: var(--esp-2);
   white-space: nowrap;
+  font-weight: var(--peso-medio);
+  font-variant-numeric: tabular-nums;
 }
 
 .turno__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+.turno__estado-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .turno__persona {
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-fuerte);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -582,68 +482,63 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-texto-suave);
 }
 
-.turno__marca {
+.turno__marca,
+.turno__reubicar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
   font-weight: var(--peso-medio);
-}
-
-.turno--confirmado {
-  background: var(--color-acento-claro);
-}
-
-.turno--presente,
-.turno--en-atencion {
-  background: var(--color-exito-fondo);
-}
-
-/* Atendido, cancelado y lo ocupado en otra sede comparten el fondo apagado. */
-.turno--atendido,
-.turno--cancelado,
-.evento--fuera {
-  background: var(--color-superficie-sutil);
-}
-
-.turno--ausente,
-.turno--retirado {
-  background: var(--color-aviso-fondo);
 }
 
 .turno--cancelado .turno__persona {
   text-decoration: line-through;
 }
 
-/* Ocupado en otra sede (0.156.0): rayado como el sobreturno, sin parecer un turno de esta sede. */
-.turno--sobreturno,
+/* Ocupado en otra sede (0.156.0): sin datos ni accion, contorno punteado de control. */
 .evento--fuera {
-  border-style: dashed;
-}
-
-/* Fuera de la disponibilidad: simbolo y texto, el borde solo refuerza (WCAG 1.4.1). */
-.turno__reubicar {
-  font-weight: var(--peso-medio);
+  --tono-fondo: var(--color-superficie-secundaria);
+  --tono-estilo: dashed;
 }
 
 .evento__enlace {
   align-self: flex-start;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
   color: var(--color-enlace);
 }
 
 .evento--clase {
-  background: var(--color-acento-claro);
+  --tono-fondo: var(--color-info-fondo);
+  --tono-borde: var(--color-info);
 }
 
+/*
+ * Bloqueo: rayado de estado bloqueado, contorno de control y candado. El texto va sobre su propio
+ * fondo liso: sobre un degradé no se puede medir el contraste.
+ */
 .evento--bloqueo {
   left: 0;
   right: 0;
-  border-color: var(--color-peligro);
-  background: var(--color-peligro-fondo);
-  color: var(--color-peligro-texto);
+  gap: var(--esp-1);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-estado-bloqueado) 0 8px,
+    var(--color-borde) 8px 10px
+  );
 }
 
-.evento--bloqueo .turno__linea {
-  color: var(--color-peligro-texto);
+.evento__rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
 }
 
 /* --- Lista en pantallas angostas --- */
@@ -660,22 +555,41 @@
 .agenda-lista__turno {
   display: flex;
   flex-direction: column;
+  gap: var(--esp-1);
   width: 100%;
   padding: var(--esp-4) var(--esp-5);
-  background: var(--color-superficie);
-  border: var(--borde-fino) solid var(--color-borde);
+  background: var(--tono-fondo, var(--color-superficie));
+  border: var(--borde-fino) var(--tono-estilo, solid) var(--tono-borde, var(--color-borde));
+  border-left: 4px solid var(--tono-borde, var(--color-borde));
   border-radius: var(--radio-md);
-  color: inherit;
+  color: var(--color-texto);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
+.agenda-lista__turno:hover {
+  box-shadow: 0 4px 12px rgb(16 38 63 / 0.12);
+}
+
 .agenda-lista__hora {
   font-weight: var(--peso-medio);
+  font-variant-numeric: tabular-nums;
 }
 
 .agenda-lista__persona {
+  font-weight: var(--peso-fuerte, 700);
+}
+
+.agenda-lista__turno .ayuda {
+  margin: 0;
+  color: var(--color-texto);
+}
+
+.agenda-lista__turno .turno__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
   font-weight: var(--peso-medio);
 }
 
@@ -721,7 +635,7 @@
 }
 
 button.mes__dia:hover {
-  background: var(--color-acento-claro);
+  background: var(--color-hover);
 }
 
 .mes__dia--hoy .mes__numero {
@@ -747,20 +661,37 @@ button.mes__dia:hover {
 .mes__estados {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 var(--esp-4);
+  gap: var(--esp-2);
   font-size: var(--tipo-xs);
-  color: var(--color-texto-suave);
+}
+
+/* Conteo por estado: pastilla con el fondo y el borde del estado, su icono y el numero. */
+.mes__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  padding: 0 var(--esp-3);
+  border: var(--borde-fino) var(--tono-estilo, solid) var(--tono-borde, var(--color-borde-control));
+  border-radius: var(--radio-pastilla);
+  background: var(--tono-fondo, var(--color-superficie));
+  color: var(--color-texto);
+  font-variant-numeric: tabular-nums;
 }
 
 .mes__bloqueo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
   font-size: var(--tipo-xs);
   padding: 0 var(--esp-2);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
+  background: var(--color-estado-bloqueado);
 }
 
 .mes__leyenda {
+  margin-top: var(--esp-4);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--esp-2) var(--esp-6);
+  gap: var(--esp-2) var(--esp-4);
 }

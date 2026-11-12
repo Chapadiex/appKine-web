@@ -1,6 +1,8 @@
 /*
- * Estado vacio de un listado (UX-14): en lugar de la tabla, que paso y que hacer. Centrado y
- * compacto: no una tabla vacia enorme.
+ * Estado vacio (UX-14; tarjeta propia desde el 08/11/2026): en lugar de la tabla, que paso y que
+ * hacer, en una tarjeta que se distingue del contenido. Icono en un circulo, titulo, una frase y
+ * las acciones en orden de importancia: la primera con `.boton`, la segunda con
+ * `.boton--secundario` y la tercera como enlace o `.boton-texto`.
  */
 .estado-vacio {
   display: flex;
@@ -8,23 +10,40 @@
   align-items: center;
   gap: var(--esp-3);
   padding: var(--esp-9) var(--esp-6);
-  border: var(--borde-fino) dashed var(--color-borde);
-  border-radius: var(--radio-md);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
   text-align: center;
 }
 
-/* Dentro de una tarjeta ya hay un borde: el vacio no dibuja una segunda caja adentro. */
+/* Dentro de una tarjeta: otra superficie, para que no se confunda con el resto del contenido. */
 .tarjeta .estado-vacio {
   border: 0;
+  background: var(--color-superficie-secundaria);
+}
+
+.estado-vacio__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--esp-2);
+  border-radius: 50%;
+  background: var(--color-seleccion);
+  color: var(--color-enlace);
+  font-size: var(--tipo-xl);
 }
 
 .estado-vacio__titulo {
   margin: 0;
   color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
   font-weight: var(--peso-semi);
 }
 
 .estado-vacio__texto {
+  max-width: 40rem;
   margin: 0;
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
@@ -32,6 +51,9 @@
 
 .estado-vacio__acciones:not(:empty) {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   gap: var(--esp-4);
   margin-top: var(--esp-4);
 }

@@ -31,16 +31,23 @@ import { RUTA_HORARIOS, SEGMENTO_HORARIOS } from '../../../core/models/rutas';
 export { RUTA_HORARIOS, SEGMENTO_HORARIOS };
 
 /** Segmentos hijos, tal como los monta `horarios.routes.ts`. */
-export const SEGMENTO_EXCEPCIONES = 'excepciones';
 export const SEGMENTO_CALENDARIO = 'calendario';
+/** Las pestañas del calendario de la sede cuelgan de su URL: la barra lateral marca una sola entrada. */
+export const SEGMENTO_CALENDARIO_HORARIO = `${SEGMENTO_CALENDARIO}/horario`;
+export const SEGMENTO_CALENDARIO_FERIADOS = `${SEGMENTO_CALENDARIO}/feriados`;
+export const SEGMENTO_EXCEPCIONES = `${SEGMENTO_CALENDARIO}/cierres`;
+/** Donde vivian los cierres hasta el 08/11/2026: queda como redireccion para enlaces guardados. */
+export const SEGMENTO_EXCEPCIONES_VIEJO = 'excepciones';
 export const SEGMENTO_EFECTIVO = 'efectivo';
 export const SEGMENTO_CAMBIOS = 'cambios';
 
 /** Cierres y aperturas. */
 export const RUTA_HORARIOS_EXCEPCIONES = `${RUTA_HORARIOS}/${SEGMENTO_EXCEPCIONES}`;
 
-/** Feriados y politica de la sede. */
+/** Calendario de la sede: resumen y politica. */
 export const RUTA_HORARIOS_CALENDARIO = `${RUTA_HORARIOS}/${SEGMENTO_CALENDARIO}`;
+export const RUTA_HORARIOS_CALENDARIO_HORARIO = `${RUTA_HORARIOS}/${SEGMENTO_CALENDARIO_HORARIO}`;
+export const RUTA_HORARIOS_CALENDARIO_FERIADOS = `${RUTA_HORARIOS}/${SEGMENTO_CALENDARIO_FERIADOS}`;
 
 /** Horario efectivo ya resuelto, dia por dia. */
 export const RUTA_HORARIOS_EFECTIVO = `${RUTA_HORARIOS}/${SEGMENTO_EFECTIVO}`;
@@ -59,6 +66,8 @@ export const RUTAS_HORARIOS = {
   semanal: RUTA_HORARIOS,
   excepciones: RUTA_HORARIOS_EXCEPCIONES,
   calendario: RUTA_HORARIOS_CALENDARIO,
+  calendarioHorario: RUTA_HORARIOS_CALENDARIO_HORARIO,
+  calendarioFeriados: RUTA_HORARIOS_CALENDARIO_FERIADOS,
   efectivo: RUTA_HORARIOS_EFECTIVO,
   cambios: RUTA_HORARIOS_CAMBIOS,
 } as const;

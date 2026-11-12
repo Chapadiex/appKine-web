@@ -45,6 +45,10 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import {
+  ETIQUETA_PESTANAS_DEL_CALENDARIO,
+  PESTANAS_DEL_CALENDARIO,
+} from '../../models/pestanas-de-horarios';
+import {
   ParametrosDeHorarios,
   SIN_PARAMETROS,
   leerParametrosDeHorarios,
@@ -94,6 +98,7 @@ import {
 import { formatearFecha, formatearHora } from '../../../../shared/utils/instantes';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
@@ -182,6 +187,7 @@ const MOTIVOS: readonly {
   selector: 'app-excepciones-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
 
     Alerta,
     PanelLateral,
@@ -229,6 +235,8 @@ export class ExcepcionesPage {
   /** Bloqueos y excepciones se gestionan con `agenda:excepciones` desde el contrato 0.154.0. */
   protected readonly permisoManage = PERMISO_AGENDA_EXCEPCIONES;
   protected readonly rutas = RUTAS_HORARIOS;
+  protected readonly pestanasDelCalendario = PESTANAS_DEL_CALENDARIO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DEL_CALENDARIO;
   protected readonly textoModoLectura = textoDeModoLectura(PERMISO_AGENDA_EXCEPCIONES);
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   private readonly permisos = inject(PermissionsStore);

@@ -1,0 +1,102 @@
+<app-cabecera-de-pagina titulo="Consultar biblioteca">
+  <app-ayuda titulo="Sobre la consulta">
+    <p>
+      El asistente responde sólo con los libros que cargó el centro y cita de dónde sacó cada
+      respuesta.
+    </p>
+    <p>
+      No guarda nada: ni tus preguntas ni las respuestas. La charla se pierde al salir de esta
+      pantalla.
+    </p>
+  </app-ayuda>
+  <span class="consulta__aviso">{{ aviso }}</span>
+  <div cabeceraAcciones class="acciones-fila">
+    <button type="button" class="boton boton--secundario" (click)="nuevaCharla()">
+      Nueva charla
+    </button>
+  </div>
+</app-cabecera-de-pagina>
+
+<section class="tarjeta consulta" aria-label="Charla con la biblioteca">
+  <div #lista class="consulta__lista">
+    @if (deshabilitada()) {
+      <app-estado-vacio titulo="La consulta no está habilitada en este entorno." />
+    } @else if (mensajes().length === 0) {
+      <app-estado-vacio titulo="Preguntá algo sobre la bibliografía del centro." />
+    } @else {
+      @for (m of mensajes(); track $index; let i = $index) {
+        <div
+          class="consulta__burbuja"
+          [class.consulta__burbuja--usuario]="m.rol === 'usuario'"
+          [class.consulta__burbuja--error]="m.estado === 'error'"
+        >
+          <p class="consulta__texto">{{ textoDeMensaje(m) }}</p>
+          @if (m.aclaracion && m.estado === 'listo' && m.opciones?.length) {
+            <div class="consulta__opciones" role="group" aria-label="Opciones">
+              @for (o of m.opciones; track $index) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="enCurso()"
+                  (click)="elegirOpcion(o)"
+                >
+                  {{ o.etiqueta }}
+                </button>
+              }
+            </div>
+          }
+          @if (
+            m.estado === 'listo' && m.rol === 'asistente' && m.fuentes.length > 0 && !m.sinMaterial
+          ) {
+            <details class="consulta__fuentes">
+              <summary>Fuentes ({{ m.fuentes.length }})</summary>
+              <ul>
+                @for (f of m.fuentes; track $index) {
+                  <li>
+                    @if (puedeAbrirLibros()) {
+                      <a [routerLink]="['/biblioteca', f.libroId]">{{ f.titulo }}</a>
+                    } @else {
+                      <strong>{{ f.titulo }}</strong>
+                    }
+                    <span class="consulta__paginas">{{ paginas(f) }}</span>
+                    <p class="consulta__extracto">{{ f.extracto }}</p>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+          @if (puedeProfundizar(m)) {
+            <button
+              type="button"
+              class="boton boton--secundario consulta__profundizar"
+              [disabled]="enCurso()"
+              (click)="profundizar(i)"
+            >
+              Profundizar
+            </button>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <div class="visualmente-oculto" aria-live="polite" role="status">{{ anuncio() }}</div>
+
+  <form class="consulta__caja" (submit)="$event.preventDefault(); enviar()">
+    <label class="visualmente-oculto" for="consulta-pregunta">Tu pregunta</label>
+    <textarea
+      id="consulta-pregunta"
+      name="consulta-pregunta"
+      rows="2"
+      [maxLength]="maxPregunta"
+      [value]="texto()"
+      [disabled]="deshabilitada()"
+      (input)="alEscribir($event)"
+      (keydown)="alTeclear($event)"
+    ></textarea>
+    <div class="consulta__pie">
+      <span class="consulta__contador">{{ texto().length }} / {{ maxPregunta }}</span>
+      <button type="submit" class="boton" [disabled]="!puedeEnviar()">Enviar</button>
+    </div>
+  </form>
+</section>

@@ -42,7 +42,7 @@
   margin: 0;
   padding: var(--esp-6) var(--esp-7);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .bloque__titulo {
@@ -107,7 +107,7 @@
 
 .ubicacion__candidato:hover {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-hover);
 }
 
 .ubicacion__coordenadas {

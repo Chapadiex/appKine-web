@@ -39,48 +39,49 @@
   busqueda va al servidor (DP-45) por paciente, oferta o profesional; el estado, detras de
   "Filtros".
 -->
+<app-filtros
+  separada
+  [activos]="filtrosAvanzadosActivos()"
+  [resultados]="resultado() === null ? null : total()"
+  [unidad]="['serie', 'series']"
+  limpiable
+  (limpiar)="cambiarEstado(Estado.VIGENTE)"
+>
+  <div class="campo" filtro-principal>
+    <label class="visualmente-oculto" for="series-busqueda"
+      >Paciente, documento, oferta o profesional</label
+    >
+    <div class="campo-busqueda">
+      <app-icono class="campo-busqueda__icono" nombre="buscar" />
+      <input
+        id="series-busqueda"
+        name="series-busqueda"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar por paciente, documento, oferta o profesional"
+        [value]="busqueda()"
+        (change)="buscar($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <div class="campo">
+    <label for="series-estado">Estado</label>
+    <select
+      id="series-estado"
+      name="series-estado"
+      [value]="filtroEstado()"
+      (change)="cambiarEstado($any($event.target).value)"
+    >
+      <option [value]="Estado.VIGENTE">Vigentes</option>
+      <option [value]="Estado.FINALIZADA">Finalizadas</option>
+      <option [value]="Estado.CANCELADA">Canceladas</option>
+      <option [value]="TODAS">Todas</option>
+    </select>
+  </div>
+</app-filtros>
+
 <section class="tarjeta" aria-label="Series de turnos">
-  <app-filtros
-    [activos]="filtrosAvanzadosActivos()"
-    [resultados]="resultado() === null ? null : total()"
-    [unidad]="['serie', 'series']"
-    limpiable
-    (limpiar)="cambiarEstado(Estado.VIGENTE)"
-  >
-    <div class="campo" filtro-principal>
-      <label class="visualmente-oculto" for="series-busqueda"
-        >Paciente, documento, oferta o profesional</label
-      >
-      <div class="campo-busqueda">
-        <app-icono class="campo-busqueda__icono" nombre="buscar" />
-        <input
-          id="series-busqueda"
-          name="series-busqueda"
-          type="search"
-          autocomplete="off"
-          placeholder="Buscar por paciente, documento, oferta o profesional"
-          [value]="busqueda()"
-          (change)="buscar($any($event.target).value)"
-        />
-      </div>
-    </div>
-
-    <div class="campo">
-      <label for="series-estado">Estado</label>
-      <select
-        id="series-estado"
-        name="series-estado"
-        [value]="filtroEstado()"
-        (change)="cambiarEstado($any($event.target).value)"
-      >
-        <option [value]="Estado.VIGENTE">Vigentes</option>
-        <option [value]="Estado.FINALIZADA">Finalizadas</option>
-        <option [value]="Estado.CANCELADA">Canceladas</option>
-        <option [value]="TODAS">Todas</option>
-      </select>
-    </div>
-  </app-filtros>
-
   @if (persona(); as filtrada) {
     <p class="filtro-persona">
       Solo las series de <b>{{ filtrada.nombre || 'la persona #' + filtrada.id }}</b
@@ -103,17 +104,14 @@
         titulo="No hay series vigentes"
         texto="Una serie se programa desde un plan, con «Programar sesiones restantes», o desde «Nuevo turno», con «Programar varias sesiones»."
       >
-        <button
-          type="button"
-          class="boton boton--secundario"
-          *akinePermiso="permisoTurnos"
-          (click)="nuevoTurno()"
-        >
+        <button type="button" class="boton" *akinePermiso="permisoTurnos" (click)="nuevoTurno()">
+          <app-icono nombre="agregar" />
           Nuevo turno
         </button>
       </app-estado-vacio>
     } @else if (filas().length === 0) {
       <app-estado-vacio
+        icono="buscar"
         titulo="No encontramos series"
         texto="Ninguna serie coincide con la búsqueda o los filtros. Probá con otros."
       >

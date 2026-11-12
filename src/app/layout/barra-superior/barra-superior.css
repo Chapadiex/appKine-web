@@ -116,7 +116,7 @@
 }
 
 .menu:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 @media (max-width: 63.99rem) {

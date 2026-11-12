@@ -7,6 +7,8 @@
     <ng-content />
   </div>
   <div class="cabecera-pagina__contexto"><ng-content select="[cabeceraContexto]" /></div>
+  <div class="cabecera-pagina__pestanas">
+    <ng-content select="app-pestanas, akine-pestanas" />
+  </div>
   <div class="cabecera-pagina__principal"><ng-content select="[cabeceraAcciones]" /></div>
 </div>
-<ng-content select="app-pestanas, akine-pestanas" />

@@ -78,7 +78,7 @@ describe('CasoDetallePage', () => {
       );
     }
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+    expect(texto(fixture)).toContain('Declará el motivo del acceso');
 
     TestBed.inject(VisitaClinica).declarar('Interconsulta');
     await estabilizar(fixture);
@@ -115,12 +115,13 @@ describe('CasoDetallePage', () => {
     segundo.flush(caso(5));
     httpMock.expectOne(`${CASO}/eventos`).flush([]);
     await estabilizar(fixture);
-    // UX-12: cada resultado es un aviso global.
+    // UX-12: cada resultado es un aviso global. Los dos guardados avisan, pero el mismo aviso no
+    // se apila: queda uno (AvisosStore, 09/11/2026).
     expect(
       TestBed.inject(AvisosStore)
         .avisos()
         .map((aviso) => aviso.titulo),
-    ).toEqual(['Equipo del caso guardado', 'Equipo del caso guardado']);
+    ).toEqual(['Equipo del caso guardado']);
   });
 
   it('la oferta y el equipo se nombran con lo que trae el caso, sin pedir el listado de ofertas', async () => {

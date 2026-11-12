@@ -237,7 +237,6 @@ test.describe('Recepcion del dia contra el backend real', () => {
     await expect(detalle.getByText('Motivo del retiro: Se canso de esperar')).toBeVisible();
     await expect(detalle.getByRole('button', { name: 'Marcar ausente' })).toHaveCount(0);
     await expect(detalle.getByRole('button', { name: 'Reprogramar' })).toHaveCount(0);
-    await detalle.getByText('Más acciones').click();
     await expect(detalle.getByRole('button', { name: 'Cancelar turno' })).toBeVisible();
 
     await detalle.getByRole('button', { name: 'Ver historial' }).click();

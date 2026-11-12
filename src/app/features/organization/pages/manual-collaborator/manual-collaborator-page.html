@@ -131,11 +131,12 @@
             <h2>Información profesional</h2>
             <div class="alta-manual__grilla alta-manual__grilla--tres">
               <div class="campo">
-                <label for="manual-profesion">Profesión</label
-                ><input
-                  id="manual-profesion"
+                <label for="manual-profesion">Profesión</label>
+                <app-buscador-con-alta
+                  idCampo="manual-profesion"
                   formControlName="profesion"
-                  placeholder="Ej. Kinesiología"
+                  placeholder="Buscar o escribir una profesión"
+                  [opciones]="profesionesSugeridas"
                 />
               </div>
               <div class="campo">
@@ -150,15 +151,57 @@
                   placeholder="Ej. Córdoba"
                 />
               </div>
-              <div class="campo">
-                <label for="manual-especialidad">Especialidad principal</label
-                ><input id="manual-especialidad" formControlName="especialidadPrincipal" />
-              </div>
-              <div class="campo alta-manual__campo-doble">
-                <label for="manual-especialidades"
-                  >Especialidades adicionales
-                  <span class="campo__opcional">(separadas por coma)</span></label
-                ><input id="manual-especialidades" formControlName="especialidadesAdicionales" />
+              <!--
+                Especialidades (11/11/2026): se buscan en el catalogo clinico o se agregan
+                escribiendolas; se pueden sumar varias y una se marca como principal.
+              -->
+              <div class="campo alta-manual__campo-triple">
+                <label for="manual-especialidad">
+                  Especialidades <span class="campo__opcional">(opcional)</span>
+                </label>
+                <app-buscador-con-alta
+                  idCampo="manual-especialidad"
+                  placeholder="Buscar o agregar una especialidad"
+                  limpiarAlElegir
+                  [opciones]="especialidadesDelCatalogo()"
+                  [excluir]="especialidades()"
+                  (elegido)="agregarEspecialidad($event)"
+                />
+                @if (especialidades().length > 0) {
+                  <fieldset class="alta-manual__especialidades">
+                    <legend class="visualmente-oculto">Especialidad principal</legend>
+                    @for (especialidad of especialidades(); track especialidad) {
+                      <div
+                        class="alta-manual__especialidad"
+                        [class.alta-manual__especialidad--principal]="principal() === especialidad"
+                      >
+                        <label>
+                          <input
+                            type="radio"
+                            name="manual-especialidad-principal"
+                            [checked]="principal() === especialidad"
+                            (change)="principal.set(especialidad)"
+                          />
+                          {{ especialidad }}
+                          @if (principal() === especialidad) {
+                            <span class="alta-manual__marca-principal">Principal</span>
+                          }
+                        </label>
+                        <button
+                          type="button"
+                          class="alta-manual__quitar"
+                          [attr.aria-label]="'Quitar ' + especialidad"
+                          (click)="quitarEspecialidad(especialidad)"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    }
+                  </fieldset>
+                  <p class="ayuda ayuda--fija">
+                    Marcá cuál es la principal; las demás quedan como adicionales.
+                  </p>
+                }
               </div>
             </div>
 

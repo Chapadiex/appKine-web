@@ -246,7 +246,7 @@ describe('AgendaPage', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('No hay turnos para este día');
-      expect(texto(fixture)).toContain('Tampoco hay horarios de atención cargados');
+      expect(texto(fixture)).toContain('ni horarios de atención cargados');
 
       clic(fixture, 'Crear turno');
       expect(TestBed.inject(FlujoDeTurnosStore).solicitud()).toMatchObject({
@@ -291,7 +291,7 @@ describe('AgendaPage', () => {
       leida().flush({ timezone: ZONA, turnos: [] });
       await asentar(fixture);
 
-      expect(texto(fixture)).toContain('No hay turnos en los próximos 14 días');
+      expect(texto(fixture)).toContain('Tampoco hay turnos en los próximos 14 días');
       expect((raiz(fixture).querySelector('#agenda-fecha') as HTMLInputElement).value).toBe(FECHA);
     });
 
@@ -312,7 +312,7 @@ describe('AgendaPage', () => {
       await asentar(fixture);
 
       expect(texto(fixture)).toContain('Esta sede no tiene boxes en servicio');
-      expect(texto(fixture)).not.toContain('Tampoco hay horarios');
+      expect(texto(fixture)).not.toContain('ni horarios de atención');
     });
 
     it('una sede sin profesionales lo dice', async () => {
@@ -534,13 +534,12 @@ describe('AgendaPage', () => {
   });
 
   describe('filtros', () => {
-    it('cada filtro activo resalta su pastilla, suma al contador y Limpiar los quita', async () => {
+    it('cada filtro activo suma al contador del botón Filtros y Limpiar los quita', async () => {
       const fixture = await montar();
       leida().flush(AGENDA);
       await asentar(fixture);
-      const activas = () => raiz(fixture).querySelectorAll('.pastilla-filtro--activa').length;
-      expect(activas()).toBe(0);
-      expect(botones(fixture)).not.toContain('Limpiar filtros');
+      expect(activas(fixture)).toBe(0);
+      expect(limpiar(fixture).disabled).toBe(true);
 
       elegir(fixture, '#agenda-profesional', '31');
       leida().flush(AGENDA);
@@ -550,26 +549,28 @@ describe('AgendaPage', () => {
       elegir(fixture, '#agenda-estado', 'CONFIRMADO');
       await asentar(fixture);
 
-      expect(activas()).toBe(3);
-      expect(raiz(fixture).querySelector('.agenda-filtros-boton')?.textContent).toContain('3');
+      expect(activas(fixture)).toBe(3);
 
-      clic(fixture, 'Limpiar filtros');
+      clic(fixture, 'Limpiar');
       const sinFiltros = leida();
       expect(sinFiltros.request.params.has('profesionalId')).toBe(false);
       sinFiltros.flush(AGENDA);
       await asentar(fixture);
-      expect(activas()).toBe(0);
+      expect(activas(fixture)).toBe(0);
     });
 
-    it('el botón Filtros pliega y despliega la fila de filtros', async () => {
+    it('los filtros avanzados arrancan plegados, Filtros los despliega y Aplicar los pliega', async () => {
       const fixture = await montar();
       leida().flush(AGENDA);
       await asentar(fixture);
-      const fila = () => raiz(fixture).querySelector('#agenda-filtros') as HTMLElement;
-      expect(fila().hidden).toBe(false);
-      (raiz(fixture).querySelector('.agenda-filtros-boton') as HTMLButtonElement).click();
+      const panel = () => raiz(fixture).querySelector('.filtros-barra__avanzados') as HTMLElement;
+      expect(panel().hidden).toBe(true);
+      (raiz(fixture).querySelector('.filtros-barra__boton') as HTMLButtonElement).click();
       await asentar(fixture);
-      expect(fila().hidden).toBe(true);
+      expect(panel().hidden).toBe(false);
+      clic(fixture, 'Aplicar');
+      await asentar(fixture);
+      expect(panel().hidden).toBe(true);
     });
 
     it('el filtro de estado no vuelve a pedir, salvo Cancelado que hay que leerlo', async () => {
@@ -621,7 +622,7 @@ describe('AgendaPage', () => {
       expect(turnos[0].getAttribute('title')).toContain(
         'A reubicar: quedó fuera de la disponibilidad',
       );
-      expect(raiz(fixture).querySelectorAll('.pastilla-filtro--activa')).toHaveLength(1);
+      expect(activas(fixture)).toBe(1);
     });
 
     it('un enlace con estado A reubicar lo respeta; uno inventado cae en todos', async () => {
@@ -665,7 +666,7 @@ describe('AgendaPage', () => {
       expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(1);
       httpMock.expectNone((r) => r.url === OPERATIVA);
 
-      clic(fixture, 'Limpiar filtros');
+      clic(fixture, 'Limpiar');
       await asentar(fixture);
       expect(raiz(fixture).querySelectorAll('button.turno')).toHaveLength(2);
     });
@@ -1055,6 +1056,20 @@ describe('AgendaPage', () => {
 
   function celdas(fixture: ComponentFixture<AgendaPage>): HTMLButtonElement[] {
     return Array.from(raiz(fixture).querySelectorAll<HTMLButtonElement>('.grilla__celda'));
+  }
+
+  /** Lo que dice el contador del boton Filtros: cuantos filtros hay aplicados (0 sin contador). */
+  function activas(fixture: ComponentFixture<AgendaPage>): number {
+    const contador = raiz(fixture).querySelector('.filtros-barra__contador');
+    return contador === null ? 0 : Number.parseInt(contador.textContent ?? '0', 10);
+  }
+
+  function limpiar(fixture: ComponentFixture<AgendaPage>): HTMLButtonElement {
+    const boton = Array.from(raiz(fixture).querySelectorAll('button')).find(
+      (b) => (b.textContent ?? '').trim() === 'Limpiar',
+    );
+    if (boton === undefined) throw new Error('No está el botón Limpiar');
+    return boton;
   }
 
   function botones(fixture: ComponentFixture<AgendaPage>): readonly string[] {

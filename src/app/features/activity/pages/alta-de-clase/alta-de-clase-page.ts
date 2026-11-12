@@ -26,7 +26,16 @@ import {
   errorSinContextoDeActividad,
   traducirErrorActividad,
 } from '../../models/actividad-errors';
-import { OpcionDeEspacio, instanteDesdeHoraDeSede } from '../../models/clases';
+import {
+  DIAS_DE_LA_SEMANA,
+  OpcionDeEspacio,
+  detalleDeOmisionUtil,
+  fechaDeSerie,
+  instanteDesdeHoraDeSede,
+  textoDeMotivoDeOmision,
+} from '../../models/clases';
+import { SerieDeClases } from '../../../../api/generated/model/serie-de-clases';
+import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { RUTA_CLASES, rutaDeClase } from '../../models/rutas-de-clases';
 import { ActivityApi } from '../../services/activity-api';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -54,9 +63,12 @@ const CAMPOS_MARCADOS: ReadonlySet<string> = new Set(['capacidad', 'espacioId'])
  * atendiendo, cupo que entre en la oferta y en el box, y que ni el profesional ni el box tengan un
  * turno u otra clase que se cruce—, y cada rechazo vuelve con su tipo.
  *
- * <p><b>No hay recurrencia</b>: el contrato programa una clase por vez. <b>El box es opcional</b>
- * (contrato 0.102.0): sin elegirlo, si la oferta lo requiere el backend toma uno habilitado y
- * libre; elegido, el backend valida ese y no cae a otro.
+ * <p><b>Una clase o todas las semanas</b> (contrato 0.163.0). En modo semanal se eligen los dias,
+ * el rango desde/hasta y el mismo horario; el backend programa cada fecha como una clase suelta y
+ * devuelve las que no pudo programar con su motivo. Si alguna quedo afuera la pantalla no navega:
+ * muestra la lista para que se resuelva a mano. <b>El box es opcional</b> (contrato 0.102.0): sin
+ * elegirlo, si la oferta lo requiere el backend toma uno habilitado y libre; elegido, el backend
+ * valida ese y no cae a otro.
  *
  * <p>Fecha y hora son de pared de la SEDE y viajan como instante UTC. La clave de idempotencia es
  * una por intento: un doble click o un reintento por red devuelven la misma clase.
@@ -91,7 +103,45 @@ export class AltaDeClasePage {
     horaFin: [sumarMinutos(HORA_POR_DEFECTO, DURACION_POR_DEFECTO), Validators.required],
     capacidad: [10, [Validators.required, Validators.min(1)]],
     titulo: [''],
+    /** Solo en modo semanal: ultimo dia del rango, inclusive. */
+    hasta: [''],
   });
+
+  protected readonly DIAS_DE_LA_SEMANA = DIAS_DE_LA_SEMANA;
+  protected readonly textoDeMotivoDeOmision = textoDeMotivoDeOmision;
+  protected readonly fechaDeSerie = fechaDeSerie;
+  protected readonly detalleDeOmisionUtil = detalleDeOmisionUtil;
+  /** Quien dicta la oferta: sus habilitaciones, en Servicios (no se importa de otra feature). */
+  protected readonly rutaDeHabilitaciones = (ofertaId: number | undefined): string =>
+    `/servicios/ofertas/${ofertaId}/habilitaciones`;
+  /** Lo que una clase necesita antes de programarse, cada cosa en su pantalla. */
+  protected readonly RUTA_CATALOGO_DE_SERVICIOS = '/servicios/catalogo';
+  protected readonly RUTA_OFERTAS_DE_LA_SEDE = '/servicios/ofertas';
+  protected readonly RUTA_ESPACIOS = '/espacios';
+  protected readonly RUTA_HORARIOS = RUTA_HORARIOS;
+
+  /** Una clase suelta, o la misma clase todas las semanas en los dias elegidos. */
+  protected readonly modo = signal<'una' | 'semanal'>('una');
+  protected readonly diasElegidos = signal<ReadonlySet<number>>(new Set());
+  /** Lo que devolvio la ultima serie, cuando alguna fecha quedo afuera. */
+  protected readonly resultadoDeSerie = signal<SerieDeClases | null>(null);
+  /**
+   * Las fechas omitidas agrupadas por motivo: una serie de dos meses con el box ocupado son quince
+   * renglones iguales, y lo que hay que resolver es uno. El detalle es el de la primera fecha.
+   */
+  protected readonly omitidasPorMotivo = computed(() => {
+    const grupos = new Map<string, { motivo: string; detalle: string; fechas: string[] }>();
+    for (const omitida of this.resultadoDeSerie()?.omitidas ?? []) {
+      const motivo = omitida.motivo ?? '';
+      const grupo = grupos.get(motivo) ?? { motivo, detalle: omitida.detalle ?? '', fechas: [] };
+      grupo.fechas.push(fechaDeSerie(omitida.fecha));
+      grupos.set(motivo, grupo);
+    }
+    return [...grupos.values()];
+  });
+  /** Modo semanal sin dias o sin fecha hasta valida: se dice junto a esos campos. */
+  protected readonly faltaDia = signal(false);
+  protected readonly hastaInvalido = signal(false);
 
   protected readonly ofertas = signal<readonly OfertaResponse[] | null>(null);
   protected readonly profesionales = signal<readonly OpcionDeProfesional[]>([]);
@@ -198,7 +248,30 @@ export class AltaDeClasePage {
     );
   }
 
+  protected cambiarModo(modo: 'una' | 'semanal'): void {
+    this.modo.set(modo);
+    this.resultadoDeSerie.set(null);
+    this.error.set(null);
+    this.clave = nuevaClaveDeIntento();
+  }
+
+  protected alternarDia(dia: number): void {
+    const elegidos = new Set(this.diasElegidos());
+    if (elegidos.has(dia)) {
+      elegidos.delete(dia);
+    } else {
+      elegidos.add(dia);
+    }
+    this.diasElegidos.set(elegidos);
+    this.faltaDia.set(false);
+    this.clave = nuevaClaveDeIntento();
+  }
+
   protected programar(): void {
+    if (this.modo() === 'semanal') {
+      this.programarSerie();
+      return;
+    }
     this.intentado.set(true);
     this.finAntesDeInicio.set(false);
     const consultorioId = this.tenant.consultorioId();
@@ -274,6 +347,98 @@ export class AltaDeClasePage {
               ? error.mensajeSinCampos((campo) => CAMPOS_MARCADOS.has(campo))
               : null;
           this.error.set(cartel === null ? traducido : { ...traducido, mensaje: cartel });
+        },
+      });
+  }
+
+  /**
+   * Clases semanales. Valida lo que el navegador puede validar (dias, rango, horas) y deja el resto
+   * al backend, que revisa cada fecha como una clase suelta.
+   */
+  private programarSerie(): void {
+    this.intentado.set(true);
+    this.finAntesDeInicio.set(false);
+    const consultorioId = this.tenant.consultorioId();
+    if (consultorioId === null) {
+      this.error.set(errorSinContextoDeActividad());
+      return;
+    }
+    const valor = this.formulario.getRawValue();
+    this.faltaDia.set(this.diasElegidos().size === 0);
+    this.hastaInvalido.set(valor.hasta === '' || valor.hasta < valor.fecha);
+    this.finAntesDeInicio.set(valor.horaFin <= valor.horaInicio);
+    if (
+      this.formulario.invalid ||
+      this.faltaDia() ||
+      this.hastaInvalido() ||
+      this.finAntesDeInicio() ||
+      this.enviando()
+    ) {
+      this.formulario.markAllAsTouched();
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+        { injector: this.injector },
+      );
+      return;
+    }
+    const profesionalId = Number(valor.profesionalId);
+    this.enviando.set(true);
+    this.error.set(null);
+    this.resultadoDeSerie.set(null);
+    this.api
+      .programarSerie(consultorioId, Number(valor.ofertaId), {
+        desde: valor.fecha,
+        hasta: valor.hasta,
+        diasSemana: [...this.diasElegidos()].sort((a, b) => a - b),
+        horaInicio: valor.horaInicio,
+        horaFin: valor.horaFin,
+        capacidad: Number(valor.capacidad),
+        profesionalId: valor.profesionalId !== '' && profesionalId > 0 ? profesionalId : undefined,
+        espacioId: valor.espacioId === '' ? undefined : Number(valor.espacioId),
+        titulo: valor.titulo.trim() === '' ? undefined : valor.titulo.trim(),
+        idempotencyKey: this.clave,
+      })
+      .subscribe({
+        next: (serie) => {
+          this.enviando.set(false);
+          const programadas = serie.programadas?.length ?? 0;
+          const omitidas = serie.omitidas?.length ?? 0;
+          const oferta = this.ofertaElegida()?.nombreComercial;
+          if (omitidas === 0) {
+            this.avisos.exito(
+              `${programadas} ${programadas === 1 ? 'clase programada' : 'clases programadas'}`,
+              {
+                descripcion: [oferta, `del ${diaYMes(valor.fecha)} al ${diaYMes(valor.hasta)}`]
+                  .filter(Boolean)
+                  .join(' · '),
+              },
+            );
+            this.router
+              .navigateByUrl(RUTA_CLASES)
+              .catch((error: unknown) => console.error('No se pudo abrir las clases', error));
+            return;
+          }
+          // Alguna fecha quedo afuera: la lista se queda en pantalla para resolverla a mano.
+          this.resultadoDeSerie.set(serie);
+          if (programadas > 0) {
+            this.avisos.exito(
+              `${programadas} ${programadas === 1 ? 'clase programada' : 'clases programadas'}`,
+              {
+                descripcion: `${omitidas} ${omitidas === 1 ? 'fecha no se pudo programar' : 'fechas no se pudieron programar'}.`,
+              },
+            );
+          }
+          afterNextRender(
+            () => this.host.nativeElement.querySelector<HTMLElement>('#serie-resultado')?.focus(),
+            { injector: this.injector },
+          );
+        },
+        error: (error: unknown) => {
+          this.enviando.set(false);
+          this.clave = nuevaClaveDeIntento();
+          this.error.set(
+            traducirErrorActividad(error, this.tenant.consultorioId(), this.diaDeLaSede.zona()),
+          );
         },
       });
   }
@@ -378,4 +543,10 @@ export function sumarMinutos(hora: string, minutos: number): string {
   }
   const total = Math.min(h * 60 + m + minutos, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** `2026-11-09` → `09/11`: en el aviso de la serie el año sobra. */
+function diaYMes(fecha: string): string {
+  const partes = /^\d{4}-(\d{2})-(\d{2})$/.exec(fecha);
+  return partes === null ? fecha : `${partes[2]}/${partes[1]}`;
 }

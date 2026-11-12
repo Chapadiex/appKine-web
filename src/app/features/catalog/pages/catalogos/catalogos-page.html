@@ -17,12 +17,10 @@
       </p>
       <p>
         Los conceptos <b>de este centro</b> son tuyos: los das de alta vos, los ve solo tu
-        organización y los administras desde esta misma tabla. Si necesitas que algo entre al
-        catalogo comun, pedilo a la plataforma desde Solicitudes.
+        organización y los administras desde esta misma tabla.
       </p>
     </app-ayuda>
     <div cabeceraAcciones>
-      <a class="boton boton--secundario" routerLink="/catalogo/solicitudes">Pedir un alta</a>
       <ng-container *akinePermiso="permisoManage">
         <button type="button" class="boton" (click)="abrirAlta()">
           <app-icono nombre="agregar" />
@@ -133,9 +131,13 @@
             <p>{{ mensajeError() }}</p>
             <p class="alerta__acciones">
               @if (faltaContexto()) {
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                  >Elegir un consultorio</a
+                >
               } @else {
-                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Reintentar
+                </button>
               }
             </p>
           </app-alerta>
@@ -159,7 +161,7 @@
               <button
                 *akinePermiso="permisoManage"
                 type="button"
-                class="boton"
+                class="boton boton--secundario"
                 (click)="abrirAlta()"
               >
                 Dar de alta un concepto del centro
@@ -202,14 +204,16 @@
                       </td>
                       <td>
                         @if (concepto.estado === 'INACTIVO') {
-                          <span class="marca-estado">Dado de baja</span>
+                          <span class="marca-estado marca-estado--revocada">Dado de baja</span>
                           @if (concepto.deactivationReason) {
                             <p class="ayuda ayuda--fija">{{ concepto.deactivationReason }}</p>
                           }
                         } @else if (concepto.vigente) {
-                          <span class="marca-estado">Activo y vigente</span>
+                          <span class="marca-estado marca-estado--activa">Activo y vigente</span>
                         } @else {
-                          <span class="marca-estado">Activo, sin vigencia hoy</span>
+                          <span class="marca-estado marca-estado--info"
+                            >Activo, sin vigencia hoy</span
+                          >
                           <p class="ayuda ayuda--fija">
                             @if (formatearInstante(concepto.validFrom); as desde) {
                               Rige desde {{ desde }}.
@@ -236,10 +240,7 @@
                               Ver vigencias
                             </a>
                           }
-                          <span class="ayuda">
-                            La mantiene AKINE.
-                            <a routerLink="/catalogo/solicitudes">Pedir un cambio</a>
-                          </span>
+                          <span class="ayuda">La mantiene AKINE.</span>
                         } @else if (concepto.estado === 'ACTIVO' && puedeGestionar()) {
                           <app-acciones-de-fila [de]="concepto.name ?? concepto.codigo ?? ''">
                             <button
@@ -484,7 +485,7 @@
               <p>{{ errorAccion() }}</p>
               @if (hayQueRecargar()) {
                 <p class="alerta__acciones">
-                  <button type="button" class="boton" (click)="cargar()">
+                  <button type="button" class="boton boton--secundario" (click)="cargar()">
                     Recargar el listado
                   </button>
                 </p>

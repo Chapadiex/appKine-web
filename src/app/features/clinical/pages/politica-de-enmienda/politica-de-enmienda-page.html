@@ -6,6 +6,10 @@
       pero no se agregan versiones nuevas.
     </p>
   </app-ayuda>
+  <app-pestanas
+    [pestanas]="pestanasDeOrganizacion()"
+    [etiqueta]="etiquetaDePestanasDeOrganizacion"
+  />
 </app-cabecera-de-pagina>
 
 @if (cargando()) {

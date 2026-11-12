@@ -1,0 +1,25 @@
+.subir-libro__nota {
+  margin: 0 0 var(--esp-4);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.subir-libro__casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-3);
+}
+
+.subir-libro__progreso {
+  margin-block: var(--esp-4);
+}
+
+.subir-libro__progreso p {
+  margin: 0 0 var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+
+.subir-libro__progreso progress {
+  width: 100%;
+  accent-color: var(--color-acento);
+}

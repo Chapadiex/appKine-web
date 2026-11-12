@@ -40,7 +40,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     await entrarConContexto(page, sembrada);
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}`);
 
-    await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Declará el motivo del acceso' })).toBeVisible();
     // Sin motivo no se manda nada: el campo obligatorio frena el envio.
     await page.getByRole('button', { name: 'Ver la historia clínica' }).click();
     await expect(page.getByText('Sin motivo no se puede seguir.')).toBeVisible();

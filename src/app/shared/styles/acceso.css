@@ -107,7 +107,7 @@
 }
 
 .campo-con-accion__boton:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 /*
@@ -169,8 +169,8 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
-  background: var(--color-marca-superficie-activa);
-  color: var(--color-acento);
+  background: var(--color-info-fondo);
+  color: var(--color-info);
   font-size: 1.375rem;
   font-weight: var(--peso-fuerte);
 }
@@ -221,7 +221,7 @@
   gap: var(--esp-5);
   padding: var(--esp-5);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   line-height: 1.4;
 }
 

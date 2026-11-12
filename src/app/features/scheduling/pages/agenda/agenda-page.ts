@@ -36,6 +36,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -48,9 +49,10 @@ import {
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
 import {
+  claseDeTonoOperativo,
   eraA,
+  iconoDeEstadoOperativo,
   nombreDeEstadoOperativo,
-  simboloDeEstadoOperativo,
   textoDeReprogramado,
 } from '../../models/etiquetas-de-turno';
 import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
@@ -128,6 +130,7 @@ const A_REUBICAR = 'A_REUBICAR';
     Ayuda,
     CabeceraDePagina,
     EstadoVacio,
+    Filtros,
     Icono,
     NgTemplateOutlet,
     Pestanas,
@@ -135,7 +138,7 @@ const A_REUBICAR = 'A_REUBICAR';
     RouterLink,
   ],
   templateUrl: './agenda-page.html',
-  styleUrl: './agenda-page.css',
+  styleUrls: ['./agenda-page.css', '../../estados-de-turno.css'],
 })
 export class AgendaPage {
   private readonly api = inject(SchedulingApi);
@@ -179,7 +182,14 @@ export class AgendaPage {
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+
+  /** El turno cuyo detalle esta abierto: la tarjeta queda marcada como seleccion actual. */
+  protected readonly turnoAbierto = computed(() => {
+    const solicitud = this.flujo.solicitud();
+    return solicitud?.tipo === 'detalle' ? solicitud.turnoId : null;
+  });
   protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly diaCorto = diaCorto;
   protected readonly PX_POR_MINUTO = PX_POR_MINUTO;
@@ -206,8 +216,6 @@ export class AgendaPage {
   private readonly duracionesPropias = signal<ReadonlyMap<number, number>>(new Map());
   private pedidoDeDuraciones?: Subscription;
   protected readonly angosta = signal(false);
-  /** La fila de filtros (profesional, prestacion, estado) se ve; el boton Filtros la pliega. */
-  protected readonly filtrosAbiertos = signal(true);
   /** "Proximo dia con turnos": buscando, y si no encontro ninguno en la ventana que se miro. */
   protected readonly buscandoProximo = signal(false);
   protected readonly sinProximo = signal(false);
@@ -987,8 +995,7 @@ export class AgendaPage {
   }
 
   protected claseDeEstado(evento: EventoDeGrilla): string {
-    const estado = evento.turno?.turno?.operativo?.estadoOperativo ?? '';
-    return `turno turno--${estado.toLowerCase().replace('_', '-')}`;
+    return `turno ${claseDeTonoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)}`;
   }
 
   // -------------------------------------------------------------------------------------

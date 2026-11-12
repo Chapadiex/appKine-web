@@ -1,11 +1,22 @@
-import { Routes } from '@angular/router';
+import { Injector, inject, runInInjectionContext } from '@angular/core';
+import { ActivatedRouteSnapshot, Routes } from '@angular/router';
 
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { contextGuard } from '../../core/guards/context.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { PERMISO_PACIENTE_READ } from '../../core/models/permisos';
-import { DATA_PRECARGA_DE_DATOS } from '../../core/guards/tras-restaurar-sesion';
-import { precargarResumenDeFicha } from './services/precarga-de-ficha';
+import { DATA_PRECARGA_DE_DATOS, PrecargaDeDatos } from '../../core/guards/tras-restaurar-sesion';
+
+/**
+ * Precarga de la ficha, perezosa: importar `PrecargaDeFicha` de forma estatica metia `PersonApi` y
+ * el cliente de personas en el bundle inicial. El chunk baja en paralelo con el de la pantalla.
+ */
+const precargarFichaPerezosa: PrecargaDeDatos = (ruta: ActivatedRouteSnapshot) => {
+  const injector = inject(Injector);
+  import('./services/precarga-de-ficha').then((m) =>
+    runInInjectionContext(injector, () => m.precargarResumenDeFicha(ruta)),
+  );
+};
 
 /**
  * Rutas de la feature `person` (padron de personas M07, etapa AKINE-03.01).
@@ -74,7 +85,7 @@ export const routes: Routes = [
     title: 'AKINE - Ficha de la persona',
     // En una carga dura el resumen sale apenas vuelve el refresh, sin esperar a los guards ni a
     // la pantalla (AKINE-LCP). Ver PrecargaDeFicha.
-    data: { [DATA_PRECARGA_DE_DATOS]: precargarResumenDeFicha },
+    data: { [DATA_PRECARGA_DE_DATOS]: precargarFichaPerezosa },
   },
 
   // Documentacion administrativa (M25, AKINE-03.02).

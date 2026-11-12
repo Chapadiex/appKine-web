@@ -82,7 +82,7 @@
 }
 
 .grafico__columna--activa {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 /* A lo sumo 24 px, con 2 px de aire entre barras vecinas; extremo de datos redondeado. */

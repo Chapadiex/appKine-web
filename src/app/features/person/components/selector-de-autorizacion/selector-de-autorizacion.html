@@ -12,7 +12,7 @@
     </app-ayuda>
   </div>
 
-  <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+  <form class="formulario-consulta" [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
     <div class="campo campo--4">
       <label for="selector-practica">Práctica</label>
       <select
@@ -42,7 +42,11 @@
     </div>
 
     <p class="acciones">
-      <button type="submit" class="boton" [disabled]="estado().tipo === 'cargando'">
+      <button
+        type="submit"
+        class="boton boton--secundario"
+        [disabled]="estado().tipo === 'cargando'"
+      >
         {{ estado().tipo === 'cargando' ? 'Consultando...' : 'Ver candidatas' }}
       </button>
     </p>

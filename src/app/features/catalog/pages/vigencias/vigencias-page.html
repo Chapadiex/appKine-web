@@ -46,9 +46,13 @@
         <p>{{ mensajeError() }}</p>
         <p class="alerta__acciones">
           @if (faltaContexto()) {
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir un consultorio</a
+            >
           } @else {
-            <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Reintentar
+            </button>
           }
         </p>
       </app-alerta>
@@ -62,7 +66,7 @@
             Código <b>{{ actual.codigo }}</b> &middot;
             <span class="etiqueta">{{ etiquetaDeAlcance(actual) }}</span>
             @if (actual.estado === 'INACTIVO') {
-              &middot; <span class="marca-estado">Dado de baja</span>
+              &middot; <span class="marca-estado marca-estado--revocada">Dado de baja</span>
             }
           </p>
           @if (actual.descripcion) {
@@ -75,7 +79,6 @@
         <p class="estado estado--vacio">
           Este nomenclador lo mantiene AKINE: podés consultar sus vigencias, pero no cargarlas ni
           darlas de baja desde acá.
-          <a routerLink="/catalogo/solicitudes">Pedile un cambio a la plataforma</a>.
         </p>
       }
 
@@ -145,7 +148,7 @@
               <button
                 *akinePermiso="permisoManage"
                 type="button"
-                class="boton"
+                class="boton boton--secundario"
                 (click)="abrirAlta()"
               >
                 Cargar la primera vigencia
@@ -230,14 +233,16 @@
                     </td>
                     <td>
                       @if (vigencia.estado === 'INACTIVO') {
-                        <span class="marca-estado">Dada de baja</span>
+                        <span class="marca-estado marca-estado--revocada">Dada de baja</span>
                         @if (vigencia.deactivationReason) {
                           <p class="ayuda ayuda--fija">{{ vigencia.deactivationReason }}</p>
                         }
                       } @else if (vigencia.vigente) {
-                        <span class="marca-estado">Rige hoy</span>
+                        <span class="marca-estado marca-estado--activa">Rige hoy</span>
                       } @else {
-                        <span class="marca-estado">Activa, fuera de ventana</span>
+                        <span class="marca-estado marca-estado--info"
+                          >Activa, fuera de ventana</span
+                        >
                       }
                     </td>
                     <td class="tabla__acciones">

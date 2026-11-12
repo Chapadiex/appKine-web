@@ -48,7 +48,7 @@ describe('explicacionDeVacio', () => {
 
     expect(explicacion.titulo).toContain('cierre cargado');
     expect(explicacion.detalle).toContain('número 77');
-    expect(explicacion.enlace.ruta).toBe('/horarios/excepciones');
+    expect(explicacion.enlace.ruta).toBe('/horarios/calendario/cierres');
   });
 
   /**

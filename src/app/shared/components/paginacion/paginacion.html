@@ -18,6 +18,8 @@
         type="button"
         class="paginacion__paso paginacion__paso--flecha"
         [disabled]="paginaActual() === 0"
+        aria-label="Página anterior"
+        title="Página anterior"
         (click)="ir(paginaActual() - 1)"
       >
         <app-icono nombre="chevron-izquierda" />
@@ -41,6 +43,8 @@
         type="button"
         class="paginacion__paso paginacion__paso--flecha"
         [disabled]="paginaActual() + 1 >= totalPaginas()"
+        aria-label="Página siguiente"
+        title="Página siguiente"
         (click)="ir(paginaActual() + 1)"
       >
         <app-icono nombre="chevron-derecha" />

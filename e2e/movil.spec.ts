@@ -71,7 +71,7 @@ const PANTALLAS: readonly Pantalla[] = [
     listo: async (page) => {
       await page.getByRole('button', { name: 'Nuevo turno', exact: true }).click();
       const panel = page.getByRole('dialog', { name: 'Nuevo turno' });
-      await panel.getByLabel('Buscar paciente').fill('Gomez');
+      await panel.getByRole('searchbox', { name: 'Paciente', exact: true }).fill('Gomez');
       await panel.locator('.candidato').first().click();
       await panel.getByRole('button', { name: 'Primer disponible' }).click();
       await expect(panel.getByRole('button', { name: 'Confirmar turno' })).toBeEnabled();

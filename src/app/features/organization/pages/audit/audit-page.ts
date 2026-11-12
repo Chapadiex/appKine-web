@@ -35,6 +35,12 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ORGANIZACION,
+  pestanasDeOrganizacion,
+} from '../../../../core/models/pestanas-de-organizacion';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 /**
  * Cual de los tres filtros excluyentes esta elegido.
@@ -81,6 +87,7 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   selector: 'app-audit-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     ReactiveFormsModule,
@@ -95,6 +102,10 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   styleUrl: '../../organization.css',
 })
 export class AuditPage {
+  /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
+
   private readonly auditoria = inject(AuditoriaService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

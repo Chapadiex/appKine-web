@@ -50,9 +50,13 @@
           <p>{{ mensajeDeCarga() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -67,7 +71,7 @@
             <button
               *akinePermiso="PERMISO_CONSULTORIO_MANAGE"
               type="button"
-              class="boton"
+              class="boton boton--secundario"
               (click)="abrirAlta()"
             >
               Cargar el primer precio
@@ -99,7 +103,20 @@
                     <th scope="row" class="importe">{{ importe(precio) }}</th>
                     <td>{{ ventana(precio) }}</td>
                     <td>
-                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--revocada]="situacionDeLaFila.resumen.startsWith('Dad')"
+                        [class.marca-estado--activa]="
+                          !situacionDeLaFila.atenuada &&
+                          !situacionDeLaFila.resumen.startsWith('Todav')
+                        "
+                        [class.marca-estado--info]="
+                          !situacionDeLaFila.resumen.startsWith('Dad') &&
+                          (situacionDeLaFila.atenuada ||
+                            situacionDeLaFila.resumen.startsWith('Todav'))
+                        "
+                        >{{ situacionDeLaFila.resumen }}</span
+                      >
                       @if (precio.estado === 'INACTIVO' && precio.deactivationReason) {
                         <p class="ayuda ayuda--fija">{{ precio.deactivationReason }}</p>
                       }
