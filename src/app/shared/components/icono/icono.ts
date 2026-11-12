@@ -58,7 +58,10 @@ const TRAZOS = {
   // Absoluto (`M`): un `m` despues de otro subtrazo seria relativo al punto anterior.
   capas: 'M12 3 21 8l-9 5-9-5 9-5zM3 12l9 5 9-5M3 16l9 5 9-5',
   organizacion:
-    circulo(12, 5, 2.5) + circulo(5, 18, 2.5) + circulo(19, 18, 2.5) + 'M10.5 7 6 15.5M13.5 7l4.5 8.5',
+    circulo(12, 5, 2.5) +
+    circulo(5, 18, 2.5) +
+    circulo(19, 18, 2.5) +
+    'M10.5 7 6 15.5M13.5 7l4.5 8.5',
   edificio: 'M5 21V4l7-2v19M12 8h7v13M3 21h18M8 6v1M8 11v1M8 16v1M15 11v1M15 16v1',
   perfil: circulo(12, 8, 3.8) + 'M4.5 20.5c.8-4 3.7-6.2 7.5-6.2s6.7 2.2 7.5 6.2',
   preferencias: 'M4 7h9M17 7h3M4 17h3M11 17h9' + circulo(15, 7, 2) + circulo(9, 17, 2),

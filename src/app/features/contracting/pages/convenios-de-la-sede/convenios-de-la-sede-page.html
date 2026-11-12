@@ -105,7 +105,9 @@
           titulo="Todavía no elegiste un consultorio."
           texto="Los convenios son de una sede concreta, así que hay que saber en cual estás trabajando. Tu sesión sigue abierta: solo falta elegir dónde estás."
         >
-          <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+            >Elegir un consultorio</a
+          >
         </app-estado-vacio>
       }
 
@@ -114,9 +116,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -128,7 +134,12 @@
             titulo="Esta sede todavía no tiene convenios"
             texto="Sin convenios, todo lo que se atienda en esta sede se cobra como particular: no hay con que resolver un arancel. Para firmar el primero hace falta un financiador con al menos un plan cargado."
           >
-            <button type="button" class="boton boton--secundario" *akinePermiso="permisoManage" (click)="abrirAlta()">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              *akinePermiso="permisoManage"
+              (click)="abrirAlta()"
+            >
               Firmar el primero
             </button>
             <a class="boton boton--secundario" routerLink="/contratacion/financiadores">

@@ -221,9 +221,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir contexto</a
+              >
             } @else {
-              <button type="button" class="boton boton--secundario" (click)="consultar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="consultar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>

@@ -7,7 +7,9 @@
             class="pestanas__enlace"
             [routerLink]="pestana.ruta"
             routerLinkActive="pestanas__enlace--actual"
-            [routerLinkActiveOptions]="pestana.exacta === true ? COINCIDENCIA_EXACTA : COINCIDENCIA_PARCIAL"
+            [routerLinkActiveOptions]="
+              pestana.exacta === true ? COINCIDENCIA_EXACTA : COINCIDENCIA_PARCIAL
+            "
             ariaCurrentWhenActive="page"
             >{{ pestana.etiqueta }}</a
           >

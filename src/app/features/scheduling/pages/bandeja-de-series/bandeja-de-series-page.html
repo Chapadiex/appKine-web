@@ -104,12 +104,7 @@
         titulo="No hay series vigentes"
         texto="Una serie se programa desde un plan, con «Programar sesiones restantes», o desde «Nuevo turno», con «Programar varias sesiones»."
       >
-        <button
-          type="button"
-          class="boton"
-          *akinePermiso="permisoTurnos"
-          (click)="nuevoTurno()"
-        >
+        <button type="button" class="boton" *akinePermiso="permisoTurnos" (click)="nuevoTurno()">
           <app-icono nombre="agregar" />
           Nuevo turno
         </button>

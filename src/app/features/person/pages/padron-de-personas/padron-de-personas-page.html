@@ -109,9 +109,13 @@
       <p>{{ mensaje }}</p>
       <p class="alerta__acciones">
         @if (faltaContexto()) {
-          <a class="boton boton--secundario" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          <a class="boton boton--secundario" href="/seleccionar-contexto"
+            >Elegir contexto de trabajo</a
+          >
         } @else {
-          <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
         }
       </p>
     </app-alerta>
@@ -120,7 +124,12 @@
       titulo="Todavía no hay personas en el padrón"
       texto="Registrá a la primera para empezar."
     >
-      <button type="button" class="boton boton--secundario" (click)="abrirAlta()" *akinePermiso="permisoManage">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        (click)="abrirAlta()"
+        *akinePermiso="permisoManage"
+      >
         Dar de alta la primera persona
       </button>
     </app-estado-vacio>
@@ -417,7 +426,12 @@
             }
           </ul>
           <p class="alerta__acciones">
-            <button type="button" class="boton boton--secundario" [disabled]="enviando()" (click)="enviarAlta(true)">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="enviando()"
+              (click)="enviarAlta(true)"
+            >
               Es otra persona: darla de alta igual
             </button>
             <button type="button" class="boton boton--secundario" (click)="descartarCandidatos()">

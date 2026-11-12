@@ -153,12 +153,7 @@
       titulo="No hay nadie en la lista de espera"
       texto="Cuando un paciente no encuentra un horario que le sirva, anotalo acá para avisarle cuando se libere uno."
     >
-      <button
-        *akinePermiso="PERMISO_TURNO_MANAGE"
-        type="button"
-        class="boton"
-        (click)="agregar()"
-      >
+      <button *akinePermiso="PERMISO_TURNO_MANAGE" type="button" class="boton" (click)="agregar()">
         <app-icono nombre="agregar" />
         Agregar a la lista
       </button>

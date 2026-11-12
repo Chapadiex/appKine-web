@@ -152,7 +152,9 @@
           titulo="Todavía no elegiste un consultorio."
           texto="Los convenios y sus aranceles son de una sede concreta. Tu sesión sigue abierta: solo falta elegir dónde estás."
         >
-          <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+            >Elegir un consultorio</a
+          >
         </app-estado-vacio>
       }
 
@@ -161,9 +163,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -177,7 +183,9 @@
           >
             @if (!convenioInactivo()) {
               <ng-container *akinePermiso="permisoManage">
-                <button type="button" class="boton boton--secundario" (click)="abrirAlta()">Cargar el primero</button>
+                <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
+                  Cargar el primero
+                </button>
                 <a
                   class="boton boton--secundario"
                   [routerLink]="['/contratacion/convenios', convenioId, 'aranceles', 'importar']"

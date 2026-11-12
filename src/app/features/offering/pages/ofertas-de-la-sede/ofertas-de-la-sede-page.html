@@ -118,9 +118,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -132,7 +136,12 @@
             titulo="Esta sede todavía no tiene ofertas activas"
             texto="Una oferta conecta un servicio del catalogo con esta sede. Sin ninguna, esta sede no ofrece nada para reservar."
           >
-            <button *akinePermiso="permisoManage" type="button" class="boton boton--secundario" (click)="abrirAlta()">
+            <button
+              *akinePermiso="permisoManage"
+              type="button"
+              class="boton boton--secundario"
+              (click)="abrirAlta()"
+            >
               Publicar el primer servicio
             </button>
           </app-estado-vacio>
@@ -225,11 +234,13 @@
                         class="marca-estado"
                         [class.marca-estado--revocada]="situacionDeLaFila.resumen.startsWith('Dad')"
                         [class.marca-estado--activa]="
-                          !situacionDeLaFila.atenuada && !situacionDeLaFila.resumen.startsWith('Todav')
+                          !situacionDeLaFila.atenuada &&
+                          !situacionDeLaFila.resumen.startsWith('Todav')
                         "
                         [class.marca-estado--info]="
                           !situacionDeLaFila.resumen.startsWith('Dad') &&
-                          (situacionDeLaFila.atenuada || situacionDeLaFila.resumen.startsWith('Todav'))
+                          (situacionDeLaFila.atenuada ||
+                            situacionDeLaFila.resumen.startsWith('Todav'))
                         "
                         >{{ situacionDeLaFila.resumen }}</span
                       >

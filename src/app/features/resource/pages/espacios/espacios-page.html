@@ -101,9 +101,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -119,7 +123,12 @@
             titulo="Todavía no hay espacios en esta sede"
             texto="Dá de alta el primer box, gimnasio o sala para poder ofrecerlo en la agenda."
           >
-            <button type="button" class="boton boton--secundario" (click)="abrirAlta()" *akinePermiso="permisoManage">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="abrirAlta()"
+              *akinePermiso="permisoManage"
+            >
               Dar de alta el primer espacio
             </button>
           </app-estado-vacio>

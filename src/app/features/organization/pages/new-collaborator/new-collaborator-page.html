@@ -15,7 +15,9 @@
         <p>{{ mensajeError() }}</p>
         @if (causaError() === 'sin-contexto') {
           <p class="alerta__acciones">
-            <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir contexto</a
+            >
           </p>
         }
       </app-alerta>

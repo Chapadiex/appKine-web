@@ -104,7 +104,15 @@ function errorDeConexion(): AkineHttpError {
   return new AkineHttpError(0, null, true);
 }
 
-const NOMBRES_CONOCIDOS = new Set(['espera', 'fuentes', 'texto', 'aclaracion', 'etapa', 'fin', 'error']);
+const NOMBRES_CONOCIDOS = new Set([
+  'espera',
+  'fuentes',
+  'texto',
+  'aclaracion',
+  'etapa',
+  'fin',
+  'error',
+]);
 
 /**
  * El evento tipado, o `null` si el nombre no se conoce (se ignora). Un evento conocido con JSON

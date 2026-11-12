@@ -46,9 +46,13 @@
         <p>{{ mensajeError() }}</p>
         <p class="alerta__acciones">
           @if (faltaContexto()) {
-            <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir un consultorio</a
+            >
           } @else {
-            <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Reintentar
+            </button>
           }
         </p>
       </app-alerta>
@@ -236,7 +240,9 @@
                       } @else if (vigencia.vigente) {
                         <span class="marca-estado marca-estado--activa">Rige hoy</span>
                       } @else {
-                        <span class="marca-estado marca-estado--info">Activa, fuera de ventana</span>
+                        <span class="marca-estado marca-estado--info"
+                          >Activa, fuera de ventana</span
+                        >
                       }
                     </td>
                     <td class="tabla__acciones">
