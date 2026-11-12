@@ -126,6 +126,12 @@
   /* Hover de la barra lateral y fondo de la barra superior: la marca del centro los tiñe. */
   --color-marca-hover: var(--color-hover);
   --color-cabecera-fondo: var(--color-superficie);
+  /* Boton secundario: neutro en AKINE; la marca del centro le da contorno, texto y fondo. */
+  --color-secundario-borde: var(--color-borde-control);
+  --color-secundario-borde-hover: var(--color-texto-suave);
+  --color-secundario-fondo: var(--color-superficie);
+  --color-secundario-fondo-hover: var(--color-hover);
+  --color-secundario-texto: var(--color-texto);
   --color-acento: #1d4ed8;
   --color-acento-claro: var(--color-seleccion);
   --color-accion-fondo: #2563eb;
@@ -533,14 +539,14 @@ h3 {
  * actua"); el contorno `--color-borde-control` sigue a 3:1 (WCAG 1.4.11) en los dos temas.
  */
 .boton--secundario {
-  border-color: var(--color-borde-control);
-  background: var(--color-superficie);
-  color: var(--color-texto);
+  border-color: var(--color-secundario-borde);
+  background: var(--color-secundario-fondo);
+  color: var(--color-secundario-texto);
 }
 
 .boton--secundario:hover:not(:disabled) {
-  border-color: var(--color-texto-suave);
-  background: var(--color-hover);
+  border-color: var(--color-secundario-borde-hover);
+  background: var(--color-secundario-fondo-hover);
 }
 
 /* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */

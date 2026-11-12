@@ -136,10 +136,19 @@ export function tokensDeMarca(colores: ColoresDeTema, tema: TemaDeMarca): Record
       `color-mix(in srgb, ${principal} 28%, var(--color-superficie))`;
     tokens['--color-cabecera-fondo'] =
       `color-mix(in srgb, ${principal} 7%, var(--color-superficie))`;
+    // El boton secundario sigue siendo de contorno (la accion con relleno es una sola), pero el
+    // contorno y el fondo son del centro.
+    tokens['--color-secundario-borde'] = principal;
+    tokens['--color-secundario-borde-hover'] = principal;
+    tokens['--color-secundario-fondo'] =
+      `color-mix(in srgb, ${principal} 8%, var(--color-superficie))`;
+    tokens['--color-secundario-fondo-hover'] =
+      `color-mix(in srgb, ${principal} 20%, var(--color-superficie))`;
   }
   if (esColor(acento)) {
     tokens['--color-acento'] = acento;
     tokens['--color-enlace'] = acento;
+    tokens['--color-secundario-texto'] = acento;
   }
   return tokens;
 }
