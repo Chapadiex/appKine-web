@@ -125,7 +125,7 @@ export function avisos(page: Page): Locator {
 /** Elige a la persona en el panel como lo hace el mostrador: escribiendo su apellido. */
 export async function elegirPersona(panel: Locator, persona: Persona): Promise<void> {
   const nombre = `${persona.apellido}, ${persona.nombre}`;
-  await panel.getByLabel('Buscar paciente').fill(persona.apellido);
+  await panel.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(persona.apellido);
   await panel.getByRole('button', { name: new RegExp(`^${nombre}`) }).click();
   await expect(panel.locator('.flujo__persona-elegida')).toContainText(nombre);
 }
