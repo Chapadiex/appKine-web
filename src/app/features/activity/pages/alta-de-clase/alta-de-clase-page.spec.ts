@@ -380,6 +380,314 @@ describe('AltaDeClasePage', () => {
     expect(alerta?.textContent).toContain('No pudimos completar la operación');
     expect(alerta?.textContent).toContain('Reintentar');
   });
+  /** Elige la oferta sin profesional ni box que exigir y deja la pantalla lista para enviar. */
+  async function montarSimple(modoSemanal = false) {
+    const fixture = await montar([
+      { ...GRUPAL, requiereProfesional: false, requiereEspacio: false },
+    ]);
+    if (modoSemanal) {
+      (
+        (fixture.nativeElement as HTMLElement).querySelector(
+          'input[value="semanal"]',
+        ) as HTMLInputElement
+      ).click();
+    }
+    escribir(fixture, '#clase-oferta', '42');
+    responderSinBoxes();
+    await asentar(fixture);
+    return fixture;
+  }
+
+  function enviarFormulario(fixture: Awaited<ReturnType<typeof montar>>): void {
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'button[type="submit"]',
+      ) as HTMLButtonElement
+    ).click();
+  }
+
+  it('sin sede elegida no lee ofertas ni programa, y manda a elegir el contexto', async () => {
+    const fixture = TestBed.createComponent(AltaDeClasePage);
+    fixture.detectChanges();
+    await asentar(fixture);
+    httpMock.expectNone((p) => p.url.includes('/ofertas'));
+
+    enviarFormulario(fixture);
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(textoDe(fixture)).toContain('No pudimos programar la clase');
+    expect(raiz.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+
+    // En modo semanal pasa lo mismo: nada sale a la red sin sede.
+    (raiz.querySelector('input[value="semanal"]') as HTMLInputElement).click();
+    await asentar(fixture);
+    expect(textoDe(fixture)).not.toContain('No pudimos programar la clase');
+    enviarFormulario(fixture);
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('No pudimos programar la clase');
+    httpMock.expectNone((p) => p.url.includes('/clases'));
+  });
+
+  it('una oferta que no admite clases se avisa junto al selector, con el detalle', async () => {
+    const fixture = await montarSimple();
+    enviarFormulario(fixture);
+    httpMock.expectOne(PROGRAMAR).flush(
+      {
+        type: 'https://akine.app/problems/clase-no-programable',
+        status: 409,
+        motivo: 'La oferta está fuera de vigencia',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const alerta = raiz.querySelector('#clase-conflicto-oferta');
+    expect(alerta?.textContent).toContain('Detalle: La oferta está fuera de vigencia');
+    expect(raiz.querySelector('#clase-oferta')?.getAttribute('aria-invalid')).toBe('true');
+    expect(raiz.querySelector('#clase-oferta')?.getAttribute('aria-describedby')).toContain(
+      'clase-conflicto-oferta',
+    );
+    // No se repite como error general del formulario.
+    expect(textoDe(fixture)).not.toContain('No pudimos programar la clase');
+  });
+
+  it('un horario no disponible muestra su motivo, y un error sin conflicto va arriba con el suyo', async () => {
+    const fixture = await montarSimple();
+    enviarFormulario(fixture);
+    httpMock.expectOne(PROGRAMAR).flush(
+      {
+        type: 'https://akine.app/problems/slot-no-disponible',
+        status: 409,
+        motivo: 'El profesional no atiende los martes',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#clase-conflicto-horario')?.textContent).toContain(
+      'Detalle: El profesional no atiende los martes',
+    );
+
+    enviarFormulario(fixture);
+    httpMock.expectOne(PROGRAMAR).flush(
+      {
+        type: 'https://akine.app/problems/clase-transicion-no-permitida',
+        status: 409,
+        motivo: 'La clase ya empezó',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await asentar(fixture);
+    expect(raiz.querySelector('#clase-conflicto-horario')).toBeNull();
+    expect(textoDe(fixture)).toContain('No pudimos programar la clase');
+    expect(textoDe(fixture)).toContain('Detalle: La clase ya empezó');
+  });
+
+  it('un 400 sobre el box se marca en el selector del box', async () => {
+    const fixture = await montarSimple();
+    enviarFormulario(fixture);
+    httpMock.expectOne(PROGRAMAR).flush(
+      {
+        type: 'https://akine.app/problems/validation-error',
+        status: 400,
+        detail: 'La solicitud contiene campos invalidos',
+        errors: { espacioId: 'Ese box no existe' },
+      },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const espacio = raiz.querySelector('#clase-espacio');
+    expect(espacio?.getAttribute('aria-invalid')).toBe('true');
+    expect(espacio?.getAttribute('aria-describedby')).toBe(
+      'clase-espacio-ayuda clase-espacio-error',
+    );
+    expect(raiz.querySelector('#clase-espacio-error')?.textContent).toContain('Ese box no existe');
+  });
+
+  it('sin hora de inicio no se manda, y lo dice en el campo', async () => {
+    const fixture = await montarSimple();
+    escribir(fixture, '#clase-inicio', '');
+    enviarFormulario(fixture);
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Indica a que hora empieza.');
+    httpMock.expectNone(PROGRAMAR);
+  });
+
+  it('si la clase vuelve sin id, vuelve al listado de clases', async () => {
+    const fixture = await montarSimple();
+    enviarFormulario(fixture);
+    httpMock.expectOne(PROGRAMAR).flush({});
+    await asentar(fixture);
+    expect(navegar).toHaveBeenCalledWith('/clases');
+  });
+
+  it('una serie completa manda profesional, box y título, y vuelve al listado con el resumen', async () => {
+    const fixture = await montar();
+    const raiz = fixture.nativeElement as HTMLElement;
+    (raiz.querySelector('input[value="semanal"]') as HTMLInputElement).click();
+    escribir(fixture, '#clase-oferta', '42');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorProfesional: true,
+      profesionales: [{ membershipId: 55, nombre: 'Lic. Diaz', estado: 'ACTIVO' }],
+      restringidaPorEspacio: true,
+      espacios: [{ espacioId: 9, nombre: 'Sala grande', estado: 'ACTIVO', enServicio: true }],
+    });
+    await asentar(fixture);
+    // Elegir y desmarcar un día: sólo viaja el que queda.
+    (raiz.querySelector('#clase-dia-1') as HTMLInputElement).click();
+    (raiz.querySelector('#clase-dia-3') as HTMLInputElement).click();
+    (raiz.querySelector('#clase-dia-1') as HTMLInputElement).click();
+    escribir(fixture, '#clase-profesional', '55');
+    escribir(fixture, '#clase-espacio', '9');
+    escribir(fixture, '#clase-titulo', ' Pilates ');
+    escribir(fixture, '#clase-fecha', '2026-12-01');
+    escribir(fixture, '#clase-hasta', '2026-12-31');
+    await asentar(fixture);
+    enviarFormulario(fixture);
+
+    const pedido = httpMock.expectOne(`${PROGRAMAR}/serie`);
+    expect(pedido.request.body).toMatchObject({
+      diasSemana: [3],
+      profesionalId: 55,
+      espacioId: 9,
+      titulo: 'Pilates',
+    });
+    pedido.flush({ programadas: [{ id: 1 }] });
+    await asentar(fixture);
+    expect(navegar).toHaveBeenCalledWith('/clases');
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('1 clase programada');
+    expect(aviso?.descripcion).toBe('Pilates reformer · del 01/12 al 31/12');
+  });
+
+  it('una serie sin ninguna clase programada lo dice y no publica aviso; con una, avisa las que faltan', async () => {
+    const fixture = await montarSimple(true);
+    const raiz = fixture.nativeElement as HTMLElement;
+    (raiz.querySelector('#clase-dia-2') as HTMLInputElement).click();
+    escribir(fixture, '#clase-fecha', '2026-12-01');
+    escribir(fixture, '#clase-hasta', '2026-12-31');
+    await asentar(fixture);
+
+    enviarFormulario(fixture);
+    // Fechas sin motivo ni detalle: se agrupan juntas igual.
+    httpMock.expectOne(`${PROGRAMAR}/serie`).flush({
+      omitidas: [{ fecha: '2026-12-01' }, { fecha: '2026-12-08' }],
+    });
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('2 fechas no se pudieron programar');
+    expect(textoDe(fixture)).toContain('No se programó ninguna clase.');
+    expect(raiz.querySelectorAll('.serie-omitidas li')).toHaveLength(1);
+    expect(raiz.querySelector('.serie-omitidas li')?.textContent).toContain('(2)');
+    expect(TestBed.inject(AvisosStore).avisos()).toHaveLength(0);
+    expect(navegar).not.toHaveBeenCalled();
+
+    enviarFormulario(fixture);
+    httpMock.expectOne(`${PROGRAMAR}/serie`).flush({
+      programadas: [{ id: 1 }],
+      omitidas: [{ fecha: '2026-12-08' }, { fecha: '2026-12-15' }],
+    });
+    await asentar(fixture);
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('1 clase programada');
+    expect(aviso?.descripcion).toBe('2 fechas no se pudieron programar.');
+    expect(textoDe(fixture)).toContain('Se programaron 1.');
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('si la serie falla, lo dice y el reintento lleva otra clave', async () => {
+    const fixture = await montarSimple(true);
+    const raiz = fixture.nativeElement as HTMLElement;
+    (raiz.querySelector('#clase-dia-2') as HTMLInputElement).click();
+    escribir(fixture, '#clase-fecha', '2026-12-01');
+    escribir(fixture, '#clase-hasta', '2026-12-31');
+    await asentar(fixture);
+
+    enviarFormulario(fixture);
+    const primero = httpMock.expectOne(`${PROGRAMAR}/serie`);
+    const clave = (primero.request.body as { idempotencyKey: string }).idempotencyKey;
+    primero.flush(null, { status: 500, statusText: 'Server Error' });
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('No pudimos programar la clase');
+
+    enviarFormulario(fixture);
+    const segundo = httpMock.expectOne(`${PROGRAMAR}/serie`);
+    expect((segundo.request.body as { idempotencyKey: string }).idempotencyKey).not.toBe(clave);
+    segundo.flush({ programadas: [{ id: 1 }, { id: 2 }] });
+    await asentar(fixture);
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('2 clases programadas');
+  });
+
+  it('una oferta sin cupo propio conserva el cupo, y los profesionales sin nombre se nombran por número', async () => {
+    const fixture = await montar([{ ...GRUPAL, capacidad: undefined }]);
+    escribir(fixture, '#clase-oferta', '42');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorProfesional: true,
+      profesionales: [
+        { membershipId: 55, nombre: '', estado: 'ACTIVO' },
+        { nombre: 'Sin vínculo', estado: 'ACTIVO' },
+      ],
+    });
+    httpMock.expectOne((p) => p.url === URL_ESPACIOS).flush({ content: [] });
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect((raiz.querySelector('#clase-capacidad') as HTMLInputElement).value).toBe('10');
+    const nombres = Array.from(raiz.querySelectorAll('#clase-profesional option')).map((o) =>
+      o.textContent?.trim(),
+    );
+    expect(nombres).toEqual(['Elegí un profesional', 'Profesional #55']);
+  });
+
+  it('los profesionales de la organización se nombran por correo o por número', async () => {
+    const fixture = await montar();
+    escribir(fixture, '#clase-oferta', '42');
+    httpMock.expectOne(HABILITACIONES).flush({});
+    httpMock.expectOne((p) => p.url === URL_ESPACIOS).flush({ content: [] });
+    httpMock
+      .expectOne((p) => p.url === rutaMemberships(ORGANIZACION))
+      .flush({
+        content: [
+          { id: 55, roleCode: 'PROFESIONAL', estado: 'ACTIVA', accountEmail: 'diaz@ejemplo.test' },
+          { id: 56, roleCode: 'PROFESIONAL', estado: 'ACTIVA', consultorioId: CONSULTORIO },
+        ],
+      });
+    await asentar(fixture);
+    const nombres = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('#clase-profesional option'),
+    ).map((o) => o.textContent?.trim());
+    expect(nombres).toEqual(['Elegí un profesional', 'diaz@ejemplo.test', 'Profesional #56']);
+  });
+
+  it('las respuestas de una oferta que ya no está elegida se descartan', async () => {
+    const fixture = await montar([GRUPAL, { ...GRUPAL, id: 44, nombreComercial: 'Yoga' }]);
+    escribir(fixture, '#clase-oferta', '42');
+    const dePilates = httpMock.expectOne(HABILITACIONES);
+    escribir(fixture, '#clase-oferta', '44');
+    dePilates.flush({
+      restringidaPorProfesional: true,
+      profesionales: [{ membershipId: 55, nombre: 'De Pilates', estado: 'ACTIVO' }],
+    });
+    // La oferta 44 sigue su propio camino: sus espacios y los profesionales de la organización.
+    httpMock.expectOne(`${URL_OFERTAS}/44/habilitaciones`).flush({});
+    const espacios = httpMock.expectOne((p) => p.url === URL_ESPACIOS);
+    const miembros = httpMock.expectOne((p) => p.url === rutaMemberships(ORGANIZACION));
+    // Se vuelve a Pilates antes de que lleguen: lo de Yoga ya no corresponde.
+    escribir(fixture, '#clase-oferta', '42');
+    espacios.flush({ content: [{ id: 9, name: 'Sala de Yoga', enServicio: true }] });
+    miembros.flush({
+      content: [{ id: 57, roleCode: 'PROFESIONAL', estado: 'ACTIVA', accountName: 'De Yoga' }],
+    });
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorProfesional: true,
+      profesionales: [],
+      restringidaPorEspacio: true,
+      espacios: [],
+    });
+    await asentar(fixture);
+    expect(textoDe(fixture)).not.toContain('De Pilates');
+    expect(textoDe(fixture)).not.toContain('De Yoga');
+    expect(textoDe(fixture)).not.toContain('Sala de Yoga');
+  });
 });
 
 describe('sumarMinutos', () => {

@@ -91,8 +91,14 @@
         (change)="cambiarFiltroServicio($any($event.target).value)"
       >
         <option value="">Todos</option>
+        <!--
+          [selected] y no solo el [value] del select: con ?servicio= el filtro ya esta puesto antes
+          de que lleguen las opciones, y el value del select no se vuelve a aplicar.
+        -->
         @for (servicio of serviciosOfertables(); track servicio.id) {
-          <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+          <option [value]="servicio.id" [selected]="servicio.id === filtroServicio()">
+            {{ servicioEnUnaLinea(servicio) }}
+          </option>
         }
       </select>
     </div>

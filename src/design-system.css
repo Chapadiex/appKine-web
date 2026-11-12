@@ -659,7 +659,12 @@ a.enlace {
   select option:hover,
   select option:focus-visible {
     background: var(--color-hover);
-    outline: none;
+  }
+
+  /* El teclado recorre las opciones: el anillo del sistema, adentro de la opcion (WCAG 2.4.7). */
+  select option:focus-visible {
+    outline: var(--foco-grosor) solid var(--color-foco);
+    outline-offset: calc(-1 * var(--foco-grosor));
   }
 
   select option:checked {

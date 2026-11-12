@@ -138,6 +138,132 @@ describe('AltaDeEspacio', () => {
     expect(aviso?.descripcion).toContain('Box 9');
     expect(listo).toBe(1);
   });
+  /** Sede elegida y componente montado; `listo` cuenta cuántas veces avisó que terminó. */
+  async function montar(sinNombreDeSede = false) {
+    tenantContext.select({
+      organizationId: 1,
+      organizationName: 'Belgrano',
+      consultorioId: 3,
+      consultorioName: sinNombreDeSede ? undefined : 'Sede Centro',
+    });
+    const fixture = TestBed.createComponent(AltaDeEspacio);
+    const avisos = { listo: 0 };
+    fixture.componentInstance.listo.subscribe(() => avisos.listo++);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return { fixture, avisos };
+  }
+
+  function esAlta() {
+    return (peticion: HttpRequest<unknown>) =>
+      peticion.method === 'POST' && peticion.url === ESPACIOS;
+  }
+
+  it('sin sede elegida no ofrece el formulario: manda a elegir consultorio', async () => {
+    tenantContext.select({ organizationId: 1, organizationName: 'Belgrano' });
+    const fixture = TestBed.createComponent(AltaDeEspacio);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Falta elegir un consultorio');
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
+  });
+
+  it('una capacidad menor a 1 no sale a la red: lo dice en el campo y lo enfoca', async () => {
+    const { fixture } = await montar();
+    escribir(fixture, '#espacio-name', 'Box 5');
+    escribir(fixture, '#espacio-capacidad', '0');
+    enviar(fixture);
+
+    httpMock.expectNone(esAlta());
+    expect(texto(fixture)).toContain('La capacidad tiene que ser al menos 1.');
+    const capacidad = fixture.nativeElement.querySelector('#espacio-capacidad');
+    expect(capacidad?.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(capacidad);
+  });
+
+  it('manda los opcionales cargados y, con inicio, aclara que puede figurar sin servicio', async () => {
+    // Sin nombre de sede en el contexto, el aviso dice "la sede activa".
+    const { fixture, avisos } = await montar(true);
+    escribir(fixture, '#espacio-name', 'Gimnasio');
+    const tipo = fixture.nativeElement.querySelector('#espacio-tipo') as HTMLSelectElement;
+    tipo.value = 'GIMNASIO';
+    tipo.dispatchEvent(new Event('change'));
+    escribir(fixture, '#espacio-capacidad', '8');
+    escribir(fixture, '#espacio-notes', '  Con espejos  ');
+    escribir(fixture, '#espacio-validFrom', '2099-09-01T08:00');
+    escribir(fixture, '#espacio-validUntil', '2099-12-01T08:00');
+    enviar(fixture);
+
+    const alta = httpMock.expectOne(esAlta());
+    const cuerpo = alta.request.body as Record<string, unknown>;
+    expect(cuerpo).toMatchObject({
+      name: 'Gimnasio',
+      tipo: 'GIMNASIO',
+      capacidad: 8,
+      notes: 'Con espejos',
+    });
+    expect(typeof cuerpo['validFrom']).toBe('string');
+    expect(typeof cuerpo['validUntil']).toBe('string');
+    expect(Date.parse(cuerpo['validUntil'] as string)).toBeGreaterThan(
+      Date.parse(cuerpo['validFrom'] as string),
+    );
+
+    // Doble envío mientras viaja el primero: no sale un segundo POST.
+    enviar(fixture);
+    httpMock.expectNone(esAlta());
+
+    // La respuesta sin nombre: el aviso usa el que se mandó.
+    alta.flush({ id: 9 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.descripcion).toContain('Gimnasio · la sede activa');
+    expect(aviso?.descripcion).toContain('Si su inicio es futuro');
+    expect(avisos.listo).toBe(1);
+  });
+
+  it('un corte de red no invita a reenviar: ofrece revisar el listado', async () => {
+    const { fixture, avisos } = await montar();
+    escribir(fixture, '#espacio-name', 'Box 6');
+    enviar(fixture);
+    httpMock.expectOne(esAlta()).error(new ProgressEvent('error'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('No pudimos dar de alta el espacio');
+    expect(texto(fixture)).toContain('revisa el listado');
+    const revisar = [...fixture.nativeElement.querySelectorAll('button')].find((b) =>
+      (b.textContent ?? '').includes('Revisar el listado'),
+    ) as HTMLButtonElement | undefined;
+    revisar?.click();
+    expect(avisos.listo).toBe(1);
+  });
+
+  it('un 429 deshabilita el alta mientras corre la espera, y lo dice', async () => {
+    const { fixture } = await montar();
+    escribir(fixture, '#espacio-name', 'Box 7');
+    enviar(fixture);
+    httpMock
+      .expectOne(esAlta())
+      .flush(
+        { type: 'https://akine.app/problems/rate-limited' },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '30' } },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Podés volver a intentar en 30 segundos');
+    expect(texto(fixture)).not.toContain('Revisar el listado');
+    const boton = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(boton.disabled).toBe(true);
+    enviar(fixture);
+    httpMock.expectNone(esAlta());
+    fixture.destroy();
+  });
 });
 
 function texto(fixture: { nativeElement: HTMLElement }): string {

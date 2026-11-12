@@ -1,7 +1,9 @@
+import { Location } from '@angular/common';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 
 import { provideApi } from '../../../../api/generated/provide-api';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -336,5 +338,264 @@ describe('ClasesDeLaSemanaPage', () => {
     expect(textoDe(fixture)).toContain('clase:read');
     clickear(fixture, 'Reintentar');
     esperarClases().flush([]);
+  });
+
+  function desdeDe(pedido: ReturnType<HttpTestingController['expectOne']>): string {
+    return decodeURIComponent(pedido.request.params.get('desde') ?? '');
+  }
+
+  function seleccionar(fixture: ReturnType<typeof montar>, id: string, valor: string): void {
+    const select = (fixture.nativeElement as HTMLElement).querySelector(
+      `#${id}`,
+    ) as HTMLSelectElement;
+    select.value = valor;
+    select.dispatchEvent(new Event('change'));
+  }
+
+  it('la vista mes avanza y retrocede de a un mes, cruza el año y lo deja en la URL', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
+    const fixture = montar('2026-12-10', 'mes');
+    // Diciembre 2026 empieza un martes: el calendario arranca el lunes 30/11.
+    const diciembre = esperarClases();
+    expect(desdeDe(diciembre)).toBe('2026-11-30T03:00:00.000Z');
+    diciembre.flush([]);
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Diciembre de 2026');
+
+    clickear(fixture, 'Mes siguiente');
+    await asentar(fixture);
+    // Enero 2027 empieza un viernes: el calendario arranca el lunes 28/12/2026.
+    const enero = esperarClases();
+    expect(desdeDe(enero)).toBe('2026-12-28T03:00:00.000Z');
+    enero.flush([]);
+    await asentar(fixture);
+    // El mes vacio no muestra "No hay clases esta semana": dibuja el calendario igual.
+    expect(textoDe(fixture)).toContain('Enero de 2027');
+    expect(textoDe(fixture)).not.toContain('No hay clases esta semana');
+    expect(replaceState).toHaveBeenLastCalledWith('/clases', 'vista=mes&semana=2027-01-01');
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(
+      raiz.querySelector('button[aria-label^="viernes 01/01"]')?.getAttribute('aria-label'),
+    ).toBe('viernes 01/01, sin clases. Ver la semana');
+
+    clickear(fixture, 'Mes anterior');
+    await asentar(fixture);
+    esperarClases().flush([]);
+    clickear(fixture, 'Mes anterior');
+    await asentar(fixture);
+    // Noviembre 2026 empieza un domingo: el calendario arranca el lunes 26/10.
+    const noviembre = esperarClases();
+    expect(desdeDe(noviembre)).toBe('2026-10-26T03:00:00.000Z');
+    noviembre.flush([]);
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Noviembre de 2026');
+  });
+
+  it('cambiar de vista conserva el período y lo escribe en la URL', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
+    const fixture = montar('2026-10-14');
+    esperarClases().flush([CLASE]);
+    await asentar(fixture);
+
+    clickear(fixture, 'Lista');
+    await asentar(fixture);
+    expect(replaceState).toHaveBeenLastCalledWith('/clases', 'vista=lista&semana=2026-10-12');
+    httpMock.match((p) => p.url === URL_CLASES).forEach((p) => p.flush([CLASE]));
+    await asentar(fixture);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.tabla')).not.toBeNull();
+
+    clickear(fixture, 'Mes');
+    await asentar(fixture);
+    expect(replaceState).toHaveBeenLastCalledWith('/clases', 'vista=mes&semana=2026-10-12');
+    const mes = httpMock.match((p) => p.url === URL_CLASES);
+    expect(desdeDe(mes[mes.length - 1])).toBe('2026-09-28T03:00:00.000Z');
+    mes.forEach((p) => p.flush([]));
+    await asentar(fixture);
+
+    clickear(fixture, 'Semana');
+    await asentar(fixture);
+    // La semana es la vista por defecto: no se escribe en la URL.
+    expect(replaceState).toHaveBeenLastCalledWith('/clases', 'semana=2026-10-12');
+    const semana = httpMock.match((p) => p.url === URL_CLASES);
+    expect(desdeDe(semana[semana.length - 1])).toBe('2026-10-12T03:00:00.000Z');
+  });
+
+  it('una fecha borrada en el calendario no mueve la semana', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    // Sin `?semana` ni `?vista` (el router los pone en undefined): la semana de hoy de la sede.
+    const fixture = montar(undefined as unknown as string, undefined as unknown as string);
+    const pedido = esperarClases();
+    expect(desdeDe(pedido)).toBe('2026-10-12T03:00:00.000Z');
+    pedido.flush([]);
+    await asentar(fixture);
+    const fecha = (fixture.nativeElement as HTMLElement).querySelector(
+      '#clases-fecha',
+    ) as HTMLInputElement;
+    fecha.value = '';
+    fecha.dispatchEvent(new Event('change'));
+    await asentar(fixture);
+    httpMock.expectNone((p) => p.url === URL_CLASES);
+    expect(textoDe(fixture)).toContain('Semana del lunes 12/10 al domingo 18/10');
+  });
+
+  it('sin sede elegida no pide clases', async () => {
+    const fixture = TestBed.createComponent(ClasesDeLaSemanaPage);
+    fixture.detectChanges();
+    await asentar(fixture);
+    httpMock.expectNone((p) => p.url === URL_CLASES);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio')).toBeNull();
+  });
+
+  it('la respuesta de una semana que ya se dejó no pisa la que se está mirando', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    const vieja = esperarClases();
+    clickear(fixture, 'Semana siguiente');
+    await asentar(fixture);
+    const nueva = esperarClases();
+    nueva.flush([{ ...CLASE, titulo: 'Funcional', inicio: '2026-10-21T21:00:00Z' }]);
+    await asentar(fixture);
+    vieja.flush([{ ...CLASE, titulo: 'Yoga suave' }]);
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Funcional');
+    expect(textoDe(fixture)).not.toContain('Yoga suave');
+  });
+
+  it('filtra por actividad y por lugar, cuenta los filtros activos y los limpia', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    esperarClases().flush([
+      { ...CLASE, id: 1, titulo: 'Yoga suave', ofertaId: 42, espacioId: 9 },
+      // Sin nombre de lugar ni de actividad: la opcion muestra el id.
+      {
+        ...CLASE,
+        id: 2,
+        titulo: 'Pilates mat',
+        ofertaId: 43,
+        ofertaNombre: undefined,
+        espacioId: 10,
+        espacioNombre: undefined,
+      },
+      { ...CLASE, id: 3, titulo: 'Funcional', ofertaId: 43, ofertaNombre: undefined, espacioId: 9 },
+    ]);
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const opciones = (id: string) =>
+      Array.from((raiz.querySelector(`#${id}`) as HTMLSelectElement).options).map((o) =>
+        o.textContent?.trim(),
+      );
+    expect(opciones('clases-lugar')).toEqual(['Todos', '#10', 'Sala grande']);
+    expect(opciones('clases-actividad')).toEqual(['Todas', '#43', 'Pilates reformer']);
+
+    seleccionar(fixture, 'clases-actividad', '43');
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Pilates mat');
+    expect(textoDe(fixture)).toContain('Funcional');
+    expect(textoDe(fixture)).not.toContain('Yoga suave');
+
+    seleccionar(fixture, 'clases-lugar', '9');
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('Funcional');
+    expect(textoDe(fixture)).not.toContain('Pilates mat');
+    expect(raiz.querySelector('.filtros-barra__contador')?.textContent).toContain('2');
+
+    const canceladas = Array.from(
+      raiz.querySelectorAll<HTMLButtonElement>('.filtros-rapidos__opcion'),
+    ).find((b) => (b.textContent ?? '').includes('Canceladas')) as HTMLButtonElement;
+    canceladas.click();
+    await asentar(fixture);
+    // El estado tambien cuenta como filtro activo.
+    expect(raiz.querySelector('.filtros-barra__contador')?.textContent).toContain('3');
+    expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain('No encontramos clases');
+
+    (raiz.querySelector('.filtros-barra__limpiar .boton-texto') as HTMLButtonElement).click();
+    await asentar(fixture);
+    expect(raiz.querySelector('.filtros-barra__contador')).toBeNull();
+    expect((raiz.querySelector('#clases-lugar') as HTMLSelectElement).value).toBe('');
+    expect(textoDe(fixture)).toContain('Yoga suave');
+    expect(textoDe(fixture)).toContain('Pilates mat');
+    expect(textoDe(fixture)).toContain('Funcional');
+  });
+
+  it('en la lista, una clase con datos incompletos se dibuja sin inventarlos', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14', 'lista');
+    esperarClases().flush([
+      {
+        estado: 'PROGRAMADA',
+        inicio: '2026-10-15T21:00:00Z',
+        fin: '2026-10-15T22:00:00Z',
+        titulo: 'Yoga sin sala',
+        version: 0,
+      },
+      {
+        ...CLASE,
+        id: 5,
+        titulo: 'Stretching',
+        capacidadEfectiva: undefined,
+        capacidad: 4,
+        ocupados: 4,
+      },
+      { ...CLASE, id: 6, titulo: 'Sin fecha', inicio: undefined, fin: undefined, ocupados: 2 },
+    ]);
+    await asentar(fixture);
+    const raiz = fixture.nativeElement as HTMLElement;
+    const filas = () =>
+      Array.from(raiz.querySelectorAll('tbody tr')).map((tr) =>
+        (tr.textContent ?? '').replace(/\s+/g, ' '),
+      );
+    // Lo que no tiene inicio va primero; sin capacidad no esta "completa"; sin id no hay enlace.
+    expect(filas()[0]).toContain('Sin fecha');
+    const yoga = filas().find((f) => f.includes('Yoga sin sala')) as string;
+    expect(yoga).toContain('0 de 0 lugares ocupados');
+    expect(yoga).not.toContain('completa');
+    expect(yoga).toContain('—');
+    expect(yoga).not.toContain('Ver clase');
+    // La capacidad efectiva que falta se toma de la capacidad declarada.
+    expect(filas().find((f) => f.includes('Stretching'))).toContain(
+      '4 de 4 lugares ocupados — completa',
+    );
+
+    // La busqueda tolera los nombres que faltan.
+    const busqueda = raiz.querySelector('#clases-busqueda') as HTMLInputElement;
+    busqueda.value = 'sin sala';
+    busqueda.dispatchEvent(new Event('input'));
+    await asentar(fixture);
+    expect(filas()).toHaveLength(1);
+
+    // Ordenar por cupo con una clase sin ocupados: va primera.
+    busqueda.value = '';
+    busqueda.dispatchEvent(new Event('input'));
+    await asentar(fixture);
+    const cupo = Array.from(raiz.querySelectorAll<HTMLButtonElement>('th button')).find((b) =>
+      (b.textContent ?? '').includes('Cupo'),
+    ) as HTMLButtonElement;
+    cupo.click();
+    await asentar(fixture);
+    expect(filas()[0]).toContain('Yoga sin sala');
+  });
+
+  it('en la semana, la tarjeta sin profesional ni lugar no deja renglones vacíos', async () => {
+    otorgar(httpMock, PERMISO_CLASE_READ);
+    const fixture = montar('2026-10-14');
+    esperarClases().flush([
+      {
+        id: 9,
+        titulo: 'Yoga sin sala',
+        inicio: '2026-10-15T21:00:00Z',
+        fin: '2026-10-15T22:00:00Z',
+        version: 0,
+      },
+    ]);
+    await asentar(fixture);
+    const tarjeta = (fixture.nativeElement as HTMLElement).querySelector(
+      '.clase-tarjeta',
+    ) as HTMLElement;
+    // Solo el horario: ni profesional ni lugar.
+    expect(tarjeta.querySelectorAll('.clase-tarjeta__dato')).toHaveLength(1);
+    expect(tarjeta.textContent).toContain('0/0');
+    expect(tarjeta.textContent).not.toContain('Completa');
   });
 });

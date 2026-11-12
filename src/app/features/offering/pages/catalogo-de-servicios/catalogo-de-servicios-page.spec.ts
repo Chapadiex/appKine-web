@@ -1,11 +1,11 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
 
-import { CatalogoDeServiciosPage } from './catalogo-de-servicios-page';
+import { CatalogoDeServiciosPage, codigoSugerido } from './catalogo-de-servicios-page';
 import { RUTA_SERVICIOS } from '../../../../core/testing/rutas-api';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
@@ -690,11 +690,292 @@ describe('CatalogoDeServiciosPage', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
-  async function montar(): Promise<ComponentFixture<CatalogoDeServiciosPage>> {
+  it('el código se propone desde el nombre hasta que el usuario lo escribe a mano', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const codigo = () => anfitrion.querySelector<HTMLInputElement>('#alta-servicio-codigo')?.value;
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-nombre', 'Kinesiología respiratoria');
+    expect(codigo()).toBe('KINESIOLOGIA-RESPIRATORIA');
+
+    // Una vez tocado, el nombre ya no lo pisa: lo que escribió el usuario manda.
+    escribir(fixture, '#alta-servicio-codigo', 'KRES-2');
+    escribir(fixture, '#alta-servicio-nombre', 'Kinesiología respiratoria infantil');
+    expect(codigo()).toBe('KRES-2');
+  });
+
+  it('codigoSugerido saca tildes y símbolos, no deja guiones en los bordes y corta en 64', () => {
+    expect(codigoSugerido('  ¡Pilates & Yoga! (Ñandú)  ')).toBe('PILATES-YOGA-NANDU');
+    expect(codigoSugerido('---')).toBe('');
+    expect(codigoSugerido('a'.repeat(80))).toHaveLength(64);
+  });
+
+  it('cerrar el alta con cambios pregunta antes de descartarlos; sin cambios cierra directo', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    // Sin tocar nada no hay nada que perder.
+    abrir(fixture, 'Nuevo servicio');
+    abrir(fixture, 'Cancelar');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
+    abrir(fixture, 'Cancelar');
+    expect(anfitrion.querySelector('[role="alertdialog"]')?.textContent).toContain(
+      '¿Descartar cambios?',
+    );
+    expect(anfitrion.querySelector('app-panel-lateral')).not.toBeNull();
+
+    // "Seguir editando" vuelve al formulario con lo escrito intacto.
+    abrir(fixture, 'Seguir editando');
+    expect(anfitrion.querySelector('[role="alertdialog"]')).toBeNull();
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-servicio-nombre')?.value).toBe(
+      'Evaluación postural',
+    );
+
+    abrir(fixture, 'Cancelar');
+    abrir(fixture, 'Descartar cambios');
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+  });
+
+  it('la X del panel de edición con cambios también pide confirmar el descarte', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-servicio-nombre', 'Otro nombre');
+    anfitrion.querySelector<HTMLButtonElement>('.panel-lateral__cerrar')?.click();
+    fixture.detectChanges();
+
+    expect(anfitrion.textContent).toContain('¿Descartar cambios?');
+    expect(anfitrion.querySelector('app-panel-lateral')).not.toBeNull();
+  });
+
+  it('un texto más largo de lo que acepta el backend no se envía y dice el límite', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-codigo', 'C'.repeat(65));
+    escribir(fixture, '#alta-servicio-nombre', 'N'.repeat(161));
+    escribir(fixture, '#alta-servicio-descripcion', 'D'.repeat(281));
+    elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
+    elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(anfitrion.textContent).toContain('Usá hasta 64 caracteres.');
+    expect(anfitrion.textContent).toContain('Usá hasta 160 caracteres.');
+    expect(anfitrion.textContent).toContain('Usá hasta 280 caracteres.');
+  });
+
+  it('el alta de un servicio propio manda la descripción y ofrece crear su oferta en la sede', async () => {
+    esAdmin.set(false);
+    gestionaCatalogo.set(true);
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = await montar();
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-nombre', 'Yoga');
+    escribir(fixture, '#alta-servicio-descripcion', '  Clase de yoga suave  ');
+    elegir(fixture, '#alta-servicio-naturaleza', 'BIENESTAR');
+    elegir(fixture, '#alta-servicio-modalidad', 'GRUPAL');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(alta.request.body).toMatchObject({ codigo: 'YOGA', descripcion: 'Clase de yoga suave' });
+    alta.flush({ ...PILATES, id: 7, nombre: 'Yoga', alcance: 'ORGANIZACION' });
+    httpMock.expectOne(esListado()).flush([KINE, PILATES]);
+    await fixture.whenStable();
+
+    const avisos = TestBed.inject(AvisosStore);
+    const [aviso] = avisos.avisos();
+    expect(aviso?.titulo).toBe('Servicio creado');
+    expect(aviso?.descripcion).toContain('catálogo de tu organización');
+    expect(aviso?.accion?.etiqueta).toBe('Crear oferta');
+
+    avisos.ejecutar(aviso.id);
+    expect(navegar).toHaveBeenCalledWith(['/servicios/ofertas'], {
+      queryParams: { nuevaOferta: 7 },
+    });
+  });
+
+  it('el alta de un servicio global no ofrece crear oferta: la plataforma no opera una sede', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
+    elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
+    elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .flush({ ...PILATES, id: 8, alcance: 'GLOBAL' });
+    httpMock.expectOne(esListado()).flush([KINE, PILATES]);
+    await fixture.whenStable();
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Servicio creado');
+    expect(aviso?.accion).toBeNull();
+  });
+
+  it('un doble envío del alta sale una sola vez', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Nuevo servicio');
+    escribir(fixture, '#alta-servicio-nombre', 'Evaluación postural');
+    elegir(fixture, '#alta-servicio-naturaleza', 'PREVENTIVO');
+    elegir(fixture, '#alta-servicio-modalidad', 'INDIVIDUAL');
+    enviar(fixture, 'form[novalidate]');
+    enviar(fixture, 'form[novalidate]');
+
+    const altas = httpMock.match((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(altas.length).toBe(1);
+    altas[0].flush({ ...PILATES, id: 9 });
+    httpMock.expectOne(esListado()).flush([KINE, PILATES]);
+    await fixture.whenStable();
+  });
+
+  it('editar un servicio al que le faltan campos opcionales no los manda como cambios', async () => {
+    // Sin descripción ni defaults clínicos: el formulario los muestra vacíos y apagados, y guardar
+    // sin tocar nada no tiene que inventar `descripcion: ''` ni `false`.
+    const MINIMO = {
+      id: 5,
+      codigo: 'MIN',
+      nombre: 'Mínimo',
+      naturaleza: 'CLINICO',
+      modalidadDefault: 'INDIVIDUAL',
+      estado: 'ACTIVO',
+      version: 3,
+    };
+    const fixture = await montar([MINIMO]);
+
+    abrir(fixture, 'Editar');
+    enviar(fixture, 'form[novalidate]');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
+    );
+    expect(edicion.request.body).toEqual({ expectedVersion: 3 });
+    edicion.flush({ ...MINIMO, nombre: undefined });
+    httpMock.expectOne(esListado()).flush([MINIMO]);
+    await fixture.whenStable();
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+  });
+
+  it('un servicio dado de baja muestra el motivo y no ofrece acciones', async () => {
+    const fixture = await montar([
+      { ...KINE, estado: 'INACTIVO', deactivationReason: 'Ya no se presta en la red' },
+      PILATES,
+    ]);
+    const [baja] = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')];
+
+    expect(baja.textContent).toContain('Dado de baja');
+    expect(baja.textContent).toContain('Ya no se presta en la red');
+    expect(baja.querySelectorAll('button').length).toBe(0);
+  });
+
+  it('un 403 al editar ofrece ir a las ofertas de la sede', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-servicio-nombre', 'Otro nombre');
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'sin rol' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('No pudimos guardar los cambios');
+    expect(
+      anfitrion.querySelector('app-panel-lateral a[href="/servicios/ofertas"]')?.textContent,
+    ).toContain('Ir a las ofertas de la sede');
+  });
+
+  it('un 403 en la baja también ofrece ir a las ofertas de la sede', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    escribir(fixture, '#baja-servicio-motivo', 'Duplicado');
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'DELETE')
+      .flush(
+        { type: 'https://akine.app/problems/forbidden', detail: 'sin rol' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.textContent).toContain('No pudimos dar de baja el servicio');
+    expect(
+      anfitrion.querySelector('app-panel-lateral a[href="/servicios/ofertas"]'),
+    ).not.toBeNull();
+  });
+
+  it('un nombre en uso al editar se avisa pegado al campo, con el título de la edición', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-servicio-nombre', 'Pilates');
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(
+        { type: 'https://akine.app/problems/servicio-nombre-taken', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(anfitrion.querySelector('#editar-servicio-duplicado')?.textContent).toContain(
+      'Ya hay un servicio con ese nombre',
+    );
+    expect(anfitrion.querySelector('#editar-servicio-nombre')?.getAttribute('aria-invalid')).toBe(
+      'true',
+    );
+  });
+
+  it('si el servicio editado ya no viene en la relectura tras el 409, la tabla igual se actualiza', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-servicio-nombre', 'Kinesiologia respiratoria adultos');
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(
+        { type: 'https://akine.app/problems/concurrent-modification', detail: 'versión vieja' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    fixture.detectChanges();
+    httpMock.expectOne(esListado()).flush([PILATES]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr').length).toBe(1);
+  });
+
+  async function montar(
+    servicios: readonly unknown[] = [KINE, PILATES],
+  ): Promise<ComponentFixture<CatalogoDeServiciosPage>> {
     const fixture = TestBed.createComponent(CatalogoDeServiciosPage);
     fixture.detectChanges();
 
-    httpMock.expectOne(esListado()).flush([KINE, PILATES]);
+    httpMock.expectOne(esListado()).flush(servicios);
     await fixture.whenStable();
     fixture.detectChanges();
 
