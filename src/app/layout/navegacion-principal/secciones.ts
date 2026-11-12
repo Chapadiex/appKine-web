@@ -1,5 +1,7 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
+  PERMISO_BIBLIOTECA_CONSULTAR,
+  PERMISO_BIBLIOTECA_MANAGE,
   PERMISO_CAJA_OPERATE,
   PERMISO_CATALOGO_READ,
   PERMISO_CLASE_READ,
@@ -90,6 +92,10 @@ export interface GrupoDeSecciones {
  *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
  *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36).</li>
+ *   <li><b>Biblioteca</b> — `biblioteca.routes.ts`: las dos rutas llevan
+ *       `permissionGuard(PERMISO_BIBLIOTECA_MANAGE)`, solo del ORG_ADMIN.</li>
+ *   <li><b>Consultar biblioteca</b> — `consulta.routes.ts`: la ruta lleva
+ *       `permissionGuard(PERMISO_BIBLIOTECA_CONSULTAR)`.</li>
  *   <li><b>Contratacion</b> — `contracting.routes.ts`: todas las rutas llevan
  *       `permissionGuard(PERMISO_CONVENIO_READ)` (DP-36).</li>
  * </ul>
@@ -115,6 +121,11 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Atender sin turno',
         ruta: '/atencion/sin-turno',
         permisos: [PERMISO_SESION_REGISTER],
+      },
+      {
+        etiqueta: 'Consultar biblioteca',
+        ruta: '/consulta',
+        permisos: [PERMISO_BIBLIOTECA_CONSULTAR],
       },
     ],
   },
@@ -210,6 +221,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         ruta: '/organizacion/colaboradores/manual/nuevo',
         permisos: [PERMISO_COLABORADOR_MANAGE],
       },
+      { etiqueta: 'Biblioteca', ruta: '/biblioteca', permisos: [PERMISO_BIBLIOTECA_MANAGE] },
     ],
   },
 ];

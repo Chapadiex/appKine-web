@@ -1,0 +1,174 @@
+<app-cabecera-de-pagina [titulo]="libro()?.titulo ?? 'Libro'">
+  @if (libro(); as l) {
+    <span [class]="claseDeEstado(l.estado)">{{ estadoEnPalabras(l.estado) }}</span>
+  }
+  <div cabeceraAcciones class="acciones-fila">
+    @if (libro() && !editando() && libro()?.reemplazaLibroId === undefined) {
+      <button type="button" class="boton boton--secundario" (click)="abrirEdicion()">
+        Editar datos
+      </button>
+    }
+  </div>
+</app-cabecera-de-pagina>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando">Cargando libro&hellip;</p>
+  }
+  @case ('error') {
+    <app-alerta tipo="error" titulo="No pudimos leer el libro">
+      <p>{{ mensajeDeError() }}</p>
+      <p class="alerta__acciones">
+        @if (noEncontrado()) {
+          <a class="boton" routerLink="/biblioteca">Volver a la biblioteca</a>
+        } @else {
+          <button type="button" class="boton" (click)="reintentar()">Reintentar</button>
+        }
+      </p>
+    </app-alerta>
+  }
+  @case ('listo') {
+    @if (libro(); as l) {
+      @if (l.estado === 'ERROR' && l.motivoError) {
+        <app-alerta class="detalle__alerta" tipo="advertencia" titulo="El procesamiento falló">
+          <p>{{ l.motivoError }}</p>
+        </app-alerta>
+      }
+
+      <section class="tarjeta" aria-label="Datos del libro">
+        @if (editando()) {
+          @if (errorDeEdicion(); as fallo) {
+            <app-alerta
+              class="detalle__alerta"
+              [tipo]="fallo.causa === 'version-vieja' ? 'advertencia' : 'error'"
+              titulo="No pudimos guardar los cambios"
+            >
+              <p>{{ fallo.mensaje }}</p>
+              @if (fallo.recargar) {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton" (click)="recargar()">Recargar</button>
+                </p>
+              }
+            </app-alerta>
+          }
+          <form (submit)="$event.preventDefault(); guardar()" novalidate>
+            <div class="campo">
+              <label for="libro-titulo">Título</label>
+              <input
+                id="libro-titulo"
+                name="titulo"
+                type="text"
+                required
+                autocomplete="off"
+                [attr.aria-invalid]="tituloVacio() ? 'true' : null"
+                [value]="titulo()"
+                (input)="titulo.set($any($event.target).value)"
+              />
+              @if (tituloVacio()) {
+                <p class="campo__error" role="alert">El título es obligatorio.</p>
+              }
+            </div>
+            <div class="campo">
+              <label for="libro-autores">Autores</label>
+              <input
+                id="libro-autores"
+                name="autores"
+                type="text"
+                autocomplete="off"
+                [value]="autores()"
+                (input)="autores.set($any($event.target).value)"
+              />
+            </div>
+            <div class="campo campo--medio">
+              <label for="libro-edicion">Edición</label>
+              <input
+                id="libro-edicion"
+                name="edicion"
+                type="text"
+                autocomplete="off"
+                [value]="edicion()"
+                (input)="edicion.set($any($event.target).value)"
+              />
+            </div>
+            <div class="campo campo--medio">
+              <label for="libro-area">Área</label>
+              <input
+                id="libro-area"
+                name="area"
+                type="text"
+                autocomplete="off"
+                [value]="area()"
+                (input)="area.set($any($event.target).value)"
+              />
+            </div>
+            <div class="acciones-fila">
+              <button type="submit" class="boton" [disabled]="guardando()">Guardar</button>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                [disabled]="guardando()"
+                (click)="cancelarEdicion()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        } @else {
+          <dl class="detalle__datos">
+            <div>
+              <dt>Autores</dt>
+              <dd>{{ l.autores || '-' }}</dd>
+            </div>
+            <div>
+              <dt>Edición</dt>
+              <dd>{{ l.edicion || '-' }}</dd>
+            </div>
+            <div>
+              <dt>Área</dt>
+              <dd>{{ l.area || '-' }}</dd>
+            </div>
+            <div>
+              <dt>Páginas</dt>
+              <dd>{{ l.paginas ?? '-' }}</dd>
+            </div>
+          </dl>
+        }
+      </section>
+
+      <section class="tarjeta" aria-label="Indexado">
+        <h2 class="detalle__subtitulo">Indexado</h2>
+        <p>
+          {{ detalle()?.fragmentos ?? 0 }} pedazos, de los cuales
+          {{ detalle()?.fragmentosConVector ?? 0 }} ya tienen vector.
+          @if (indexando() !== null) {
+            <span class="detalle__indexando">Indexando {{ indexando() }} %</span>
+          }
+        </p>
+      </section>
+
+      <section class="tarjeta" aria-label="Pedazos sospechosos">
+        <h2 class="detalle__subtitulo">
+          Pedazos sospechosos ({{ sospechosos().length }})
+          <app-ayuda titulo="Sobre los pedazos sospechosos">
+            <p>
+              Se excluyen de la búsqueda porque parecen instrucciones dirigidas al sistema o texto
+              corrupto. Conviene revisar esas páginas del PDF.
+            </p>
+          </app-ayuda>
+        </h2>
+        @if (sospechosos().length === 0) {
+          <p>No hay pedazos sospechosos.</p>
+        } @else {
+          <ul class="detalle__sospechosos">
+            @for (s of sospechosos(); track $index) {
+              <li>
+                <strong>Página {{ s.paginaDesde }}</strong>
+                <blockquote>{{ s.extracto }}</blockquote>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  }
+}

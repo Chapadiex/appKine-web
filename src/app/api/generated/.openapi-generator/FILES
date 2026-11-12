@@ -21,6 +21,8 @@ api/auditoria.service.ts
 api/auditoria.serviceInterface.ts
 api/autorizaciones.service.ts
 api/autorizaciones.serviceInterface.ts
+api/biblioteca.service.ts
+api/biblioteca.serviceInterface.ts
 api/caja.service.ts
 api/caja.serviceInterface.ts
 api/calendario-de-sede.service.ts
@@ -189,6 +191,9 @@ model/baja-de-entrada-clinica-request.ts
 model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/baja-de-producto.ts
+model/biblioteca-busqueda-request.ts
+model/biblioteca-busqueda-response.ts
+model/biblioteca-pasaje-response.ts
 model/bloque-response.ts
 model/bloqueo-en-agenda.ts
 model/bloques-creados-response.ts
@@ -240,6 +245,14 @@ model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consulta-evento-aclaracion.ts
+model/consulta-evento-error.ts
+model/consulta-evento-espera.ts
+model/consulta-evento-etapa.ts
+model/consulta-evento-fin.ts
+model/consulta-evento-fuentes.ts
+model/consulta-evento-texto.ts
+model/consulta-request.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
@@ -347,6 +360,7 @@ model/financiador-response.ts
 model/franja-de-agenda.ts
 model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
+model/fuente-de-consulta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
 model/guardar-borrador.ts
@@ -385,6 +399,11 @@ model/invitacion-token-request.ts
 model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
+model/libro-datos-request.ts
+model/libro-detalle-response.ts
+model/libro-fragmento-sospechoso-response.ts
+model/libro-page-response.ts
+model/libro-response.ts
 model/limit-usage-response.ts
 model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts
@@ -420,6 +439,7 @@ model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts
 model/oferta-response.ts
+model/opcion-de-aclaracion-response.ts
 model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -569,6 +589,7 @@ model/tratamiento.ts
 model/turno-a-cancelar-en-lote.ts
 model/turno-afectado-por-disponibilidad-response.ts
 model/turno-de-calendario.ts
+model/turno-de-consulta-request.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
 model/turno.ts
