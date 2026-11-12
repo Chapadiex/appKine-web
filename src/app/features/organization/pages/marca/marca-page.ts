@@ -140,7 +140,13 @@ export class MarcaPage {
     effect(() => {
       // Cambiar de centro invalida lo que se estaba editando.
       this.tenant.contextEpoch();
-      untracked(() => this.cargar());
+      untracked(() => {
+        // Lo que estaba en vuelo era del centro anterior: su respuesta se ignora (`delContextoActual`).
+        this.guardando.set(false);
+        this.subiendoLogo.set(false);
+        this.errorDeLogo.set(null);
+        this.cargar();
+      });
     });
   }
 
@@ -150,7 +156,7 @@ export class MarcaPage {
       return;
     }
     this.estado.set('cargando');
-    this.api.getMarcaDeOrganizacion({ orgId }).subscribe({
+    this.delContextoActual(this.api.getMarcaDeOrganizacion({ orgId })).subscribe({
       next: (marca) => {
         this.adoptar(marca);
         this.estado.set('listo');
@@ -270,8 +276,8 @@ export class MarcaPage {
     this.guardando.set(true);
     this.errorAlGuardar.set(null);
     this.erroresDeCampo.set({});
-    this.api
-      .updateMarcaDeOrganizacion({
+    this.delContextoActual(
+      this.api.updateMarcaDeOrganizacion({
         orgId,
         updateMarcaRequest: {
           version: base.version,
@@ -285,30 +291,30 @@ export class MarcaPage {
           direccion: contacto.direccion.trim(),
           leyenda: contacto.leyenda.trim(),
         },
-      })
-      .subscribe({
-        next: (marca) => {
-          this.guardando.set(false);
-          this.adoptar(marca);
-          this.store.adoptar(marca);
-          this.avisos.exito('Marca guardada', {
-            descripcion: 'Los colores y los datos ya se ven en todo el centro.',
-          });
-        },
-        error: (error: unknown) => {
-          this.guardando.set(false);
-          if (error instanceof AkineHttpError) {
-            this.erroresDeCampo.set(error.erroresPorCampo);
-            this.errorAlGuardar.set(
-              error.status === 409
-                ? 'Alguien cambió la marca mientras editabas. Recargá la pantalla y volvé a intentar.'
-                : (error.mensajeSinCampos(() => true) ?? error.message),
-            );
-            return;
-          }
-          this.errorAlGuardar.set('No pudimos guardar la marca. Volvé a intentar.');
-        },
-      });
+      }),
+    ).subscribe({
+      next: (marca) => {
+        this.guardando.set(false);
+        this.adoptar(marca);
+        this.store.adoptar(marca);
+        this.avisos.exito('Marca guardada', {
+          descripcion: 'Los colores y los datos ya se ven en todo el centro.',
+        });
+      },
+      error: (error: unknown) => {
+        this.guardando.set(false);
+        if (error instanceof AkineHttpError) {
+          this.erroresDeCampo.set(error.erroresPorCampo);
+          this.errorAlGuardar.set(
+            error.status === 409
+              ? 'Alguien cambió la marca mientras editabas. Recargá la pantalla y volvé a intentar.'
+              : (error.mensajeSinCampos(() => true) ?? error.message),
+          );
+          return;
+        }
+        this.errorAlGuardar.set('No pudimos guardar la marca. Volvé a intentar.');
+      },
+    });
   }
 
   protected descartar(): void {
@@ -364,7 +370,7 @@ export class MarcaPage {
   private cambiarLogo(pedido: Observable<MarcaResponse>, aviso: string): void {
     this.subiendoLogo.set(true);
     this.errorDeLogo.set(null);
-    pedido.subscribe({
+    this.delContextoActual(pedido).subscribe({
       next: (marca) => {
         this.subiendoLogo.set(false);
         // Solo los logos: lo que se esta editando de colores y contacto no se pisa.
@@ -390,6 +396,25 @@ export class MarcaPage {
         );
       },
     });
+  }
+
+  /**
+   * Deja pasar la respuesta de un pedido solo si el contexto sigue siendo el de cuando salio.
+   *
+   * <p>Sin esto, cambiar de centro con un pedido en vuelo dejaba en el editor la marca del centro
+   * anterior, y guardar la escribia sobre el centro nuevo. Se compara la epoca y no el id: tambien
+   * cubre salir y volver al mismo centro.
+   */
+  private delContextoActual<T>(pedido: Observable<T>): Observable<T> {
+    const epoca = this.tenant.contextEpoch();
+    const vigente = (): boolean => this.tenant.contextEpoch() === epoca;
+    return new Observable<T>((destino) =>
+      pedido.subscribe({
+        next: (valor) => vigente() && destino.next(valor),
+        error: (error: unknown) => vigente() && destino.error(error),
+        complete: () => destino.complete(),
+      }),
+    );
   }
 
   private adoptar(marca: MarcaResponse): void {
