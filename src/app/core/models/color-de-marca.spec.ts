@@ -3,6 +3,7 @@ import {
   REFERENCIA_DE_TEMA,
   TemaDeMarca,
   ajustarIntensidad,
+  colorPorDefecto,
   contraste,
   esColor,
   textoSobre,
@@ -74,7 +75,44 @@ describe('color de marca', () => {
     expect(tokens['--color-enlace']).toBe('#115e59');
     // La barra lateral y la superior se tiñen con el principal, mezclado con la superficie.
     expect(tokens['--color-marca-fondo']).toContain('#fde047 12%');
-    expect(tokens['--color-cabecera-fondo']).toContain('#fde047');
+    expect(tokens['--color-cabecera-fondo']).toContain('#fde047 7%');
     expect(esColor(tokens['--color-acento'])).toBe(true);
+  });
+
+  it('una zona con color propio le gana al tinte y lleva encima un texto que se lee', () => {
+    const tokens = tokensDeMarca(
+      {
+        principal: '#0f766e',
+        acento: null,
+        barraLateral: '#0b3b37',
+        cabecera: '#fde047',
+        fondo: '#f0fdfa',
+        tarjeta: '#fffbeb',
+        pie: '#0b3b37',
+        botonSecundario: '#fde047',
+      },
+      'claro',
+    );
+    expect(tokens['--color-marca-fondo']).toBe('#0b3b37');
+    expect(tokens['--color-marca-texto']).toBe('#ffffff');
+    expect(contraste(tokens['--color-marca-texto-suave'], '#0b3b37')).toBeGreaterThanOrEqual(4.5);
+    expect(tokens['--color-cabecera-fondo']).toBe('#fde047');
+    expect(tokens['--color-cabecera-texto']).toBe('#101820');
+    expect(tokens['--color-superficie-sutil']).toBe('#f0fdfa');
+    expect(tokens['--color-superficie']).toBe('#fffbeb');
+    expect(tokens['--color-pie-fondo']).toBe('#0b3b37');
+    expect(tokens['--color-pie-texto']).toBe('#ffffff');
+    // El contorno queda del color elegido; el texto se oscurece hasta leerse.
+    expect(tokens['--color-secundario-borde']).toBe('#fde047');
+    expect(contraste(tokens['--color-secundario-texto'], '#ffffff')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('una zona sin color propio muestra el que sale del principal', () => {
+    const sinMarca = { principal: null, acento: null };
+    expect(colorPorDefecto(sinMarca, 'claro', 'barraLateral')).toBe('#ffffff');
+    expect(colorPorDefecto(sinMarca, 'oscuro', 'fondo')).toBe('#101820');
+    const conMarca = { principal: '#0f766e', acento: null };
+    expect(colorPorDefecto(conMarca, 'claro', 'botonSecundario')).toBe('#0f766e');
+    expect(colorPorDefecto(conMarca, 'claro', 'barraLateral')).not.toBe('#ffffff');
   });
 });

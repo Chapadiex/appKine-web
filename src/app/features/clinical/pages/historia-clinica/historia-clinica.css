@@ -461,7 +461,8 @@ button.timeline__boton:focus-visible {
 .politica__columnas {
   display: grid;
   gap: var(--esp-6);
-  align-items: start;
+  /* Las tarjetas de una misma fila terminan a la misma altura. */
+  align-items: stretch;
 }
 
 @media (min-width: 60rem) {

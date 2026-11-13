@@ -14,8 +14,8 @@
   gap: var(--esp-4) var(--esp-8);
   padding: var(--esp-5) var(--esp-8);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  background: var(--color-superficie);
-  color: var(--color-texto-suave);
+  background: var(--color-pie-fondo);
+  color: var(--color-pie-texto-suave);
   font-size: var(--tipo-xs);
 }
 
@@ -34,7 +34,7 @@
 }
 
 .pie__nombre {
-  color: var(--color-texto);
+  color: var(--color-pie-texto);
   font-weight: var(--peso-medio);
 }
 
@@ -50,10 +50,6 @@
 .pie__datos li {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.pie__datos a {
-  color: var(--color-enlace);
 }
 
 @media (max-width: 40rem) {

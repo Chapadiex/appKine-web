@@ -539,7 +539,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
   gap: var(--esp-8);
-  align-items: start;
+  /* Las tarjetas de una misma fila terminan a la misma altura. */
+  align-items: stretch;
 }
 
 .ficha-en-columnas > .tarjeta {
@@ -633,4 +634,121 @@
 /* Auditoria: los campos del criterio y la barra de busqueda de abajo no se tocan. */
 .grilla-campos:has(+ app-filtros) {
   margin-bottom: var(--esp-6);
+}
+
+/* Datos de contacto, dentro de la ficha del centro: un subtitulo que separa del bloque de arriba. */
+.contacto__titulo {
+  margin: var(--esp-7) 0 var(--esp-4);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+/*
+  Auditoria: el criterio de busqueda como control segmentado. Son radios de verdad (teclado y
+  lector de pantalla los tratan como tales); el aspecto es el de tres botones pegados, con el
+  elegido marcado por fondo, color, peso y tilde (WCAG 1.4.1).
+*/
+form fieldset.auditoria-criterio.auditoria-criterio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-6);
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.auditoria-criterio__rotulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.segmentos {
+  display: inline-flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+}
+
+.segmentos .opcion-radio {
+  position: relative;
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.segmentos .opcion-radio + .opcion-radio {
+  box-shadow: calc(-1 * var(--borde-fino)) 0 0 var(--color-borde-control);
+}
+
+.segmentos input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmentos label {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-3);
+  min-height: 2.5rem;
+  padding: 0 var(--esp-6);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  white-space: nowrap;
+}
+
+.segmentos .opcion-radio:hover label {
+  background: var(--color-hover);
+}
+
+.segmentos input:checked + label {
+  background: var(--color-seleccion);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.segmentos input:checked + label::before {
+  content: '✓';
+}
+
+.segmentos input:focus-visible + label {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+/*
+  Ficha del centro: dos listas (datos y contacto) una debajo de la otra. La columna de rotulos
+  tiene ancho fijo para que los valores de las dos arranquen en la misma vertical, y los botones
+  de cada bloque miden lo mismo.
+*/
+.detalle--ficha {
+  grid-template-columns: 12rem minmax(0, 1fr);
+}
+
+.detalle--ficha dd {
+  overflow-wrap: anywhere;
+}
+
+.acciones--ficha .boton {
+  min-width: 15rem;
+}
+
+@media (max-width: 30rem) {
+  .detalle--ficha {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+  }
+
+  .acciones--ficha .boton {
+    min-width: 0;
+    width: 100%;
+  }
 }

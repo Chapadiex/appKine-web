@@ -7,7 +7,8 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
  * Pie institucional: el logo y los datos de contacto que el centro cargo en su marca.
  *
  * <p>Solo se dibuja con contexto elegido y si el centro cargo al menos un dato: un pie vacio es
- * ruido. Lo que no esta cargado no deja hueco ni separador.
+ * ruido. Lo que no esta cargado no deja hueco ni separador. Es solo texto, sin enlaces: informa,
+ * no es un lugar desde donde llamar ni escribir.
  */
 @Component({
   selector: 'app-pie-institucional',
@@ -31,11 +32,6 @@ export class PieInstitucional {
       Boolean(m.telefono || m.email || m.sitioWeb || m.direccion || m.leyenda)
     );
   });
-
-  /** `tel:` sin espacios ni guiones: lo que el telefono marca. */
-  protected readonly enlaceDeTelefono = computed(
-    () => 'tel:' + (this.marca()?.telefono ?? '').replace(/[^\d+]/g, ''),
-  );
 
   /** El sitio sin el protocolo, que es como se lee. */
   protected readonly sitioLegible = computed(() =>

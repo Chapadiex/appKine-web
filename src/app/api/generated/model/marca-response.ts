@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ColoresDeInterfaz } from './colores-de-interfaz';
 import { LogoDeMarcaResponse } from './logo-de-marca-response';
 
 
@@ -38,6 +39,14 @@ export interface MarcaResponse {
      * Email de contacto del centro
      */
     email?: string;
+    /**
+     * Colores de barra lateral, cabecera, fondo y boton secundario en tema claro, si el centro fijo alguno
+     */
+    interfazClaro?: ColoresDeInterfaz;
+    /**
+     * Lo mismo para tema oscuro
+     */
+    interfazOscuro?: ColoresDeInterfaz;
     /**
      * Linea libre del pie: horario, matricula, lema
      */

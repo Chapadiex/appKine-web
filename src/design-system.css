@@ -126,6 +126,17 @@
   /* Hover de la barra lateral y fondo de la barra superior: la marca del centro los tiñe. */
   --color-marca-hover: var(--color-hover);
   --color-cabecera-fondo: var(--color-superficie);
+  /* Texto de la barra lateral activa y de la barra superior: cambian si el centro les fija fondo. */
+  --color-marca-activo-texto: var(--color-enlace);
+  --color-cabecera-texto: var(--color-texto-fuerte);
+  --color-cabecera-texto-suave: var(--color-texto-suave);
+  --color-cabecera-acento: var(--color-acento);
+  --color-cabecera-enlace: var(--color-enlace);
+  --color-cabecera-hover: var(--color-hover);
+  /* Pie de pagina: superficie y texto de siempre, salvo que el centro le fije un fondo. */
+  --color-pie-fondo: var(--color-superficie);
+  --color-pie-texto: var(--color-texto);
+  --color-pie-texto-suave: var(--color-texto-suave);
   /* Boton secundario: neutro en AKINE; la marca del centro le da contorno, texto y fondo. */
   --color-secundario-borde: var(--color-borde-control);
   --color-secundario-borde-hover: var(--color-texto-suave);

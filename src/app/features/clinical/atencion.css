@@ -536,6 +536,14 @@
   font-size: var(--tipo-xs);
 }
 
+/*
+  Es una franja, no un parrafo de lectura: ocupa el ancho de la tarjeta. La clase repetida le gana
+  al tope de 90ch que el sistema le pone a todo `p` del contenido.
+*/
+.franja-info.franja-info {
+  max-width: none;
+}
+
 .franja-info > .enlace {
   margin-left: auto;
 }

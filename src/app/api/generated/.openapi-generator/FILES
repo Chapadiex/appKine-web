@@ -243,6 +243,7 @@ model/cobertura-para-oferta-practica.ts
 model/cobertura-para-oferta-response.ts
 model/cobertura-response.ts
 model/cobro.ts
+model/colores-de-interfaz.ts
 model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts

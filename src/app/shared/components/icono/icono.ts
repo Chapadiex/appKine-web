@@ -30,6 +30,7 @@ const TRAZOS = {
   ayuda: ANILLO + 'M9.5 9.2a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.3-2.5 3.8M12 17.2h.01',
   filtro: 'M3.5 5h17l-6.5 8v5.5l-4 2V13z',
   agregar: 'M12 5v14M5 12h14',
+  menos: 'M5 12h14',
   orden: 'M8 9l4-4 4 4M8 15l4 4 4-4',
   'orden-asc': 'M8 14l4-4 4 4',
   'orden-desc': 'M8 10l4 4 4-4',

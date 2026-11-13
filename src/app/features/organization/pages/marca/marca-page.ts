@@ -8,24 +8,28 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { Observable } from 'rxjs';
 
 import { MarcaDeLaOrganizacionService } from '../../../../api/generated/api/marca-de-la-organizacion.service';
+import { ColoresDeInterfaz } from '../../../../api/generated/model/colores-de-interfaz';
 import { MarcaResponse } from '../../../../api/generated/model/marca-response';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import {
   COLORES_DE_AKINE,
+  CampoDeMarca,
   PALETAS_DE_MARCA,
   PaletaDeMarca,
   REFERENCIA_DE_TEMA,
   TemaDeMarca,
   ajustarIntensidad,
+  colorPorDefecto,
+  mezclar,
   contraste,
   esColor,
   textoSobre,
   tonoConContraste,
+  zonasDe,
 } from '../../../../core/models/color-de-marca';
 import {
   ETIQUETA_PESTANAS_DE_ORGANIZACION,
@@ -41,10 +45,20 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 
-type CampoDeColor = 'principal' | 'acento';
+type CampoDeColor = CampoDeMarca;
 
-/** Los cuatro colores en edicion. `null` es "el de AKINE". */
+const PESTANAS: readonly TemaDeMarca[] = ['claro', 'oscuro'];
+
+/** Los colores en edicion. `null` es "el de AKINE" o, en una zona, "automatico". */
 type Colores = Readonly<Record<TemaDeMarca, Readonly<Record<CampoDeColor, string | null>>>>;
+
+interface DefinicionDeCampo {
+  readonly id: CampoDeColor;
+  readonly etiqueta: string;
+  readonly uso: string;
+  /** Rotulo del enlace que le quita el color propio. */
+  readonly reinicio: string;
+}
 
 interface AvisoDeContraste {
   readonly campo: CampoDeColor;
@@ -52,8 +66,51 @@ interface AvisoDeContraste {
   readonly sugerido: string;
 }
 
-/** Contraste minimo de un control contra su fondo (WCAG 1.4.11) y de un texto (1.4.3). */
-const MINIMO: Readonly<Record<CampoDeColor, number>> = { principal: 3, acento: 4.5 };
+/**
+ * Lo que se mide de cada color que el centro elige: contra que, el minimo (3:1 para un control,
+ * WCAG 1.4.11; 4,5:1 para texto, 1.4.3) y como se le dice. La barra lateral y la cabecera no
+ * figuran: el texto que llevan encima lo elige la aplicacion y se lee siempre.
+ */
+const MEDICIONES: readonly {
+  readonly campo: CampoDeColor;
+  readonly contra: 'superficie' | 'texto';
+  readonly minimo: number;
+  readonly texto: (medida: string) => string;
+}[] = [
+  {
+    campo: 'principal',
+    contra: 'superficie',
+    minimo: 3,
+    texto: (m) => `El color principal se distingue poco del fondo (${m}:1; conviene 3:1 o más).`,
+  },
+  {
+    campo: 'acento',
+    contra: 'superficie',
+    minimo: 4.5,
+    texto: (m) =>
+      `Los enlaces con este acento van a costar de leer (${m}:1; conviene 4,5:1 o más).`,
+  },
+  {
+    campo: 'botonSecundario',
+    contra: 'superficie',
+    minimo: 3,
+    texto: (m) =>
+      `El contorno de los botones secundarios se distingue poco (${m}:1; conviene 3:1 o más).`,
+  },
+  {
+    campo: 'tarjeta',
+    contra: 'texto',
+    minimo: 4.5,
+    texto: (m) => `El texto sobre las tarjetas va a costar de leer (${m}:1; conviene 4,5:1 o más).`,
+  },
+  {
+    campo: 'fondo',
+    contra: 'texto',
+    minimo: 4.5,
+    texto: (m) =>
+      `Los títulos sobre este fondo van a costar de leer (${m}:1; conviene 4,5:1 o más).`,
+  },
+];
 
 const LOGO_MAX_BYTES = 500 * 1024;
 const TIPOS_DE_LOGO = ['image/png', 'image/jpeg', 'image/webp'];
@@ -66,12 +123,13 @@ const TIPOS_DE_LOGO = ['image/png', 'image/jpeg', 'image/webp'];
  * pero deja guardar igual: es la decision del producto. El texto que va sobre el color principal
  * (blanco o casi negro) lo elige la aplicacion.
  *
- * <p>Colores y contacto se guardan juntos con "Guardar los cambios". El logo se guarda al subirlo:
- * es otro pedido, y esperar al guardado dejaria un archivo elegido que nadie ve.
+ * <p>Los colores de los dos temas se guardan juntos con "Guardar los cambios". El logo se guarda
+ * al subirlo: es otro pedido, y esperar al guardado dejaria un archivo elegido que nadie ve. Los
+ * datos de contacto del pie viven en la misma marca pero se editan en "Datos del centro".
  */
 @Component({
   selector: 'app-marca-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta, Icono, ReactiveFormsModule],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta, Icono, NgTemplateOutlet],
   templateUrl: './marca-page.html',
   styleUrl: './marca-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -90,14 +148,73 @@ export class MarcaPage {
     { id: 'claro', titulo: 'Tema claro' },
     { id: 'oscuro', titulo: 'Tema oscuro' },
   ];
-  protected readonly camposDeColor: readonly {
-    id: CampoDeColor;
-    etiqueta: string;
-    uso: string;
-  }[] = [
-    { id: 'principal', etiqueta: 'Color principal', uso: 'Botones, foco y selección.' },
-    { id: 'acento', etiqueta: 'Color de acento', uso: 'Enlaces y pestaña activa.' },
+  protected readonly camposDeColor: readonly DefinicionDeCampo[] = [
+    {
+      id: 'principal',
+      etiqueta: 'Principal',
+      uso: 'Botones, foco y selección.',
+      reinicio: 'Volver al de AKINE',
+    },
+    {
+      id: 'acento',
+      etiqueta: 'Acento',
+      uso: 'Enlaces y pestaña activa.',
+      reinicio: 'Volver al de AKINE',
+    },
   ];
+  /** Zonas de la pantalla: sin color propio salen solas del color principal. */
+  protected readonly camposDeZona: readonly DefinicionDeCampo[] = [
+    {
+      id: 'barraLateral',
+      etiqueta: 'Barra lateral',
+      uso: 'Fondo del menú.',
+      reinicio: 'Automático',
+    },
+    {
+      id: 'cabecera',
+      etiqueta: 'Cabecera',
+      uso: 'Fondo de la barra superior.',
+      reinicio: 'Automático',
+    },
+    {
+      id: 'fondo',
+      etiqueta: 'Fondo',
+      uso: 'Fondo de la página, detrás de las tarjetas.',
+      reinicio: 'Automático',
+    },
+    {
+      id: 'tarjeta',
+      etiqueta: 'Tarjetas',
+      uso: 'Fondo de tarjetas, paneles y campos.',
+      reinicio: 'Automático',
+    },
+    {
+      id: 'pie',
+      etiqueta: 'Pie',
+      uso: 'Fondo del pie de página.',
+      reinicio: 'Automático',
+    },
+    {
+      id: 'botonSecundario',
+      etiqueta: 'Secundario',
+      uso: 'Contorno y texto de los botones secundarios.',
+      reinicio: 'Automático',
+    },
+  ];
+
+  protected readonly todosLosCampos: readonly DefinicionDeCampo[] = [
+    ...this.camposDeColor,
+    ...this.camposDeZona,
+  ];
+
+  /** El color que se esta editando: se elige en la miniatura o en la tira de colores. */
+  protected readonly campoElegido = signal<CampoDeColor>('principal');
+  protected readonly definicionElegida = computed(() =>
+    this.todosLosCampos.find((campo) => campo.id === this.campoElegido())!,
+  );
+
+  /** El tema que se esta editando: arranca en el que la persona tiene en uso. */
+  protected readonly pestana = signal<TemaDeMarca>(this.store.temaEfectivo());
 
   protected readonly estado = signal<'cargando' | 'listo' | 'error'>('cargando');
   protected readonly mensajeDeCarga = signal('');
@@ -111,30 +228,9 @@ export class MarcaPage {
   private readonly guardada = signal<MarcaResponse | null>(null);
   private readonly colores = signal<Colores>(coloresDe(null));
 
-  protected readonly contacto = inject(FormBuilder).nonNullable.group({
-    telefono: [''],
-    email: ['', [Validators.email]],
-    sitioWeb: ['', [Validators.pattern(/^https?:\/\/\S+$/)]],
-    direccion: [''],
-    leyenda: [''],
-  });
-  private readonly valoresDeContacto = toSignal(this.contacto.valueChanges, {
-    initialValue: this.contacto.getRawValue(),
-  });
-
   protected readonly hayCambios = computed(() => {
     const base = this.guardada();
-    if (base === null) {
-      return false;
-    }
-    this.valoresDeContacto();
-    const contacto = this.contacto.getRawValue();
-    return (
-      JSON.stringify(this.colores()) !== JSON.stringify(coloresDe(base)) ||
-      (Object.keys(contacto) as (keyof typeof contacto)[]).some(
-        (campo) => contacto[campo].trim() !== (base[campo] ?? ''),
-      )
-    );
+    return base !== null && JSON.stringify(this.colores()) !== JSON.stringify(coloresDe(base));
   });
 
   constructor() {
@@ -183,17 +279,69 @@ export class MarcaPage {
 
   // --- Colores ---
 
-  /** El color que se ve: el propio o, si no hay, el de AKINE. */
+  /** Flechas entre las pestañas, como pide el patron: mueven la seleccion y el foco. */
+  protected cambiarDePestana(evento: Event, paso: 1 | -1): void {
+    const actual = PESTANAS.indexOf(this.pestana());
+    const destino = PESTANAS[(actual + paso + PESTANAS.length) % PESTANAS.length];
+    this.pestana.set(destino);
+    (evento.currentTarget as HTMLElement).parentElement
+      ?.querySelector<HTMLElement>('#pestana-tema-' + destino)
+      ?.focus();
+  }
+
+  /** El color que se ve: el propio o, si no hay, el de AKINE (o el automatico de la zona). */
   protected colorEfectivo(tema: TemaDeMarca, campo: CampoDeColor): string {
-    return this.colores()[tema][campo] ?? COLORES_DE_AKINE[tema][campo];
+    const delTema = this.colores()[tema];
+    return delTema[campo] ?? colorPorDefecto(delTema, tema, campo);
   }
 
   protected esPropio(tema: TemaDeMarca, campo: CampoDeColor): boolean {
     return this.colores()[tema][campo] !== null;
   }
 
-  protected textoSobrePrincipal(tema: TemaDeMarca): string {
-    return textoSobre(this.colorEfectivo(tema, 'principal'));
+  /**
+   * Los colores de la miniatura de un tema, ya resueltos (lo propio o lo que sale solo), como
+   * variables `--q-*`. Sigue las mismas reglas que `tokensDeMarca`: texto que se lee sobre la
+   * barra y la cabecera, y tintes del principal donde el centro no fijo nada.
+   */
+  protected maqueta(tema: TemaDeMarca): Record<string, string> {
+    const propios = this.colores()[tema];
+    const referencia = REFERENCIA_DE_TEMA[tema];
+    const de = (campo: CampoDeColor): string => this.colorEfectivo(tema, campo);
+    const principal = de('principal');
+    const barra = de('barraLateral');
+    const cabecera = de('cabecera');
+    const tarjeta = de('tarjeta');
+    const secundario = de('botonSecundario');
+    const pie = de('pie');
+    const textoDeBarra = propios.barraLateral === null ? referencia.texto : textoSobre(barra);
+    const conMarca = propios.principal !== null || propios.botonSecundario !== null;
+    return {
+      '--q-barra': barra,
+      '--q-barra-texto': textoDeBarra,
+      '--q-barra-actual':
+        propios.barraLateral === null
+          ? mezclar(referencia.superficie, principal, 0.28)
+          : mezclar(barra, textoDeBarra, 0.2),
+      '--q-cabecera': cabecera,
+      '--q-cabecera-texto': propios.cabecera === null ? referencia.texto : textoSobre(cabecera),
+      '--q-fondo': de('fondo'),
+      '--q-pie': pie,
+      '--q-pie-texto': propios.pie === null ? referencia.texto : textoSobre(pie),
+      '--q-tarjeta': tarjeta,
+      '--q-texto': referencia.texto,
+      '--q-borde': mezclar(tarjeta, referencia.texto, 0.16),
+      '--q-fila': mezclar(tarjeta, principal, 0.16),
+      '--q-principal': principal,
+      '--q-sobre-principal': textoSobre(principal),
+      '--q-acento': de('acento'),
+      '--q-secundario': secundario,
+      '--q-secundario-fondo': conMarca ? mezclar(tarjeta, secundario, 0.08) : tarjeta,
+      '--q-secundario-texto':
+        propios.botonSecundario !== null
+          ? tonoConContraste(secundario, referencia.superficie, 4.5)
+          : (propios.acento ?? referencia.texto),
+    };
   }
 
   protected cambiarColor(tema: TemaDeMarca, campo: CampoDeColor, valor: string | null): void {
@@ -221,14 +369,11 @@ export class MarcaPage {
   }
 
   protected usarPaleta(paleta: PaletaDeMarca): void {
-    this.colores.set({ claro: { ...paleta.claro }, oscuro: { ...paleta.oscuro } });
+    this.colores.set(coloresDePaleta(paleta));
   }
 
   protected esLaPaletaActual(paleta: PaletaDeMarca): boolean {
-    return (
-      JSON.stringify({ claro: paleta.claro, oscuro: paleta.oscuro }) ===
-      JSON.stringify(this.colores())
-    );
+    return JSON.stringify(coloresDePaleta(paleta)) === JSON.stringify(this.colores());
   }
 
   protected muestrasDe(paleta: PaletaDeMarca): string[] {
@@ -242,23 +387,19 @@ export class MarcaPage {
 
   /** Lo que no se va a leer bien en un tema, con el tono mas cercano que si. Solo colores propios. */
   protected avisosDe(tema: TemaDeMarca): AvisoDeContraste[] {
-    const fondo = REFERENCIA_DE_TEMA[tema].superficie;
     const avisos: AvisoDeContraste[] = [];
-    for (const campo of ['principal', 'acento'] as const) {
+    for (const { campo, contra, minimo, texto } of MEDICIONES) {
       const color = this.colores()[tema][campo];
       if (color === null) {
         continue;
       }
-      const razon = contraste(color, fondo);
-      if (razon < MINIMO[campo]) {
-        const medida = razon.toFixed(1).replace('.', ',');
+      const referencia = REFERENCIA_DE_TEMA[tema][contra];
+      const razon = contraste(color, referencia);
+      if (razon < minimo) {
         avisos.push({
           campo,
-          sugerido: tonoConContraste(color, fondo, MINIMO[campo]),
-          texto:
-            campo === 'principal'
-              ? `El color principal se distingue poco del fondo (${medida}:1; conviene 3:1 o más).`
-              : `Los enlaces con este acento van a costar de leer (${medida}:1; conviene 4,5:1 o más).`,
+          sugerido: tonoConContraste(color, referencia, minimo),
+          texto: texto(razon.toFixed(1).replace('.', ',')),
         });
       }
     }
@@ -267,23 +408,13 @@ export class MarcaPage {
 
   // --- Guardado ---
 
-  protected conError(campo: 'email' | 'sitioWeb'): boolean {
-    const control = this.contacto.controls[campo];
-    return (control.invalid && control.touched) || campo in this.erroresDeCampo();
-  }
-
   protected guardar(): void {
     const orgId = this.tenant.organizationId();
     const base = this.guardada();
     if (orgId === null || base === null) {
       return;
     }
-    if (this.contacto.invalid) {
-      this.contacto.markAllAsTouched();
-      return;
-    }
     const colores = this.colores();
-    const contacto = this.contacto.getRawValue();
     this.guardando.set(true);
     this.errorAlGuardar.set(null);
     this.erroresDeCampo.set({});
@@ -296,11 +427,15 @@ export class MarcaPage {
           colorAcentoClaro: colores.claro.acento ?? undefined,
           colorPrincipalOscuro: colores.oscuro.principal ?? undefined,
           colorAcentoOscuro: colores.oscuro.acento ?? undefined,
-          telefono: contacto.telefono.trim(),
-          email: contacto.email.trim(),
-          sitioWeb: contacto.sitioWeb.trim(),
-          direccion: contacto.direccion.trim(),
-          leyenda: contacto.leyenda.trim(),
+          interfazClaro: interfazDe(colores.claro),
+          interfazOscuro: interfazDe(colores.oscuro),
+          // El contacto se edita en "Datos del centro": aca viaja tal como esta guardado, porque
+          // el servidor reemplaza la marca entera.
+          telefono: base.telefono,
+          email: base.email,
+          sitioWeb: base.sitioWeb,
+          direccion: base.direccion,
+          leyenda: base.leyenda,
         },
       }),
     ).subscribe({
@@ -309,7 +444,7 @@ export class MarcaPage {
         this.adoptar(marca);
         this.store.adoptar(marca);
         this.avisos.exito('Marca guardada', {
-          descripcion: 'Los colores y los datos ya se ven en todo el centro.',
+          descripcion: 'Los colores ya se ven en todo el centro.',
         });
       },
       error: (error: unknown) => {
@@ -431,13 +566,6 @@ export class MarcaPage {
   private adoptar(marca: MarcaResponse): void {
     this.guardada.set(marca);
     this.colores.set(coloresDe(marca));
-    this.contacto.reset({
-      telefono: marca.telefono ?? '',
-      email: marca.email ?? '',
-      sitioWeb: marca.sitioWeb ?? '',
-      direccion: marca.direccion ?? '',
-      leyenda: marca.leyenda ?? '',
-    });
     this.errorAlGuardar.set(null);
     this.erroresDeCampo.set({});
   }
@@ -448,11 +576,32 @@ function coloresDe(marca: MarcaResponse | null): Colores {
     claro: {
       principal: marca?.colorPrincipalClaro ?? null,
       acento: marca?.colorAcentoClaro ?? null,
+      ...zonasDe(marca?.interfazClaro),
     },
     oscuro: {
       principal: marca?.colorPrincipalOscuro ?? null,
       acento: marca?.colorAcentoOscuro ?? null,
+      ...zonasDe(marca?.interfazOscuro),
     },
+  };
+}
+
+/** Una paleta fija principal y acento, y deja las zonas en automatico. */
+function coloresDePaleta(paleta: PaletaDeMarca): Colores {
+  return {
+    claro: { ...paleta.claro, ...zonasDe(undefined) },
+    oscuro: { ...paleta.oscuro, ...zonasDe(undefined) },
+  };
+}
+
+function interfazDe(colores: Colores[TemaDeMarca]): ColoresDeInterfaz {
+  return {
+    barraLateral: colores.barraLateral ?? undefined,
+    cabecera: colores.cabecera ?? undefined,
+    fondo: colores.fondo ?? undefined,
+    tarjeta: colores.tarjeta ?? undefined,
+    pie: colores.pie ?? undefined,
+    botonSecundario: colores.botonSecundario ?? undefined,
   };
 }
 

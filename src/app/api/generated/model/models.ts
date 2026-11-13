@@ -108,6 +108,7 @@ export * from './cobertura-para-oferta-practica';
 export * from './cobertura-para-oferta-response';
 export * from './cobertura-response';
 export * from './cobro';
+export * from './colores-de-interfaz';
 export * from './comparacion-de-mediciones';
 export * from './configuracion-de-renovacion-de-abono';
 export * from './confirmar-liquidacion-de-honorarios-request';

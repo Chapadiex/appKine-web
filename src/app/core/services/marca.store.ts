@@ -3,7 +3,7 @@ import { Injectable, Signal, computed, effect, inject, signal, untracked } from 
 
 import { MarcaDeLaOrganizacionService } from '../../api/generated/api/marca-de-la-organizacion.service';
 import { MarcaResponse } from '../../api/generated/model/marca-response';
-import { ColoresDeTema, TemaDeMarca, tokensDeMarca } from '../models/color-de-marca';
+import { ColoresDeTema, TemaDeMarca, tokensDeMarca, zonasDe } from '../models/color-de-marca';
 import { PreferenciasStore } from './preferencias.store';
 import { SessionService } from './session.service';
 import { TenantContextStore } from './tenant-context.store';
@@ -167,10 +167,12 @@ function coloresGuardados(marca: MarcaResponse | null): Record<TemaDeMarca, Colo
     claro: {
       principal: marca?.colorPrincipalClaro ?? null,
       acento: marca?.colorAcentoClaro ?? null,
+      ...zonasDe(marca?.interfazClaro),
     },
     oscuro: {
       principal: marca?.colorPrincipalOscuro ?? null,
       acento: marca?.colorAcentoOscuro ?? null,
+      ...zonasDe(marca?.interfazOscuro),
     },
   };
 }

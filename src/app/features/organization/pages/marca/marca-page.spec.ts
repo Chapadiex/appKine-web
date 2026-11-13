@@ -11,11 +11,14 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { MarcaPage } from './marca-page';
 
-const marcaDe = (organizationId: number, email: string): MarcaResponse => ({
+const COLOR_DE_A = '#0f766e';
+const COLOR_DE_B = '#4338ca';
+
+const marcaDe = (organizationId: number, colorPrincipalClaro: string): MarcaResponse => ({
   organizationId,
   version: 3,
-  colorPrincipalClaro: organizationId === 1 ? '#0f766e' : '#4338ca',
-  email,
+  colorPrincipalClaro,
+  email: 'contacto@centro.example',
 });
 
 describe('MarcaPage', () => {
@@ -24,8 +27,11 @@ describe('MarcaPage', () => {
   let tenant: TenantContextStore;
   const adoptada = vi.fn();
 
-  const email = (): string =>
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#marca-email')!.value;
+  const campoDeColor = (): HTMLInputElement =>
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '#color-claro-principal-hex',
+    )!;
+  const color = (): string => campoDeColor().value;
 
   beforeEach(async () => {
     adoptada.mockClear();
@@ -41,6 +47,7 @@ describe('MarcaPage', () => {
           provide: MarcaStore,
           useValue: {
             marca: signal<MarcaResponse | null>(null),
+            temaEfectivo: signal('claro'),
             logosPorTema: signal({ claro: null, oscuro: null }),
             adoptar: adoptada,
             previsualizar: () => undefined,
@@ -62,37 +69,37 @@ describe('MarcaPage', () => {
 
     tenant.select({ organizationId: 2, organizationName: 'Centro B' });
     await fixture.whenStable();
-    httpMock.expectOne('/api/v1/organizations/2/marca').flush(marcaDe(2, 'b@centro.example'));
+    httpMock.expectOne('/api/v1/organizations/2/marca').flush(marcaDe(2, COLOR_DE_B));
     // La respuesta del centro anterior llega ultima: no puede pisar lo que se edita de B.
-    deA.flush(marcaDe(1, 'a@centro.example'));
+    deA.flush(marcaDe(1, COLOR_DE_A));
     await fixture.whenStable();
 
-    expect(email()).toBe('b@centro.example');
+    expect(color()).toBe(COLOR_DE_B);
   });
 
   it('no adopta el guardado de un centro si ya se cambio a otro', async () => {
-    httpMock.expectOne('/api/v1/organizations/1/marca').flush(marcaDe(1, 'a@centro.example'));
+    httpMock.expectOne('/api/v1/organizations/1/marca').flush(marcaDe(1, COLOR_DE_A));
     await fixture.whenStable();
 
-    const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '#marca-email',
-    )!;
-    campo.value = 'nuevo@centro.example';
-    campo.dispatchEvent(new Event('input'));
+    const campo = campoDeColor();
+    campo.value = '#be185d';
+    campo.dispatchEvent(new Event('change'));
     await fixture.whenStable();
     (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLButtonElement>('button[type="submit"]')!
       .click();
     const guardado = httpMock.expectOne({ method: 'PUT', url: '/api/v1/organizations/1/marca' });
     expect(guardado.request.body.version).toBe(3);
+    // El contacto no se edita aca, pero viaja: el servidor reemplaza la marca entera.
+    expect(guardado.request.body.email).toBe('contacto@centro.example');
 
     tenant.select({ organizationId: 2, organizationName: 'Centro B' });
     await fixture.whenStable();
-    httpMock.expectOne('/api/v1/organizations/2/marca').flush(marcaDe(2, 'b@centro.example'));
-    guardado.flush(marcaDe(1, 'nuevo@centro.example'));
+    httpMock.expectOne('/api/v1/organizations/2/marca').flush(marcaDe(2, COLOR_DE_B));
+    guardado.flush(marcaDe(1, '#be185d'));
     await fixture.whenStable();
 
-    expect(email()).toBe('b@centro.example');
+    expect(color()).toBe(COLOR_DE_B);
     // Los colores del centro anterior tampoco se pintan sobre el nuevo.
     expect(adoptada).not.toHaveBeenCalled();
   });

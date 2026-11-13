@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ColoresDeInterfaz } from './colores-de-interfaz';
 
 
 /**
@@ -37,6 +38,14 @@ export interface UpdateMarcaRequest {
      * Email de contacto
      */
     email?: string;
+    /**
+     * Colores de barra lateral, cabecera, fondo y boton secundario en tema claro
+     */
+    interfazClaro?: ColoresDeInterfaz;
+    /**
+     * Lo mismo para tema oscuro
+     */
+    interfazOscuro?: ColoresDeInterfaz;
     /**
      * Linea libre del pie
      */
