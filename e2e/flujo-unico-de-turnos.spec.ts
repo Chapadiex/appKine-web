@@ -97,7 +97,7 @@ test.describe('Flujo unico de turnos', () => {
   const apellido = (): string => sembrada.nombreCompleto.split(',')[0];
 
   async function elegirPaciente(dialogo: Locator): Promise<void> {
-    await dialogo.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(apellido());
+    await dialogo.getByRole('combobox', { name: 'Paciente', exact: true }).fill(apellido());
     await dialogo.getByRole('button', { name: new RegExp(apellido()) }).click();
   }
 
@@ -265,7 +265,7 @@ test.describe('Flujo unico de turnos', () => {
 
     const dialogo = panel(page, 'Nuevo turno');
     // Lo que ya se sabe no se vuelve a preguntar.
-    await expect(dialogo.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
+    await expect(dialogo.getByRole('combobox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(dialogo.getByText(sembrada.nombreCompleto).first()).toBeVisible();
     await expect(dialogo.getByLabel('Prestación', { exact: true })).toBeHidden();
 
@@ -292,7 +292,7 @@ test.describe('Flujo unico de turnos', () => {
     await proximaSesion.click();
     const proxima = panel(page, 'Nuevo turno');
     // El contexto del plan ya viene: paciente, caso, plan y prestacion.
-    await expect(proxima.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
+    await expect(proxima.getByRole('combobox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(proxima.getByLabel('Caso / Plan')).not.toHaveValue('');
     await expect(proxima.getByText('Planificadas:')).toBeVisible();
     await proxima.getByRole('button', { name: 'Primer disponible' }).click();
@@ -451,7 +451,7 @@ test.describe('Flujo unico de turnos', () => {
     await page.reload();
     await page.getByRole('button', { name: 'Programar próxima sesión' }).click();
     const proxima = panel(page, 'Nuevo turno');
-    await expect(proxima.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
+    await expect(proxima.getByRole('combobox', { name: 'Paciente', exact: true })).toBeHidden();
     await proxima.getByRole('button', { name: 'Primer disponible' }).click();
     await proxima.getByRole('button', { name: 'Confirmar turno' }).click();
     await expect(avisos(page).getByText('Turno creado correctamente.')).toBeVisible();
@@ -509,7 +509,7 @@ test.describe('Flujo unico de turnos', () => {
     await page.getByRole('button', { name: new RegExp(`Nuevo turno ${dia} a las 18:00`) }).click();
 
     const dialogo = panel(page, 'Nuevo turno');
-    await dialogo.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(apellidoNuevo);
+    await dialogo.getByRole('combobox', { name: 'Paciente', exact: true }).fill(apellidoNuevo);
     await expect(dialogo.getByText('No encontramos pacientes.')).toBeVisible();
     await dialogo.getByRole('button', { name: 'Crear paciente' }).click();
     await dialogo.getByLabel('Nombre', { exact: true }).fill('Rocio');
@@ -552,7 +552,7 @@ test.describe('Flujo unico de turnos', () => {
     await nuevoTurno.click();
 
     const dialogo = panel(page, 'Nuevo turno');
-    await expect(dialogo.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
+    await expect(dialogo.getByRole('combobox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(dialogo.getByLabel('Caso / Plan')).toHaveValue(`plan:${planId}`);
     await expect(
       dialogo.getByText('No se pueden programar más turnos para esta prestación'),

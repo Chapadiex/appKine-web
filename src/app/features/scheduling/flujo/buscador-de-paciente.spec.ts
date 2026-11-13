@@ -85,6 +85,35 @@ describe('BuscadorDePaciente', () => {
     TIMEOUT_AXE,
   );
 
+  it('es un combo: flechas y Enter eligen, Escape cierra y avisa cuando hay más resultados', async () => {
+    const fixture = await montar();
+    escribir(fixture, 'Pe');
+    await esperarBusqueda();
+    buscando('Pe').flush({
+      content: [ANA, { ...ANA, id: 99, nombre: 'Berta' }],
+      totalElements: 40,
+    });
+    await asentar(fixture);
+
+    const campo = raiz(fixture).querySelector('#flujo-paciente') as HTMLInputElement;
+    expect(campo.getAttribute('aria-expanded')).toBe('true');
+    expect(raiz(fixture).textContent).toContain('Se muestran 2 de 40');
+
+    const tecla = (key: string) => campo.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    tecla('ArrowDown');
+    tecla('ArrowDown');
+    await asentar(fixture);
+    expect(campo.getAttribute('aria-activedescendant')).toBe('flujo-paciente-opcion-1');
+
+    tecla('Escape');
+    await asentar(fixture);
+    expect(campo.getAttribute('aria-expanded')).toBe('false');
+
+    tecla('ArrowDown');
+    tecla('Enter');
+    expect(elegidas.map((p) => p.id)).toEqual([ANA.id]);
+  });
+
   it('borrar el texto limpia la lista sin ir al servidor', async () => {
     const fixture = await montar();
     escribir(fixture, 'Perez');
