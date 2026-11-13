@@ -1,5 +1,12 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -265,29 +272,35 @@ export class PadronDePersonasPage {
   /** Ficha que ya tiene el documento del alta rechazada, o `null`. */
   protected readonly duenioDelDocumento = signal<PersonaResponse | null>(null);
 
-  protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    // Solo apellido y nombre son obligatorios: el documento es opcional a proposito, porque una
-    // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
-    apellido: ['', [textoRequerido]],
-    nombre: ['', [textoRequerido]],
-    tipoDocumento: [''],
-    numeroDocumento: [''],
-    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
-    email: ['', [Validators.email]],
-    telefono: [''],
-    notas: [''],
-  });
+  protected readonly formularioAlta = this.formBuilder.nonNullable.group(
+    {
+      // Solo apellido y nombre son obligatorios: el documento es opcional a proposito, porque una
+      // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
+      apellido: ['', [textoRequerido]],
+      nombre: ['', [textoRequerido]],
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+      email: ['', [Validators.email]],
+      telefono: [''],
+      notas: [''],
+    },
+    { validators: documentoCompleto },
+  );
 
-  protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    apellido: [''],
-    nombre: [''],
-    tipoDocumento: [''],
-    numeroDocumento: [''],
-    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
-    email: ['', [Validators.email]],
-    telefono: [''],
-    notas: [''],
-  });
+  protected readonly formularioEdicion = this.formBuilder.nonNullable.group(
+    {
+      apellido: [''],
+      nombre: [''],
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+      email: ['', [Validators.email]],
+      telefono: [''],
+      notas: [''],
+    },
+    { validators: documentoCompleto },
+  );
 
   constructor() {
     effect(() => {
@@ -561,6 +574,19 @@ export class PadronDePersonasPage {
     return control !== null && control.invalid && (control.touched || control.dirty);
   }
 
+  /**
+   * `true` cuando hay numero de documento sin tipo y el numero ya se toco. El error es del grupo
+   * —depende de dos campos— y se muestra junto al selector, que es lo que falta completar.
+   */
+  protected faltaTipoDeDocumento(formulario: FormGroup): boolean {
+    const numero = formulario.get('numeroDocumento');
+    return (
+      formulario.hasError('tipoDocumentoFaltante') &&
+      numero !== null &&
+      (numero.touched || numero.dirty)
+    );
+  }
+
   protected mostrarErrorEdicion(campo: string): boolean {
     const control = this.formularioEdicion.get(campo);
     return control !== null && control.invalid && (control.touched || control.dirty);
@@ -639,6 +665,19 @@ export class PadronDePersonasPage {
     }
     return tipo as TipoDeDocumento;
   }
+}
+
+/**
+ * Un numero sin tipo no se puede mandar: `tipoDocumentoDe` omitia el tipo, el numero viajaba solo
+ * y el backend lo informaba como "documento ya registrado", mandando a buscar en el padron una
+ * ficha que no existia.
+ */
+function documentoCompleto(grupo: AbstractControl): ValidationErrors | null {
+  const tipo: unknown = grupo.get('tipoDocumento')?.value;
+  const numero: unknown = grupo.get('numeroDocumento')?.value;
+  return typeof numero === 'string' && numero.trim() !== '' && !tipo
+    ? { tipoDocumentoFaltante: true }
+    : null;
 }
 
 /** `''` significa "no lo mandes", no "mandalo vacio". Es la diferencia entre omitir y borrar. */

@@ -332,12 +332,16 @@
           id="alta-persona-tipo-documento"
           formControlName="tipoDocumento"
           aria-describedby="alta-persona-documento-ayuda"
+          [attr.aria-invalid]="faltaTipoDeDocumento(formularioAlta) ? 'true' : null"
         >
           <option value="">Sin documento</option>
           @for (tipo of tiposDeDocumento; track tipo) {
             <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
           }
         </select>
+        @if (faltaTipoDeDocumento(formularioAlta)) {
+          <p class="campo__error">Elegí el tipo del documento que cargaste.</p>
+        }
       </div>
 
       <div class="campo campo--2">
@@ -531,12 +535,19 @@
 
         <div class="campo campo--2">
           <label for="edicion-tipo-{{ persona.id }}">Tipo de documento</label>
-          <select id="edicion-tipo-{{ persona.id }}" formControlName="tipoDocumento">
+          <select
+            id="edicion-tipo-{{ persona.id }}"
+            formControlName="tipoDocumento"
+            [attr.aria-invalid]="faltaTipoDeDocumento(formularioEdicion) ? 'true' : null"
+          >
             <option value="">Sin documento</option>
             @for (tipo of tiposDeDocumento; track tipo) {
               <option [value]="tipo">{{ etiquetaDeTipoDocumento(tipo) }}</option>
             }
           </select>
+          @if (faltaTipoDeDocumento(formularioEdicion)) {
+            <p class="campo__error">Elegí el tipo del documento que cargaste.</p>
+          }
         </div>
 
         <div class="campo campo--2">
