@@ -3,7 +3,7 @@
  *
  * <b>Deliberadamente corta</b>, igual que las de `offering`, `resource` y `catalog`. `.boton`,
  * `.campo`, `.tabla`, `.tabla-scroll`, `.estado`, `.tarjeta`, `.ayuda`, `.marca-estado`,
- * `.fila--revocada`, `.fila--atenuada`, `.fila-panel`, `.acciones-fila`, `.par-de-campos` y
+ * `.fila--revocada`, `.fila--atenuada`, `.fila-panel`, `.par-de-campos` y
  * `.campo__error` los aporta `src/design-system.css`, que es global. Copiarlos aca no seria
  * aislar el feature: seria una copia que se despega del original el dia que alguien retoque un
  * gris.
@@ -264,140 +264,6 @@
   color: var(--color-peligro-texto);
 }
 
-/*
- * Asistente de importacion (refactor UX/UI del 28/10/2026): los pasos en una franja horizontal
- * arriba y a todo el ancho, y el paso actual debajo. Mismo patron visual que el alta de sede
- * (`organization.css`, `.asistente*`); las clases `.pasos`/`.paso` se conservan porque las usan el
- * spec y el E2E de la importacion.
- */
-.asistente {
-  padding: 0;
-}
-
-.pasos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  margin: 0;
-  padding: 0;
-  border-bottom: var(--borde-fino) solid var(--color-borde);
-  list-style: none;
-}
-
-.paso {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--esp-5);
-  min-width: 0;
-  padding: var(--esp-6) var(--esp-8);
-  border-bottom: var(--borde-medio) solid transparent;
-  color: var(--color-texto-suave);
-}
-
-/* Linea que une un paso con el siguiente. */
-.paso + .paso::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: var(--esp-6);
-  height: var(--borde-fino);
-  background: var(--color-borde);
-}
-
-.paso--actual {
-  border-bottom-color: var(--color-acento);
-  color: var(--color-texto-fuerte);
-}
-
-.paso__volver {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-5);
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.paso__volver:hover .paso__titulo {
-  color: var(--color-enlace);
-  text-decoration: underline;
-}
-
-.paso__textos {
-  min-width: 0;
-}
-
-.paso__numero {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: 50%;
-  background: var(--color-superficie);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-}
-
-.paso--actual .paso__numero {
-  border-color: var(--color-acento);
-  background: var(--color-acento);
-  color: var(--color-accion-texto);
-}
-
-.paso--hecho .paso__numero {
-  border-color: var(--color-exito);
-  background: var(--color-exito-fondo);
-  color: var(--color-exito-texto);
-}
-
-.paso__titulo {
-  display: block;
-  font-weight: var(--peso-medio);
-}
-
-.paso__sub {
-  display: block;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
-}
-
-.asistente__contenido {
-  padding: var(--esp-7) var(--esp-8) var(--esp-8);
-}
-
-.asistente__encabezado {
-  margin: 0 0 var(--esp-7);
-  font-size: var(--tipo-lg);
-  font-weight: var(--peso-fuerte);
-}
-
-.asistente__numero {
-  display: block;
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-2xs);
-  font-weight: var(--peso-medio);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-/* Acciones del paso: a la derecha, con la principal en el borde (primera en el DOM). */
-.asistente__acciones {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
-  margin-top: var(--esp-8);
-  padding-top: var(--esp-6);
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-}
-
 /* Paso 1: la carga a la izquierda y el formato de la planilla al lado, en escritorio. */
 .importacion {
   display: grid;
@@ -420,20 +286,6 @@
 .importacion__formato .ejemplo-planilla {
   margin-bottom: 0;
   background: var(--color-superficie);
-}
-
-@media (max-width: 40rem) {
-  .paso {
-    padding: var(--esp-5) var(--esp-6);
-  }
-
-  .paso__sub {
-    display: none;
-  }
-
-  .asistente__contenido {
-    padding: var(--esp-6);
-  }
 }
 
 /*

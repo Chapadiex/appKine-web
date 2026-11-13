@@ -234,6 +234,14 @@
   /* --- Shell (UX-01) ---------------------------------------------------------------- */
   --ancho-barra-lateral: 15.5rem;
   --alto-barra-superior: 3rem;
+
+  /* --- Medidas de control y de composicion ------------------------------------------- */
+  /* Un control (campo, boton, filtro) mide lo mismo en toda la aplicacion; el chico es el de la
+     fila de una tabla. Los anchos de campo los da la grilla de 12 columnas, no un numero suelto. */
+  --alto-control: 2.5rem;
+  --alto-control-chico: 2rem;
+  /* Selector de contexto en una barra (profesional, sede): ancho de un nombre, no de la fila. */
+  --ancho-selector: 22rem;
 }
 
 /*
@@ -512,7 +520,7 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: var(--esp-4);
-  min-height: 2.5rem;
+  min-height: var(--alto-control);
   padding: var(--esp-4) var(--esp-7);
   border: var(--borde-fino) solid var(--color-accion-fondo);
   border-radius: var(--radio-md);
@@ -624,7 +632,8 @@ a.enlace {
 .campo select,
 .campo textarea {
   padding: var(--esp-4) 0.625rem;
-  min-height: 2.5rem;
+  min-height: var(--alto-control);
+  box-sizing: border-box;
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -1258,6 +1267,23 @@ form:not(.formulario--libre),
   --ancho-campo: 12;
 }
 
+/*
+ * Formulario muy ancho (contenido de una pantalla de 1920): cada campo toma tres cuartos de sus
+ * columnas, con dos de minimo. Entran mas campos por fila en vez de estirarse: un "Motivo" de 6
+ * columnas medía 780 px. Lo que pide la fila entera la sigue ocupando.
+ */
+@container (min-width: 90rem) {
+  :is(
+      form:not(.formulario--libre),
+      .grilla-12,
+      .grilla-campos,
+      form:not(.formulario--libre) fieldset
+    )
+    > .campo:not(.campo--12, .campo--ancho, :has(textarea)) {
+    grid-column: span max(2, round(down, calc(var(--ancho-campo, 3) * 3 / 4), 1));
+  }
+}
+
 @container (max-width: 52rem) {
   :is(
       form:not(.formulario--libre),
@@ -1280,6 +1306,54 @@ form:not(.formulario--libre),
     > .campo {
     grid-column: 1 / -1;
   }
+}
+
+/*
+ * Campos de una misma fila alineados (06/11/2026). Cada campo toma cinco filas de la grilla del
+ * formulario y las comparte por `subgrid`: la etiqueta en la primera, el control en la segunda y lo
+ * que venga debajo (ayuda fija, error) en las siguientes. Asi una etiqueta que parte en dos renglones
+ * ("Duracion del turno (min) (opcional)") ya no baja su control respecto de los vecinos, y un mensaje
+ * de error crece hacia abajo sin mover los controles de al lado. Las filas vacias no miden nada: la
+ * separacion es margen del hijo, no `gap` de la grilla.
+ */
+:is(form:not(.formulario--libre), .grilla-12, .grilla-campos, form:not(.formulario--libre) fieldset)
+  > .campo {
+  display: grid;
+  grid-row: span 5;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: start;
+}
+
+:is(form:not(.formulario--libre), .grilla-12, .grilla-campos, form:not(.formulario--libre) fieldset)
+  > .campo
+  > * {
+  grid-column: 1;
+  min-width: 0;
+  margin-top: var(--esp-2);
+}
+
+/* Con la columna fija, la colocacion automatica pone cada hijo en la fila siguiente. */
+:is(form:not(.formulario--libre), .grilla-12, .grilla-campos, form:not(.formulario--libre) fieldset)
+  > .campo
+  > :first-child {
+  align-self: end;
+  margin-top: 0;
+}
+
+/*
+ * Un grupo de opciones dentro de una tarjeta no lleva su propio recuadro: era una tarjeta dentro de
+ * otra ("Alcance" en Vincular colaborador, el filtro de la auditoria). Lo separa su titulo.
+ */
+.tarjeta .grupo {
+  padding: 0;
+  border: 0;
+}
+
+.tarjeta .grupo legend {
+  margin-bottom: var(--esp-4);
+  padding: 0;
+  font-size: var(--tipo-sm);
 }
 
 /*
@@ -1343,7 +1417,7 @@ form > .acciones {
 
 /* Boton compacto para la accion principal de una fila de tabla (48 px de alto). */
 .boton--chico {
-  min-height: 2rem;
+  min-height: var(--alto-control-chico);
   padding: 0 var(--esp-5);
   font-size: var(--tipo-sm);
 }
@@ -1400,10 +1474,14 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Sin palabras sueltas en la ultima linea de un parrafo o una ayuda. */
+/*
+ * Sin palabras sueltas en la ultima linea de un parrafo o una ayuda. `text-wrap-style` y no el atajo
+ * `text-wrap`: el atajo tambien fija `text-wrap-mode: wrap` y anulaba el `nowrap` heredado, asi que
+ * "La mantiene AKINE. Pedir un cambio" se partia palabra por palabra en la columna de acciones.
+ */
 p,
 .ayuda {
-  text-wrap: pretty;
+  text-wrap-style: pretty;
 }
 
 /* Una tarjeta dentro de otra no lleva un segundo borde: la separa el espacio y su titulo. */

@@ -159,9 +159,7 @@
                     <td>{{ fila.intentos ?? 0 }} de {{ fila.maxIntentos ?? '-' }}</td>
                     <td class="tabla__col--secundaria">
                       @if (fila.ultimoError) {
-                        <span class="marca-estado marca-estado--suspendida">{{
-                          fila.ultimoError
-                        }}</span>
+                        <span class="ayuda">{{ fila.ultimoError }}</span>
                       } @else {
                         -
                       }

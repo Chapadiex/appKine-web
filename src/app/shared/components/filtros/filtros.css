@@ -39,7 +39,7 @@
   gap: var(--esp-3);
   flex-shrink: 0;
   min-width: 2.75rem;
-  height: 2.5rem;
+  height: var(--alto-control);
   padding: 0 var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
@@ -65,6 +65,13 @@
   flex: 0 1 auto;
   min-width: 0;
   margin-bottom: 0;
+}
+
+/* El "?" de un filtro frecuente, centrado con el control y no con el campo entero (que lleva label). */
+.filtros-barra__fila > :is(app-ayuda, akine-ayuda) {
+  display: flex;
+  align-items: center;
+  min-height: var(--alto-control);
 }
 
 /*
