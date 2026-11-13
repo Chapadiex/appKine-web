@@ -8,6 +8,10 @@
       No se consulta nada al entrar: sin un filtro la consulta no es valida, así que no habria nada
       util que mostrar.
     </p>
+    <p>
+      Se busca por uno solo de los tres criterios (una entidad, una persona o un rango de fechas);
+      no se pueden combinar.
+    </p>
   </app-ayuda>
   <app-pestanas
     [pestanas]="pestanasDeOrganizacion()"
@@ -19,16 +23,21 @@
   Consulta y resultados en una sola tarjeta (UX-14): el criterio arriba, la toolbar con "Refinar",
   Buscar y el total pegada a la tabla.
 -->
-<section class="tarjeta" aria-label="Consulta de la auditoría">
+<section class="tarjeta" aria-labelledby="titulo-consulta">
+  <h2 id="titulo-consulta">Consulta</h2>
   <form [formGroup]="formulario" (ngSubmit)="buscar()" novalidate>
-    <fieldset class="grupo">
-      <legend>Filtro</legend>
-      <p class="ayuda" id="auditoria-filtro-ayuda">
+    <!--
+      El criterio es una sola eleccion entre tres: un control segmentado, sin recuadro. La
+      explicacion vive en el "?" de la pantalla; aca queda solo para el lector de pantalla.
+    -->
+    <fieldset class="auditoria-criterio">
+      <legend class="visualmente-oculto">Buscar por</legend>
+      <span class="auditoria-criterio__rotulo" aria-hidden="true">Buscar por</span>
+      <p class="visualmente-oculto" id="auditoria-filtro-ayuda">
         Se consulta por uno solo de los tres criterios. No se pueden combinar.
       </p>
 
-      <!-- Los tres criterios en una fila mientras entren (UX-14): son una sola eleccion. -->
-      <div class="opciones-en-linea">
+      <div class="segmentos">
         <div class="opcion-radio">
           <input
             id="auditoria-filtro-entidad"

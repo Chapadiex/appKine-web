@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -9,6 +10,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
 import { PERMISO_TENANT_UPDATE } from '../../../../core/models/permisos';
+import { MarcaStore } from '../../../../core/services/marca.store';
 
 const ORGANIZACION = {
   id: 1,
@@ -39,6 +41,8 @@ describe('OrganizationPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        // Los datos de contacto salen de la marca: sin esto, cada test veria un GET .../marca.
+        { provide: MarcaStore, useValue: { marca: signal(null), adoptar: () => undefined } },
       ],
     }).compileComponents();
 

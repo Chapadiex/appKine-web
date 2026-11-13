@@ -11,9 +11,15 @@
     aria-label="Secciones de AKINE"
   >
     <!-- Solo la marca: la sede activa se dice una vez, en el selector de la barra superior. -->
+    <!-- Con logo cargado, la marca es la del centro; sin logo, la de AKINE. -->
     <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">
-      <span class="marca__logo" aria-hidden="true">A</span>
-      <span class="marca__nombre">AKINE</span>
+      @if (logoDelCentro(); as url) {
+        <!-- El logo suele traer el nombre: repetirlo al lado seria decirlo dos veces. -->
+        <img class="marca__imagen" [src]="url" [alt]="nombreDelCentro()" />
+      } @else {
+        <span class="marca__logo" aria-hidden="true">A</span>
+        <span class="marca__nombre">AKINE</span>
+      }
     </a>
 
     @for (grupo of grupos(); track grupo.etiqueta) {

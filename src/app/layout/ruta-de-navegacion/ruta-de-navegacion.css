@@ -10,7 +10,7 @@
 .titulo {
   overflow: hidden;
   margin: 0;
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font-size: var(--tipo-md);
   font-weight: var(--peso-fuerte);
   text-overflow: ellipsis;
@@ -58,21 +58,21 @@
 /* El separador lo dibuja el CSS y no se lee: el lector anuncia la lista de pasos. */
 .ubicacion__paso + .ubicacion__paso::before {
   content: '/' / '';
-  color: var(--color-texto-suave);
+  color: var(--color-cabecera-texto-suave);
 }
 
 .ubicacion__enlace {
   display: inline-block;
   overflow: hidden;
   padding-block: var(--esp-2);
-  color: var(--color-texto-suave);
+  color: var(--color-cabecera-texto-suave);
   font-size: var(--tipo-sm);
   text-decoration: none;
   text-overflow: ellipsis;
 }
 
 .ubicacion__enlace:hover {
-  color: var(--color-enlace);
+  color: var(--color-cabecera-enlace);
   text-decoration: underline;
 }
 
@@ -89,6 +89,6 @@
   .ubicacion__paso + .ubicacion__paso.ubicacion__paso--padre::before,
   .ubicacion__paso.ubicacion__paso--padre::before {
     content: '‹' / '';
-    color: var(--color-texto-suave);
+    color: var(--color-cabecera-texto-suave);
   }
 }

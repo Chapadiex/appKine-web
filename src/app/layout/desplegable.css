@@ -26,7 +26,7 @@
   border: 0;
   border-radius: var(--radio-md);
   background: transparent;
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font: inherit;
   font-size: var(--tipo-sm);
   cursor: pointer;
@@ -34,12 +34,12 @@
 
 .disparador:hover,
 .disparador[aria-expanded='true'] {
-  background: var(--color-hover);
+  background: var(--color-cabecera-hover);
   box-shadow: inset 0 0 0 var(--borde-fino) var(--color-borde-control);
 }
 
 .disparador__flecha {
-  color: var(--color-texto-suave);
+  color: var(--color-cabecera-texto-suave);
   transition: transform 150ms ease;
 }
 

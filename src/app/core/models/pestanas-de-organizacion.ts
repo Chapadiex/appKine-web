@@ -2,13 +2,19 @@ import { Signal, computed } from '@angular/core';
 
 import { Pestana } from '../../shared/components/pestanas/pestanas';
 import { PermissionsStore } from '../services/permissions.store';
-import { PERMISO_AUDITORIA_READ, PERMISO_CONSULTORIO_MANAGE } from './permisos';
+import {
+  PERMISO_AUDITORIA_READ,
+  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_TENANT_UPDATE,
+} from './permisos';
 
 /** `aria-label` de las pestanas de la organizacion. */
 export const ETIQUETA_PESTANAS_DE_ORGANIZACION = 'Secciones de la organización';
 
 const DATOS: Pestana = { etiqueta: 'Datos del centro', ruta: '/organizacion', exacta: true };
 const SUSCRIPCION: Pestana = { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' };
+/** Colores, logo y datos de contacto del centro: solo quien puede editar la organizacion. */
+const MARCA: Pestana = { etiqueta: 'Marca', ruta: '/organizacion/marca' };
 const AUDITORIA: Pestana = { etiqueta: 'Auditoría', ruta: '/organizacion/auditoria' };
 const ENMIENDA: Pestana = {
   etiqueta: 'Política de enmienda',
@@ -28,6 +34,7 @@ export function pestanasDeOrganizacion(permisos: PermissionsStore): Signal<reado
   return computed(() => [
     DATOS,
     SUSCRIPCION,
+    ...(permisos.tiene(PERMISO_TENANT_UPDATE) ? [MARCA] : []),
     ...(permisos.tiene(PERMISO_AUDITORIA_READ) ? [AUDITORIA] : []),
     ...(permisos.tiene(PERMISO_CONSULTORIO_MANAGE) ? [ENMIENDA] : []),
   ]);

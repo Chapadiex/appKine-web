@@ -80,6 +80,7 @@ export class App {
   private readonly anclaNavegacion = viewChild.required('navegacion', { read: ViewContainerRef });
   private readonly anclaAvisos = viewChild.required('avisos', { read: ViewContainerRef });
   private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
+  private readonly anclaPie = viewChild.required('pie', { read: ViewContainerRef });
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
@@ -115,6 +116,15 @@ export class App {
           }
         },
         // Sin el chunk (red caida, despliegue nuevo) no hay avisos, pero la pantalla sigue.
+        () => undefined,
+      );
+      // Pie institucional del centro: decide solo si se dibuja (contexto y datos cargados).
+      import('./layout/pie-institucional/pie-institucional').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaPie().createComponent(m.PieInstitucional);
+          }
+        },
         () => undefined,
       );
     });

@@ -1,0 +1,38 @@
+@if (visible()) {
+  <footer class="pie" aria-label="Datos del centro">
+    <div class="pie__identidad">
+      @if (logo(); as url) {
+        <img class="pie__logo" [src]="url" [alt]="nombre()" />
+      } @else {
+        <span class="pie__nombre">{{ nombre() }}</span>
+      }
+    </div>
+
+    <ul class="pie__datos">
+      @if (marca()?.telefono; as telefono) {
+        <li>
+          <span class="visualmente-oculto">Teléfono: </span>
+          {{ telefono }}
+        </li>
+      }
+      @if (marca()?.email; as email) {
+        <li>
+          <span class="visualmente-oculto">Email: </span>
+          {{ email }}
+        </li>
+      }
+      @if (marca()?.sitioWeb) {
+        <li>
+          <span class="visualmente-oculto">Sitio web: </span>
+          {{ sitioLegible() }}
+        </li>
+      }
+      @if (marca()?.direccion; as direccion) {
+        <li><span class="visualmente-oculto">Dirección: </span>{{ direccion }}</li>
+      }
+      @if (marca()?.leyenda; as leyenda) {
+        <li>{{ leyenda }}</li>
+      }
+    </ul>
+  </footer>
+}

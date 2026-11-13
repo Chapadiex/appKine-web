@@ -1,0 +1,629 @@
+/*
+  Marca del centro. El formulario es la grilla de 12 del sistema: colores a lo ancho, logo y
+  contacto lado a lado. Ningun color literal: las muestras se pintan con variables que pone el
+  componente (`--m-*`) sobre las superficies de referencia de cada tema (`--ref-*`).
+*/
+
+.marca {
+  row-gap: var(--esp-6);
+}
+
+.marca > .tarjeta {
+  margin: 0;
+}
+
+/* Logo y contacto, lado a lado. */
+.marca > .marca__mitad {
+  grid-column: span 6;
+  align-self: stretch;
+}
+
+/* Titulo de bloque (paletas, vista previa, logo): el mismo en los tres, a la misma altura. */
+.marca__subtitulo {
+  margin: 0 0 var(--esp-4);
+  color: var(--color-texto);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+/* Dentro de una columna con separacion propia no suma margen. */
+.tema__colores > .marca__subtitulo,
+.logo > .marca__subtitulo {
+  margin: 0;
+}
+
+.marca__nota {
+  margin-left: var(--esp-3);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+/* --- Colores: paletas en columna a la izquierda, los dos temas apilados a la derecha --- */
+
+.colores {
+  display: grid;
+  grid-template-columns: 20rem minmax(0, 1fr);
+  gap: var(--esp-8);
+  align-items: start;
+}
+
+/* Dos columnas parejas. */
+.paletas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Una paleta por renglon: la tira de colores y el nombre al lado. */
+.paleta {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  width: 100%;
+  padding: var(--esp-2) var(--esp-4);
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-md);
+  background: none;
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.paleta:hover {
+  background: var(--color-hover);
+}
+
+.paleta--elegida {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-seleccion);
+  font-weight: var(--peso-medio);
+}
+
+.paleta__muestras {
+  display: flex;
+  flex-shrink: 0;
+  overflow: hidden;
+  width: 3.5rem;
+  height: 1.25rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-sm);
+}
+
+.paleta__muestra {
+  flex: 1;
+}
+
+.temas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-7);
+  min-width: 0;
+}
+
+/* Pestañas de tema: una linea con la actual subrayada, como las de la cabecera de pantalla. */
+.temas__pestanas {
+  display: flex;
+  gap: var(--esp-6);
+  box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
+}
+
+.temas__pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2.5rem;
+  padding: 0 var(--esp-2);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.temas__pestana:hover {
+  color: var(--color-texto);
+}
+
+.temas__pestana--actual {
+  border-bottom-color: var(--color-acento);
+  color: var(--color-texto-fuerte);
+}
+
+.temas__pestana:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.temas__avisos {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  color: var(--color-aviso-texto);
+  font-size: var(--tipo-xs);
+}
+
+.temas__pestanas {
+  margin-bottom: var(--esp-6);
+}
+
+.colores[hidden],
+.marca .tema[hidden] {
+  display: none;
+}
+
+/* Colores del tema a la izquierda; a la derecha, su logo. */
+.tema__cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16rem;
+  gap: var(--esp-8);
+  align-items: start;
+}
+
+.tema__colores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  min-width: 0;
+}
+
+.tema__logo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  min-width: 0;
+}
+
+/*
+  Miniatura de la aplicacion. Todo se pinta con las variables `--q-*` que pone el componente: son
+  los colores del tema que se edita, no los del tema en uso. Las zonas son botones hermanos
+  apilados en una grilla (un boton no puede vivir dentro de otro).
+*/
+.maqueta {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  grid-template-rows: 2.25rem minmax(0, 1fr) 1.5rem;
+  overflow: hidden;
+  height: 16.5rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  font-size: var(--tipo-xs);
+}
+
+.maqueta__zona {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.maqueta__zona:focus-visible,
+.maqueta__zona--elegida {
+  position: relative;
+  z-index: 3;
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+.maqueta__barra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  grid-row: 1 / -1;
+  padding: var(--esp-4);
+  background: var(--q-barra);
+  color: var(--q-barra-texto);
+}
+
+.maqueta__marca {
+  width: 60%;
+  height: 0.75rem;
+  margin-bottom: var(--esp-3);
+  border-radius: var(--radio-sm);
+  background: var(--q-principal);
+}
+
+.maqueta__item {
+  height: 0.875rem;
+  border-radius: var(--radio-sm);
+  background: color-mix(in srgb, currentcolor 22%, transparent);
+}
+
+.maqueta__item--actual {
+  background: var(--q-barra-actual);
+  box-shadow: inset 0 0 0 var(--borde-fino) color-mix(in srgb, currentcolor 35%, transparent);
+}
+
+.maqueta__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--esp-5);
+  background: var(--q-cabecera);
+  color: var(--q-cabecera-texto);
+  box-shadow: inset 0 calc(-1 * var(--borde-fino)) 0 var(--q-borde);
+}
+
+.maqueta__avatar {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentcolor 30%, transparent);
+}
+
+.maqueta__pie {
+  grid-row: 3;
+  grid-column: 2;
+  overflow: hidden;
+  padding: 0 var(--esp-5);
+  background: var(--q-pie);
+  color: var(--q-pie-texto);
+  box-shadow: inset 0 var(--borde-fino) 0 var(--q-borde);
+  font-size: 0.6875rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.maqueta__fondo,
+.maqueta__tarjeta,
+.maqueta__contenido {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+.maqueta__fondo {
+  background: var(--q-fondo);
+}
+
+.maqueta__tarjeta,
+.maqueta__contenido {
+  margin: var(--esp-5);
+}
+
+.maqueta__tarjeta {
+  z-index: 1;
+  border: var(--borde-fino) solid var(--q-borde);
+  border-radius: var(--radio-md);
+  background: var(--q-tarjeta);
+}
+
+/* Lo que va dentro de la tarjeta: no atrapa el clic (es de la tarjeta), salvo sus botones. */
+.maqueta__contenido {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  padding: var(--esp-5);
+  color: var(--q-texto);
+  pointer-events: none;
+}
+
+.maqueta__titulo {
+  font-weight: var(--peso-fuerte);
+}
+
+.maqueta__renglon {
+  padding: var(--esp-1) var(--esp-3);
+  border-radius: var(--radio-sm);
+}
+
+.maqueta__renglon--elegido {
+  background: var(--q-fila);
+}
+
+.maqueta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin-top: auto;
+}
+
+.maqueta__acciones .maqueta__zona {
+  min-height: 1.75rem;
+  padding: 0 var(--esp-5);
+  border-radius: var(--radio-md);
+  pointer-events: auto;
+}
+
+.maqueta__acciones .maqueta__zona:focus-visible,
+.maqueta__acciones .maqueta__zona--elegida {
+  outline-offset: var(--foco-offset);
+}
+
+.maqueta__principal {
+  background: var(--q-principal);
+  color: var(--q-sobre-principal);
+  font-weight: var(--peso-medio);
+}
+
+.maqueta__secundario {
+  background: var(--q-secundario-fondo);
+  color: var(--q-secundario-texto);
+  box-shadow: inset 0 0 0 var(--borde-fino) var(--q-secundario);
+}
+
+.maqueta__acciones .maqueta__enlace {
+  padding: 0 var(--esp-2);
+  background: none;
+  color: var(--q-acento);
+  text-decoration: underline;
+}
+
+/* Tira con todos los colores del tema: elegir uno lo trae al editor. */
+.campos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: var(--esp-3);
+}
+
+.campos__campo {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2rem;
+  padding: 0 var(--esp-4) 0 var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  cursor: pointer;
+}
+
+.campos__campo:hover {
+  background: var(--color-hover);
+}
+
+.campos__campo--elegido {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-seleccion);
+  font-weight: var(--peso-medio);
+}
+
+.campos__campo:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.campos__muestra {
+  width: 1rem;
+  height: 1rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+}
+
+/* El editor del color elegido: una sola fila, siempre en el mismo lugar. */
+.tema__editor {
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+/* Aclarar y oscurecer: dos botones cuadrados pegados, del alto del campo. */
+.color__pasos {
+  display: inline-flex;
+  gap: var(--esp-2);
+}
+
+.color__paso {
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+}
+
+/* `.marca .tema`: le gana a la grilla que el sistema le pone a todo `fieldset` de formulario. */
+.marca .tema {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tema__titulo {
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-fuerte);
+}
+
+/* Principal y acento lado a lado; debajo, la vista previa en una tira. */
+.tema__fila {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-4) var(--esp-7);
+  align-items: end;
+}
+
+.color__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-2) var(--esp-4);
+}
+
+.color {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.color__etiqueta {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.color__uso {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+.color__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.color__selector {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2rem;
+  padding: var(--esp-1);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.marca .color__hex {
+  width: 6rem;
+  font-family: var(--fuente-mono);
+}
+
+.color__cabecera .enlace-boton {
+  font-size: var(--tipo-xs);
+}
+
+.enlace-boton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-enlace);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- Aviso de contraste: avisa y deja seguir --- */
+
+.aviso-de-contraste {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  font-size: var(--tipo-sm);
+}
+
+.aviso-de-contraste p {
+  flex: 1;
+  margin: 0;
+}
+
+.aviso-de-contraste .enlace-boton {
+  color: inherit;
+  font-weight: var(--peso-medio);
+}
+
+.aviso-de-contraste__sugerido {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: var(--borde-fino) solid currentcolor;
+  border-radius: var(--radio-sm);
+}
+
+/* --- Logo --- */
+
+.logos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-6);
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  min-width: 0;
+}
+
+.logo__lienzo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 6rem;
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--ref-claro-borde);
+  border-radius: var(--radio-md);
+  background: var(--ref-claro-superficie);
+  color: var(--ref-claro-texto);
+  font-size: var(--tipo-sm);
+}
+
+.logo__lienzo--oscuro {
+  border-color: var(--ref-oscuro-borde);
+  background: var(--ref-oscuro-superficie);
+  color: var(--ref-oscuro-texto);
+}
+
+.logo__lienzo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.logo__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+}
+
+/* Cambios vistos solo en este navegador hasta guardar. */
+.marca__pendiente {
+  margin: 0 auto 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+@media (max-width: 40rem) {
+  .campos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 56rem) {
+  .colores,
+  .tema__cuerpo,
+  .tema__fila,
+  .logos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marca > .marca__mitad {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Nombres en un renglon: en dos columnas no hay lugar para partirlos. */
+.paleta__nombre,
+.campos__campo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campos__muestra {
+  flex-shrink: 0;
+}
