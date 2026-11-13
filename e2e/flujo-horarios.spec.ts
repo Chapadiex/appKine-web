@@ -63,7 +63,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await navegar(page, '/horarios');
     await page.getByLabel('Elegí un profesional').selectOption({ label: profesional.nombre });
     await expect(
-      page.getByRole('heading', { name: `Semana de ${profesional.nombre}`, level: 2 }),
+      page.getByRole('heading', { name: `Horario de ${profesional.nombre}`, level: 2 }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Agregar horario' }).click();
     // Carga rapida (05/11/2026): un solo dia, elegido a mano entre los siete.

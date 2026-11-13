@@ -72,6 +72,7 @@ const TRAZOS = {
   info: ANILLO + 'M12 11v5.5M12 7.6h.01',
   advertencia: 'M12 3.5l9.5 16.5h-19zM12 10v4.5M12 17.4h.01',
   error: ANILLO + 'M9 9l6 6M15 9l-6 6',
+  repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
 } satisfies Record<string, string>;
 
 /** Los iconos que existen. Agregar uno es agregar su trazo en `TRAZOS`. */

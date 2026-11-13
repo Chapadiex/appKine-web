@@ -221,9 +221,55 @@
   gap: var(--esp-3);
 }
 
-/* El modo (una clase o todas las semanas) separado de los campos que siguen. */
+/* El modo (una clase o todas las semanas): dos tarjetas, sin estirarse a todo el ancho. */
 .modo-de-clase {
-  margin-bottom: var(--esp-6);
+  max-width: 44rem;
+}
+
+/* Titulo de bloque del alta: icono en su ficha, y una linea que lo separa del bloque anterior. */
+.seccion-de-clase {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: var(--esp-5) 0;
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  font-size: var(--tipo-md);
+  color: var(--color-texto-fuerte);
+}
+
+.seccion-de-clase__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+}
+
+/* Lo que se va a programar, en una frase, arriba de las acciones. */
+.resumen-de-clase {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  margin: var(--esp-6) 0 0;
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+}
+
+.resumen-de-clase > app-icono {
+  color: var(--color-acento);
+}
+
+.resumen-de-clase__zona {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
 }
 
 /* Rotulo de un grupo de casillas: el mismo peso que el label de un campo. */

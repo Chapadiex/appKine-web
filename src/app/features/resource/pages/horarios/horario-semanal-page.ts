@@ -102,6 +102,18 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
 
+/** Como se mira el horario cargado. */
+type VistaDeHorario = 'dia' | 'semana' | 'mes';
+
+/** Una fecha del calendario mensual con los bloques que rigen ese dia. */
+interface DiaDelMes {
+  readonly fecha: string;
+  readonly numero: number;
+  readonly diaSemana: number;
+  readonly delMes: boolean;
+  readonly bloques: readonly BloqueResponse[];
+}
+
 /** Un dia de la semana con los bloques que el profesional tiene cargados en el. */
 interface DiaConBloques {
   readonly numero: number;
@@ -304,6 +316,101 @@ export class HorarioSemanalPage {
   });
 
   protected readonly totalBloques = computed(() => this.vista.filas().length);
+
+  // --- Vistas del horario: dia, semana o mes --------------------------------------------
+
+  /** Como se mira el horario cargado. Por defecto la semana, que es la forma de la regla. */
+  protected readonly vistaHorario = signal<VistaDeHorario>('semana');
+  /** Dia ISO (lunes = 1) que muestra la vista de dia. Arranca en el de hoy. */
+  protected readonly diaVisto = signal(diaIsoDe(new Date()));
+  /** Primer dia del mes que muestra la vista de mes. */
+  protected readonly mesVisto = signal(primerDiaDelMes(new Date()));
+  protected readonly hoyIso = fechaIso(new Date());
+
+  /** Los dias que dibuja la lista: uno en la vista de dia, los siete en la de semana. */
+  protected readonly diasVisibles = computed<readonly DiaConBloques[]>(() =>
+    this.vistaHorario() === 'dia'
+      ? this.semana().filter((dia) => dia.numero === this.diaVisto())
+      : this.semana(),
+  );
+
+  protected readonly tituloDelMes = computed(() => {
+    const texto = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(
+      this.mesVisto(),
+    );
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  });
+
+  /**
+   * El mes en semanas de lunes a domingo, con los bloques que rigen cada fecha segun su
+   * vigencia. Es la regla proyectada: no aplica feriados ni cierres (eso es el horario efectivo).
+   */
+  protected readonly semanasDelMes = computed<readonly (readonly DiaDelMes[])[]>(() => {
+    const inicio = this.mesVisto();
+    const mes = inicio.getMonth();
+    const cursor = new Date(inicio);
+    cursor.setDate(1 - (diaIsoDe(inicio) - 1));
+    const porDia = new Map(this.semana().map((dia) => [dia.numero, dia.bloques]));
+    const semanas: DiaDelMes[][] = [];
+    do {
+      const fila: DiaDelMes[] = [];
+      for (let i = 0; i < 7; i++) {
+        const fecha = fechaIso(cursor);
+        const diaSemana = diaIsoDe(cursor);
+        fila.push({
+          fecha,
+          numero: cursor.getDate(),
+          diaSemana,
+          delMes: cursor.getMonth() === mes,
+          bloques: (porDia.get(diaSemana) ?? []).filter(
+            (bloque) =>
+              (!bloque.vigenciaDesde || bloque.vigenciaDesde <= fecha) &&
+              (!bloque.vigenciaHasta || fecha < bloque.vigenciaHasta),
+          ),
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      semanas.push(fila);
+    } while (cursor.getMonth() === mes);
+    return semanas;
+  });
+
+  /** `2026-11-08` -> `08/11/2026`. Solo presentacion: el contrato sigue en ISO. */
+  protected fechaCorta(iso: string | undefined): string {
+    const partes = (iso ?? '').split('-');
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : (iso ?? '');
+  }
+
+  protected elegirVistaHorario(vista: VistaDeHorario): void {
+    this.vistaHorario.set(vista);
+  }
+
+  protected elegirDiaVisto(numero: number): void {
+    this.diaVisto.set(numero);
+  }
+
+  protected moverMes(delta: number): void {
+    const actual = this.mesVisto();
+    this.mesVisto.set(new Date(actual.getFullYear(), actual.getMonth() + delta, 1));
+  }
+
+  protected irAlMesDeHoy(): void {
+    this.mesVisto.set(primerDiaDelMes(new Date()));
+  }
+
+  /** Un clic en una fecha del mes abre la vista de dia de ese dia de la semana. */
+  protected abrirDiaDelMes(dia: DiaDelMes): void {
+    this.diaVisto.set(dia.diaSemana);
+    this.vistaHorario.set('dia');
+  }
+
+  protected descripcionDelDiaDelMes(dia: DiaDelMes): string {
+    const cuantos =
+      dia.bloques.length === 0
+        ? 'no atiende'
+        : dia.bloques.map((b) => rangoHorario(b.horaDesde, b.horaHasta)).join(', ');
+    return `${etiquetaDeDia(dia.diaSemana)} ${dia.numero}: ${cuantos}`;
+  }
 
   // --- Paneles y envio ----------------------------------------------------------------
 
@@ -680,7 +787,8 @@ export class HorarioSemanalPage {
         horaHasta: bloque.horaHasta ?? '',
         vigenciaDesde: bloque.vigenciaDesde ?? '',
         vigenciaHasta: bloque.vigenciaHasta ?? '',
-        limpiarVigenciaHasta: false,
+        // Sin fin cargado, la opcion elegida es "Sin fecha de finalizacion" (misma vista que el alta).
+        limpiarVigenciaHasta: !bloque.vigenciaHasta,
       });
       afterNextRender(() => this.enfocar('#editar-bloque-dia'), { injector: this.injector });
     } else {
@@ -1038,8 +1146,11 @@ export class HorarioSemanalPage {
 
     if (valores.limpiarVigenciaHasta) {
       // Con la bandera puesta el backend IGNORA `vigenciaHasta`: mandarlo igual solo
-      // confundiria a quien lea el request en un log.
-      cambios.limpiarVigenciaHasta = true;
+      // confundiria a quien lea el request en un log. Y solo es un cambio si el bloque tenia
+      // fin: sin fin, la opcion ya venia elegida.
+      if (original.vigenciaHasta) {
+        cambios.limpiarVigenciaHasta = true;
+      }
     } else if (
       valores.vigenciaHasta !== '' &&
       valores.vigenciaHasta !== (original.vigenciaHasta ?? '')
@@ -1146,6 +1257,22 @@ function sinVersion(cambios: UpdateBloqueRequest): SimularEdicionBloqueRequest {
 /** Identidad de lo escrito, para saber si el impacto mostrado sigue describiendolo. */
 function claveDeCambios(cambios: UpdateBloqueRequest): string {
   return JSON.stringify(sinVersion(cambios));
+}
+
+/** Dia ISO-8601 de una fecha: lunes = 1 .. domingo = 7. */
+function diaIsoDe(fecha: Date): number {
+  return ((fecha.getDay() + 6) % 7) + 1;
+}
+
+function primerDiaDelMes(fecha: Date): Date {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+}
+
+/** `YYYY-MM-DD` en hora local, comparable como texto con las vigencias del contrato. */
+function fechaIso(fecha: Date): string {
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
 /** Ordena por hora de inicio. `24:00` compara como 1440, sin ningun caso especial. */

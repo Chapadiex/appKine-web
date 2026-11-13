@@ -11,9 +11,9 @@ import {
   untracked,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 
 import { HabilitacionesResponse } from '../../../../api/generated/model/habilitaciones-response';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
@@ -41,6 +41,11 @@ import { ActivityApi } from '../../services/activity-api';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../../shared/components/icono/icono';
+import {
+  OpcionEnTarjeta,
+  OpcionesEnTarjetas,
+} from '../../../../shared/components/opciones-en-tarjetas/opciones-en-tarjetas';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Un profesional elegible: el id que viaja es el de su membership. */
@@ -51,6 +56,24 @@ export interface OpcionDeProfesional {
 
 const HORA_POR_DEFECTO = '09:00';
 const DURACION_POR_DEFECTO = 60;
+/** Sin fecha hasta, la serie semanal dura esto desde la fecha desde. */
+const MESES_DE_SERIE_POR_DEFECTO = 6;
+
+/** Una clase suelta o la misma todas las semanas: las dos alternativas, a la vista. */
+const MODOS: readonly OpcionEnTarjeta[] = [
+  {
+    valor: 'una',
+    etiqueta: 'Una clase',
+    descripcion: 'Un día puntual, a un horario.',
+    icono: 'calendario',
+  },
+  {
+    valor: 'semanal',
+    etiqueta: 'Todas las semanas',
+    descripcion: 'La misma clase en los días que elijas, hasta una fecha.',
+    icono: 'repetir',
+  },
+];
 
 /** Los campos cuyo error del servidor la plantilla muestra junto al control. */
 const CAMPOS_MARCADOS: ReadonlySet<string> = new Set(['capacidad', 'espacioId']);
@@ -75,7 +98,15 @@ const CAMPOS_MARCADOS: ReadonlySet<string> = new Set(['capacidad', 'espacioId'])
  */
 @Component({
   selector: 'app-alta-de-clase-page',
-  imports: [CabeceraDePagina, Ayuda, ReactiveFormsModule, RouterLink, Alerta],
+  imports: [
+    CabeceraDePagina,
+    Ayuda,
+    ReactiveFormsModule,
+    RouterLink,
+    Alerta,
+    Icono,
+    OpcionesEnTarjetas,
+  ],
   templateUrl: './alta-de-clase-page.html',
   styleUrl: '../../activity.css',
 })
@@ -108,6 +139,13 @@ export class AltaDeClasePage {
   });
 
   protected readonly DIAS_DE_LA_SEMANA = DIAS_DE_LA_SEMANA;
+  protected readonly MODOS = MODOS;
+  /** El modo en tarjetas: control suelto, no viaja con el formulario. */
+  protected readonly modoControl = this.fb.control('una');
+  private readonly valores = toSignal(
+    this.formulario.valueChanges.pipe(map(() => this.formulario.getRawValue())),
+    { initialValue: this.formulario.getRawValue() },
+  );
   protected readonly textoDeMotivoDeOmision = textoDeMotivoDeOmision;
   protected readonly fechaDeSerie = fechaDeSerie;
   protected readonly detalleDeOmisionUtil = detalleDeOmisionUtil;
@@ -139,6 +177,32 @@ export class AltaDeClasePage {
     }
     return [...grupos.values()];
   });
+  /**
+   * Lo que se va a programar, en una frase: en modo semanal cuenta las fechas del rango. Es una
+   * cuenta del navegador; feriados y choques los resuelve el backend fecha por fecha.
+   */
+  protected readonly resumen = computed<{ fechas: number | null; texto: string } | null>(() => {
+    const valor = this.valores();
+    if (valor.fecha === '' || valor.horaInicio === '' || valor.horaFin === '') {
+      return null;
+    }
+    const horario = `de ${valor.horaInicio} a ${valor.horaFin}`;
+    if (this.modo() === 'una') {
+      return { fechas: null, texto: `El ${fechaDeSerie(valor.fecha)}, ${horario}.` };
+    }
+    const elegidos = this.diasElegidos();
+    if (elegidos.size === 0 || valor.hasta === '' || valor.hasta < valor.fecha) {
+      return null;
+    }
+    const dias = DIAS_DE_LA_SEMANA.filter((dia) => elegidos.has(dia.valor)).map((d) => d.nombre);
+    return {
+      fechas: contarFechas(valor.fecha, valor.hasta, elegidos),
+      texto:
+        `${new Intl.ListFormat('es').format(dias)} ${horario}, ` +
+        `del ${diaMesYAnio(valor.fecha)} al ${diaMesYAnio(valor.hasta)}.`,
+    };
+  });
+
   /** Modo semanal sin dias o sin fecha hasta valida: se dice junto a esos campos. */
   protected readonly faltaDia = signal(false);
   protected readonly hastaInvalido = signal(false);
@@ -203,6 +267,15 @@ export class AltaDeClasePage {
         this.cargarOfertas();
       });
     });
+    // Mientras nadie haya escrito la fecha hasta, acompaña a la fecha desde.
+    fecha.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.modo() === 'semanal' && this.formulario.controls.hasta.pristine) {
+        this.proponerHasta();
+      }
+    });
+    this.modoControl.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((modo) => this.cambiarModo(modo === 'semanal' ? 'semanal' : 'una'));
     this.formulario.controls.ofertaId.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((id) => this.elegirOferta(id));
@@ -250,9 +323,19 @@ export class AltaDeClasePage {
 
   protected cambiarModo(modo: 'una' | 'semanal'): void {
     this.modo.set(modo);
+    if (modo === 'semanal' && this.formulario.controls.hasta.value === '') {
+      this.proponerHasta();
+    }
     this.resultadoDeSerie.set(null);
     this.error.set(null);
     this.clave = nuevaClaveDeIntento();
+  }
+
+  /** Hasta = desde + seis meses; no ensucia el control, asi sigue a la fecha desde. */
+  private proponerHasta(): void {
+    const { fecha, hasta } = this.formulario.controls;
+    hasta.setValue(sumarMeses(fecha.value, MESES_DE_SERIE_POR_DEFECTO));
+    this.hastaInvalido.set(false);
   }
 
   protected alternarDia(dia: number): void {
@@ -362,6 +445,10 @@ export class AltaDeClasePage {
     if (consultorioId === null) {
       this.error.set(errorSinContextoDeActividad());
       return;
+    }
+    // Sin fecha hasta no es un error: la serie dura seis meses.
+    if (this.formulario.controls.hasta.value === '') {
+      this.proponerHasta();
     }
     const valor = this.formulario.getRawValue();
     this.faltaDia.set(this.diasElegidos().size === 0);
@@ -543,6 +630,43 @@ export function sumarMinutos(hora: string, minutos: number): string {
   }
   const total = Math.min(h * 60 + m + minutos, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** `YYYY-MM-DD` + meses; el 31 cae en el ultimo dia del mes si ese mes es mas corto. */
+export function sumarMeses(fecha: string, meses: number): string {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (partes === null) {
+    return '';
+  }
+  const indice = Number(partes[1]) * 12 + (Number(partes[2]) - 1) + meses;
+  const anio = Math.floor(indice / 12);
+  const mes = indice % 12;
+  const ultimoDia = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(Number(partes[3]), ultimoDia);
+  return `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+/** `2026-11-09` → `09/11/2026`. */
+function diaMesYAnio(fecha: string): string {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  return partes === null ? fecha : `${partes[3]}/${partes[2]}/${partes[1]}`;
+}
+
+/** Cuantas fechas del rango (inclusive) caen en los dias elegidos (1 = lunes … 7 = domingo). */
+export function contarFechas(desde: string, hasta: string, dias: ReadonlySet<number>): number {
+  const fin = Date.parse(hasta + 'T00:00:00Z');
+  let cantidad = 0;
+  // Tope de 400 dias: el backend admite un año y un rango absurdo no cuelga la pantalla.
+  for (
+    let dia = Date.parse(desde + 'T00:00:00Z'), i = 0;
+    dia <= fin && i < 400;
+    dia += 864e5, i++
+  ) {
+    if (dias.has(new Date(dia).getUTCDay() || 7)) {
+      cantidad++;
+    }
+  }
+  return cantidad;
 }
 
 /** `2026-11-09` → `09/11`: en el aviso de la serie el año sobra. */

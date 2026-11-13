@@ -79,7 +79,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
   gap: var(--esp-6);
-  align-items: start;
+  align-items: stretch;
 }
 .calendario-sede[hidden] {
   display: none;
@@ -739,4 +739,283 @@ form.formulario-espacio > .campo,
   .formulario-espacio .grilla-campos > .campo {
     grid-column: 1 / -1;
   }
+}
+
+/*
+ * Vistas del horario del profesional: dia, semana o mes. El control segmentado copia el de la
+ * agenda; el mes proyecta los bloques cargados sobre cada fecha.
+ */
+.segmento-horario {
+  display: inline-flex;
+  min-height: 2.5rem;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+}
+
+.segmento-horario button {
+  padding: 0 var(--esp-5);
+  border: 0;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+}
+
+.segmento-horario button + button {
+  border-left: var(--borde-fino) solid var(--color-borde-control);
+}
+
+.segmento-horario button:hover {
+  background: var(--color-superficie-sutil);
+}
+
+/* La elegida: fondo, peso y subrayado, no solo color (WCAG 1.4.1). */
+.segmento-horario button[aria-pressed='true'] {
+  background: var(--color-seleccion);
+  box-shadow: inset 0 calc(-1 * var(--borde-medio)) 0 var(--color-acento);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-fuerte);
+}
+
+.segmento-horario button:focus-visible {
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+.vista-horario__barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.vista-horario__mes {
+  min-width: 9.5rem;
+  color: var(--color-texto-fuerte);
+}
+
+.mes-horario {
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.mes-horario__cabecera,
+.mes-horario__semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.mes-horario__cabecera span {
+  padding: var(--esp-3) var(--esp-4);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+  text-align: center;
+}
+
+.mes-horario__dia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  min-width: 0;
+  min-height: 6rem;
+  padding: var(--esp-3) var(--esp-4);
+  border: 0;
+  border-top: var(--borde-fino) solid var(--color-borde);
+  border-left: var(--borde-fino) solid var(--color-borde);
+  border-radius: 0;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-2xs);
+  text-align: left;
+}
+
+.mes-horario__semana > :first-child {
+  border-left: 0;
+}
+
+button.mes-horario__dia {
+  cursor: pointer;
+}
+
+button.mes-horario__dia:hover {
+  background: var(--color-superficie-sutil);
+}
+
+button.mes-horario__dia:focus-visible {
+  position: relative;
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+.mes-horario__numero {
+  display: inline-grid;
+  place-items: center;
+  align-self: flex-start;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.mes-horario__dia--fuera .mes-horario__numero {
+  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+.mes-horario__dia--hoy .mes-horario__numero {
+  border-radius: 50%;
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+.mes-horario__bloque {
+  overflow: hidden;
+  padding-left: var(--esp-3);
+  border-left: 3px solid var(--color-acento);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mes-horario__vacio {
+  color: var(--color-texto-suave);
+}
+
+/*
+ * Vista de semana: los siete dias como columnas, con el nombre arriba y sus bloques apilados.
+ * En pantallas angostas vuelve a un renglon por dia.
+ */
+@media (min-width: 48rem) {
+  .semana--columnas {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(10.5rem, 1fr));
+    overflow-x: auto;
+  }
+
+  .semana--columnas .dia {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--esp-3);
+    padding: 0 0 var(--esp-4);
+    border-top: none;
+    border-left: var(--borde-fino) solid var(--color-borde-sutil);
+  }
+
+  .semana--columnas .dia:first-child {
+    border-left: none;
+  }
+
+  .semana--columnas .dia__titulo {
+    padding: var(--esp-3) var(--esp-4);
+    border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+    background: var(--color-superficie-sutil);
+    font-size: var(--tipo-sm);
+    text-align: center;
+  }
+
+  .semana--columnas .dia__bloques {
+    padding: 0 var(--esp-3);
+  }
+
+  .semana--columnas .dia--vacio {
+    padding-top: 0;
+    text-align: center;
+  }
+
+  .semana--columnas .bloque {
+    margin-top: var(--esp-3);
+    padding: var(--esp-3) var(--esp-4);
+  }
+
+  .semana--columnas .bloque:first-child {
+    margin-top: 0;
+  }
+
+  .semana--columnas .bloque__resumen {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--esp-3);
+  }
+
+  .semana--columnas .bloque__numero {
+    display: block;
+    font-weight: var(--peso-normal);
+  }
+
+  .semana--columnas .bloque__datos .ayuda {
+    font-size: var(--tipo-2xs);
+  }
+}
+
+/* El combo del profesional no se estira: deja lugar a las vistas y sus filtros en la misma fila. */
+:host ::ng-deep .filtros-barra__principal:has(#selector-profesional) {
+  flex: 0 1 18rem;
+}
+
+/* Cada dato del bloque con su icono: reloj para el horario, calendario para la vigencia. */
+.bloque__horario,
+.bloque__vigencia {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-3);
+}
+
+.bloque__horario app-icono,
+.bloque__vigencia app-icono {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+  color: var(--color-acento);
+}
+
+.bloque__vigencia {
+  margin: var(--esp-2) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  line-height: 1.4;
+}
+
+.bloque__vigencia app-icono {
+  color: var(--color-texto-suave);
+}
+
+/* El numero de bloque como etiqueta: lo nombra el horario efectivo ("bloque numero 17"). */
+.bloque__horario .bloque__numero {
+  margin-left: auto;
+  padding: 0 var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bloque__horario .bloque__numero::before {
+  content: '#';
+}
+
+.semana--columnas .bloque__horario .bloque__numero {
+  display: inline-block;
+}
+
+/* Titulos de seccion del formulario de horario con su icono. */
+.formulario-horario__seccion > legend app-icono {
+  flex-shrink: 0;
+  margin-right: calc(-1 * var(--esp-2));
+  color: var(--color-acento);
+}
+
+/* Horario general de la sede: usa todo el ancho y entra en una pantalla. */
+.calendario-panel--ancho {
+  max-width: none;
+}
+
+.calendario-panel--ancho .calendario-sede__acciones {
+  margin-top: var(--esp-3);
+  padding-top: var(--esp-3);
 }
