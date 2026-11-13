@@ -37,13 +37,13 @@
   min-width: 0;
   max-width: 16rem;
   padding: 0 var(--esp-5);
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
 }
 
 .reserva-sede app-icono {
-  color: var(--color-acento);
+  color: var(--color-cabecera-acento);
   font-size: var(--tipo-base);
 }
 
@@ -65,7 +65,7 @@
 .titulo {
   overflow: hidden;
   margin: 0;
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font-size: var(--tipo-md);
   font-weight: var(--peso-fuerte);
   text-overflow: ellipsis;
@@ -89,7 +89,7 @@
 }
 
 .marca {
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font-size: var(--tipo-lg);
   font-weight: var(--peso-fuerte);
   letter-spacing: 0.08em;
@@ -133,7 +133,7 @@
   gap: var(--esp-2) var(--esp-4);
   margin: 0;
   font-size: var(--tipo-sm);
-  color: var(--color-texto-suave);
+  color: var(--color-cabecera-texto-suave);
 }
 
 /*
@@ -142,6 +142,6 @@
 */
 .contexto__cambiar {
   padding-block: var(--esp-2);
-  color: var(--color-enlace);
+  color: var(--color-cabecera-enlace);
   text-decoration: underline;
 }

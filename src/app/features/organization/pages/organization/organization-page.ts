@@ -15,6 +15,7 @@ import { validadorDeCuit } from '../../../../shared/utils/cuit';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { ContactoDelCentro } from '../../components/contacto-del-centro/contacto-del-centro';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -74,6 +75,7 @@ type EstadoOrganizacion =
     ReactiveFormsModule,
     PanelLateral,
     PermisoDirective,
+    ContactoDelCentro,
   ],
   templateUrl: './organization-page.html',
   styleUrls: ['../../organization.css', './organization-page.css'],

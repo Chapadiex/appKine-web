@@ -80,6 +80,18 @@
 
   /* --- Superficies -------------------------------------------------------------------- */
   /* Nivel 4 (contenido): paneles, tarjetas, campos. */
+  /*
+    Referencias fijas de los dos temas, iguales en claro y en oscuro: la pantalla de marca del
+    centro muestra como queda cada color sobre la superficie de CADA tema, no solo del actual.
+    Son copia de --color-superficie / --color-texto / --color-borde de cada tema.
+  */
+  --ref-claro-superficie: #ffffff;
+  --ref-claro-texto: #182230;
+  --ref-claro-borde: #d5dee8;
+  --ref-oscuro-superficie: #1d2a36;
+  --ref-oscuro-texto: #f1f5f9;
+  --ref-oscuro-borde: #405365;
+
   --color-superficie: #ffffff;
   /* Fondo de la pagina: el contenido se despega de el por tono. */
   --color-superficie-sutil: #f4f6f9;
@@ -111,6 +123,26 @@
   --color-marca-texto: #182230;
   --color-marca-texto-suave: #3b4754;
   --color-marca-superficie-activa: var(--color-seleccion);
+  /* Hover de la barra lateral y fondo de la barra superior: la marca del centro los tiñe. */
+  --color-marca-hover: var(--color-hover);
+  --color-cabecera-fondo: var(--color-superficie);
+  /* Texto de la barra lateral activa y de la barra superior: cambian si el centro les fija fondo. */
+  --color-marca-activo-texto: var(--color-enlace);
+  --color-cabecera-texto: var(--color-texto-fuerte);
+  --color-cabecera-texto-suave: var(--color-texto-suave);
+  --color-cabecera-acento: var(--color-acento);
+  --color-cabecera-enlace: var(--color-enlace);
+  --color-cabecera-hover: var(--color-hover);
+  /* Pie de pagina: superficie y texto de siempre, salvo que el centro le fije un fondo. */
+  --color-pie-fondo: var(--color-superficie);
+  --color-pie-texto: var(--color-texto);
+  --color-pie-texto-suave: var(--color-texto-suave);
+  /* Boton secundario: neutro en AKINE; la marca del centro le da contorno, texto y fondo. */
+  --color-secundario-borde: var(--color-borde-control);
+  --color-secundario-borde-hover: var(--color-texto-suave);
+  --color-secundario-fondo: var(--color-superficie);
+  --color-secundario-fondo-hover: var(--color-hover);
+  --color-secundario-texto: var(--color-texto);
   --color-acento: #1d4ed8;
   --color-acento-claro: var(--color-seleccion);
   --color-accion-fondo: #2563eb;
@@ -518,14 +550,14 @@ h3 {
  * actua"); el contorno `--color-borde-control` sigue a 3:1 (WCAG 1.4.11) en los dos temas.
  */
 .boton--secundario {
-  border-color: var(--color-borde-control);
-  background: var(--color-superficie);
-  color: var(--color-texto);
+  border-color: var(--color-secundario-borde);
+  background: var(--color-secundario-fondo);
+  color: var(--color-secundario-texto);
 }
 
 .boton--secundario:hover:not(:disabled) {
-  border-color: var(--color-texto-suave);
-  background: var(--color-hover);
+  border-color: var(--color-secundario-borde-hover);
+  background: var(--color-secundario-fondo-hover);
 }
 
 /* Heredaba el fondo gris del deshabilitado y su texto azul: no se leia. */

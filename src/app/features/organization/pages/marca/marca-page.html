@@ -1,0 +1,431 @@
+<app-cabecera-de-pagina titulo="Marca del centro">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Los colores y el logo de tu centro. Los ven todas las personas que trabajan en él, en la barra
+      lateral, los botones y el pie de cada pantalla. Los datos de contacto del pie se cargan en
+      Datos del centro.
+    </p>
+    <p>
+      Verde, rojo y ámbar no cambian: significan lo mismo en todos los centros (confirmado, error,
+      pendiente).
+    </p>
+  </app-ayuda>
+  <app-pestanas
+    [pestanas]="pestanasDeOrganizacion()"
+    [etiqueta]="etiquetaDePestanasDeOrganizacion"
+  />
+</app-cabecera-de-pagina>
+
+<div aria-live="polite">
+  @switch (estado()) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">Cargando la marca del centro&hellip;</p>
+    }
+    @case ('error') {
+      <app-alerta tipo="error" titulo="No pudimos leer la marca del centro">
+        <p>{{ mensajeDeCarga() }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
+    }
+  }
+</div>
+
+@if (estado() === 'listo') {
+  <form (submit)="$event.preventDefault(); guardar()" novalidate class="marca">
+    @if (errorAlGuardar(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos guardar la marca">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    <!-- Una tarjeta con una pestaña por tema: sus colores y su logo. -->
+    <section class="tarjeta" aria-labelledby="titulo-colores">
+      <h2 id="titulo-colores" class="visualmente-oculto">Colores y logo</h2>
+
+      <div class="temas__pestanas" role="tablist" aria-label="Qué estás editando">
+        @for (tema of temas; track tema.id) {
+          @let avisos = avisosDe(tema.id).length;
+          <button
+            type="button"
+            role="tab"
+            class="temas__pestana"
+            [id]="'pestana-tema-' + tema.id"
+            [class.temas__pestana--actual]="pestana() === tema.id"
+            [attr.aria-selected]="pestana() === tema.id"
+            [attr.aria-controls]="'panel-tema-' + tema.id"
+            [attr.tabindex]="pestana() === tema.id ? 0 : -1"
+            (click)="pestana.set(tema.id)"
+            (keydown.arrowRight)="cambiarDePestana($event, 1)"
+            (keydown.arrowLeft)="cambiarDePestana($event, -1)"
+          >
+            {{ tema.titulo }}
+            @if (avisos > 0) {
+              <span class="temas__avisos">
+                <app-icono nombre="advertencia" />
+                {{ avisos
+                }}<span class="visualmente-oculto">
+                  {{ avisos === 1 ? 'aviso de contraste' : 'avisos de contraste' }}</span
+                >
+              </span>
+            }
+          </button>
+        }
+      </div>
+
+      <!-- Paletas en una columna a la izquierda; a la derecha, el tema elegido. -->
+      <div class="colores">
+        <div class="colores__paletas">
+          <h3 class="marca__subtitulo" id="titulo-paletas">Paletas</h3>
+          <ul class="paletas" aria-labelledby="titulo-paletas">
+            @for (paleta of paletas; track paleta.nombre) {
+              <li>
+                <button
+                  type="button"
+                  class="paleta"
+                  [class.paleta--elegida]="esLaPaletaActual(paleta)"
+                  [attr.aria-pressed]="esLaPaletaActual(paleta)"
+                  (click)="usarPaleta(paleta)"
+                >
+                  <span class="paleta__muestras" aria-hidden="true">
+                    @for (color of muestrasDe(paleta); track $index) {
+                      <span class="paleta__muestra" [style.background]="color"></span>
+                    }
+                  </span>
+                  <span class="paleta__nombre">{{ paleta.nombre }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="temas">
+          <!-- Un color: selector, codigo y los dos pasos de intensidad. -->
+          <ng-template #campoDeColor let-campo let-tema="tema">
+            @let valor = colorEfectivo(tema.id, campo.id);
+            @let idCampo = 'color-' + tema.id + '-' + campo.id;
+            <div class="color">
+              <div class="color__cabecera">
+                <label class="color__etiqueta" [for]="idCampo + '-hex'">
+                  {{ campo.etiqueta }}
+                  <span class="color__uso" [id]="idCampo + '-nota'">{{ campo.uso }}</span>
+                </label>
+                @if (esPropio(tema.id, campo.id)) {
+                  <button
+                    type="button"
+                    class="enlace-boton"
+                    (click)="cambiarColor(tema.id, campo.id, null)"
+                  >
+                    {{ campo.reinicio
+                    }}<span class="visualmente-oculto">: {{ campo.etiqueta }}</span>
+                  </button>
+                }
+              </div>
+              <div class="color__controles">
+                <input
+                  class="color__selector"
+                  type="color"
+                  [value]="valor"
+                  [attr.aria-label]="campo.etiqueta + ', selector, ' + tema.titulo"
+                  (input)="cambiarColor(tema.id, campo.id, $any($event.target).value)"
+                />
+                <input
+                  class="color__hex"
+                  type="text"
+                  [id]="idCampo + '-hex'"
+                  [value]="valor"
+                  maxlength="7"
+                  spellcheck="false"
+                  autocomplete="off"
+                  [attr.aria-describedby]="idCampo + '-nota'"
+                  (change)="escribirColor(tema.id, campo.id, $any($event.target))"
+                />
+                <span class="color__pasos">
+                  <button
+                    type="button"
+                    class="boton boton--secundario color__paso"
+                    title="Más claro"
+                    [attr.aria-label]="'Aclarar ' + campo.etiqueta + ', ' + tema.titulo"
+                    (click)="intensidad(tema.id, campo.id, -1)"
+                  >
+                    <app-icono nombre="menos" />
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario color__paso"
+                    title="Más oscuro"
+                    [attr.aria-label]="'Oscurecer ' + campo.etiqueta + ', ' + tema.titulo"
+                    (click)="intensidad(tema.id, campo.id, 1)"
+                  >
+                    <app-icono nombre="agregar" />
+                  </button>
+                </span>
+              </div>
+            </div>
+          </ng-template>
+
+          @for (tema of temas; track tema.id) {
+            <fieldset
+              class="tema"
+              role="tabpanel"
+              [id]="'panel-tema-' + tema.id"
+              [attr.aria-labelledby]="'pestana-tema-' + tema.id"
+              [hidden]="pestana() !== tema.id"
+            >
+              <legend class="visualmente-oculto">{{ tema.titulo }}</legend>
+
+              <div class="tema__cuerpo">
+                <div class="tema__colores">
+                  <!--
+                    Miniatura de la aplicacion con los colores de ESTE tema (aunque no sea el que
+                    esta en uso). Cada zona es un boton: elegirla trae su color al editor de abajo.
+                  -->
+                  <h3 class="marca__subtitulo">
+                    Vista previa
+                    <span class="marca__nota">Elegí una zona para cambiar su color.</span>
+                  </h3>
+                  <div
+                    class="maqueta"
+                    role="group"
+                    [style]="maqueta(tema.id)"
+                    [attr.aria-label]="
+                      'Vista previa de ' + tema.titulo + '. Elegí una zona para cambiar su color.'
+                    "
+                  >
+                    <button
+                      type="button"
+                      class="maqueta__zona maqueta__barra"
+                      [class.maqueta__zona--elegida]="campoElegido() === 'barraLateral'"
+                      [attr.aria-pressed]="campoElegido() === 'barraLateral'"
+                      aria-label="Barra lateral"
+                      title="Barra lateral"
+                      (click)="campoElegido.set('barraLateral')"
+                    >
+                      <span class="maqueta__marca" aria-hidden="true"></span>
+                      <span class="maqueta__item" aria-hidden="true"></span>
+                      <span class="maqueta__item maqueta__item--actual" aria-hidden="true"></span>
+                      <span class="maqueta__item" aria-hidden="true"></span>
+                      <span class="maqueta__item" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="maqueta__zona maqueta__cabecera"
+                      [class.maqueta__zona--elegida]="campoElegido() === 'cabecera'"
+                      [attr.aria-pressed]="campoElegido() === 'cabecera'"
+                      aria-label="Cabecera"
+                      title="Cabecera"
+                      (click)="campoElegido.set('cabecera')"
+                    >
+                      <span class="maqueta__miga" aria-hidden="true">Agenda</span>
+                      <span class="maqueta__avatar" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="maqueta__zona maqueta__fondo"
+                      [class.maqueta__zona--elegida]="campoElegido() === 'fondo'"
+                      [attr.aria-pressed]="campoElegido() === 'fondo'"
+                      aria-label="Fondo de página"
+                      title="Fondo de página"
+                      (click)="campoElegido.set('fondo')"
+                    ></button>
+                    <button
+                      type="button"
+                      class="maqueta__zona maqueta__tarjeta"
+                      [class.maqueta__zona--elegida]="campoElegido() === 'tarjeta'"
+                      [attr.aria-pressed]="campoElegido() === 'tarjeta'"
+                      aria-label="Tarjetas"
+                      title="Tarjetas"
+                      (click)="campoElegido.set('tarjeta')"
+                    ></button>
+                    <button
+                      type="button"
+                      class="maqueta__zona maqueta__pie"
+                      [class.maqueta__zona--elegida]="campoElegido() === 'pie'"
+                      [attr.aria-pressed]="campoElegido() === 'pie'"
+                      aria-label="Pie de página"
+                      title="Pie de página"
+                      (click)="campoElegido.set('pie')"
+                    >
+                      <span aria-hidden="true">Centro · Teléfono · Email</span>
+                    </button>
+                    <div class="maqueta__contenido">
+                      <span class="maqueta__titulo" aria-hidden="true">Turnos de hoy</span>
+                      <span class="maqueta__renglon" aria-hidden="true">Ana García · 9:00</span>
+                      <span class="maqueta__renglon maqueta__renglon--elegido" aria-hidden="true"
+                        >Luis Pérez · 9:30</span
+                      >
+                      <span class="maqueta__acciones">
+                        <button
+                          type="button"
+                          class="maqueta__zona maqueta__principal"
+                          [class.maqueta__zona--elegida]="campoElegido() === 'principal'"
+                          [attr.aria-pressed]="campoElegido() === 'principal'"
+                          aria-label="Color principal"
+                          title="Color principal"
+                          (click)="campoElegido.set('principal')"
+                        >
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          class="maqueta__zona maqueta__secundario"
+                          [class.maqueta__zona--elegida]="campoElegido() === 'botonSecundario'"
+                          [attr.aria-pressed]="campoElegido() === 'botonSecundario'"
+                          aria-label="Botones secundarios"
+                          title="Botones secundarios"
+                          (click)="campoElegido.set('botonSecundario')"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          class="maqueta__zona maqueta__enlace"
+                          [class.maqueta__zona--elegida]="campoElegido() === 'acento'"
+                          [attr.aria-pressed]="campoElegido() === 'acento'"
+                          aria-label="Color de acento"
+                          title="Color de acento"
+                          (click)="campoElegido.set('acento')"
+                        >
+                          Ver detalle
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Todos los colores del tema de un vistazo; el elegido se edita debajo. -->
+                  <div class="campos" role="group" aria-label="Colores del tema">
+                    @for (campo of todosLosCampos; track campo.id) {
+                      <button
+                        type="button"
+                        class="campos__campo"
+                        [class.campos__campo--elegido]="campoElegido() === campo.id"
+                        [attr.aria-pressed]="campoElegido() === campo.id"
+                        (click)="campoElegido.set(campo.id)"
+                      >
+                        <span
+                          class="campos__muestra"
+                          [style.background]="colorEfectivo(tema.id, campo.id)"
+                          aria-hidden="true"
+                        ></span>
+                        {{ campo.etiqueta }}
+                      </button>
+                    }
+                  </div>
+
+                  <div class="tema__editor">
+                    <ng-container
+                      [ngTemplateOutlet]="campoDeColor"
+                      [ngTemplateOutletContext]="{ $implicit: definicionElegida(), tema: tema }"
+                    />
+                  </div>
+
+                  @for (aviso of avisosDe(tema.id); track aviso.campo) {
+                    <div class="aviso-de-contraste" role="status">
+                      <app-icono nombre="advertencia" />
+                      <p>
+                        {{ aviso.texto }}
+                        <button
+                          type="button"
+                          class="enlace-boton"
+                          (click)="cambiarColor(tema.id, aviso.campo, aviso.sugerido)"
+                        >
+                          Usar el tono sugerido
+                        </button>
+                      </p>
+                      <span
+                        class="aviso-de-contraste__sugerido"
+                        [style.background]="aviso.sugerido"
+                        aria-hidden="true"
+                      ></span>
+                    </div>
+                  }
+                </div>
+
+                <!-- El logo de ESTE tema, al lado de sus colores. Se guarda al subirlo. -->
+                <div class="tema__logo">
+                  @let url = urlDeLogo(tema.id);
+                  <div class="logo">
+                    <h3 class="marca__subtitulo">Logo de {{ tema.titulo.toLowerCase() }}</h3>
+                    <div class="logo__lienzo" [class.logo__lienzo--oscuro]="tema.id === 'oscuro'">
+                      @if (url) {
+                        <img [src]="url" [alt]="'Logo actual para ' + tema.titulo" />
+                      } @else {
+                        <span>Sin logo</span>
+                      }
+                    </div>
+                    <div class="logo__acciones">
+                      <input
+                        #archivo
+                        class="visualmente-oculto"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        tabindex="-1"
+                        [attr.aria-label]="'Archivo del logo para ' + tema.titulo"
+                        (change)="subirLogo(tema.id, archivo)"
+                      />
+                      <button
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        [disabled]="subiendoLogo()"
+                        (click)="archivo.click()"
+                      >
+                        {{ url ? 'Reemplazar' : 'Subir logo'
+                        }}<span class="visualmente-oculto">: {{ tema.titulo }}</span>
+                      </button>
+                      @if (tieneLogo(tema.id)) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          [disabled]="subiendoLogo()"
+                          (click)="quitarLogo(tema.id)"
+                        >
+                          Quitar<span class="visualmente-oculto">
+                            el logo de {{ tema.titulo }}</span
+                          >
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <p class="ayuda ayuda--fija">
+                    PNG, JPG o WebP de hasta 500 kB. Se guarda al subirlo.
+                    @if (tema.id === 'oscuro') {
+                      Sin logo propio, en oscuro se usa el del tema claro.
+                    }
+                  </p>
+                  @if (errorDeLogo(); as mensaje) {
+                    <app-alerta tipo="error" titulo="No pudimos guardar el logo">
+                      <p>{{ mensaje }}</p>
+                    </app-alerta>
+                  }
+                </div>
+              </div>
+            </fieldset>
+          }
+        </div>
+      </div>
+    </section>
+
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="guardando() || !hayCambios()">
+        Guardar los cambios
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="guardando() || !hayCambios()"
+        (click)="descartar()"
+      >
+        Descartar
+      </button>
+      <!-- Al final: la barra va de derecha a izquierda, asi los botones no cambian de lado. -->
+      @if (hayCambios()) {
+        <p class="marca__pendiente" role="status">
+          Estás viendo los cambios solo vos. Guardá para aplicarlos a todo el centro.
+        </p>
+      }
+    </div>
+  </form>
+}
