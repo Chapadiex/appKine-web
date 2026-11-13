@@ -51,6 +51,8 @@ export interface OpcionDeProfesional {
 
 const HORA_POR_DEFECTO = '09:00';
 const DURACION_POR_DEFECTO = 60;
+/** Sin fecha hasta, la serie semanal dura esto desde la fecha desde. */
+const MESES_DE_SERIE_POR_DEFECTO = 6;
 
 /** Los campos cuyo error del servidor la plantilla muestra junto al control. */
 const CAMPOS_MARCADOS: ReadonlySet<string> = new Set(['capacidad', 'espacioId']);
@@ -203,6 +205,12 @@ export class AltaDeClasePage {
         this.cargarOfertas();
       });
     });
+    // Mientras nadie haya escrito la fecha hasta, acompaña a la fecha desde.
+    fecha.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.modo() === 'semanal' && this.formulario.controls.hasta.pristine) {
+        this.proponerHasta();
+      }
+    });
     this.formulario.controls.ofertaId.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((id) => this.elegirOferta(id));
@@ -250,9 +258,19 @@ export class AltaDeClasePage {
 
   protected cambiarModo(modo: 'una' | 'semanal'): void {
     this.modo.set(modo);
+    if (modo === 'semanal' && this.formulario.controls.hasta.value === '') {
+      this.proponerHasta();
+    }
     this.resultadoDeSerie.set(null);
     this.error.set(null);
     this.clave = nuevaClaveDeIntento();
+  }
+
+  /** Hasta = desde + seis meses; no ensucia el control, asi sigue a la fecha desde. */
+  private proponerHasta(): void {
+    const { fecha, hasta } = this.formulario.controls;
+    hasta.setValue(sumarMeses(fecha.value, MESES_DE_SERIE_POR_DEFECTO));
+    this.hastaInvalido.set(false);
   }
 
   protected alternarDia(dia: number): void {
@@ -362,6 +380,10 @@ export class AltaDeClasePage {
     if (consultorioId === null) {
       this.error.set(errorSinContextoDeActividad());
       return;
+    }
+    // Sin fecha hasta no es un error: la serie dura seis meses.
+    if (this.formulario.controls.hasta.value === '') {
+      this.proponerHasta();
     }
     const valor = this.formulario.getRawValue();
     this.faltaDia.set(this.diasElegidos().size === 0);
@@ -543,6 +565,20 @@ export function sumarMinutos(hora: string, minutos: number): string {
   }
   const total = Math.min(h * 60 + m + minutos, 23 * 60 + 59);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** `YYYY-MM-DD` + meses; el 31 cae en el ultimo dia del mes si ese mes es mas corto. */
+export function sumarMeses(fecha: string, meses: number): string {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (partes === null) {
+    return '';
+  }
+  const indice = Number(partes[1]) * 12 + (Number(partes[2]) - 1) + meses;
+  const anio = Math.floor(indice / 12);
+  const mes = indice % 12;
+  const ultimoDia = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(Number(partes[3]), ultimoDia);
+  return `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
 /** `2026-11-09` → `09/11`: en el aviso de la serie el año sobra. */
