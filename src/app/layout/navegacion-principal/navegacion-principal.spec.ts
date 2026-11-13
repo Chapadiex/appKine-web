@@ -141,24 +141,18 @@ describe('NavegacionPrincipal', () => {
     expect(enlaces(fixture)).toContain('Horarios de profesionales');
   });
 
-  it('muestra el alta manual en Configuración solo con permiso de gestión', async () => {
+  it('el alta manual no está en el menú: se entra desde Colaboradores, que queda marcado', async () => {
     conContexto();
     const fixture = montar();
-    responderPermisos([PERMISO_COLABORADOR_READ]);
+    responderPermisos([PERMISO_COLABORADOR_READ, PERMISO_COLABORADOR_MANAGE]);
     fixture.detectChanges();
+    expect(enlaces(fixture)).toContain('Colaboradores');
     expect(enlaces(fixture)).not.toContain('Alta manual de colaborador');
-
-    TestBed.inject(PermissionsStore).cargar().subscribe();
-    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
-      permissions: [PERMISO_COLABORADOR_READ, PERMISO_COLABORADOR_MANAGE],
-    });
-    fixture.detectChanges();
-    expect(enlaces(fixture)).toContain('Alta manual de colaborador');
 
     await router.navigateByUrl('/organizacion/colaboradores/manual/nuevo');
     fixture.detectChanges();
     expect(desplegados(fixture)).toEqual(['Configuración']);
-    expect(marcados(fixture)).toEqual(['Alta manual de colaborador']);
+    expect(marcados(fixture)).toEqual(['Colaboradores']);
   });
 
   /**

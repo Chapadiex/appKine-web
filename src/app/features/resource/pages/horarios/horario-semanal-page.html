@@ -130,7 +130,12 @@
           </p>
         </app-ayuda>
         @if (estado().tipo === 'listo') {
-          <div class="segmento-horario" filtro-frecuente role="group" aria-label="Vista del horario">
+          <div
+            class="segmento-horario"
+            filtro-frecuente
+            role="group"
+            aria-label="Vista del horario"
+          >
             <button
               type="button"
               [attr.aria-pressed]="vistaHorario() === 'dia'"
@@ -292,96 +297,96 @@
             }
           </div>
         } @else {
-        <div class="semana" [class.semana--columnas]="vistaHorario() === 'semana'">
-          @for (dia of diasVisibles(); track dia.numero) {
-            <section class="dia" [attr.aria-labelledby]="'dia-' + dia.numero">
-              <h3 class="dia__titulo" [id]="'dia-' + dia.numero">{{ dia.etiqueta }}</h3>
+          <div class="semana" [class.semana--columnas]="vistaHorario() === 'semana'">
+            @for (dia of diasVisibles(); track dia.numero) {
+              <section class="dia" [attr.aria-labelledby]="'dia-' + dia.numero">
+                <h3 class="dia__titulo" [id]="'dia-' + dia.numero">{{ dia.etiqueta }}</h3>
 
-              <div class="dia__bloques">
-                @if (dia.bloques.length === 0) {
-                  <p class="ayuda dia--vacio">No atiende</p>
-                } @else {
-                  <ul class="lista-datos">
-                    @for (bloque of dia.bloques; track bloque.id ?? $index) {
-                      <li
-                        class="bloque"
-                        [class.bloque--conflicto]="esBloqueEnConflicto(bloque)"
-                        [class.bloque--seleccionado]="bloqueEnPanel()?.bloque?.id === bloque.id"
-                      >
-                        <div class="bloque__resumen">
-                          <div class="bloque__datos">
-                            <!--
+                <div class="dia__bloques">
+                  @if (dia.bloques.length === 0) {
+                    <p class="ayuda dia--vacio">No atiende</p>
+                  } @else {
+                    <ul class="lista-datos">
+                      @for (bloque of dia.bloques; track bloque.id ?? $index) {
+                        <li
+                          class="bloque"
+                          [class.bloque--conflicto]="esBloqueEnConflicto(bloque)"
+                          [class.bloque--seleccionado]="bloqueEnPanel()?.bloque?.id === bloque.id"
+                        >
+                          <div class="bloque__resumen">
+                            <div class="bloque__datos">
+                              <!--
                               El numero del bloque se muestra porque hay una pantalla que lo
                               NOMBRA: el horario efectivo explica cada franja con "la produjo el
                               horario semanal, bloque numero 17". Sin el numero visible aca, esa
                               frase manda a buscar una fila que no se puede identificar entre dos
                               parecidas.
                             -->
-                            <p class="bloque__horario">
-                              <app-icono nombre="horarios" />
-                              <span>{{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}</span>
-                              <span class="bloque__numero"
-                                ><span class="visualmente-oculto">bloque número </span
-                                >{{ bloque.id }}</span
+                              <p class="bloque__horario">
+                                <app-icono nombre="horarios" />
+                                <span>{{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}</span>
+                                <span class="bloque__numero"
+                                  ><span class="visualmente-oculto">bloque número </span
+                                  >{{ bloque.id }}</span
+                                >
+                              </p>
+                              <p class="bloque__vigencia">
+                                <app-icono nombre="calendario" />
+                                <span>
+                                  <span class="visualmente-oculto">Rige </span>desde
+                                  {{ fechaCorta(bloque.vigenciaDesde) }}
+                                  @if (bloque.vigenciaHasta) {
+                                    <br />hasta {{ fechaCorta(bloque.vigenciaHasta) }}
+                                    <span class="visualmente-oculto">(exclusivo)</span>
+                                  } @else {
+                                    · sin fin
+                                  }
+                                </span>
+                              </p>
+                            </div>
+                            @if (!ajeno()) {
+                              <app-acciones-de-fila
+                                *akinePermiso="permisoManage"
+                                [de]="'el bloque número ' + bloque.id"
                               >
-                            </p>
-                            <p class="bloque__vigencia">
-                              <app-icono nombre="calendario" />
-                              <span>
-                                <span class="visualmente-oculto">Rige </span>desde
-                                {{ fechaCorta(bloque.vigenciaDesde) }}
-                                @if (bloque.vigenciaHasta) {
-                                  <br />hasta {{ fechaCorta(bloque.vigenciaHasta) }}
-                                  <span class="visualmente-oculto">(exclusivo)</span>
-                                } @else {
-                                  · sin fin
-                                }
-                              </span>
-                            </p>
+                                <button
+                                  principal
+                                  type="button"
+                                  class="boton boton--secundario boton--chico"
+                                  (click)="abrirPanel(bloque, 'editar')"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  class="accion--peligro"
+                                  (click)="abrirPanel(bloque, 'baja')"
+                                >
+                                  Dar de baja
+                                </button>
+                              </app-acciones-de-fila>
+                            }
                           </div>
-                          @if (!ajeno()) {
-                            <app-acciones-de-fila
-                              *akinePermiso="permisoManage"
-                              [de]="'el bloque número ' + bloque.id"
-                            >
-                              <button
-                                principal
-                                type="button"
-                                class="boton boton--secundario boton--chico"
-                                (click)="abrirPanel(bloque, 'editar')"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                class="accion--peligro"
-                                (click)="abrirPanel(bloque, 'baja')"
-                              >
-                                Dar de baja
-                              </button>
-                            </app-acciones-de-fila>
-                          }
-                        </div>
 
-                        <!--
+                          <!--
                           La marca del solapamiento. No alcanza con el cartel: cuando hay dos
                           bloques parecidos, el mensaje solo dice cual es si ademas se lo puede
                           ver senalado. El texto acompana al color porque el color solo no
                           comunica (WCAG 1.4.1).
                         -->
-                        @if (esBloqueEnConflicto(bloque)) {
-                          <p class="estado estado--error" role="alert">
-                            Este es el bloque con el que se pisa lo que pediste.
-                          </p>
-                        }
-                      </li>
-                    }
-                  </ul>
-                }
-              </div>
-            </section>
-          }
-        </div>
+                          @if (esBloqueEnConflicto(bloque)) {
+                            <p class="estado estado--error" role="alert">
+                              Este es el bloque con el que se pisa lo que pediste.
+                            </p>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              </section>
+            }
+          </div>
         }
       }
     }

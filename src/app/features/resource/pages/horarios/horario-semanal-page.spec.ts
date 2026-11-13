@@ -192,7 +192,7 @@ describe('HorarioSemanalPage', () => {
     // el profesional acotado a la sede 99, cuyo alta terminaria siempre en 409.
     const opciones = [...fixture.nativeElement.querySelectorAll('#selector-profesional option')];
     expect(opciones.map((opcion) => (opcion as HTMLOptionElement).textContent?.trim())).toEqual([
-      'Sin elegir',
+      'Elegí un profesional',
       'Ana Kine',
     ]);
   });
@@ -364,7 +364,7 @@ describe('HorarioSemanalPage', () => {
     // El formulario carga las horas TAL CUAL llegaron, sin reformatear.
     expect(campo(fixture, '#editar-bloque-desde')).toBe('09:00');
 
-    seleccionar(fixture, '#editar-bloque-dia', '4');
+    elegirDiaDeEdicion(fixture, 4);
     enviar(fixture, 'form');
 
     // Primero la consulta sin efectos, con el mismo cuerpo y SIN version. Sin turnos afectados
@@ -393,7 +393,7 @@ describe('HorarioSemanalPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    seleccionar(fixture, '#editar-bloque-dia', '4');
+    elegirDiaDeEdicion(fixture, 4);
     enviar(fixture, 'form');
 
     httpMock
@@ -561,7 +561,7 @@ describe('HorarioSemanalPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    seleccionar(fixture, '#editar-bloque-dia', '5');
+    elegirDiaDeEdicion(fixture, 5);
     enviar(fixture, 'form');
 
     // La consulta previa ya lo sabe: el PUT no llega a salir.
@@ -575,8 +575,11 @@ describe('HorarioSemanalPage', () => {
 
     // Dejar el formulario activo invitaria a reenviar algo que ya sabemos que va a fallar.
     expect(texto(fixture)).toContain('La baja no se deshace');
-    const dia: HTMLSelectElement | null = fixture.nativeElement.querySelector('#editar-bloque-dia');
-    expect(dia?.disabled).toBe(true);
+    const dias: HTMLInputElement[] = [
+      ...fixture.nativeElement.querySelectorAll('#editar-bloque-dia input[type="radio"]'),
+    ];
+    expect(dias.length).toBe(7);
+    expect(dias.every((dia) => dia.disabled)).toBe(true);
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
   });
 
@@ -953,6 +956,25 @@ function seleccionar(
   }
   desplegable.value = valor;
   desplegable.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/**
+ * Elige el dia en la edicion. Son pastillas de radio, de lunes (1) a domingo (7): el `[value]`
+ * lo administra Angular y no llega al DOM, asi que se elige por posicion.
+ */
+function elegirDiaDeEdicion(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  diaSemana: number,
+) {
+  const radios = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
+    '#editar-bloque-dia input[type="radio"]',
+  );
+  const radio = radios[diaSemana - 1];
+  if (radio === undefined) {
+    throw new Error(`No existe el día ${diaSemana} en la edición`);
+  }
+  radio.click();
   fixture.detectChanges();
 }
 
