@@ -219,7 +219,7 @@
         </section>
       </div>
 
-      <div class="calendario-panel" [hidden]="pestana !== 'horario'">
+      <div class="calendario-panel calendario-panel--ancho" [hidden]="pestana !== 'horario'">
         <section class="tarjeta" aria-labelledby="titulo-horario-general">
           <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
             <h2 id="titulo-horario-general">Horario general de la sede</h2>
@@ -251,6 +251,7 @@
               }
 
               <app-horario-semanal
+                class="horario-compacto"
                 idBase="calendario-horario"
                 [franjas]="formularioHorario"
                 [mostrarErrores]="intentosHorario() > 0"

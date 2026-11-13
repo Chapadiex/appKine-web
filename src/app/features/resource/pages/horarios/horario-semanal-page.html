@@ -21,6 +21,10 @@
       Para un bloque que llega hasta el final del día, la hora de fin es
       <b>{{ horaMedianoche }}</b> y no 00:00: las 00:00 serían el principio del día, no el final.
     </p>
+    <p>
+      Los bloques dados de baja no se muestran: la fila sobrevive en la auditoría con su motivo y su
+      autor.
+    </p>
   </app-ayuda>
   @if (estado().tipo === 'listo') {
     <div cabeceraAcciones>
@@ -100,13 +104,13 @@
         [unidad]="['bloque cargado', 'bloques cargados']"
       >
         <div class="campo" filtro-principal>
-          <label for="selector-profesional">Elegí un profesional</label>
+          <label for="selector-profesional" class="visualmente-oculto">Elegí un profesional</label>
           <select
             id="selector-profesional"
             [value]="membershipElegido() ?? ''"
             (change)="elegirProfesional($any($event.target).value)"
           >
-            <option value="">Sin elegir</option>
+            <option value="">Elegí un profesional</option>
             <!--
               `[selected]` ademas del `[value]` del select: cuando el profesional viene en la URL,
               esta elegido ANTES de que llegue la lista de vinculos, y asignarle a un `<select>` un
@@ -125,6 +129,75 @@
             vinculo acotado a otra sede no puede tener horario acá.
           </p>
         </app-ayuda>
+        @if (estado().tipo === 'listo') {
+          <div class="segmento-horario" filtro-frecuente role="group" aria-label="Vista del horario">
+            <button
+              type="button"
+              [attr.aria-pressed]="vistaHorario() === 'dia'"
+              (click)="elegirVistaHorario('dia')"
+            >
+              Día
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="vistaHorario() === 'semana'"
+              (click)="elegirVistaHorario('semana')"
+            >
+              Semana
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="vistaHorario() === 'mes'"
+              (click)="elegirVistaHorario('mes')"
+            >
+              Mes
+            </button>
+          </div>
+        }
+        @if (estado().tipo === 'listo' && vistaHorario() === 'dia') {
+          <div class="segmento-horario" filtro-frecuente role="group" aria-label="Día de la semana">
+            @for (dia of diasParaPastillas; track dia.numero) {
+              <button
+                type="button"
+                [attr.aria-pressed]="diaVisto() === dia.numero"
+                [attr.aria-label]="dia.etiqueta"
+                (click)="elegirDiaVisto(dia.numero)"
+              >
+                {{ dia.corto }}
+              </button>
+            }
+          </div>
+        }
+        @if (estado().tipo === 'listo' && vistaHorario() === 'mes') {
+          <div class="vista-horario__barra" filtro-frecuente>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              aria-label="Mes anterior"
+              (click)="moverMes(-1)"
+            >
+              <app-icono nombre="chevron-izquierda" />
+            </button>
+            <button type="button" class="boton boton--secundario" (click)="irAlMesDeHoy()">
+              Hoy
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              aria-label="Mes siguiente"
+              (click)="moverMes(1)"
+            >
+              <app-icono nombre="chevron-derecha" />
+            </button>
+            <strong class="vista-horario__mes" aria-live="polite">{{ tituloDelMes() }}</strong>
+            <app-ayuda titulo="Sobre la vista del mes">
+              <p>
+                Es el horario cargado, proyectado sobre cada fecha según la vigencia de cada bloque.
+                No descuenta feriados ni cierres: eso se ve en <b>Horario efectivo</b>.
+              </p>
+            </app-ayuda>
+          </div>
+        }
       </app-filtros>
       <!--
         Con la lista recortada, un desplegable al que le falta gente se lee como "esa persona
@@ -136,21 +209,9 @@
     }
   }
 
-  <div class="seccion-cabecera">
-    <h2 id="titulo-semana">
-      {{ profesionalElegido() ? 'Semana de ' + nombreDelProfesional() : 'Semana del profesional' }}
-    </h2>
-    @if (estado().tipo === 'listo') {
-      <div class="seccion-cabecera__datos">
-        <app-ayuda titulo="Sobre los bloques">
-          <p>
-            Los bloques dados de baja no se muestran: la fila sobrevive en la auditoría con su
-            motivo y su autor.
-          </p>
-        </app-ayuda>
-      </div>
-    }
-  </div>
+  <h2 id="titulo-semana" class="visualmente-oculto">
+    {{ profesionalElegido() ? 'Horario de ' + nombreDelProfesional() : 'Horario del profesional' }}
+  </h2>
 
   <div aria-live="polite">
     @switch (estado().tipo) {
@@ -194,8 +255,45 @@
           <p class="ayuda ayuda--fija">{{ textoModoLectura() }}</p>
         }
 
-        <div class="semana">
-          @for (dia of semana(); track dia.numero) {
+        @if (vistaHorario() === 'mes') {
+          <div class="mes-horario" role="region" [attr.aria-label]="'Horario de ' + tituloDelMes()">
+            <div class="mes-horario__cabecera" aria-hidden="true">
+              @for (dia of diasParaPastillas; track dia.numero) {
+                <span>{{ dia.corto }}</span>
+              }
+            </div>
+            @for (fila of semanasDelMes(); track fila[0].fecha) {
+              <div class="mes-horario__semana">
+                @for (dia of fila; track dia.fecha) {
+                  @if (dia.delMes) {
+                    <button
+                      type="button"
+                      class="mes-horario__dia"
+                      [class.mes-horario__dia--hoy]="dia.fecha === hoyIso"
+                      [attr.aria-label]="descripcionDelDiaDelMes(dia)"
+                      (click)="abrirDiaDelMes(dia)"
+                    >
+                      <span class="mes-horario__numero">{{ dia.numero }}</span>
+                      @for (bloque of dia.bloques; track bloque.id ?? $index) {
+                        <span class="mes-horario__bloque">{{
+                          rangoHorario(bloque.horaDesde, bloque.horaHasta)
+                        }}</span>
+                      } @empty {
+                        <span class="mes-horario__vacio">No atiende</span>
+                      }
+                    </button>
+                  } @else {
+                    <span class="mes-horario__dia mes-horario__dia--fuera" aria-hidden="true">
+                      <span class="mes-horario__numero">{{ dia.numero }}</span>
+                    </span>
+                  }
+                }
+              </div>
+            }
+          </div>
+        } @else {
+        <div class="semana" [class.semana--columnas]="vistaHorario() === 'semana'">
+          @for (dia of diasVisibles(); track dia.numero) {
             <section class="dia" [attr.aria-labelledby]="'dia-' + dia.numero">
               <h3 class="dia__titulo" [id]="'dia-' + dia.numero">{{ dia.etiqueta }}</h3>
 
@@ -220,20 +318,26 @@
                               parecidas.
                             -->
                             <p class="bloque__horario">
-                              {{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}
-                              <span class="bloque__numero">bloque número {{ bloque.id }}</span>
+                              <app-icono nombre="horarios" />
+                              <span>{{ rangoHorario(bloque.horaDesde, bloque.horaHasta) }}</span>
+                              <span class="bloque__numero"
+                                ><span class="visualmente-oculto">bloque número </span
+                                >{{ bloque.id }}</span
+                              >
                             </p>
-
-                            @if (bloque.vigenciaHasta) {
-                              <p class="ayuda ayuda--fija">
-                                Rige desde {{ bloque.vigenciaDesde }} hasta
-                                {{ bloque.vigenciaHasta }} (exclusivo)
-                              </p>
-                            } @else {
-                              <p class="ayuda ayuda--fija">
-                                Rige desde {{ bloque.vigenciaDesde }}, sin fin previsto
-                              </p>
-                            }
+                            <p class="bloque__vigencia">
+                              <app-icono nombre="calendario" />
+                              <span>
+                                <span class="visualmente-oculto">Rige </span>desde
+                                {{ fechaCorta(bloque.vigenciaDesde) }}
+                                @if (bloque.vigenciaHasta) {
+                                  <br />hasta {{ fechaCorta(bloque.vigenciaHasta) }}
+                                  <span class="visualmente-oculto">(exclusivo)</span>
+                                } @else {
+                                  · sin fin
+                                }
+                              </span>
+                            </p>
                           </div>
                           @if (!ajeno()) {
                             <app-acciones-de-fila
@@ -278,6 +382,7 @@
             </section>
           }
         </div>
+        }
       }
     }
   </div>
@@ -310,7 +415,7 @@
 
       <!-- Dias: un modelo de un clic, o los siete dias uno por uno. -->
       <fieldset class="formulario-horario__seccion" [attr.aria-describedby]="idErrorDeDias()">
-        <legend>Días de atención</legend>
+        <legend><app-icono nombre="calendario" />Días de atención</legend>
         <div class="pastillas" role="radiogroup" aria-label="Selección rápida de días">
           @for (modo of modos; track modo.id) {
             <label class="pastilla">
@@ -348,6 +453,7 @@
       <!-- Horario: desde y hasta en la misma fila, con la grilla de 30 o 15 minutos. -->
       <fieldset class="formulario-horario__seccion">
         <legend>
+          <app-icono nombre="horarios" />
           Horario
           <button
             type="button"
@@ -397,7 +503,7 @@
 
       <!-- Vigencia: lo normal es "desde hoy, sin fin"; las fechas aparecen solo si se piden. -->
       <fieldset class="formulario-horario__seccion">
-        <legend>Vigencia</legend>
+        <legend><app-icono nombre="calendario" />Vigencia</legend>
         <div class="vigencia-fila">
           <div class="pastillas" role="radiogroup" aria-label="Inicio de la vigencia">
             <label class="pastilla">
@@ -507,18 +613,33 @@
         }
 
         <fieldset class="formulario-horario__seccion">
+          <legend><app-icono nombre="calendario" />Día de atención</legend>
+          <div
+            id="editar-bloque-dia"
+            class="pastillas pastillas--dias"
+            role="radiogroup"
+            aria-label="Día de la semana"
+            tabindex="-1"
+          >
+            @for (opcion of diasParaPastillas; track opcion.numero) {
+              <label class="pastilla pastilla--dia">
+                <input
+                  type="radio"
+                  name="diaSemana"
+                  [value]="opcion.numero.toString()"
+                  formControlName="diaSemana"
+                />
+                <span aria-hidden="true">{{ opcion.corto }}</span>
+                <span class="visualmente-oculto">{{ opcion.etiqueta }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <fieldset class="formulario-horario__seccion">
           <legend>
-            Día y horario
-            <app-ayuda titulo="Sobre la edición">
-              <p>
-                Se envía solo lo que cambies. El profesional no se puede cambiar: mover un bloque a
-                otra persona es un bloque nuevo.
-              </p>
-              <p>
-                Si el cambio quita horario, los turnos pendientes que caían ahí quedan en conflicto:
-                no se cancelan ni se mueven. Antes de guardar se calcula cuántos son.
-              </p>
-            </app-ayuda>
+            <app-icono nombre="horarios" />
+            Horario
             <button
               type="button"
               class="boton-texto formulario-horario__paso"
@@ -529,19 +650,6 @@
             </button>
           </legend>
           <div class="horario-fila">
-            <div class="campo campo--dia">
-              <label for="editar-bloque-dia">Día</label>
-              <select
-                id="editar-bloque-dia"
-                formControlName="diaSemana"
-                [attr.aria-invalid]="solapado() ? 'true' : null"
-                [attr.aria-describedby]="solapado() ? 'editar-bloque-horas-error' : null"
-              >
-                @for (opcion of dias; track opcion.numero) {
-                  <option [value]="opcion.numero">{{ opcion.etiqueta }}</option>
-                }
-              </select>
-            </div>
             <div class="campo">
               <app-selector-de-hora
                 idCampo="editar-bloque-desde"
@@ -563,6 +671,16 @@
                 [describedBy]="errorDeHoras(false) !== null ? 'editar-bloque-horas-error' : null"
               />
             </div>
+            <app-ayuda titulo="Sobre la edición" class="horario-fila__ayuda">
+              <p>
+                Se envía solo lo que cambies. El profesional no se puede cambiar: mover un bloque a
+                otra persona es un bloque nuevo.
+              </p>
+              <p>
+                Si el cambio quita horario, los turnos pendientes que caían ahí quedan en conflicto:
+                no se cancelan ni se mueven. Antes de guardar se calcula cuántos son.
+              </p>
+            </app-ayuda>
           </div>
           <p class="formulario-horario__error" id="editar-bloque-horas-error" role="alert">
             @if (errorDeHoras(false); as mensaje) {
@@ -572,8 +690,8 @@
         </fieldset>
 
         <fieldset class="formulario-horario__seccion">
-          <legend>Vigencia</legend>
-          <div class="horario-fila">
+          <legend><app-icono nombre="calendario" />Vigencia</legend>
+          <div class="vigencia-fila">
             <div class="campo campo--fecha">
               <label for="editar-bloque-vigencia-desde">Rige desde</label>
               <input
@@ -582,28 +700,42 @@
                 formControlName="vigenciaDesde"
               />
             </div>
-            <div class="campo campo--fecha">
-              <label for="editar-bloque-vigencia-hasta">Rige hasta</label>
-              <input
-                id="editar-bloque-vigencia-hasta"
-                type="date"
-                formControlName="vigenciaHasta"
-                aria-describedby="editar-bloque-vigencia-hasta-ayuda"
-                [disabled]="formularioEdicion.controls.limpiarVigenciaHasta.value"
-              />
-              <p class="ayuda" id="editar-bloque-vigencia-hasta-ayuda">
-                Primer día en que ya no rige.
-              </p>
-            </div>
           </div>
-          <label class="opcion-casilla">
-            <input
-              id="editar-bloque-limpiar"
-              type="checkbox"
-              formControlName="limpiarVigenciaHasta"
-            />
-            Sin fecha de finalización
-          </label>
+          <div class="vigencia-fila">
+            <div class="pastillas" role="radiogroup" aria-label="Fin de la vigencia">
+              <label class="pastilla">
+                <input
+                  id="editar-bloque-limpiar"
+                  type="radio"
+                  name="limpiarVigenciaHasta"
+                  [value]="true"
+                  formControlName="limpiarVigenciaHasta"
+                />
+                <span>Sin fecha de finalización</span>
+              </label>
+              <label class="pastilla">
+                <input
+                  type="radio"
+                  name="limpiarVigenciaHasta"
+                  [value]="false"
+                  formControlName="limpiarVigenciaHasta"
+                />
+                <span>Hasta una fecha</span>
+              </label>
+            </div>
+            @if (!formularioEdicion.controls.limpiarVigenciaHasta.value) {
+              <div class="campo campo--fecha">
+                <label for="editar-bloque-vigencia-hasta" class="visualmente-oculto">
+                  Fecha de fin (primer día en que ya no rige)
+                </label>
+                <input
+                  id="editar-bloque-vigencia-hasta"
+                  type="date"
+                  formControlName="vigenciaHasta"
+                />
+              </div>
+            }
+          </div>
         </fieldset>
 
         <app-impacto-previo [estado]="impacto()" />
