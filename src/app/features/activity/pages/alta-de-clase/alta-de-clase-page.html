@@ -14,28 +14,9 @@
 </app-cabecera-de-pagina>
 
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
-  <div class="pastillas modo-de-clase" role="radiogroup" aria-label="Cuántas clases">
-    <label class="pastilla">
-      <input
-        type="radio"
-        name="modo-de-clase"
-        value="una"
-        [checked]="modo() === 'una'"
-        (change)="cambiarModo('una')"
-      />
-      <span>Una clase</span>
-    </label>
-    <label class="pastilla">
-      <input
-        type="radio"
-        name="modo-de-clase"
-        value="semanal"
-        [checked]="modo() === 'semanal'"
-        (change)="cambiarModo('semanal')"
-      />
-      <span>Todas las semanas</span>
-    </label>
-  </div>
+  <app-opciones-en-tarjetas class="modo-de-clase" [formControl]="modoControl" [opciones]="MODOS">
+    <span leyenda>¿Cuántas clases?</span>
+  </app-opciones-en-tarjetas>
 
   <!-- Fechas de la serie que no se programaron: se quedan a la vista para resolverlas a mano. -->
   @if (resultadoDeSerie(); as serie) {
@@ -125,9 +106,13 @@
   }
 
   <!--
-    Grilla de 12 (UX-14): oferta, titulo y profesional en una fila; fecha, horas, cupo y box en la
-    siguiente. Sin profesional, oferta y titulo se reparten la fila.
+    Tres bloques, en el orden en que se piensa una clase: que se dicta, cuando, donde y para
+    cuantos. Grilla de 12 (UX-14) dentro de cada uno.
   -->
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="actividades" /></span>
+    Actividad
+  </h2>
   <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
     <label for="clase-oferta">Oferta grupal</label>
     <select
@@ -195,6 +180,10 @@
     </app-alerta>
   }
 
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="horarios" /></span>
+    Cuándo
+  </h2>
   @if (modo() === 'semanal') {
     <div class="campo campo--ancho">
       <p class="campo__rotulo" id="clase-dias-rotulo">Días de la semana</p>
@@ -249,11 +238,11 @@
         [attr.aria-describedby]="hastaInvalido() ? 'clase-hasta-error' : 'clase-hasta-ayuda'"
       />
       @if (hastaInvalido()) {
-        <p class="campo__error" id="clase-hasta-error">
-          No puede ser antes de la fecha desde.
-        </p>
+        <p class="campo__error" id="clase-hasta-error">No puede ser antes de la fecha desde.</p>
       } @else {
-        <p class="ayuda" id="clase-hasta-ayuda">Incluye ese día. Vacía, seis meses; hasta un año.</p>
+        <p class="ayuda" id="clase-hasta-ayuda">
+          Incluye ese día. Vacía, seis meses; hasta un año.
+        </p>
       }
     </div>
   }
@@ -294,6 +283,25 @@
     }
   </div>
 
+  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
+  @if (conflicto() === 'horario') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese horario no está libre"
+      id="clase-conflicto-horario"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
+      }
+    </app-alerta>
+  }
+
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="sede" /></span>
+    Lugar y cupo
+  </h2>
   <div class="campo">
     <label for="clase-capacidad">Cupo</label>
     <input
@@ -346,23 +354,6 @@
     </div>
   }
 
-  <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
-
-  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
-  @if (conflicto() === 'horario') {
-    <app-alerta
-      class="campo--ancho"
-      tipo="advertencia"
-      titulo="Ese horario no está libre"
-      id="clase-conflicto-horario"
-    >
-      <p>{{ error()?.mensaje }}</p>
-      @if (error()?.motivo) {
-        <p>Detalle: {{ error()?.motivo }}</p>
-      }
-    </app-alerta>
-  }
-
   <!-- El cupo no entra en la oferta o en el box, o queda por debajo de los ya inscriptos. -->
   @if (conflicto() === 'cupo') {
     <app-alerta
@@ -375,9 +366,26 @@
     </app-alerta>
   }
 
+  <!-- Lo que se va a programar, dicho en una frase antes de confirmar. -->
+  @if (resumen(); as r) {
+    <p class="resumen-de-clase">
+      <app-icono nombre="calendario" />
+      <span>
+        @if (r.fechas !== null) {
+          <b>{{ r.fechas }} {{ r.fechas === 1 ? 'fecha' : 'fechas' }}:</b>
+        }
+        {{ r.texto }}
+        <span class="resumen-de-clase__zona">Fecha y horas en la zona de la sede.</span>
+      </span>
+    </p>
+  } @else {
+    <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
+  }
+
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">
     <button type="submit" class="boton" [disabled]="enviando()">
+      <app-icono nombre="tilde" />
       {{
         enviando() ? 'Programando…' : modo() === 'semanal' ? 'Programar clases' : 'Programar clase'
       }}
