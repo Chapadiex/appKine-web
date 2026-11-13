@@ -368,7 +368,7 @@ export class SolicitudesCatalogoPage {
       case 'ESPECIALIDAD':
         return 'Especialidad';
       case 'PRACTICA':
-        return 'Practica';
+        return 'Práctica';
       case 'NOMENCLADOR':
         return 'Nomenclador';
       default:

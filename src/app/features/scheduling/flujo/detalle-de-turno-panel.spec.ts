@@ -1519,7 +1519,11 @@ describe('DetalleDeTurnoPanel', () => {
 
     it('se editan con la versión leída, avisan y releen', async () => {
       const fixture = await abierto(conObservaciones('Trae estudios'));
-      expect(texto(fixture)).toContain('Observaciones: Trae estudios');
+      expect(
+        raiz(fixture)
+          .querySelector('[aria-labelledby="flujo-observaciones-titulo"] .flujo__dato')
+          ?.textContent?.trim(),
+      ).toBe('Trae estudios');
 
       clic(fixture, 'Editar observaciones');
       const campo = raiz(fixture).querySelector('#flujo-observaciones') as HTMLTextAreaElement;
@@ -1541,7 +1545,11 @@ describe('DetalleDeTurnoPanel', () => {
 
       expect(avisos()).toEqual(['Observaciones guardadas.']);
       expect(raiz(fixture).querySelector('#flujo-observaciones')).toBeNull();
-      expect(texto(fixture)).toContain('Observaciones: Trae estudios y la orden');
+      expect(
+        raiz(fixture)
+          .querySelector('[aria-labelledby="flujo-observaciones-titulo"] .flujo__dato')
+          ?.textContent?.trim(),
+      ).toBe('Trae estudios y la orden');
     });
 
     it('sin observaciones lo dice, y "Descartar" no manda nada', async () => {

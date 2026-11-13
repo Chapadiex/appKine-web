@@ -71,7 +71,7 @@ interface DiaDelEditor {
  * Horario semanal en forma de semana: un renglon por dia, con un interruptor de abierto o
  * cerrado y sus horas (refactor del alta de sede, 03/11/2026).
  *
- * <p>Reemplaza en el alta a {@link EditorDeFranjas}, que pedia armar la semana franja por
+ * <p>Reemplaza en el alta a el antiguo editor de franjas, que pedia armar la semana franja por
  * franja —dia, desde, hasta, cinco veces para un lunes a viernes—. <b>Edita el mismo
  * `FormArray`</b> que arma `crearFranjasForm()`, asi que el cuerpo que viaja, las validaciones y
  * los errores del servidor por indice no cambian: cambia solo como se carga.

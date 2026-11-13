@@ -20,10 +20,11 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
 };
 
 /**
- * Avisos globales ("toasts"), arriba a la derecha y debajo de la barra superior.
+ * Avisos globales ("toasts"), abajo a la derecha (decision del 08/11/2026).
  *
- * <p><b>Arriba y no abajo.</b> Los formularios largos y los paneles laterales tienen la barra de
- * acciones pegada al pie: un aviso abajo la taparia, o quedaria tapado por ella.
+ * <p><b>Abajo y no arriba.</b> Arriba a la derecha tapaban las acciones de la cabecera de la
+ * pantalla ("Nuevo turno", "Bloquear"). Abajo pueden quedar sobre la barra de acciones de un panel
+ * lateral: duran unos segundos, se cierran a mano y el mas nuevo queda pegado al borde.
  *
  * <p><b>Capa superior.</b> El contenedor es un `popover="manual"`: vive en la capa superior, por
  * encima de la pagina. Un panel lateral (`dialog` modal) que se abre despues lo taparia, asi que
@@ -31,8 +32,8 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
  *
  * <p><b>Accesible.</b> Cada aviso dice su severidad con icono y con texto (oculto para la vista,
  * leido por el lector), no solo con color. El contenedor existe antes del primer aviso: los exitos
- * e informaciones se anuncian por su region `polite`; las advertencias y los errores, con
- * `role="alert"`. Pasar el puntero o el foco pausa el cierre automatico.
+ * e informaciones se anuncian por su region `polite` y llevan `role="status"`; las advertencias y
+ * los errores, `role="alert"`. Pasar el puntero o el foco pausa el cierre automatico.
  */
 @Component({
   selector: 'app-avisos',
@@ -50,7 +51,7 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
       @for (aviso of store.avisos(); track aviso.id) {
         <div
           class="aviso aviso--{{ aviso.tipo }}"
-          [attr.role]="aviso.tipo === 'error' || aviso.tipo === 'advertencia' ? 'alert' : null"
+          [attr.role]="aviso.tipo === 'error' || aviso.tipo === 'advertencia' ? 'alert' : 'status'"
           (mouseenter)="store.pausar(aviso.id)"
           (mouseleave)="store.reanudar(aviso.id)"
           (focusin)="store.pausar(aviso.id)"
@@ -77,7 +78,13 @@ const PREFIJO: Readonly<Record<TipoDeAviso, string>> = {
               </button>
             }
           </div>
-          <button type="button" class="aviso__cerrar" (click)="store.cerrar(aviso.id)">
+          <button
+            type="button"
+            class="aviso__cerrar"
+            aria-label="Cerrar el aviso"
+            title="Cerrar el aviso"
+            (click)="store.cerrar(aviso.id)"
+          >
             <app-icono nombre="cerrar" />
             <span class="visualmente-oculto">Cerrar el aviso</span>
           </button>

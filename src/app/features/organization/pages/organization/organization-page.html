@@ -2,6 +2,10 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>Datos del centro sobre el que estás trabajando.</p>
   </app-ayuda>
+  <app-pestanas
+    [pestanas]="pestanasDeOrganizacion()"
+    [etiqueta]="etiquetaDePestanasDeOrganizacion"
+  />
 </app-cabecera-de-pagina>
 
 <!-- Ficha y accesos lado a lado en escritorio (refactor UX/UI del 28/10/2026). -->
@@ -25,23 +29,44 @@
         }
 
         @case ('listo') {
-          <dl class="detalle">
+          <dl class="detalle detalle--ficha">
             <dt>Nombre</dt>
             <dd>{{ organizacion()?.name }}</dd>
 
             <dt>Estado operativo</dt>
-            <dd>{{ organizacion()?.operationalStatus }}</dd>
+            <dd>
+              @switch (organizacion()?.operationalStatus) {
+                @case ('ACTIVA') {
+                  <span class="marca-estado marca-estado--activa">Activa</span>
+                }
+                @case ('SUSPENDIDA') {
+                  <span class="marca-estado marca-estado--suspendida">Suspendida</span>
+                }
+                @case ('CANCELADA') {
+                  <span class="marca-estado marca-estado--revocada">Cancelada</span>
+                }
+                @case ('BAJA') {
+                  <span class="marca-estado marca-estado--revocada">Dada de baja</span>
+                }
+                @default {
+                  {{ organizacion()?.operationalStatus }}
+                }
+              }
+            </dd>
 
             <dt>Zona horaria</dt>
             <dd>{{ organizacion()?.timezone }}</dd>
 
             <dt>Identificador de soporte</dt>
             <dd>{{ organizacion()?.slug }}</dd>
+          </dl>
 
-            <!--
-              Datos fiscales (05/11/2026): los heredan las sedes que no tienen los suyos, asi que
-              viven aca y no se repiten sede por sede.
-            -->
+          <!--
+            Datos fiscales (05/11/2026): los heredan las sedes que no tienen los suyos, asi que
+            viven aca y no se repiten sede por sede. Bloque propio, igual que el de contacto.
+          -->
+          <h3 class="contacto__titulo" id="titulo-fiscal">Datos fiscales</h3>
+          <dl class="detalle detalle--ficha" aria-labelledby="titulo-fiscal">
             <dt>Razón social</dt>
             <dd>{{ organizacion()?.legalName || '-' }}</dd>
 
@@ -53,7 +78,7 @@
           </dl>
 
           @if (organizacion()?.active !== false) {
-            <p class="acciones">
+            <p class="acciones acciones--ficha">
               <button
                 *akinePermiso="permisoEditar"
                 type="button"
@@ -64,6 +89,9 @@
               </button>
             </p>
           }
+
+          <!-- Lo que muestra el pie de cada pantalla; vive en la marca del centro. -->
+          <app-contacto-del-centro />
 
           @if (organizacion()?.active === false) {
             <p class="estado estado--error" role="alert">
@@ -77,9 +105,13 @@
             <p>{{ mensajeError() }}</p>
             <p class="alerta__acciones">
               @if (faltaContexto()) {
-                <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+                <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                  >Elegir contexto</a
+                >
               } @else {
-                <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Reintentar
+                </button>
               }
             </p>
           </app-alerta>

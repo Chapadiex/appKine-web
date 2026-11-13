@@ -67,6 +67,8 @@ const HAY_POPOVER = typeof HTMLElement.prototype.showPopover === 'function';
       #boton
       type="button"
       class="ayuda-contextual__boton"
+      [attr.aria-label]="'Ayuda: ' + titulo()"
+      [title]="'Ayuda: ' + titulo()"
       [attr.aria-expanded]="abierta()"
       [attr.aria-controls]="idPanel"
       (click)="alternar()"
@@ -86,7 +88,13 @@ const HAY_POPOVER = typeof HTMLElement.prototype.showPopover === 'function';
     >
       <div class="ayuda-contextual__cabecera">
         <p class="ayuda-contextual__titulo" [id]="idTitulo">{{ titulo() }}</p>
-        <button type="button" class="ayuda-contextual__cerrar" (click)="cerrar()">
+        <button
+          type="button"
+          class="ayuda-contextual__cerrar"
+          aria-label="Cerrar la ayuda"
+          title="Cerrar la ayuda"
+          (click)="cerrar()"
+        >
           <app-icono nombre="cerrar" />
           <span class="visualmente-oculto">Cerrar la ayuda</span>
         </button>

@@ -20,21 +20,13 @@ import { PERMISO_CATALOGO_READ } from '../../core/models/permisos';
  * Un id en la URL seria un segundo lugar desde donde elegir tenant, y el unico que el token
  * acota es el del contexto.
  *
- * <p><b>Las estaticas van antes que la parametrica.</b> `:tipo` se comeria `solicitudes` y
- * `nomencladores/:id/vigencias` si estuviera primero, y el sintoma seria una pantalla de
- * catalogo pidiendole al backend el tipo `solicitudes`, que no existe.
+ * <p><b>Las estaticas van antes que la parametrica.</b> `:tipo` se comeria
+ * `nomencladores/:id/vigencias` si estuviera primero.
+ *
+ * <p><b>Sin pedidos a la plataforma</b> (11/11/2026): el usuario saco la pantalla
+ * `/catalogo/solicitudes` y todo camino hacia ella. El centro carga sus conceptos propios.
  */
 export const routes: Routes = [
-  {
-    path: 'solicitudes',
-    canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
-    loadComponent: () =>
-      import('./pages/solicitudes/solicitudes-page').then((m) => m.SolicitudesPage),
-    title: 'AKINE - Pedidos al catálogo de la plataforma',
-    // Sin `ancho`: la tabla tiene cuatro columnas y una de ellas es prosa larga -la
-    // justificacion-. A 1216px el texto queda en renglones de 200 caracteres, que es
-    // exactamente lo que el ancho de lectura existe para evitar.
-  },
   {
     path: 'nomencladores/:nomencladorId/vigencias',
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],

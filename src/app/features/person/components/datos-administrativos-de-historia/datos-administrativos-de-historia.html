@@ -63,7 +63,14 @@
                 @for (caso of tablaDeCasos.visibles(); track caso.id) {
                   <tr>
                     <td>N.º {{ caso.numeroCaso }}</td>
-                    <td>{{ caso.estado === 'ACTIVO' ? 'Activo' : 'Cerrado' }}</td>
+                    <td>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="caso.estado === 'ACTIVO'"
+                        [class.marca-estado--neutra]="caso.estado !== 'ACTIVO'"
+                        >{{ caso.estado === 'ACTIVO' ? 'Activo' : 'Cerrado' }}</span
+                      >
+                    </td>
                     <td>{{ nombreDeOferta(caso) }}</td>
                     <td>{{ fecha(caso.abiertoEn) }}</td>
                     <td class="tabla__col--secundaria">{{ fecha(caso.cerradoEn) || '—' }}</td>

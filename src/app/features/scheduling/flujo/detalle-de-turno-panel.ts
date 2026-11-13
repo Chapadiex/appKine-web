@@ -36,6 +36,7 @@ import { SessionService } from '../../../core/services/session.service';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../shared/components/ayuda/ayuda';
+import { Icono } from '../../../shared/components/icono/icono';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { enlaceComoLlegar } from '../../../shared/utils/enlaces-de-mapa';
 import { PermisoDirective } from '../../../shared/directives/permiso.directive';
@@ -62,7 +63,8 @@ import {
   fechaHoraEnZona,
   nombreDeEstado,
   nombreDeEstadoOperativo,
-  simboloDeEstadoOperativo,
+  claseDeTonoOperativo,
+  iconoDeEstadoOperativo,
   textoDeEvento,
   textoDeReprogramado,
   textoDeUltimoMovimiento,
@@ -104,9 +106,9 @@ const QUEDO_VIEJO: ReadonlySet<AccionSugerida> = new Set<AccionSugerida>([
 @Component({
   selector: 'app-detalle-de-turno-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Alerta, Ayuda, ListaDeHorarios, PanelLateral, PermisoDirective],
+  imports: [Alerta, Ayuda, Icono, ListaDeHorarios, PanelLateral, PermisoDirective],
   templateUrl: './detalle-de-turno-panel.html',
-  styleUrl: './flujo.css',
+  styleUrls: ['./flujo.css', '../estados-de-turno.css'],
 })
 export class DetalleDeTurnoPanel implements OnInit {
   private readonly api = inject(SchedulingApi);
@@ -133,7 +135,8 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly MOTIVOS_DE_CANCELACION = MOTIVOS_DE_CANCELACION;
   protected readonly MOTIVOS_DE_REPROGRAMACION = MOTIVOS_DE_REPROGRAMACION;
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
   protected readonly textoDeEvento = textoDeEvento;
   protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly textoDeUltimoMovimiento = textoDeUltimoMovimiento;
@@ -144,7 +147,6 @@ export class DetalleDeTurnoPanel implements OnInit {
   protected readonly turno = signal<TurnoDelDia | null>(null);
   protected readonly cargando = signal(true);
   protected readonly vista = signal<Vista>('resumen');
-  protected readonly masAcciones = signal(false);
   protected readonly enviando = signal(false);
   protected readonly error = signal<ErrorAgenda | null>(null);
   private pedidoDeLectura: Subscription | null = null;
@@ -380,8 +382,28 @@ export class DetalleDeTurnoPanel implements OnInit {
       case 'trasladar':
         return 'Cambiar de sede';
       default:
-        return 'Turno';
+        return 'Detalle del turno';
     }
+  });
+
+  /** Cuanto dura el turno, "45 min" o "1 h 30 min". Solo de lectura: sale del inicio y el fin. */
+  protected readonly duracion = computed(() => {
+    const turno = this.turno();
+    if (turno === null) {
+      return '';
+    }
+    const minutos = Math.round(
+      (Date.parse(turno.fin ?? '') - Date.parse(turno.inicio ?? '')) / 60_000,
+    );
+    if (!Number.isFinite(minutos) || minutos <= 0) {
+      return '';
+    }
+    const horas = Math.floor(minutos / 60);
+    const resto = minutos % 60;
+    if (horas === 0) {
+      return `${minutos} min`;
+    }
+    return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
   });
 
   protected readonly cuando = computed(() => {
@@ -494,7 +516,6 @@ export class DetalleDeTurnoPanel implements OnInit {
 
   protected abrir(vista: Vista): void {
     this.error.set(null);
-    this.masAcciones.set(false);
     this.observacion.set('');
     this.vista.set(vista);
     if (vista === 'historial') {

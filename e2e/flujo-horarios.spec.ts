@@ -63,7 +63,7 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
     await navegar(page, '/horarios');
     await page.getByLabel('Elegí un profesional').selectOption({ label: profesional.nombre });
     await expect(
-      page.getByRole('heading', { name: `Semana de ${profesional.nombre}`, level: 2 }),
+      page.getByRole('heading', { name: `Horario de ${profesional.nombre}`, level: 2 }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Agregar horario' }).click();
     // Carga rapida (05/11/2026): un solo dia, elegido a mano entre los siete.
@@ -125,10 +125,13 @@ test.describe('Horarios y disponibilidad contra el backend real', () => {
 
     // --- El feriado en el calendario de la sede ---
     await navegar(page, '/horarios/calendario');
+    await page.getByRole('link', { name: 'Feriados', exact: true }).click();
     await page.getByLabel('Desde').fill(f);
     await page.getByLabel('Hasta (exclusivo)').fill(sumarDias(f, 1));
     await page.getByRole('button', { name: 'Consultar' }).click();
     await expect(page.getByRole('row').filter({ hasText: feriado!.nombre })).toBeVisible();
+    // La politica esta en la primera pestaña.
+    await page.getByRole('link', { name: 'Resumen y política' }).click();
     await expect(page.getByLabel('La sede cierra los feriados de su calendario')).toBeChecked();
 
     // --- La agenda lo refleja ---

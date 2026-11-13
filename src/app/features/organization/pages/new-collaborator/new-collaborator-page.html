@@ -15,7 +15,9 @@
         <p>{{ mensajeError() }}</p>
         @if (causaError() === 'sin-contexto') {
           <p class="alerta__acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir contexto</a
+            >
           </p>
         }
       </app-alerta>
@@ -151,7 +153,7 @@
       </div>
     </fieldset>
 
-    <div class="campo campo--ancho">
+    <div class="campo campo--6">
       <label for="alta-reason">Motivo</label>
       <input
         id="alta-reason"

@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 
+import { Icono, NombreDeIcono } from '../icono/icono';
+
 /**
  * Estado vacio de un listado (UX-14): en lugar de una tabla vacia, que dice que paso y que hacer.
  *
@@ -8,7 +10,7 @@ import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@a
  *     <a class="boton" routerLink="/organizacion/sedes/nueva">Abrir una sede</a>
  *   </app-estado-vacio>
  *
- *   <app-estado-vacio filtrado titulo="No encontramos sedes" texto="Probá con otra búsqueda o filtros.">
+ *   <app-estado-vacio icono="buscar" titulo="No encontramos sedes" texto="Probá con otra búsqueda o filtros.">
  *     <button class="boton boton--secundario" (click)="limpiar()">Limpiar filtros</button>
  *   </app-estado-vacio>
  * </pre>
@@ -22,8 +24,10 @@ import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@a
   selector: 'app-estado-vacio',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  imports: [Icono],
   styleUrl: './estado-vacio.css',
   template: `
+    <app-icono class="estado-vacio__icono" [nombre]="icono()" />
     <p class="estado-vacio__titulo">{{ titulo() }}</p>
     @if (texto()) {
       <p class="estado-vacio__texto">{{ texto() }}</p>
@@ -35,4 +39,7 @@ import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@a
 export class EstadoVacio {
   readonly titulo = input.required<string>();
   readonly texto = input<string | null>(null);
+
+  /** Icono del vacio (norma: estado = texto + icono). `buscar` para "no hay con esta busqueda". */
+  readonly icono = input<NombreDeIcono>('capas');
 }

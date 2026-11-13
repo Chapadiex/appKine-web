@@ -9,6 +9,8 @@ import {
   computed,
   effect,
   inject,
+  inputBinding,
+  outputBinding,
   signal,
   viewChild,
 } from '@angular/core';
@@ -26,9 +28,10 @@ import { filter, map, startWith } from 'rxjs';
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { AvisosStore } from './core/services/avisos.store';
 import { FlujoDeTurnosStore } from './core/services/flujo-de-turnos.store';
-import { BarraSuperior } from './layout/barra-superior/barra-superior';
+import { BarraSuperiorDiferida } from './layout/barra-superior/barra-superior-diferida';
 import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
-import { NavegacionPrincipal } from './layout/navegacion-principal/navegacion-principal';
+import { PermissionsStore } from './core/services/permissions.store';
+import { PlatformRoleStore } from './core/services/platform-role.store';
 import { PreferenciasStore } from './core/services/preferencias.store';
 import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { SessionService } from './core/services/session.service';
@@ -52,10 +55,16 @@ import { TenantContextStore } from './core/services/tenant-context.store';
  * barra lateral el panel; el estado es uno solo y vive aca. Se cierra al navegar, con Escape
  * y tocando el fondo. Al abrir, el foco entra al panel; al cerrar con Escape, vuelve al
  * boton: sin eso el teclado queda parado en un panel que ya no esta.
+ *
+ * <p><b>Las dos barras llegan despues de la primera pintura</b> (07/11/2026), cada una en su chunk:
+ * la carga inicial esta al borde de su presupuesto y entre las dos, con el icono, pesan mas de
+ * 25 kB. La lateral no se dibuja hasta que la sesion termina de restaurarse, que tarda mas que bajar
+ * el chunk; la superior deja en su lugar a {@link BarraSuperiorDiferida}, con el mismo alto y la
+ * marca. No van en `@defer`, que suma su runtime (~7 kB) a la carga inicial.
  */
 @Component({
   selector: 'app-root',
-  imports: [BarraSuperior, NavegacionPrincipal, RouterLink, RouterOutlet],
+  imports: [BarraSuperiorDiferida, RouterLink, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -68,8 +77,10 @@ export class App {
   private readonly tenant = inject(TenantContextStore);
   private readonly injector = inject(Injector);
 
+  private readonly anclaNavegacion = viewChild.required('navegacion', { read: ViewContainerRef });
   private readonly anclaAvisos = viewChild.required('avisos', { read: ViewContainerRef });
   private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
+  private readonly anclaPie = viewChild.required('pie', { read: ViewContainerRef });
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
@@ -82,6 +93,22 @@ export class App {
     let destruido = false;
     inject(DestroyRef).onDestroy(() => (destruido = true));
     afterNextRender(() => {
+      // La barra lateral: hasta que llega, el shell se dibuja sin su columna (`conBarraLateral`).
+      import('./layout/navegacion-principal/navegacion-principal').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaNavegacion().createComponent(m.NavegacionPrincipal, {
+              bindings: [
+                inputBinding('abierto', this.menuAbierto),
+                outputBinding('cerrar', () => this.cerrarMenu()),
+              ],
+            });
+            this.navegacionMontada.set(true);
+          }
+        },
+        // Sin el chunk no hay barra lateral, pero la pantalla sigue.
+        () => undefined,
+      );
       import('./layout/avisos/avisos').then(
         (m) => {
           if (!destruido) {
@@ -89,6 +116,15 @@ export class App {
           }
         },
         // Sin el chunk (red caida, despliegue nuevo) no hay avisos, pero la pantalla sigue.
+        () => undefined,
+      );
+      // Pie institucional del centro: decide solo si se dibuja (contexto y datos cargados).
+      import('./layout/pie-institucional/pie-institucional').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaPie().createComponent(m.PieInstitucional);
+          }
+        },
         () => undefined,
       );
     });
@@ -118,6 +154,26 @@ export class App {
       );
     });
 
+    // Los permisos y el rol de plataforma deciden que enlaces muestra la barra lateral, y se piden
+    // apenas hay contexto. Lo hace ella tambien, pero llega en su chunk y no tiene que demorarlos:
+    // los dos stores ignoran el pedido repetido.
+    const permisos = inject(PermissionsStore);
+    const rolDePlataforma = inject(PlatformRoleStore);
+    effect(() => {
+      if (
+        this.session.estado() === 'activa' &&
+        this.tenant.context() !== null &&
+        !permisos.cargados()
+      ) {
+        permisos.asegurarCargados();
+      }
+    });
+    effect(() => {
+      if (this.session.estado() !== 'anonimo') {
+        rolDePlataforma.asegurarCargado();
+      }
+    });
+
     // Al cerrar sesion nada de lo que decian los avisos sigue siendo cierto.
     effect(() => {
       if (this.session.estado() === 'anonimo') {
@@ -133,9 +189,16 @@ export class App {
 
   protected readonly menuAbierto = signal(false);
 
-  /** Hay barra lateral cuando hay contexto: es la misma condicion con la que ella se dibuja. */
+  /** Ya llego el chunk de la barra lateral. */
+  private readonly navegacionMontada = signal(false);
+
+  /**
+   * Hay barra lateral cuando hay contexto: es la misma condicion con la que ella se dibuja. Y
+   * cuando ya llego: sin ella su columna quedaria vacia y la pagina caeria adentro.
+   */
   protected readonly conBarraLateral = computed(
     () =>
+      this.navegacionMontada() &&
       !this.session.restaurando() &&
       this.session.estado() === 'activa' &&
       this.tenant.context() !== null,

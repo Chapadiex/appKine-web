@@ -51,6 +51,7 @@
               data-testid="caso-estado"
               class="marca-estado"
               [class.marca-estado--activa]="activo()"
+              [class.marca-estado--neutra]="!activo()"
             >
               {{ estadoEnPalabras() }}
             </dd>

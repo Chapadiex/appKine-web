@@ -231,7 +231,7 @@
             <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
             <th
               scope="col"
-              class="tabla__col--secundaria"
+              class="importe tabla__col--secundaria"
               appOrdenable
               [tabla]="tabla"
               columna="precio"
@@ -589,10 +589,16 @@
                 <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="tipo">
                   Movimiento
                 </th>
-                <th scope="col" appOrdenable [tabla]="ordenDeMovimientos" columna="cantidad">
+                <th
+                  scope="col"
+                  class="importe"
+                  appOrdenable
+                  [tabla]="ordenDeMovimientos"
+                  columna="cantidad"
+                >
                   Creditos
                 </th>
-                <th scope="col">Saldo</th>
+                <th scope="col" class="importe">Saldo</th>
                 <th scope="col">Detalle</th>
               </tr>
             </thead>

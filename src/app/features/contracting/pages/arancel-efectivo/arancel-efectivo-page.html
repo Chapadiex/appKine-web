@@ -54,7 +54,7 @@
             Elegí el financiador del paciente.
           </p>
         }
-        <p class="ayuda ayuda--fija" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
+        <p class="ayuda" id="consulta-financiador-ayuda">{{ notaParticular }}</p>
       </div>
 
       <div class="campo campo--3">
@@ -154,7 +154,9 @@
         <p>{{ mensaje }}</p>
         @if (faltaContexto()) {
           <p class="alerta__acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir un consultorio</a
+            >
           </p>
         }
       </app-alerta>

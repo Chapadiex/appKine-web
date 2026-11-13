@@ -96,7 +96,9 @@
           titulo="Todavía no elegiste un consultorio."
           texto="Una invitación la emite una organización concreta, así que hay que indicar cual. Tu sesión sigue abierta: solo falta elegir donde estas trabajando."
         >
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+            >Elegir un consultorio</a
+          >
         </app-estado-vacio>
       }
 
@@ -105,9 +107,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -119,7 +125,12 @@
             titulo="No hay invitaciones pendientes"
             texto="Invitá a alguien para que se sume al equipo."
           >
-            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+            <button
+              *akinePermiso="permisoManage"
+              type="button"
+              class="boton boton--secundario"
+              (click)="abrirAlta()"
+            >
               Invitar a alguien
             </button>
           </app-estado-vacio>
@@ -180,7 +191,19 @@
                       {{ formatearInstante(invitacion.createdAt) ?? 'Sin fecha' }}
                     </td>
                     <td>
-                      <span class="marca-estado">{{ rotuloDeEstado(invitacion) }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--activa]="invitacion.estado === 'ACEPTADA'"
+                        [class.marca-estado--revocada]="
+                          invitacion.estado === 'RECHAZADA' || invitacion.estado === 'CANCELADA'
+                        "
+                        [class.marca-estado--suspendida]="
+                          invitacion.estado !== 'ACEPTADA' &&
+                          invitacion.estado !== 'RECHAZADA' &&
+                          invitacion.estado !== 'CANCELADA'
+                        "
+                        >{{ rotuloDeEstado(invitacion) }}</span
+                      >
 
                       @if (invitacion.estado === 'PENDIENTE' && invitacion.vencida) {
                         <p class="ayuda">

@@ -37,6 +37,7 @@ import {
 import { ventanaEnPalabras } from '../../models/vigencia-de-contracting';
 import { NgTemplateOutlet } from '@angular/common';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { AsistenteDePasos } from '../../../../shared/components/asistente-de-pasos/asistente-de-pasos';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -98,6 +99,7 @@ interface Desenlace {
     PieDeTabla,
     EstadoVacio,
     RouterLink,
+    AsistenteDePasos,
   ],
   templateUrl: './importar-aranceles-page.html',
   styleUrl: '../../contracting.css',
@@ -202,9 +204,9 @@ export class ImportarArancelesPage {
 
   /** Pasos del asistente. No agregan comportamiento: nombran los estados que la pantalla ya tenia. */
   protected readonly pasos = [
-    { numero: 1, etiqueta: 'Cargar', sub: 'Subí o pegá la planilla' },
-    { numero: 2, etiqueta: 'Vista previa', sub: 'Qué entra y qué no, fila por fila' },
-    { numero: 3, etiqueta: 'Confirmar', sub: 'Todo o nada' },
+    { numero: 1, titulo: 'Cargar', sub: 'Subí o pegá la planilla' },
+    { numero: 2, titulo: 'Vista previa', sub: 'Qué entra y qué no, fila por fila' },
+    { numero: 3, titulo: 'Confirmar', sub: 'Todo o nada' },
   ] as const;
 
   /** Paso actual: 1 la planilla, 2 el resultado de la vista previa, 3 la confirmacion. */

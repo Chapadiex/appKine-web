@@ -237,3 +237,57 @@
     justify-content: flex-start;
   }
 }
+
+/*
+ * Variante compacta (calendario de la sede): la semana entera entra en una pantalla. Las franjas
+ * de un dia van una al lado de la otra, los renglones pierden aire y la cabecera queda en una linea.
+ */
+:host(.horario-compacto) .semana__cabecera {
+  align-items: center;
+  margin-bottom: var(--esp-3);
+}
+
+:host(.horario-compacto) .semana__rotulo {
+  flex-basis: auto;
+}
+
+:host(.horario-compacto) .semana__modelo {
+  min-height: 2rem;
+  padding: 0 var(--esp-5);
+}
+
+:host(.horario-compacto) .semana__dia {
+  grid-template-columns: 9rem minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: var(--esp-2) 0;
+}
+
+:host(.horario-compacto) .semana__franjas {
+  flex-flow: row wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-7);
+}
+
+:host(.horario-compacto) .semana__hora {
+  min-height: 2.25rem;
+  padding-block: var(--esp-2);
+}
+
+:host(.horario-compacto) .semana__acciones {
+  align-self: center;
+}
+
+:host(.horario-compacto) .semana__corte,
+:host(.horario-compacto) .semana__quitar {
+  min-height: 2.25rem;
+}
+
+:host(.horario-compacto) .semana__pie {
+  padding-top: var(--esp-3);
+}
+
+@media (max-width: 40rem) {
+  :host(.horario-compacto) .semana__dia {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

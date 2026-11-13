@@ -163,7 +163,7 @@ test.describe('Casos clinicos (D-b)', () => {
     await entrarConContexto(page, sembrada);
     await navegar(page, `/historia-clinica/personas/${sembrada.personaId}/casos/${casoId}`);
 
-    await expect(page.getByRole('heading', { name: 'Declara el motivo del acceso' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Declará el motivo del acceso' })).toBeVisible();
     await expect(page.getByText('Lumbalgia')).toHaveCount(0);
     await page.getByRole('textbox', { name: 'Motivo del acceso' }).fill(MOTIVO_DE_ACCESO);
     await page.getByRole('button', { name: 'Ver el caso' }).click();

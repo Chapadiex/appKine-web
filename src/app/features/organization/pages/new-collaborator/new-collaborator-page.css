@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radio-md);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
 }
 
@@ -61,7 +61,7 @@
 
 .vinculo__opcion--elegida {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 .vinculo__opcion-etiqueta {

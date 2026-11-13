@@ -18,7 +18,8 @@
     elemento enfocable del documento (ADR-0005), y el salto al contenido existe justamente para
     que el teclado no tenga que recorrer el menu entero en cada pantalla.
   -->
-  <app-navegacion-principal [abierto]="menuAbierto()" (cerrar)="cerrarMenu()" />
+  <!-- La barra lateral (`app-navegacion-principal`) se monta aca despues de la primera pintura. -->
+  <ng-container #navegacion />
 
   <!--
     Fondo que cierra el panel en tablet al tocarlo. Es un boton y no un `div` con `click`: un
@@ -36,7 +37,7 @@
       tarjeta y el pie lleva los enlaces de ayuda (diseño del canvas, 22/10/2026).
     -->
     <header class="cabecera" [hidden]="esAcceso()">
-      <app-barra-superior [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
+      <app-barra-superior-diferida [menuAbierto]="menuAbierto()" (alternarMenu)="alternarMenu()" />
     </header>
 
     <!--
@@ -83,11 +84,14 @@
         </footer>
       }
     </main>
+
+    <!-- Pie institucional del centro (logo y datos de contacto): llega con la barra lateral. -->
+    <ng-container #pie />
   </div>
 </div>
 
 <!--
-  Avisos globales ("toasts"): resultado de una operacion, arriba a la derecha y en la capa superior.
+  Avisos globales ("toasts"): resultado de una operacion, abajo a la derecha y en la capa superior.
   Se montan despues de la primera pintura (ver App).
 -->
 <ng-container #avisos />

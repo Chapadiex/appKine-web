@@ -21,6 +21,8 @@ api/auditoria.service.ts
 api/auditoria.serviceInterface.ts
 api/autorizaciones.service.ts
 api/autorizaciones.serviceInterface.ts
+api/biblioteca.service.ts
+api/biblioteca.serviceInterface.ts
 api/caja.service.ts
 api/caja.serviceInterface.ts
 api/calendario-de-sede.service.ts
@@ -75,6 +77,8 @@ api/invitaciones.service.ts
 api/invitaciones.serviceInterface.ts
 api/lista-de-espera.service.ts
 api/lista-de-espera.serviceInterface.ts
+api/marca-de-la-organizacion.service.ts
+api/marca-de-la-organizacion.serviceInterface.ts
 api/mediciones-de-sesion.service.ts
 api/mediciones-de-sesion.serviceInterface.ts
 api/mi-cuenta.service.ts
@@ -189,6 +193,9 @@ model/baja-de-entrada-clinica-request.ts
 model/baja-de-perfil-paciente-request.ts
 model/baja-de-persona-request.ts
 model/baja-de-producto.ts
+model/biblioteca-busqueda-request.ts
+model/biblioteca-busqueda-response.ts
+model/biblioteca-pasaje-response.ts
 model/bloque-response.ts
 model/bloqueo-en-agenda.ts
 model/bloques-creados-response.ts
@@ -236,10 +243,19 @@ model/cobertura-para-oferta-practica.ts
 model/cobertura-para-oferta-response.ts
 model/cobertura-response.ts
 model/cobro.ts
+model/colores-de-interfaz.ts
 model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consulta-evento-aclaracion.ts
+model/consulta-evento-error.ts
+model/consulta-evento-espera.ts
+model/consulta-evento-etapa.ts
+model/consulta-evento-fin.ts
+model/consulta-evento-fuentes.ts
+model/consulta-evento-texto.ts
+model/consulta-request.ts
 model/consultorio-page-response.ts
 model/consultorio-response.ts
 model/consumo-de-credito.ts
@@ -337,6 +353,7 @@ model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/evento-relacionado-de-agenda.ts
 model/excepcion-response.ts
+model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
@@ -346,6 +363,7 @@ model/financiador-response.ts
 model/franja-de-agenda.ts
 model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
+model/fuente-de-consulta-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
 model/guardar-borrador.ts
@@ -384,11 +402,18 @@ model/invitacion-token-request.ts
 model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
+model/libro-datos-request.ts
+model/libro-detalle-response.ts
+model/libro-fragmento-sospechoso-response.ts
+model/libro-page-response.ts
+model/libro-response.ts
 model/limit-usage-response.ts
 model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts
 model/lista-de-espera-page.ts
 model/login-request.ts
+model/logo-de-marca-response.ts
+model/marca-response.ts
 model/marcar-cobertura-principal-request.ts
 model/medicion-comparada.ts
 model/medicion-definicion-page-response.ts
@@ -419,6 +444,7 @@ model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts
 model/oferta-response.ts
+model/opcion-de-aclaracion-response.ts
 model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -469,6 +495,7 @@ model/producto.ts
 model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
+model/programar-serie-de-clases.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
@@ -533,6 +560,7 @@ model/seccion-omitida-response.ts
 model/seccion-response.ts
 model/seleccion-de-cobertura-response.ts
 model/select-context-request.ts
+model/serie-de-clases.ts
 model/serie-de-indicador-de-reporte.ts
 model/serie-de-reporte.ts
 model/serie-de-turnos-page.ts
@@ -566,6 +594,7 @@ model/tratamiento.ts
 model/turno-a-cancelar-en-lote.ts
 model/turno-afectado-por-disponibilidad-response.ts
 model/turno-de-calendario.ts
+model/turno-de-consulta-request.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
 model/turno.ts
@@ -584,6 +613,7 @@ model/update-convenio-request.ts
 model/update-espacio-request.ts
 model/update-excepcion-request.ts
 model/update-financiador-request.ts
+model/update-marca-request.ts
 model/update-medicion-definicion-request.ts
 model/update-oferta-request.ts
 model/update-orden-request.ts

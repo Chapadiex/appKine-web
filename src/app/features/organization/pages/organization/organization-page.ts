@@ -15,9 +15,16 @@ import { validadorDeCuit } from '../../../../shared/utils/cuit';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { ContactoDelCentro } from '../../components/contacto-del-centro/contacto-del-centro';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ORGANIZACION,
+  pestanasDeOrganizacion,
+} from '../../../../core/models/pestanas-de-organizacion';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 /** Una fila de la seccion Configuracion. */
 interface AccesoDeConfiguracion {
@@ -60,6 +67,7 @@ type EstadoOrganizacion =
   selector: 'app-organization-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     Ayuda,
     Icono,
     RouterLink,
@@ -67,11 +75,16 @@ type EstadoOrganizacion =
     ReactiveFormsModule,
     PanelLateral,
     PermisoDirective,
+    ContactoDelCentro,
   ],
   templateUrl: './organization-page.html',
   styleUrls: ['../../organization.css', './organization-page.css'],
 })
 export class OrganizationPage {
+  /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
+
   private readonly organizaciones = inject(OrganizacionesService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly avisos = inject(AvisosStore);

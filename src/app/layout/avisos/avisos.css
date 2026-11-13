@@ -1,11 +1,10 @@
 /*
-  Avisos globales: arriba a la derecha, debajo de la barra superior, en la capa superior. `inset`,
-  `margin`, `border` y `background` anulan el centrado y el recuadro que el navegador le da a todo
-  `[popover]`.
+  Avisos globales: abajo a la derecha (08/11/2026) y en la capa superior. `inset`, `margin`,
+  `border` y `background` anulan el centrado y el recuadro que el navegador le da a todo `[popover]`.
 */
 :host {
   position: fixed;
-  inset: calc(var(--alto-barra-superior) + var(--esp-5)) var(--esp-6) auto auto;
+  inset: auto var(--esp-6) var(--esp-6) auto;
   z-index: 50;
   width: min(24rem, calc(100vw - 2 * var(--esp-6)));
   max-height: none;
@@ -23,38 +22,52 @@
   gap: var(--esp-4);
 }
 
+/*
+ * Norma global de avisos (08/11/2026): el color dice el RESULTADO de la operacion, no la accion
+ * ("Turno cancelado" es verde: salio bien). Fondo suave, borde, icono y textos del mismo color
+ * semantico, con los tokens de cada tema (claro y oscuro los redefinen en design-system.css).
+ */
 .aviso {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
   gap: var(--esp-4);
   padding: var(--esp-5) var(--esp-4) var(--esp-5) var(--esp-6);
-  border: var(--borde-fino) solid var(--color-borde);
+  border: var(--borde-fino) solid var(--aviso-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie);
+  background: var(--aviso-fondo);
+  color: var(--aviso-texto);
   box-shadow: var(--sombra-flotante);
   animation: aviso-entra 0.18s ease-out;
 }
 
 .aviso--exito {
-  --aviso-color: var(--color-exito);
+  --aviso-borde: var(--color-exito);
+  --aviso-fondo: var(--color-exito-fondo);
+  --aviso-texto: var(--color-exito-texto);
 }
 
 .aviso--info {
-  --aviso-color: var(--color-acento);
+  --aviso-borde: var(--color-info);
+  --aviso-fondo: var(--color-info-fondo);
+  --aviso-texto: var(--color-info-texto);
 }
 
 .aviso--advertencia {
-  --aviso-color: var(--color-aviso);
+  --aviso-borde: var(--color-aviso);
+  --aviso-fondo: var(--color-aviso-fondo);
+  --aviso-texto: var(--color-aviso-texto);
 }
 
 .aviso--error {
-  --aviso-color: var(--color-peligro);
+  --aviso-borde: var(--color-peligro);
+  --aviso-fondo: var(--color-peligro-fondo);
+  --aviso-texto: var(--color-peligro-texto);
 }
 
 .aviso__icono {
   margin-top: 1px;
-  color: var(--aviso-color);
+  color: var(--aviso-borde);
   font-size: var(--tipo-lg);
 }
 
@@ -71,7 +84,7 @@
 
 .aviso__descripcion {
   margin: var(--esp-2) 0 0;
-  color: var(--color-texto-suave);
+  color: var(--aviso-texto);
   font-size: var(--tipo-sm);
 }
 
@@ -80,10 +93,10 @@
   padding: var(--esp-2) 0;
   border: 0;
   background: transparent;
-  color: var(--color-enlace);
+  color: var(--aviso-texto);
   font: inherit;
   font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
+  font-weight: var(--peso-semi);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -102,19 +115,18 @@
   border: 0;
   border-radius: var(--radio-sm);
   background: transparent;
-  color: var(--color-texto-suave);
+  color: var(--aviso-texto);
   cursor: pointer;
 }
 
 .aviso__cerrar:hover {
-  background: var(--color-superficie-sutil);
-  color: var(--color-texto);
+  background: color-mix(in srgb, var(--aviso-borde) 18%, transparent);
 }
 
 @keyframes aviso-entra {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(6px);
   }
 }
 
@@ -127,7 +139,7 @@
 /* En el telefono, a lo ancho de la pantalla. */
 @media (max-width: 40rem) {
   :host {
-    inset: calc(var(--alto-barra-superior) + var(--esp-4)) var(--esp-4) auto var(--esp-4);
+    inset: auto var(--esp-4) var(--esp-4) var(--esp-4);
     width: auto;
   }
 }

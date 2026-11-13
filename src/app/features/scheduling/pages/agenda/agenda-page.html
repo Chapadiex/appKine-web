@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Agenda" class="agenda-cabecera">
+<app-cabecera-de-pagina titulo="Agenda">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Hacé clic en un horario libre para dar un turno: la fecha, la hora y el profesional ya quedan
@@ -10,10 +10,7 @@
     </p>
   </app-ayuda>
 
-  <!-- Envuelta: asi no la toma la ranura de pestañas y queda en la fila del titulo. -->
-  <div class="agenda-cabecera__pestanas">
-    <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
-  </div>
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 
   <div cabeceraAcciones>
     <button
@@ -32,9 +29,31 @@
   </div>
 </app-cabecera-de-pagina>
 
-<!-- La barra de la agenda: que dia se mira, como, y que se filtra. -->
-<section class="agenda-barra" aria-label="Fecha, vista y filtros">
-  <div class="agenda-barra__fila">
+<!--
+  La barra de herramientas de la agenda (08/11/2026), la misma de toda Atencion: buscar paciente,
+  moverse de fecha, el periodo, como se agrupa y los filtros, plegados hasta que se piden.
+-->
+<app-filtros
+  separada
+  class="agenda-barra"
+  [activos]="filtrosActivos().length"
+  limpiable
+  (limpiar)="limpiarFiltros()"
+>
+  <div class="agenda-buscar" filtro-principal>
+    <app-icono nombre="buscar" />
+    <label class="visualmente-oculto" for="agenda-paciente">Paciente</label>
+    <input
+      id="agenda-paciente"
+      type="search"
+      autocomplete="off"
+      placeholder="Buscar paciente o DNI"
+      [value]="paciente()"
+      (input)="paciente.set($any($event.target).value)"
+    />
+  </div>
+
+  <div class="agenda-barra__fecha" filtro-frecuente>
     <div class="agenda-nav" role="group" aria-label="Fecha de la agenda">
       <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
         <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
@@ -63,137 +82,101 @@
     @if (cargando()) {
       <span class="ayuda agenda-fecha__estado" role="status">Actualizando…</span>
     }
+  </div>
 
-    <div class="agenda-barra__derecha">
-      @if (!angosta()) {
-        <div class="segmento" role="group" aria-label="Período">
+  <div class="agenda-barra__vista" filtro-frecuente>
+    @if (!angosta()) {
+      <div class="segmento" role="group" aria-label="Período">
+        <button
+          type="button"
+          [attr.aria-pressed]="vistaElegida() === 'dia'"
+          (click)="elegirVista('dia')"
+        >
+          Día
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="vistaElegida() === 'semana'"
+          (click)="elegirVista('semana')"
+        >
+          Semana
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="vistaElegida() === 'mes'"
+          (click)="elegirVista('mes')"
+        >
+          Mes
+        </button>
+      </div>
+      @if (vistaElegida() === 'dia') {
+        <div class="segmento" role="group" aria-label="Columnas de la agenda">
           <button
             type="button"
-            [attr.aria-pressed]="vistaElegida() === 'dia'"
-            (click)="elegirVista('dia')"
+            [attr.aria-pressed]="agrupacion() === 'profesional'"
+            (click)="elegirAgrupacion('profesional')"
           >
-            Día
+            Profesionales
           </button>
           <button
             type="button"
-            [attr.aria-pressed]="vistaElegida() === 'semana'"
-            (click)="elegirVista('semana')"
+            [attr.aria-pressed]="agrupacion() === 'box'"
+            (click)="elegirAgrupacion('box')"
           >
-            Semana
-          </button>
-          <button
-            type="button"
-            [attr.aria-pressed]="vistaElegida() === 'mes'"
-            (click)="elegirVista('mes')"
-          >
-            Mes
+            Boxes
           </button>
         </div>
-        @if (vistaElegida() === 'dia') {
-          <div class="segmento" role="group" aria-label="Columnas de la agenda">
-            <button
-              type="button"
-              [attr.aria-pressed]="agrupacion() === 'profesional'"
-              (click)="elegirAgrupacion('profesional')"
-            >
-              Profesionales
-            </button>
-            <button
-              type="button"
-              [attr.aria-pressed]="agrupacion() === 'box'"
-              (click)="elegirAgrupacion('box')"
-            >
-              Boxes
-            </button>
-          </div>
-        }
       }
-
-      <div class="agenda-buscar">
-        <app-icono nombre="buscar" />
-        <label class="visualmente-oculto" for="agenda-paciente">Paciente</label>
-        <input
-          id="agenda-paciente"
-          type="search"
-          autocomplete="off"
-          placeholder="Paciente o DNI"
-          [value]="paciente()"
-          (input)="paciente.set($any($event.target).value)"
-        />
-      </div>
-
-      <button
-        type="button"
-        class="agenda-filtros-boton"
-        aria-controls="agenda-filtros"
-        [attr.aria-expanded]="filtrosAbiertos()"
-        (click)="filtrosAbiertos.set(!filtrosAbiertos())"
-      >
-        <app-icono nombre="filtro" />
-        Filtros
-        @if (filtrosActivos().length > 0) {
-          <span class="agenda-filtros-boton__contador"
-            >{{ filtrosActivos().length }}<span class="visualmente-oculto"> activos</span></span
-          >
-        }
-      </button>
-    </div>
-  </div>
-
-  <div id="agenda-filtros" class="agenda-barra__filtros" [hidden]="!filtrosAbiertos()">
-    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="profesionalId() !== null">
-      <label for="agenda-profesional">Profesional</label>
-      <select
-        id="agenda-profesional"
-        [value]="profesionalId() ?? ''"
-        (change)="filtrarProfesional($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        @for (profesional of profesionales(); track profesional.id) {
-          <option [value]="profesional.id" [selected]="profesional.id === profesionalId()">
-            {{ profesional.nombre }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="ofertaId() !== null">
-      <label for="agenda-oferta">Prestación</label>
-      <select
-        id="agenda-oferta"
-        [value]="ofertaId() ?? ''"
-        (change)="filtrarOferta($any($event.target).value)"
-      >
-        <option value="">Todas</option>
-        @for (oferta of ofertas(); track oferta.id) {
-          <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
-            {{ oferta.nombreComercial }}
-          </option>
-        }
-      </select>
-    </div>
-    <div class="pastilla-filtro" [class.pastilla-filtro--activa]="estadoElegido() !== ''">
-      <label for="agenda-estado">Estado</label>
-      <select
-        id="agenda-estado"
-        [value]="estadoElegido()"
-        (change)="filtrarEstado($any($event.target).value)"
-      >
-        <option value="">Todos</option>
-        @for (valor of ESTADOS; track valor) {
-          <option [value]="valor" [selected]="valor === estadoElegido()">
-            {{ nombreDeEstadoOperativo(valor) }}
-          </option>
-        }
-        <option [value]="A_REUBICAR" [selected]="estadoElegido() === A_REUBICAR">A reubicar</option>
-      </select>
-    </div>
-    @if (filtrosActivos().length > 0) {
-      <button type="button" class="boton-texto agenda-limpiar" (click)="limpiarFiltros()">
-        Limpiar<span class="visualmente-oculto"> filtros</span>
-      </button>
     }
   </div>
-</section>
+
+  <div class="campo">
+    <label for="agenda-profesional">Profesional</label>
+    <select
+      id="agenda-profesional"
+      [value]="profesionalId() ?? ''"
+      (change)="filtrarProfesional($any($event.target).value)"
+    >
+      <option value="">Todos</option>
+      @for (profesional of profesionales(); track profesional.id) {
+        <option [value]="profesional.id" [selected]="profesional.id === profesionalId()">
+          {{ profesional.nombre }}
+        </option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="agenda-oferta">Prestación</label>
+    <select
+      id="agenda-oferta"
+      [value]="ofertaId() ?? ''"
+      (change)="filtrarOferta($any($event.target).value)"
+    >
+      <option value="">Todas</option>
+      @for (oferta of ofertas(); track oferta.id) {
+        <option [value]="oferta.id" [selected]="oferta.id === ofertaId()">
+          {{ oferta.nombreComercial }}
+        </option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="agenda-estado">Estado</label>
+    <select
+      id="agenda-estado"
+      [value]="estadoElegido()"
+      (change)="filtrarEstado($any($event.target).value)"
+    >
+      <option value="">Todos</option>
+      @for (valor of ESTADOS; track valor) {
+        <option [value]="valor" [selected]="valor === estadoElegido()">
+          {{ nombreDeEstadoOperativo(valor) }}
+        </option>
+      }
+      <option [value]="A_REUBICAR" [selected]="estadoElegido() === A_REUBICAR">A reubicar</option>
+    </select>
+  </div>
+</app-filtros>
 
 <div aria-live="polite">
   @if (error(); as fallo) {
@@ -221,7 +204,10 @@
           <li>
             <button
               type="button"
-              class="agenda-lista__turno"
+              [class]="
+                'agenda-lista__turno ' +
+                claseDeTonoOperativo(turno.turno?.operativo?.estadoOperativo)
+              "
               (click)="flujo.verTurno(turno.turno?.id ?? 0)"
             >
               <span class="agenda-lista__hora"
@@ -231,21 +217,21 @@
               <span class="ayuda"
                 >{{ turno.turno?.ofertaNombre }} · {{ turno.profesionalNombre }}</span
               >
-              <span class="ayuda">
-                <span aria-hidden="true">{{
-                  simboloDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)
-                }}</span>
+              <span class="turno__estado">
+                <app-icono
+                  [nombre]="iconoDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo)"
+                />
                 {{ nombreDeEstadoOperativo(turno.turno?.operativo?.estadoOperativo) }}
               </span>
               @if (reprogramado(turno.turno); as marca) {
                 <span class="turno__marca"><span aria-hidden="true">↻</span> {{ marca }}</span>
               }
               @if (turno.fueraDeDisponibilidad) {
-                <span class="turno__reubicar"><span aria-hidden="true">⚠</span> A reubicar</span>
+                <span class="turno__reubicar"><app-icono nombre="advertencia" /> A reubicar</span>
               }
               @if (chocaConClase(turno)) {
                 <span class="turno__reubicar"
-                  ><span aria-hidden="true">⚠</span> Choca con una clase</span
+                  ><app-icono nombre="advertencia" /> Choca con una clase</span
                 >
               }
             </button>
@@ -279,14 +265,17 @@
                   >
                   <span class="mes__estados">
                     @for (conteo of dia.porEstado; track conteo.estado) {
-                      <span [title]="nombreDeEstadoOperativo(conteo.estado)"
-                        >{{ simboloDeEstadoOperativo(conteo.estado) }} {{ conteo.cantidad }}</span
+                      <span
+                        [class]="'mes__estado ' + claseDeTonoOperativo(conteo.estado)"
+                        [title]="nombreDeEstadoOperativo(conteo.estado)"
+                        ><app-icono [nombre]="iconoDeEstadoOperativo(conteo.estado)" />
+                        {{ conteo.cantidad }}</span
                       >
                     }
                   </span>
                 }
                 @if (dia.bloqueos > 0) {
-                  <span class="mes__bloqueo">Bloqueado</span>
+                  <span class="mes__bloqueo"><app-icono nombre="candado" /> Bloqueado</span>
                 }
               </button>
             } @else {
@@ -300,8 +289,8 @@
     </div>
     <p class="mes__leyenda ayuda">
       @for (valor of ESTADOS; track valor) {
-        <span
-          ><span aria-hidden="true">{{ simboloDeEstadoOperativo(valor) }}</span>
+        <span [class]="'mes__estado ' + claseDeTonoOperativo(valor)"
+          ><app-icono [nombre]="iconoDeEstadoOperativo(valor)" />
           {{ nombreDeEstadoOperativo(valor) }}</span
         >
       }
@@ -380,6 +369,7 @@
                 <button
                   type="button"
                   class="grilla__celda"
+                  [class.grilla__celda--en-punto]="celda.inicioMin % 60 === 0"
                   [style.top.px]="arriba(celda.inicioMin)"
                   [style.height.px]="(celda.finMin - celda.inicioMin) * PX_POR_MINUTO"
                   (click)="nuevoTurnoEn(columna, celda)"
@@ -388,9 +378,11 @@
                     Nuevo turno {{ columna.fecha }} a las {{ horaDeMinuto(celda.inicioMin) }},
                     {{ columna.titulo }}
                   </span>
-                  <span class="grilla__celda-hora" aria-hidden="true">{{
-                    horaDeMinuto(celda.inicioMin)
-                  }}</span>
+                  <span class="grilla__celda-hora" aria-hidden="true"
+                    >{{ horaDeMinuto(celda.inicioMin) }} ·
+                    <span class="grilla__celda-libre">Libre</span
+                    ><span class="grilla__celda-dar">Dar turno</span></span
+                  >
                 </button>
               }
             </ng-container>
@@ -402,6 +394,14 @@
                     type="button"
                     [class]="claseDeEstado(evento)"
                     [class.turno--sobreturno]="evento.turno?.turno?.operativo?.sobreturno"
+                    [class.turno--seleccionado]="
+                      turnoAbierto() !== null && evento.turno?.turno?.id === turnoAbierto()
+                    "
+                    [attr.aria-current]="
+                      turnoAbierto() !== null && evento.turno?.turno?.id === turnoAbierto()
+                        ? 'true'
+                        : null
+                    "
                     [style.top.px]="arriba(evento.inicioMin)"
                     [style.height.px]="alto(evento.inicioMin, evento.finMin)"
                     [style.left.%]="(evento.carril * 100) / evento.carriles"
@@ -412,9 +412,11 @@
                     <span class="turno__hora">
                       {{ hora(evento.turno?.turno?.inicio) }} a {{ hora(evento.turno?.turno?.fin) }}
                       <span class="turno__estado">
-                        <span aria-hidden="true">{{
-                          simboloDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
-                        }}</span>
+                        <app-icono
+                          [nombre]="
+                            iconoDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
+                          "
+                        />
                         <span class="turno__estado-texto">{{
                           nombreDeEstadoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)
                         }}</span>
@@ -436,12 +438,12 @@
                     }
                     @if (evento.turno?.fueraDeDisponibilidad) {
                       <span class="turno__reubicar"
-                        ><span aria-hidden="true">⚠</span> A reubicar</span
+                        ><app-icono nombre="advertencia" /> A reubicar</span
                       >
                     }
                     @if (chocaConClase(evento.turno)) {
                       <span class="turno__reubicar"
-                        ><span aria-hidden="true">⚠</span> Choca con una clase</span
+                        ><app-icono nombre="advertencia" /> Choca con una clase</span
                       >
                     }
                   </button>
@@ -480,8 +482,11 @@
                     [style.height.px]="alto(evento.inicioMin, evento.finMin)"
                     [title]="descripcion(evento)"
                   >
-                    <span class="turno__persona">{{ evento.titulo }}</span>
-                    <span class="turno__linea">{{ evento.detalle }}</span>
+                    <span class="evento__rotulo">
+                      <app-icono nombre="candado" />
+                      <span class="turno__persona">{{ evento.titulo }}</span>
+                    </span>
+                    <span class="turno__linea evento__rotulo">{{ evento.detalle }}</span>
                     <a
                       *akinePermiso="PERMISO_AGENDA_EXCEPCIONES"
                       class="evento__enlace"
@@ -528,48 +533,36 @@
   es la causa mas comun de una agenda vacia y se arregla en Horarios, no aca.
 -->
 <ng-template #sinTurnos>
-  <div class="agenda-sin-turnos" role="status">
-    <span class="agenda-sin-turnos__icono"><app-icono nombre="calendario" /></span>
-    <div class="agenda-sin-turnos__texto">
-      <p class="agenda-sin-turnos__titulo">
-        No hay turnos para este {{ vistaEfectiva() === 'semana' ? 'período' : 'día' }}
-      </p>
-      <p>
-        @if (sinHorarios()) {
-          Tampoco hay horarios de atención cargados. Podés dar un turno igual, ir al próximo día con
-          agenda o cargar los horarios del profesional.
-        } @else {
-          Podés dar un turno o ir al próximo día con turnos.
-        }
-      </p>
-      @if (sinProximo()) {
-        <p class="agenda-sin-turnos__aviso">
-          No hay turnos en los próximos {{ DIAS_POR_PEDIDO }} días.
-        </p>
-      }
-    </div>
-    <div class="agenda-sin-turnos__acciones">
-      <button
-        *akinePermiso="PERMISO_TURNO_MANAGE"
-        type="button"
-        class="boton boton--chico"
-        (click)="nuevoTurno()"
+  <!--
+    Tarjeta de estado vacio (08/11/2026), con las acciones por importancia: crear el turno es la
+    principal, ir al proximo dia con turnos la secundaria y cargar horarios la terciaria.
+  -->
+  <app-estado-vacio
+    icono="calendario"
+    [titulo]="'No hay turnos para este ' + (vistaEfectiva() === 'semana' ? 'período' : 'día')"
+    [texto]="
+      (sinHorarios()
+        ? 'No se encontraron turnos ni horarios de atención cargados para la fecha seleccionada.'
+        : 'No se encontraron turnos para la fecha seleccionada.') +
+      (sinProximo() ? ' Tampoco hay turnos en los próximos ' + DIAS_POR_PEDIDO + ' días.' : '')
+    "
+  >
+    <button *akinePermiso="PERMISO_TURNO_MANAGE" type="button" class="boton" (click)="nuevoTurno()">
+      <app-icono nombre="agregar" />
+      Crear turno
+    </button>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="buscandoProximo()"
+      (click)="irAlProximoDiaConTurnos()"
+    >
+      Próximo día con turnos <span aria-hidden="true">→</span>
+    </button>
+    @if (sinHorarios()) {
+      <a *akinePermiso="PERMISO_AGENDA_HORARIO" class="boton-texto" [routerLink]="rutaDeHorarios"
+        >Cargar horarios</a
       >
-        Crear turno
-      </button>
-      <button
-        type="button"
-        class="boton boton--secundario boton--chico agenda-sin-turnos__proximo"
-        [disabled]="buscandoProximo()"
-        (click)="irAlProximoDiaConTurnos()"
-      >
-        Próximo día con turnos <span aria-hidden="true">→</span>
-      </button>
-      @if (sinHorarios()) {
-        <a *akinePermiso="PERMISO_AGENDA_HORARIO" class="enlace" [routerLink]="rutaDeHorarios"
-          >Cargar horarios</a
-        >
-      }
-    </div>
-  </div>
+    }
+  </app-estado-vacio>
 </ng-template>

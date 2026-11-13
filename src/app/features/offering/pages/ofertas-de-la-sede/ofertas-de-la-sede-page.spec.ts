@@ -946,6 +946,290 @@ describe('OfertasDeLaSedePage', () => {
     TIMEOUT_AXE,
   );
 
+  // -----------------------------------------------------------------------------------------
+  // Llegadas desde el catalogo: `?servicio=` ("En la sede") y `?nuevaOferta=` ("Crear oferta")
+  // -----------------------------------------------------------------------------------------
+
+  it('?servicio= filtra el listado por ese servicio y, si la sede no lo ofrece, abre el alta con él', async () => {
+    const fixture = await montarConEntrada({ servicio: '1' }, []);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('app-panel-lateral')).not.toBeNull();
+    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+
+    // Una sola vez: cerrar y volver a leer una lista vacía no reabre el alta.
+    anfitrion.querySelector<HTMLButtonElement>('.panel-lateral__cerrar')?.click();
+    fixture.detectChanges();
+    elegir(fixture, '#filtro-estado-oferta', 'TODOS');
+    const relectura = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.url === OFERTAS &&
+        peticion.params.get('servicioId') === '1' &&
+        peticion.params.get('estado') === 'TODOS',
+    );
+    relectura.flush([]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('?servicio= de un servicio que la sede ya ofrece sólo filtra: no abre el alta', async () => {
+    const fixture = await montarConEntrada({ servicio: '1' }, [VIGENTE]);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('app-panel-lateral')).toBeNull();
+    expect(anfitrion.textContent).toContain('Rehabilitacion respiratoria adultos');
+    // El filtro muestra el servicio pedido, no "Todos", aunque sus opciones lleguen despues.
+    expect((anfitrion.querySelector('#filtro-servicio-oferta') as HTMLSelectElement).value).toBe(
+      '1',
+    );
+  });
+
+  it('?servicio= de un servicio dado de baja filtra pero no ofrece darlo de alta', async () => {
+    const fixture = await montarConEntrada(
+      { servicio: '2' },
+      [],
+      [SERVICIO, SERVICIO_DADO_DE_BAJA],
+    );
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('un ?servicio= que no es un id se ignora: lista todo y no abre nada', async () => {
+    for (const invalido of ['abc', '0', '-3']) {
+      const fixture = await montarConEntrada({ servicio: invalido }, [VIGENTE]);
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
+      fixture.destroy();
+    }
+  });
+
+  it('?nuevaOferta= abre el alta con el servicio recién creado ya elegido', async () => {
+    const fixture = await montarConEntrada({ nuevaOferta: '1' }, [VIGENTE]);
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+  });
+
+  it('?nuevaOferta= de un servicio que no se puede ofertar no abre nada', async () => {
+    const fixture = await montarConEntrada(
+      { nuevaOferta: '2' },
+      [VIGENTE],
+      [SERVICIO, SERVICIO_DADO_DE_BAJA],
+    );
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('"Productos de pack" aparece en el menú sólo en las ofertas que cobran POR_PACK', async () => {
+    const fixture = await montar({
+      ofertas: [{ ...VIGENTE, esquemaCobro: 'POR_PACK' }, AUN_NO],
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    const enlaces = [...anfitrion.querySelectorAll('a[href="/productos"]')];
+    expect(enlaces.length).toBe(1);
+    expect(enlaces[0].textContent).toContain('Productos de pack');
+    expect(enlaces[0].closest('tr')?.textContent).toContain('Rehabilitacion respiratoria adultos');
+  });
+
+  // -----------------------------------------------------------------------------------------
+  // Alta y edicion con los campos opcionales completos
+  // -----------------------------------------------------------------------------------------
+
+  it('el alta con todo declarado manda cada campo y avisa si la vigencia arranca más adelante', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Publicar un servicio en la sede');
+    elegir(fixture, '#alta-oferta-servicio', '1');
+    escribir(fixture, '#alta-oferta-nombre', 'Pilates reformer');
+    elegir(fixture, '#alta-oferta-modalidad', 'GRUPAL');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'necesita capacidad mayor a 1',
+    );
+    escribir(fixture, '#alta-oferta-duracion', '60');
+    escribir(fixture, '#alta-oferta-capacidad', '6');
+    escribir(fixture, '#alta-oferta-precio', '9000');
+    escribir(fixture, '#alta-oferta-moneda', 'usd');
+    elegir(fixture, '#alta-oferta-esquema', 'POR_PACK');
+    escribir(fixture, '#alta-oferta-descripcion', '  Con máquina  ');
+    elegir(fixture, '#alta-oferta-caso', 'false');
+    elegir(fixture, '#alta-oferta-registro', 'true');
+    escribir(fixture, '#alta-oferta-desde', '2099-01-01');
+    escribir(fixture, '#alta-oferta-hasta', '2099-12-31');
+    enviar(fixture, 'form[novalidate]');
+
+    const alta = httpMock.expectOne(esAlta());
+    expect(alta.request.body).toEqual({
+      servicioId: 1,
+      nombreComercial: 'Pilates reformer',
+      descripcion: 'Con máquina',
+      modalidad: 'GRUPAL',
+      duracionMinutos: 60,
+      capacidad: 6,
+      precioBase: 9000,
+      moneda: 'USD',
+      esquemaCobro: 'POR_PACK',
+      requiereCasoClinico: false,
+      generaRegistroClinico: true,
+      admiteObraSocial: false,
+      requiereProfesional: true,
+      requiereEspacio: true,
+      vigenciaDesde: '2099-01-01',
+      vigenciaHasta: '2099-12-31',
+    });
+
+    alta.flush({ ...AUN_NO, id: 20, nombreComercial: undefined });
+    httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
+    await fixture.whenStable();
+
+    // Sin la aclaracion, "activa pero sin vigencia" se lee como que el alta fallo.
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.descripcion).toContain('Pilates reformer. Figura sin vigencia hasta');
+  });
+
+  it('la edición manda cada campo que cambió, y nada más', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-oferta-descripcion', 'Adultos mayores');
+    elegir(fixture, '#editar-oferta-modalidad', 'GRUPAL');
+    escribir(fixture, '#editar-oferta-duracion', '30');
+    escribir(fixture, '#editar-oferta-capacidad', '4');
+    elegir(fixture, '#editar-oferta-esquema', 'POR_SESION');
+    cambiarCasilla(fixture, '#editar-oferta-obra-social', false);
+    cambiarCasilla(fixture, '#editar-oferta-caso', false);
+    cambiarCasilla(fixture, '#editar-oferta-registro', false);
+    cambiarCasilla(fixture, '#editar-oferta-profesional', false);
+    cambiarCasilla(fixture, '#editar-oferta-espacio', false);
+    escribir(fixture, '#editar-oferta-desde', '2026-02-01');
+    escribir(fixture, '#editar-oferta-hasta', '2026-12-31');
+    enviar(fixture, 'form[novalidate]');
+
+    const edicion = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
+    );
+    expect(edicion.request.body).toEqual({
+      expectedVersion: 4,
+      descripcion: 'Adultos mayores',
+      modalidad: 'GRUPAL',
+      duracionMinutos: 30,
+      capacidad: 4,
+      esquemaCobro: 'POR_SESION',
+      admiteObraSocial: false,
+      requiereCasoClinico: false,
+      generaRegistroClinico: false,
+      requiereProfesional: false,
+      requiereEspacio: false,
+      vigenciaDesde: '2026-02-01',
+      vigenciaHasta: '2026-12-31',
+    });
+
+    edicion.flush({ ...VIGENTE, version: 5 });
+    httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
+    await fixture.whenStable();
+    expect(
+      TestBed.inject(AvisosStore)
+        .avisos()
+        .map((aviso) => aviso.titulo),
+    ).toEqual(['Cambios guardados']);
+  });
+
+  it('la edición con el nombre vacío no emite el PUT y marca el campo', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    escribir(fixture, '#editar-oferta-nombre', '   ');
+    enviar(fixture, 'form[novalidate]');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'El nombre comercial es obligatorio.',
+    );
+  });
+
+  it('dejar de exigir prepago lo confirma sin la explicación del aviso de recepción', async () => {
+    const fixture = await montar({ ofertas: [{ ...VIGENTE, exigePrepago: true }] });
+
+    hacerClick(fixture, 'Dejar de exigir prepago');
+    httpMock
+      .expectOne(`${OFERTAS}/10/politica-de-prepago`)
+      .flush({ ...VIGENTE, exigePrepago: false, version: 5 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toContain('ya no exige prepago');
+    expect(textoDeBotones(fixture)).toContain('Exigir prepago');
+  });
+
+  it('un error que no es de versión al cambiar el prepago ofrece reintentar, y el reintento vuelve a pedir', async () => {
+    const fixture = await montar({ ofertas: [VIGENTE] });
+
+    hacerClick(fixture, 'Exigir prepago');
+    httpMock
+      .expectOne(`${OFERTAS}/10/politica-de-prepago`)
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    await fixture.whenStable();
+
+    const avisos = TestBed.inject(AvisosStore);
+    const [aviso] = avisos.avisos();
+    expect(aviso?.tipo).toBe('error');
+    expect(aviso?.accion?.etiqueta).toBe('Reintentar');
+    // Sin relectura: el error no dice nada de la version.
+    httpMock.expectNone(esListado());
+
+    avisos.ejecutar(aviso.id);
+    const reintento = httpMock.expectOne(`${OFERTAS}/10/politica-de-prepago`);
+    expect(reintento.request.body).toEqual({ exigePrepago: true, expectedVersion: 4 });
+    reintento.flush({ ...VIGENTE, exigePrepago: true, version: 5 });
+    await fixture.whenStable();
+  });
+
+  it('la fila muestra la descripción y el fin de vigencia cuando los hay', async () => {
+    const fixture = await montar({
+      ofertas: [{ ...VIGENTE, descripcion: 'Para adultos', vigenciaHasta: '2026-12-31' }],
+    });
+    const fila = (fixture.nativeElement as HTMLElement).querySelector('tbody tr');
+
+    expect(fila?.textContent).toContain('Para adultos');
+    expect(fila?.textContent).toContain('(exclusivo)');
+    expect(fila?.textContent).not.toContain('Sin fecha de fin');
+  });
+
+  /**
+   * Monta con inputs de ruta (`?servicio=` o `?nuevaOferta=`). El listado se matchea por la
+   * presencia de `servicioId`, que es justamente lo que `?servicio=` tiene que agregar.
+   */
+  async function montarConEntrada(
+    entradas: { readonly servicio?: string; readonly nuevaOferta?: string },
+    ofertas: readonly unknown[],
+    catalogo: readonly unknown[] = [SERVICIO],
+  ): Promise<ComponentFixture<OfertasDeLaSedePage>> {
+    prepararContexto();
+
+    const fixture = TestBed.createComponent(OfertasDeLaSedePage);
+    for (const [nombre, valor] of Object.entries(entradas)) {
+      fixture.componentRef.setInput(nombre, valor);
+    }
+    fixture.detectChanges();
+
+    const filtrado = Number(entradas.servicio);
+    const esperado = Number.isInteger(filtrado) && filtrado > 0 ? String(filtrado) : null;
+    const listado = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) =>
+        peticion.method === 'GET' &&
+        peticion.url === OFERTAS &&
+        peticion.params.get('servicioId') === esperado,
+    );
+    listado.flush(ofertas);
+    httpMock.expectOne(esCatalogo()).flush(catalogo);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    return fixture;
+  }
+
   /** Contexto de trabajo y permisos ya resueltos, antes de montar el componente. */
   function prepararContexto(permisosEfectivos: readonly string[] = [PERMISO_CONSULTORIO_MANAGE]) {
     tenantContext.select({

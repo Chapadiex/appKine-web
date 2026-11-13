@@ -5,6 +5,7 @@ import {
 } from '../../../api/generated/model/reprogramacion-de-turno';
 import { EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
+import { NombreDeIcono } from '../../../shared/components/icono/icono';
 
 /**
  * Textos y lecturas derivadas del ciclo de vida del turno (M12, AKINE-05.03).
@@ -167,20 +168,31 @@ export function nombreDeEstadoOperativo(estado: string | undefined): string {
   return NOMBRES_OPERATIVOS[estado ?? ''] ?? estado ?? '';
 }
 
-/** Un simbolo por estado: junto con el texto, distingue el estado sin depender del color. */
-const SIMBOLOS_OPERATIVOS: Readonly<Record<string, string>> = {
-  RESERVADO: '○',
-  CONFIRMADO: '●',
-  PRESENTE: '◆',
-  RETIRADO: '↩',
-  EN_ATENCION: '▶',
-  ATENDIDO: '✓',
-  AUSENTE: '✕',
-  CANCELADO: '⊘',
+/**
+ * El icono de cada estado operativo (norma de diseno §7): con la palabra y el color, el estado nunca
+ * depende de uno solo. Sin estado conocido, el reloj de lo que falta resolver.
+ */
+const ICONOS_OPERATIVOS: Readonly<Record<string, NombreDeIcono>> = {
+  RESERVADO: 'horarios',
+  CONFIRMADO: 'tilde',
+  PRESENTE: 'perfil',
+  RETIRADO: 'salir',
+  EN_ATENCION: 'flecha-derecha',
+  ATENDIDO: 'exito',
+  AUSENTE: 'advertencia',
+  CANCELADO: 'error',
 };
 
-export function simboloDeEstadoOperativo(estado: string | undefined): string {
-  return SIMBOLOS_OPERATIVOS[estado ?? ''] ?? '';
+export function iconoDeEstadoOperativo(estado: string | undefined): NombreDeIcono {
+  return ICONOS_OPERATIVOS[estado ?? ''] ?? 'horarios';
+}
+
+/**
+ * La clase de tono del estado (`turno--en-atencion`), que la hoja de la agenda traduce a los tokens
+ * `--color-estado-*`. La comparten la tarjeta de la grilla y la fila de la lista angosta.
+ */
+export function claseDeTonoOperativo(estado: string | undefined): string {
+  return estado ? `turno--${estado.toLowerCase().replace(/_/g, '-')}` : '';
 }
 
 /** A quien se le atribuye una cancelacion, para el historial y los selectores. */

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   output,
@@ -39,44 +40,73 @@ const ESPERA_DE_BUSQUEDA_MS = 300;
   template: `
     @if (!creando()) {
       <div class="flujo">
-        <div class="campo">
-          <label for="flujo-paciente">Buscar paciente</label>
+        <div class="campo combo">
+          <label for="flujo-paciente">Paciente <span aria-hidden="true">*</span></label>
           <input
             id="flujo-paciente"
             type="search"
+            role="combobox"
             autocomplete="off"
-            placeholder="Nombre, apellido, DNI o teléfono"
+            aria-autocomplete="list"
+            aria-controls="flujo-paciente-opciones"
+            [attr.aria-expanded]="desplegado()"
+            [attr.aria-activedescendant]="idActivo()"
+            placeholder="Nombre, apellido, DNI, teléfono o correo"
             (input)="buscar($any($event.target).value)"
+            (focus)="abierto.set(true)"
+            (blur)="abierto.set(false)"
+            (keydown)="alTeclear($event)"
           />
+
+          <!-- mousedown sin foco: el clic en una opcion no le saca el foco al campo ni cierra la lista. -->
+          @if (desplegado()) {
+            <div class="combo__panel" (mousedown)="$event.preventDefault()">
+              @if (candidatos().length > 0) {
+                <ul
+                  id="flujo-paciente-opciones"
+                  class="candidatos"
+                  role="listbox"
+                  aria-label="Pacientes encontrados"
+                >
+                  @for (candidata of candidatos(); track candidata.id; let i = $index) {
+                    <li
+                      [id]="'flujo-paciente-opcion-' + i"
+                      class="candidato"
+                      role="option"
+                      [class.candidato--activo]="i === activo()"
+                      [attr.aria-selected]="i === activo()"
+                      tabindex="-1"
+                      (click)="elegir(candidata)"
+                      (keydown.enter)="elegir(candidata)"
+                    >
+                      <span class="candidato__nombre"
+                        >{{ candidata.apellido }}, {{ candidata.nombre }}</span
+                      >
+                      <span class="candidato__datos">{{ datosDe(candidata) }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (total() > candidatos().length) {
+                  <p class="combo__nota">
+                    Se muestran {{ candidatos().length }} de {{ total() }}. Seguí escribiendo para
+                    acotar.
+                  </p>
+                }
+              } @else {
+                <p class="estado estado--vacio combo__nota">No encontramos pacientes.</p>
+              }
+
+              <p class="combo__pie" *akinePermiso="PERMISO_PACIENTE_MANAGE">
+                <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
+                  Crear paciente
+                </button>
+              </p>
+            </div>
+          }
         </div>
 
         @if (errorDeBusqueda(); as error) {
           <p class="estado estado--error" role="alert">{{ error }}</p>
-        }
-
-        @if (candidatos().length > 0) {
-          <ul class="candidatos" aria-label="Pacientes encontrados">
-            @for (candidata of candidatos(); track candidata.id) {
-              <li>
-                <button type="button" class="candidato" (click)="elegida.emit(candidata)">
-                  <span class="candidato__nombre"
-                    >{{ candidata.apellido }}, {{ candidata.nombre }}</span
-                  >
-                  <span class="candidato__datos">{{ datosDe(candidata) }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-        } @else if (busco()) {
-          <p class="estado estado--vacio">No encontramos pacientes.</p>
-        }
-
-        @if (busco() || candidatos().length > 0) {
-          <p class="flujo__fila" *akinePermiso="PERMISO_PACIENTE_MANAGE">
-            <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
-              Crear paciente
-            </button>
-          </p>
         }
       </div>
     } @else {
@@ -178,7 +208,18 @@ export class BuscadorDePaciente {
   protected readonly PERMISO_PACIENTE_MANAGE = PERMISO_PACIENTE_MANAGE;
 
   protected readonly candidatos = signal<readonly PersonaResponse[]>([]);
+  protected readonly total = signal(0);
   protected readonly busco = signal(false);
+  /** El foco esta en el campo. La lista se despliega solo si ademas hay algo que mostrar. */
+  protected readonly abierto = signal(false);
+  /** La opcion marcada con las flechas, -1 ninguna. */
+  protected readonly activo = signal(-1);
+  protected readonly desplegado = computed(
+    () => this.abierto() && (this.busco() || this.candidatos().length > 0),
+  );
+  protected readonly idActivo = computed(() =>
+    this.desplegado() && this.activo() >= 0 ? `flujo-paciente-opcion-${this.activo()}` : null,
+  );
   protected readonly errorDeBusqueda = signal<string | null>(null);
 
   protected readonly creando = signal(false);
@@ -209,6 +250,7 @@ export class BuscadorDePaciente {
         switchMap((texto) => {
           if (texto === '') {
             this.candidatos.set([]);
+            this.total.set(0);
             this.busco.set(false);
             return of(null);
           }
@@ -224,7 +266,10 @@ export class BuscadorDePaciente {
       )
       .subscribe((pagina) => {
         if (pagina !== null) {
-          this.candidatos.set(pagina.content ?? []);
+          const contenido = pagina.content ?? [];
+          this.candidatos.set(contenido);
+          this.total.set(pagina.totalElements ?? contenido.length);
+          this.activo.set(-1);
           this.busco.set(true);
         }
       });
@@ -232,14 +277,52 @@ export class BuscadorDePaciente {
 
   protected buscar(texto: string): void {
     this.ultimoTexto = texto.trim();
+    this.abierto.set(true);
     this.textos.next(this.ultimoTexto);
+  }
+
+  /** Flechas, Enter y Escape, como cualquier combo (patron combobox de ARIA). */
+  protected alTeclear(evento: KeyboardEvent): void {
+    const cantidad = this.candidatos().length;
+    switch (evento.key) {
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        evento.preventDefault();
+        this.abierto.set(true);
+        if (cantidad === 0) return;
+        const paso = evento.key === 'ArrowDown' ? 1 : -1;
+        this.activo.update((i) => (i + paso + cantidad) % cantidad);
+        return;
+      }
+      case 'Enter': {
+        const candidata = this.candidatos()[this.activo()];
+        if (this.desplegado() && candidata) {
+          evento.preventDefault();
+          this.elegir(candidata);
+        }
+        return;
+      }
+      case 'Escape':
+        // Cierra la lista y no el panel: el dialog modal escucha el mismo Escape.
+        if (this.desplegado()) {
+          evento.preventDefault();
+          evento.stopPropagation();
+          this.abierto.set(false);
+        }
+        return;
+    }
+  }
+
+  protected elegir(persona: PersonaResponse): void {
+    this.abierto.set(false);
+    this.elegida.emit(persona);
   }
 
   protected datosDe(persona: PersonaResponse): string {
     const documento = persona.numeroDocumento
       ? `${persona.tipoDocumento ?? 'DNI'} ${persona.numeroDocumento}`
       : 'Sin documento';
-    return [documento, persona.telefono].filter(Boolean).join(' · ');
+    return [documento, persona.telefono, persona.email].filter(Boolean).join(' · ');
   }
 
   protected abrirAlta(): void {

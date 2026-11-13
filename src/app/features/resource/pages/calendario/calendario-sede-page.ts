@@ -18,6 +18,11 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import {
+  ETIQUETA_PESTANAS_DEL_CALENDARIO,
+  PESTANAS_DEL_CALENDARIO,
+} from '../../models/pestanas-de-horarios';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
   ParametrosDeHorarios,
   SIN_PARAMETROS,
   leerParametrosDeHorarios,
@@ -29,7 +34,12 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { etiquetaDeTipoDeFeriado } from '../../models/tipos-de-feriado';
 import { traducirErrorExcepcion } from '../../models/excepcion-errors';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
-import { EditorDeFranjas } from '../../../../shared/components/editor-de-franjas/editor-de-franjas';
+import { NgTemplateOutlet } from '@angular/common';
+import { HorarioSemanal } from '../../../../shared/components/horario-semanal/horario-semanal';
+import {
+  SemanaDibujada,
+  horarioRedactado,
+} from '../../../../shared/components/horario-semanal/semana-dibujada';
 import { etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
 import { rangoHorario } from '../../../../shared/utils/horas-de-pared';
 import {
@@ -85,6 +95,8 @@ const DIAS_PROPUESTOS = 365;
  * La `version` se muestra igual, porque es lo unico que permite notar que alguien mas la
  * cambio.
  */
+type PestanaDelCalendario = 'resumen' | 'horario' | 'feriados';
+
 @Component({
   selector: 'app-calendario-sede-page',
   imports: [
@@ -98,7 +110,10 @@ const DIAS_PROPUESTOS = 365;
     ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
-    EditorDeFranjas,
+    HorarioSemanal,
+    SemanaDibujada,
+    NgTemplateOutlet,
+    Pestanas,
     FranjasFueraDelHorario,
   ],
   templateUrl: './calendario-sede-page.html',
@@ -233,7 +248,22 @@ export class CalendarioSedePage {
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
-  /** El horario guardado, redactado: lo que ve quien no puede editarlo. */
+  /** El horario guardado, agrupado por dias iguales: "Lunes a viernes: 09:00 a 18:00". */
+  protected readonly franjasGuardadas = computed(() =>
+    normalizar(this.politica()?.horarioGeneral ?? []),
+  );
+  protected readonly resumenGuardado = computed(() => horarioRedactado(this.franjasGuardadas()));
+  protected readonly diasAbiertos = computed(
+    () => new Set(this.franjasGuardadas().map((franja) => franja.diaSemana)).size,
+  );
+
+  /** Pestañas de la pantalla: cada una es una ruta (`horarios.routes.ts`) con su panel. */
+  protected readonly pestanasDelCalendario = PESTANAS_DEL_CALENDARIO;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DEL_CALENDARIO;
+  protected readonly pestana: PestanaDelCalendario =
+    inject(ActivatedRoute).snapshot.data?.['pestana'] ?? 'resumen';
+
+  /** El horario guardado, franja por franja. */
   protected readonly horarioGuardado = computed(() =>
     (this.politica()?.horarioGeneral ?? []).map(
       (franja) =>

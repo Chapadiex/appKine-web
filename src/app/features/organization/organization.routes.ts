@@ -5,6 +5,7 @@ import {
   PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
   PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_TENANT_UPDATE,
 } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
@@ -129,6 +130,12 @@ export const routes: Routes = [
       import('./pages/consultorios/consultorios-page').then((m) => m.ConsultoriosPage),
     title: 'AKINE - Sedes',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    path: 'marca',
+    canActivate: [permissionGuard(PERMISO_TENANT_UPDATE)],
+    loadComponent: () => import('./pages/marca/marca-page').then((m) => m.MarcaPage),
+    title: 'AKINE - Marca del centro',
   },
   {
     path: 'auditoria',

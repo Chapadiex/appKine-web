@@ -104,7 +104,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
     await expect(detalle.locator('.estado-turno')).toContainText('Confirmado');
     await cerrarAvisos(page);
 
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Cancelar turno' }).click();
     // "Otro" solo no es un motivo (DP-04): hasta que se escribe, no se puede mandar.
     await detalle.getByLabel('Motivo', { exact: true }).selectOption('Otro');
@@ -118,7 +117,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
     await cerrarAvisos(page);
 
     // El historial conserva el motivo y la transicion: nada se borra.
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Ver historial' }).click();
     const historial = panelDeTurno(page, 'Historial del turno');
     await expect(historial.getByText('Otro: El paciente aviso que viaja')).toBeVisible();
@@ -156,7 +154,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
       await crearPersona(api),
     );
 
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Reprogramar' }).click();
     const reprogramar = panelDeTurno(page, 'Reprogramar turno');
 
@@ -174,7 +171,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
     await expect(avisos(page).getByText('Turno reprogramado correctamente.')).toBeVisible();
     await cerrarAvisos(page);
 
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Ver historial' }).click();
     const historial = panelDeTurno(page, 'Historial del turno');
     await expect(
@@ -218,7 +214,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
     await expect(detalle.locator('.estado-turno')).toContainText('Confirmado');
     await cerrarAvisos(page);
 
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Reprogramar' }).click();
     const reprogramar = panelDeTurno(page, 'Reprogramar turno');
     const buscar = (): Promise<unknown> =>
@@ -302,7 +297,6 @@ test.describe('Ciclo del turno contra el backend real', () => {
       },
     );
 
-    await detalle.getByText('Más acciones').click();
     await detalle.getByRole('button', { name: 'Cancelar turno' }).click();
     const rechazo = respuestaDe(page, 'POST', /\/turnos\/\d+\/cancelacion$/);
     await detalle.getByRole('button', { name: 'Cancelar turno' }).click();
@@ -346,7 +340,9 @@ test.describe('Ciclo del turno contra el backend real', () => {
       hora(slot.desde, centro.timezone),
     );
     await expect(page).toHaveURL(new RegExp(`/agenda\\?(.*&)?fecha=${fecha}`));
-    await expect(detalle.getByRole('heading', { name: 'Turno', exact: true })).toBeVisible();
+    await expect(
+      detalle.getByRole('heading', { name: 'Detalle del turno', exact: true }),
+    ).toBeVisible();
 
     // Atras la grilla esta en el dia del turno: cerrar el panel deja a la vista ese turno.
     await detalle.getByRole('button', { name: 'Cerrar el panel' }).click();

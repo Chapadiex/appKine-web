@@ -22,7 +22,7 @@
 
 .filtros-rapidos__opcion[aria-pressed='true'] {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-texto-fuerte);
   font-weight: var(--peso-semi);
 }

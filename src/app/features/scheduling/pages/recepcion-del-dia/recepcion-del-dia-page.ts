@@ -37,8 +37,10 @@ import {
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
 import {
+  claseDeTonoOperativo,
   detalleDeEstado,
   eraA,
+  iconoDeEstadoOperativo,
   nombreDeEstado,
   textoDeReprogramado,
 } from '../../models/etiquetas-de-turno';
@@ -217,7 +219,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     PanelLateral,
   ],
   templateUrl: './recepcion-del-dia-page.html',
-  styleUrl: '../../agenda.css',
+  styleUrls: ['../../agenda.css', '../../estados-de-turno.css'],
 })
 export class RecepcionDelDiaPage {
   private readonly api = inject(SchedulingApi);
@@ -245,6 +247,8 @@ export class RecepcionDelDiaPage {
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly nombreDeEstado = nombreDeEstado;
   protected readonly detalleDeEstado = detalleDeEstado;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
   protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
   protected readonly detalleDeEstadoDeRecepcion = detalleDeEstadoDeRecepcion;
   protected readonly textoDeModalidad = textoDeModalidad;

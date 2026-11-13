@@ -11,8 +11,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@a
  * <p><b>Regiones</b>, siempre en el mismo orden y a la misma altura:
  *
  * <pre>
- *   Titulo (?) [estado]   [contexto: ‹ semana › Hoy]          [accion principal]
- *   Pestaña | Pestaña | Pestaña
+ *   Titulo (?) [estado]   [contexto]    Pestaña | Pestaña | Pestaña    [accion principal]
  * </pre>
  *
  * - `titulo` (input): el `h1`. Una sola linea; si no entra se corta con "…" y nunca invade la zona
@@ -24,7 +23,8 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@a
  *   del titulo mientras entren; si no, bajan a una segunda linea antes que desplazar la pagina.
  * - `[cabeceraAcciones]`: la accion principal (y, si hay, las de la pantalla entera), siempre
  *   pegada al borde derecho. Sin acciones el lugar queda vacio y nada se corre.
- * - `app-pestanas`: las pantallas hermanas, en una segunda fila compacta.
+ * - `app-pestanas`: las pantallas hermanas, centradas en la fila del titulo (08/11/2026). Bajan a
+ *   una segunda fila cuando no entran.
  *
  * <p><b>Nunca desplaza.</b> Crece solo lo que su contenido pide; el scroll es del contenido de la
  * pagina.

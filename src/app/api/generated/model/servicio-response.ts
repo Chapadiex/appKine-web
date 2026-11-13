@@ -10,9 +10,13 @@
 
 
 /**
- * Servicio del catalogo global de la plataforma
+ * Servicio del catalogo global de la plataforma o propio del centro
  */
 export interface ServicioResponse { 
+    /**
+     * GLOBAL: del catalogo de la plataforma, lo ven todos los centros. ORGANIZACION: servicio propio del centro, lo ve solo esa organizacion
+     */
+    alcance?: ServicioResponseAlcanceEnum;
     /**
      * Clave estable con la que las ofertas lo referencian. No cambia nunca: renombrar es cambiar nombre, no codigo
      */
@@ -62,6 +66,10 @@ export interface ServicioResponse {
      */
     version?: number;
 }
+export enum ServicioResponseAlcanceEnum {
+    GLOBAL = 'GLOBAL',
+    ORGANIZACION = 'ORGANIZACION'
+};
 export enum ServicioResponseEstadoEnum {
     ACTIVO = 'ACTIVO',
     INACTIVO = 'INACTIVO'

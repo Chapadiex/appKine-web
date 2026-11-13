@@ -95,7 +95,7 @@ describe('HistoriaClinicaPage', () => {
     expect(primero.request.headers.has(HEADER)).toBe(false);
     primero.flush(SIN_RELACION, { status: 403, statusText: 'Forbidden' });
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('Declara el motivo del acceso');
+    expect(texto(fixture)).toContain('Declará el motivo del acceso');
 
     // Vacio no sale nada.
     enviarMotivo(fixture, '   ');

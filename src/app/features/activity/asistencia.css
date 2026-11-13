@@ -59,14 +59,14 @@
 }
 
 .marcas .opcion-radio:has(input:checked) {
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
 }
 
 .contadores li {
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-medio);
 }
@@ -90,8 +90,8 @@
 .clase-meta__estado {
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
-  background: var(--color-acento-claro);
-  color: var(--color-acento);
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-medio);
 }

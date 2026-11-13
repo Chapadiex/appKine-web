@@ -1,34 +1,49 @@
 @let m = modelo();
-<app-cabecera-de-pagina [titulo]="titulo() ?? m.titulo">
-  <ng-content select="app-ayuda, akine-ayuda" ngProjectAs="app-ayuda" />
-  <!--
-    En una hermana el titulo es el de la seccion: la persona sigue a la vista como dato (la ruta de
-    navegacion de la barra superior la nombra y enlaza a su ficha).
-  -->
-  @if (titulo() !== null) {
-    <span class="cabecera-ficha__dato cabecera-ficha__persona" [title]="persona()">{{
-      persona()
-    }}</span>
-  } @else {
-    @for (dato of m.datos; track $index) {
-      <span class="cabecera-ficha__dato">{{ dato }}</span>
+<!--
+  Dos filas (08/11/2026). Arriba quien es: el nombre con su perfil y el "?". Abajo, en una fila, el
+  documento y el estado, y a su derecha las pestañas y la accion. Es la misma en la ficha y en
+  todas sus pestañas: nada cambia de lugar al navegar.
+-->
+<div class="cabecera-ficha__grilla">
+  <div class="cabecera-ficha__identidad">
+    <div class="cabecera-ficha__linea">
+      @if (titulo() === null) {
+        <h1 class="cabecera-ficha__nombre" [title]="m.titulo">{{ m.titulo }}</h1>
+      } @else {
+        <!--
+        En una hermana el h1 es el de la seccion, para el lector de pantalla y el titulo de la
+        pestaña del navegador; a la vista la seccion la marca la pestaña y arriba sigue la persona.
+      -->
+        <h1 class="visualmente-oculto">{{ titulo() }}</h1>
+        <p class="cabecera-ficha__nombre" [title]="m.titulo">{{ m.titulo }}</p>
+      }
+      @for (marca of perfiles(); track $index) {
+        <span class="cabecera-ficha__perfil">{{ marca.texto }}</span>
+      }
+      <ng-content select="app-ayuda, akine-ayuda" />
+    </div>
+    @if (m.datos.length > 0 || estados().length > 0) {
+      <div class="cabecera-ficha__linea cabecera-ficha__linea--datos">
+        @for (dato of m.datos; track $index) {
+          <span class="cabecera-ficha__dato">{{ dato }}</span>
+        }
+        @for (marca of estados(); track $index) {
+          <span
+            class="marca-estado"
+            [class.marca-estado--activa]="marca.tono === 'activa'"
+            [class.marca-estado--revocada]="marca.tono === 'revocada'"
+            >{{ marca.texto }}</span
+          >
+        }
+      </div>
     }
-  }
-  @for (marca of m.marcas; track $index) {
-    @if (marca.tono === 'neutra') {
-      <span class="cabecera-ficha__perfil">{{ marca.texto }}</span>
-    } @else {
-      <span
-        class="marca-estado"
-        [class.marca-estado--activa]="marca.tono === 'activa'"
-        [class.marca-estado--revocada]="marca.tono === 'revocada'"
-        >{{ marca.texto }}</span
-      >
-    }
-  }
-  <div cabeceraAcciones>
-    <ng-content select="[cabeceraAcciones]" />
-    <ng-content />
   </div>
-  <app-pestanas [pestanas]="m.pestanas" [etiqueta]="m.etiquetaPestanas" />
-</app-cabecera-de-pagina>
+
+  <div class="cabecera-ficha__navegacion">
+    <app-pestanas [pestanas]="m.pestanas" [etiqueta]="m.etiquetaPestanas" />
+    <div class="cabecera-ficha__acciones">
+      <ng-content select="[cabeceraAcciones]" />
+      <ng-content />
+    </div>
+  </div>
+</div>

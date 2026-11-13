@@ -34,6 +34,7 @@ export interface BuscarPersonasRequestParams {
     q?: string;
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     perfil?: 'CON_PERFIL' | 'SIN_PERFIL' | 'TODOS';
+    actividad?: 'CON_ACTIVIDAD' | 'SIN_ACTIVIDAD' | 'TODOS';
     page?: number;
     size?: number;
     sort?: 'apellido,asc' | 'apellido,desc' | 'nombre,asc' | 'nombre,desc' | 'documento,asc' | 'documento,desc' | 'nacimiento,asc' | 'nacimiento,desc' | 'alta,asc' | 'alta,desc';
@@ -81,7 +82,7 @@ export interface PersonasServiceInterface {
 
     /**
      * Buscar personas en el padron
-     * Busca por documento, apellido, nombre o telefono, todo con el mismo parametro q. La comparacion ignora mayusculas y acentos, y los separadores del documento y del telefono: buscar 12345678, 12.345.678 o Perez encuentra a la misma persona.  Sin q devuelve el padron completo, paginado y ordenado por apellido.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. perfil filtra por perfil clinico y por defecto no filtra: la busqueda del mostrador no sabe de antemano si quien busca es paciente.  OJO: esPaciente es DERIVADO y de solo lectura. Una persona sin perfil clinico es una persona valida y completa —RN-M07-006—, no una ficha a medio cargar.  DP-45: sort ordena por apellido, nombre, documento, nacimiento o alta; detras va siempre apellido, nombre e id.
+     * Busca por documento, apellido, nombre o telefono, todo con el mismo parametro q. La comparacion ignora mayusculas y acentos, y los separadores del documento y del telefono: buscar 12345678, 12.345.678 o Perez encuentra a la misma persona. Tambien encuentra por correo, completo o en parte.  Sin q devuelve el padron completo, paginado y ordenado por apellido.  estado filtra por ciclo de vida y por defecto trae solo las ACTIVAS. perfil filtra por perfil clinico y por defecto no filtra: la busqueda del mostrador no sabe de antemano si quien busca es paciente. actividad separa a quien hoy hace actividades del centro (clases, pases, abonos) y se combina con perfil.  OJO: esPaciente es DERIVADO y de solo lectura. Una persona sin perfil clinico es una persona valida y completa —RN-M07-006—, no una ficha a medio cargar.  DP-45: sort ordena por apellido, nombre, documento, nacimiento o alta; detras va siempre apellido, nombre e id.
      * @endpoint get /api/v1/personas
 * @param requestParameters
      */

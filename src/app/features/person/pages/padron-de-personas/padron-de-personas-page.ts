@@ -1,5 +1,12 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
@@ -24,7 +31,8 @@ import { PersonaPageResponse } from '../../../../api/generated/model/persona-pag
 import { PersonaResponse } from '../../../../api/generated/model/persona-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdatePersonaRequest } from '../../../../api/generated/model/update-persona-request';
-import { FiltroEstadoPersona, FiltroPerfil, PersonApi } from '../../services/person-api';
+import { FiltroEstadoPersona, PersonApi } from '../../services/person-api';
+import { TIPOS_DE_PERSONA, TipoDePersona, filtrosDeTipo } from '../../models/tipo-de-persona';
 import { fechaDeNacimientoPosible } from '../../models/fecha-de-nacimiento';
 import { CausaPersona, hayQueRecargar, traducirErrorPersona } from '../../models/person-errors';
 import {
@@ -200,11 +208,13 @@ export class PadronDePersonasPage {
 
   protected readonly texto = signal('');
   protected readonly filtroEstado = signal<FiltroEstadoPersona>('ACTIVO');
-  protected readonly filtroPerfil = signal<FiltroPerfil>('TODOS');
+  /** Pacientes de kinesiología, de actividades o las dos cosas: perfil y actividad en el backend. */
+  protected readonly filtroTipo = signal<TipoDePersona>('TODAS');
+  protected readonly tiposDePersona = TIPOS_DE_PERSONA;
 
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(
-    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroPerfil() !== 'TODOS'),
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== 'TODAS'),
   );
   /** Hay algo elegido: busqueda o filtros del embudo. Separa "no hay nadie" de "no coincide". */
   protected readonly hayFiltros = computed(
@@ -262,29 +272,35 @@ export class PadronDePersonasPage {
   /** Ficha que ya tiene el documento del alta rechazada, o `null`. */
   protected readonly duenioDelDocumento = signal<PersonaResponse | null>(null);
 
-  protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    // Solo apellido y nombre son obligatorios: el documento es opcional a proposito, porque una
-    // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
-    apellido: ['', [textoRequerido]],
-    nombre: ['', [textoRequerido]],
-    tipoDocumento: [''],
-    numeroDocumento: [''],
-    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
-    email: ['', [Validators.email]],
-    telefono: [''],
-    notas: [''],
-  });
+  protected readonly formularioAlta = this.formBuilder.nonNullable.group(
+    {
+      // Solo apellido y nombre son obligatorios: el documento es opcional a proposito, porque una
+      // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
+      apellido: ['', [textoRequerido]],
+      nombre: ['', [textoRequerido]],
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+      email: ['', [Validators.email]],
+      telefono: [''],
+      notas: [''],
+    },
+    { validators: documentoCompleto },
+  );
 
-  protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    apellido: [''],
-    nombre: [''],
-    tipoDocumento: [''],
-    numeroDocumento: [''],
-    fechaNacimiento: ['', [fechaDeNacimientoPosible]],
-    email: ['', [Validators.email]],
-    telefono: [''],
-    notas: [''],
-  });
+  protected readonly formularioEdicion = this.formBuilder.nonNullable.group(
+    {
+      apellido: [''],
+      nombre: [''],
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      fechaNacimiento: ['', [fechaDeNacimientoPosible]],
+      email: ['', [Validators.email]],
+      telefono: [''],
+      notas: [''],
+    },
+    { validators: documentoCompleto },
+  );
 
   constructor() {
     effect(() => {
@@ -314,8 +330,8 @@ export class PadronDePersonasPage {
     this.cargar();
   }
 
-  protected cambiarPerfil(valor: string): void {
-    this.filtroPerfil.set(valor as FiltroPerfil);
+  protected cambiarTipo(valor: string): void {
+    this.filtroTipo.set(valor as TipoDePersona);
     this.pagina.set(0);
     this.cargar();
   }
@@ -324,7 +340,7 @@ export class PadronDePersonasPage {
   protected limpiarFiltros(): void {
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
-    this.filtroPerfil.set('TODOS');
+    this.filtroTipo.set('TODAS');
     this.pagina.set(0);
     this.cargar();
   }
@@ -346,7 +362,7 @@ export class PadronDePersonasPage {
       .buscar({
         texto: this.texto(),
         estado: this.filtroEstado(),
-        perfil: this.filtroPerfil(),
+        ...filtrosDeTipo(this.filtroTipo()),
         pagina: this.pagina(),
         tamano: this.porPagina(),
         sort: this.orden.sort(),
@@ -558,6 +574,19 @@ export class PadronDePersonasPage {
     return control !== null && control.invalid && (control.touched || control.dirty);
   }
 
+  /**
+   * `true` cuando hay numero de documento sin tipo y el numero ya se toco. El error es del grupo
+   * —depende de dos campos— y se muestra junto al selector, que es lo que falta completar.
+   */
+  protected faltaTipoDeDocumento(formulario: FormGroup): boolean {
+    const numero = formulario.get('numeroDocumento');
+    return (
+      formulario.hasError('tipoDocumentoFaltante') &&
+      numero !== null &&
+      (numero.touched || numero.dirty)
+    );
+  }
+
   protected mostrarErrorEdicion(campo: string): boolean {
     const control = this.formularioEdicion.get(campo);
     return control !== null && control.invalid && (control.touched || control.dirty);
@@ -612,7 +641,7 @@ export class PadronDePersonasPage {
     this.cerrarPaneles();
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
-    this.filtroPerfil.set('TODOS');
+    this.filtroTipo.set('TODAS');
     this.pagina.set(0);
     this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();
@@ -636,6 +665,19 @@ export class PadronDePersonasPage {
     }
     return tipo as TipoDeDocumento;
   }
+}
+
+/**
+ * Un numero sin tipo no se puede mandar: `tipoDocumentoDe` omitia el tipo, el numero viajaba solo
+ * y el backend lo informaba como "documento ya registrado", mandando a buscar en el padron una
+ * ficha que no existia.
+ */
+function documentoCompleto(grupo: AbstractControl): ValidationErrors | null {
+  const tipo: unknown = grupo.get('tipoDocumento')?.value;
+  const numero: unknown = grupo.get('numeroDocumento')?.value;
+  return typeof numero === 'string' && numero.trim() !== '' && !tipo
+    ? { tipoDocumentoFaltante: true }
+    : null;
 }
 
 /** `''` significa "no lo mandes", no "mandalo vacio". Es la diferencia entre omitir y borrar. */

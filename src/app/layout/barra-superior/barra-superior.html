@@ -13,12 +13,14 @@
     <button
       type="button"
       class="menu"
+      aria-label="Menú de navegación"
+      title="Menú de navegación"
       [attr.aria-expanded]="menuAbierto()"
       aria-controls="navegacion-principal"
       (click)="alternar()"
     >
       <app-icono [nombre]="menuAbierto() ? 'cerrar' : 'menu'" />
-      <span class="visualmente-oculto">Menu</span>
+      <span class="visualmente-oculto">Menú de navegación</span>
     </button>
 
     <!--

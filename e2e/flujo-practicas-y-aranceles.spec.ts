@@ -149,13 +149,17 @@ test.describe('Importacion de aranceles de un convenio contra el backend real', 
 
     // Se vuelve al primer paso y se corrige la planilla: confirmar exige otra vista previa.
     await page.getByRole('button', { name: 'Volver', exact: true }).click();
-    await expect(page.locator('ol.pasos li[aria-current="step"]')).toContainText('Cargar');
+    await expect(page.locator('ol.indicador-pasos li[aria-current="step"]')).toContainText(
+      'Cargar',
+    );
     await planilla.fill([encabezado, ...validas].join('\n'));
     await page.getByRole('button', { name: 'Vista previa' }).click();
     await expect(page.getByText(/Las 2 filas entran como aranceles nuevos/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Continuar' }).click();
-    await expect(page.locator('ol.pasos li[aria-current="step"]')).toContainText('Confirmar');
+    await expect(page.locator('ol.indicador-pasos li[aria-current="step"]')).toContainText(
+      'Confirmar',
+    );
     const confirmacion = respuestaDe(page, 'POST', /\/aranceles\/importacion$/);
     await page.getByRole('button', { name: 'Confirmar 2 aranceles' }).click();
     expect((await confirmacion).status()).toBeLessThan(300);

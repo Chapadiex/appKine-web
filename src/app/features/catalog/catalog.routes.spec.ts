@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { Type } from '@angular/core';
 
 import { CatalogosPage } from './pages/catalogos/catalogos-page';
-import { SolicitudesPage } from './pages/solicitudes/solicitudes-page';
 import { VigenciasPage } from './pages/vigencias/vigencias-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
@@ -64,30 +63,20 @@ describe('Rutas de /catalogo', () => {
   });
 
   it('cada una de las rutas fijas resuelve a su pantalla', async () => {
-    expect(await componenteDe('/catalogo/solicitudes')).toBe(SolicitudesPage);
     expect(await componenteDe('/catalogo/nomencladores/123/vigencias')).toBe(VigenciasPage);
     expect(await componenteDe('/catalogo/especialidades')).toBe(CatalogosPage);
   });
 
   it('ninguna de las rutas fijas cae en el comodin', async () => {
-    const urls = [
-      '/catalogo',
-      '/catalogo/solicitudes',
-      '/catalogo/nomencladores/123/vigencias',
-      '/catalogo/especialidades',
-    ];
+    const urls = ['/catalogo', '/catalogo/nomencladores/123/vigencias', '/catalogo/especialidades'];
     for (const url of urls) {
       expect(await componenteDe(url)).not.toBe(NotFound);
     }
   });
 
-  it('sin catalogo:read ninguna de las tres pantallas abre, aunque tenga catalogo:manage (DP-36)', async () => {
+  it('sin catalogo:read ninguna de las dos pantallas abre, aunque tenga catalogo:manage (DP-36)', async () => {
     concedidos = new Set([PERMISO_CATALOGO_MANAGE]);
-    for (const url of [
-      '/catalogo/especialidades',
-      '/catalogo/solicitudes',
-      '/catalogo/nomencladores/123/vigencias',
-    ]) {
+    for (const url of ['/catalogo/especialidades', '/catalogo/nomencladores/123/vigencias']) {
       await router.navigateByUrl(url);
       expect(router.url).toBe(RUTA_SIN_PERMISO);
     }

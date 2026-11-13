@@ -34,7 +34,7 @@ test.describe('Disponibilidad resuelta contra el backend real', () => {
     await ingresar(page, centro);
     await navegar(page, '/espacios/disponibilidad');
     await expect(
-      page.getByRole('heading', { name: 'Espacios en servicio', level: 1 }),
+      page.getByRole('heading', { name: 'Espacios habilitados por período', level: 1 }),
     ).toBeVisible();
     // `datetime-local`: la pantalla lo lee en la zona del NAVEGADOR (ver el reporte del PR). Las
     // vigencias de arriba caen lejos de los bordes, asi que el resultado no depende de eso.
