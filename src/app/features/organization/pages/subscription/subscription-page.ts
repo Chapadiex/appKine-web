@@ -14,6 +14,12 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ORGANIZACION,
+  pestanasDeOrganizacion,
+} from '../../../../core/models/pestanas-de-organizacion';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 /**
  * Suscripcion lista para pintar: la respuesta del backend mas el motivo de la suspension.
@@ -62,11 +68,15 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [CabeceraDePagina, Ayuda, DatePipe, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, DatePipe, RouterLink, Alerta],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })
 export class SubscriptionPage {
+  /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
+
   private readonly suscripciones = inject(SuscripcionesService);
   private readonly tenantContext = inject(TenantContextStore);
 

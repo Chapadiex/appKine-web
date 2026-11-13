@@ -1,11 +1,13 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ExcepcionesPage } from './excepciones-page';
-import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
+import { PERMISO_AGENDA_EXCEPCIONES } from '../../../../core/models/permisos';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
   rutaCalendarioSede,
@@ -694,6 +696,131 @@ describe('ExcepcionesPage', () => {
     expect(texto(fixture)).not.toContain('Cargar igual');
   });
 
+  describe('apertura superpuesta con otra sede (contrato 0.158.0)', () => {
+    const SOLAPADO = {
+      type: 'https://akine.app/problems/bloque-solapado',
+      status: 409,
+      detail:
+        'El profesional ya tiene horario de atencion el 10/09/2026 de 10:00 a 12:00 en la sede Centro.',
+      conflictoTipo: 'DISPONIBILIDAD',
+      conflictoMismaSede: false,
+      conflictoConsultorioId: 9,
+      conflictoConsultorioNombre: 'Centro',
+      conflictoInicio: '2026-09-10T13:00:00Z',
+      conflictoFin: '2026-09-10T15:00:00Z',
+      superposiciones: [
+        {
+          conflictoTipo: 'DISPONIBILIDAD',
+          conflictoMismaSede: false,
+          conflictoConsultorioId: 9,
+          conflictoConsultorioNombre: 'Centro',
+          conflictoInicio: '2026-09-10T13:00:00Z',
+          conflictoFin: '2026-09-10T15:00:00Z',
+        },
+      ],
+    };
+
+    async function aperturaRechazada(rechazo: object): Promise<ComponentFixture<ExcepcionesPage>> {
+      const fixture = await montar();
+      abrir(fixture, 'Cargar un cierre o una apertura');
+      seleccionar(fixture, '#alta-excepcion-tipo', 'APERTURA');
+      seleccionar(fixture, '#alta-excepcion-motivo', 'AMPLIACION');
+      seleccionar(fixture, '#alta-excepcion-alcance', String(ANA_ID));
+      escribir(fixture, '#alta-excepcion-desde', '2026-09-10');
+      escribir(fixture, '#alta-excepcion-hasta', '2026-09-11');
+      marcar(fixture, '#alta-excepcion-dia-completo', false);
+      escribir(fixture, '#alta-excepcion-hora-desde', '10:00');
+      escribir(fixture, '#alta-excepcion-hora-hasta', '12:00');
+      enviar(fixture, '#form-alta-excepcion');
+      sinImpacto();
+      const alta = httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+      );
+      expect(alta.request.body.sustituirDisponibilidadSuperpuesta).toBeUndefined();
+      alta.flush(rechazo, { status: 409, statusText: 'Conflict' });
+      await estabilizar(fixture);
+      return fixture;
+    }
+
+    function sustituir(fixture: ComponentFixture<ExcepcionesPage>): HTMLButtonElement | null {
+      return fixture.nativeElement.querySelector('#alta-excepcion-sustituir');
+    }
+
+    it('dice dónde y cuándo, y sustituir es un click explícito que reenvía con la bandera', async () => {
+      const fixture = await aperturaRechazada(SOLAPADO);
+
+      const contenido = texto(fixture);
+      expect(contenido).toContain('en la sede Centro');
+      expect(contenido).toContain('Horario de atención en la sede Centro, 10/09/2026');
+      expect(contenido).not.toContain('otra sede');
+      const boton = sustituir(fixture);
+      expect(boton?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Cerrar esa franja en Centro y abrir acá',
+      );
+      // Nada se sustituye solo.
+      httpMock.expectNone(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+      );
+
+      boton?.click();
+      const otra = httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+      );
+      expect(otra.request.body).toEqual(
+        expect.objectContaining({
+          tipo: 'APERTURA',
+          membershipId: ANA_ID,
+          sustituirDisponibilidadSuperpuesta: true,
+        }),
+      );
+      otra.flush(
+        { ...CIERRE_DE_SEDE, id: 600, tipo: 'APERTURA' },
+        { status: 201, statusText: 'Created' },
+      );
+      listado().flush(VIGENTES);
+      await estabilizar(fixture);
+      expect(titulosDeAvisos()).toEqual(['Apertura cargada']);
+    });
+
+    it('sin permiso en la otra sede lo dice con su nombre, sin ofrecer otra vez', async () => {
+      const fixture = await aperturaRechazada(SOLAPADO);
+
+      sustituir(fixture)?.click();
+      httpMock
+        .expectOne(
+          (peticion: HttpRequest<unknown>) =>
+            peticion.method === 'POST' && peticion.url === EXCEPCIONES,
+        )
+        .flush(
+          { type: 'https://akine.app/problems/forbidden', status: 403, detail: 'prohibido' },
+          { status: 403, statusText: 'Forbidden' },
+        );
+      await estabilizar(fixture);
+
+      expect(texto(fixture)).toContain('No tenés permiso para cargar cierres en la sede Centro');
+      expect(sustituir(fixture)).toBeNull();
+    });
+
+    it('un turno o una clase allá no se sustituye: no hay botón', async () => {
+      const fixture = await aperturaRechazada({
+        type: 'https://akine.app/problems/recurso-ocupado',
+        status: 409,
+        detail:
+          'El profesional ya tiene un turno el 10/09/2026 de 10:00 a 10:45 en la sede Centro.',
+        recurso: 'profesional',
+        conflictoTipo: 'TURNO',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Centro',
+      });
+
+      expect(texto(fixture)).toContain('en la sede Centro');
+      expect(sustituir(fixture)).toBeNull();
+    });
+  });
+
   it('las fechas incoherentes y la franja a medias no salen a la red', async () => {
     const fixture = await montar();
 
@@ -726,6 +853,22 @@ describe('ExcepcionesPage', () => {
     enviar(fixture, '#form-alta-excepcion');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     expect(texto(fixture)).toContain('Escribi la hora de fin como HH:MM');
+  });
+
+  it('con el motivo "Otro" la nota es obligatoria', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Cargar un cierre o una apertura');
+    const motivo = (fixture.nativeElement as HTMLElement).querySelector(
+      '#alta-excepcion-motivo',
+    ) as HTMLSelectElement;
+    motivo.value = 'OTRO';
+    motivo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    enviar(fixture, '#form-alta-excepcion');
+
+    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
+    expect(texto(fixture)).toContain('Con el motivo "Otro" escribí cuál es');
   });
 
   it('la baja pide motivo, y dar de baja dos veces dice que ya estaba dada de baja', async () => {
@@ -914,6 +1057,221 @@ describe('ExcepcionesPage', () => {
     expect(texto(fixture)).toContain('No hay cierres ni aperturas vigentes en este periodo');
   });
 
+  describe('editar una excepción (contrato 0.154.0)', () => {
+    const EDICION = `${EXCEPCIONES}/${CIERRE_DE_SEDE.id}`;
+    const edicion = () =>
+      httpMock.expectOne((peticion: HttpRequest<unknown>) => peticion.url === EDICION);
+
+    /** Abre la edicion del cierre de sede y le cambia el motivo a Licencia. */
+    async function editarElCierre(): Promise<ComponentFixture<ExcepcionesPage>> {
+      const fixture = await montar();
+      abrir(fixture, 'Editar');
+      await estabilizar(fixture);
+      return fixture;
+    }
+
+    it('abre con lo cargado; tipo y alcance no se editan', async () => {
+      const fixture = await editarElCierre();
+      const host: HTMLElement = fixture.nativeElement;
+
+      expect(texto(fixture)).toContain('Editar el cierre número 500');
+      expect(host.querySelector<HTMLSelectElement>('#alta-excepcion-tipo')?.disabled).toBe(true);
+      const alcance = host.querySelector<HTMLSelectElement>('#alta-excepcion-alcance');
+      expect(alcance?.disabled).toBe(true);
+      // La de sede entera viene con membershipId en null: es "toda la sede", no un valor raro.
+      expect(alcance?.value).toBe('');
+      expect(host.querySelector<HTMLSelectElement>('#alta-excepcion-motivo')?.value).toBe(
+        'BLOQUEO',
+      );
+      expect(host.querySelector<HTMLTextAreaElement>('#alta-excepcion-notas')?.value).toBe(
+        'Obra en el pasillo',
+      );
+      expect(texto(fixture)).toContain('Guardar los cambios');
+    });
+
+    it('guarda con la versión y sin preguntar el impacto antes', async () => {
+      const fixture = await editarElCierre();
+      seleccionar(fixture, '#alta-excepcion-motivo', 'LICENCIA');
+      enviar(fixture, '#form-alta-excepcion');
+
+      // La edicion no consulta el impacto: el 409 del PUT ya trae la lista si deja turnos afuera.
+      httpMock.expectNone((peticion: HttpRequest<unknown>) =>
+        peticion.url.endsWith('/impacto-de-alta'),
+      );
+      const pedido = edicion();
+      expect(pedido.request.method).toBe('PUT');
+      expect(pedido.request.body).toMatchObject({
+        motivo: 'LICENCIA',
+        fechaDesde: '2026-09-01',
+        fechaHasta: '2026-09-03',
+        notes: 'Obra en el pasillo',
+        version: 1,
+      });
+      expect(
+        (pedido.request.body as { confirmaTurnosAfectados?: boolean }).confirmaTurnosAfectados,
+      ).toBeUndefined();
+      pedido.flush({ ...CIERRE_DE_SEDE, motivo: 'LICENCIA', version: 2 });
+      listado().flush(VIGENTES);
+      await estabilizar(fixture);
+
+      expect(titulosDeAvisos()).toContain('Excepción actualizada');
+      expect(fixture.nativeElement.querySelector('#form-alta-excepcion')).toBeNull();
+    });
+
+    it('el 409 con turnos afectados muestra la lista y "Cargar igual" confirma', async () => {
+      const fixture = await editarElCierre();
+      seleccionar(fixture, '#alta-excepcion-motivo', 'LICENCIA');
+      enviar(fixture, '#form-alta-excepcion');
+
+      edicion().flush(
+        {
+          type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+          status: 409,
+          detail: 'El cambio deja turnos fuera de la disponibilidad.',
+          turnosAfectados: 1,
+          turnos: [
+            {
+              turnoId: 70,
+              membershipId: ANA_ID,
+              inicio: '2026-09-02T12:00:00Z',
+              fin: '2026-09-02T13:00:00Z',
+              personaNombre: 'Perez, Ana',
+              estado: 'RESERVADO',
+            },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+      await estabilizar(fixture);
+
+      // Nada se guardo: se ve a quien deja afuera y se decide.
+      expect(texto(fixture)).toContain('Perez, Ana');
+      expect(titulosDeAvisos()).not.toContain('Excepción actualizada');
+
+      abrir(fixture, 'Cargar igual');
+      const confirmado = edicion();
+      expect(confirmado.request.body).toMatchObject({
+        motivo: 'LICENCIA',
+        version: 1,
+        confirmaTurnosAfectados: true,
+      });
+      confirmado.flush({ ...CIERRE_DE_SEDE, motivo: 'LICENCIA', version: 2 });
+      listado().flush(VIGENTES);
+      await estabilizar(fixture);
+
+      expect(titulosDeAvisos()).toContain('Excepción actualizada');
+    });
+
+    it('el 400 sobre las notas se muestra junto al campo', async () => {
+      const fixture = await editarElCierre();
+      seleccionar(fixture, '#alta-excepcion-motivo', 'OTRO');
+      enviar(fixture, '#form-alta-excepcion');
+
+      edicion().flush(
+        {
+          type: 'https://akine.app/problems/validation-error',
+          status: 400,
+          detail: 'Datos inválidos.',
+          errors: { notes: 'Con el motivo Otro las notas dicen cuál es.' },
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      await estabilizar(fixture);
+
+      const campo = fixture.nativeElement.querySelector('#alta-excepcion-notas')
+        ?.parentElement as HTMLElement;
+      expect(campo.querySelector('.campo__error')?.textContent).toContain(
+        'Con el motivo Otro las notas dicen cuál es.',
+      );
+    });
+
+    it('con el motivo Otro y sin nota no sale a la red', async () => {
+      const fixture = await editarElCierre();
+      seleccionar(fixture, '#alta-excepcion-motivo', 'OTRO');
+      escribir(fixture, '#alta-excepcion-notas', '   ');
+      enviar(fixture, '#form-alta-excepcion');
+
+      httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url === EDICION);
+      expect(texto(fixture)).toContain('Con el motivo "Otro" escribí cuál es');
+    });
+
+    it('abrir el alta después de editar vuelve a habilitar tipo y alcance', async () => {
+      const fixture = await editarElCierre();
+      abrir(fixture, 'Cancelar');
+      abrir(fixture, 'Cargar un cierre o una apertura');
+      await estabilizar(fixture);
+
+      const host: HTMLElement = fixture.nativeElement;
+      expect(host.querySelector<HTMLSelectElement>('#alta-excepcion-tipo')?.disabled).toBe(false);
+      expect(host.querySelector<HTMLSelectElement>('#alta-excepcion-alcance')?.disabled).toBe(
+        false,
+      );
+      expect(texto(fixture)).toContain('Cargar la excepción');
+    });
+  });
+
+  it('cada excepción dice quién la cargó, o que no consta', async () => {
+    const fixture = await montar([
+      { ...CIERRE_DE_SEDE, createdByNombre: 'Ruiz, Pablo' },
+      APERTURA_DE_SEDE,
+    ]);
+    const autores = [...fixture.nativeElement.querySelectorAll('tr.excepcion td:nth-child(6)')].map(
+      (celda) => (celda as HTMLElement).textContent?.trim(),
+    );
+
+    expect(autores).toEqual(['Ruiz, Pablo', 'Sin registrar']);
+  });
+
+  describe('agenda:excepciones solo propio (contrato 0.154.0)', () => {
+    const DE_ANA = { ...CIERRE_DE_SEDE, id: 510, membershipId: ANA_ID, notes: 'Turno médico' };
+
+    async function comoAna(): Promise<ComponentFixture<ExcepcionesPage>> {
+      (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+        signal(ANA_ID);
+      tenantContext.select({
+        organizationId: ORG,
+        organizationName: 'Belgrano',
+        consultorioId: SEDE,
+        consultorioName: 'Sede Centro',
+      });
+      permisos.cargar().subscribe();
+      httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+        permissions: [PERMISO_AGENDA_EXCEPCIONES],
+        ownScopedPermissions: [PERMISO_AGENDA_EXCEPCIONES],
+      });
+      const fixture = TestBed.createComponent(ExcepcionesPage);
+      fixture.detectChanges();
+      httpMock
+        .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+        .flush({ content: [ANA, BETO], page: 0, size: 100, totalElements: 2, totalPages: 1 });
+      listado().flush([CIERRE_DE_SEDE, DE_ANA]);
+      await estabilizar(fixture);
+      return fixture;
+    }
+
+    it('ve todas, pero solo opera las suyas', async () => {
+      const fixture = await comoAna();
+      const filas = [...fixture.nativeElement.querySelectorAll('tr.excepcion')] as HTMLElement[];
+
+      expect(filas).toHaveLength(2);
+      const conAcciones = filas.filter((fila) => fila.querySelector('app-acciones-de-fila'));
+      expect(conAcciones).toHaveLength(1);
+      expect(conAcciones[0].textContent).toContain('Turno médico');
+    });
+
+    it('el alta sale a su nombre, sin la opción de toda la sede', async () => {
+      const fixture = await comoAna();
+      abrir(fixture, 'Cargar un cierre o una apertura');
+      await estabilizar(fixture);
+
+      const alcance = fixture.nativeElement.querySelector(
+        '#alta-excepcion-alcance',
+      ) as HTMLSelectElement;
+      expect(alcance.value).toBe(String(ANA_ID));
+      expect(Array.from(alcance.options).map((o) => o.value)).toEqual([String(ANA_ID)]);
+    });
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
@@ -938,7 +1296,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();
@@ -977,7 +1335,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();
@@ -1014,7 +1372,7 @@ describe('ExcepcionesPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE] });
+      .flush({ permissions: [PERMISO_AGENDA_EXCEPCIONES] });
 
     const fixture = TestBed.createComponent(ExcepcionesPage);
     fixture.detectChanges();

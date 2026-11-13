@@ -1,22 +1,20 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
-  PERMISO_AUDITORIA_READ,
+  PERMISO_BIBLIOTECA_CONSULTAR,
+  PERMISO_BIBLIOTECA_MANAGE,
   PERMISO_CAJA_OPERATE,
   PERMISO_CATALOGO_READ,
   PERMISO_CLASE_READ,
   PERMISO_COBRO_REGISTER,
   PERMISO_COLABORADOR_READ,
-  PERMISO_CONSULTORIO_MANAGE,
   PERMISO_CONVENIO_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
-  PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
-import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 
@@ -31,6 +29,12 @@ export interface Seccion {
    * `permisos`, la seccion se ve con solo tener contexto.
    */
   readonly permisos?: readonly string[];
+
+  /**
+   * Otras rutas que se ven como esta seccion: pantallas que son pestañas suyas pero viven bajo otra
+   * raiz (la politica de enmienda es de `/atencion` y se llega desde Organizacion).
+   */
+  readonly tambien?: readonly string[];
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -87,6 +91,10 @@ export interface GrupoDeSecciones {
  *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
  *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36).</li>
+ *   <li><b>Biblioteca</b> — `biblioteca.routes.ts`: las dos rutas llevan
+ *       `permissionGuard(PERMISO_BIBLIOTECA_MANAGE)`, solo del ORG_ADMIN.</li>
+ *   <li><b>Consultar biblioteca</b> — `consulta.routes.ts`: la ruta lleva
+ *       `permissionGuard(PERMISO_BIBLIOTECA_CONSULTAR)`.</li>
  *   <li><b>Contratacion</b> — `contracting.routes.ts`: todas las rutas llevan
  *       `permissionGuard(PERMISO_CONVENIO_READ)` (DP-36).</li>
  * </ul>
@@ -113,6 +121,11 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         ruta: '/atencion/sin-turno',
         permisos: [PERMISO_SESION_REGISTER],
       },
+      {
+        etiqueta: 'Consultar biblioteca',
+        ruta: '/consulta',
+        permisos: [PERMISO_BIBLIOTECA_CONSULTAR],
+      },
     ],
   },
   {
@@ -126,7 +139,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     secciones: [
       { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
       { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
-      { etiqueta: 'Productos de pack', ruta: RUTA_PRODUCTOS, permisos: [PERMISO_PRODUCTO_READ] },
     ],
   },
   {
@@ -145,13 +157,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'servicios',
     secciones: [
       { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
-      { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
       { etiqueta: 'Catálogo clínico', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
-      {
-        etiqueta: 'Pedidos al catálogo',
-        ruta: '/catalogo/solicitudes',
-        permisos: [PERMISO_CATALOGO_READ],
-      },
     ],
   },
   {
@@ -180,20 +186,15 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'horarios',
     secciones: [
       { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
-      { etiqueta: 'Espacios en servicio', ruta: '/espacios/disponibilidad' },
       {
         etiqueta: 'Horarios de profesionales',
         ruta: RUTA_HORARIOS,
         permisos: [PERMISO_COLABORADOR_READ],
       },
       {
+        // Cierres y aperturas es una pestaña del calendario desde el 08/11/2026.
         etiqueta: 'Calendario de la sede',
         ruta: `${RUTA_HORARIOS}/calendario`,
-        permisos: [PERMISO_COLABORADOR_READ],
-      },
-      {
-        etiqueta: 'Cierres y aperturas',
-        ruta: `${RUTA_HORARIOS}/excepciones`,
         permisos: [PERMISO_COLABORADOR_READ],
       },
     ],
@@ -202,24 +203,19 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     etiqueta: 'Configuración',
     icono: 'configuracion',
     secciones: [
-      { etiqueta: 'Organización', ruta: '/organizacion' },
+      // Suscripcion, auditoria y politica de enmienda son pestañas de Organizacion (08/11/2026).
+      {
+        etiqueta: 'Organización',
+        ruta: '/organizacion',
+        tambien: ['/atencion/politica-de-enmienda'],
+      },
       { etiqueta: 'Sedes', ruta: '/organizacion/sedes' },
       {
         etiqueta: 'Colaboradores',
         ruta: '/organizacion/colaboradores',
         permisos: [PERMISO_COLABORADOR_READ],
       },
-      { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' },
-      {
-        etiqueta: 'Auditoría',
-        ruta: '/organizacion/auditoria',
-        permisos: [PERMISO_AUDITORIA_READ],
-      },
-      {
-        etiqueta: 'Política de enmienda',
-        ruta: '/atencion/politica-de-enmienda',
-        permisos: [PERMISO_CONSULTORIO_MANAGE],
-      },
+      { etiqueta: 'Biblioteca', ruta: '/biblioteca', permisos: [PERMISO_BIBLIOTECA_MANAGE] },
     ],
   },
 ];
@@ -252,10 +248,14 @@ export const RUTA_INICIO = '/agenda';
 export function seccionDe(url: string, secciones: readonly Seccion[]): Seccion | null {
   const camino = url.split(/[?#]/)[0] ?? '';
   let elegida: Seccion | null = null;
+  let largo = -1;
   for (const seccion of secciones) {
-    const coincide = camino === seccion.ruta || camino.startsWith(`${seccion.ruta}/`);
-    if (coincide && (elegida === null || seccion.ruta.length > elegida.ruta.length)) {
-      elegida = seccion;
+    for (const ruta of [seccion.ruta, ...(seccion.tambien ?? [])]) {
+      const coincide = camino === ruta || camino.startsWith(`${ruta}/`);
+      if (coincide && ruta.length > largo) {
+        elegida = seccion;
+        largo = ruta.length;
+      }
     }
   }
   return elegida;

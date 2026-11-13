@@ -88,16 +88,16 @@
     </div>
 
     <div class="campo">
-      <label for="padron-filtro-perfil">Perfil clínico</label>
+      <label for="padron-filtro-tipo">Tipo de persona</label>
       <select
-        id="padron-filtro-perfil"
-        name="padron-filtro-perfil"
-        [value]="filtroPerfil()"
-        (change)="cambiarPerfil($any($event.target).value)"
+        id="padron-filtro-tipo"
+        name="padron-filtro-tipo"
+        [value]="filtroTipo()"
+        (change)="cambiarTipo($any($event.target).value)"
       >
-        <option value="TODOS">Todas</option>
-        <option value="CON_PERFIL">Solo pacientes</option>
-        <option value="SIN_PERFIL">Solo personas sin perfil</option>
+        @for (tipo of tiposDePersona; track tipo.valor) {
+          <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+        }
       </select>
     </div>
   </app-filtros>
@@ -109,9 +109,13 @@
       <p>{{ mensaje }}</p>
       <p class="alerta__acciones">
         @if (faltaContexto()) {
-          <a class="boton" href="/seleccionar-contexto">Elegir contexto de trabajo</a>
+          <a class="boton boton--secundario" href="/seleccionar-contexto"
+            >Elegir contexto de trabajo</a
+          >
         } @else {
-          <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
         }
       </p>
     </app-alerta>
@@ -120,7 +124,12 @@
       titulo="Todavía no hay personas en el padrón"
       texto="Registrá a la primera para empezar."
     >
-      <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        (click)="abrirAlta()"
+        *akinePermiso="permisoManage"
+      >
         Dar de alta la primera persona
       </button>
     </app-estado-vacio>
@@ -157,7 +166,14 @@
               <td>
                 <span class="etiqueta">{{ etiquetaDePerfil(persona) }}</span>
               </td>
-              <td>{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</td>
+              <td>
+                <span
+                  class="marca-estado"
+                  [class.marca-estado--activa]="persona.estado === 'ACTIVO'"
+                  [class.marca-estado--revocada]="persona.estado !== 'ACTIVO'"
+                  >{{ persona.estado === 'ACTIVO' ? 'Activa' : 'Dada de baja' }}</span
+                >
+              </td>
               <td class="tabla__acciones">
                 <!--
                   Entrada a la ficha 360 (AKINE-03.02). Va a la vista y sin permiso detras: la lectura
@@ -414,7 +430,12 @@
             }
           </ul>
           <p class="alerta__acciones">
-            <button type="button" class="boton" [disabled]="enviando()" (click)="enviarAlta(true)">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="enviando()"
+              (click)="enviarAlta(true)"
+            >
               Es otra persona: darla de alta igual
             </button>
             <button type="button" class="boton boton--secundario" (click)="descartarCandidatos()">

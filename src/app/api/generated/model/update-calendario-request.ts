@@ -19,6 +19,10 @@ export interface UpdateCalendarioRequest {
      */
     cierraPorFeriado?: boolean;
     /**
+     * Que hacer con las franjas de profesionales que el horario general enviado deja afuera (0.162.0): RECORTAR deja cada una en su parte comun con el horario de la sede y da de baja las que quedan vacias; CONSERVAR guarda el horario sin tocarlas, para ajustarlas a mano. OMITIRLO con alguna franja afuera no guarda nada y responde 409 franjas-de-profesionales-fuera-del-horario con la lista. Sin horarioGeneral no se usa
+     */
+    franjasFueraDelHorario?: UpdateCalendarioRequestFranjasFueraDelHorarioEnum;
+    /**
      * Horario general de la sede (RF-M03-003). OMITIRLO lo deja como estaba; una lista vacia lo borra; una lista lo REEMPLAZA entero. Lo reemplazado no se borra: queda como historia. Informativo: no sustituye la disponibilidad de cada profesional (RN-M03-004). Dos franjas del mismo dia que se pisan son 400
      */
     horarioGeneral?: Array<HorarioGeneralFranjaRequest>;
@@ -27,4 +31,10 @@ export interface UpdateCalendarioRequest {
      */
     pais?: string;
 }
+export enum UpdateCalendarioRequestFranjasFueraDelHorarioEnum {
+    RECORTAR = 'RECORTAR',
+    CONSERVAR = 'CONSERVAR'
+};
+
+
 

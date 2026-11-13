@@ -5,6 +5,7 @@ import {
   PERMISO_COLABORADOR_MANAGE,
   PERMISO_COLABORADOR_READ,
   PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_TENANT_UPDATE,
 } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
@@ -60,6 +61,16 @@ export const routes: Routes = [
   // Alta antes que el listado: si `colaboradores/nuevo` quedara despues de `colaboradores`
   // seguiria funcionando -son paths distintos, no un parametro-, pero el orden explicito
   // evita que un futuro `colaboradores/:id` se coma esta ruta sin que nadie lo note.
+  {
+    path: 'colaboradores/manual/nuevo',
+    canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
+    loadComponent: () =>
+      import('./pages/manual-collaborator/manual-collaborator-page').then(
+        (m) => m.ManualCollaboratorPage,
+      ),
+    title: 'AKINE - Nuevo colaborador',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
   {
     path: 'colaboradores/nuevo',
     canActivate: [permissionGuard(PERMISO_COLABORADOR_MANAGE)],
@@ -119,6 +130,12 @@ export const routes: Routes = [
       import('./pages/consultorios/consultorios-page').then((m) => m.ConsultoriosPage),
     title: 'AKINE - Sedes',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    path: 'marca',
+    canActivate: [permissionGuard(PERMISO_TENANT_UPDATE)],
+    loadComponent: () => import('./pages/marca/marca-page').then((m) => m.MarcaPage),
+    title: 'AKINE - Marca del centro',
   },
   {
     path: 'auditoria',

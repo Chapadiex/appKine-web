@@ -68,7 +68,7 @@
 }
 
 .navegador-semana__boton:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 .navegador-semana__rango {
@@ -189,7 +189,7 @@
   min-width: 4rem;
   height: 0.375rem;
   border-radius: 0.1875rem;
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
   overflow: hidden;
 }
 
@@ -202,4 +202,147 @@
 /* Paneles laterales del detalle de una clase (refactor UX/UI del 28/10/2026). */
 .clase__nota {
   margin: 0 0 var(--esp-6);
+}
+
+/* Importes y cantidades: a la derecha y con cifras de ancho fijo, para compararlos fila contra fila. */
+.tabla :is(th, td).importe {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/*
+ * Pastillas del alta de clase (modo y dias de la semana): radios y casillas nativas con aspecto de
+ * boton. Mismas reglas que las de horarios en `resource.css`; no se importa CSS entre features.
+ */
+.pastillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+/* El modo (una clase o todas las semanas): dos tarjetas, sin estirarse a todo el ancho. */
+.modo-de-clase {
+  max-width: 44rem;
+}
+
+/* Titulo de bloque del alta: icono en su ficha, y una linea que lo separa del bloque anterior. */
+.seccion-de-clase {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: var(--esp-5) 0;
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  font-size: var(--tipo-md);
+  color: var(--color-texto-fuerte);
+}
+
+.seccion-de-clase__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-acento-claro);
+  color: var(--color-acento);
+}
+
+/* Lo que se va a programar, en una frase, arriba de las acciones. */
+.resumen-de-clase {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-4);
+  margin: var(--esp-6) 0 0;
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+}
+
+.resumen-de-clase > app-icono {
+  color: var(--color-acento);
+}
+
+.resumen-de-clase__zona {
+  display: block;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* Rotulo de un grupo de casillas: el mismo peso que el label de un campo. */
+.campo__rotulo {
+  margin: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pastilla {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pastilla input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pastilla:hover {
+  border-color: var(--color-acento);
+}
+
+.pastilla:has(input:checked) {
+  border-color: var(--color-acento);
+  box-shadow: inset 0 0 0 1px var(--color-acento);
+  background: var(--color-acento-claro);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.pastilla:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.pastilla--dia {
+  min-width: 2.75rem;
+  padding: 0 var(--esp-3);
+}
+
+/* Fechas de una serie que no se programaron: fecha y motivo en una linea, el detalle debajo. */
+.serie-omitidas {
+  margin: var(--esp-3) 0 0;
+  padding-left: var(--esp-6);
+}
+
+.serie-omitidas li + li {
+  margin-top: var(--esp-2);
+}
+
+/* Lo que falta cargar antes de la primera clase, en orden. */
+.pasos-previos {
+  margin: var(--esp-3) 0 0;
+  padding-left: var(--esp-6);
+}
+
+.pasos-previos li + li {
+  margin-top: var(--esp-2);
 }

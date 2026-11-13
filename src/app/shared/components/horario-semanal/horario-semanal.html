@@ -1,0 +1,115 @@
+<div class="semana__cabecera">
+  <div class="semana__modelos" role="group" aria-label="Modelos de horario">
+    <span class="semana__rotulo">Empezá desde un modelo</span>
+    @for (modelo of modelos; track modelo.id) {
+      <button
+        type="button"
+        class="semana__modelo"
+        [attr.aria-pressed]="modeloActual() === modelo.id"
+        (click)="aplicarModelo(modelo.id)"
+      >
+        {{ modelo.rotulo }}
+      </button>
+    }
+  </div>
+  <p class="semana__resumen" aria-live="polite">{{ resumen() }}</p>
+</div>
+
+<ul class="semana__dias">
+  @for (dia of dias(); track dia.numero) {
+    <li class="semana__dia" [class.semana__dia--cerrado]="dia.franjas.length === 0">
+      <label class="semana__interruptor">
+        <input
+          type="checkbox"
+          role="switch"
+          [id]="idBase() + '-abre-' + dia.numero"
+          [checked]="dia.franjas.length > 0"
+          (change)="alternarDia(dia)"
+        />
+        <span class="semana__nombre">{{ dia.etiqueta }}</span>
+      </label>
+
+      @if (dia.franjas.length === 0) {
+        <span class="semana__cerrada">Cerrada</span>
+      } @else {
+        <div class="semana__franjas">
+          @for (franja of dia.franjas; track franja.control; let posicion = $index) {
+            <div class="semana__franja" [formGroup]="franja.control">
+              <label class="visualmente-oculto" [for]="idBase() + '-desde-' + franja.indice">
+                {{ dia.etiqueta }}, abre{{ sufijoDeFranja(posicion) }}
+              </label>
+              <select
+                class="semana__hora"
+                [id]="idBase() + '-desde-' + franja.indice"
+                formControlName="horaDesde"
+                [attr.aria-invalid]="mensaje(franja.indice) !== null"
+                [attr.aria-describedby]="
+                  errorDelDia(dia) ? idBase() + '-error-' + errorDelDia(dia)?.indice : null
+                "
+              >
+                <option value="">--:--</option>
+                @for (hora of horasDeApertura; track hora) {
+                  <option [value]="hora">{{ hora }}</option>
+                }
+              </select>
+              <span aria-hidden="true">–</span>
+              <label class="visualmente-oculto" [for]="idBase() + '-hasta-' + franja.indice">
+                {{ dia.etiqueta }}, cierra{{ sufijoDeFranja(posicion) }}
+              </label>
+              <select
+                class="semana__hora"
+                [id]="idBase() + '-hasta-' + franja.indice"
+                formControlName="horaHasta"
+                [attr.aria-invalid]="mensaje(franja.indice) !== null"
+                [attr.aria-describedby]="
+                  errorDelDia(dia) ? idBase() + '-error-' + errorDelDia(dia)?.indice : null
+                "
+              >
+                <option value="">--:--</option>
+                @for (hora of horasDeCierre; track hora) {
+                  <option [value]="hora">{{ hora }}</option>
+                }
+              </select>
+              @if (puedeQuitarFranja(dia)) {
+                <button type="button" class="semana__quitar" (click)="quitarFranja(franja.indice)">
+                  Quitar<span class="visualmente-oculto">
+                    la franja {{ posicion + 1 }} del {{ dia.etiqueta }}</span
+                  >
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="semana__acciones">
+          <button type="button" class="semana__corte" (click)="alternarCorte(dia)">
+            @if (dia.franjas.length > 1) {
+              Sin corte<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            } @else {
+              + Corte al mediodía<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            }
+          </button>
+          @if (puedeAgregarFranja(dia)) {
+            <button type="button" class="semana__corte" (click)="agregarFranja(dia)">
+              + Otra franja<span class="visualmente-oculto"> el {{ dia.etiqueta }}</span>
+            </button>
+          }
+        </div>
+
+        @if (errorDelDia(dia); as error) {
+          <p class="campo__error semana__error" [id]="idBase() + '-error-' + error.indice">
+            {{ error.texto }}
+          </p>
+        }
+      }
+    </li>
+  }
+</ul>
+
+@if (puedeCopiarLunes()) {
+  <div class="semana__pie">
+    <button type="button" class="boton boton--secundario" (click)="copiarLunes()">
+      Copiar el horario del lunes a los demás días abiertos
+    </button>
+  </div>
+}

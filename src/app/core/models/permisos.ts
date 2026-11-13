@@ -139,6 +139,21 @@ export const PERMISO_TURNO_READ = 'turno:read';
  */
 export const PERMISO_TURNO_MANAGE = 'turno:manage';
 
+/**
+ * Cargar y editar el horario habitual de un profesional (contrato 0.154.0). Reemplaza a
+ * `consultorio:manage` en los bloques del horario semanal. El `PROFESIONAL` lo tiene solo sobre el
+ * suyo (ver `PermissionsStore.soloPropio`); el horario general y el calendario siguen en
+ * `consultorio:manage`.
+ */
+export const PERMISO_AGENDA_HORARIO = 'agenda:horario';
+
+/**
+ * Bloqueos y excepciones de disponibilidad (contrato 0.154.0). Reemplaza a `consultorio:manage` en
+ * alta, edicion, baja e impacto previo. La secretaria lo tiene en la sede; el `PROFESIONAL`, sobre
+ * su propia agenda. La excepcion de sede entera exige un alcance no propio.
+ */
+export const PERMISO_AGENDA_EXCEPCIONES = 'agenda:excepciones';
+
 /** Autorizar un turno sobre un horario ocupado (TURNO.md §21). Lo tienen los administradores. */
 export const PERMISO_TURNO_SOBRETURNO = 'turno:sobreturno';
 
@@ -253,3 +268,21 @@ export const PERMISO_PASE_MANAGE = 'pase:manage';
  * no el mostrador (el ADMINISTRATIVO vende pero no corrige saldos).
  */
 export const PERMISO_PASE_ADJUST = 'pase:adjust';
+
+/**
+ * Administrar la biblioteca del centro (libros PDF y su busqueda, contrato 0.164.0). Copiado de
+ * `knowledge.domain.PermissionCodes`.
+ *
+ * <p>Es solo del ORG_ADMIN. Gobierna la pantalla `/biblioteca` entera: el guard y la entrada del
+ * menu son UX, la autoridad es el backend.
+ */
+export const PERMISO_BIBLIOTECA_MANAGE = 'biblioteca:manage';
+
+/**
+ * Consultar la biblioteca del centro con el asistente (contrato 0.165.0). Copiado de
+ * `knowledge.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Gobierna
+ * `/consulta`: el guard y la entrada del menu son UX, la autoridad es el backend.
+ */
+export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';

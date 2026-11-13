@@ -86,11 +86,114 @@ summary {
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .flujo__resumen-titulo {
   font-weight: var(--peso-medio);
+}
+
+/*
+ * --- Detalle del turno (rediseño del 08/11/2026) ---
+ * Datos en grupos con icono, y despues secciones separadas por una linea: observaciones,
+ * seguimiento, gestion y cancelacion. Una sola columna de scroll, la del panel.
+ */
+
+/* El estado, debajo del nombre en la cabecera del panel. */
+.flujo__estado-cabecera {
+  margin: var(--esp-3) 0 0;
+}
+
+.flujo__datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin: 0;
+}
+
+.flujo__grupo {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--esp-4);
+}
+
+.flujo__grupo dt {
+  display: flex;
+  padding-top: 0.125rem;
+  color: var(--color-texto-suave);
+}
+
+.flujo__grupo dd {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  overflow-wrap: anywhere;
+}
+
+/* Debajo del dato principal, en su propia linea ("45 minutos" bajo la prestacion). */
+.flujo__dato > .flujo__secundario {
+  display: block;
+}
+
+.flujo__secundario {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+a.flujo__secundario {
+  align-self: flex-start;
+  color: var(--color-enlace);
+}
+
+.flujo__seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+/* Sin ningun boton (estado o permisos), seguimiento y gestion no se dibujan. */
+.flujo__seccion:not(:has(button, a, textarea, p)) {
+  display: none;
+}
+
+.flujo__seccion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+}
+
+.flujo__seccion-titulo {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.flujo__vacio {
+  color: var(--color-texto-suave);
+}
+
+/* Las acciones de una seccion: dos columnas parejas, una en un panel angosto. */
+.flujo__acciones-grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  gap: var(--esp-4);
+}
+
+.flujo__acciones-grilla > .boton {
+  width: 100%;
+}
+
+.flujo__seccion--peligro > .boton {
+  width: 100%;
 }
 
 .flujo__fila {
@@ -151,7 +254,7 @@ summary {
 
 .candidato:hover,
 .candidato:focus-visible {
-  background: var(--color-acento-claro);
+  background: var(--color-hover);
 }
 
 .candidato__nombre {
@@ -165,66 +268,144 @@ summary {
   color: var(--color-texto-suave);
 }
 
-/* --- Horarios --- */
+/* --- Horarios (rediseño del 08/11/2026) --- */
 
 .horarios {
   display: flex;
   flex-direction: column;
-  gap: var(--esp-5);
+  gap: var(--esp-6);
 }
 
+.horarios__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+/* "Lunes 9 de noviembre · 7 horarios disponibles · Pablo Profesional" en una linea que se parte. */
 .horarios__dia {
-  margin: 0 0 var(--esp-2);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-  color: var(--color-texto-suave);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-1) var(--esp-4);
+  margin: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
 }
 
-.horarios__dia::first-letter {
+.horarios__fecha::first-letter {
   text-transform: uppercase;
 }
 
+.horarios__cantidad,
+.horarios__profesional {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+.horarios__profesional::before {
+  content: '·';
+  margin-right: var(--esp-4);
+}
+
+/* Tres columnas parejas; dos en un telefono. */
 .horarios__lista {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: var(--esp-4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-3);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/*
+ * Libre: neutro, con borde de control (3:1). El color no se gasta en "disponible": todo lo que se
+ * ofrece lo esta. Lo que se distingue es el elegido: fondo y borde azules, peso y tilde.
+ */
 .horario {
-  display: block;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-1);
   width: 100%;
-  padding: var(--esp-4) var(--esp-5);
+  min-height: 2.75rem;
+  padding: var(--esp-3) var(--esp-5);
   background: var(--color-superficie);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
-  color: inherit;
+  color: var(--color-texto-fuerte);
   font: inherit;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
 .horario:hover {
-  border-color: var(--color-acento);
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.horario:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
 }
 
 .horario[aria-pressed='true'] {
-  border-color: var(--color-acento);
-  box-shadow: inset 0 0 0 1px var(--color-acento);
-  background: var(--color-acento-claro);
+  border-color: var(--color-accion-fondo);
+  box-shadow: inset 0 0 0 1px var(--color-accion-fondo);
+  background: var(--color-seleccion);
+  color: var(--color-texto-fuerte);
+}
+
+.horario__tilde {
+  position: absolute;
+  top: var(--esp-2);
+  right: var(--esp-3);
+  color: var(--color-enlace);
+  font-size: var(--tipo-sm);
 }
 
 .horario__hora {
-  display: block;
   font-weight: var(--peso-medio);
+  font-variant-numeric: tabular-nums;
+}
+
+.horario[aria-pressed='true'] .horario__hora {
+  font-weight: var(--peso-fuerte);
 }
 
 .horario__detalle {
-  display: block;
-  font-size: var(--tipo-xs);
+  max-width: 100%;
+  overflow: hidden;
   color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .horarios__lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.horarios__ver-todos {
+  align-self: flex-start;
+  padding: var(--esp-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.horarios__ver-todos:hover {
+  text-decoration: underline;
 }
 
 /* --- Programacion multiple --- */
@@ -320,4 +501,115 @@ summary {
   display: block;
   font-size: var(--tipo-xs);
   color: var(--color-texto-suave);
+}
+
+/* Casilla con su texto en una sola linea, como en Excepciones (resource.css). */
+.opcion-casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
+}
+
+.opcion-casilla input {
+  width: auto;
+  margin: 0;
+}
+
+/* --- Pastillas de accion: salidas secundarias, centradas (08/11/2026) --- */
+
+.flujo__pastillas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--esp-3);
+}
+
+.pastilla-accion {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: var(--esp-2) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-acento-claro);
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.pastilla-accion:hover {
+  border-color: var(--color-acento);
+  background: var(--color-hover);
+}
+
+.pastilla-accion:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* --- Nuevo turno (rediseño del 08/11/2026) --- */
+
+/* La disponibilidad es lo principal: su titulo, con la duracion al lado, separa de lo de arriba. */
+.flujo__disponibilidad {
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.flujo__titulo-disponibilidad {
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.flujo__titulo-disponibilidad .flujo__secundario {
+  font-weight: var(--peso-normal);
+}
+
+/* Ver la agenda y programar varias: salidas de menos peso, juntas y a la izquierda. */
+.flujo__otras-salidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-6);
+  padding-top: var(--esp-4);
+  border-top: var(--borde-fino) dashed var(--color-borde);
+}
+
+.flujo__otras-salidas .boton-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding-inline: 0;
+  color: var(--color-enlace);
+  font-size: var(--tipo-sm);
+}
+
+/* Pie: a la izquierda lo elegido (o lo que falta, en neutro); a la derecha, las acciones. */
+.flujo__pie-resumen {
+  flex: 1 1 14rem;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.flujo__pie-resumen > p {
+  margin: 0;
+}
+
+.flujo__pie-cuando {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}
+
+.flujo__pie-cuando::first-letter {
+  text-transform: uppercase;
+}
+
+.flujo__pie-detalle {
+  overflow: hidden;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

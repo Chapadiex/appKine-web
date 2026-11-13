@@ -1,6 +1,14 @@
 import { AkineHttpError, ProblemDetail } from '../../../core/interceptors/error.interceptor';
 
-import { recortarVentana, traducirErrorAgenda, traducirErrorRecepcion } from './agenda-errors';
+import {
+  conflictoEnOtraSede,
+  detalleDelConflicto,
+  nombreDeSede,
+  recortarVentana,
+  traducirErrorAgenda,
+  traducirErrorRecepcion,
+  turnosDelRechazo,
+} from './agenda-errors';
 
 /**
  * Arma un cuerpo de Problem Details con extensiones.
@@ -36,6 +44,115 @@ describe('traducirErrorAgenda', () => {
       false,
     );
   }
+
+  it('recurso-ocupado con una clase lo dice, y trae la clase y la sede (contrato 0.156.0)', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('recurso-ocupado', {
+        recurso: 'profesional',
+        conflictoTipo: 'CLASE',
+        claseEnConflictoId: 55,
+        conflictoConsultorioId: 8,
+        conflictoInicio: '2030-03-04T13:00:00Z',
+        conflictoFin: '2030-03-04T14:00:00Z',
+      }),
+    );
+
+    expect(traducido.mensaje).toContain('clase');
+    expect(traducido.mensaje).toContain('no admite sobreturno');
+    expect(traducido.conflictoTipo).toBe('CLASE');
+    expect(traducido.claseEnConflictoId).toBe(55);
+    expect(traducido.conflictoConsultorioId).toBe(8);
+    expect(conflictoEnOtraSede(traducido, 3)).toBe(true);
+    expect(conflictoEnOtraSede(traducido, 8)).toBe(false);
+
+    const hora = (instante: string): string => instante.slice(11, 16);
+    expect(detalleDelConflicto(traducido, 3, () => 'Norte', hora)).toBe(
+      'Clase en la sede Norte, 13:00 a 14:00',
+    );
+    // Sin nombre para otra sede no se supone nada: queda el detail del servidor.
+    expect(detalleDelConflicto(traducido, 3, () => '', hora)).toBe('Rechazado por el servidor.');
+    expect(detalleDelConflicto(traducido, 8, () => 'Norte', hora)).toBe(
+      'Clase en la sede Norte, 13:00 a 14:00',
+    );
+  });
+
+  it('0.158.0: la sede y si es la misma vienen del servidor, con el instructor si lo hay', () => {
+    const traducido = traducirErrorAgenda(
+      conflicto('recurso-ocupado', {
+        recurso: 'profesional',
+        conflictoTipo: 'TURNO',
+        turnoEnConflictoId: 9,
+        conflictoConsultorioId: 8,
+        conflictoConsultorioNombre: 'Centro',
+        conflictoMismaSede: true,
+        conflictoInicio: '2030-03-04T13:00:00Z',
+        conflictoFin: '2030-03-04T13:45:00Z',
+      }),
+    );
+    const hora = (instante: string): string => instante.slice(11, 16);
+
+    expect(traducido.mensaje).toContain('Ya hay otro turno');
+    // La bandera del servidor manda sobre la comparacion de ids.
+    expect(conflictoEnOtraSede(traducido, 3)).toBe(false);
+    expect(detalleDelConflicto(traducido, 3, () => 'otro nombre', hora)).toBe(
+      'Turno en la sede Centro, 13:00 a 13:45',
+    );
+  });
+
+  it.each([
+    ['BLOQUEO', 'agenda bloqueada', 'Agenda bloqueada en la sede Norte, 10:00 a 12:00'],
+    ['AUSENCIA', 'ausencia registrada', 'Ausencia registrada en la sede Norte, 10:00 a 12:00'],
+    ['CIERRE_DE_SEDE', 'sede está cerrada', 'Sede cerrada (Norte), 10:00 a 12:00'],
+    ['DISPONIBILIDAD', 'dos lugares', 'Horario de atención en la sede Norte, 10:00 a 12:00'],
+  ])(
+    'slot-no-disponible por %s dice la causa, no "se fue mientras mirabas"',
+    (tipo, texto, linea) => {
+      const traducido = traducirErrorAgenda(
+        conflicto('slot-no-disponible', {
+          motivo: 'cerrado',
+          conflictoTipo: tipo,
+          conflictoConsultorioNombre: 'Norte',
+          conflictoMismaSede: false,
+          conflictoInicio: '2030-03-04T10:00:00Z',
+          conflictoFin: '2030-03-04T12:00:00Z',
+        }),
+      );
+
+      expect(traducido.causa).toBe('slot-no-disponible');
+      expect(traducido.mensaje).toContain(texto);
+      expect(
+        detalleDelConflicto(
+          traducido,
+          3,
+          () => '',
+          (i) => i.slice(11, 16),
+        ),
+      ).toBe(linea);
+    },
+  );
+
+  it('un turno sin intervalo ni sede cae al detail; los nombres de sede salen de los contextos', () => {
+    const turno = traducirErrorAgenda(conflicto('recurso-ocupado', { conflictoTipo: 'TURNO' }));
+    expect(turno.mensaje).toContain('Ya hay otro turno');
+    expect(
+      detalleDelConflicto(
+        turno,
+        3,
+        () => '',
+        (i) => i,
+      ),
+    ).toBe('Rechazado por el servidor.');
+    expect(
+      detalleDelConflicto(
+        traducirErrorAgenda(conflicto('slot-completo')),
+        3,
+        () => '',
+        (i) => i,
+      ),
+    ).toBe('');
+    expect(nombreDeSede([{ consultorioId: 8, consultorioName: 'Norte' }], 8)).toBe('Norte');
+    expect(nombreDeSede([], 8)).toBe('');
+  });
 
   it('slot-no-disponible manda a recargar la agenda y trae el motivo', () => {
     const traducido = traducirErrorAgenda(
@@ -397,5 +514,50 @@ describe('recortarVentana', () => {
     expect(recortarVentana('2026-09-15', 0)).toBeNull();
     expect(recortarVentana('2026-09-15', -1)).toBeNull();
     expect(recortarVentana('no es una fecha', 62)).toBeNull();
+  });
+});
+
+describe('conflictos del flujo de turnos (contrato 0.154.0)', () => {
+  function rechazo(tipo: string, extras: Record<string, unknown> = {}): AkineHttpError {
+    return new AkineHttpError(
+      409,
+      cuerpo({ type: `https://akine.app/problems/${tipo}`, status: 409, ...extras }),
+      false,
+    );
+  }
+
+  it('sin detalle del servidor, cada conflicto dice lo suyo y no ofrece una acción que no sirve', () => {
+    expect(traducirErrorAgenda(rechazo('plan-sin-sesiones'))).toMatchObject({
+      mensaje: 'El plan no tiene sesiones disponibles.',
+      accion: 'ninguna',
+      pendientes: 0,
+    });
+    expect(traducirErrorAgenda(rechazo('contexto-clinico-invalido'))).toMatchObject({
+      mensaje: 'El caso o el plan no sirven para este turno.',
+      accion: 'ninguna',
+    });
+    expect(traducirErrorAgenda(rechazo('espacio-no-elegible')).accion).toBe('elegir-otro');
+    expect(traducirErrorAgenda(rechazo('lista-de-espera-cerrada')).accion).toBe('recargar-agenda');
+  });
+
+  it('el bloqueo con turnos afectados trae la cuenta y la lista', () => {
+    const error = rechazo('bloqueo-con-turnos-afectados', {
+      detail: 'El bloqueo deja 2 turnos afuera.',
+      turnosAfectados: 2,
+      turnos: [{ turnoId: 1 }, null, { turnoId: 2 }],
+    });
+
+    expect(traducirErrorAgenda(error)).toMatchObject({
+      mensaje: 'El bloqueo deja 2 turnos afuera.',
+      turnosAfectados: 2,
+    });
+    expect(turnosDelRechazo(error)).toEqual([{ turnoId: 1 }, { turnoId: 2 }]);
+    // Sin lista (un backend anterior) o sin un error del servidor no hay filas que mostrar.
+    expect(turnosDelRechazo(rechazo('bloqueo-con-turnos-afectados'))).toEqual([]);
+    expect(turnosDelRechazo(new Error('red'))).toEqual([]);
+    expect(traducirErrorAgenda(rechazo('bloqueo-con-turnos-afectados'))).toMatchObject({
+      mensaje: 'Este bloqueo afecta turnos.',
+      turnosAfectados: 0,
+    });
   });
 });

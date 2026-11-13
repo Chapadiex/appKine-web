@@ -1,0 +1,426 @@
+<header class="alta-manual__cabecera">
+  <h1>Nuevo colaborador</h1>
+  <ol class="alta-manual__pasos" aria-label="Pasos del alta manual">
+    <li
+      [class.alta-manual__paso--hecho]="paso() > 1"
+      [attr.aria-current]="paso() === 1 ? 'step' : null"
+    >
+      <button type="button" [disabled]="paso() <= 1" (click)="irAPaso(1)">
+        <span class="alta-manual__numero">{{ paso() > 1 ? '✓' : '1' }}</span> Tipo y persona
+      </button>
+    </li>
+    <li
+      [class.alta-manual__paso--hecho]="paso() > 2"
+      [attr.aria-current]="paso() === 2 ? 'step' : null"
+    >
+      <button type="button" [disabled]="paso() <= 2" (click)="irAPaso(2)">
+        <span class="alta-manual__numero">{{ paso() > 2 ? '✓' : '2' }}</span> Función y sedes
+      </button>
+    </li>
+    <li [attr.aria-current]="paso() === 3 ? 'step' : null">
+      <span class="alta-manual__paso-estatico"
+        ><span class="alta-manual__numero">3</span> Revisión y acceso</span
+      >
+    </li>
+  </ol>
+</header>
+
+<div class="alta-manual__columnas">
+  <section class="alta-manual__principal" aria-label="Datos del colaborador">
+    <form
+      class="formulario--libre"
+      [formGroup]="formulario"
+      (ngSubmit)="paso() === 3 ? enviar() : avanzar()"
+      novalidate
+    >
+      @if (error(); as mensaje) {
+        <app-alerta tipo="error" titulo="Revisá los datos del colaborador"
+          ><p>{{ mensaje }}</p></app-alerta
+        >
+      }
+
+      @switch (paso()) {
+        @case (1) {
+          <h2>Tipo y persona</h2>
+          <div class="alta-manual__grilla alta-manual__grilla--tres">
+            <div class="campo">
+              <label for="manual-rol">Tipo de colaborador</label>
+              <select id="manual-rol" formControlName="roleCode">
+                @for (rol of roles; track rol.codigo) {
+                  <option [value]="rol.codigo">{{ rol.etiqueta }}</option>
+                }
+              </select>
+            </div>
+            <div class="campo">
+              <label for="manual-nombre">Nombre</label>
+              <input
+                id="manual-nombre"
+                formControlName="nombre"
+                autocomplete="given-name"
+                [attr.aria-invalid]="
+                  formulario.controls.nombre.touched && formulario.controls.nombre.invalid
+                "
+              />
+              @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+                <p class="campo__error">Escribí el nombre.</p>
+              }
+            </div>
+            <div class="campo">
+              <label for="manual-apellido">Apellido</label>
+              <input
+                id="manual-apellido"
+                formControlName="apellido"
+                autocomplete="family-name"
+                [attr.aria-invalid]="
+                  formulario.controls.apellido.touched && formulario.controls.apellido.invalid
+                "
+              />
+              @if (formulario.controls.apellido.touched && formulario.controls.apellido.invalid) {
+                <p class="campo__error">Escribí el apellido.</p>
+              }
+            </div>
+            <div class="campo">
+              <label for="manual-tipo-documento">Tipo de documento</label>
+              <select id="manual-tipo-documento" formControlName="tipoDocumento">
+                <option value="DNI">DNI</option>
+                <option value="LC">LC</option>
+                <option value="LE">LE</option>
+                <option value="CI">CI</option>
+                <option value="PASAPORTE">Pasaporte</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="manual-documento">Número de documento</label>
+              <input id="manual-documento" formControlName="numeroDocumento" inputmode="numeric" />
+            </div>
+            <div class="campo">
+              <label for="manual-telefono"
+                >Teléfono <span class="campo__opcional">(opcional)</span></label
+              >
+              <input
+                id="manual-telefono"
+                type="tel"
+                formControlName="telefono"
+                autocomplete="tel"
+              />
+            </div>
+            <div class="campo alta-manual__campo-doble">
+              <label for="manual-email"
+                >Email para la invitación
+                <span class="campo__opcional">(podés completarlo en el paso 3)</span></label
+              >
+              <input
+                id="manual-email"
+                type="email"
+                formControlName="email"
+                autocomplete="off"
+                [attr.aria-invalid]="
+                  formulario.controls.email.touched && formulario.controls.email.invalid
+                "
+              />
+              @if (formulario.controls.email.touched && formulario.controls.email.invalid) {
+                <p class="campo__error">Escribí un email válido.</p>
+              }
+            </div>
+          </div>
+        }
+
+        @case (2) {
+          @if (esProfesional()) {
+            <h2>Información profesional</h2>
+            <div class="alta-manual__grilla alta-manual__grilla--tres">
+              <div class="campo">
+                <label for="manual-profesion">Profesión</label>
+                <app-buscador-con-alta
+                  idCampo="manual-profesion"
+                  formControlName="profesion"
+                  placeholder="Buscar o escribir una profesión"
+                  [opciones]="profesionesSugeridas"
+                />
+              </div>
+              <div class="campo">
+                <label for="manual-matricula">Matrícula</label
+                ><input id="manual-matricula" formControlName="matricula" />
+              </div>
+              <div class="campo">
+                <label for="manual-jurisdiccion">Jurisdicción</label
+                ><input
+                  id="manual-jurisdiccion"
+                  formControlName="jurisdiccion"
+                  placeholder="Ej. Córdoba"
+                />
+              </div>
+              <!--
+                Especialidades (11/11/2026): se buscan en el catalogo clinico o se agregan
+                escribiendolas; se pueden sumar varias y una se marca como principal.
+              -->
+              <div class="campo alta-manual__campo-triple">
+                <label for="manual-especialidad">
+                  Especialidades <span class="campo__opcional">(opcional)</span>
+                </label>
+                <app-buscador-con-alta
+                  idCampo="manual-especialidad"
+                  placeholder="Buscar o agregar una especialidad"
+                  limpiarAlElegir
+                  [opciones]="especialidadesDelCatalogo()"
+                  [excluir]="especialidades()"
+                  (elegido)="agregarEspecialidad($event)"
+                />
+                @if (especialidades().length > 0) {
+                  <fieldset class="alta-manual__especialidades">
+                    <legend class="visualmente-oculto">Especialidad principal</legend>
+                    @for (especialidad of especialidades(); track especialidad) {
+                      <div
+                        class="alta-manual__especialidad"
+                        [class.alta-manual__especialidad--principal]="principal() === especialidad"
+                      >
+                        <label>
+                          <input
+                            type="radio"
+                            name="manual-especialidad-principal"
+                            [checked]="principal() === especialidad"
+                            (change)="principal.set(especialidad)"
+                          />
+                          {{ especialidad }}
+                          @if (principal() === especialidad) {
+                            <span class="alta-manual__marca-principal">Principal</span>
+                          }
+                        </label>
+                        <button
+                          type="button"
+                          class="alta-manual__quitar"
+                          [attr.aria-label]="'Quitar ' + especialidad"
+                          (click)="quitarEspecialidad(especialidad)"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    }
+                  </fieldset>
+                  <p class="ayuda ayuda--fija">
+                    Marcá cuál es la principal; las demás quedan como adicionales.
+                  </p>
+                }
+              </div>
+            </div>
+
+            <fieldset class="alta-manual__seccion">
+              <legend>Servicios previstos</legend>
+              <p>
+                Elegí las ofertas en las que va a trabajar. La configuración de la agenda se
+                completa cuando acepte la invitación.
+              </p>
+              @if (serviciosDisponibles().length === 0) {
+                <p class="alta-manual__sin-servicios">
+                  Seleccioná una sede para ver sus servicios activos.
+                </p>
+              } @else {
+                <div class="alta-manual__servicios">
+                  @for (item of serviciosDisponibles(); track item.sedeId + '-' + item.oferta.id) {
+                    <label
+                      class="alta-manual__servicio"
+                      [class.alta-manual__servicio--elegido]="
+                        servicioElegido(item.sedeId, item.oferta.id)
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="servicioElegido(item.sedeId, item.oferta.id)"
+                        (change)="alternarServicio(item.sedeId, item.oferta.id)"
+                      />
+                      <span
+                        >{{ item.oferta.nombreComercial }}
+                        <small>{{ nombreDeSede(item.sedeId) }}</small></span
+                      >
+                      <span class="alta-manual__duracion"
+                        >{{ item.oferta.duracionMinutos }} min</span
+                      >
+                    </label>
+                  }
+                </div>
+              }
+            </fieldset>
+          } @else {
+            <h2>Función en el centro</h2>
+            <p class="alta-manual__descripcion">
+              El rol define los permisos de la cuenta cuando acepte la invitación.
+            </p>
+            <p class="alta-manual__rol-elegido">{{ etiquetaDeRol() }}</p>
+          }
+
+          <fieldset class="alta-manual__seccion">
+            <legend>Sedes de trabajo</legend>
+            <div class="alta-manual__grilla alta-manual__grilla--dos">
+              @if (esAdminOrganizacion()) {
+                <p class="alta-manual__alcance-total">
+                  Este rol tiene acceso a toda la organización y sus sedes.
+                </p>
+              } @else {
+                <div>
+                  <p class="alta-manual__etiqueta">Sedes</p>
+                  <div class="alta-manual__sedes">
+                    @for (sede of sedes.sedes(); track sede.id) {
+                      <button
+                        type="button"
+                        class="alta-manual__sede"
+                        [class.alta-manual__sede--elegida]="sedeElegida(sede.id)"
+                        [attr.aria-pressed]="sedeElegida(sede.id)"
+                        (click)="alternarSede(sede.id)"
+                      >
+                        @if (sedeElegida(sede.id)) {
+                          <span aria-hidden="true">✓</span>
+                        }
+                        {{ sede.name }}
+                      </button>
+                    }
+                    <button type="button" class="alta-manual__todas" (click)="elegirTodas()">
+                      Todas
+                    </button>
+                  </div>
+                </div>
+              }
+              <div class="campo">
+                <label for="manual-fecha"
+                  >Fecha de incorporación <span class="campo__opcional">(opcional)</span></label
+                ><input id="manual-fecha" type="date" formControlName="fechaIncorporacion" />
+              </div>
+            </div>
+            <div class="alta-manual__indicadores">
+              @if (esProfesional()) {
+                <label
+                  ><input type="checkbox" formControlName="recibeTurnos" /> Previsto para recibir
+                  turnos</label
+                >
+                <label
+                  ><input type="checkbox" formControlName="instructorDeActividades" /> Previsto como
+                  instructor de actividades</label
+                >
+              }
+              <label><input type="checkbox" formControlName="activo" /> Activo al aceptar</label>
+            </div>
+            @if (esProfesional()) {
+              <p class="alta-manual__nota-agenda">
+                La disponibilidad y las habilitaciones de servicios se configuran en Agenda después
+                de aceptar la invitación.
+              </p>
+            }
+          </fieldset>
+        }
+
+        @case (3) {
+          <h2>Revisión y acceso</h2>
+          <p class="alta-manual__descripcion">
+            La cuenta y los vínculos se crean cuando la persona acepta la invitación. Hasta entonces
+            figura como pendiente.
+          </p>
+          <dl class="alta-manual__resumen">
+            <div>
+              <dt>Colaborador</dt>
+              <dd>{{ nombreCompleto() }}</dd>
+            </div>
+            <div>
+              <dt>Función</dt>
+              <dd>{{ etiquetaDeRol() }}</dd>
+            </div>
+            <div>
+              <dt>Sedes</dt>
+              <dd>
+                {{
+                  esAdminOrganizacion()
+                    ? 'Toda la organización'
+                    : sedesElegidas().length + ' seleccionada(s)'
+                }}
+              </dd>
+            </div>
+            @if (esProfesional()) {
+              <div>
+                <dt>Servicios previstos</dt>
+                <dd>{{ serviciosElegidos().length }} seleccionado(s)</dd>
+              </div>
+            }
+          </dl>
+          <div class="campo alta-manual__email-final">
+            <label for="manual-email-final">Email de la persona</label>
+            <input
+              id="manual-email-final"
+              type="email"
+              formControlName="email"
+              autocomplete="off"
+              [attr.aria-invalid]="
+                formulario.controls.email.touched && formulario.controls.email.invalid
+              "
+            />
+            <p class="ayuda ayuda--fija">
+              Le enviaremos un enlace para completar la cuenta y aceptar el vínculo.
+            </p>
+          </div>
+        }
+      }
+
+      <footer class="alta-manual__acciones">
+        @if (paso() === 1) {
+          <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">Cancelar</a>
+        } @else {
+          <button type="button" class="boton boton--secundario" (click)="volver()">← Atrás</button>
+        }
+        @if (paso() < 3) {
+          <button type="submit" class="boton">Siguiente →</button>
+        } @else {
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ enviando() ? 'Enviando…' : 'Guardar y enviar invitación' }}
+          </button>
+        }
+      </footer>
+    </form>
+  </section>
+
+  <aside class="alta-manual__lateral" aria-label="Resumen del alta">
+    <section class="alta-manual__panel alta-manual__persona">
+      <span class="alta-manual__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      <div>
+        <strong>{{ nombreCompleto() }}</strong
+        ><span>{{ etiquetaDeRol() }}</span
+        ><span
+          >{{
+            formulario.controls.numeroDocumento.value
+              ? formulario.controls.tipoDocumento.value +
+                ' ' +
+                formulario.controls.numeroDocumento.value
+              : 'Sin documento cargado'
+          }}
+          · {{ formulario.controls.email.value || 'sin email' }}</span
+        >
+      </div>
+    </section>
+    <section class="alta-manual__panel">
+      <h2>Estado de preparación</h2>
+      <ul class="alta-manual__lista-estado">
+        <li [class.alta-manual__listo]="esAdminOrganizacion() || sedesElegidas().length > 0">
+          <span aria-hidden="true">{{
+            esAdminOrganizacion() || sedesElegidas().length > 0 ? '✓' : '○'
+          }}</span>
+          {{ esAdminOrganizacion() ? 'Toda la organización' : 'Al menos una sede' }}
+          <small>{{ esAdminOrganizacion() ? 'Todas' : sedesElegidas().length }}</small>
+        </li>
+        @if (esProfesional()) {
+          <li [class.alta-manual__listo]="serviciosElegidos().length > 0">
+            <span aria-hidden="true">{{ serviciosElegidos().length > 0 ? '✓' : '○' }}</span>
+            Servicios previstos <small>{{ serviciosElegidos().length }}</small>
+          </li>
+        }
+        <li>
+          <span aria-hidden="true">○</span> Horarios de atención <small>Después, en Agenda</small>
+        </li>
+        <li><span aria-hidden="true">○</span> Cuenta de usuario <small>Al aceptar</small></li>
+      </ul>
+    </section>
+    <section class="alta-manual__panel">
+      <h2>Acceso a AKINE</h2>
+      <p>
+        La invitación permite que la persona cree o use su cuenta y acepte el vínculo con las sedes
+        elegidas.
+      </p>
+    </section>
+  </aside>
+</div>

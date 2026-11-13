@@ -1,10 +1,6 @@
-import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import {
-  ETIQUETA_PESTANAS_DE_SERVICIOS,
-  PESTANAS_DE_SERVICIOS,
-} from '../../models/pestanas-de-offering';
+import {} from '../../models/pestanas-de-offering';
 import {
   Component,
   ElementRef,
@@ -14,12 +10,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, Subscription, catchError, debounceTime, of } from 'rxjs';
 
 import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_CATALOGO_MANAGE } from '../../../../core/models/permisos';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { CreateServicioRequest } from '../../../../api/generated/model/create-servicio-request';
 import { EstadoDeListado } from '../../../../shared/utils/estado-de-listado';
@@ -42,6 +40,10 @@ import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import {
+  OpcionEnTarjeta,
+  OpcionesEnTarjetas,
+} from '../../../../shared/components/opciones-en-tarjetas/opciones-en-tarjetas';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
@@ -58,30 +60,26 @@ type TipoAccion = 'editar' | 'baja';
 const ESPERA_DE_BUSQUEDA = 250;
 
 /**
- * Catalogo global de Servicios (M27, AKINE-02.06).
+ * Catalogo de Servicios (M27, AKINE-02.06; servicios propios desde el contrato 0.163.0).
  *
  * <p>Un `Servicio` es <b>que existe como concepto</b> —"kinesiologia respiratoria"—, no como lo
  * presta un centro concreto. Eso ultimo es la Oferta, y vive en la otra pantalla de esta misma
- * feature. Es la regla maestra 14 y es el objetivo entero de la etapa: si las dos cosas se
- * mezclan, el precio de un centro termina siendo el precio de todos.
+ * feature. Es la regla maestra 14: si las dos cosas se mezclan, el precio de un centro termina
+ * siendo el precio de todos.
  *
- * <p>El catalogo es <b>puramente global</b>: un `Servicio` no tiene organizacion (diseno 1). No
- * hay dos poblaciones como en el catalogo clinico, asi que no hay ninguna columna de alcance:
- * todas las filas son de la plataforma.
+ * <p><b>Dos poblaciones desde 0.163.0</b> (ADR-0025 del backend): el catalogo global de AKINE, que
+ * ven todos los centros, y los servicios propios del centro (`alcance: ORGANIZACION`), que ve solo
+ * su organizacion. La tabla los distingue con una columna de origen.
  *
  * <h2>Quien puede administrar esto</h2>
  *
- * <p>Leer el catalogo alcanza con estar autenticado. <b>Mutarlo exige rol de plataforma</b>, y
- * desde A-7 el frontend lo sabe: `PlatformRoleStore` pregunta una vez por sesion a
- * `GET /me/platform-role`. Las acciones de alta, edicion y baja se muestran <b>solo</b> a quien
- * tiene ese rol; a los demas la nota de arriba les dice por que no estan y los manda a las
- * ofertas de la sede, que es lo que su centro si administra.
+ * <p>Leer alcanza con estar autenticado. El <b>global</b> lo muta el rol de plataforma
+ * (`PlatformRoleStore`). Los <b>propios</b>, quien tenga `catalogo:manage` en el contexto
+ * (`PermissionsStore`): la administradora del centro da de alta su "Yoga" sin esperar a AKINE.
+ * El alcance del alta no se elige: lo decide el backend segun quien llama, y la pantalla solo
+ * ajusta los textos.
  *
- * <p>Hasta A-7 la pantalla hacia lo contrario —mostrar las acciones a todos y dejar que el
- * `403` del servidor fuera la respuesta— porque ocultarlas sin saber el rol era adivinar, y
- * adivinar en contra le escondia el boton a la unica persona que tenia que apretarlo.
- *
- * <p><b>Ocultar es UX, no seguridad</b> (AGENT.md 1): el backend verifica el rol en cada
+ * <p><b>Ocultar es UX, no seguridad</b> (AGENT.md 1): el backend verifica rol y permiso en cada
  * request. Por eso el manejo del `403` (`rechazadoPorRol`) se queda: un rol revocado a mitad
  * de sesion, o una consulta del rol que fallo y se resolvio como "no", siguen terminando en una
  * explicacion y no en un error mudo.
@@ -97,7 +95,6 @@ const ESPERA_DE_BUSQUEDA = 250;
     CabeceraDePagina,
 
     Alerta,
-    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     Filtros,
@@ -108,23 +105,45 @@ const ESPERA_DE_BUSQUEDA = 250;
     RouterLink,
     ConfirmacionConMotivo,
     PanelLateral,
+    OpcionesEnTarjetas,
     AccionesDeFila,
   ],
   templateUrl: './catalogo-de-servicios-page.html',
   styleUrl: '../../offering.css',
 })
 export class CatalogoDeServiciosPage {
-  protected readonly pestanasDeServicios = PESTANAS_DE_SERVICIOS;
-  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   private readonly api = inject(OfferingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly injector = inject(Injector);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
+  private readonly router = inject(Router);
 
-  /** `true` solo si la cuenta tiene rol de plataforma. Ver el javadoc de la clase. */
+  private readonly permisos = inject(PermissionsStore);
+
+  /** `true` solo si la cuenta tiene rol de plataforma: administra el catalogo global. */
   protected readonly puedeAdministrar = this.rolDePlataforma.esAdminDePlataforma;
+
+  /** `true` si administra los servicios propios de su centro (`catalogo:manage`). */
+  protected readonly puedeGestionarDelCentro = computed(
+    () => !this.puedeAdministrar() && this.permisos.tiene(PERMISO_CATALOGO_MANAGE),
+  );
+
+  /** Alguna de las dos: muestra "Nuevo servicio" y la columna de acciones. */
+  protected readonly puedeCrear = computed(
+    () => this.puedeAdministrar() || this.puedeGestionarDelCentro(),
+  );
+
+  /** Si quien mira puede editar o dar de baja ESTE servicio: el global o uno propio. */
+  protected puedeMutar(servicio: ServicioResponse): boolean {
+    return servicio.alcance === 'ORGANIZACION'
+      ? this.puedeGestionarDelCentro()
+      : this.puedeAdministrar();
+  }
+
+  protected readonly etiquetaDeAlcance = (servicio: ServicioResponse): string =>
+    servicio.alcance === 'ORGANIZACION' ? 'Del centro' : 'AKINE';
 
   /**
    * `true` cuando ya se sabe la respuesta —incluida una consulta fallida, que el store resuelve
@@ -134,6 +153,19 @@ export class CatalogoDeServiciosPage {
 
   protected readonly naturalezas = NATURALEZAS;
   protected readonly modalidades = MODALIDADES;
+
+  /** Naturaleza y modalidad como tarjetas: se comparan sin abrir un menú (10/11/2026). */
+  protected readonly opcionesDeNaturaleza = NATURALEZAS.map((opcion): OpcionEnTarjeta => ({
+    valor: opcion.valor,
+    etiqueta: opcion.etiqueta,
+    descripcion: opcion.resumen,
+  }));
+  protected readonly opcionesDeModalidad = MODALIDADES.map((opcion): OpcionEnTarjeta => ({
+    valor: opcion.valor,
+    etiqueta: opcion.etiqueta,
+    descripcion: opcion.resumen,
+    icono: opcion.valor === 'GRUPAL' ? 'pacientes' : 'perfil',
+  }));
   protected readonly etiquetaDeNaturaleza = etiquetaDeNaturaleza;
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
 
@@ -162,6 +194,7 @@ export class CatalogoDeServiciosPage {
       codigo: (servicio) => servicio.codigo,
       naturaleza: (servicio) => this.etiquetaDeNaturaleza(servicio.naturaleza),
       modalidad: (servicio) => this.etiquetaDeModalidad(servicio.modalidadDefault),
+      origen: (servicio) => this.etiquetaDeAlcance(servicio),
       estado: (servicio) => servicio.estado,
     },
   });
@@ -234,9 +267,9 @@ export class CatalogoDeServiciosPage {
   private cargaEnVuelo: Subscription | null = null;
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
-    codigo: ['', [textoRequerido]],
-    nombre: ['', [textoRequerido]],
-    descripcion: [''],
+    codigo: ['', [textoRequerido, Validators.maxLength(LARGO_MAXIMO.codigo)]],
+    nombre: ['', [textoRequerido, Validators.maxLength(LARGO_MAXIMO.nombre)]],
+    descripcion: ['', [Validators.maxLength(LARGO_MAXIMO.descripcion)]],
     naturaleza: ['', [Validators.required]],
     modalidadDefault: ['', [Validators.required]],
     requiereCasoClinicoDefault: [false],
@@ -244,16 +277,40 @@ export class CatalogoDeServiciosPage {
   });
 
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    nombre: ['', [textoRequerido]],
-    descripcion: [''],
+    nombre: ['', [textoRequerido, Validators.maxLength(LARGO_MAXIMO.nombre)]],
+    descripcion: ['', [Validators.maxLength(LARGO_MAXIMO.descripcion)]],
     naturaleza: ['', [Validators.required]],
     modalidadDefault: ['', [Validators.required]],
     requiereCasoClinicoDefault: [false],
     generaRegistroClinicoDefault: [false],
   });
 
+  protected readonly largoMaximo = LARGO_MAXIMO;
+
+  /** El formulario abierto: el alta y la edición comparten plantilla (10/11/2026). */
+  protected readonly modoFormulario = computed<'alta' | 'editar' | null>(() => {
+    if (this.altaAbierta()) {
+      return 'alta';
+    }
+    return this.panel()?.tipo === 'editar' ? 'editar' : null;
+  });
+
+  /** Pidió cerrar con cambios sin guardar: el pie pregunta antes de descartarlos. */
+  protected readonly confirmandoDescarte = signal(false);
+
   constructor() {
+    // Mientras el código no se tocó a mano, se propone desde el nombre. Se puede cambiar.
+    this.formularioAlta.controls.nombre.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((nombre) => {
+        const codigo = this.formularioAlta.controls.codigo;
+        if (!codigo.dirty) {
+          codigo.setValue(codigoSugerido(nombre));
+        }
+      });
+
     this.cargar();
+    this.permisos.asegurarCargados();
 
     this.rolDePlataforma
       .resolver()
@@ -361,7 +418,20 @@ export class CatalogoDeServiciosPage {
     }
   }
 
+  /** X, Escape y Cancelar: con cambios sin guardar, primero pregunta en el pie (10/11/2026). */
+  protected pedirCierre(): void {
+    const modo = this.modoFormulario();
+    const formulario =
+      modo === 'alta' ? this.formularioAlta : modo === 'editar' ? this.formularioEdicion : null;
+    if (formulario?.dirty && !this.enviando() && !this.confirmandoDescarte()) {
+      this.confirmandoDescarte.set(true);
+      return;
+    }
+    this.cerrarPanel();
+  }
+
   protected cerrarPanel(): void {
+    this.confirmandoDescarte.set(false);
     this.panel.set(null);
     this.altaAbierta.set(false);
     this.original.set(null);
@@ -371,16 +441,21 @@ export class CatalogoDeServiciosPage {
     this.intentos.set(0);
   }
 
-  protected mostrarErrorAlta(
-    campo: 'codigo' | 'nombre' | 'naturaleza' | 'modalidadDefault',
-  ): boolean {
-    const control = this.formularioAlta.controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
-  }
-
-  protected mostrarErrorEdicion(campo: 'nombre'): boolean {
-    const control = this.formularioEdicion.controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
+  /** El error de un campo del formulario abierto, en palabras; `null` si no hay que mostrarlo. */
+  protected errorDe(campo: CampoDelServicio): string | null {
+    const controles: Partial<Record<CampoDelServicio, AbstractControl>> =
+      this.modoFormulario() === 'alta'
+        ? this.formularioAlta.controls
+        : this.formularioEdicion.controls;
+    const control = controles[campo];
+    // El código se sugiere desde el nombre: pasar por él vacío no es un error hasta enviar o
+    // hasta que el usuario lo escriba y lo deje vacío.
+    const tocado = campo === 'codigo' ? control?.touched && control.dirty : control?.touched;
+    if (control === undefined || control.valid || !(tocado || this.intentos() > 0)) {
+      return null;
+    }
+    const largo = control.getError('maxlength') as { requiredLength: number } | undefined;
+    return largo === undefined ? FALTA[campo] : `Usá hasta ${largo.requiredLength} caracteres.`;
   }
 
   /**
@@ -399,11 +474,7 @@ export class CatalogoDeServiciosPage {
 
     if (this.formularioAlta.invalid) {
       this.formularioAlta.markAllAsTouched();
-      this.enfocar(
-        this.formularioAlta.controls.codigo.invalid
-          ? '#alta-servicio-codigo'
-          : '#alta-servicio-nombre',
-      );
+      this.enfocarPrimerError();
       return;
     }
 
@@ -432,12 +503,32 @@ export class CatalogoDeServiciosPage {
     this.causaAccion.set(null);
 
     this.api.crearServicio(cuerpo).subscribe({
-      next: () => {
+      next: (creado) => {
         this.cerrarPanel();
-        this.avisos.exito('Servicio agregado al catálogo', {
+        const idDelCentro = creado.alcance === 'ORGANIZACION' ? creado.id : undefined;
+        this.avisos.exito('Servicio creado', {
           descripcion:
-            `${cuerpo.nombre}. Lo ven todos los centros; para ofrecerlo en una sede, creá su ` +
-            'oferta.',
+            idDelCentro === undefined
+              ? `${cuerpo.nombre}. Lo ven todos los centros; cada uno lo ofrece creando su oferta.`
+              : `${cuerpo.nombre} ya está en el catálogo de tu organización. Para usarlo en una ` +
+                'sede, creá su oferta.',
+          // El alta de oferta con el servicio ya elegido. Sólo el del centro: la plataforma no
+          // opera una sede.
+          ...(idDelCentro === undefined
+            ? {}
+            : {
+                accion: {
+                  etiqueta: 'Crear oferta',
+                  ejecutar: () => {
+                    this.router
+                      .navigate(['/servicios/ofertas'], {
+                        queryParams: { nuevaOferta: idDelCentro },
+                      })
+                      .catch(() => undefined);
+                  },
+                },
+                duracion: 10_000,
+              }),
         });
         this.cargar();
       },
@@ -455,7 +546,7 @@ export class CatalogoDeServiciosPage {
     this.intentos.update((valor) => valor + 1);
     if (this.formularioEdicion.invalid) {
       this.formularioEdicion.markAllAsTouched();
-      this.enfocar('#editar-servicio-nombre');
+      this.enfocarPrimerError();
       return;
     }
 
@@ -614,4 +705,40 @@ export class CatalogoDeServiciosPage {
   private enfocar(selector: string): void {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
+
+  /** Al primer campo marcado con error, en el orden del formulario (también un grupo de tarjetas). */
+  private enfocarPrimerError(): void {
+    afterNextRender(
+      () =>
+        this.enfocar(
+          '.panel-lateral :is(input, textarea)[aria-invalid="true"], ' +
+            '.panel-lateral fieldset[aria-invalid="true"] input',
+        ),
+      { injector: this.injector },
+    );
+  }
+}
+
+/** Los largos que acepta el backend (`CreateServicioRequest`): se avisan antes de enviar. */
+const LARGO_MAXIMO = { codigo: 64, nombre: 160, descripcion: 280 } as const;
+
+type CampoDelServicio = 'codigo' | 'nombre' | 'descripcion' | 'naturaleza' | 'modalidadDefault';
+
+const FALTA: Readonly<Record<CampoDelServicio, string>> = {
+  codigo: 'Ingresá el código del servicio.',
+  nombre: 'Ingresá el nombre del servicio.',
+  descripcion: 'Revisá la descripción.',
+  naturaleza: 'Elegí qué tipo de servicio es.',
+  modalidadDefault: 'Elegí cómo se realiza el servicio.',
+};
+
+/** `Entrenamiento funcional` → `ENTRENAMIENTO-FUNCIONAL`: sin tildes ni espacios. */
+export function codigoSugerido(nombre: string): string {
+  return nombre
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, LARGO_MAXIMO.codigo);
 }

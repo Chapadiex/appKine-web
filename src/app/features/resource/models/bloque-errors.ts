@@ -1,4 +1,6 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { conflictoDelProblema, sedeDelConflicto } from '../../../core/models/conflicto-de-agenda';
+import { formatearFecha } from '../../../shared/utils/instantes';
 import {
   MensajeTraducido,
   conDetalle,
@@ -37,6 +39,11 @@ export type CausaBloque =
   | 'no-encontrado'
   /** 409 bloque-solapado: se pisa con otro bloque activo. Trae {@link BloqueEnConflicto}. */
   | 'solapado'
+  /**
+   * 409 franja-fuera-del-horario-de-sede (0.162.0): la franja se sale del horario general de la
+   * sede. Trae {@link FranjaFueraDeSede} por cada dia que no entra.
+   */
+  | 'fuera-de-horario-sede'
   /** 409 bloque-inactivo: esta dado de baja y no admite ediciones. */
   | 'bloque-inactivo'
   /** 409 bloque-already-inactive: la baja ya estaba hecha. Hay que recargar. */
@@ -86,6 +93,97 @@ export interface BloqueEnConflicto {
 export interface ErrorBloque extends MensajeTraducido<CausaBloque> {
   /** Solo en `solapado`. `null` en cualquier otra causa. */
   readonly conflicto: BloqueEnConflicto | null;
+  /** Solo en `fuera-de-horario-sede`: cada dia pedido que no entra. Vacia en cualquier otra causa. */
+  readonly fueraDeHorario?: readonly FranjaFueraDeSede[];
+}
+
+/**
+ * Un dia pedido que no entra en el horario de la sede (regla del 08/11/2026), con el horario de
+ * la sede ese dia: es la referencia para corregir la franja. Vacio: la sede no abre ese dia.
+ */
+export interface FranjaFueraDeSede {
+  readonly diaSemana: number;
+  readonly horarioDeSede: readonly { readonly horaDesde: string; readonly horaHasta: string }[];
+}
+
+/**
+ * El horario de la sede de los dias que no entran, con los dias del mismo horario juntos: "Lunes a
+ * viernes la sede abre de 09:00 a 22:30. Sabado no abre." Un lote de seis dias da dos frases y no
+ * seis.
+ */
+export function redactarHorarioDeSede(fuera: readonly FranjaFueraDeSede[]): string {
+  const porHorario = new Map<string, number[]>();
+  for (const franja of fuera) {
+    const horario = enUnaFrase(franja.horarioDeSede);
+    porHorario.set(horario, [...(porHorario.get(horario) ?? []), franja.diaSemana]);
+  }
+  return [...porHorario.entries()]
+    .map(([horario, dias], indice) => {
+      const quien = indice === 0 ? `${diasJuntos(dias)} la sede` : diasJuntos(dias);
+      return `${quien} ${horario}.`;
+    })
+    .join(' ');
+}
+
+function enUnaFrase(horario: FranjaFueraDeSede['horarioDeSede']): string {
+  if (horario.length === 0) {
+    return 'no abre';
+  }
+  const tramos = horario.map((tramo) => `de ${rangoHorario(tramo.horaDesde, tramo.horaHasta)}`);
+  return `abre ${tramos.length === 1 ? tramos[0] : `${tramos.slice(0, -1).join(', ')} y ${tramos.at(-1)}`}`;
+}
+
+/** "Lunes a viernes", "Martes y jueves", "Sabado": corridos consecutivos con "a". */
+function diasJuntos(dias: readonly number[]): string {
+  const ordenados = [...new Set(dias)].sort((a, b) => a - b);
+  const tramos: string[] = [];
+  for (let i = 0; i < ordenados.length;) {
+    let fin = i;
+    while (fin + 1 < ordenados.length && ordenados[fin + 1] === ordenados[fin] + 1) {
+      fin++;
+    }
+    const desde = etiquetaDeDia(ordenados[i]).toLowerCase();
+    tramos.push(
+      fin - i >= 2
+        ? `${desde} a ${etiquetaDeDia(ordenados[fin]).toLowerCase()}`
+        : ordenados
+            .slice(i, fin + 1)
+            .map((dia) => etiquetaDeDia(dia).toLowerCase())
+            .join(', '),
+    );
+    i = fin + 1;
+  }
+  const texto =
+    tramos.length === 1 ? tramos[0] : `${tramos.slice(0, -1).join(', ')} y ${tramos.at(-1)}`;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function franjasFueraDe(error: AkineHttpError): FranjaFueraDeSede[] {
+  const crudas = error.extension('franjasFueraDeHorario');
+  if (!Array.isArray(crudas)) {
+    return [];
+  }
+  return crudas.flatMap((cruda: unknown) => {
+    if (typeof cruda !== 'object' || cruda === null) {
+      return [];
+    }
+    const fila = cruda as { diaSemana?: unknown; horarioDeSede?: unknown };
+    if (typeof fila.diaSemana !== 'number') {
+      return [];
+    }
+    const horario = Array.isArray(fila.horarioDeSede) ? fila.horarioDeSede : [];
+    return [
+      {
+        diaSemana: fila.diaSemana,
+        horarioDeSede: horario.flatMap((tramo: unknown) => {
+          const t = tramo as { horaDesde?: unknown; horaHasta?: unknown } | null;
+          return typeof t?.horaDesde === 'string' && typeof t.horaHasta === 'string'
+            ? [{ horaDesde: t.horaDesde, horaHasta: t.horaHasta }]
+            : [];
+        }),
+      },
+    ];
+  });
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
@@ -138,40 +236,56 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'Se resuelve desde la pantalla de suscripción.';
 
 /**
- * Redacta el solapamiento nombrando <b>el otro bloque</b>.
+ * Redacta el solapamiento nombrando <b>el otro bloque</b>, en una linea.
  *
- * <p>El mensaje dice el dia y las horas del bloque con el que se choca; la grilla, ademas,
- * marca esa fila. Las dos cosas juntas: el cartel se lee donde esta el foco despues del
- * envio, y la marca resuelve cual de dos bloques parecidos es.
- *
- * <p><b>Aclara que ser contiguo no es solapar</b> porque es la confusion inmediata de quien
- * acaba de cargar la tarde despues de la manana: la hora de fin es exclusiva, y 09:00-12:00
- * con 12:00-15:00 conviven sin conflicto. Sin la aclaracion, el usuario "corrige" un horario
- * que estaba bien.
+ * <p>"Ya existe un horario para el martes de 09:00 a 13:00": dia y horas del bloque con el que se
+ * choca, y la grilla marca esa fila. Corto a proposito (rediseño del 05/11/2026): el mensaje vive
+ * pegado a los campos y no puede desarmar el formulario. Que contiguo no es solapado lo explica
+ * la ayuda "?" del horario, no el error.
  */
 function mensajeDeSolapamiento(conflicto: BloqueEnConflicto): string {
   if (conflicto.horaDesde === null || conflicto.horaHasta === null) {
-    return (
-      'El horario que pediste se pisa con otro bloque activo de este profesional en esta sede. ' +
-      'Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la hora de fin es ' +
-      'exclusiva.'
-    );
+    return 'Ya existe un horario que se pisa con el pedido.';
   }
-
   const dia =
-    conflicto.diaSemana === null ? '' : ` del ${etiquetaDeDia(conflicto.diaSemana).toLowerCase()}`;
+    conflicto.diaSemana === null
+      ? ''
+      : ` para el ${etiquetaDeDia(conflicto.diaSemana).toLowerCase()}`;
+  return `Ya existe un horario${dia} de ${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}.`;
+}
 
-  return (
-    `El horario que pediste se pisa con el bloque${dia} de ` +
-    `${rangoHorario(conflicto.horaDesde, conflicto.horaHasta)}, que quedo marcado en la grilla. ` +
-    'Corregi uno de los dos. Ojo: dos bloques que se tocan en un extremo NO se pisan, porque la ' +
-    'hora de fin es exclusiva: la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven.'
-  );
+/**
+ * El bloque choca con la disponibilidad de la misma persona en otra sede (0.158.0): su horario
+ * habitual o una apertura futura. Sin nombre de sede, el `detail` del servidor, que ya la redacta.
+ */
+function mensajeEntreSedes(error: AkineHttpError): string {
+  const conflicto = conflictoDelProblema(error);
+  const sede = sedeDelConflicto(conflicto, {});
+  if (sede === '') {
+    return conDetalle(error, 'Conflicto con actividad en otra sede.');
+  }
+  const que =
+    conflicto.conflictoOrigen === 'APERTURA' ? 'una apertura de agenda' : 'horario de atención';
+  const dia = error.numeroDeExtension('diaSemana');
+  const nombreDelDia = dia === null ? '' : etiquetaDeDia(dia).toLowerCase();
+  const cuando =
+    conflicto.conflictoFecha !== undefined
+      ? ` el ${formatearFecha(conflicto.conflictoFecha)}`
+      : nombreDelDia === ''
+        ? ''
+        : ` los ${nombreDelDia}${nombreDelDia.endsWith('s') ? '' : 's'}`;
+  const desde = conflicto.conflictoHoraDesde;
+  const franja =
+    desde === undefined ? '' : ` de ${rangoHorario(desde, conflicto.conflictoHoraHasta ?? '')}`;
+  return `Conflicto con actividad en otra sede: ya tiene ${que} en ${sede}${cuando}${franja}.`;
 }
 
 function conflictoDe(error: AkineHttpError): BloqueEnConflicto {
-  const horaDesde = error.extension('horaDesde');
-  const horaHasta = error.extension('horaHasta');
+  // Desde 0.158.0 `horaDesde`/`horaHasta` son las horas PEDIDAS y las del bloque que ya existe
+  // viajan en `conflictoHoraDesde`/`conflictoHoraHasta`. El mensaje nombra al bloque existente:
+  // "ya existe un horario de 09:00 a 13:00", no "de 10:00 a 12:00", que es lo que se pidio.
+  const horaDesde = error.extension('conflictoHoraDesde') ?? error.extension('horaDesde');
+  const horaHasta = error.extension('conflictoHoraHasta') ?? error.extension('horaHasta');
 
   return {
     id: error.numeroDeExtension('bloqueEnConflictoId'),
@@ -208,8 +322,23 @@ export function traducirErrorBloque(error: unknown): ErrorBloque {
     case 'missing-tenant-context':
       return base(MENSAJE_SIN_CONTEXTO, 'sin-contexto');
     case 'bloque-solapado': {
+      // Desde 0.158.0 el choque puede ser con el horario o una apertura de la misma persona en OTRA
+      // sede: se nombra la sede y la franja, y no se marca ninguna fila de esta grilla.
+      if (error.extension('conflictoMismaSede') === false) {
+        return { ...base(mensajeEntreSedes(error), 'solapado'), conflicto: null };
+      }
       const conflicto = conflictoDe(error);
       return { ...base(mensajeDeSolapamiento(conflicto), 'solapado'), conflicto };
+    }
+    case 'franja-fuera-del-horario-de-sede': {
+      // Regla del 08/11/2026: el horario del profesional queda dentro del de la sede. El mensaje
+      // dice el horario de la sede de cada dia que no entra: es lo que hace falta para corregirla.
+      const fuera = franjasFueraDe(error);
+      const mensaje =
+        fuera.length === 0
+          ? conDetalle(error, 'El horario tiene que quedar dentro del horario de la sede.')
+          : `Fuera del horario de la sede. ${redactarHorarioDeSede(fuera)}`;
+      return { ...base(mensaje, 'fuera-de-horario-sede'), fueraDeHorario: fuera };
     }
     case 'bloque-inactivo':
       return base(MENSAJE_BLOQUE_INACTIVO, 'bloque-inactivo');

@@ -14,6 +14,10 @@
  */
 export interface ReprogramarTurno { 
     /**
+     * Box elegido a mano en el horario nuevo. Si se omite, el sistema asigna el primero libre. Se valida igual que al reservar (`espacio-no-elegible`). El historial guarda el profesional y el box de antes y de despues.
+     */
+    espacioId?: number;
+    /**
      * Version que devolvio la ultima lectura del turno.
      */
     expectedVersion: number;

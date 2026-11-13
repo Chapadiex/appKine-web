@@ -57,6 +57,10 @@ export interface Turno {
      * Por que se cancelo. Obligatorio al cancelar (DP-04), ausente en cualquier otro estado.
      */
     motivoCancelacion?: string;
+    /**
+     * Observaciones administrativas del turno. **Nunca informacion clinica.**
+     */
+    observaciones?: string;
     ofertaId?: number;
     /**
      * Persona del padron para la que se reservo
@@ -83,6 +87,10 @@ export interface Turno {
      * `true` si se reservo sobre un horario ocupado, con autorizacion
      */
     sobreturno?: boolean;
+    /**
+     * Turno original cuando este nace de un cambio de sede. Ausente si no es un traslado.
+     */
+    turnoOrigenId?: number;
     /**
      * Version para el control optimista. Se envia al cancelar, mover o marcar ausencia.
      */

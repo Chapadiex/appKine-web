@@ -17,8 +17,10 @@ import { EventoDeClase } from '../model/models';
 import { InstructoresDeClase } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { ProgramarClase } from '../model/models';
+import { ProgramarSerieDeClases } from '../model/models';
 import { ReemplazarInstructoresDeClaseRequest } from '../model/models';
 import { ReprogramarClase } from '../model/models';
+import { SerieDeClases } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
@@ -50,6 +52,12 @@ export interface ProgramarRequestParams {
     consultorioId: number;
     ofertaId: number;
     programarClase: ProgramarClase;
+}
+
+export interface ProgramarSerieDeClasesRequestParams {
+    consultorioId: number;
+    ofertaId: number;
+    programarSerieDeClases: ProgramarSerieDeClases;
 }
 
 export interface ReemplazarInstructoresDeClaseRequestParams {
@@ -113,6 +121,14 @@ export interface ClasesServiceInterface {
 * @param requestParameters
      */
     programar(requestParameters: ProgramarRequestParams, extraHttpRequestParams?: any): Observable<Clase>;
+
+    /**
+     * Programar clases semanales
+     * Programa una clase en cada fecha del rango (desde y hasta inclusive) que cae en uno de los &#x60;diasSemana&#x60;, con el mismo horario, profesional, box y cupo.  **Cada fecha es una clase suelta**: se valida exactamente igual que &#x60;POST .../clases/ofertas/{ofertaId}&#x60; y en su propia transaccion.  **No es todo o nada.** Una fecha que no se puede programar (feriado, box o profesional ocupado, fuera del horario del profesional, oferta no vigente, cupo) va a &#x60;omitidas&#x60; con su motivo y las demas se programan. Responde 200 aunque no se haya programado ninguna: el detalle esta en el cuerpo.  Lo que si rechaza la serie entera es lo que fallaria en todas las fechas: sede u oferta ajenas (404), oferta no grupal (409), sin permiso (403) o un pedido mal formado (400; por ejemplo, un rango de mas de un anio).
+     * @endpoint post /api/v1/consultorios/{consultorioId}/clases/ofertas/{ofertaId}/serie
+* @param requestParameters
+     */
+    programarSerieDeClases(requestParameters: ProgramarSerieDeClasesRequestParams, extraHttpRequestParams?: any): Observable<SerieDeClases>;
 
     /**
      * Reemplazar los instructores adicionales de una clase

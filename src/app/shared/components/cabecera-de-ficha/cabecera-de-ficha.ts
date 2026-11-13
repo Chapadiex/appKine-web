@@ -6,7 +6,6 @@ import {
   input,
 } from '@angular/core';
 
-import { CabeceraDePagina } from '../cabecera-de-pagina/cabecera-de-pagina';
 import { Pestana, Pestanas } from '../pestanas/pestanas';
 
 /** Una marca de estado al lado del titulo. El tono elige el color, no el texto. */
@@ -34,18 +33,19 @@ export interface ModeloDeCabeceraDeFicha {
 }
 
 /**
- * Cabecera de una ficha (UX-01): titulo, datos y marcas arriba, y las pestanas de las
- * pantallas hermanas debajo. Desde el 29/10/2026 es una {@link CabeceraDePagina} con esos datos:
- * la misma fila, la misma altura y el mismo lugar para la accion principal que cualquier pantalla.
+ * Cabecera de una ficha en dos filas (08/11/2026). Arriba la identificacion: el nombre, con el
+ * perfil ("Paciente") y el "?", y debajo el documento y el estado. Abajo la navegacion: las
+ * pestanas de las pantallas hermanas a la izquierda y las acciones a la derecha. Es identica en la
+ * ficha y en cada pestana, asi que nada cambia de lugar al navegar.
  *
  * <p>Antes vivia como `app-cabecera-de-persona` en cuatro copias (person, billing, activity y
  * clinical) porque las features no pueden importarse entre si (ADR-0004). La parte de dominio
  * -que pestanas ve quien, como se escribe el documento- subio a `core/models/cabecera-de-persona`;
  * aca queda solo el dibujo, que no sabe que es una persona.
  *
- * <p><b>La ficha y sus hermanas.</b> En la ficha el titulo es el nombre de la persona. En una
- * pantalla hermana (`titulo`: "Coberturas") el titulo es el de la seccion y la persona queda al
- * lado como dato, con su documento. La ruta de navegacion ("Padrón / Perez, Ana / Coberturas")
+ * <p><b>La ficha y sus hermanas.</b> A la vista arriba va siempre la persona. En la ficha el `h1`
+ * es su nombre; en una hermana (`titulo`: "Coberturas") el `h1` es el de la seccion, oculto a
+ * la vista: lo lee el lector de pantalla y la seccion se ve en la pestana marcada. La ruta de navegacion ("Padrón / Perez, Ana / Coberturas")
  * vive en la barra superior (UX-13) y la publica `cabeceraDePersona`.
  *
  * <p><b>Dos ranuras.</b> `app-ayuda` va pegada al titulo (el "?"); el resto, a la derecha (las
@@ -57,10 +57,11 @@ export interface ModeloDeCabeceraDeFicha {
 @Component({
   selector: 'app-cabecera-de-ficha',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CabeceraDePagina, Pestanas],
+  imports: [Pestanas],
   templateUrl: './cabecera-de-ficha.html',
   styleUrl: './cabecera-de-ficha.css',
   encapsulation: ViewEncapsulation.None,
+  host: { class: 'cabecera-ficha' },
 })
 export class CabeceraDeFicha {
   readonly modelo = input.required<ModeloDeCabeceraDeFicha>();
@@ -68,9 +69,13 @@ export class CabeceraDeFicha {
   /** El titulo de la seccion en una pantalla hermana. Sin el, el titulo es el de la ficha. */
   readonly titulo = input<string | null>(null);
 
-  /** En una hermana, quien es la persona: nombre y documento, en una linea. */
-  protected readonly persona = computed(() => {
-    const m = this.modelo();
-    return [m.titulo, ...m.datos].join(' · ');
-  });
+  /** El tipo de persona ("Paciente"), al lado del nombre. */
+  protected readonly perfiles = computed(() =>
+    this.modelo().marcas.filter((marca) => marca.tono === 'neutra'),
+  );
+
+  /** El estado ("Activa", "De baja"), en la linea del documento. */
+  protected readonly estados = computed(() =>
+    this.modelo().marcas.filter((marca) => marca.tono !== 'neutra'),
+  );
 }

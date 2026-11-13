@@ -1,4 +1,12 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
+import { TurnoAfectadoPorDisponibilidadResponse } from '../../../api/generated/model/turno-afectado-por-disponibilidad-response';
+import { ProblemDetailConflictoTipoEnum } from '../../../api/generated/model/problem-detail';
+import {
+  ConflictoDelProblema,
+  conflictoDelProblema,
+  conflictoEnOtraSede as enOtraSede,
+  describirConflicto,
+} from '../../../core/models/conflicto-de-agenda';
 
 /**
  * Motivo por el que fallo una operacion de agenda o de reserva (M12, AKINE-05.01 y 05.02).
@@ -174,6 +182,22 @@ export interface ErrorAgenda {
   readonly turnoEnConflictoId: number;
   readonly conflictoInicio: string;
   readonly conflictoFin: string;
+  /**
+   * Con que choca un `recurso-ocupado` del profesional: `TURNO` o `CLASE` (contrato 0.156.0). Vacio
+   * si el backend no lo dijo. Una clase no admite sobreturno: el backend responde 409 igual.
+   */
+  readonly conflictoTipo: string;
+  /** Clase con la que choca, si es una clase. 0 si no. */
+  readonly claseEnConflictoId: number;
+  /** Sede del turno o la clase con que choca: puede ser otra de la organizacion. 0 si no vino. */
+  readonly conflictoConsultorioId: number;
+  /**
+   * Todas las extensiones de conflicto (0.158.0): causa, sede por nombre, si es la misma, franja e
+   * instructor. Vacio si el error no las trae.
+   */
+  readonly conflicto: ConflictoDelProblema;
+  /** El `detail` del servidor, que redacta causa, sede y franja. Respaldo de la descripcion. */
+  readonly detalleDelServidor: string;
   /** Sesiones que le quedan al plan, en `plan-sin-sesiones`. */
   readonly pendientes: number;
   /** Turnos que deja afuera un bloqueo, en `bloqueo-con-turnos-afectados`. */
@@ -215,6 +239,32 @@ const MENSAJE_BOX_OCUPADO =
 const MENSAJE_RECURSO_OCUPADO =
   'Ya hay otro turno que se cruza con este intervalo. Elegí otro horario, o el mismo horario con ' +
   'otro profesional.';
+
+/**
+ * El profesional da una clase en ese horario (contrato 0.156.0); la sede la nombra la linea del
+ * conflicto. Una clase no se pisa con un sobreturno: la salida es otro horario u otro profesional.
+ */
+const MENSAJE_CLASE_OCUPA =
+  'El profesional tiene una clase que se cruza con este horario. Una clase no admite sobreturno: ' +
+  'elegí otro horario u otro profesional.';
+
+/**
+ * El horario choca con un cierre o con la disponibilidad de la persona (0.158.0): no es que "se fue
+ * mientras lo mirabas". Se ramifica por `conflictoTipo`, nunca por el texto.
+ */
+const MENSAJE_POR_CAUSA: Readonly<Record<string, string>> = {
+  BLOQUEO:
+    'El profesional tiene la agenda bloqueada en ese horario. No reservamos nada: elegí otro ' +
+    'horario u otro profesional.',
+  AUSENCIA:
+    'El profesional tiene una ausencia registrada en ese horario. No reservamos nada: elegí otro ' +
+    'horario u otro profesional.',
+  CIERRE_DE_SEDE:
+    'La sede está cerrada en ese horario. No reservamos nada: elegí otro horario u otra sede.',
+  DISPONIBILIDAD:
+    'El profesional ya ofrece ese horario en otra agenda y no puede atender en dos lugares a la ' +
+    'vez. No reservamos nada: elegí otro horario u otro profesional.',
+};
 
 const MENSAJE_SIN_PERFIL_PACIENTE =
   'Esa persona todavía no tiene perfil de paciente, así que no se le puede reservar una atención. ' +
@@ -297,30 +347,38 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
         ...base(mensajeDeVentana(error), 'ventana-demasiado-amplia', 'recargar-agenda'),
         maxDias: error.numeroDeExtension('maxDays') ?? 0,
       };
-    case 'slot-no-disponible':
+    case 'slot-no-disponible': {
+      const conflicto = conflictoDelProblema(error);
       return {
-        ...base(MENSAJE_SLOT_NO_DISPONIBLE, 'slot-no-disponible', 'recargar-agenda'),
+        ...base(
+          MENSAJE_POR_CAUSA[conflicto.conflictoTipo ?? ''] ?? MENSAJE_SLOT_NO_DISPONIBLE,
+          'slot-no-disponible',
+          'recargar-agenda',
+        ),
+        ...datosDelConflicto(error, conflicto),
         motivo: textoDeExtension(error, 'motivo'),
       };
+    }
     case 'slot-completo':
       return {
         ...base(MENSAJE_SLOT_COMPLETO, 'slot-completo', 'ofrecer-siguiente'),
         cupoTotal: error.numeroDeExtension('cupoTotal') ?? 0,
       };
-    case 'recurso-ocupado':
+    case 'recurso-ocupado': {
+      const recurso = textoDeExtension(error, 'recurso');
+      const conflicto = conflictoDelProblema(error);
+      const mensaje =
+        recurso === 'espacio'
+          ? MENSAJE_BOX_OCUPADO
+          : conflicto.conflictoTipo === 'CLASE'
+            ? MENSAJE_CLASE_OCUPA
+            : (MENSAJE_POR_CAUSA[conflicto.conflictoTipo ?? ''] ?? MENSAJE_RECURSO_OCUPADO);
       return {
-        ...base(
-          textoDeExtension(error, 'recurso') === 'espacio'
-            ? MENSAJE_BOX_OCUPADO
-            : MENSAJE_RECURSO_OCUPADO,
-          'recurso-ocupado',
-          'elegir-otro',
-        ),
-        recurso: textoDeExtension(error, 'recurso'),
-        turnoEnConflictoId: error.numeroDeExtension('turnoEnConflictoId') ?? 0,
-        conflictoInicio: textoDeExtension(error, 'conflictoInicio'),
-        conflictoFin: textoDeExtension(error, 'conflictoFin'),
+        ...base(mensaje, 'recurso-ocupado', 'elegir-otro'),
+        ...datosDelConflicto(error, conflicto),
+        recurso,
       };
+    }
     case 'plan-sin-sesiones':
       return {
         ...base(
@@ -382,6 +440,14 @@ export function traducirErrorAgenda(error: unknown): ErrorAgenda {
     // falls through
     case 'oferta-no-agendable':
       return base(MENSAJE_OFERTA_NO_AGENDABLE, 'oferta-no-agendable', 'ninguna');
+    case 'consultorio-sin-agenda':
+      // La sede existe pero no esta habilitada para turnos (05/11/2026): lo cambia quien
+      // administra la sede, no quien reserva.
+      return base(
+        'Esta sede todavía no está habilitada para agenda y turnos. Un administrador puede habilitarla desde Configuración › Sedes.',
+        'conflicto',
+        'ninguna',
+      );
     default:
       break;
   }
@@ -509,8 +575,30 @@ function base(mensaje: string, causa: CausaAgenda, accion: AccionSugerida): Erro
     turnoEnConflictoId: 0,
     conflictoInicio: '',
     conflictoFin: '',
+    conflictoTipo: '',
+    claseEnConflictoId: 0,
+    conflictoConsultorioId: 0,
+    conflicto: {},
+    detalleDelServidor: '',
     pendientes: 0,
     turnosAfectados: 0,
+  };
+}
+
+/** Las extensiones de conflicto de un 409 de reserva, planas y juntas. */
+function datosDelConflicto(
+  error: AkineHttpError,
+  conflicto: ConflictoDelProblema,
+): Partial<ErrorAgenda> {
+  return {
+    turnoEnConflictoId: error.numeroDeExtension('turnoEnConflictoId') ?? 0,
+    conflictoInicio: conflicto.conflictoInicio ?? '',
+    conflictoFin: conflicto.conflictoFin ?? '',
+    conflictoTipo: conflicto.conflictoTipo ?? '',
+    claseEnConflictoId: error.numeroDeExtension('claseEnConflictoId') ?? 0,
+    conflictoConsultorioId: conflicto.conflictoConsultorioId ?? 0,
+    conflicto,
+    detalleDelServidor: error.problem === null ? '' : (error.detalle ?? ''),
   };
 }
 
@@ -538,3 +626,56 @@ function segundosDeEspera(error: AkineHttpError): number {
   }
   return Math.ceil(segundos);
 }
+
+/**
+ * La lista de turnos que trae el 409 `bloqueo-con-turnos-afectados` desde el contrato 0.154.0 (la
+ * misma forma que el impacto previo), o vacia si no vino. Se verifica la forma: la extension no esta
+ * tipada en el contrato.
+ */
+export function turnosDelRechazo(
+  error: unknown,
+): readonly TurnoAfectadoPorDisponibilidadResponse[] {
+  if (!(error instanceof AkineHttpError)) {
+    return [];
+  }
+  const turnos = error.extension('turnos');
+  return Array.isArray(turnos)
+    ? turnos.filter(
+        (t): t is TurnoAfectadoPorDisponibilidadResponse => typeof t === 'object' && t !== null,
+      )
+    : [];
+}
+
+/**
+ * Con que choca un 409 de reserva, en una linea: "Clase en la sede Norte, 10:00 a 11:00" o "Agenda
+ * bloqueada en la sede Centro, 09:00 a 12:00" (0.158.0). Nombra la sede que manda el backend, o la
+ * de los contextos de la cuenta; si no puede nombrarla, devuelve el `detail` del servidor, que la
+ * redacta. Vacio si el error no trae conflicto. Nunca lleva datos de paciente.
+ */
+export function detalleDelConflicto(
+  error: ErrorAgenda,
+  consultorioActual: number | null,
+  nombreDeSede: (consultorioId: number) => string,
+  hora: (instante: string) => string,
+): string {
+  if (error.conflicto.conflictoTipo === undefined && error.conflictoInicio === '') {
+    return '';
+  }
+  // Antes de 0.158.0 un intervalo sin tipo era siempre un turno.
+  const conflicto: ConflictoDelProblema = {
+    ...error.conflicto,
+    conflictoTipo: error.conflicto.conflictoTipo ?? ProblemDetailConflictoTipoEnum.TURNO,
+  };
+  return (
+    describirConflicto(conflicto, { hora, consultorioActual, nombreDeSede }) ||
+    error.detalleDelServidor
+  );
+}
+
+/** `true` si el choque es con algo de otra sede: su detalle no se puede leer desde esta. */
+export function conflictoEnOtraSede(error: ErrorAgenda, consultorioActual: number | null): boolean {
+  return enOtraSede(error.conflicto, consultorioActual);
+}
+
+/** Nombre de una sede entre los contextos de la cuenta (vive en `core/`: lo usan otras features). */
+export { nombreDeSede } from '../../../core/models/conflicto-de-agenda';

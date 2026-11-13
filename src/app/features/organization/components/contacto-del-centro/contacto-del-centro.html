@@ -1,0 +1,104 @@
+@if (marca(); as datos) {
+  <h3 class="contacto__titulo" id="titulo-contacto">Datos de contacto</h3>
+  <dl class="detalle detalle--ficha" aria-labelledby="titulo-contacto">
+    @for (fila of filas; track fila.campo) {
+      <dt>{{ fila.rotulo }}</dt>
+      <dd>{{ datos[fila.campo] || '-' }}</dd>
+    }
+  </dl>
+
+  <p class="acciones acciones--ficha">
+    <button
+      *akinePermiso="permisoEditar"
+      type="button"
+      class="boton boton--secundario"
+      (click)="abrir()"
+    >
+      Editar datos de contacto
+    </button>
+  </p>
+}
+
+@if (editando()) {
+  <app-panel-lateral
+    titulo="Datos de contacto del centro"
+    subtitulo="Se muestran en el pie de cada pantalla."
+    (cerrar)="cerrar()"
+  >
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      @if (error(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos guardar los datos de contacto">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <p class="ayuda ayuda--fija panel-lateral__nota" id="contacto-ayuda">
+        Todos son opcionales. <b>Vaciar un dato lo borra</b>.
+      </p>
+
+      <div class="campo campo--6">
+        <label for="contacto-telefono">Teléfono</label>
+        <input id="contacto-telefono" type="tel" formControlName="telefono" maxlength="40" />
+      </div>
+
+      <div class="campo campo--6">
+        <label for="contacto-email">Email</label>
+        <input
+          id="contacto-email"
+          type="email"
+          formControlName="email"
+          maxlength="254"
+          [attr.aria-invalid]="conError('email')"
+          [attr.aria-describedby]="conError('email') ? 'contacto-email-error' : null"
+        />
+        @if (conError('email')) {
+          <p class="campo__error" id="contacto-email-error">
+            {{ erroresDeCampo()['email'] ?? 'Revisá el formato del email.' }}
+          </p>
+        }
+      </div>
+
+      <div class="campo campo--12">
+        <label for="contacto-sitio">Sitio web</label>
+        <input
+          id="contacto-sitio"
+          type="url"
+          formControlName="sitioWeb"
+          maxlength="200"
+          placeholder="https://"
+          [attr.aria-invalid]="conError('sitioWeb')"
+          [attr.aria-describedby]="conError('sitioWeb') ? 'contacto-sitio-error' : null"
+        />
+        @if (conError('sitioWeb')) {
+          <p class="campo__error" id="contacto-sitio-error">
+            {{ erroresDeCampo()['sitioWeb'] ?? 'Tiene que empezar con http:// o https://.' }}
+          </p>
+        }
+      </div>
+
+      <div class="campo campo--12">
+        <label for="contacto-direccion">Dirección</label>
+        <input id="contacto-direccion" type="text" formControlName="direccion" maxlength="240" />
+      </div>
+
+      <div class="campo campo--12">
+        <label for="contacto-leyenda">Leyenda del pie</label>
+        <input
+          id="contacto-leyenda"
+          type="text"
+          formControlName="leyenda"
+          maxlength="200"
+          aria-describedby="contacto-leyenda-ayuda"
+        />
+        <p class="ayuda ayuda--fija" id="contacto-leyenda-ayuda">
+          Una línea libre: horario de atención, matrícula, lema.
+        </p>
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="guardando()">Guardar los cambios</button>
+        <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}

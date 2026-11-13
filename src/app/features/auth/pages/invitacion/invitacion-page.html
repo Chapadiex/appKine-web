@@ -71,6 +71,77 @@
             </app-alerta>
           }
 
+          @if (datos.perfil) {
+            <section class="invitacion__alta" aria-labelledby="titulo-perfil-invitado">
+              <h2 id="titulo-perfil-invitado">Revisá tus datos</h2>
+              <p class="ayuda">
+                Podés corregir los datos que cargaron antes de aceptar la invitación.
+              </p>
+              @if (!requiereRegistro()) {
+                <p class="ayuda">
+                  Los cambios quedan registrados con esta invitación; no modifican tu cuenta
+                  existente.
+                </p>
+              }
+              <div class="campo">
+                <label for="invitacion-nombre">Nombre</label>
+                <input id="invitacion-nombre" formControlName="nombre" autocomplete="given-name" />
+                @if (mostrarErrorDe('nombre')) {
+                  <p class="campo__error">El nombre es obligatorio.</p>
+                }
+              </div>
+              <div class="campo">
+                <label for="invitacion-apellido">Apellido</label>
+                <input
+                  id="invitacion-apellido"
+                  formControlName="apellido"
+                  autocomplete="family-name"
+                />
+                @if (mostrarErrorDe('apellido')) {
+                  <p class="campo__error">El apellido es obligatorio.</p>
+                }
+              </div>
+              <div class="campo">
+                <label for="invitacion-tipo-documento">Tipo de documento</label
+                ><input id="invitacion-tipo-documento" formControlName="tipoDocumento" />
+              </div>
+              <div class="campo">
+                <label for="invitacion-documento">Número de documento</label
+                ><input id="invitacion-documento" formControlName="numeroDocumento" />
+              </div>
+              <div class="campo">
+                <label for="invitacion-telefono">Teléfono</label
+                ><input id="invitacion-telefono" type="tel" formControlName="telefono" />
+              </div>
+              @if (datos.roleCode === 'PROFESIONAL') {
+                <div class="campo">
+                  <label for="invitacion-profesion">Profesión</label
+                  ><input id="invitacion-profesion" formControlName="profesion" />
+                </div>
+                <div class="campo">
+                  <label for="invitacion-matricula">Matrícula</label
+                  ><input id="invitacion-matricula" formControlName="matricula" />
+                </div>
+                <div class="campo">
+                  <label for="invitacion-jurisdiccion">Jurisdicción</label
+                  ><input id="invitacion-jurisdiccion" formControlName="jurisdiccion" />
+                </div>
+                <div class="campo">
+                  <label for="invitacion-especialidad">Especialidad principal</label
+                  ><input id="invitacion-especialidad" formControlName="especialidadPrincipal" />
+                </div>
+                <div class="campo">
+                  <label for="invitacion-especialidades"
+                    >Especialidades adicionales (separadas por coma)</label
+                  ><input
+                    id="invitacion-especialidades"
+                    formControlName="especialidadesAdicionales"
+                  />
+                </div>
+              }
+            </section>
+          }
+
           @if (requiereRegistro()) {
             <!--
               Solo cuando hace falta: a quien ya tiene cuenta pedirle una contrasena nueva seria
@@ -83,32 +154,36 @@
                 correo de activación, porque abrir este enlace ya confirmó tu dirección.
               </p>
 
-              <div class="campo">
-                <label for="invitacion-nombre">Nombre</label>
-                <input
-                  id="invitacion-nombre"
-                  type="text"
-                  formControlName="nombre"
-                  autocomplete="given-name"
-                  [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
-                  [attr.aria-describedby]="
-                    mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
-                  "
-                />
-                @if (mostrarErrorDe('nombre')) {
-                  <p class="campo__error" id="invitacion-nombre-error">El nombre es obligatorio.</p>
-                }
-              </div>
+              @if (!datos.perfil) {
+                <div class="campo">
+                  <label for="invitacion-nombre">Nombre</label>
+                  <input
+                    id="invitacion-nombre"
+                    type="text"
+                    formControlName="nombre"
+                    autocomplete="given-name"
+                    [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
+                    "
+                  />
+                  @if (mostrarErrorDe('nombre')) {
+                    <p class="campo__error" id="invitacion-nombre-error">
+                      El nombre es obligatorio.
+                    </p>
+                  }
+                </div>
 
-              <div class="campo">
-                <label for="invitacion-apellido">Apellido (opcional)</label>
-                <input
-                  id="invitacion-apellido"
-                  type="text"
-                  formControlName="apellido"
-                  autocomplete="family-name"
-                />
-              </div>
+                <div class="campo">
+                  <label for="invitacion-apellido">Apellido (opcional)</label>
+                  <input
+                    id="invitacion-apellido"
+                    type="text"
+                    formControlName="apellido"
+                    autocomplete="family-name"
+                  />
+                </div>
+              }
 
               <div class="campo">
                 <label for="invitacion-password">Contraseña</label>

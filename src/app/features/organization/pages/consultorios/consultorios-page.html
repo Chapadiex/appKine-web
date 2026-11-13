@@ -89,7 +89,7 @@
           titulo="Todavía no elegiste un contexto de trabajo."
           texto="Las sedes son de una organización concreta, así que hay que indicar cual."
         >
-          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+          <a class="boton boton--secundario" routerLink="/seleccionar-contexto">Elegir contexto</a>
         </app-estado-vacio>
       }
 
@@ -98,9 +98,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir contexto</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -109,7 +113,10 @@
       @case ('listo') {
         @if (sedesDeLaPagina().length === 0 && !hayFiltros()) {
           <app-estado-vacio titulo="No hay sedes todavía" texto="Abrí la primera para empezar.">
-            <a *akinePermiso="permisoManage" class="boton" routerLink="/organizacion/sedes/nueva"
+            <a
+              *akinePermiso="permisoManage"
+              class="boton boton--secundario"
+              routerLink="/organizacion/sedes/nueva"
               >Abrir una sede</a
             >
           </app-estado-vacio>
@@ -156,9 +163,19 @@
                           <span class="etiqueta">Estás trabajando acá</span>
                         }
                       </span>
-                      <!-- Un dato institucional como referencia; todos estan en el panel. -->
-                      @if (sede.addressLine || sede.legalName) {
-                        <span class="sede__detalle">{{ sede.addressLine || sede.legalName }}</span>
+                      <!-- La direccion fisica como referencia; el resto esta en el panel. -->
+                      @if (direccionDe(sede); as direccion) {
+                        <span class="sede__detalle">{{ direccion }}</span>
+                      } @else if (sede.alias) {
+                        <span class="sede__detalle">{{ sede.alias }}</span>
+                      }
+                      @if (sede.estado !== 'INACTIVO') {
+                        @if (sede.agendaHabilitada === false) {
+                          <span class="etiqueta">Sin agenda</span>
+                        }
+                        @if (sede.ubicacionPendiente) {
+                          <span class="etiqueta">Ubicación pendiente</span>
+                        }
                       }
                     </th>
                     <td class="tabla__col--secundaria">
@@ -207,6 +224,13 @@
                           >
                             Editar
                           </button>
+                          <!--
+                            El calendario trabaja sobre la sede del contexto: en otra fila
+                            mostraria el horario de la sede equivocada.
+                          -->
+                          @if (esLaDelContexto(sede.id)) {
+                            <a routerLink="/horarios/calendario">Horario general</a>
+                          }
                           <button type="button" (click)="abrirPanel(sede, 'baja')">
                             Dar de baja
                           </button>
@@ -243,6 +267,7 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral
       [titulo]="'Editar ' + (sede.name ?? 'la sede')"
+      ancho="amplio"
       [subtitulo]="esLaDelContexto(sede.id) ? 'Es la sede en la que estás trabajando' : null"
       (cerrar)="cerrarPanel()"
     >
@@ -251,34 +276,22 @@
         administrativos, que son opcionales y se cargan una vez.
       -->
       <div class="panel-lateral__pestanas" role="tablist" aria-label="Datos de la sede">
-        <button
-          type="button"
-          role="tab"
-          id="editar-pestana-general"
-          class="panel-lateral__pestana"
-          aria-controls="editar-general"
-          [attr.aria-selected]="pestanaEdicion() === 'general'"
-          [attr.tabindex]="pestanaEdicion() === 'general' ? 0 : -1"
-          (click)="pestanaEdicion.set('general')"
-          (keydown.arrowRight)="cambiarPestana('institucional')"
-          (keydown.arrowLeft)="cambiarPestana('institucional')"
-        >
-          General
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="editar-pestana-institucional"
-          class="panel-lateral__pestana"
-          aria-controls="editar-institucional"
-          [attr.aria-selected]="pestanaEdicion() === 'institucional'"
-          [attr.tabindex]="pestanaEdicion() === 'institucional' ? 0 : -1"
-          (click)="pestanaEdicion.set('institucional')"
-          (keydown.arrowRight)="cambiarPestana('general')"
-          (keydown.arrowLeft)="cambiarPestana('general')"
-        >
-          Datos institucionales
-        </button>
+        @for (pestana of pestanas; track pestana.id) {
+          <button
+            type="button"
+            role="tab"
+            [id]="'editar-pestana-' + pestana.id"
+            class="panel-lateral__pestana"
+            [attr.aria-controls]="'editar-' + pestana.id"
+            [attr.aria-selected]="pestanaEdicion() === pestana.id"
+            [attr.tabindex]="pestanaEdicion() === pestana.id ? 0 : -1"
+            (click)="mostrarPestana(pestana.id)"
+            (keydown.arrowRight)="cambiarPestana(pestana.id, 1)"
+            (keydown.arrowLeft)="cambiarPestana(pestana.id, -1)"
+          >
+            {{ pestana.rotulo }}
+          </button>
+        }
       </div>
 
       <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
@@ -311,6 +324,13 @@
                 vigentes.
               </p>
             }
+          </div>
+
+          <div class="campo campo--6">
+            <label for="editar-alias">
+              Nombre visible / alias <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input id="editar-alias" type="text" formControlName="alias" autocomplete="off" />
           </div>
 
           <div class="campo campo--4">
@@ -352,69 +372,21 @@
               Es el intervalo por defecto de la agenda de esta sede.
             </p>
           </div>
-        </div>
-
-        <div
-          id="editar-institucional"
-          class="panel-lateral__seccion"
-          role="tabpanel"
-          aria-labelledby="editar-pestana-institucional"
-          [hidden]="pestanaEdicion() !== 'institucional'"
-        >
-          <!-- Advertencia con consecuencias: va a la vista, no detras de un "?". -->
-          <p class="ayuda ayuda--fija panel-lateral__nota" id="editar-ayuda-patch">
-            Todos son opcionales. <b>Vaciar un dato lo borra</b>; los que no toques quedan como
-            están.
-          </p>
 
           <div class="campo campo--6">
-            <label for="editar-legalName">Razón social</label>
-            <input
-              id="editar-legalName"
-              type="text"
-              formControlName="legalName"
-              aria-describedby="editar-ayuda-patch"
-            />
-          </div>
-
-          <div class="campo campo--3">
-            <label for="editar-taxId">CUIT o identificación fiscal</label>
-            <input
-              id="editar-taxId"
-              type="text"
-              formControlName="taxId"
-              aria-describedby="editar-ayuda-patch"
-            />
-          </div>
-
-          <div class="campo campo--3">
-            <label for="editar-phone">Teléfono</label>
-            <input
-              id="editar-phone"
-              type="tel"
-              formControlName="phone"
-              aria-describedby="editar-ayuda-patch"
-            />
+            <label for="editar-phone">Teléfono de contacto</label>
+            <input id="editar-phone" type="tel" formControlName="phone" autocomplete="tel" />
           </div>
 
           <div class="campo campo--6">
-            <label for="editar-addressLine">Dirección</label>
-            <input
-              id="editar-addressLine"
-              type="text"
-              formControlName="addressLine"
-              aria-describedby="editar-ayuda-patch"
-            />
-          </div>
-
-          <div class="campo">
             <label for="editar-email">Email de contacto</label>
             <input
               id="editar-email"
               type="email"
               formControlName="contactEmail"
+              autocomplete="email"
               [attr.aria-describedby]="
-                mostrarErrorEdicion('contactEmail') ? 'editar-email-error' : 'editar-ayuda-patch'
+                mostrarErrorEdicion('contactEmail') ? 'editar-email-error' : null
               "
               [attr.aria-invalid]="mostrarErrorEdicion('contactEmail')"
             />
@@ -424,6 +396,145 @@
               </p>
             }
           </div>
+
+          <!-- Visibilidad (05/11/2026): una sede puede existir sin recibir turnos todavia. -->
+          <fieldset class="panel-seccion">
+            <legend class="visualmente-oculto">Visibilidad de la sede</legend>
+            <label class="interruptor">
+              <input
+                id="editar-agendaHabilitada"
+                type="checkbox"
+                role="switch"
+                formControlName="agendaHabilitada"
+              />
+              <span class="interruptor__textos">
+                <span class="interruptor__titulo">Habilitada para agenda y turnos</span>
+                <span class="interruptor__ayuda">
+                  Apagada, la sede existe pero no se pueden reservar turnos en ella.
+                </span>
+              </span>
+            </label>
+            <label class="interruptor">
+              <input
+                id="editar-direccionPublica"
+                type="checkbox"
+                role="switch"
+                formControlName="direccionPublica"
+              />
+              <span class="interruptor__textos">
+                <span class="interruptor__titulo">Mostrar la dirección a los pacientes</span>
+                <span class="interruptor__ayuda"
+                  >Va en los avisos de turno, con el enlace para llegar.</span
+                >
+              </span>
+            </label>
+          </fieldset>
+        </div>
+
+        <!-- Ubicacion: direccion en partes y punto en el mapa, en una columna. -->
+        <div
+          id="editar-ubicacion"
+          class="panel-lateral__seccion"
+          role="tabpanel"
+          aria-labelledby="editar-pestana-ubicacion"
+          [hidden]="pestanaEdicion() !== 'ubicacion'"
+        >
+          <app-editor-de-ubicacion
+            idBase="editar-ubicacion"
+            [formulario]="ubicacionEdicion"
+            [mostrarErrores]="intentos() > 0"
+            [nombreDeSede]="sede.name ?? ''"
+            [compacto]="true"
+          />
+        </div>
+
+        <div
+          id="editar-institucional"
+          class="panel-lateral__seccion"
+          role="tabpanel"
+          aria-labelledby="editar-pestana-institucional"
+          [hidden]="pestanaEdicion() !== 'institucional'"
+        >
+          <p class="ayuda ayuda--fija panel-lateral__nota">
+            Razón social, CUIT y domicilio fiscal: distintos de la dirección física. Por defecto son
+            los de la organización.
+          </p>
+
+          <label class="interruptor">
+            <input
+              id="editar-datosFiscalesPropios"
+              type="checkbox"
+              role="switch"
+              [checked]="!formularioEdicion.controls.datosFiscalesPropios.value"
+              (change)="
+                formularioEdicion.controls.datosFiscalesPropios.setValue(
+                  !$any($event.target).checked
+                )
+              "
+            />
+            <span class="interruptor__textos">
+              <span class="interruptor__titulo">Usar los datos fiscales de la organización</span>
+              <span class="interruptor__ayuda">
+                @if (formularioEdicion.controls.datosFiscalesPropios.value) {
+                  Apagado: esta sede factura con datos propios.
+                } @else if (sede.datosFiscalesEfectivos; as efectivos) {
+                  {{ efectivos.legalName || 'Sin razón social' }}
+                  @if (efectivos.taxId) {
+                    · CUIT {{ efectivos.taxId }}
+                  }
+                  @if (efectivos.addressLine) {
+                    · {{ efectivos.addressLine }}
+                  }
+                }
+              </span>
+            </span>
+          </label>
+
+          @if (formularioEdicion.controls.datosFiscalesPropios.value) {
+            <!-- Advertencia con consecuencias: va a la vista, no detras de un "?". -->
+            <p class="ayuda ayuda--fija panel-lateral__nota" id="editar-ayuda-patch">
+              <b>Vaciar un dato lo borra</b>; los que no toques quedan como están.
+            </p>
+
+            <div class="campo campo--12">
+              <label for="editar-legalName">Razón social</label>
+              <input
+                id="editar-legalName"
+                type="text"
+                formControlName="legalName"
+                aria-describedby="editar-ayuda-patch"
+              />
+            </div>
+
+            <div class="campo campo--6">
+              <label for="editar-taxId">CUIT o identificación fiscal</label>
+              <input
+                id="editar-taxId"
+                type="text"
+                inputmode="numeric"
+                formControlName="taxId"
+                [attr.aria-invalid]="mostrarErrorEdicion('taxId')"
+                [attr.aria-describedby]="
+                  mostrarErrorEdicion('taxId') ? 'editar-taxId-error' : 'editar-ayuda-patch'
+                "
+              />
+              @if (mostrarErrorEdicion('taxId')) {
+                <p class="campo__error" id="editar-taxId-error">
+                  El CUIT no es válido: revisá el dígito verificador.
+                </p>
+              }
+            </div>
+
+            <div class="campo campo--12">
+              <label for="editar-addressLine">Domicilio fiscal</label>
+              <input
+                id="editar-addressLine"
+                type="text"
+                formControlName="addressLine"
+                aria-describedby="editar-ayuda-patch"
+              />
+            </div>
+          }
         </div>
 
         <div class="acciones">

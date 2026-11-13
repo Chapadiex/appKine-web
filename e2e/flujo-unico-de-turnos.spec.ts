@@ -1,6 +1,6 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 
-import { navegar } from './support/agenda-real';
+import { diaDelPanel, diasHabilesSinFeriado, navegar } from './support/agenda-real';
 import { ZONA_DE_HOY } from './support/centro-de-hoy';
 import {
   HistoriaSembrada,
@@ -39,6 +39,8 @@ test.describe('Flujo unico de turnos', () => {
   let casoId: number;
   let planId: number;
   let dia: string;
+  /** Feriados de la sede entre `dia` y dos semanas despues: lo que la serie tiene que esquivar. */
+  let feriados: ReadonlySet<string>;
 
   interface Turno {
     readonly id: number;
@@ -51,6 +53,8 @@ test.describe('Flujo unico de turnos', () => {
       readonly casoId?: number;
       readonly planId?: number;
       readonly sobreturno?: boolean;
+      readonly reprogramaciones?: number;
+      readonly reprogramacion?: { readonly inicioOriginal?: string };
     };
   }
 
@@ -93,7 +97,7 @@ test.describe('Flujo unico de turnos', () => {
   const apellido = (): string => sembrada.nombreCompleto.split(',')[0];
 
   async function elegirPaciente(dialogo: Locator): Promise<void> {
-    await dialogo.getByLabel('Buscar paciente').fill(apellido());
+    await dialogo.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(apellido());
     await dialogo.getByRole('button', { name: new RegExp(apellido()) }).click();
   }
 
@@ -163,7 +167,7 @@ test.describe('Flujo unico de turnos', () => {
       'GET',
       ruta(`/calendario?desde=${fechaLocal(ZONA, 3)}&hasta=${fechaLocal(ZONA, 20)}`),
     );
-    const feriados = new Set(calendario.feriados.map((f) => f.fecha));
+    feriados = new Set(calendario.feriados.map((f) => f.fecha));
     dia = fechaLocal(ZONA, 3);
     while (feriados.has(dia)) {
       dia = sumarDias(dia, 1);
@@ -205,7 +209,6 @@ test.describe('Flujo unico de turnos', () => {
       timeZone: ZONA,
     }).format(inicio);
     const dialogo = await abrirTurnoEnLaAgenda(page, fechaLocal(ZONA), hora);
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Marcar ausente' }).click();
     await dialogo.getByRole('button', { name: 'Registrar la ausencia' }).click();
     await expect(dialogo.locator('.estado-turno')).toContainText('Ausente');
@@ -262,7 +265,7 @@ test.describe('Flujo unico de turnos', () => {
 
     const dialogo = panel(page, 'Nuevo turno');
     // Lo que ya se sabe no se vuelve a preguntar.
-    await expect(dialogo.getByLabel('Buscar paciente')).toBeHidden();
+    await expect(dialogo.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(dialogo.getByText(sembrada.nombreCompleto).first()).toBeVisible();
     await expect(dialogo.getByLabel('Prestación', { exact: true })).toBeHidden();
 
@@ -289,7 +292,7 @@ test.describe('Flujo unico de turnos', () => {
     await proximaSesion.click();
     const proxima = panel(page, 'Nuevo turno');
     // El contexto del plan ya viene: paciente, caso, plan y prestacion.
-    await expect(proxima.getByLabel('Buscar paciente')).toBeHidden();
+    await expect(proxima.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(proxima.getByLabel('Caso / Plan')).not.toHaveValue('');
     await expect(proxima.getByText('Planificadas:')).toBeVisible();
     await proxima.getByRole('button', { name: 'Primer disponible' }).click();
@@ -305,13 +308,18 @@ test.describe('Flujo unico de turnos', () => {
     // La cantidad sale de lo que le queda al plan.
     await expect(varias.getByText('Pendientes:')).toBeVisible();
     await expect(varias.getByLabel('Cantidad de sesiones')).toHaveValue('4');
+    // Dos dias habiles sin feriado, una semana despues: el panel excluye la ocurrencia que cae en
+    // feriado y confirma una sola, con otro aviso. Con "Lun" y "Jue" fijos, el 23/11/2026 lo hizo.
+    const [primera, segunda] = diasHabilesSinFeriado(sumarDias(dia, 7), feriados, 2);
     await varias.getByLabel('Horario preferido').fill('15:00');
-    await varias.getByLabel('Fecha inicial').fill(sumarDias(dia, 7));
+    await varias.getByLabel('Fecha inicial').fill(primera);
     await varias.getByLabel('Cantidad de sesiones').fill('2');
-    await varias.getByLabel('Lun', { exact: true }).check();
-    await varias.getByLabel('Jue', { exact: true }).check();
+    await varias.getByLabel(diaDelPanel(primera), { exact: true }).check();
+    await varias.getByLabel(diaDelPanel(segunda), { exact: true }).check();
     await varias.getByRole('button', { name: 'Buscar disponibilidad' }).click();
-    await expect(varias.getByRole('table')).toBeVisible();
+    const propuestas = varias.getByRole('table').locator('tbody tr');
+    await expect(propuestas).toHaveCount(2);
+    await expect(propuestas.getByText(/se omite|Excluida|No disponible/)).toHaveCount(0);
     await varias.getByRole('button', { name: /^Confirmar/ }).click();
     await expect(avisos(page).getByText(/2 turnos|sesiones programadas/i)).toBeVisible();
 
@@ -344,7 +352,6 @@ test.describe('Flujo unico de turnos', () => {
     await entrarComoAdministradora(page, sembrada);
 
     const dialogo = await abrirTurnoEnLaAgenda(page, dia, '11:00');
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
     await dialogo.locator('.horario').first().click();
     await dialogo.getByRole('button', { name: 'Reprogramar' }).click();
@@ -362,6 +369,32 @@ test.describe('Flujo unico de turnos', () => {
     const reprogramacion = eventos.find((e) => e.tipo === 'REPROGRAMACION');
     expect(reprogramacion).toBeDefined();
     expect(reprogramacion?.actorNombre, 'el historial dice quien lo hizo').toBeTruthy();
+
+    // Reprogramado es un indicador y no un estado (contrato 0.155.0): el backend lo cuenta y guarda
+    // el horario original, y la agenda y el detalle lo muestran sin tocar el estado.
+    expect(movido.operativo?.reprogramaciones).toBe(1);
+    expect(new Date(movido.operativo?.reprogramacion?.inicioOriginal ?? '').getTime()).toBe(
+      new Date(turno.inicio).getTime(),
+    );
+    expect(['RESERVADO', 'CONFIRMADO']).toContain(movido.operativo?.estadoOperativo);
+
+    // El primer horario ofrecido puede caer en otro dia que `dia`: la tarjeta se busca en el dia
+    // al que se movio el turno, con el panel cerrado (un dialogo modal deja la grilla inerte).
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    const diaNuevo = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ZONA,
+      dateStyle: 'short',
+    }).format(new Date(movido.inicio));
+    await navegar(page, `/agenda?fecha=${diaNuevo}`);
+    const tarjeta = page
+      .getByRole('button', { name: new RegExp(apellido()) })
+      .filter({ hasText: 'Reprogramado' });
+    await expect(tarjeta).toHaveCount(1);
+    await tarjeta.click();
+    const detalle = page.getByRole('dialog');
+    await expect(detalle.getByText(/Reprogramado/)).toBeVisible();
+    await expect(detalle.getByText(/Original: .* → Ahora: /)).toBeVisible();
   });
 
   test('Turno -> cancelar: libera el lugar y conserva el motivo', async ({ page }) => {
@@ -369,7 +402,6 @@ test.describe('Flujo unico de turnos', () => {
     await entrarComoAdministradora(page, sembrada);
 
     const dialogo = await abrirTurnoEnLaAgenda(page, dia, '21:00');
-    await dialogo.getByText('Más acciones').click();
     await dialogo.getByRole('button', { name: 'Cancelar turno' }).click();
     await dialogo.getByRole('button', { name: 'Cancelar turno' }).click();
     await expect(avisos(page).getByText(/Turno cancelado/)).toBeVisible();
@@ -419,7 +451,7 @@ test.describe('Flujo unico de turnos', () => {
     await page.reload();
     await page.getByRole('button', { name: 'Programar próxima sesión' }).click();
     const proxima = panel(page, 'Nuevo turno');
-    await expect(proxima.getByLabel('Buscar paciente')).toBeHidden();
+    await expect(proxima.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
     await proxima.getByRole('button', { name: 'Primer disponible' }).click();
     await proxima.getByRole('button', { name: 'Confirmar turno' }).click();
     await expect(avisos(page).getByText('Turno creado correctamente.')).toBeVisible();
@@ -477,7 +509,7 @@ test.describe('Flujo unico de turnos', () => {
     await page.getByRole('button', { name: new RegExp(`Nuevo turno ${dia} a las 18:00`) }).click();
 
     const dialogo = panel(page, 'Nuevo turno');
-    await dialogo.getByLabel('Buscar paciente').fill(apellidoNuevo);
+    await dialogo.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(apellidoNuevo);
     await expect(dialogo.getByText('No encontramos pacientes.')).toBeVisible();
     await dialogo.getByRole('button', { name: 'Crear paciente' }).click();
     await dialogo.getByLabel('Nombre', { exact: true }).fill('Rocio');
@@ -520,7 +552,7 @@ test.describe('Flujo unico de turnos', () => {
     await nuevoTurno.click();
 
     const dialogo = panel(page, 'Nuevo turno');
-    await expect(dialogo.getByLabel('Buscar paciente')).toBeHidden();
+    await expect(dialogo.getByRole('searchbox', { name: 'Paciente', exact: true })).toBeHidden();
     await expect(dialogo.getByLabel('Caso / Plan')).toHaveValue(`plan:${planId}`);
     await expect(
       dialogo.getByText('No se pueden programar más turnos para esta prestación'),

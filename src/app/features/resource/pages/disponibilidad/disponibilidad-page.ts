@@ -1,4 +1,5 @@
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { publicarMigas } from '../../../../core/services/migas.store';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
@@ -78,6 +79,12 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   styleUrl: '../../resource.css',
 })
 export class DisponibilidadPage {
+  /** Fuera del menu desde el 11/11/2026: se llega desde Espacios y boxes y se vuelve por aca. */
+  private readonly migasDeLaBarra = publicarMigas(() => [
+    { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
+    { etiqueta: 'Por período' },
+  ]);
+
   private readonly espacios = inject(EspaciosService);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenantContext = inject(TenantContextStore);

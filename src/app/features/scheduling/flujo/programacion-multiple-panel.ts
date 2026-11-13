@@ -26,7 +26,13 @@ import { TenantContextStore } from '../../../core/services/tenant-context.store'
 import { Alerta } from '../../../shared/components/alerta/alerta';
 import { PanelLateral } from '../../../shared/components/panel-lateral/panel-lateral';
 import { nuevaClaveDeIntento } from '../../../shared/utils/clave-de-intento';
-import { ErrorAgenda, traducirErrorAgenda } from '../models/agenda-errors';
+import {
+  ErrorAgenda,
+  detalleDelConflicto,
+  nombreDeSede,
+  traducirErrorAgenda,
+} from '../models/agenda-errors';
+import { SessionService } from '../../../core/services/session.service';
 import {
   fechaEnPalabras,
   horaEnZona,
@@ -78,6 +84,7 @@ export class ProgramacionMultiplePanel implements OnInit {
   private readonly api = inject(SchedulingApi);
   private readonly series = inject(SeriesApi);
   private readonly tenant = inject(TenantContextStore);
+  private readonly session = inject(SessionService);
   private readonly dia = inject(DiaDeLaSede);
   private readonly avisos = inject(AvisosStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
@@ -548,9 +555,22 @@ export class ProgramacionMultiplePanel implements OnInit {
             traducido.causa === 'slot-completo' ||
             traducido.causa === 'recurso-ocupado'
           ) {
+            const conflicto = detalleDelConflicto(
+              traducido,
+              this.tenant.consultorioId(),
+              (id) => nombreDeSede(this.session.contextos(), id),
+              (instante) => horaEnZona(instante, this.timezone()),
+            );
             this.rechazoDeOcurrencia.set(
-              'No se creó ningún turno: un horario dejó de estar libre mientras revisabas. ' +
-                'Volvé a revisar la propuesta.',
+              traducido.conflictoTipo === 'CLASE'
+                ? 'No se creó ningún turno: un horario choca con una clase del profesional' +
+                    (conflicto === '' ? '' : ` (${conflicto})`) +
+                    '. Volvé a revisar la propuesta.'
+                : conflicto !== ''
+                  ? `No se creó ningún turno: un horario choca con la agenda (${conflicto}). ` +
+                    'Volvé a revisar la propuesta.'
+                  : 'No se creó ningún turno: un horario dejó de estar libre mientras revisabas. ' +
+                    'Volvé a revisar la propuesta.',
             );
             this.pedirPropuesta();
           }

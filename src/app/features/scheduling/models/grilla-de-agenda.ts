@@ -1,4 +1,5 @@
 import { AgendaOperativa } from '../../../api/generated/model/agenda-operativa';
+import { ConflictoDeAgendaTipoEnum } from '../../../api/generated/model/conflicto-de-agenda';
 import { TurnoDeCalendario } from '../../../api/generated/model/turno-de-calendario';
 import { sumarDias } from './etiquetas-de-agenda';
 import { MOTIVOS_DE_BLOQUEO } from './etiquetas-de-turno';
@@ -10,7 +11,7 @@ import { diaEnZona } from './semana';
  * <p>Una columna es un profesional, un box o un dia, segun la vista. Lo que cambia entre vistas es como
  * se reparten las mismas cosas; por eso todo sale de {@link armarColumnas}.
  */
-export type VistaDeAgenda = 'dia' | 'semana';
+export type VistaDeAgenda = 'dia' | 'semana' | 'mes';
 export type AgrupacionDeAgenda = 'profesional' | 'box';
 
 /** Cada cuantos minutos se ofrece un horario libre si no hay prestaciones de donde sacarlo. */
@@ -44,7 +45,11 @@ const MINUTOS_DEL_DIA = 24 * 60;
 
 export interface EventoDeGrilla {
   readonly clave: string;
-  readonly tipo: 'turno' | 'clase' | 'bloqueo';
+  /**
+   * `fuera`: la persona de la columna esta ocupada en OTRA sede (turno o clase, contrato 0.156.0).
+   * No es interactivo ni lleva datos de paciente: solo dice que ese tramo no esta libre.
+   */
+  readonly tipo: 'turno' | 'clase' | 'bloqueo' | 'fuera';
   readonly inicioMin: number;
   readonly finMin: number;
   /** El carril dentro del grupo que se pisa, para dibujar lado a lado sin taparse. */
@@ -74,7 +79,25 @@ export interface ColumnaDeAgenda {
   readonly eventos: readonly EventoDeGrilla[];
   readonly celdas: readonly CeldaLibre[];
   readonly franjas: readonly { readonly inicioMin: number; readonly finMin: number }[];
+  /**
+   * Tramos en que la persona de la columna esta disponible a la vez aca y en otra sede (0.158.0,
+   * `DISPONIBILIDAD_DOBLE`): una marca, no un evento. No ocupa celdas ni modifica nada.
+   */
+  readonly avisos?: readonly AvisoDeColumna[];
 }
+
+export interface AvisoDeColumna {
+  readonly inicioMin: number;
+  readonly finMin: number;
+  readonly texto: string;
+  /** La otra sede, para nombrarla. */
+  readonly otraSedeConsultorioId?: number;
+}
+
+/** Marca de una clase cuyo instructor tiene un cierre que la alcanza (0.158.0). */
+export const MARCA_CLASE_EN_CIERRE = '⚠ Clase con instructor no disponible';
+/** Marca de un tramo con disponibilidad en dos sedes a la vez (0.158.0). */
+export const MARCA_DISPONIBILIDAD_DOBLE = '⚠ Disponible en dos sedes';
 
 const formateadores = new Map<string, Intl.DateTimeFormat>();
 
@@ -172,7 +195,7 @@ interface Entrada {
   readonly duracionesPropias?: ReadonlyMap<number, number>;
 }
 
-function tramoEnElDia(
+export function tramoEnElDia(
   desde: string | undefined,
   hasta: string | undefined,
   fecha: string,
@@ -243,8 +266,87 @@ function clasesDe(
       inicioMin: minutosEnZona(c.inicio, zona),
       finMin: minutosEnZona(c.fin, zona) || MINUTOS_DEL_DIA,
       titulo: c.titulo || c.ofertaNombre || 'Clase',
-      detalle: `Clase · ${c.ocupados ?? 0}/${c.capacidad ?? 0}`,
+      detalle: `Clase · ${c.ocupados ?? 0}/${c.capacidad ?? 0}` + marcasDeClase(entrada, c.claseId),
     }));
+}
+
+/**
+ * Lo que la persona de la columna tiene en otras sedes ese dia (contrato 0.156.0). Ocupa la celda
+ * aunque en esta sede no haya nada: sin esto la grilla ofreceria un horario que el backend rechaza.
+ */
+function fueraDe(entrada: Entrada, fecha: string, profesionalId: number | null) {
+  if (profesionalId === null) {
+    return [];
+  }
+  const zona = entrada.agenda.timezone ?? '';
+  return (entrada.agenda.ocupacionesEnOtrasSedes ?? [])
+    .filter((o) => o.membershipId === profesionalId)
+    .flatMap((o) => {
+      const tramo = tramoEnElDia(o.inicio, o.fin, fecha, zona);
+      return tramo === null
+        ? []
+        : [
+            {
+              clave: `f${profesionalId}-${o.consultorioId}-${o.inicio}`,
+              tipo: 'fuera' as const,
+              ...tramo,
+              titulo: 'Ocupado en otra sede',
+              detalle: o.tipo === 'CLASE' ? 'Clase' : 'Turno',
+            },
+          ];
+    });
+}
+
+/** Los conflictos que `conflictos[]` guarda, por tipo. Sin tipo (antes de 0.158.0) es TURNO_CLASE. */
+function conflictosDeTipo(agenda: AgendaOperativa | null, tipo: ConflictoDeAgendaTipoEnum) {
+  return (agenda?.conflictos ?? []).filter(
+    (c) => (c.tipo ?? ConflictoDeAgendaTipoEnum.TURNO_CLASE) === tipo,
+  );
+}
+
+/** " · ⚠ Choca con un turno" y/o " · ⚠ Clase con instructor no disponible", o vacio. */
+function marcasDeClase(entrada: Entrada, claseId: number | undefined): string {
+  const de = (tipo: ConflictoDeAgendaTipoEnum) =>
+    conflictosDeTipo(entrada.agenda, tipo).some((x) => x.claseId === claseId);
+  return (
+    (de(ConflictoDeAgendaTipoEnum.TURNO_CLASE) ? ' · ⚠ Choca con un turno' : '') +
+    (de(ConflictoDeAgendaTipoEnum.CLASE_EN_CIERRE) ? ` · ${MARCA_CLASE_EN_CIERRE}` : '')
+  );
+}
+
+/** Los tramos con doble disponibilidad de la persona de la columna ese dia (0.158.0). */
+function avisosDe(entrada: Entrada, fecha: string, profesionalId: number | null) {
+  if (profesionalId === null) {
+    return [];
+  }
+  const zona = entrada.agenda.timezone ?? '';
+  return conflictosDeTipo(entrada.agenda, ConflictoDeAgendaTipoEnum.DISPONIBILIDAD_DOBLE)
+    .filter((c) => c.membershipId === profesionalId)
+    .flatMap((c) => {
+      const tramo = tramoEnElDia(c.inicio, c.fin, fecha, zona);
+      return tramo === null
+        ? []
+        : [
+            {
+              ...tramo,
+              texto: MARCA_DISPONIBILIDAD_DOBLE,
+              otraSedeConsultorioId: c.otraSedeConsultorioId,
+            },
+          ];
+    });
+}
+
+/**
+ * Turnos de esta sede que ya se pisan con una clase de la misma persona (datos anteriores a la
+ * regla entre sedes). Van al filtro "A reubicar" junto con los que quedaron fuera del horario.
+ * Solo `TURNO_CLASE`: los otros tipos no son de un turno.
+ */
+export function turnosQueChocanConClase(agenda: AgendaOperativa | null): ReadonlySet<number> {
+  return new Set(
+    conflictosDeTipo(agenda, ConflictoDeAgendaTipoEnum.TURNO_CLASE)
+      .map((c) => c.turnoId)
+      .filter((id): id is number => id !== undefined),
+  );
 }
 
 function bloqueosDe(entrada: Entrada, fecha: string, profesionalId: number | null) {
@@ -340,6 +442,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
       const otros = [
         ...clasesDe(entrada, dia, () => true),
         ...bloqueosDe(entrada, dia, profesionalFiltrado),
+        ...fueraDe(entrada, dia, profesionalFiltrado),
       ];
       const eventos = [...turnosDe(entrada, dia, () => true), ...otros];
       const franjas = franjasDe(entrada, dia, profesionalFiltrado);
@@ -350,6 +453,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
         profesionalId: profesionalFiltrado ?? undefined,
         eventos: conCarriles(eventos),
         franjas,
+        avisos: avisosDe(entrada, dia, profesionalFiltrado),
         // Sin profesional elegido un horario ocupado por uno puede estar libre para otro: la
         // disponibilidad de ese horario la responde el backend al abrir el formulario.
         celdas: celdasLibres(
@@ -390,6 +494,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
     const otros = [
       ...clasesDe(entrada, fecha, (profesionalId) => profesionalId === id),
       ...bloqueosDe(entrada, fecha, id),
+      ...fueraDe(entrada, fecha, id),
     ];
     const eventos = [...turnosDe(entrada, fecha, delProfesional), ...otros];
     const franjas = franjasDe(entrada, fecha, id);
@@ -400,6 +505,7 @@ export function armarColumnas(entrada: Entrada): readonly ColumnaDeAgenda[] {
       profesionalId: id,
       eventos: conCarriles(eventos),
       franjas,
+      avisos: avisosDe(entrada, fecha, id),
       celdas: celdasLibres(
         entrada,
         fecha,

@@ -2,14 +2,60 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una clase es un evento grupal único sobre una oferta grupal, con su cupo. No genera un turno
-      por persona: las inscripciones se hacen después, desde el detalle de la clase. Cada clase se
-      programa por separado. El box se puede elegir; si no se elige y la oferta lo necesita, el
-      sistema toma uno libre.
+      por persona: las inscripciones se hacen después, desde el detalle de la clase. El box se puede
+      elegir; si no se elige y la oferta lo necesita, el sistema toma uno libre.
+    </p>
+    <p>
+      <b>Todas las semanas</b> programa la misma clase en los días elegidos, entre la fecha desde y
+      la hasta. Cada fecha se revisa como una clase suelta: si un día cae feriado o el box está
+      ocupado, ese día no se programa y te decimos por qué; los demás sí.
     </p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
 <form class="tarjeta" [formGroup]="formulario" (ngSubmit)="programar()" novalidate>
+  <app-opciones-en-tarjetas class="modo-de-clase" [formControl]="modoControl" [opciones]="MODOS">
+    <span leyenda>¿Cuántas clases?</span>
+  </app-opciones-en-tarjetas>
+
+  <!-- Fechas de la serie que no se programaron: se quedan a la vista para resolverlas a mano. -->
+  @if (resultadoDeSerie(); as serie) {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      [titulo]="
+        (serie.omitidas?.length ?? 0) +
+        ((serie.omitidas?.length ?? 0) === 1
+          ? ' fecha no se pudo programar'
+          : ' fechas no se pudieron programar')
+      "
+      id="serie-resultado"
+      tabindex="-1"
+    >
+      <p>
+        @if ((serie.programadas?.length ?? 0) === 0) {
+          No se programó ninguna clase.
+        } @else {
+          Se programaron {{ serie.programadas?.length }}.
+        }
+        Las fechas de abajo quedaron afuera; podés programarlas una por una con otro horario o box.
+      </p>
+      <ul class="serie-omitidas">
+        @for (grupo of omitidasPorMotivo(); track grupo.motivo) {
+          <li>
+            <b>{{ textoDeMotivoDeOmision(grupo.motivo) }}</b> ({{ grupo.fechas.length }}):
+            {{ grupo.fechas.join(', ') }}
+            @if (grupo.detalle && detalleDeOmisionUtil(grupo.motivo)) {
+              <p class="ayuda ayuda--fija">{{ grupo.detalle }}</p>
+            }
+          </li>
+        }
+      </ul>
+      <p class="alerta__acciones">
+        <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Ver las clases</a>
+      </p>
+    </app-alerta>
+  }
   <!-- Error general de la operacion: arriba del formulario, a la vista mientras se corrige. -->
   @if (error(); as fallo) {
     @if (conflicto() === null) {
@@ -43,16 +89,30 @@
       </p>
     </app-alerta>
   } @else if (ofertas()!.length === 0) {
-    <p class="estado estado--vacio">
-      Esta sede no tiene ofertas grupales activas. Una clase necesita una oferta de modalidad
-      grupal: se crea en Servicios.
-    </p>
+    <app-alerta tipo="advertencia" titulo="Esta sede todavía no tiene actividades grupales">
+      <p>Una clase necesita tres cosas cargadas antes, cada una en su pantalla:</p>
+      <ol class="pasos-previos">
+        <li><a [routerLink]="RUTA_ESPACIOS">El lugar</a>: un box o salón con su capacidad.</li>
+        <li>
+          <a [routerLink]="RUTA_CATALOGO_DE_SERVICIOS">La actividad</a>: un servicio de modalidad
+          grupal, por ejemplo Yoga.
+        </li>
+        <li>
+          <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">La oferta de la sede</a>: ese servicio publicado
+          acá, con quiénes lo dictan.
+        </li>
+      </ol>
+    </app-alerta>
   }
 
   <!--
-    Grilla de 12 (UX-14): oferta, titulo y profesional en una fila; fecha, horas, cupo y box en la
-    siguiente. Sin profesional, oferta y titulo se reparten la fila.
+    Tres bloques, en el orden en que se piensa una clase: que se dicta, cuando, donde y para
+    cuantos. Grilla de 12 (UX-14) dentro de cada uno.
   -->
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="actividades" /></span>
+    Actividad
+  </h2>
   <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
     <label for="clase-oferta">Oferta grupal</label>
     <select
@@ -75,6 +135,11 @@
     @if (invalido('ofertaId')) {
       <p class="campo__error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
     }
+    <p class="ayuda ayuda--fija">
+      ¿No está la actividad?
+      <a [routerLink]="RUTA_CATALOGO_DE_SERVICIOS">Darla de alta</a> y
+      <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">publicarla en la sede</a>.
+    </p>
   </div>
   <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
     <label for="clase-titulo">Título (opcional)</label>
@@ -91,6 +156,12 @@
         }
       </select>
       <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
+      @if (ofertaElegida(); as oferta) {
+        <p class="ayuda ayuda--fija">
+          <a [routerLink]="rutaDeHabilitaciones(oferta.id)">Elegir quiénes dictan esta oferta</a> ·
+          <a [routerLink]="RUTA_HORARIOS">Cargar su horario</a>
+        </p>
+      }
     </div>
   }
 
@@ -109,8 +180,41 @@
     </app-alerta>
   }
 
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="horarios" /></span>
+    Cuándo
+  </h2>
+  @if (modo() === 'semanal') {
+    <div class="campo campo--ancho">
+      <p class="campo__rotulo" id="clase-dias-rotulo">Días de la semana</p>
+      <div
+        class="pastillas"
+        role="group"
+        aria-labelledby="clase-dias-rotulo"
+        [attr.aria-describedby]="faltaDia() ? 'clase-dias-error' : null"
+      >
+        @for (dia of DIAS_DE_LA_SEMANA; track dia.valor) {
+          <label class="pastilla pastilla--dia">
+            <input
+              type="checkbox"
+              [id]="'clase-dia-' + dia.valor"
+              [checked]="diasElegidos().has(dia.valor)"
+              [attr.aria-invalid]="faltaDia() ? 'true' : null"
+              (change)="alternarDia(dia.valor)"
+            />
+            <span aria-hidden="true">{{ dia.corto }}</span>
+            <span class="visualmente-oculto">{{ dia.nombre }}</span>
+          </label>
+        }
+      </div>
+      @if (faltaDia()) {
+        <p class="campo__error" id="clase-dias-error">Elegí al menos un día.</p>
+      }
+    </div>
+  }
+
   <div class="campo">
-    <label for="clase-fecha">Fecha</label>
+    <label for="clase-fecha">{{ modo() === 'semanal' ? 'Desde' : 'Fecha' }}</label>
     <input
       id="clase-fecha"
       type="date"
@@ -122,6 +226,26 @@
       <p class="campo__error" id="clase-fecha-error">Elegí la fecha de la clase.</p>
     }
   </div>
+  @if (modo() === 'semanal') {
+    <div class="campo">
+      <label for="clase-hasta">Hasta</label>
+      <input
+        id="clase-hasta"
+        type="date"
+        formControlName="hasta"
+        [min]="formulario.controls.fecha.value"
+        [attr.aria-invalid]="hastaInvalido() ? 'true' : null"
+        [attr.aria-describedby]="hastaInvalido() ? 'clase-hasta-error' : 'clase-hasta-ayuda'"
+      />
+      @if (hastaInvalido()) {
+        <p class="campo__error" id="clase-hasta-error">No puede ser antes de la fecha desde.</p>
+      } @else {
+        <p class="ayuda" id="clase-hasta-ayuda">
+          Incluye ese día. Vacía, seis meses; hasta un año.
+        </p>
+      }
+    </div>
+  }
   <div class="campo">
     <label for="clase-inicio">Hora de inicio</label>
     <input
@@ -159,6 +283,25 @@
     }
   </div>
 
+  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
+  @if (conflicto() === 'horario') {
+    <app-alerta
+      class="campo--ancho"
+      tipo="advertencia"
+      titulo="Ese horario no está libre"
+      id="clase-conflicto-horario"
+    >
+      <p>{{ error()?.mensaje }}</p>
+      @if (error()?.motivo) {
+        <p>Detalle: {{ error()?.motivo }}</p>
+      }
+    </app-alerta>
+  }
+
+  <h2 class="formulario__seccion seccion-de-clase">
+    <span class="seccion-de-clase__icono"><app-icono nombre="sede" /></span>
+    Lugar y cupo
+  </h2>
   <div class="campo">
     <label for="clase-capacidad">Cupo</label>
     <input
@@ -202,27 +345,13 @@
         Un box elegido tiene que estar habilitado y libre: si no lo esta, la clase no se programa en
         otro.
       </p>
+      <p class="ayuda ayuda--fija">
+        ¿No está el lugar? <a [routerLink]="RUTA_ESPACIOS">Cargar un box</a> con su capacidad.
+      </p>
       @if (errorDelServidor('espacioId'); as mensaje) {
         <p class="campo__error" id="clase-espacio-error">{{ mensaje }}</p>
       }
     </div>
-  }
-
-  <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
-
-  <!-- El profesional o el box ya estan ocupados, o no atienden ese horario. -->
-  @if (conflicto() === 'horario') {
-    <app-alerta
-      class="campo--ancho"
-      tipo="advertencia"
-      titulo="Ese horario no está libre"
-      id="clase-conflicto-horario"
-    >
-      <p>{{ error()?.mensaje }}</p>
-      @if (error()?.motivo) {
-        <p>Detalle: {{ error()?.motivo }}</p>
-      }
-    </app-alerta>
   }
 
   <!-- El cupo no entra en la oferta o en el box, o queda por debajo de los ya inscriptos. -->
@@ -237,10 +366,29 @@
     </app-alerta>
   }
 
+  <!-- Lo que se va a programar, dicho en una frase antes de confirmar. -->
+  @if (resumen(); as r) {
+    <p class="resumen-de-clase">
+      <app-icono nombre="calendario" />
+      <span>
+        @if (r.fechas !== null) {
+          <b>{{ r.fechas }} {{ r.fechas === 1 ? 'fecha' : 'fechas' }}:</b>
+        }
+        {{ r.texto }}
+        <span class="resumen-de-clase__zona">Fecha y horas en la zona de la sede.</span>
+      </span>
+    </p>
+  } @else {
+    <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
+  }
+
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->
   <div class="acciones acciones--pie">
     <button type="submit" class="boton" [disabled]="enviando()">
-      {{ enviando() ? 'Programando…' : 'Programar clase' }}
+      <app-icono nombre="tilde" />
+      {{
+        enviando() ? 'Programando…' : modo() === 'semanal' ? 'Programar clases' : 'Programar clase'
+      }}
     </button>
     <a class="boton boton--secundario" [routerLink]="RUTA_CLASES">Cancelar</a>
   </div>

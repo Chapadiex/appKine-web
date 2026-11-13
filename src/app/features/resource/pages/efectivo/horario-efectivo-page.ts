@@ -34,11 +34,13 @@ import {
   rangoDeFranja,
   textoDeRecorte,
 } from '../../models/horario-efectivo';
+import { PERMISO_AGENDA_EXCEPCIONES } from '../../../../core/models/permisos';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_HORARIOS,
-  PESTANAS_DE_HORARIOS,
+  pestanasDeHorarios,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
@@ -112,10 +114,13 @@ export class HorarioEfectivoPage {
   private readonly colaboradores = inject(ColaboradoresService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly permisos = inject(PermissionsStore);
 
   protected readonly maximoDias = MAXIMO_DIAS_VENTANA;
   protected readonly rutas = RUTAS_HORARIOS;
-  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly pestanas = computed(() =>
+    pestanasDeHorarios(this.permisos.tiene(PERMISO_AGENDA_EXCEPCIONES)),
+  );
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
   protected readonly etiquetaDeFecha = etiquetaDeFecha;

@@ -55,6 +55,7 @@ const PRIMER_CAMPO =
       #dialogo
       class="panel-lateral"
       [class.panel-lateral--amplio]="ancho() === 'amplio'"
+      [class.panel-lateral--grande]="ancho() === 'grande'"
       [attr.aria-labelledby]="idTitulo"
       (cancel)="alCancelar($event)"
     >
@@ -66,7 +67,13 @@ const PRIMER_CAMPO =
           }
           <ng-content select="[panel-subtitulo]" />
         </div>
-        <button type="button" class="panel-lateral__cerrar" (click)="cerrar.emit()">
+        <button
+          type="button"
+          class="panel-lateral__cerrar"
+          aria-label="Cerrar el panel"
+          title="Cerrar el panel"
+          (click)="cerrar.emit()"
+        >
           <app-icono nombre="cerrar" />
           <span class="visualmente-oculto">Cerrar el panel</span>
         </button>
@@ -88,7 +95,7 @@ export class PanelLateral implements OnDestroy {
   readonly subtitulo = input<string | null>(null);
 
   /** `amplio` para formularios con tablas o grillas de varias columnas. */
-  readonly ancho = input<'normal' | 'amplio'>('normal');
+  readonly ancho = input<'normal' | 'amplio' | 'grande'>('normal');
 
   /** El usuario pidio cerrar: boton de cerrar o Escape. */
   readonly cerrar = output<void>();

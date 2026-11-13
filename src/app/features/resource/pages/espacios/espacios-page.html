@@ -23,13 +23,10 @@
     </p>
   </app-ayuda>
   <div cabeceraAcciones>
-    <a class="boton boton--secundario" routerLink="/espacios/disponibilidad">
-      Ver espacios en servicio
-    </a>
-    <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+    <button type="button" class="boton" (click)="abrirAlta()" *akinePermiso="permisoManage">
       <app-icono nombre="agregar" />
       Dar de alta un espacio
-    </a>
+    </button>
   </div>
 </app-cabecera-de-pagina>
 
@@ -101,9 +98,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -119,9 +120,14 @@
             titulo="Todavía no hay espacios en esta sede"
             texto="Dá de alta el primer box, gimnasio o sala para poder ofrecerlo en la agenda."
           >
-            <a class="boton" routerLink="/espacios/nuevo" *akinePermiso="permisoManage">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="abrirAlta()"
+              *akinePermiso="permisoManage"
+            >
               Dar de alta el primer espacio
-            </a>
+            </button>
           </app-estado-vacio>
         } @else if (espaciosDeLaPagina().length === 0) {
           <app-estado-vacio
@@ -275,6 +281,17 @@
   </div>
 </section>
 
+<!-- Alta en un panel lateral (10/11/2026), como la edición: el listado queda a la vista. -->
+@if (altaAbierta()) {
+  <app-panel-lateral
+    titulo="Nuevo espacio"
+    [subtitulo]="'En ' + nombreDeLaSede() + '. Lo único obligatorio es el nombre.'"
+    (cerrar)="cerrarAlta(false)"
+  >
+    <app-alta-de-espacio (listo)="cerrarAlta(true)" (cancelar)="cerrarAlta(false)" />
+  </app-panel-lateral>
+}
+
 <!--
   Edicion y baja en un panel lateral (refactor UX/UI del 28/10/2026). Antes vivian en una fila de
   la tabla: el formulario partia el listado en dos. El panel deja la tabla quieta, con la fila
@@ -284,10 +301,19 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral
       [titulo]="'Editar ' + (espacio.name ?? 'el espacio')"
-      subtitulo="Se envia solo lo que cambies"
+      [subtitulo]="'En ' + nombreDeLaSede() + '. Se guarda solo lo que cambies.'"
       (cerrar)="cerrarPanel()"
     >
-      <form [formGroup]="formularioEdicion" (ngSubmit)="enviarEdicion()" novalidate>
+      <!--
+        Misma disposición que el alta (11/11/2026): nombre y tipo en una fila, capacidad y
+        observación en otra, y la vigencia plegada con su resumen a la vista.
+      -->
+      <form
+        class="formulario-espacio"
+        [formGroup]="formularioEdicion"
+        (ngSubmit)="enviarEdicion()"
+        novalidate
+      >
         <!-- Error general: arriba del formulario (UX-12). El nombre en uso va junto al campo. -->
         @if (errorAccion() && !errorEnElNombre()) {
           <app-alerta tipo="error" titulo="No pudimos guardar los cambios">
@@ -302,13 +328,14 @@
           </app-alerta>
         }
 
-        <div class="campo campo--4">
+        <div class="campo campo--8">
           <label for="editar-espacio-name">Nombre del espacio</label>
           <input
             id="editar-espacio-name"
             type="text"
             formControlName="name"
             autocomplete="off"
+            placeholder="Ej.: Box 3"
             [attr.aria-invalid]="mostrarErrorEdicion('name') || errorEnElNombre()"
             [attr.aria-describedby]="descritoNombre()"
           />
@@ -317,6 +344,22 @@
               El espacio necesita un nombre.
             </p>
           }
+        </div>
+
+        <div class="campo campo--4">
+          <label for="editar-espacio-tipo">Tipo de espacio</label>
+          <select
+            id="editar-espacio-tipo"
+            formControlName="tipo"
+            aria-describedby="editar-espacio-tipo-ayuda"
+          >
+            @for (opcion of tipos; track opcion.valor) {
+              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+            }
+          </select>
+          <p class="ayuda" id="editar-espacio-tipo-ayuda">
+            Clasificación física. <b>No habilita ningún servicio</b>: eso se resuelve en la oferta.
+          </p>
         </div>
 
         @if (errorEnElNombre()) {
@@ -331,23 +374,7 @@
         }
 
         <div class="campo campo--4">
-          <label for="editar-espacio-tipo">Tipo de espacio</label>
-          <select
-            id="editar-espacio-tipo"
-            formControlName="tipo"
-            aria-describedby="editar-espacio-tipo-ayuda"
-          >
-            @for (opcion of tipos; track opcion.valor) {
-              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-            }
-          </select>
-          <p class="ayuda" id="editar-espacio-tipo-ayuda">
-            Clasificacion fisica. No habilita ningún servicio: eso se resuelve por Oferta.
-          </p>
-        </div>
-
-        <div class="campo campo--4">
-          <label for="editar-espacio-capacidad">Personas simultáneas que admite</label>
+          <label for="editar-espacio-capacidad">Capacidad</label>
           <input
             id="editar-espacio-capacidad"
             type="number"
@@ -356,11 +383,12 @@
             aria-describedby="editar-espacio-capacidad-ayuda"
           />
           <p class="ayuda" id="editar-espacio-capacidad-ayuda">
-            La capacidad configurada, no cuantos lugares quedan libres hoy.
+            Personas simultáneas que admite: la capacidad configurada, no cuántos lugares quedan
+            libres hoy.
           </p>
         </div>
 
-        <div class="campo campo--12">
+        <div class="campo campo--8">
           <label for="editar-espacio-notes">
             Observación <span class="campo__opcional">(opcional)</span>
           </label>
@@ -368,59 +396,76 @@
             id="editar-espacio-notes"
             type="text"
             formControlName="notes"
+            placeholder="Ej.: tiene camilla eléctrica"
             aria-describedby="editar-espacio-notes-ayuda"
           />
           <p class="ayuda" id="editar-espacio-notes-ayuda">
-            Nota operativa ("tiene camilla electrica"). Nunca información clínica de un paciente.
-            <b>Vaciala para borrarla.</b>
+            Nota operativa. <b>Nunca información clínica de un paciente.</b> Vaciala para borrarla.
           </p>
         </div>
 
-        <h3 class="formulario__seccion">Vigencia</h3>
+        <details class="seccion-plegable">
+          <summary>
+            Ventana de vigencia
+            <span class="seccion-plegable__resumen">
+              Desde el {{ formatearInstante(espacio.validFrom) ?? '-' }},
+              @if (espacio.validUntil) {
+                hasta el {{ formatearInstante(espacio.validUntil) }}
+              } @else {
+                sin fin previsto
+              }
+            </span>
+          </summary>
 
-        <div class="campo campo--3">
-          <label for="editar-espacio-validFrom">En servicio desde</label>
-          <input
-            id="editar-espacio-validFrom"
-            type="datetime-local"
-            formControlName="validFrom"
-            aria-describedby="editar-espacio-vigencia-ayuda"
-          />
-        </div>
-
-        <div class="campo campo--3">
-          <label for="editar-espacio-validUntil">En servicio hasta</label>
-          <input
-            id="editar-espacio-validUntil"
-            type="datetime-local"
-            formControlName="validUntil"
-            [attr.disabled]="formularioEdicion.value.clearValidUntil ? '' : null"
-            aria-describedby="editar-espacio-vigencia-ayuda"
-          />
-          <p class="ayuda" id="editar-espacio-vigencia-ayuda">
-            La ventana en la que se ofrece para reservar, distinta de la baja. El fin es exclusivo:
-            uno que termina el 30 se ofrece hasta el 29 inclusive.
+          <p class="ayuda ayuda--fija" id="editar-espacio-vigencia-ayuda">
+            Cuando el espacio <b>se ofrece para reservar</b>; es distinto de la baja. El fin es
+            exclusivo: uno que termina el 30 se ofrece hasta el 29 inclusive.
           </p>
-        </div>
 
-        <div class="campo campo--12">
-          <label class="opcion-casilla" for="editar-espacio-clear">
-            <input
-              id="editar-espacio-clear"
-              type="checkbox"
-              formControlName="clearValidUntil"
-              aria-describedby="editar-espacio-clear-ayuda"
-            />
-            Dejarlo sin fin de vigencia
-          </label>
-          <p class="ayuda" id="editar-espacio-clear-ayuda">
-            <b>Quita</b> el fin que tenga. Dejar el campo como esta significa "no lo toques".
-          </p>
-        </div>
+          <div class="grilla-campos">
+            <div class="campo campo--6">
+              <label for="editar-espacio-validFrom">En servicio desde</label>
+              <input
+                id="editar-espacio-validFrom"
+                type="datetime-local"
+                formControlName="validFrom"
+                aria-describedby="editar-espacio-vigencia-ayuda"
+              />
+            </div>
+
+            <div class="campo campo--6">
+              <label for="editar-espacio-validUntil">
+                En servicio hasta <span class="campo__opcional">(opcional)</span>
+              </label>
+              <input
+                id="editar-espacio-validUntil"
+                type="datetime-local"
+                formControlName="validUntil"
+                [attr.disabled]="formularioEdicion.value.clearValidUntil ? '' : null"
+                aria-describedby="editar-espacio-vigencia-ayuda"
+              />
+            </div>
+
+            <div class="campo campo--12">
+              <label class="opcion-casilla" for="editar-espacio-clear">
+                <input
+                  id="editar-espacio-clear"
+                  type="checkbox"
+                  formControlName="clearValidUntil"
+                />
+                Quitar el fin de vigencia
+              </label>
+            </div>
+          </div>
+        </details>
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando() || edicionBloqueada()">
-            Guardar los cambios
+            @if (enviando()) {
+              Guardando&hellip;
+            } @else {
+              Guardar los cambios
+            }
           </button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
             Cancelar

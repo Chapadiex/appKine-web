@@ -1,4 +1,4 @@
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,16 +15,22 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, map } from 'rxjs';
 
 import { AgendaOperativa } from '../../../../api/generated/model/agenda-operativa';
 import { OfertaResponse } from '../../../../api/generated/model/oferta-response';
 import { RecursoLibre } from '../../../../api/generated/model/recurso-libre';
 import { TurnoDeCalendario } from '../../../../api/generated/model/turno-de-calendario';
-import { PERMISO_CONSULTORIO_MANAGE, PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
+import {
+  PERMISO_AGENDA_EXCEPCIONES,
+  PERMISO_AGENDA_HORARIO,
+  PERMISO_TURNO_MANAGE,
+} from '../../../../core/models/permisos';
 import { RUTA_HORARIOS } from '../../../../core/models/rutas';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -34,16 +40,25 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
-import { ErrorAgenda, traducirErrorAgenda } from '../../models/agenda-errors';
+import { SessionService } from '../../../../core/services/session.service';
+import { ErrorAgenda, nombreDeSede, traducirErrorAgenda } from '../../models/agenda-errors';
 import {
   fechaEnPalabras,
   horaEnZona,
   hoyEnZona,
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
-import { nombreDeEstadoOperativo, simboloDeEstadoOperativo } from '../../models/etiquetas-de-turno';
+import {
+  claseDeTonoOperativo,
+  eraA,
+  iconoDeEstadoOperativo,
+  nombreDeEstadoOperativo,
+  textoDeReprogramado,
+} from '../../models/etiquetas-de-turno';
+import { TurnoDelDia } from '../../../../api/generated/model/turno-del-dia';
 import {
   AgrupacionDeAgenda,
+  AvisoDeColumna,
   CeldaLibre,
   ColumnaDeAgenda,
   EventoDeGrilla,
@@ -53,7 +68,18 @@ import {
   minutosEnZona,
   pasoDeCelda,
   rangoDeHoras,
+  turnosQueChocanConClase,
 } from '../../models/grilla-de-agenda';
+import {
+  DIAS_POR_PEDIDO,
+  DiaDelMes,
+  primerDiaDelMes,
+  rotuloDeMes,
+  semanasDelMes,
+  sumarMeses,
+  unirAgendas,
+  ventanasDePedido,
+} from '../../models/mes-de-agenda';
 import { ETIQUETA_PESTANAS_DE_AGENDA, pestanasDeAgenda } from '../../models/pestanas-de-agenda';
 import { diaCorto, diaEnZona, esFecha, lunesDe, rotuloDeSemana } from '../../models/semana';
 import { SchedulingApi } from '../../services/scheduling-api';
@@ -69,11 +95,18 @@ const ESTADOS = [
   'RESERVADO',
   'CONFIRMADO',
   'PRESENTE',
+  'RETIRADO',
   'EN_ATENCION',
   'ATENDIDO',
   'AUSENTE',
   'CANCELADO',
 ] as const;
+
+/**
+ * Opcion del filtro de estado que no es un estado: los turnos que un bloqueo o un cambio de horario
+ * dejaron fuera de la disponibilidad (`fueraDeDisponibilidad`, contrato 0.154.0).
+ */
+const A_REUBICAR = 'A_REUBICAR';
 
 /**
  * La agenda operativa de la sede: dia o semana, por profesional o por box (TURNO - Tecnico §14, §52 a
@@ -99,21 +132,25 @@ const ESTADOS = [
     EstadoVacio,
     Filtros,
     Icono,
+    NgTemplateOutlet,
     Pestanas,
     PermisoDirective,
     RouterLink,
   ],
   templateUrl: './agenda-page.html',
-  styleUrl: './agenda-page.css',
+  styleUrls: ['./agenda-page.css', '../../estados-de-turno.css'],
 })
 export class AgendaPage {
   private readonly api = inject(SchedulingApi);
   private readonly dia = inject(DiaDeLaSede);
   private readonly tenant = inject(TenantContextStore);
+  private readonly session = inject(SessionService);
   private readonly location = inject(Location);
   private readonly injector = inject(Injector);
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly flujo = inject(FlujoDeTurnosStore);
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
 
   /** De la query. El `transform` cubre el parametro ausente, que llega como `undefined`. */
   readonly fecha = input('', {
@@ -136,12 +173,24 @@ export class AgendaPage {
   });
 
   protected readonly PERMISO_TURNO_MANAGE = PERMISO_TURNO_MANAGE;
-  protected readonly PERMISO_CONSULTORIO_MANAGE = PERMISO_CONSULTORIO_MANAGE;
+  protected readonly PERMISO_AGENDA_EXCEPCIONES = PERMISO_AGENDA_EXCEPCIONES;
+  protected readonly PERMISO_AGENDA_HORARIO = PERMISO_AGENDA_HORARIO;
+  protected readonly DIAS_POR_PEDIDO = DIAS_POR_PEDIDO;
+  protected readonly rutaDeHorarios = RUTA_HORARIOS;
   protected readonly ESTADOS = ESTADOS;
+  protected readonly A_REUBICAR = A_REUBICAR;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_AGENDA;
   protected readonly pestanas = pestanasDeAgenda(true);
   protected readonly nombreDeEstadoOperativo = nombreDeEstadoOperativo;
-  protected readonly simboloDeEstadoOperativo = simboloDeEstadoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+
+  /** El turno cuyo detalle esta abierto: la tarjeta queda marcada como seleccion actual. */
+  protected readonly turnoAbierto = computed(() => {
+    const solicitud = this.flujo.solicitud();
+    return solicitud?.tipo === 'detalle' ? solicitud.turnoId : null;
+  });
+  protected readonly textoDeReprogramado = textoDeReprogramado;
   protected readonly diaCorto = diaCorto;
   protected readonly PX_POR_MINUTO = PX_POR_MINUTO;
   /** Quitar un bloqueo pide motivo y muestra su impacto: lo resuelve Excepciones, no se repite aca. */
@@ -153,6 +202,11 @@ export class AgendaPage {
   protected readonly profesionalId = signal<number | null>(null);
   protected readonly ofertaId = signal<number | null>(null);
   protected readonly estadoElegido = signal('');
+  /**
+   * Busca en los turnos ya leidos, por nombre o documento. No va a la URL: es un dato del paciente, y
+   * una direccion copiada o guardada en el historial no tiene por que llevarlo.
+   */
+  protected readonly paciente = signal('');
 
   protected readonly agenda = signal<AgendaOperativa | null>(null);
   protected readonly cargando = signal(false);
@@ -162,6 +216,10 @@ export class AgendaPage {
   private readonly duracionesPropias = signal<ReadonlyMap<number, number>>(new Map());
   private pedidoDeDuraciones?: Subscription;
   protected readonly angosta = signal(false);
+  /** "Proximo dia con turnos": buscando, y si no encontro ninguno en la ventana que se miro. */
+  protected readonly buscandoProximo = signal(false);
+  protected readonly sinProximo = signal(false);
+  private pedidoDeProximo?: Subscription;
   /** Ahora, para la linea de la hora y las celdas que ya pasaron. */
   private readonly ahora = signal(new Date());
 
@@ -172,21 +230,59 @@ export class AgendaPage {
   private ultimaUrl = '';
   /** La fecha sigue siendo el "hoy" que se supuso al abrir: sin `?fecha=` y sin que nadie la toque. */
   private fechaProvisoria = false;
+  /** La agenda propia se preselecciona una sola vez: despues manda lo que elija el usuario. */
+  private propiaPreseleccionada = false;
+
+  /**
+   * Con `turno:manage` recortado a lo propio, el profesional opera solo sus turnos: las celdas libres
+   * de otra columna no se ofrecen. Sin profesional (vista por box) se ofrecen: decide el backend.
+   */
+  protected readonly turnosPropios = computed(() => this.permisos.soloPropio(PERMISO_TURNO_MANAGE));
+  protected puedeOperarEn(profesionalId: number | undefined): boolean {
+    return (
+      !this.turnosPropios() ||
+      profesionalId === undefined ||
+      profesionalId === this.perfil.membershipId()
+    );
+  }
 
   protected readonly timezone = computed(() => this.agenda()?.timezone ?? this.dia.zona());
-  /** Primer dia de lo que se pide: el dia, o el lunes de su semana. */
-  protected readonly primerDia = computed(() =>
-    this.vistaEfectiva() === 'semana' ? lunesDe(this.fechaVisible()) : this.fechaVisible(),
-  );
+  /** Primer dia de lo que se pide: el dia, el lunes de su semana o el primero de su mes. */
+  protected readonly primerDia = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return lunesDe(this.fechaVisible());
+      case 'mes':
+        return primerDiaDelMes(this.fechaVisible());
+      default:
+        return this.fechaVisible();
+    }
+  });
+  /** Fin exclusivo de lo que se pide. */
+  private readonly finDeVentana = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return sumarDias(this.primerDia(), 7);
+      case 'mes':
+        return sumarMeses(this.primerDia(), 1);
+      default:
+        return sumarDias(this.primerDia(), 1);
+    }
+  });
   protected readonly vistaEfectiva = computed<VistaDeAgenda>(() =>
     this.angosta() ? 'dia' : this.vistaElegida(),
   );
 
-  protected readonly rotuloDeFecha = computed(() =>
-    this.vistaEfectiva() === 'semana'
-      ? rotuloDeSemana(this.primerDia())
-      : fechaEnPalabras(this.fechaVisible()),
-  );
+  protected readonly rotuloDeFecha = computed(() => {
+    switch (this.vistaEfectiva()) {
+      case 'semana':
+        return rotuloDeSemana(this.primerDia());
+      case 'mes':
+        return rotuloDeMes(this.primerDia());
+      default:
+        return fechaEnPalabras(this.fechaVisible());
+    }
+  });
 
   protected readonly hoy = computed(() =>
     this.timezone() === '' ? this.dia.hoy() : hoyEnZona(this.timezone()),
@@ -217,24 +313,69 @@ export class AgendaPage {
     if (this.estadoElegido() !== '') {
       chips.push({
         clave: 'estado',
-        texto: `Estado: ${nombreDeEstadoOperativo(this.estadoElegido())}`,
+        texto: `Estado: ${this.nombreDeFiltroDeEstado(this.estadoElegido())}`,
         quitar: () => this.filtrarEstado(''),
+      });
+    }
+    if (this.paciente().trim() !== '') {
+      chips.push({
+        clave: 'paciente',
+        texto: `Paciente: ${this.paciente().trim()}`,
+        quitar: () => this.paciente.set(''),
       });
     }
     return chips;
   });
 
+  /** Turnos que ya se pisan con una clase de la misma persona (contrato 0.156.0, `conflictos`). */
+  private readonly chocanConClase = computed(() => turnosQueChocanConClase(this.agenda()));
+
+  /** "Tambien disponible en la sede Norte en este horario": la marca de doble disponibilidad. */
+  protected tituloDeAviso(aviso: AvisoDeColumna): string {
+    const sede = nombreDeSede(this.session.contextos(), aviso.otraSedeConsultorioId);
+    return sede === ''
+      ? 'La persona tiene horario de atención en dos sedes a la vez en este tramo.'
+      : `También tiene horario de atención en la sede ${sede} en este tramo.`;
+  }
+
+  protected chocaConClase(turno: TurnoDeCalendario | undefined): boolean {
+    const id = turno?.turno?.id;
+    return id !== undefined && this.chocanConClase().has(id);
+  }
+
   private readonly filtroDeTurno = computed(() => {
     const estado = this.estadoElegido();
+    const chocan = this.chocanConClase();
     const oferta = this.ofertaId();
+    const paciente = normalizar(this.paciente());
     return (turno: TurnoDeCalendario) =>
-      (estado === '' || turno.turno?.operativo?.estadoOperativo === estado) &&
-      (oferta === null || turno.turno?.ofertaId === oferta);
+      (estado === '' ||
+        (estado === A_REUBICAR
+          ? turno.fueraDeDisponibilidad === true || chocan.has(turno.turno?.id ?? -1)
+          : turno.turno?.operativo?.estadoOperativo === estado)) &&
+      (oferta === null || turno.turno?.ofertaId === oferta) &&
+      (paciente === '' ||
+        normalizar(`${turno.turno?.personaNombre ?? ''} ${turno.turno?.documento ?? ''}`).includes(
+          paciente,
+        ));
   });
+
+  /** La grilla del mes: conteos por dia y por estado, con los mismos filtros que el resto. */
+  protected readonly semanasDelMes = computed<readonly (readonly DiaDelMes[])[]>(() =>
+    this.vistaEfectiva() === 'mes'
+      ? semanasDelMes({
+          primero: this.primerDia(),
+          agenda: this.agenda(),
+          filtroDeTurno: this.filtroDeTurno(),
+          profesionalId: this.profesionalId(),
+          estados: ESTADOS,
+        })
+      : [],
+  );
 
   protected readonly columnas = computed<readonly ColumnaDeAgenda[]>(() => {
     const agenda = this.agenda();
-    if (agenda === null) {
+    if (agenda === null || this.vistaEfectiva() === 'mes') {
       return [];
     }
     return armarColumnas({
@@ -273,9 +414,7 @@ export class AgendaPage {
     const fecha = this.fechaVisible();
     return (this.agenda()?.turnos ?? [])
       .filter(this.filtroDeTurno())
-      .filter(
-        (t) => this.vistaEfectiva() === 'semana' || diaEnZona(t.turno?.inicio, zona) === fecha,
-      )
+      .filter((t) => this.vistaEfectiva() !== 'dia' || diaEnZona(t.turno?.inicio, zona) === fecha)
       .sort((a, b) => (a.turno?.inicio ?? '').localeCompare(b.turno?.inicio ?? ''));
   });
 
@@ -302,6 +441,7 @@ export class AgendaPage {
     destroyRef.onDestroy(() => {
       this.pedido?.unsubscribe();
       this.pedidoDeDuraciones?.unsubscribe();
+      this.pedidoDeProximo?.unsubscribe();
     });
 
     // La URL manda al entrar o al navegar; adentro de la pantalla se reescribe con replaceState.
@@ -351,6 +491,27 @@ export class AgendaPage {
       });
     });
 
+    // Un profesional con turnos propios arranca en su agenda; puede mirar las demas igual.
+    effect(() => {
+      const membershipId = this.perfil.membershipId();
+      const propios = this.turnosPropios();
+      untracked(() => {
+        if (
+          this.propiaPreseleccionada ||
+          !propios ||
+          membershipId === null ||
+          this.profesional() !== ''
+        ) {
+          return;
+        }
+        this.propiaPreseleccionada = true;
+        if (this.profesionalId() === null) {
+          this.filtrarProfesional(String(membershipId));
+        }
+      });
+    });
+    this.perfil.asegurarCargado();
+
     // Lo que hace el flujo se ve en el lugar: sin vaciar la grilla ni mover el scroll.
     let primera = true;
     effect(() => {
@@ -367,7 +528,7 @@ export class AgendaPage {
       this.angosta.set(consulta.matches);
       const aplicar = (): void => {
         this.angosta.set(consulta.matches);
-        if (this.vistaElegida() === 'semana') {
+        if (this.vistaElegida() !== 'dia') {
           this.cargar();
         }
       };
@@ -390,13 +551,12 @@ export class AgendaPage {
   private leerUrl(): void {
     this.fechaProvisoria = !esFecha(this.fecha());
     this.fechaVisible.set(esFecha(this.fecha()) ? this.fecha() : this.dia.hoy());
-    this.vistaElegida.set(this.vista() === 'semana' ? 'semana' : 'dia');
+    const vista = this.vista();
+    this.vistaElegida.set(vista === 'semana' || vista === 'mes' ? vista : 'dia');
     this.agrupacion.set(this.por() === 'box' ? 'box' : 'profesional');
     this.profesionalId.set(numeroOVacio(this.profesional()));
     this.ofertaId.set(numeroOVacio(this.oferta()));
-    this.estadoElegido.set(
-      (ESTADOS as readonly string[]).includes(this.estado()) ? this.estado() : '',
-    );
+    this.estadoElegido.set([...ESTADOS, A_REUBICAR].includes(this.estado()) ? this.estado() : '');
   }
 
   private escribirUrl(): void {
@@ -447,31 +607,38 @@ export class AgendaPage {
       return;
     }
     const desde = this.primerDia();
-    const hasta = sumarDias(desde, this.vistaEfectiva() === 'semana' ? 7 : 1);
+    const hasta = this.finDeVentana();
     this.pedido?.unsubscribe();
     this.cargando.set(true);
     this.error.set(null);
     this.ahora.set(new Date());
-    this.pedido = this.api
-      .agendaOperativa(consultorioId, {
-        desde,
-        hasta,
-        profesionalId: this.profesionalId() ?? undefined,
-        incluirCancelados: this.estadoElegido() === 'CANCELADO',
-      })
-      .subscribe({
-        next: (agenda) => {
-          this.cargando.set(false);
-          this.agenda.set(agenda);
-          if (!this.alinearConLaSede(agenda.timezone)) {
-            this.alLlegarLaAgenda();
-          }
-        },
-        error: (error: unknown) => {
-          this.cargando.set(false);
-          this.error.set(traducirErrorAgenda(error));
-        },
-      });
+    const filtro = {
+      profesionalId: this.profesionalId() ?? undefined,
+      incluirCancelados: this.estadoElegido() === 'CANCELADO',
+    };
+    // El mes no entra en un pedido (la agenda operativa admite catorce dias): va en tramos, en
+    // paralelo, y se une. Es la unica lectura que trae bloqueos y estado operativo a la vez.
+    const lectura =
+      this.vistaEfectiva() === 'mes'
+        ? forkJoin(
+            ventanasDePedido(desde, hasta).map((ventana) =>
+              this.api.agendaOperativa(consultorioId, { ...ventana, ...filtro }),
+            ),
+          ).pipe(map((partes) => unirAgendas(partes, desde, hasta)))
+        : this.api.agendaOperativa(consultorioId, { desde, hasta, ...filtro });
+    this.pedido = lectura.subscribe({
+      next: (agenda) => {
+        this.cargando.set(false);
+        this.agenda.set(agenda);
+        if (!this.alinearConLaSede(agenda.timezone)) {
+          this.alLlegarLaAgenda();
+        }
+      },
+      error: (error: unknown) => {
+        this.cargando.set(false);
+        this.error.set(traducirErrorAgenda(error));
+      },
+    });
   }
 
   /**
@@ -553,10 +720,37 @@ export class AgendaPage {
 
   protected mover(sentido: -1 | 1): void {
     this.fechaProvisoria = false;
+    const vista = this.vistaEfectiva();
     this.fechaVisible.set(
-      sumarDias(this.fechaVisible(), this.vistaEfectiva() === 'semana' ? 7 * sentido : sentido),
+      vista === 'mes'
+        ? sumarMeses(this.fechaVisible(), sentido)
+        : sumarDias(this.fechaVisible(), vista === 'semana' ? 7 * sentido : sentido),
     );
     this.alCambiarVentana();
+  }
+
+  /** Del mes al dia: el clic en un dia abre ese dia, con los mismos filtros. */
+  protected abrirDia(fecha: string): void {
+    this.fechaProvisoria = false;
+    this.fechaVisible.set(fecha);
+    this.vistaElegida.set('dia');
+    this.alCambiarVentana();
+  }
+
+  protected descripcionDelDia(dia: DiaDelMes): string {
+    const partes = [
+      fechaEnPalabras(dia.fecha),
+      dia.total === 1 ? '1 turno' : `${dia.total} turnos`,
+      ...dia.porEstado.map((e) => `${e.cantidad} ${nombreDeEstadoOperativo(e.estado)}`),
+    ];
+    if (dia.bloqueos > 0) {
+      partes.push(dia.bloqueos === 1 ? '1 bloqueo' : `${dia.bloqueos} bloqueos`);
+    }
+    return partes.join(', ');
+  }
+
+  protected numeroDeDia(fecha: string): number {
+    return Number(fecha.slice(8, 10));
   }
 
   protected irAHoy(): void {
@@ -571,6 +765,62 @@ export class AgendaPage {
       this.fechaVisible.set(valor);
       this.alCambiarVentana();
     }
+  }
+
+  /** El rotulo de la fecha abre el calendario del navegador; donde no hay showPicker, el input lo abre solo. */
+  protected abrirCalendario(input: HTMLInputElement): void {
+    try {
+      input.showPicker?.();
+    } catch {
+      // Sin gesto de usuario o en un navegador viejo: el clic ya llego al input.
+    }
+  }
+
+  /**
+   * Va al primer dia siguiente que tenga turnos, con los mismos filtros. Mira una ventana (lo que la
+   * agenda operativa admite en un pedido); si no hay nada, lo dice y no se mueve.
+   */
+  protected irAlProximoDiaConTurnos(): void {
+    const consultorioId = this.tenant.consultorioId();
+    if (consultorioId === null || this.buscandoProximo()) {
+      return;
+    }
+    // Desde el dia siguiente al que se mira; en la semana, desde el lunes que sigue.
+    const desde =
+      this.vistaEfectiva() === 'semana' ? this.finDeVentana() : sumarDias(this.fechaVisible(), 1);
+    this.pedidoDeProximo?.unsubscribe();
+    this.buscandoProximo.set(true);
+    this.sinProximo.set(false);
+    this.pedidoDeProximo = this.api
+      .agendaOperativa(consultorioId, {
+        desde,
+        hasta: sumarDias(desde, DIAS_POR_PEDIDO),
+        profesionalId: this.profesionalId() ?? undefined,
+        incluirCancelados: this.estadoElegido() === 'CANCELADO',
+      })
+      .subscribe({
+        next: (agenda) => {
+          this.buscandoProximo.set(false);
+          const zona = agenda.timezone ?? this.timezone();
+          const dias = (agenda.turnos ?? [])
+            .filter(this.filtroDeTurno())
+            .map((t) => diaEnZona(t.turno?.inicio, zona))
+            .filter((dia) => dia !== '' && dia >= desde)
+            .sort();
+          if (dias.length === 0) {
+            this.sinProximo.set(true);
+            return;
+          }
+          this.fechaProvisoria = false;
+          this.fechaVisible.set(dias[0]);
+          this.vistaElegida.set('dia');
+          this.alCambiarVentana();
+        },
+        error: () => {
+          this.buscandoProximo.set(false);
+          this.sinProximo.set(true);
+        },
+      });
   }
 
   protected elegirVista(vista: VistaDeAgenda): void {
@@ -601,6 +851,7 @@ export class AgendaPage {
     this.profesionalId.set(null);
     this.ofertaId.set(null);
     this.estadoElegido.set('');
+    this.paciente.set('');
     this.escribirUrl();
     if (leiaCancelados || habiaProfesional) {
       this.cargar();
@@ -623,6 +874,7 @@ export class AgendaPage {
   }
 
   private alCambiarVentana(): void {
+    this.sinProximo.set(false);
     this.escribirUrl();
     this.cargar();
   }
@@ -717,14 +969,33 @@ export class AgendaPage {
       turno.turno?.operativo?.espacioNombre,
       estado,
       turno.turno?.operativo?.sobreturno ? 'Sobreturno' : '',
+      this.reprogramado(turno.turno),
+      turno.fueraDeDisponibilidad ? 'A reubicar: quedó fuera de la disponibilidad' : '',
+      this.chocaConClase(turno) ? 'A reubicar: choca con una clase' : '',
     ]
       .filter(Boolean)
       .join(' · ');
   }
 
+  /**
+   * "Reprogramado, era 10:00": la marca de un turno que se movio, con la hora que tenia. Es un
+   * indicador y no un estado (contrato 0.155.0). Vacio si nunca se movio.
+   */
+  protected reprogramado(turno: TurnoDelDia | undefined): string {
+    const operativo = turno?.operativo;
+    if (textoDeReprogramado(operativo?.reprogramaciones) === '') {
+      return '';
+    }
+    const era = eraA(this.hora(operativo?.reprogramacion?.inicioOriginal));
+    return era === '' ? 'Reprogramado' : `Reprogramado, ${era}`;
+  }
+
+  protected nombreDeFiltroDeEstado(valor: string): string {
+    return valor === A_REUBICAR ? 'A reubicar' : nombreDeEstadoOperativo(valor);
+  }
+
   protected claseDeEstado(evento: EventoDeGrilla): string {
-    const estado = evento.turno?.turno?.operativo?.estadoOperativo ?? '';
-    return `turno turno--${estado.toLowerCase().replace('_', '-')}`;
+    return `turno ${claseDeTonoOperativo(evento.turno?.turno?.operativo?.estadoOperativo)}`;
   }
 
   // -------------------------------------------------------------------------------------
@@ -766,6 +1037,15 @@ export class AgendaPage {
       profesionalId: this.profesionalId() ?? undefined,
     });
   }
+}
+
+/** Para buscar sin que importen mayusculas ni tildes. */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 }
 
 function numeroOVacio(valor: string): number | null {

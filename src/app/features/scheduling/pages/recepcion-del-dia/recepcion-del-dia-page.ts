@@ -36,7 +36,14 @@ import {
   hoyEnZona,
   sumarDias,
 } from '../../models/etiquetas-de-agenda';
-import { detalleDeEstado, nombreDeEstado } from '../../models/etiquetas-de-turno';
+import {
+  claseDeTonoOperativo,
+  detalleDeEstado,
+  eraA,
+  iconoDeEstadoOperativo,
+  nombreDeEstado,
+  textoDeReprogramado,
+} from '../../models/etiquetas-de-turno';
 import {
   admiteParticular,
   admiteRetiro,
@@ -212,7 +219,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     PanelLateral,
   ],
   templateUrl: './recepcion-del-dia-page.html',
-  styleUrl: '../../agenda.css',
+  styleUrls: ['../../agenda.css', '../../estados-de-turno.css'],
 })
 export class RecepcionDelDiaPage {
   private readonly api = inject(SchedulingApi);
@@ -240,6 +247,8 @@ export class RecepcionDelDiaPage {
   protected readonly fechaEnPalabras = fechaEnPalabras;
   protected readonly nombreDeEstado = nombreDeEstado;
   protected readonly detalleDeEstado = detalleDeEstado;
+  protected readonly claseDeTonoOperativo = claseDeTonoOperativo;
+  protected readonly iconoDeEstadoOperativo = iconoDeEstadoOperativo;
   protected readonly nombreDeEstadoDeRecepcion = nombreDeEstadoDeRecepcion;
   protected readonly detalleDeEstadoDeRecepcion = detalleDeEstadoDeRecepcion;
   protected readonly textoDeModalidad = textoDeModalidad;
@@ -725,6 +734,15 @@ export class RecepcionDelDiaPage {
     const desde = horaEnZona(turno.inicio, this.timezone());
     const hasta = horaEnZona(turno.fin, this.timezone());
     return hasta === '' ? desde : `${desde} a ${hasta}`;
+  }
+
+  /**
+   * "↻ Reprogramado · era 10:00" para un turno que se movio (indicador, no estado). Vacio si no.
+   */
+  protected reprogramado(turno: TurnoDelDia): string {
+    const marca = textoDeReprogramado(turno.operativo?.reprogramaciones);
+    const era = eraA(horaEnZona(turno.operativo?.reprogramacion?.inicioOriginal, this.timezone()));
+    return marca === '' || era === '' ? marca : `${marca} · ${era}`;
   }
 
   /** La hora REAL de llegada: la de la recepcion vigente. */

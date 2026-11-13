@@ -56,33 +56,12 @@
     que vuelve a el; para avanzar hay que pasar por la vista previa.
   -->
   <section class="tarjeta asistente" aria-labelledby="titulo-paso">
-    <ol class="pasos" aria-label="Pasos de la importación">
-      @for (item of pasos; track item.numero) {
-        <li
-          class="paso"
-          [class.paso--actual]="item.numero === paso()"
-          [class.paso--hecho]="item.numero < paso()"
-          [attr.aria-current]="item.numero === paso() ? 'step' : null"
-        >
-          @if (item.numero < paso()) {
-            <button type="button" class="paso__volver" (click)="volverAPaso(item.numero)">
-              <span class="paso__numero" aria-hidden="true">✓</span>
-              <span class="paso__textos">
-                <span class="paso__titulo">{{ item.etiqueta }}</span>
-                <span class="paso__sub">{{ item.sub }}</span>
-              </span>
-              <span class="visualmente-oculto">(completado, volver a este paso)</span>
-            </button>
-          } @else {
-            <span class="paso__numero" aria-hidden="true">{{ item.numero }}</span>
-            <span class="paso__textos">
-              <span class="paso__titulo">{{ item.etiqueta }}</span>
-              <span class="paso__sub">{{ item.sub }}</span>
-            </span>
-          }
-        </li>
-      }
-    </ol>
+    <app-asistente-de-pasos
+      etiqueta="Pasos de la importación"
+      [pasos]="pasos"
+      [actual]="paso()"
+      (volver)="volverAPaso($any($event))"
+    />
 
     <div class="asistente__contenido">
       <h2 id="titulo-paso" class="asistente__encabezado" tabindex="-1">

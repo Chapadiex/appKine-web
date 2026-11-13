@@ -18,9 +18,9 @@
 .previa {
   margin: 0 0 var(--esp-5);
   padding: var(--esp-4) var(--esp-5);
-  border-left: var(--borde-acento) solid var(--color-acento);
+  border-left: var(--borde-acento) solid var(--color-info);
   border-radius: var(--radio-sm);
-  background: var(--color-superficie-sutil);
+  background: var(--color-info-fondo);
   color: var(--color-texto);
   font-size: var(--tipo-md);
 }
@@ -96,7 +96,7 @@
 /* El chip elegido va en azul claro, como en el lienzo. */
 .chip[aria-pressed='true'] {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
 }
 
@@ -124,7 +124,7 @@
   padding: var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-codigo);
+  background: var(--color-superficie-secundaria);
   color: var(--color-texto);
   font-family: var(--fuente-mono);
   font-size: var(--tipo-sm);
@@ -365,7 +365,7 @@
 }
 
 .segmentado__opcion:has(input:checked) {
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
 }
 
@@ -394,8 +394,8 @@
   margin: 0 0 var(--esp-6);
   padding: var(--esp-4) var(--esp-5);
   border-radius: var(--radio-md);
-  background: var(--color-acento-claro);
-  color: var(--color-texto);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
   font-size: var(--tipo-xs);
 }
 
@@ -452,7 +452,7 @@
 
 .opciones-tarjeta .opcion-radio:has(input:checked) {
   border-color: var(--color-acento);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
 }
 
 /* La persona elegida en "Atender sin turno": iniciales y la accion para cambiarla. */
@@ -465,7 +465,7 @@
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-atenuada);
+  background: var(--color-superficie-secundaria);
 }
 
 .persona-elegida__iniciales {
@@ -476,7 +476,7 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-acento);
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-medio);
@@ -514,7 +514,7 @@
 }
 
 .lista-candidatas button:hover {
-  background: var(--color-superficie-sutil);
+  background: var(--color-hover);
 }
 
 .lista-candidatas button:focus-visible {
@@ -531,9 +531,17 @@
   margin: 0 0 var(--esp-6);
   padding: var(--esp-4) var(--esp-5);
   border-radius: var(--radio-md);
-  background: var(--color-acento-claro);
+  background: var(--color-info-fondo);
   color: var(--color-texto);
   font-size: var(--tipo-xs);
+}
+
+/*
+  Es una franja, no un parrafo de lectura: ocupa el ancho de la tarjeta. La clase repetida le gana
+  al tope de 90ch que el sistema le pone a todo `p` del contenido.
+*/
+.franja-info.franja-info {
+  max-width: none;
 }
 
 .franja-info > .enlace {

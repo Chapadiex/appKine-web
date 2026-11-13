@@ -7,21 +7,23 @@
   </app-ayuda>
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-label="Datos del vínculo">
-  <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+<section class="tarjeta vinculo" aria-label="Datos del vínculo">
+  <form class="vinculo__formulario" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
     <!-- Error general del alta (no de un campo): arriba del formulario, a la vista. -->
     @if (mensajeError() && causaError() !== 'conflicto') {
       <app-alerta tipo="error" titulo="No pudimos vincular al colaborador">
         <p>{{ mensajeError() }}</p>
         @if (causaError() === 'sin-contexto') {
           <p class="alerta__acciones">
-            <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+            <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+              >Elegir contexto</a
+            >
           </p>
         }
       </app-alerta>
     }
 
-    <div class="campo">
+    <div class="campo campo--6">
       <label for="alta-email">Email de la cuenta</label>
       <input
         id="alta-email"
@@ -69,7 +71,7 @@
       </app-alerta>
     }
 
-    <div class="campo campo--4">
+    <div class="campo campo--6">
       <label for="alta-roleCode">Rol</label>
       <select
         id="alta-roleCode"
@@ -87,42 +89,71 @@
       }
     </div>
 
-    <fieldset class="grupo">
-      <legend>Alcance</legend>
-      <p class="ayuda" id="alta-alcance-ayuda">
-        Sobre qué puede trabajar: toda la organización o una sede.
-      </p>
-
-      <div class="opcion-radio">
-        <input
-          id="alta-alcance-organizacion"
-          type="radio"
-          formControlName="alcance"
-          value="organizacion"
-          aria-describedby="alta-alcance-ayuda"
-        />
-        <label for="alta-alcance-organizacion">Toda la organización</label>
-      </div>
-
-      <div class="opcion-radio">
-        <input id="alta-alcance-sede" type="radio" formControlName="alcance" value="sede" />
-        <label for="alta-alcance-sede">Una sede en particular</label>
-      </div>
-
-      @if (formulario.controls.alcance.value === 'sede') {
-        <div class="campo campo--4">
-          <label for="alta-consultorioId">Sede</label>
-          <select id="alta-consultorioId" formControlName="consultorioId">
-            <option value="">Elegí una sede</option>
-            @for (sede of sedes.sedes(); track sede.id) {
-              <option [value]="sede.id">{{ sede.name }}</option>
-            }
-          </select>
+    <fieldset class="grupo vinculo__alcance">
+      <legend class="visualmente-oculto">Alcance</legend>
+      <div class="vinculo__alcance-cabecera">
+        <span class="vinculo__alcance-icono"><app-icono nombre="capas" /></span>
+        <div>
+          <h2>Alcance</h2>
+          <p id="alta-alcance-ayuda">Sobre qué puede trabajar: toda la organización o una sede.</p>
         </div>
-      }
+      </div>
+
+      <div class="vinculo__opciones">
+        <div
+          class="vinculo__opcion"
+          [class.vinculo__opcion--elegida]="formulario.controls.alcance.value === 'organizacion'"
+        >
+          <label class="vinculo__opcion-etiqueta" for="alta-alcance-organizacion">
+            <input
+              id="alta-alcance-organizacion"
+              type="radio"
+              formControlName="alcance"
+              value="organizacion"
+              aria-describedby="alta-alcance-ayuda"
+            />
+            <span class="vinculo__opcion-icono"><app-icono nombre="organizacion" /></span>
+            <span class="vinculo__opcion-textos">
+              <strong>Toda la organización</strong>
+              <span>Puede trabajar en todas las sedes de la organización.</span>
+            </span>
+          </label>
+        </div>
+
+        <div
+          class="vinculo__opcion"
+          [class.vinculo__opcion--elegida]="formulario.controls.alcance.value === 'sede'"
+        >
+          <label class="vinculo__opcion-etiqueta" for="alta-alcance-sede">
+            <input
+              id="alta-alcance-sede"
+              type="radio"
+              formControlName="alcance"
+              value="sede"
+              aria-describedby="alta-alcance-ayuda"
+            />
+            <span class="vinculo__opcion-icono"><app-icono nombre="edificio" /></span>
+            <span class="vinculo__opcion-textos">
+              <strong>Una sede en particular</strong>
+              <span>Puede trabajar solo en una sede específica.</span>
+            </span>
+          </label>
+          @if (formulario.controls.alcance.value === 'sede') {
+            <div class="campo vinculo__selector-sede">
+              <label for="alta-consultorioId">Sede</label>
+              <select id="alta-consultorioId" formControlName="consultorioId">
+                <option value="">Elegí una sede</option>
+                @for (sede of sedes.sedes(); track sede.id) {
+                  <option [value]="sede.id">{{ sede.name }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+      </div>
     </fieldset>
 
-    <div class="campo campo--ancho">
+    <div class="campo campo--6">
       <label for="alta-reason">Motivo</label>
       <input
         id="alta-reason"

@@ -23,7 +23,9 @@
   <app-cabecera-de-pagina titulo="{{ titulo() }}">
     <span
       class="marca-estado"
-      [class.marca-estado--activa]="actual.estado === 'PROGRAMADA'"
+      [class.marca-estado--info]="actual.estado === 'PROGRAMADA'"
+      [class.marca-estado--activa]="actual.estado === 'REALIZADA'"
+      [class.marca-estado--suspendida]="actual.estado === 'EN_CURSO'"
       [class.marca-estado--revocada]="actual.estado === 'CANCELADA'"
       >{{ textoDeEstado(actual.estado) }}</span
     >

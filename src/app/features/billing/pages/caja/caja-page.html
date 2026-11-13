@@ -13,7 +13,7 @@
   @if (jornada()) {
     <span class="marca-estado marca-estado--activa">Abierta</span>
   } @else if (cerrada()) {
-    <span class="marca-estado">Cerrada</span>
+    <span class="marca-estado marca-estado--neutra">Cerrada</span>
   }
   @if (jornada(); as abierta) {
     <span cabeceraContexto class="caja-contexto">

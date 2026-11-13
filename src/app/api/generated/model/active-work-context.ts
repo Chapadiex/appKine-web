@@ -22,6 +22,10 @@ export interface ActiveWorkContext {
      */
     consultorioName?: string;
     /**
+     * Membership de la cuenta que gobierna este contexto. Es el id con el que la agenda nombra a un profesional (profesionalId de turnos, membershipId de horarios y excepciones): la agenda de un PROFESIONAL abre en el suyo. Null si no se resuelve
+     */
+    membershipId?: number | null;
+    /**
      * Identificador de la organizacion
      */
     organizationId?: number;

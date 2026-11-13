@@ -50,6 +50,10 @@ export interface CreateExcepcionRequest {
      */
     notes?: string;
     /**
+     * Solo APERTURA de un profesional. Si la franja se superpone con su horario de atencion en OTRA sede, sin esto responde 409 `bloque-solapado` con cada superposicion (`superposiciones`). Con `true`, en la misma operacion se carga un CIERRE en la otra sede para cada franja superpuesta (auditado, motivo BLOQUEO); exige agenda:excepciones sobre ese profesional en esa sede (403 si no). Nunca sustituye lo reservado: un turno o una clase de la misma persona en otra sede en esa franja es siempre 409 `recurso-ocupado`.
+     */
+    sustituirDisponibilidadSuperpuesta?: boolean;
+    /**
      * CIERRE recorta disponibilidad; APERTURA la habilita donde no la habia. La apertura NO es el caso raro: es como un centro declara que atiende un feriado o que suma una banda un sabado puntual
      */
     tipo: CreateExcepcionRequestTipoEnum;
@@ -58,6 +62,7 @@ export enum CreateExcepcionRequestMotivoEnum {
     AUSENCIA = 'AUSENCIA',
     LICENCIA = 'LICENCIA',
     CAPACITACION = 'CAPACITACION',
+    VACACIONES = 'VACACIONES',
     FERIADO = 'FERIADO',
     BLOQUEO = 'BLOQUEO',
     AMPLIACION = 'AMPLIACION',

@@ -69,6 +69,22 @@ describe('AvisosStore', () => {
     expect(store.avisos()).toHaveLength(0);
   });
 
+  it('el mismo aviso de una misma operacion no se apila: vuelve a contar su tiempo', () => {
+    const primero = store.exito('Turno cancelado');
+    vi.advanceTimersByTime(DURACION_POR_DEFECTO.exito - 1);
+    const segundo = store.exito('Turno cancelado');
+
+    expect(segundo).toBe(primero);
+    expect(store.avisos()).toHaveLength(1);
+    vi.advanceTimersByTime(DURACION_POR_DEFECTO.exito - 1);
+    expect(store.avisos()).toHaveLength(1);
+
+    // Otro tipo u otro texto si es otro aviso.
+    store.error('Turno cancelado');
+    store.exito('Turno cancelado', { descripcion: 'Se avisó al paciente.' });
+    expect(store.avisos()).toHaveLength(3);
+  });
+
   it('vaciar saca todos', () => {
     store.exito('Uno');
     store.error('Dos', { accion: { etiqueta: 'Reintentar', ejecutar: () => undefined } });

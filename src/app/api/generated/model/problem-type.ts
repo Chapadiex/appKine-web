@@ -76,6 +76,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_HAS_ACTIVE_REFERENCES = 'https://akine.app/problems/consultorio-has-active-references',
 
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTORIO_SIN_AGENDA = 'https://akine.app/problems/consultorio-sin-agenda',
+
+    HTTPS___AKINE_APP_PROBLEMS_GEOCODIFICADOR_NO_DISPONIBLE = 'https://akine.app/problems/geocodificador-no-disponible',
+
     HTTPS___AKINE_APP_PROBLEMS_ESPACIO_NAME_TAKEN = 'https://akine.app/problems/espacio-name-taken',
 
     HTTPS___AKINE_APP_PROBLEMS_ESPACIO_INACTIVE = 'https://akine.app/problems/espacio-inactive',
@@ -115,6 +119,10 @@ export enum ProblemType {
     HTTPS___AKINE_APP_PROBLEMS_COLABORADOR_YA_VINCULADO = 'https://akine.app/problems/colaborador-ya-vinculado',
 
     HTTPS___AKINE_APP_PROBLEMS_BLOQUE_SOLAPADO = 'https://akine.app/problems/bloque-solapado',
+
+    HTTPS___AKINE_APP_PROBLEMS_FRANJA_FUERA_DEL_HORARIO_DE_SEDE = 'https://akine.app/problems/franja-fuera-del-horario-de-sede',
+
+    HTTPS___AKINE_APP_PROBLEMS_FRANJAS_DE_PROFESIONALES_FUERA_DEL_HORARIO = 'https://akine.app/problems/franjas-de-profesionales-fuera-del-horario',
 
     HTTPS___AKINE_APP_PROBLEMS_BLOQUE_INACTIVO = 'https://akine.app/problems/bloque-inactivo',
 
@@ -454,6 +462,20 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ENMIENDA_FUERA_DE_VENTANA = 'https://akine.app/problems/enmienda-fuera-de-ventana',
 
-    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta'
+    HTTPS___AKINE_APP_PROBLEMS_PROFESIONAL_NO_HABILITADO_EN_OFERTA = 'https://akine.app/problems/profesional-no-habilitado-en-oferta',
+
+    HTTPS___AKINE_APP_PROBLEMS_BIBLIOTECA_DESHABILITADA = 'https://akine.app/problems/biblioteca-deshabilitada',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_NO_ENCONTRADO = 'https://akine.app/problems/libro-no-encontrado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_DUPLICADO = 'https://akine.app/problems/libro-duplicado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_ARCHIVO_NO_ACEPTADO = 'https://akine.app/problems/libro-archivo-no-aceptado',
+
+    HTTPS___AKINE_APP_PROBLEMS_LIBRO_EN_PROCESO = 'https://akine.app/problems/libro-en-proceso',
+
+    HTTPS___AKINE_APP_PROBLEMS_CONSULTA_OCUPADA = 'https://akine.app/problems/consulta-ocupada',
+
+    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_NO_DISPONIBLE = 'https://akine.app/problems/asistente-no-disponible'
 }
 

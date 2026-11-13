@@ -23,31 +23,39 @@ import { catchError, of } from 'rxjs';
 import { BloqueResponse } from '../../../../api/generated/model/bloque-response';
 import { ColaboradoresService } from '../../../../api/generated/api/colaboradores.service';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
-import { CreateBloqueRequest } from '../../../../api/generated/model/create-bloque-request';
+import { CreateBloquesRequest } from '../../../../api/generated/model/create-bloques-request';
 import { DisponibilidadProfesionalService } from '../../../../api/generated/api/disponibilidad-profesional.service';
 import { EstadoDeListado, vistaDeListado } from '../../../../shared/utils/estado-de-listado';
 import { MembershipResponse } from '../../../../api/generated/model/membership-response';
 import {
-  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_AGENDA_EXCEPCIONES,
+  PERMISO_AGENDA_HORARIO,
   PERMISO_TURNO_MANAGE,
   PERMISO_TURNO_READ,
 } from '../../../../core/models/permisos';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { RUTAS_HORARIOS } from '../../models/rutas-de-horarios';
 import { leerParametrosDeHorarios } from '../../models/parametros-de-horarios';
 import { traducirErrorHorarioEfectivo } from '../../models/horario-efectivo-errors';
-import { TEXTO_MODO_LECTURA, modoLectura } from '../../models/modo-lectura';
+import { modoLectura, textoDeModoLectura } from '../../models/modo-lectura';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { UpdateBloqueRequest } from '../../../../api/generated/model/update-bloque-request';
-import { BloqueEnConflicto, CausaBloque, traducirErrorBloque } from '../../models/bloque-errors';
+import {
+  BloqueEnConflicto,
+  CausaBloque,
+  FranjaFueraDeSede,
+  traducirErrorBloque,
+} from '../../models/bloque-errors';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { DIAS_DE_LA_SEMANA, etiquetaDeDia } from '../../../../shared/utils/dias-de-la-semana';
 import {
   ImpactoPrevio,
   avisoDeTurnosAfectados,
+  impactoDelRechazo,
   turnosPrevistos,
 } from '../../models/turnos-afectados';
 import { ImpactoPrevioPanel } from '../../components/impacto-previo/impacto-previo';
@@ -70,17 +78,41 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_HORARIOS,
-  PESTANAS_DE_HORARIOS,
+  pestanasDeHorarios,
 } from '../../models/pestanas-de-horarios';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import {
+  IntervaloDeHora,
+  SelectorDeHora,
+} from '../../../../shared/components/selector-de-hora/selector-de-hora';
+import {
+  DIAS_PARA_PASTILLAS,
+  MODOS_DE_DIAS,
+  ModoDeDias,
+  alternarDia,
+  describirDias,
+  diasDelModo,
+} from '../../models/dias-rapidos';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 
 /** Operacion abierta sobre un bloque. Solo una a la vez, y nunca junto con el alta. */
 type TipoAccion = 'editar' | 'baja';
+
+/** Como se mira el horario cargado. */
+type VistaDeHorario = 'dia' | 'semana' | 'mes';
+
+/** Una fecha del calendario mensual con los bloques que rigen ese dia. */
+interface DiaDelMes {
+  readonly fecha: string;
+  readonly numero: number;
+  readonly diaSemana: number;
+  readonly delMes: boolean;
+  readonly bloques: readonly BloqueResponse[];
+}
 
 /** Un dia de la semana con los bloques que el profesional tiene cargados en el. */
 interface DiaConBloques {
@@ -134,6 +166,7 @@ interface DiaConBloques {
     Icono,
     Pestanas,
     ReactiveFormsModule,
+    SelectorDeHora,
     RouterLink,
     PermisoDirective,
     ConfirmacionConMotivo,
@@ -168,18 +201,47 @@ export class HorarioSemanalPage {
     inject(ActivatedRoute).snapshot.queryParamMap,
   ).membershipId;
 
-  protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
+  /** El horario habitual se gestiona con `agenda:horario` desde el contrato 0.154.0. */
+  protected readonly permisoManage = PERMISO_AGENDA_HORARIO;
+  private readonly permisos = inject(PermissionsStore);
+  private readonly perfil = inject(PerfilPropioStore);
   protected readonly permisoVerTurnos = PERMISO_TURNO_READ;
   protected readonly permisoTurnos = PERMISO_TURNO_MANAGE;
   protected readonly rutas = RUTAS_HORARIOS;
-  protected readonly pestanas = PESTANAS_DE_HORARIOS;
+  protected readonly pestanas = computed(() =>
+    pestanasDeHorarios(this.permisos.tiene(PERMISO_AGENDA_EXCEPCIONES)),
+  );
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_HORARIOS;
-  protected readonly textoModoLectura = TEXTO_MODO_LECTURA;
+  /**
+   * Con `agenda:horario` recortado a lo propio, el horario de otro profesional se mira y no se toca.
+   * Un profesional sin elegir todavia no es ajeno.
+   */
+  protected readonly ajeno = computed(
+    () =>
+      this.permisos.soloPropio(PERMISO_AGENDA_HORARIO) &&
+      this.membershipElegido() !== null &&
+      this.membershipElegido() !== this.perfil.membershipId(),
+  );
+  protected readonly textoModoLectura = computed(() =>
+    this.ajeno()
+      ? 'Modo lectura: podés consultar el horario de otros profesionales, pero cambiar solo el tuyo.'
+      : textoDeModoLectura(PERMISO_AGENDA_HORARIO),
+  );
   protected readonly textoListaIncompleta = TEXTO_LISTA_INCOMPLETA;
-  protected readonly modoLectura = modoLectura(inject(PermissionsStore));
+  private readonly sinPermisoDeHorario = modoLectura(this.permisos, PERMISO_AGENDA_HORARIO);
+  protected readonly modoLectura = computed(() => this.sinPermisoDeHorario() || this.ajeno());
   protected readonly patronHora = PATRON_HORA;
   protected readonly horaMedianoche = HORA_MEDIANOCHE;
   protected readonly dias = DIAS_DE_LA_SEMANA;
+  protected readonly modos = MODOS_DE_DIAS;
+  protected readonly diasParaPastillas = DIAS_PARA_PASTILLAS;
+
+  /**
+   * Cada cuantos minutos ofrece una hora el desplegable (rediseño del 05/11/2026). Es de la
+   * pantalla y no del formulario: vale para el alta y la edicion, y no viaja.
+   */
+  protected readonly intervalo = signal<IntervaloDeHora>(30);
+  protected readonly otroIntervalo = computed(() => (this.intervalo() === 30 ? 15 : 30));
   protected readonly etiquetaDeDia = etiquetaDeDia;
   protected readonly rangoHorario = rangoHorario;
 
@@ -255,6 +317,101 @@ export class HorarioSemanalPage {
 
   protected readonly totalBloques = computed(() => this.vista.filas().length);
 
+  // --- Vistas del horario: dia, semana o mes --------------------------------------------
+
+  /** Como se mira el horario cargado. Por defecto la semana, que es la forma de la regla. */
+  protected readonly vistaHorario = signal<VistaDeHorario>('semana');
+  /** Dia ISO (lunes = 1) que muestra la vista de dia. Arranca en el de hoy. */
+  protected readonly diaVisto = signal(diaIsoDe(new Date()));
+  /** Primer dia del mes que muestra la vista de mes. */
+  protected readonly mesVisto = signal(primerDiaDelMes(new Date()));
+  protected readonly hoyIso = fechaIso(new Date());
+
+  /** Los dias que dibuja la lista: uno en la vista de dia, los siete en la de semana. */
+  protected readonly diasVisibles = computed<readonly DiaConBloques[]>(() =>
+    this.vistaHorario() === 'dia'
+      ? this.semana().filter((dia) => dia.numero === this.diaVisto())
+      : this.semana(),
+  );
+
+  protected readonly tituloDelMes = computed(() => {
+    const texto = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(
+      this.mesVisto(),
+    );
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  });
+
+  /**
+   * El mes en semanas de lunes a domingo, con los bloques que rigen cada fecha segun su
+   * vigencia. Es la regla proyectada: no aplica feriados ni cierres (eso es el horario efectivo).
+   */
+  protected readonly semanasDelMes = computed<readonly (readonly DiaDelMes[])[]>(() => {
+    const inicio = this.mesVisto();
+    const mes = inicio.getMonth();
+    const cursor = new Date(inicio);
+    cursor.setDate(1 - (diaIsoDe(inicio) - 1));
+    const porDia = new Map(this.semana().map((dia) => [dia.numero, dia.bloques]));
+    const semanas: DiaDelMes[][] = [];
+    do {
+      const fila: DiaDelMes[] = [];
+      for (let i = 0; i < 7; i++) {
+        const fecha = fechaIso(cursor);
+        const diaSemana = diaIsoDe(cursor);
+        fila.push({
+          fecha,
+          numero: cursor.getDate(),
+          diaSemana,
+          delMes: cursor.getMonth() === mes,
+          bloques: (porDia.get(diaSemana) ?? []).filter(
+            (bloque) =>
+              (!bloque.vigenciaDesde || bloque.vigenciaDesde <= fecha) &&
+              (!bloque.vigenciaHasta || fecha < bloque.vigenciaHasta),
+          ),
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      semanas.push(fila);
+    } while (cursor.getMonth() === mes);
+    return semanas;
+  });
+
+  /** `2026-11-08` -> `08/11/2026`. Solo presentacion: el contrato sigue en ISO. */
+  protected fechaCorta(iso: string | undefined): string {
+    const partes = (iso ?? '').split('-');
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : (iso ?? '');
+  }
+
+  protected elegirVistaHorario(vista: VistaDeHorario): void {
+    this.vistaHorario.set(vista);
+  }
+
+  protected elegirDiaVisto(numero: number): void {
+    this.diaVisto.set(numero);
+  }
+
+  protected moverMes(delta: number): void {
+    const actual = this.mesVisto();
+    this.mesVisto.set(new Date(actual.getFullYear(), actual.getMonth() + delta, 1));
+  }
+
+  protected irAlMesDeHoy(): void {
+    this.mesVisto.set(primerDiaDelMes(new Date()));
+  }
+
+  /** Un clic en una fecha del mes abre la vista de dia de ese dia de la semana. */
+  protected abrirDiaDelMes(dia: DiaDelMes): void {
+    this.diaVisto.set(dia.diaSemana);
+    this.vistaHorario.set('dia');
+  }
+
+  protected descripcionDelDiaDelMes(dia: DiaDelMes): string {
+    const cuantos =
+      dia.bloques.length === 0
+        ? 'no atiende'
+        : dia.bloques.map((b) => rangoHorario(b.horaDesde, b.horaHasta)).join(', ');
+    return `${etiquetaDeDia(dia.diaSemana)} ${dia.numero}: ${cuantos}`;
+  }
+
   // --- Paneles y envio ----------------------------------------------------------------
 
   protected readonly altaAbierta = signal(false);
@@ -321,8 +478,16 @@ export class HorarioSemanalPage {
     return enConflicto !== null && enConflicto.id !== null && enConflicto.id === bloque.id;
   }
 
-  /** Solapamiento con otro bloque (UX-12): va pegado al día y las horas, no arriba. */
-  protected readonly solapado = computed(() => this.causaAccion() === 'solapado');
+  /**
+   * Solapamiento con otro bloque (UX-12), o franja fuera del horario de la sede (0.162.0): los dos
+   * van pegados al día y las horas, no arriba, porque se corrigen ahí.
+   */
+  protected readonly solapado = computed(
+    () => this.causaAccion() === 'solapado' || this.causaAccion() === 'fuera-de-horario-sede',
+  );
+
+  /** Los días del último 409 `franja-fuera-del-horario-de-sede`; solo valen con esa causa. */
+  private readonly fueraDeHorario = signal<readonly FranjaFueraDeSede[]>([]);
 
   /** Errores que solo se resuelven releyendo el horario. */
   protected readonly hayQueRecargar = computed(() => {
@@ -330,10 +495,45 @@ export class HorarioSemanalPage {
     return causa === 'no-encontrado' || causa === 'ya-inactivo' || causa === 'concurrencia';
   });
 
-  protected readonly formularioAlta = this.nuevoFormulario();
+  /**
+   * El alta carga el mismo horario en VARIOS dias (rediseño del 05/11/2026). `modoDias` es la
+   * seleccion rapida; lo que viaja es `diasSemana`. La vigencia se elige por modo y las fechas solo
+   * cuentan cuando el modo las pide.
+   */
+  protected readonly formularioAlta = this.formBuilder.nonNullable.group(
+    {
+      modoDias: ['lv' as ModoDeDias],
+      diasSemana: [[1, 2, 3, 4, 5] as number[], [validadorDeDias]],
+      horaDesde: ['', [Validators.required, validadorDeHora]],
+      horaHasta: ['', [Validators.required, validadorDeHora]],
+      modoInicio: ['hoy' as 'hoy' | 'fecha'],
+      vigenciaDesde: [''],
+      modoFin: ['sin-fin' as 'sin-fin' | 'fecha'],
+      vigenciaHasta: [''],
+    },
+    { validators: [validadorDeRango, validadorDeVigencia] },
+  );
   protected readonly formularioEdicion = this.nuevoFormulario();
 
+  /** Los dias elegidos, como signal: la plantilla marca las pastillas con esto. */
+  protected readonly diasElegidos = signal<readonly number[]>([1, 2, 3, 4, 5]);
+  private readonly modoDeDias = signal<ModoDeDias>('lv');
+  protected readonly diasPersonalizados = computed(() => this.modoDeDias() === 'personalizado');
+
   constructor() {
+    this.formularioAlta.controls.diasSemana.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((dias) => this.diasElegidos.set(dias));
+    this.formularioAlta.controls.modoDias.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((modo) => {
+        this.modoDeDias.set(modo);
+        const fijos = diasDelModo(modo);
+        if (fijos !== null) {
+          this.formularioAlta.controls.diasSemana.setValue([...fijos]);
+        }
+      });
+
     // Lo que se calculo ya no describe lo que esta escrito: el proximo envio vuelve a consultar.
     this.formularioEdicion.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       if (this.panel()?.tipo === 'editar' && this.impacto()?.tipo !== 'consultando') {
@@ -474,17 +674,92 @@ export class HorarioSemanalPage {
   protected abrirAlta(): void {
     this.cerrarPanel();
     this.formularioAlta.reset({
-      diaSemana: '1',
+      modoDias: 'lv',
+      diasSemana: [1, 2, 3, 4, 5],
       horaDesde: '',
       horaHasta: '',
+      modoInicio: 'hoy',
       vigenciaDesde: '',
+      modoFin: 'sin-fin',
       vigenciaHasta: '',
-      limpiarVigenciaHasta: false,
     });
     this.altaAbierta.set(true);
     // El foco se va con el panel: sin esto, quien navega por teclado aprieta "Agregar" y el
     // foco se queda en el boton, con el formulario reciente varios saltos mas abajo.
-    afterNextRender(() => this.enfocar('#alta-bloque-dia'), { injector: this.injector });
+    afterNextRender(() => this.enfocar('#alta-bloque-desde'), { injector: this.injector });
+  }
+
+  /** Marca o desmarca un dia en el modo personalizado. */
+  protected alternarDia(dia: number): void {
+    const control = this.formularioAlta.controls.diasSemana;
+    control.setValue(alternarDia(control.value, dia));
+    control.markAsTouched();
+  }
+
+  protected alternarIntervalo(): void {
+    this.intervalo.set(this.otroIntervalo());
+  }
+
+  /** "Seleccioná al menos un día", cuando corresponde mostrarlo. */
+  protected faltanDias(): boolean {
+    const control = this.formularioAlta.controls.diasSemana;
+    return control.invalid && (control.touched || this.intentos() > 0);
+  }
+
+  protected idErrorDeDias(): string | null {
+    return this.faltanDias() ? 'alta-bloque-dias-error' : null;
+  }
+
+  /** Los días del 409 de solapamiento o de fuera de horario de la sede, para marcar sus pastillas. */
+  protected readonly diasEnConflicto = computed<ReadonlySet<number>>(() => {
+    if (this.causaAccion() === 'fuera-de-horario-sede') {
+      return new Set(this.fueraDeHorario().map((franja) => franja.diaSemana));
+    }
+    const dia = this.conflicto()?.diaSemana;
+    return new Set(dia === undefined || dia === null ? [] : [dia]);
+  });
+
+  /**
+   * El unico mensaje de la fila de horas: hora invalida, fin antes del inicio, o el 409 de
+   * solapamiento tal como lo redacta `bloque-errors.ts`. Uno a la vez y en una linea.
+   */
+  protected errorDeHoras(alta: boolean): string | null {
+    const formulario = alta ? this.formularioAlta : this.formularioEdicion;
+    const tocado =
+      this.intentos() > 0 ||
+      formulario.controls.horaDesde.touched ||
+      formulario.controls.horaHasta.touched;
+    if (
+      tocado &&
+      (formulario.controls.horaDesde.invalid || formulario.controls.horaHasta.invalid)
+    ) {
+      return 'Ingresá una hora válida';
+    }
+    if (this.intentos() > 0 && formulario.errors?.['rango'] === true) {
+      return 'La hora de fin debe ser posterior al inicio';
+    }
+    if (this.solapado()) {
+      return this.errorAccion();
+    }
+    return null;
+  }
+
+  /** El mensaje de la vigencia del alta: fecha que falta, o fin anterior al inicio. */
+  protected errorDeVigencia(alta: boolean): string | null {
+    if (!alta || this.intentos() === 0) {
+      return null;
+    }
+    const errores = this.formularioAlta.errors;
+    if (errores?.['inicio'] === true) {
+      return 'Elegí la fecha de inicio';
+    }
+    if (errores?.['fin'] === true) {
+      return 'Elegí la fecha de fin';
+    }
+    if (errores?.['vigencia'] === true) {
+      return 'El fin debe ser posterior al inicio';
+    }
+    return null;
   }
 
   protected panelAbierto(id: number | undefined, tipo: TipoAccion): boolean {
@@ -512,7 +787,8 @@ export class HorarioSemanalPage {
         horaHasta: bloque.horaHasta ?? '',
         vigenciaDesde: bloque.vigenciaDesde ?? '',
         vigenciaHasta: bloque.vigenciaHasta ?? '',
-        limpiarVigenciaHasta: false,
+        // Sin fin cargado, la opcion elegida es "Sin fecha de finalizacion" (misma vista que el alta).
+        limpiarVigenciaHasta: !bloque.vigenciaHasta,
       });
       afterNextRender(() => this.enfocar('#editar-bloque-dia'), { injector: this.injector });
     } else {
@@ -541,18 +817,6 @@ export class HorarioSemanalPage {
     this.intentos.set(0);
   }
 
-  /** Si el campo de un formulario tiene que mostrar su error. */
-  protected mostrarError(alta: boolean, campo: 'diaSemana' | 'horaDesde' | 'horaHasta'): boolean {
-    const control = (alta ? this.formularioAlta : this.formularioEdicion).controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
-  }
-
-  /** Si el rango horario del formulario esta invertido o vacio. */
-  protected rangoInvertido(alta: boolean): boolean {
-    const formulario = alta ? this.formularioAlta : this.formularioEdicion;
-    return formulario.errors?.['rango'] === true && this.intentos() > 0;
-  }
-
   // =====================================================================================
   // Mutaciones
   // =====================================================================================
@@ -572,31 +836,43 @@ export class HorarioSemanalPage {
     }
 
     const valores = this.formularioAlta.getRawValue();
-    const cuerpo: CreateBloqueRequest = {
-      diaSemana: Number(valores.diaSemana),
+    const dias = [...valores.diasSemana].sort((uno, otro) => uno - otro);
+    const cuerpo: CreateBloquesRequest = {
+      diasSemana: dias,
       // Los strings van tal cual: `24:00` es el valor del contrato, no un error de carga.
       horaDesde: valores.horaDesde.trim(),
       horaHasta: valores.horaHasta.trim(),
     };
     // Omitir `vigenciaDesde` significa HOY, que es lo que quiere quien carga el horario de
-    // alguien que ya esta atendiendo. Mandar una fecha vacia seria un 400.
-    if (valores.vigenciaDesde !== '') {
+    // alguien que ya esta atendiendo. Las fechas solo cuentan si su modo las pide: una fecha que
+    // quedo escrita y despues se volvio a "Desde hoy" no viaja.
+    if (valores.modoInicio === 'fecha' && valores.vigenciaDesde !== '') {
       cuerpo.vigenciaDesde = valores.vigenciaDesde;
     }
-    if (valores.vigenciaHasta !== '') {
+    if (valores.modoFin === 'fecha' && valores.vigenciaHasta !== '') {
       cuerpo.vigenciaHasta = valores.vigenciaHasta;
     }
 
     this.empezarEnvio();
 
+    // Un solo pedido para todos los dias, atomico en el backend: si un dia se pisa, no se guarda
+    // ninguno y el 409 nombra el dia (RF-M05-003, lote desde el contrato 0.159.0).
     this.disponibilidad
-      .createBloqueDisponibilidad({ consultorioId, membershipId, createBloqueRequest: cuerpo })
+      .createBloquesDisponibilidad({ consultorioId, membershipId, createBloquesRequest: cuerpo })
       .subscribe({
-        next: () => {
+        next: (resultado) => {
           this.cerrarAlta();
-          this.avisos.exito('Bloque agregado al horario', {
-            descripcion: this.nombreDelProfesional(),
-          });
+          const cuando = `${describirDias(dias)} de ${rangoHorario(cuerpo.horaDesde, cuerpo.horaHasta)}`;
+          if (resultado.creados === 0) {
+            this.avisos.exito('Ese horario ya estaba cargado', {
+              descripcion: `${this.nombreDelProfesional()}: ${cuando}`,
+            });
+          } else {
+            const bloques = resultado.creados === 1 ? '1 bloque' : `${resultado.creados} bloques`;
+            this.avisos.exito('Horario agregado', {
+              descripcion: `${this.nombreDelProfesional()}: ${cuando} (${bloques})`,
+            });
+          }
           this.cargar();
         },
         error: (error: unknown) => this.fallar(error),
@@ -691,6 +967,7 @@ export class HorarioSemanalPage {
     cambios: UpdateBloqueRequest,
   ): void {
     const previsto = turnosPrevistos(this.impacto());
+    const clave = this.claveDelImpacto;
     this.empezarEnvio();
 
     this.disponibilidad
@@ -698,7 +975,9 @@ export class HorarioSemanalPage {
         consultorioId,
         membershipId,
         bloqueId,
-        updateBloqueRequest: cambios,
+        // Ya se mostro que deja turnos afuera y se volvio a enviar: eso es la confirmacion.
+        updateBloqueRequest:
+          (previsto ?? 0) > 0 ? { ...cambios, confirmaTurnosAfectados: true } : cambios,
       })
       .subscribe({
         next: (bloque) => {
@@ -709,8 +988,31 @@ export class HorarioSemanalPage {
           );
           this.cargar();
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          if (this.mostrarTurnosDelRechazo(error)) {
+            this.claveDelImpacto = clave;
+            return;
+          }
+          this.fallar(error);
+        },
       });
+  }
+
+  /**
+   * Un 409 `bloqueo-con-turnos-afectados`: entro un turno despues de la consulta, o la consulta no se
+   * pudo hacer. Se muestra la lista que trae y el proximo envio confirma. Devuelve si era eso.
+   */
+  private mostrarTurnosDelRechazo(error: unknown): boolean {
+    const impacto = impactoDelRechazo(error);
+    if (impacto === null) {
+      return false;
+    }
+    this.enviando.set(false);
+    this.impacto.set({ tipo: 'listo', impacto });
+    this.errorAccion.set(
+      'Este cambio deja turnos fuera del horario. Revisalos abajo y confirmá de nuevo para guardarlo igual: los turnos no se cancelan.',
+    );
+    return true;
   }
 
   /**
@@ -739,7 +1041,10 @@ export class HorarioSemanalPage {
         consultorioId,
         membershipId,
         bloqueId: panel.id,
-        deactivateBloqueRequest: { reason: motivo },
+        deactivateBloqueRequest: {
+          reason: motivo,
+          confirmaTurnosAfectados: (previsto ?? 0) > 0 ? true : undefined,
+        },
       })
       .subscribe({
         next: (bloque) => {
@@ -751,7 +1056,11 @@ export class HorarioSemanalPage {
           );
           this.cargar();
         },
-        error: (error: unknown) => this.fallar(error),
+        error: (error: unknown) => {
+          if (!this.mostrarTurnosDelRechazo(error)) {
+            this.fallar(error);
+          }
+        },
       });
   }
 
@@ -837,8 +1146,11 @@ export class HorarioSemanalPage {
 
     if (valores.limpiarVigenciaHasta) {
       // Con la bandera puesta el backend IGNORA `vigenciaHasta`: mandarlo igual solo
-      // confundiria a quien lea el request en un log.
-      cambios.limpiarVigenciaHasta = true;
+      // confundiria a quien lea el request en un log. Y solo es un cambio si el bloque tenia
+      // fin: sin fin, la opcion ya venia elegida.
+      if (original.vigenciaHasta) {
+        cambios.limpiarVigenciaHasta = true;
+      }
     } else if (
       valores.vigenciaHasta !== '' &&
       valores.vigenciaHasta !== (original.vigenciaHasta ?? '')
@@ -889,6 +1201,7 @@ export class HorarioSemanalPage {
     this.errorAccion.set(traducido.mensaje);
     this.causaAccion.set(traducido.causa);
     this.conflicto.set(traducido.conflicto);
+    this.fueraDeHorario.set(traducido.fueraDeHorario ?? []);
 
     if (traducido.causa === 'bloque-inactivo') {
       // Un bloque dado de baja no admite ediciones: el formulario se apaga en vez de dejar al
@@ -946,6 +1259,22 @@ function claveDeCambios(cambios: UpdateBloqueRequest): string {
   return JSON.stringify(sinVersion(cambios));
 }
 
+/** Dia ISO-8601 de una fecha: lunes = 1 .. domingo = 7. */
+function diaIsoDe(fecha: Date): number {
+  return ((fecha.getDay() + 6) % 7) + 1;
+}
+
+function primerDiaDelMes(fecha: Date): Date {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+}
+
+/** `YYYY-MM-DD` en hora local, comparable como texto con las vigencias del contrato. */
+function fechaIso(fecha: Date): string {
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
 /** Ordena por hora de inicio. `24:00` compara como 1440, sin ningun caso especial. */
 function porHoraDeInicio(uno: BloqueResponse, otro: BloqueResponse): number {
   return (minutosDeHora(uno.horaDesde ?? '') ?? 0) - (minutosDeHora(otro.horaDesde ?? '') ?? 0);
@@ -975,4 +1304,36 @@ function validadorDeRango(grupo: AbstractControl): ValidationErrors | null {
     return null;
   }
   return hasta > desde ? null : { rango: true };
+}
+
+/** Al menos un dia: una lista vacia no es un horario. */
+function validadorDeDias(control: AbstractControl): ValidationErrors | null {
+  const dias = control.value;
+  return Array.isArray(dias) && dias.length > 0 ? null : { dias: true };
+}
+
+/**
+ * La vigencia del alta: una fecha pedida por su modo tiene que estar, y el fin tiene que ser
+ * posterior al inicio. Las fechas de un modo que no las pide no se miran: quedaron escritas de
+ * antes y no viajan.
+ */
+function validadorDeVigencia(grupo: AbstractControl): ValidationErrors | null {
+  const valores = grupo.value as {
+    modoInicio?: string;
+    vigenciaDesde?: string;
+    modoFin?: string;
+    vigenciaHasta?: string;
+  };
+  const desde = valores.modoInicio === 'fecha' ? (valores.vigenciaDesde ?? '') : '';
+  const hasta = valores.modoFin === 'fecha' ? (valores.vigenciaHasta ?? '') : '';
+  if (valores.modoInicio === 'fecha' && desde === '') {
+    return { inicio: true };
+  }
+  if (valores.modoFin === 'fecha' && hasta === '') {
+    return { fin: true };
+  }
+  if (desde !== '' && hasta !== '' && hasta <= desde) {
+    return { vigencia: true };
+  }
+  return null;
 }

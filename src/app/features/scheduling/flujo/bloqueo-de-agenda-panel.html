@@ -28,25 +28,175 @@
         </div>
 
         @if ((resultado.turnos?.length ?? 0) > 0) {
-          <ul class="flujo__historial" aria-label="Turnos afectados">
-            @for (turno of resultado.turnos; track turno.turnoId ?? $index) {
-              <li class="flujo__fila flujo__fila--entre">
-                <span>
-                  {{ rotuloDelTurno(turno.inicio, turno.fin) }}
-                  @if (profesionalDelTurno(turno.membershipId); as profesional) {
-                    <span class="flujo__historial-cuando">{{ profesional }}</span>
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Turnos afectados">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <input
+                      type="checkbox"
+                      aria-label="Elegir todos los turnos afectados"
+                      [checked]="todosSeleccionados()"
+                      [disabled]="seleccionables().length === 0"
+                      (change)="alternarTodos($any($event.target).checked)"
+                    />
+                  </th>
+                  <th scope="col">Turno</th>
+                  <th scope="col">Paciente</th>
+                  @if (alcance() === TODA_LA_SEDE) {
+                    <th scope="col">Profesional</th>
                   }
-                </span>
-                @if (turno.turnoId; as turnoId) {
-                  <button type="button" class="boton-texto" (click)="verTurno(turnoId)">
-                    Ver turno<span class="visualmente-oculto">
-                      del {{ rotuloDelTurno(turno.inicio, turno.fin) }}</span
-                    >
-                  </button>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (turno of resultado.turnos; track turno.turnoId ?? $index) {
+                  <tr>
+                    <td>
+                      @if (turno.turnoId; as turnoId) {
+                        @if (resultadoDe(turnoId) === '') {
+                          <input
+                            type="checkbox"
+                            [attr.aria-label]="
+                              'Elegir el turno del ' + rotuloDelTurno(turno.inicio, turno.fin)
+                            "
+                            [checked]="seleccion().has(turnoId)"
+                            (change)="alternar(turnoId, $any($event.target).checked)"
+                          />
+                        }
+                      }
+                    </td>
+                    <td>{{ rotuloDelTurno(turno.inicio, turno.fin) }}</td>
+                    <td>{{ turno.personaNombre || 'Sin nombre cargado' }}</td>
+                    @if (alcance() === TODA_LA_SEDE) {
+                      <td>{{ profesionalDeLaFila(turno) }}</td>
+                    }
+                    <td>
+                      @if (resultadoDe(turno.turnoId); as resultadoDelLote) {
+                        <b>{{ resultadoDelLote }}</b>
+                      } @else {
+                        {{ nombreDeEstado(turno.estado) }}
+                      }
+                    </td>
+                    <td class="tabla__acciones">
+                      @if (turno.turnoId; as turnoId) {
+                        <app-acciones-de-fila
+                          [de]="'turno del ' + rotuloDelTurno(turno.inicio, turno.fin)"
+                        >
+                          <button
+                            principal
+                            type="button"
+                            class="boton-texto"
+                            (click)="verTurno(turnoId)"
+                          >
+                            Ver turno<span class="visualmente-oculto">
+                              del {{ rotuloDelTurno(turno.inicio, turno.fin) }}</span
+                            >
+                          </button>
+                          <button type="button" (click)="verTurno(turnoId, 'reprogramar')">
+                            Reprogramar
+                          </button>
+                          <button type="button" (click)="verTurno(turnoId, 'reprogramar')">
+                            Cambiar profesional
+                          </button>
+                          <button type="button" (click)="verTurno(turnoId, 'cancelar')">
+                            Cancelar turno
+                          </button>
+                        </app-acciones-de-fila>
+                      }
+                    </td>
+                  </tr>
                 }
-              </li>
-            }
-          </ul>
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (clasesAfectadas().length > 0) {
+          <!-- Clases sin instructor (0.158.0): sin participantes, solo cuando y de quien. -->
+          <section class="flujo" aria-labelledby="bloqueo-clases-titulo">
+            <h3 id="bloqueo-clases-titulo" class="flujo__dato">Clases que quedan sin instructor</h3>
+            <p class="ayuda">
+              No se cancelan: revisalas en la grilla de clases y asigná otro instructor si hace
+              falta.
+            </p>
+            <ul>
+              @for (clase of clasesAfectadas(); track clase.claseId) {
+                <li>
+                  Clase {{ rotuloDelTurno(clase.inicio, clase.fin) }}
+                  @if (clase.instructorMembershipId !== undefined && alcance() === TODA_LA_SEDE) {
+                    · {{ profesionalDelTurno(clase.instructorMembershipId) }}
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+        @if (seleccion().size > 0) {
+          <fieldset class="flujo" aria-labelledby="bloqueo-lote-titulo">
+            <legend id="bloqueo-lote-titulo" class="flujo__dato">
+              Cancelar
+              {{
+                seleccion().size === 1 ? '1 turno elegido' : seleccion().size + ' turnos elegidos'
+              }}
+            </legend>
+            <div class="flujo__campos">
+              <div class="campo campo--mitad">
+                <label for="bloqueo-lote-origen">Quién cancela</label>
+                <select
+                  id="bloqueo-lote-origen"
+                  [value]="origenDeLote()"
+                  (change)="origenDeLote.set($any($event.target).value)"
+                >
+                  @for (origen of ORIGENES_DE_CANCELACION; track origen.valor) {
+                    <option [value]="origen.valor" [selected]="origen.valor === origenDeLote()">
+                      {{ origen.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo campo--mitad">
+                <label for="bloqueo-lote-motivo">Motivo</label>
+                <select
+                  id="bloqueo-lote-motivo"
+                  [value]="motivoDeLote()"
+                  (change)="motivoDeLote.set($any($event.target).value)"
+                >
+                  @for (motivo of MOTIVOS_DE_CANCELACION; track motivo) {
+                    <option [value]="motivo" [selected]="motivo === motivoDeLote()">
+                      {{ motivo }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="campo">
+                <label for="bloqueo-lote-nota">
+                  Observación ({{ motivoDeLote() === 'Otro' ? 'obligatoria' : 'opcional' }})
+                </label>
+                <textarea
+                  id="bloqueo-lote-nota"
+                  rows="2"
+                  maxlength="200"
+                  [attr.aria-required]="motivoDeLote() === 'Otro'"
+                  [value]="notaDeLote()"
+                  (input)="notaDeLote.set($any($event.target).value)"
+                ></textarea>
+              </div>
+            </div>
+            <div class="flujo__fila">
+              <button
+                type="button"
+                class="boton boton--peligro"
+                [disabled]="cancelandoEnLote() || faltaNotaDeLote()"
+                (click)="cancelarSeleccionados()"
+              >
+                {{ cancelandoEnLote() ? 'Cancelando…' : 'Cancelar en lote' }}
+              </button>
+            </div>
+          </fieldset>
+        }
+        @if (resumenDelLote(); as resumen) {
+          <p class="flujo__dato" role="status">{{ resumen }}</p>
         }
         @if (listaRecortada() && (resultado.turnos?.length ?? 0) > 0) {
           <p class="ayuda">Se muestran los primeros {{ resultado.turnos?.length }}.</p>
@@ -91,9 +241,11 @@
             <option value="" [selected]="alcance() === ''">
               Elegí un profesional o toda la sede
             </option>
-            <option [value]="TODA_LA_SEDE" [selected]="alcance() === TODA_LA_SEDE">
-              Toda la sede
-            </option>
+            @if (!soloPropio()) {
+              <option [value]="TODA_LA_SEDE" [selected]="alcance() === TODA_LA_SEDE">
+                Toda la sede
+              </option>
+            }
             @for (profesional of profesionales(); track profesional.id) {
               <option [value]="profesional.id" [selected]="'' + profesional.id === alcance()">
                 {{ profesional.nombre }}
@@ -143,38 +295,47 @@
             (change)="hasta.set($any($event.target).value)"
           />
         </div>
-        <div class="campo campo--cuarto">
-          <label for="bloqueo-hora-desde">Hora desde</label>
-          <input
-            id="bloqueo-hora-desde"
-            type="time"
-            aria-describedby="bloqueo-horario-ayuda"
-            [value]="horaDesde()"
-            (change)="horaDesde.set($any($event.target).value)"
-          />
-        </div>
-        <div class="campo campo--cuarto">
-          <label for="bloqueo-hora-hasta">Hora hasta</label>
-          <input
-            id="bloqueo-hora-hasta"
-            type="time"
-            aria-describedby="bloqueo-horario-ayuda"
-            [value]="horaHasta()"
-            (change)="horaHasta.set($any($event.target).value)"
-          />
-        </div>
         <div class="campo">
-          <p id="bloqueo-horario-ayuda" class="ayuda ayuda--fija">
-            Sin horario se bloquea el día completo.
-          </p>
+          <label class="opcion-casilla">
+            <input
+              id="bloqueo-todo-el-dia"
+              type="checkbox"
+              [checked]="todoElDia()"
+              (change)="todoElDia.set($any($event.target).checked)"
+            />
+            Todo el día
+          </label>
         </div>
+        @if (!todoElDia()) {
+          <div class="campo campo--cuarto">
+            <label for="bloqueo-hora-desde">Hora desde</label>
+            <input
+              id="bloqueo-hora-desde"
+              type="time"
+              [value]="horaDesde()"
+              (change)="horaDesde.set($any($event.target).value)"
+            />
+          </div>
+          <div class="campo campo--cuarto">
+            <label for="bloqueo-hora-hasta">Hora hasta</label>
+            <input
+              id="bloqueo-hora-hasta"
+              type="time"
+              [value]="horaHasta()"
+              (change)="horaHasta.set($any($event.target).value)"
+            />
+          </div>
+        }
         <div class="campo">
-          <label for="bloqueo-notas">Notas</label>
+          <label for="bloqueo-notas">
+            Notas ({{ motivoEsOtro() ? 'obligatorias con el tipo Otro' : 'opcional' }})
+          </label>
           <textarea
             id="bloqueo-notas"
             rows="2"
             maxlength="280"
             aria-describedby="bloqueo-notas-ayuda"
+            [attr.aria-required]="motivoEsOtro()"
             [value]="notas()"
             (input)="notas.set($any($event.target).value)"
           ></textarea>

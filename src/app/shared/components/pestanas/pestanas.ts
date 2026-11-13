@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 
 /** Una pestana: un enlace a una pantalla hermana de la seccion. */
 export interface Pestana {
@@ -26,13 +26,15 @@ export interface Pestana {
  * <p><b>No sabe de dominio.</b> Recibe etiquetas y rutas; quien la usa decide cuales y con que
  * permiso. Por eso vive en `shared/` (AGENT.md 4.1).
  *
- * <p><b>Sin hoja propia.</b> `.pestanas` la aporta `src/design-system.css`.
+ * <p><b>Hoja propia</b> para la lista y los enlaces; `.pestanas` (el `nav`) la aporta
+ * `src/design-system.css`.
  */
 @Component({
   selector: 'akine-pestanas, app-pestanas',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './pestanas.html',
+  styleUrl: './pestanas.css',
 })
 export class Pestanas {
   /** Las pestanas, en orden. Con una sola no se renderiza nada: no hay entre que elegir. */
@@ -40,4 +42,19 @@ export class Pestanas {
 
   /** `aria-label` del `nav`. Ej: "Pantallas de la agenda". */
   readonly etiqueta = input.required<string>();
+
+  /*
+   * Solo cuenta el camino: `exact: true` comparaba tambien los parametros, y `/agenda?fecha=...`
+   * dejaba sin marcar la pestaña Agenda en cuanto se movia la fecha (08/11/2026).
+   */
+  protected readonly COINCIDENCIA_EXACTA: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    matrixParams: 'ignored',
+    fragment: 'ignored',
+  };
+  protected readonly COINCIDENCIA_PARCIAL: IsActiveMatchOptions = {
+    ...this.COINCIDENCIA_EXACTA,
+    paths: 'subset',
+  };
 }

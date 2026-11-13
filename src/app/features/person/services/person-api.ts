@@ -21,6 +21,9 @@ export type FiltroEstadoPersona = 'ACTIVO' | 'INACTIVO' | 'TODOS';
  */
 export type FiltroPerfil = 'CON_PERFIL' | 'SIN_PERFIL' | 'TODOS';
 
+/** Filtro por actividades vigentes hoy (clases, pases, abonos). Independiente del perfil. */
+export type FiltroActividad = 'CON_ACTIVIDAD' | 'SIN_ACTIVIDAD' | 'TODOS';
+
 /**
  * Unico punto de la feature `person` que toca el cliente generado (M07, AKINE-03.01).
  *
@@ -58,6 +61,8 @@ export class PersonApi {
     readonly texto?: string;
     readonly estado: FiltroEstadoPersona;
     readonly perfil: FiltroPerfil;
+    /** Sin él, indistinto. */
+    readonly actividad?: FiltroActividad;
     readonly pagina: number;
     readonly tamano: number;
     /** Orden pedido al servidor (DP-45). Sin el, por apellido y nombre. */
@@ -68,6 +73,8 @@ export class PersonApi {
       q: texto === undefined || texto === '' ? undefined : texto,
       estado: filtros.estado,
       perfil: filtros.perfil,
+      // `TODOS` no viaja: es el defecto del backend y la URL queda como antes del filtro.
+      actividad: filtros.actividad === 'TODOS' ? undefined : filtros.actividad,
       page: filtros.pagina,
       size: filtros.tamano,
       sort: filtros.sort,

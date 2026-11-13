@@ -1,6 +1,11 @@
 import { CoberturaResponse } from '../../../api/generated/model/cobertura-response';
+import {
+  ReprogramacionDeTurno,
+  ReprogramacionDeTurnoUltimoTipoEnum,
+} from '../../../api/generated/model/reprogramacion-de-turno';
 import { EventoDeTurnoTipoEnum } from '../../../api/generated/model/evento-de-turno';
 import { TurnoEstadoEnum } from '../../../api/generated/model/turno';
+import { NombreDeIcono } from '../../../shared/components/icono/icono';
 
 /**
  * Textos y lecturas derivadas del ciclo de vida del turno (M12, AKINE-05.03).
@@ -44,6 +49,7 @@ const TEXTOS_DE_EVENTO: Readonly<Record<EventoDeTurnoTipoEnum, string>> = {
   [EventoDeTurnoTipoEnum.AUSENCIA]: 'Se registró que el paciente no vino',
   [EventoDeTurnoTipoEnum.LLEGADA]: 'Llegó al centro',
   [EventoDeTurnoTipoEnum.LLEGADA_DESHECHA]: 'Se deshizo el registro de llegada',
+  [EventoDeTurnoTipoEnum.OBSERVACIONES]: 'Se cambiaron las observaciones',
 };
 
 /** Estados desde los que ya no hay ninguna transicion posible. */
@@ -162,20 +168,31 @@ export function nombreDeEstadoOperativo(estado: string | undefined): string {
   return NOMBRES_OPERATIVOS[estado ?? ''] ?? estado ?? '';
 }
 
-/** Un simbolo por estado: junto con el texto, distingue el estado sin depender del color. */
-const SIMBOLOS_OPERATIVOS: Readonly<Record<string, string>> = {
-  RESERVADO: '○',
-  CONFIRMADO: '●',
-  PRESENTE: '◆',
-  RETIRADO: '↩',
-  EN_ATENCION: '▶',
-  ATENDIDO: '✓',
-  AUSENTE: '✕',
-  CANCELADO: '⊘',
+/**
+ * El icono de cada estado operativo (norma de diseno §7): con la palabra y el color, el estado nunca
+ * depende de uno solo. Sin estado conocido, el reloj de lo que falta resolver.
+ */
+const ICONOS_OPERATIVOS: Readonly<Record<string, NombreDeIcono>> = {
+  RESERVADO: 'horarios',
+  CONFIRMADO: 'tilde',
+  PRESENTE: 'perfil',
+  RETIRADO: 'salir',
+  EN_ATENCION: 'flecha-derecha',
+  ATENDIDO: 'exito',
+  AUSENTE: 'advertencia',
+  CANCELADO: 'error',
 };
 
-export function simboloDeEstadoOperativo(estado: string | undefined): string {
-  return SIMBOLOS_OPERATIVOS[estado ?? ''] ?? '';
+export function iconoDeEstadoOperativo(estado: string | undefined): NombreDeIcono {
+  return ICONOS_OPERATIVOS[estado ?? ''] ?? 'horarios';
+}
+
+/**
+ * La clase de tono del estado (`turno--en-atencion`), que la hoja de la agenda traduce a los tokens
+ * `--color-estado-*`. La comparten la tarjeta de la grilla y la fila de la lista angosta.
+ */
+export function claseDeTonoOperativo(estado: string | undefined): string {
+  return estado ? `turno--${estado.toLowerCase().replace(/_/g, '-')}` : '';
 }
 
 /** A quien se le atribuye una cancelacion, para el historial y los selectores. */
@@ -203,6 +220,7 @@ export const MOTIVOS_DE_REPROGRAMACION = [
 
 export const MOTIVOS_DE_BLOQUEO = [
   { valor: 'LICENCIA', etiqueta: 'Licencia' },
+  { valor: 'VACACIONES', etiqueta: 'Vacaciones' },
   { valor: 'CAPACITACION', etiqueta: 'Capacitación' },
   { valor: 'AUSENCIA', etiqueta: 'Personal' },
   { valor: 'BLOQUEO', etiqueta: 'Institucional' },
@@ -230,3 +248,43 @@ export const DIAS_ABREVIADOS = [
   { iso: 6, etiqueta: 'Sáb' },
   { iso: 7, etiqueta: 'Dom' },
 ] as const;
+
+/**
+ * Marca de un turno que se movio de horario o de sede. No es un estado: el turno sigue
+ * reservado, confirmado o atendido, y la marca solo avisa que no esta donde se pidio.
+ */
+export const SIMBOLO_REPROGRAMADO = '↻';
+
+/**
+ * "↻ Reprogramado", o "↻ Reprogramado 3 veces" cuando se movio mas de una. Vacio si nunca se
+ * movio: la marca no se dibuja para cero.
+ */
+export function textoDeReprogramado(cantidad: number | undefined): string {
+  if (cantidad === undefined || cantidad <= 0) {
+    return '';
+  }
+  const base = `${SIMBOLO_REPROGRAMADO} Reprogramado`;
+  return cantidad === 1 ? base : `${base} ${cantidad} veces`;
+}
+
+/** "era 10:00": a que hora estaba el turno antes de moverse. Vacio si no hay hora original. */
+export function eraA(horaOriginal: string | undefined): string {
+  return horaOriginal === undefined || horaOriginal === '' ? '' : `era ${horaOriginal}`;
+}
+
+/**
+ * El ultimo movimiento en una linea: "Último: cambio de sede por Ana Gomez — Pedido del paciente".
+ * Sin actor ni motivo dice solo que tipo de movimiento fue. Vacio si nunca se movio.
+ */
+export function textoDeUltimoMovimiento(reprogramacion: ReprogramacionDeTurno | undefined): string {
+  if (reprogramacion === undefined || (reprogramacion.cantidad ?? 0) <= 0) {
+    return '';
+  }
+  const tipo =
+    reprogramacion.ultimoTipo === ReprogramacionDeTurnoUltimoTipoEnum.TRASLADO
+      ? 'cambio de sede'
+      : 'cambio de horario';
+  const actor = reprogramacion.ultimoActorNombre ? ` por ${reprogramacion.ultimoActorNombre}` : '';
+  const motivo = reprogramacion.ultimoMotivo ? ` — ${reprogramacion.ultimoMotivo}` : '';
+  return `Último: ${tipo}${actor}${motivo}`;
+}

@@ -15,7 +15,8 @@ interface Precarga {
   readonly personaId: number;
   readonly epoca: number;
   readonly vence: number;
-  readonly respuesta: Observable<ResumenDePersonaResponse>;
+  /** `null`: la pantalla ya consulto por su cuenta y una precarga que llegue tarde sobra. */
+  readonly respuesta: Observable<ResumenDePersonaResponse> | null;
 }
 
 /**
@@ -71,7 +72,17 @@ export class PrecargaDeFicha {
   /** El resumen ya pedido para esta persona, si sigue valido. Se toma una sola vez. */
   tomar(personaId: number): Observable<ResumenDePersonaResponse> | null {
     const precarga = this.vigente(personaId);
-    this.precarga = null;
+    // Sin precarga la pantalla consulta sola. La precarga se importa perezosa (person.routes) y
+    // puede llegar despues: la marca evita que pida el mismo resumen por segunda vez.
+    this.precarga =
+      precarga === null
+        ? {
+            personaId,
+            epoca: this.tenantContext.contextEpoch(),
+            vence: Date.now() + VIGENCIA_MS,
+            respuesta: null,
+          }
+        : null;
     return precarga?.respuesta ?? null;
   }
 

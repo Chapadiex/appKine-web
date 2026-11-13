@@ -1,15 +1,17 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { HorarioSemanalPage } from './horario-semanal-page';
 import {
-  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_AGENDA_HORARIO,
   PERMISO_TURNO_MANAGE,
   PERMISO_TURNO_READ,
 } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { PerfilPropioStore } from '../../../../core/services/perfil-propio.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
@@ -27,6 +29,8 @@ const SEDE = 3;
 const PROFESIONAL = 42;
 
 const BLOQUES = rutaBloquesDisponibilidad(SEDE, PROFESIONAL);
+/** El alta en lote (contrato 0.159.0): todos los dias en un pedido. */
+const LOTE = `${BLOQUES}/lote`;
 
 /** Profesional con vinculo de alcance organizacion: habilita en TODAS las sedes, incluida esta. */
 const ANA = {
@@ -188,7 +192,7 @@ describe('HorarioSemanalPage', () => {
     // el profesional acotado a la sede 99, cuyo alta terminaria siempre en 409.
     const opciones = [...fixture.nativeElement.querySelectorAll('#selector-profesional option')];
     expect(opciones.map((opcion) => (opcion as HTMLOptionElement).textContent?.trim())).toEqual([
-      'Sin elegir',
+      'Elegí un profesional',
       'Ana Kine',
     ]);
   });
@@ -202,42 +206,51 @@ describe('HorarioSemanalPage', () => {
 
     // Y se puede volver a escribir: el campo es de texto justamente porque un `type="time"`
     // rechaza 24:00 y vacia el control sin decir nada.
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '20:00');
-    escribir(fixture, '#alta-bloque-hasta', '24:00');
-    seleccionar(fixture, '#alta-bloque-dia', '3');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '20:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '24:00');
+    elegirDias(fixture, [3]);
     enviar(fixture, 'form');
 
+    // Un solo pedido al lote, con el dia elegido y las horas tal cual (contrato 0.159.0).
     const alta = httpMock.expectOne(
-      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === BLOQUES,
+      (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LOTE,
     );
-    expect(alta.request.body).toEqual({ diaSemana: 3, horaDesde: '20:00', horaHasta: '24:00' });
+    expect(alta.request.body).toEqual({ diasSemana: [3], horaDesde: '20:00', horaHasta: '24:00' });
 
-    alta.flush({ ...MARTES_NOCHE, id: 103, diaSemana: 3 }, { status: 201, statusText: 'Created' });
+    alta.flush(
+      { bloques: [{ ...MARTES_NOCHE, id: 103, diaSemana: 3 }], creados: 1, existentes: 0 },
+      { status: 201, statusText: 'Created' },
+    );
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
 
-    expect(titulosDeAvisos()).toEqual(['Bloque agregado al horario']);
+    expect(titulosDeAvisos()).toEqual(['Horario agregado']);
     expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
   });
 
   it('un 409 de solapamiento muestra los dos bloques que chocan, no un cartel generico', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '10:00');
-    escribir(fixture, '#alta-bloque-hasta', '11:00');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '10:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '11:00');
     enviar(fixture, 'form');
 
     httpMock
-      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'POST')
+      .expectOne(
+        (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === LOTE,
+      )
       .flush(
         {
           type: 'https://akine.app/problems/bloque-solapado',
           bloqueEnConflictoId: LUNES_MANANA.id,
           diaSemana: 1,
-          horaDesde: '09:00',
-          horaHasta: '12:00',
+          horaDesde: '10:00',
+          horaHasta: '11:00',
+          conflictoHoraDesde: '09:00',
+          conflictoHoraHasta: '12:00',
+          conflictoMismaSede: true,
         },
         { status: 409, statusText: 'Conflict' },
       );
@@ -245,10 +258,10 @@ describe('HorarioSemanalPage', () => {
 
     const contenido = texto(fixture);
 
-    // 1. El mensaje NOMBRA el otro bloque: sin esto hay que recorrer la semana comparando horas.
-    expect(contenido).toContain('se pisa con el bloque del lunes de 09:00 a 12:00');
-    // 2. Y aclara lo que el usuario esta por "corregir" mal: contiguo no es solapado.
-    expect(contenido).toContain('la mañana de 09:00 a 12:00 y la tarde de 12:00 a 15:00 conviven');
+    // 1. El mensaje NOMBRA el otro bloque, en una linea: sin esto hay que recorrer la semana
+    //    comparando horas. Que contiguo no es solapado lo explica la ayuda "?", no el error.
+    expect(contenido).toContain('Ya existe un horario para el lunes de 09:00 a 12:00');
+    expect(contenido).not.toContain('conviven');
 
     // 3. La fila del bloque en conflicto queda senalada, y SOLO esa. El color no es lo unico
     //    que la distingue: dentro de la fila hay un texto que lo dice.
@@ -260,13 +273,13 @@ describe('HorarioSemanalPage', () => {
     // 4. El panel sigue abierto con lo escrito: la correccion es sobre eso mismo.
     expect(campo(fixture, '#alta-bloque-desde')).toBe('10:00');
 
-    // 5. UX-12: el choque es una advertencia pegada al día y las horas que lo producen.
-    const alerta = fixture.nativeElement.querySelector('#alta-bloque-solapado');
-    expect(alerta?.textContent).toContain('Se superpone con otro bloque del horario');
-    for (const selector of ['#alta-bloque-dia', '#alta-bloque-desde', '#alta-bloque-hasta']) {
+    // 5. El choque es el unico mensaje de la fila de horas, y los dos selectores lo describen.
+    const error = fixture.nativeElement.querySelector('#alta-bloque-horas-error');
+    expect(error?.textContent).toContain('Ya existe un horario para el lunes');
+    for (const selector of ['#alta-bloque-desde', '#alta-bloque-hasta']) {
       const control = fixture.nativeElement.querySelector(selector);
       expect(control?.getAttribute('aria-invalid')).toBe('true');
-      expect(control?.getAttribute('aria-describedby')).toBe('alta-bloque-solapado');
+      expect(control?.getAttribute('aria-describedby')).toBe('alta-bloque-horas-error');
     }
   });
 
@@ -319,7 +332,11 @@ describe('HorarioSemanalPage', () => {
       (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
     );
     expect(baja.request.url).toBe(`${BLOQUES}/${LUNES_MANANA.id}`);
-    expect(baja.request.body).toEqual({ reason: 'Dejo de atender los lunes a la mañana' });
+    // Ya se vio que deja turnos afuera: la baja los confirma (contrato 0.154.0).
+    expect(baja.request.body).toEqual({
+      reason: 'Dejo de atender los lunes a la mañana',
+      confirmaTurnosAfectados: true,
+    });
 
     baja.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 3 });
     httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
@@ -347,7 +364,7 @@ describe('HorarioSemanalPage', () => {
     // El formulario carga las horas TAL CUAL llegaron, sin reformatear.
     expect(campo(fixture, '#editar-bloque-desde')).toBe('09:00');
 
-    seleccionar(fixture, '#editar-bloque-dia', '4');
+    elegirDiaDeEdicion(fixture, 4);
     enviar(fixture, 'form');
 
     // Primero la consulta sin efectos, con el mismo cuerpo y SIN version. Sin turnos afectados
@@ -372,24 +389,167 @@ describe('HorarioSemanalPage', () => {
     expect(titulosDeAvisos()).toEqual(['Cambios del bloque guardados']);
   });
 
+  it('un 409 con turnos afectados muestra la lista y el reenvío confirma (contrato 0.154.0)', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    elegirDiaDeEdicion(fixture, 4);
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`)
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2027-01-06' });
+    // Entre la consulta y el guardado entro un turno: el backend lo rechaza con la lista.
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.method === 'PUT')
+      .flush(
+        {
+          type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+          status: 409,
+          turnosAfectados: 1,
+          turnos: [
+            {
+              turnoId: 900,
+              membershipId: PROFESIONAL,
+              personaNombre: 'Perez, Ana',
+              inicio: '2026-10-12T14:00:00Z',
+              fin: '2026-10-12T14:30:00Z',
+            },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Turnos afectados: 1.');
+    expect(texto(fixture)).toContain('Perez, Ana');
+    abrir(fixture, 'Guardar igual');
+
+    const confirmada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
+    );
+    expect(confirmada.request.body).toEqual({
+      version: 1,
+      diaSemana: 4,
+      confirmaTurnosAfectados: true,
+    });
+    confirmada.flush({ ...LUNES_MANANA, diaSemana: 4, version: 2 });
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+  });
+
+  it('una baja sin turnos previstos que el backend rechaza con la lista la muestra y confirma al reenviar', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`)
+      .flush({ turnosAfectados: 0, turnos: [], evaluadoHasta: '2027-01-06' });
+    await estabilizar(fixture);
+
+    escribir(fixture, '#baja-bloque-reason', 'Cambia de horario');
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+
+    const baja = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
+    );
+    // La consulta dijo cero: no hay nada que confirmar todavia.
+    expect(baja.request.body).toEqual({ reason: 'Cambia de horario' });
+    baja.flush(
+      {
+        type: 'https://akine.app/problems/bloqueo-con-turnos-afectados',
+        status: 409,
+        turnosAfectados: 1,
+        turnos: [
+          {
+            turnoId: 905,
+            membershipId: PROFESIONAL,
+            personaNombre: 'Gomez, Juan',
+            inicio: '2026-10-12T12:00:00Z',
+            fin: '2026-10-12T12:30:00Z',
+          },
+        ],
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Gomez, Juan');
+    expect(texto(fixture)).toContain('Este cambio deja turnos fuera del horario');
+    expect(titulosDeAvisos()).toEqual([]);
+
+    // Ya se vio la lista: el reenvio confirma.
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+    const confirmada = httpMock.expectOne(
+      (peticion: HttpRequest<unknown>) => peticion.method === 'DELETE',
+    );
+    expect(confirmada.request.body).toEqual({
+      reason: 'Cambia de horario',
+      confirmaTurnosAfectados: true,
+    });
+    confirmada.flush({ ...LUNES_MANANA, estado: 'INACTIVO', turnosAfectados: 1 });
+    httpMock.expectOne(BLOQUES).flush([LUNES_TARDE, MARTES_NOCHE]);
+    await estabilizar(fixture);
+    expect(titulosDeAvisos()).toContain('Bloque dado de baja');
+  });
+
+  it('con agenda:horario propio, el horario de otro profesional se mira y no se toca', async () => {
+    (TestBed.inject(PerfilPropioStore) as unknown as { membershipId: unknown }).membershipId =
+      signal(7);
+    tenantContext.select({
+      organizationId: ORG,
+      organizationName: 'Belgrano',
+      consultorioId: SEDE,
+      consultorioName: 'Sede Centro',
+    });
+    permisos.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: [PERMISO_AGENDA_HORARIO],
+      ownScopedPermissions: [PERMISO_AGENDA_HORARIO],
+    });
+    const fixture = TestBed.createComponent(HorarioSemanalPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne((peticion: HttpRequest<unknown>) => peticion.url === rutaMemberships(ORG))
+      .flush({ content: [ANA], page: 0, size: 100, totalElements: 1, totalPages: 1 });
+    await estabilizar(fixture);
+
+    // Sin profesional elegido todavia no hay nada ajeno.
+    expect(texto(fixture)).not.toContain('cambiar solo el tuyo');
+
+    seleccionar(fixture, '#selector-profesional', String(PROFESIONAL));
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain(
+      'podés consultar el horario de otros profesionales, pero cambiar solo el tuyo',
+    );
+    const rotulos = [...fixture.nativeElement.querySelectorAll('button')].map((b) =>
+      (b.textContent ?? '').trim(),
+    );
+    expect(rotulos).not.toContain('Agregar horario');
+    expect(rotulos).not.toContain('Editar');
+  });
+
   it('un rango invertido no sale a la red, y volver a "Sin elegir" vacía la semana', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Agregar un bloque');
-    escribir(fixture, '#alta-bloque-desde', '15:00');
-    escribir(fixture, '#alta-bloque-hasta', '09:00');
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '15:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '09:00');
     enviar(fixture, 'form');
 
     // Un bloque nunca cruza al dia siguiente: el backend lo rechazaria con 400 y gastar ese
     // viaje no aporta nada.
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('tiene que ser posterior a la de inicio');
+    expect(texto(fixture)).toContain('La hora de fin debe ser posterior al inicio');
 
-    // Y una hora mal escrita se senala en el campo, no al pie.
-    escribir(fixture, '#alta-bloque-desde', '9:00');
+    // Y una hora mal escrita en el campo de hora exacta se senala en la fila, en una linea.
+    seleccionar(fixture, '#alta-bloque-desde', 'otra');
+    escribir(fixture, '#alta-bloque-desde-exacta', '9:00');
     enviar(fixture, 'form');
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    expect(texto(fixture)).toContain('Escribi la hora de inicio como HH:MM');
+    expect(texto(fixture)).toContain('Ingresá una hora válida');
 
     // Deseleccionar vuelve al estado inicial sin consultar nada: la semana que quedaba en
     // pantalla era de un profesional que ya no esta elegido.
@@ -401,7 +561,7 @@ describe('HorarioSemanalPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    seleccionar(fixture, '#editar-bloque-dia', '5');
+    elegirDiaDeEdicion(fixture, 5);
     enviar(fixture, 'form');
 
     // La consulta previa ya lo sabe: el PUT no llega a salir.
@@ -415,8 +575,11 @@ describe('HorarioSemanalPage', () => {
 
     // Dejar el formulario activo invitaria a reenviar algo que ya sabemos que va a fallar.
     expect(texto(fixture)).toContain('La baja no se deshace');
-    const dia: HTMLSelectElement | null = fixture.nativeElement.querySelector('#editar-bloque-dia');
-    expect(dia?.disabled).toBe(true);
+    const dias: HTMLInputElement[] = [
+      ...fixture.nativeElement.querySelectorAll('#editar-bloque-dia input[type="radio"]'),
+    ];
+    expect(dias.length).toBe(7);
+    expect(dias.every((dia) => dia.disabled)).toBe(true);
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
   });
 
@@ -424,7 +587,7 @@ describe('HorarioSemanalPage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-bloque-hasta', '11:00');
+    seleccionar(fixture, '#editar-bloque-hasta', '11:00');
     enviar(fixture, 'form');
 
     httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`).flush({
@@ -450,7 +613,11 @@ describe('HorarioSemanalPage', () => {
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT',
     );
-    expect(edicion.request.body).toEqual({ version: 1, horaHasta: '11:00' });
+    expect(edicion.request.body).toEqual({
+      version: 1,
+      horaHasta: '11:00',
+      confirmaTurnosAfectados: true,
+    });
     edicion.flush({ ...LUNES_MANANA, horaHasta: '11:00', version: 2, turnosAfectados: 1 });
     httpMock.expectOne(BLOQUES).flush(HORARIO);
     await estabilizar(fixture);
@@ -523,7 +690,7 @@ describe('HorarioSemanalPage', () => {
 
     expect(fixture.nativeElement.querySelector('#selector-profesional')).not.toBeNull();
     // Sin `consultorio:manage` no se ofrece ninguna accion que termine en 403.
-    expect(texto(fixture)).not.toContain('Agregar un bloque');
+    expect(texto(fixture)).not.toContain('Agregar horario');
   });
 
   /**
@@ -717,7 +884,7 @@ describe('HorarioSemanalPage', () => {
     permisos.cargar().subscribe();
     httpMock
       .expectOne(RUTA_PERMISOS_EFECTIVOS)
-      .flush({ permissions: [PERMISO_CONSULTORIO_MANAGE, ...otrosPermisos] });
+      .flush({ permissions: [PERMISO_AGENDA_HORARIO, ...otrosPermisos] });
 
     const fixture = TestBed.createComponent(HorarioSemanalPage);
     fixture.detectChanges();
@@ -792,6 +959,25 @@ function seleccionar(
   fixture.detectChanges();
 }
 
+/**
+ * Elige el dia en la edicion. Son pastillas de radio, de lunes (1) a domingo (7): el `[value]`
+ * lo administra Angular y no llega al DOM, asi que se elige por posicion.
+ */
+function elegirDiaDeEdicion(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  diaSemana: number,
+) {
+  const radios = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>(
+    '#editar-bloque-dia input[type="radio"]',
+  );
+  const radio = radios[diaSemana - 1];
+  if (radio === undefined) {
+    throw new Error(`No existe el día ${diaSemana} en la edición`);
+  }
+  radio.click();
+  fixture.detectChanges();
+}
+
 function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, selector: string) {
   const formulario = (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>(
     selector,
@@ -817,4 +1003,35 @@ function titulosDeAvisos(): string[] {
   return TestBed.inject(AvisosStore)
     .avisos()
     .map((aviso) => aviso.titulo);
+}
+
+/**
+ * Elige exactamente esos dias en el alta: pasa al modo personalizado y deja marcadas solo esas
+ * pastillas. Las pastillas son casillas nativas: se marcan con un click.
+ */
+function elegirDias(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  dias: readonly number[],
+) {
+  const host = fixture.nativeElement as HTMLElement;
+  // El `[value]` del radio lo administra Angular y no llega al DOM: se busca por su rotulo.
+  const personalizado =
+    [...host.querySelectorAll<HTMLLabelElement>('label.pastilla')]
+      .find((pastilla) => (pastilla.textContent ?? '').trim() === 'Personalizado')
+      ?.querySelector<HTMLInputElement>('input[name="modoDias"]') ?? null;
+  if (personalizado === null) {
+    throw new Error('No existe la opción Personalizado');
+  }
+  personalizado.click();
+  fixture.detectChanges();
+  for (let dia = 1; dia <= 7; dia++) {
+    const casilla = host.querySelector<HTMLInputElement>(`#alta-bloque-dia-${dia}`);
+    if (casilla === null) {
+      throw new Error(`No existe la pastilla del día ${dia}`);
+    }
+    if (casilla.checked !== dias.includes(dia)) {
+      casilla.click();
+      fixture.detectChanges();
+    }
+  }
 }

@@ -163,6 +163,21 @@ describe('RecepcionDelDiaPage', () => {
     expect(texto).toContain('aguarda ser llamado');
   });
 
+  it('un turno movido lleva la marca de reprogramado con la hora que tenía (0.155.0)', async () => {
+    const movido = {
+      ...DEL_DIA[0],
+      operativo: {
+        estadoOperativo: 'CONFIRMADO',
+        reprogramaciones: 1,
+        reprogramacion: { cantidad: 1, inicioOriginal: '2026-09-15T11:00:00Z' },
+      },
+    };
+    const fixture = await montar({ turnos: [movido, DEL_DIA[1]] });
+
+    expect(textoDe(fixture)).toContain('↻ Reprogramado · era 08:00');
+    expect(textoDe(fixture).match(/Reprogramado/g)).toHaveLength(1);
+  });
+
   it('"Nuevo turno" abre el flujo sobre esta pantalla, con el dia que se esta mirando', async () => {
     const fixture = await montar();
 
@@ -414,18 +429,21 @@ describe('RecepcionDelDiaPage', () => {
     expect(textoDe(fixture)).toContain('Ningún turno del día coincide');
   });
 
-  it('toolbar del listado (UX-14): búsqueda, estado y "Filtros" en una fila, con el contador', async () => {
+  it('barra de herramientas separada: búsqueda, día, estado y "Filtros", con el contador', async () => {
     const fixture = await montar();
     const raiz = fixture.nativeElement as HTMLElement;
 
-    const fila = raiz.querySelector('.tarjeta .filtros-barra__fila') as HTMLElement;
+    const fila = raiz.querySelector(
+      '.filtros-barra--separada > .filtros-barra__fila',
+    ) as HTMLElement;
     expect(fila.querySelector('#recepcion-busqueda')).not.toBeNull();
     expect(fila.querySelector('app-filtros-rapidos')).not.toBeNull();
     expect(fila.querySelector('.filtros-barra__boton')?.textContent).toContain('Filtros');
     expect(fila.querySelector('.filtros-barra__resultados')?.textContent).toBe('4 turnos');
     expect(raiz.querySelector('.paginacion-pie__resumen')?.textContent).toBe('Mostrando 1–4 de 4');
-    // El dia y "Actualizar" son de la cabecera, no de la toolbar de la tabla.
-    expect(raiz.querySelector('.cabecera-pagina__contexto #recepcion-fecha')).not.toBeNull();
+    // La barra va afuera de la tarjeta de la lista, y el dia y "Actualizar" viven en ella.
+    expect(raiz.querySelector('.tarjeta .filtros-barra')).toBeNull();
+    expect(fila.querySelector('#recepcion-fecha')).not.toBeNull();
 
     // La prestacion es un filtro avanzado: cuenta en el boton y achica la lista.
     const prestacion = raiz.querySelector('#recepcion-prestacion') as HTMLSelectElement;

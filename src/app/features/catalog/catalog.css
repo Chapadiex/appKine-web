@@ -3,7 +3,7 @@
  *
  * <b>Deliberadamente corta</b>, igual que la de `resource`. `.boton`, `.campo`, `.tabla`,
  * `.tabla-scroll`, `.estado`, `.tarjeta`, `.etiqueta`, `.marca-estado`, `.fila--revocada`,
- * `.fila-panel`, `.acciones-fila`, `.campo__error`, `.opcion-casilla` y `.paginacion` los
+ * `.fila-panel`, `.campo__error`, `.opcion-casilla` y `.paginacion` los
  * aporta `src/design-system.css`, que es global. Copiarlos aca no seria aislar el feature:
  * seria una copia que se despega del original el dia que alguien retoque un gris.
  *
@@ -34,4 +34,14 @@
   text-decoration: underline;
   text-underline-offset: 0.25rem;
   font-weight: var(--peso-semi);
+}
+
+/*
+ * "La mantiene AKINE. Pedir un cambio" en la columna de acciones: sin ancho propio se partia en
+ * cinco renglones y estiraba cada fila al triple de su alto.
+ */
+.tabla__acciones > .ayuda {
+  display: block;
+  min-width: 11rem;
+  margin: 0;
 }

@@ -11,12 +11,12 @@
   min-width: 0;
   margin: 0;
   padding: 0 var(--esp-5);
-  color: var(--color-texto-fuerte);
+  color: var(--color-cabecera-texto);
   font-size: var(--tipo-sm);
 }
 
 .sede__icono {
-  color: var(--color-acento);
+  color: var(--color-cabecera-acento);
   font-size: var(--tipo-base);
 }
 
@@ -89,6 +89,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* La sede en la que se esta: fondo de seleccion, tilde y peso (no solo color). */
+.desplegable__item.sede__opcion--actual,
+.desplegable__item.sede__opcion--actual:hover:not(:disabled) {
+  background: var(--color-seleccion);
 }
 
 .sede__opcion--actual .sede__opcion-nombre {

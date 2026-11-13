@@ -63,7 +63,7 @@
         titulo="Esta persona no tiene ningún cobro registrado"
         texto="Lo que pague va a aparecer acá con su comprobante."
       >
-        <a class="boton" [routerLink]="rutaCobrar()">Registrar un cobro</a>
+        <a class="boton boton--secundario" [routerLink]="rutaCobrar()">Registrar un cobro</a>
       </app-estado-vacio>
     } @else if (cobros().length > 0 && tabla.total() === 0) {
       <app-estado-vacio

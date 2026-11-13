@@ -70,15 +70,23 @@ describe('PrecargaDeFicha', () => {
     expect(precarga.tomar(8)).toBeNull();
     expect(precarga.tomar(7)).toBeNull(); // tomar(8) la descarto
 
-    precarga.precargar(7);
-    httpMock.expectOne(RESUMEN_7).flush({});
+    precarga.precargar(9);
+    httpMock.expectOne('/api/v1/personas/9/resumen').flush({});
     TestBed.inject(TenantContextStore).select({
       organizationId: 1,
       organizationName: 'Otra',
       consultorioId: 3,
       consultorioName: 'Otra sede',
     });
+    expect(precarga.tomar(9)).toBeNull();
+  });
+
+  it('una precarga que llega despues de que la pantalla consulto no repite el pedido', () => {
+    conContexto();
+
     expect(precarga.tomar(7)).toBeNull();
+    precarga.precargar(7);
+    httpMock.expectNone(RESUMEN_7);
   });
 
   it('sin contexto, o con un id que no es de persona, no consulta nada', () => {

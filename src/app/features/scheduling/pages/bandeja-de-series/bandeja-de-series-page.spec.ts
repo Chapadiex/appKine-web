@@ -167,6 +167,22 @@ describe('BandejaDeSeriesPage', () => {
     expect(textoDe(fixture)).toContain('Ninguna serie coincide con la búsqueda');
   });
 
+  it('una lectura vieja que llega tarde no pisa a la búsqueda', async () => {
+    const fixture = await montar();
+    const inicial = esperarListado();
+
+    const campo = html(fixture).querySelector('#series-busqueda') as HTMLInputElement;
+    campo.value = 'Perez';
+    campo.dispatchEvent(new Event('change'));
+    const buscada = esperarListado();
+    buscada.flush(pagina([{ ...FILA, profesionalId: undefined }]));
+    await asentar(fixture);
+
+    // La lista sin filtro se canceló: no hay respuesta suya que pueda llegar después.
+    expect(inicial.cancelled).toBe(true);
+    expect(textoDe(fixture)).toContain('1 serie');
+  });
+
   it('cambia las filas por página en el servidor y vuelve a la primera', async () => {
     const fixture = await montar();
     esperarListado().flush(pagina([FILA], 3, 0, 27));

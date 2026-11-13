@@ -1,7 +1,7 @@
 <app-panel-lateral
   titulo="Nuevo turno"
   [subtitulo]="persona() ? persona()!.apellido + ', ' + persona()!.nombre : null"
-  ancho="amplio"
+  ancho="grande"
   (cerrar)="cerrar.emit()"
 >
   <div class="flujo">
@@ -11,12 +11,17 @@
         [titulo]="
           fallo.causa === 'slot-no-disponible'
             ? 'Ese horario ya no está disponible'
-            : conflictoDeLugar()
-              ? 'Este horario acaba de ser reservado'
-              : 'No pudimos crear el turno'
+            : fallo.conflictoTipo === 'CLASE'
+              ? 'El profesional tiene una clase en ese horario'
+              : conflictoDeLugar()
+                ? 'Este horario acaba de ser reservado'
+                : 'No pudimos crear el turno'
         "
       >
         <p>{{ fallo.mensaje }}</p>
+        @if (conflictoDelRechazo(); as detalle) {
+          <p class="ayuda">{{ detalle }}</p>
+        }
         @if (fallo.causa === 'persona-sin-perfil-paciente') {
           <p class="alerta__acciones">
             <button type="button" class="boton boton--secundario" (click)="activarPerfil()">
@@ -81,7 +86,10 @@
       @if (ofertaFija() && ofertaElegida(); as oferta) {
         <p class="flujo__dato campo--mitad">
           <span class="flujo__dato-etiqueta">Prestación</span>
-          {{ oferta.nombreComercial }} · {{ minutosDe(oferta) }} min
+          <b>{{ oferta.nombreComercial }}</b>
+          @if (minutosDe(oferta); as minutos) {
+            <span class="flujo__secundario">{{ minutos }} minutos</span>
+          }
         </p>
       } @else {
         <div class="campo campo--mitad">
@@ -168,10 +176,12 @@
               tipo="advertencia"
               [titulo]="resultado.motivo || 'Ese horario no se puede reservar'"
             >
-              @if (resultado.conflictoInicio) {
+              @if (conflictoDeLaValidacion(); as detalle) {
                 <p>
-                  Se cruza con un turno de {{ hora(resultado.conflictoInicio) }} a
-                  {{ hora(resultado.conflictoFin) }}.
+                  Se cruza con otra actividad del profesional: {{ detalle }}.
+                  @if (resultado.conflictoTipo === 'CLASE') {
+                    Una clase no admite sobreturno.
+                  }
                 </p>
               }
               <ng-container *ngTemplateOutlet="salidas" />
@@ -199,9 +209,16 @@
           }
         }
       } @else {
-        <section aria-labelledby="flujo-horarios-titulo" class="flujo">
+        <section aria-labelledby="flujo-horarios-titulo" class="flujo flujo__disponibilidad">
           <div class="flujo__fila flujo__fila--entre">
-            <h3 id="flujo-horarios-titulo" class="flujo__dato">Próximos horarios disponibles</h3>
+            <h3 id="flujo-horarios-titulo" class="flujo__titulo-disponibilidad">
+              Horarios disponibles
+              @if (ofertaElegida(); as oferta) {
+                @if (minutosDe(oferta); as minutos) {
+                  <span class="flujo__secundario">· sesiones de {{ minutos }} min</span>
+                }
+              }
+            </h3>
             <button
               type="button"
               class="boton boton--secundario"
@@ -213,7 +230,7 @@
           </div>
           <div class="flujo__filtros">
             <div class="campo">
-              <label for="flujo-desde">Desde</label>
+              <label for="flujo-desde">Buscar desde</label>
               <input
                 id="flujo-desde"
                 type="date"
@@ -223,7 +240,7 @@
               />
             </div>
             <div class="campo">
-              <label for="flujo-franja">Franja</label>
+              <label for="flujo-franja">Franja horaria</label>
               <select
                 id="flujo-franja"
                 [value]="franja()"
@@ -256,22 +273,35 @@
               <ng-container *ngTemplateOutlet="salidas" />
             </div>
           } @else {
+            <!--
+              Seis horarios del primer dia y tres de los siguientes; cada dia se expande con "Ver
+              todos los horarios", y "Ver más horarios" pide mas dias al servidor.
+            -->
             <app-lista-de-horarios
               [horarios]="horarios()"
               [timezone]="timezone()"
               [elegido]="horario()"
+              [limitePrimerDia]="6"
+              [limiteOtrosDias]="3"
               (elegir)="elegirHorario($event)"
             />
-            <div class="flujo__fila">
-              @if (truncado()) {
-                <button type="button" class="boton-texto" (click)="verMas()">
+            @if (truncado()) {
+              <div class="flujo__pastillas">
+                <button type="button" class="pastilla-accion" (click)="verMas()">
                   Ver más horarios
                 </button>
-              }
+              </div>
+            }
+          }
+          <!-- Otras salidas: no compiten con confirmar. -->
+          @if (!buscando()) {
+            <div class="flujo__otras-salidas">
               <button type="button" class="boton-texto" (click)="verAgendaCompleta()">
+                <app-icono nombre="calendario" />
                 Ver agenda completa
               </button>
               <button type="button" class="boton-texto" (click)="irAProgramarVarias()">
+                <app-icono nombre="horarios" />
                 Programar varias sesiones
               </button>
             </div>
@@ -282,50 +312,48 @@
 
     <!-- Lo que se va a reservar: datos, no inputs deshabilitados. -->
     @if (horario() && ofertaId() !== null && validacion()?.estado !== 'NO_DISPONIBLE') {
-      <div class="flujo__resumen" aria-live="polite">
-        <span class="flujo__resumen-titulo">{{ rotuloDelHorario() }}</span>
-        @if (nombreDelProfesional(); as profesional) {
-          <span>{{ profesional }}</span>
-        }
-        @if (ofertaElegida()?.requiereEspacio) {
-          @if (!cambiandoEspacio()) {
-            <span class="flujo__fila">
-              {{ rotuloDelEspacio() || 'Sin box libre a la vista' }}
-              @if (espacioId() === null && rotuloDelEspacio()) {
-                <span class="ayuda">Asignado automáticamente</span>
-              }
-              @if ((validacion()?.espaciosLibres?.length ?? 0) > 1) {
-                <button type="button" class="boton-texto" (click)="cambiandoEspacio.set(true)">
-                  Cambiar
-                </button>
-              }
-            </span>
-          } @else {
-            <span class="campo">
-              <label for="flujo-box">Box</label>
-              <select
-                id="flujo-box"
-                [value]="espacioId() ?? ''"
-                (change)="elegirEspacio($any($event.target).value)"
-              >
-                <option value="">Asignar automáticamente</option>
-                @for (espacio of validacion()?.espaciosLibres; track espacio.id) {
-                  <option [value]="espacio.id" [selected]="espacio.id === espacioId()">
-                    {{ espacio.nombre }}
-                  </option>
+      @if (ofertaElegida()?.requiereEspacio || (validacion()?.avisos?.length ?? 0) > 0) {
+        <div class="flujo__resumen" aria-live="polite">
+          @if (ofertaElegida()?.requiereEspacio) {
+            @if (!cambiandoEspacio()) {
+              <span class="flujo__fila">
+                {{ rotuloDelEspacio() || 'Sin box libre a la vista' }}
+                @if (espacioId() === null && rotuloDelEspacio()) {
+                  <span class="ayuda">Asignado automáticamente</span>
                 }
-              </select>
-            </span>
+                @if ((validacion()?.espaciosLibres?.length ?? 0) > 1) {
+                  <button type="button" class="boton-texto" (click)="cambiandoEspacio.set(true)">
+                    Cambiar
+                  </button>
+                }
+              </span>
+            } @else {
+              <span class="campo">
+                <label for="flujo-box">Box</label>
+                <select
+                  id="flujo-box"
+                  [value]="espacioId() ?? ''"
+                  (change)="elegirEspacio($any($event.target).value)"
+                >
+                  <option value="">Asignar automáticamente</option>
+                  @for (espacio of validacion()?.espaciosLibres; track espacio.id) {
+                    <option [value]="espacio.id" [selected]="espacio.id === espacioId()">
+                      {{ espacio.nombre }}
+                    </option>
+                  }
+                </select>
+              </span>
+            }
           }
-        }
-        @for (aviso of validacion()?.avisos; track aviso) {
-          <span class="ayuda">{{ aviso }}</span>
-        }
-      </div>
+          @for (aviso of validacion()?.avisos; track aviso) {
+            <span class="ayuda">{{ aviso }}</span>
+          }
+        </div>
+      }
 
-      @if (coberturas().length > 0) {
-        <details>
-          <summary>Más opciones</summary>
+      <details>
+        <summary>Más opciones</summary>
+        @if (coberturas().length > 0) {
           <div class="campo">
             <label for="flujo-cobertura">Cobertura con la que se piensa atender (opcional)</label>
             <select
@@ -339,8 +367,22 @@
               }
             </select>
           </div>
-        </details>
-      }
+        }
+        <div class="campo">
+          <label for="flujo-observaciones">Observaciones (opcional)</label>
+          <textarea
+            id="flujo-observaciones"
+            rows="2"
+            maxlength="500"
+            aria-describedby="flujo-observaciones-ayuda"
+            [value]="observaciones()"
+            (input)="observaciones.set($any($event.target).value)"
+          ></textarea>
+          <p id="flujo-observaciones-ayuda" class="ayuda ayuda--fija">
+            Se ven en la agenda: no escribas información clínica.
+          </p>
+        </div>
+      </details>
     }
 
     <!-- Conflicto al confirmar: alternativas reales, y las salidas que quedan. -->
@@ -385,19 +427,31 @@
           <button
             type="button"
             class="boton"
-            [disabled]="enviando()"
+            [disabled]="enviando() || persona() === null"
+            [attr.aria-describedby]="persona() === null ? 'flujo-sobreturno-falta' : null"
             (click)="confirmarSobreturno()"
           >
             Crear sobreturno
           </button>
         </div>
+        @if (persona() === null) {
+          <p id="flujo-sobreturno-falta" class="ayuda">Falta elegir el paciente.</p>
+        }
       </section>
     }
 
     <div class="acciones acciones--pie">
-      @if (faltante() !== '') {
-        <p id="flujo-faltante" class="ayuda flujo__faltante">{{ faltante() }}</p>
-      }
+      <div class="flujo__pie-resumen" aria-live="polite">
+        @if (horario() && validacion()?.estado !== 'NO_DISPONIBLE') {
+          <p class="flujo__pie-cuando">{{ rotuloDelHorario() }}</p>
+          @if (detalleDelPie(); as detalle) {
+            <p class="flujo__pie-detalle">{{ detalle }}</p>
+          }
+        }
+        @if (faltante() !== '') {
+          <p id="flujo-faltante" class="ayuda flujo__faltante">{{ faltante() }}</p>
+        }
+      </div>
       <button type="button" class="boton boton--secundario" (click)="cerrar.emit()">
         Cancelar
       </button>
@@ -439,7 +493,7 @@
         Agregar a lista de espera
       </button>
     }
-    @if (horario() && persona() && !sobreturnoAbierto()) {
+    @if (horario() && persona() && !sobreturnoAbierto() && admiteSobreturno()) {
       <button
         *akinePermiso="PERMISO_TURNO_SOBRETURNO"
         type="button"

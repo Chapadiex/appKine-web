@@ -1,5 +1,10 @@
 import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
 import {
+  ConflictoDelProblema,
+  conflictoDelProblema,
+  superposicionesDelProblema,
+} from '../../../core/models/conflicto-de-agenda';
+import {
   MensajeTraducido,
   conDetalle,
   mensajeTraducido,
@@ -14,10 +19,10 @@ import {
  * fusionar traductores que ramifican distinto, y estos dos ramifican distinto de verdad:
  *
  * <ul>
- *   <li>Las excepciones <b>no tienen 409 de solapamiento</b>, y no es un olvido del backend: dos
- *       excepciones que se pisan sin ser identicas son las dos legitimas —una ausencia de una
- *       tarde dentro de una licencia mas larga es un hecho corriente— y las dos se guardan.
- *       Escribir aca el manejo del solapamiento seria codigo muerto para siempre.</li>
+ *   <li>Dos excepciones de la misma sede que se pisan <b>no</b> son un 409: una ausencia de una
+ *       tarde dentro de una licencia mas larga es un hecho corriente y las dos se guardan. El unico
+ *       solapamiento es otro (0.158.0): una APERTURA de un profesional que se superpone con su
+ *       horario en <b>otra</b> sede, que se resuelve sustituyendo esa franja de alla.</li>
  *   <li>Aparece `excepcion-already-inactive`, que `traducirErrorBloque` no ramifica.</li>
  *   <li>Los textos nombran <b>lo que se esta tocando</b>. Un 404 que dice "ese bloque ya no
  *       existe" en la pantalla de excepciones manda a buscar en el horario semanal algo que
@@ -47,6 +52,16 @@ export type CausaExcepcion =
   | 'profesional-no-vinculado'
   /** 409 bloqueo-con-turnos-afectados: se reservo algo despues de la consulta de impacto. */
   | 'turnos-afectados'
+  /**
+   * 409 bloque-solapado de una APERTURA (0.158.0): la persona ya ofrece esa franja en otra sede. Ver
+   * `conflictos`. Se resuelve reenviando con `sustituirDisponibilidadSuperpuesta`.
+   */
+  | 'superpuesta'
+  /**
+   * 409 recurso-ocupado de una APERTURA (0.158.0): la persona tiene un turno o una clase en otra sede
+   * en esa franja. Lo reservado no se sustituye nunca.
+   */
+  | 'actividad-reservada'
   /** 400 ventana-demasiado-amplia: la ventana pedida supera el tope. Ver `maximoDias`. */
   | 'ventana-amplia'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
@@ -61,6 +76,11 @@ export type CausaExcepcion =
 export interface ErrorExcepcion extends MensajeTraducido<CausaExcepcion> {
   /** Tope de dias que el backend acepta. Solo en `ventana-amplia`; 0 en el resto. */
   readonly maximoDias: number;
+  /**
+   * Con que choca, en `superpuesta` (cada franja de `superposiciones`) y en
+   * `actividad-reservada` (la actividad). Vacio en el resto.
+   */
+  readonly conflictos: readonly ConflictoDelProblema[];
 }
 
 const MENSAJE_GENERICO = 'No pudimos completar la operación. Volvé a intentar en un momento.';
@@ -105,6 +125,14 @@ const MENSAJE_TURNOS_AFECTADOS =
   'Se reservaron turnos en ese período mientras cargabas el cierre, así que no se guardó. Volvé a ' +
   'enviarlo para ver cuáles quedan afectados y confirmar.';
 
+const MENSAJE_SUPERPUESTA =
+  'El profesional ya ofrece esa franja en otra agenda y no puede atender en dos lugares a la vez. ' +
+  'Ajustá la apertura, o cerrá aquella franja para abrir esta.';
+
+const MENSAJE_ACTIVIDAD_RESERVADA =
+  'El profesional ya tiene un turno o una clase en esa franja, así que no se puede abrir acá. Lo ' +
+  'reservado no se sustituye: elegí otra franja o reubicá primero esa actividad.';
+
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. ' +
   'Se resuelve desde la pantalla de suscripción.';
@@ -143,6 +171,18 @@ export function traducirErrorExcepcion(error: unknown): ErrorExcepcion {
       return base(MENSAJE_NO_VINCULADO, 'profesional-no-vinculado');
     case 'bloqueo-con-turnos-afectados':
       return base(MENSAJE_TURNOS_AFECTADOS, 'turnos-afectados');
+    case 'bloque-solapado': {
+      const superposiciones = superposicionesDelProblema(error);
+      return {
+        ...base(conDetalle(error, MENSAJE_SUPERPUESTA), 'superpuesta'),
+        conflictos: superposiciones.length > 0 ? superposiciones : [conflictoDelProblema(error)],
+      };
+    }
+    case 'recurso-ocupado':
+      return {
+        ...base(conDetalle(error, MENSAJE_ACTIVIDAD_RESERVADA), 'actividad-reservada'),
+        conflictos: [conflictoDelProblema(error)],
+      };
     case 'subscription-suspended':
       return base(MENSAJE_SUSCRIPCION_SUSPENDIDA, 'suscripcion-suspendida');
     case 'ventana-demasiado-amplia': {
@@ -192,5 +232,5 @@ function mensajeDeVentana(maximoDias: number): string {
 }
 
 function base(mensaje: string, causa: CausaExcepcion): ErrorExcepcion {
-  return { ...mensajeTraducido(mensaje, causa), maximoDias: 0 };
+  return { ...mensajeTraducido(mensaje, causa), maximoDias: 0, conflictos: [] };
 }

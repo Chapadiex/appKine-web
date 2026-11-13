@@ -52,6 +52,28 @@ describe('PermissionsStore', () => {
     expect(store.tieneAlguno('caja:operate')).toBe(false);
   });
 
+  it('soloPropio dice qué permisos vienen recortados a la actividad propia (0.154.0)', () => {
+    // Sin cargar no hay recorte que informar.
+    expect(store.soloPropio('turno:manage')).toBe(false);
+
+    tenant.select(ORG_A);
+    store.cargar().subscribe();
+    httpMock.expectOne(RUTA_PERMISOS_EFECTIVOS).flush({
+      permissions: ['turno:manage', 'agenda:horario'],
+      ownScopedPermissions: ['turno:manage'],
+    });
+
+    expect(store.tiene('turno:manage')).toBe(true);
+    expect(store.soloPropio('turno:manage')).toBe(true);
+    expect(store.soloPropio('agenda:horario')).toBe(false);
+
+    // Otro contexto invalida tambien el recorte: el de la A no vale en la B.
+    tenant.select(ORG_B);
+    expect(store.soloPropio('turno:manage')).toBe(false);
+    cargar(['turno:manage']);
+    expect(store.soloPropio('turno:manage')).toBe(false);
+  });
+
   it('distingue "no tiene ninguno" de "todavía no cargaron"', () => {
     tenant.select(ORG_A);
     cargar([]);

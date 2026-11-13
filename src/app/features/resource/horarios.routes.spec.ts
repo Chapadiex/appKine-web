@@ -2,6 +2,7 @@ import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 import { Type } from '@angular/core';
 
+import { CambiosDeAgendaPage } from './pages/cambios/cambios-de-agenda-page';
 import { CalendarioSedePage } from './pages/calendario/calendario-sede-page';
 import { ExcepcionesPage } from './pages/excepciones/excepciones-page';
 import { HorarioEfectivoPage } from './pages/efectivo/horario-efectivo-page';
@@ -13,6 +14,7 @@ import {
   RUTAS_HORARIOS,
   RUTA_HORARIOS,
   RUTA_HORARIOS_CALENDARIO,
+  RUTA_HORARIOS_CAMBIOS,
   RUTA_HORARIOS_EFECTIVO,
   RUTA_HORARIOS_EXCEPCIONES,
 } from './models/rutas-de-horarios';
@@ -71,9 +73,10 @@ describe('Rutas de /horarios', () => {
 
   it('las cuatro URLs son las que estan escritas, y salen de la misma raiz', () => {
     expect(RUTA_HORARIOS).toBe('/horarios');
-    expect(RUTA_HORARIOS_EXCEPCIONES).toBe('/horarios/excepciones');
+    expect(RUTA_HORARIOS_EXCEPCIONES).toBe('/horarios/calendario/cierres');
     expect(RUTA_HORARIOS_CALENDARIO).toBe('/horarios/calendario');
     expect(RUTA_HORARIOS_EFECTIVO).toBe('/horarios/efectivo');
+    expect(RUTA_HORARIOS_CAMBIOS).toBe('/horarios/cambios');
 
     // El objeto que consumen las plantillas es el mismo juego de strings: si divergiera, los
     // enlaces cruzados apuntarian a un lado y las rutas montarian otro.
@@ -81,15 +84,22 @@ describe('Rutas de /horarios', () => {
       semanal: RUTA_HORARIOS,
       excepciones: RUTA_HORARIOS_EXCEPCIONES,
       calendario: RUTA_HORARIOS_CALENDARIO,
+      calendarioHorario: `${RUTA_HORARIOS_CALENDARIO}/horario`,
+      calendarioFeriados: `${RUTA_HORARIOS_CALENDARIO}/feriados`,
       efectivo: RUTA_HORARIOS_EFECTIVO,
+      cambios: RUTA_HORARIOS_CAMBIOS,
     });
   });
 
   it('cada una de las cuatro resuelve a su pantalla', async () => {
     expect(await componenteDe(RUTA_HORARIOS)).toBe(HorarioSemanalPage);
     expect(await componenteDe(RUTA_HORARIOS_EXCEPCIONES)).toBe(ExcepcionesPage);
+    // La direccion vieja de los cierres sigue llegando: hay enlaces guardados.
+    expect(await componenteDe('/horarios/excepciones')).toBe(ExcepcionesPage);
     expect(await componenteDe(RUTA_HORARIOS_CALENDARIO)).toBe(CalendarioSedePage);
+    expect(await componenteDe(`${RUTA_HORARIOS_CALENDARIO}/feriados`)).toBe(CalendarioSedePage);
     expect(await componenteDe(RUTA_HORARIOS_EFECTIVO)).toBe(HorarioEfectivoPage);
+    expect(await componenteDe(RUTA_HORARIOS_CAMBIOS)).toBe(CambiosDeAgendaPage);
   });
 
   it('ninguna de las cuatro cae en el comodin', async () => {

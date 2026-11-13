@@ -52,6 +52,29 @@ describe('traducirErrorBloque', () => {
    * <p>Ramificar por el codigo equivocado dejaria el unico error del modulo donde hay que
    * RECARGAR antes de reintentar cayendo en la rama generica, que solo dice "volve a intentar".
    */
+  it('la franja fuera del horario de la sede dice el horario de la sede de cada dia que no entra (0.162.0)', () => {
+    const traducido = traducirErrorBloque(
+      problema(409, 'franja-fuera-del-horario-de-sede', {
+        franjasFueraDeHorario: [
+          {
+            indice: 0,
+            diaSemana: 2,
+            horaDesde: '08:00',
+            horaHasta: '12:00',
+            horarioDeSede: [{ horaDesde: '09:00', horaHasta: '13:00' }],
+          },
+          { indice: 1, diaSemana: 6, horaDesde: '08:00', horaHasta: '12:00', horarioDeSede: [] },
+        ],
+      }),
+    );
+
+    expect(traducido.causa).toBe('fuera-de-horario-sede');
+    expect(traducido.fueraDeHorario?.map((franja) => franja.diaSemana)).toEqual([2, 6]);
+    expect(traducido.mensaje).toBe(
+      'Fuera del horario de la sede. Martes la sede abre de 09:00 a 13:00. Sabado no abre.',
+    );
+  });
+
   it('la versión vieja de un bloque llega como concurrent-modification y manda a recargar', () => {
     const traducido = traducirErrorBloque(problema(409, 'concurrent-modification'));
     expect(traducido.causa).toBe('concurrencia');
@@ -76,9 +99,9 @@ describe('traducirErrorBloque', () => {
       horaDesde: '09:00',
       horaHasta: '12:00',
     });
-    expect(traducido.mensaje).toContain('el bloque del miercoles de 09:00 a 12:00');
-    // Y aclara lo que el usuario esta por corregir mal: contiguo no es solapado.
-    expect(traducido.mensaje).toContain('la hora de fin es exclusiva');
+    expect(traducido.mensaje).toBe('Ya existe un horario para el miercoles de 09:00 a 12:00.');
+    // Corto y en una linea (05/11/2026): que contiguo no es solapado lo explica la ayuda "?".
+    expect(traducido.mensaje).not.toContain('exclusiva');
   });
 
   it('un solapamiento sin extensiones degrada a un mensaje sin senalamiento, no rompe', () => {
@@ -93,7 +116,7 @@ describe('traducirErrorBloque', () => {
       horaDesde: null,
       horaHasta: null,
     });
-    expect(traducido.mensaje).toContain('NO se pisan');
+    expect(traducido.mensaje).toBe('Ya existe un horario que se pisa con el pedido.');
   });
 
   it('la medianoche se nombra en palabras: 24:00 a secas se lee como un error de carga', () => {
@@ -154,5 +177,45 @@ describe('traducirErrorBloque', () => {
     const traducido = traducirErrorBloque(problema(422, 'algo-que-este-cliente-no-conoce'));
     expect(traducido.causa).toBe('otro');
     expect(traducido.mensaje.length).toBeGreaterThan(0);
+  });
+
+  it('el bloque que choca con el horario de la persona en otra sede nombra la sede y no marca fila (0.158.0)', () => {
+    const traducido = traducirErrorBloque(
+      problema(409, 'bloque-solapado', {
+        bloqueEnConflictoId: 77,
+        diaSemana: 6,
+        conflictoTipo: 'DISPONIBILIDAD',
+        conflictoOrigen: 'BLOQUE',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Norte',
+        conflictoHoraDesde: '09:00',
+        conflictoHoraHasta: '13:00',
+      }),
+    );
+    expect(traducido.causa).toBe('solapado');
+    expect(traducido.conflicto).toBeNull();
+    expect(traducido.mensaje).toContain(
+      'Conflicto con actividad en otra sede: ya tiene horario de atención en Norte los sabados',
+    );
+    expect(traducido.mensaje).toContain('09:00');
+    expect(traducido.mensaje).not.toContain('esta sede');
+
+    const apertura = traducirErrorBloque(
+      problema(409, 'bloque-solapado', {
+        conflictoOrigen: 'APERTURA',
+        conflictoMismaSede: false,
+        conflictoConsultorioNombre: 'Norte',
+        conflictoFecha: '2030-03-04',
+        conflictoHoraDesde: '09:00',
+        conflictoHoraHasta: '13:00',
+      }),
+    );
+    expect(apertura.mensaje).toContain('ya tiene una apertura de agenda en Norte el 04/03/2030');
+
+    // Sin nombre de sede, el detail del servidor.
+    const sinNombre = traducirErrorBloque(
+      problema(409, 'bloque-solapado', { conflictoMismaSede: false }),
+    );
+    expect(sinNombre.mensaje).toBe('prosa del backend');
   });
 });

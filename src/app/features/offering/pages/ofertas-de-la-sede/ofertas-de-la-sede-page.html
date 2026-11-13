@@ -27,8 +27,6 @@
       Publicar un servicio en la sede
     </button>
   </div>
-
-  <app-pestanas [pestanas]="pestanasDeServicios" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Ofertas cargadas en esta sede">
@@ -93,8 +91,14 @@
         (change)="cambiarFiltroServicio($any($event.target).value)"
       >
         <option value="">Todos</option>
+        <!--
+          [selected] y no solo el [value] del select: con ?servicio= el filtro ya esta puesto antes
+          de que lleguen las opciones, y el value del select no se vuelve a aplicar.
+        -->
         @for (servicio of serviciosOfertables(); track servicio.id) {
-          <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+          <option [value]="servicio.id" [selected]="servicio.id === filtroServicio()">
+            {{ servicioEnUnaLinea(servicio) }}
+          </option>
         }
       </select>
     </div>
@@ -120,9 +124,13 @@
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
-              <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir un consultorio</a
+              >
             } @else {
-              <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
             }
           </p>
         </app-alerta>
@@ -134,7 +142,12 @@
             titulo="Esta sede todavía no tiene ofertas activas"
             texto="Una oferta conecta un servicio del catalogo con esta sede. Sin ninguna, esta sede no ofrece nada para reservar."
           >
-            <button *akinePermiso="permisoManage" type="button" class="boton" (click)="abrirAlta()">
+            <button
+              *akinePermiso="permisoManage"
+              type="button"
+              class="boton boton--secundario"
+              (click)="abrirAlta()"
+            >
               Publicar el primer servicio
             </button>
           </app-estado-vacio>
@@ -223,7 +236,20 @@
                       }
                     </td>
                     <td>
-                      <span class="marca-estado">{{ situacionDeLaFila.resumen }}</span>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--revocada]="situacionDeLaFila.resumen.startsWith('Dad')"
+                        [class.marca-estado--activa]="
+                          !situacionDeLaFila.atenuada &&
+                          !situacionDeLaFila.resumen.startsWith('Todav')
+                        "
+                        [class.marca-estado--info]="
+                          !situacionDeLaFila.resumen.startsWith('Dad') &&
+                          (situacionDeLaFila.atenuada ||
+                            situacionDeLaFila.resumen.startsWith('Todav'))
+                        "
+                        >{{ situacionDeLaFila.resumen }}</span
+                      >
                       @if (situacionDeLaFila.explicacion; as explicacion) {
                         <p class="ayuda ayuda--fija">{{ explicacion }}</p>
                       }
@@ -259,6 +285,9 @@
                           <a [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']">
                             Prácticas
                           </a>
+                          @if (oferta.esquemaCobro === 'POR_PACK') {
+                            <a routerLink="/productos">Productos de pack</a>
+                          }
                           <ng-container *akinePermiso="permisoManage">
                             @if (oferta.modalidad === 'GRUPAL') {
                               <a [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']">

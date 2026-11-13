@@ -29,9 +29,13 @@ import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { ProgramarClase } from '../model/programar-clase';
 // @ts-ignore
+import { ProgramarSerieDeClases } from '../model/programar-serie-de-clases';
+// @ts-ignore
 import { ReemplazarInstructoresDeClaseRequest } from '../model/reemplazar-instructores-de-clase-request';
 // @ts-ignore
 import { ReprogramarClase } from '../model/reprogramar-clase';
+// @ts-ignore
+import { SerieDeClases } from '../model/serie-de-clases';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -44,6 +48,7 @@ import {
     HistorialClaseRequestParams,
     ListarClaseRequestParams,
     ProgramarRequestParams,
+    ProgramarSerieDeClasesRequestParams,
     ReemplazarInstructoresDeClaseRequestParams,
     ReprogramarClaseRequestParams,
     VerClaseRequestParams
@@ -433,6 +438,86 @@ export class ClasesService extends BaseService implements ClasesServiceInterface
             {
                 context: localVarHttpContext,
                 body: programarClase,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Programar clases semanales
+     * Programa una clase en cada fecha del rango (desde y hasta inclusive) que cae en uno de los &#x60;diasSemana&#x60;, con el mismo horario, profesional, box y cupo.  **Cada fecha es una clase suelta**: se valida exactamente igual que &#x60;POST .../clases/ofertas/{ofertaId}&#x60; y en su propia transaccion.  **No es todo o nada.** Una fecha que no se puede programar (feriado, box o profesional ocupado, fuera del horario del profesional, oferta no vigente, cupo) va a &#x60;omitidas&#x60; con su motivo y las demas se programan. Responde 200 aunque no se haya programado ninguna: el detalle esta en el cuerpo.  Lo que si rechaza la serie entera es lo que fallaria en todas las fechas: sede u oferta ajenas (404), oferta no grupal (409), sin permiso (403) o un pedido mal formado (400; por ejemplo, un rango de mas de un anio).
+     * @endpoint post /api/v1/consultorios/{consultorioId}/clases/ofertas/{ofertaId}/serie
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public programarSerieDeClases(requestParameters: ProgramarSerieDeClasesRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<SerieDeClases>;
+    public programarSerieDeClases(requestParameters: ProgramarSerieDeClasesRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<SerieDeClases>>;
+    public programarSerieDeClases(requestParameters: ProgramarSerieDeClasesRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<SerieDeClases>>;
+    public programarSerieDeClases(requestParameters: ProgramarSerieDeClasesRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling programarSerieDeClases.');
+        }
+        const ofertaId = requestParameters?.ofertaId;
+        if (ofertaId === null || ofertaId === undefined) {
+            throw new Error('Required parameter ofertaId was null or undefined when calling programarSerieDeClases.');
+        }
+        const programarSerieDeClases = requestParameters?.programarSerieDeClases;
+        if (programarSerieDeClases === null || programarSerieDeClases === undefined) {
+            throw new Error('Required parameter programarSerieDeClases was null or undefined when calling programarSerieDeClases.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/clases/ofertas/${this.configuration.encodeParam({name: "ofertaId", value: ofertaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/serie`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<SerieDeClases>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: programarSerieDeClases,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

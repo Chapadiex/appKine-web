@@ -19,7 +19,7 @@
  */
 .nota-clave {
   border-left: var(--borde-acento) solid var(--color-acento);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie-secundaria);
 }
 
 .nota-clave p {
@@ -132,7 +132,7 @@
  * por lo mismo de siempre: el color solo no comunica.
  */
 .fila-senalada {
-  background: var(--color-superficie-sutil);
+  background: var(--color-aviso-fondo);
 }
 
 /*
@@ -200,7 +200,7 @@
 }
 
 .ficha-grilla > .tarjeta,
-.ficha-grilla__ancha .tarjeta {
+.ficha-grilla__ancha ::ng-deep .tarjeta {
   margin: 0;
 }
 
@@ -241,7 +241,7 @@
   display: inline-block;
   padding: var(--esp-1) var(--esp-4);
   border-radius: var(--radio-pastilla);
-  background: var(--color-acento-claro);
+  background: var(--color-seleccion);
   color: var(--color-texto-fuerte);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-semi);
@@ -301,4 +301,18 @@
 
 .panel-persona__aviso {
   margin: 0 0 var(--esp-6);
+}
+
+/*
+ * Formulario de consulta (no guarda nada): el boton va en la misma fila que los campos, como una
+ * herramienta, y no en la barra de pie de un formulario de alta.
+ */
+.tarjeta .formulario-consulta > .acciones:last-child {
+  position: static;
+  grid-column: auto / span 2;
+  align-self: end;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+  background: none;
 }

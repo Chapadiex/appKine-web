@@ -618,7 +618,7 @@ export class ListaDeEsperaPage {
   /** La entrada cambio en otro puesto: reintentar con esta version vieja daria el mismo 409. */
   private soltarEntrada(fallo: ErrorAgenda): void {
     this.cerrarPaneles();
-    this.avisos.advertencia(fallo.mensaje);
+    this.avisos.error(fallo.mensaje);
     this.leer();
     this.leerCoincidencias();
   }

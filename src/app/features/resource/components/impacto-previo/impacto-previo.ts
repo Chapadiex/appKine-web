@@ -17,8 +17,8 @@ import {
  * distintos pero reciben la misma `ImpactoDisponibilidadResponse`, y el cartel tiene que decir
  * lo mismo en las dos.
  *
- * <p><b>La lista no trae datos del paciente</b>: el contrato los omite a proposito. Cada fila
- * es una fecha y una franja, y el detalle se abre en la agenda.
+ * <p>Desde el contrato 0.154.0 cada fila trae el nombre del paciente (solo en los primeros 50); el
+ * detalle se abre en la agenda.
  */
 @Component({
   selector: 'app-impacto-previo',
@@ -47,8 +47,29 @@ import {
                 @for (turno of turnos(); track turno.turnoId) {
                   <li>
                     {{ franja(turno) }}
+                    @if (turno.personaNombre) {
+                      · {{ turno.personaNombre }}
+                    }
                     @if (nombreDe(); as nombre) {
                       · {{ nombre(turno.membershipId) }}
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            @if (clases().length > 0) {
+              <p>
+                <b>Clases que quedan sin instructor: {{ clases().length }}.</b> No se cancelan:
+                revisalas en la grilla de clases y asigná otro instructor si hace falta.
+              </p>
+              <ul class="lista-datos" aria-label="Clases afectadas">
+                @for (clase of clases(); track clase.claseId) {
+                  <li>
+                    Clase {{ franjaDe(clase.inicio, clase.fin) }}
+                    @if (nombreDe(); as nombre) {
+                      @if (clase.instructorMembershipId !== undefined) {
+                        · {{ nombre(clase.instructorMembershipId) }}
+                      }
                     }
                   </li>
                 }
@@ -92,6 +113,10 @@ export class ImpactoPrevioPanel {
     return impacto === null ? '' : resumenDeImpacto(impacto);
   });
   protected readonly turnos = computed(() => this.impacto()?.turnos ?? []);
+  protected readonly clases = computed(() => {
+    const estado = this.estado();
+    return estado?.tipo === 'listo' ? (estado.clases ?? []) : [];
+  });
   protected readonly nota = computed(() => {
     const impacto = this.impacto();
     return impacto === null ? null : notaDeListaRecortada(impacto);
@@ -108,9 +133,13 @@ export class ImpactoPrevioPanel {
   });
 
   protected franja(turno: TurnoAfectadoPorDisponibilidadResponse): string {
+    return this.franjaDe(turno.inicio, turno.fin);
+  }
+
+  protected franjaDe(desde: string | undefined, hasta: string | undefined): string {
     const zona = this.diaDeLaSede.zona();
-    const inicio = formatearInstante(turno.inicio, zona) ?? 'Sin fecha';
-    const fin = formatearHora(turno.fin, zona);
+    const inicio = formatearInstante(desde, zona) ?? 'Sin fecha';
+    const fin = formatearHora(hasta, zona);
     return fin === null ? inicio : `${inicio} a ${fin}`;
   }
 }

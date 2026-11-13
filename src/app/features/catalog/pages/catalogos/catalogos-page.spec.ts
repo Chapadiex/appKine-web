@@ -103,10 +103,9 @@ describe('CatalogosPage', () => {
     const filaPropia = filas[1] as HTMLElement;
 
     // La fila global no trae NINGUN boton: el backend responde 403 y ofrecerlo seria ofrecer
-    // un error. Lo que si trae es el camino que si existe.
+    // un error.
     expect(filaGlobal.querySelectorAll('button').length).toBe(0);
     expect(filaGlobal.textContent).toContain('La mantiene AKINE');
-    expect(filaGlobal.querySelector('a[href="/catalogo/solicitudes"]')).not.toBeNull();
 
     // La del centro si: es la unica poblacion que esta pantalla administra.
     const acciones = [...filaPropia.querySelectorAll('button')].map((boton) =>

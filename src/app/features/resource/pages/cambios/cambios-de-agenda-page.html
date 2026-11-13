@@ -1,0 +1,325 @@
+<app-cabecera-de-pagina titulo="Cambios de la agenda">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Todo lo que se cambió en la agenda de un profesional: su horario habitual, los cierres y
+      aperturas, y los turnos (reservas, confirmaciones, cancelaciones, ausencias, cambios de
+      horario y de sede). Cada fila dice quién lo hizo, cuándo y por qué.
+    </p>
+    <p>
+      Los <b>cierres generales de sede</b> aparecen en la agenda de cada profesional al que
+      afectaron, con los turnos que quedaron en el período y los que falta reubicar. Un turno
+      trasladado de sede es una sola fila: el detalle técnico muestra la cancelación y la reserva
+      que la componen.
+    </p>
+    <p>
+      Las fechas del filtro son las del <b>cambio</b>, no las del turno. No se edita ni se borra
+      nada: es el rastro de lo que pasó.
+    </p>
+  </app-ayuda>
+
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Consulta de los cambios">
+  <div class="barra-consulta">
+    @if (soloPropio()) {
+      <p class="campo barra-consulta__profesional">
+        <b>Tu agenda</b> — {{ nombreDelProfesional() }}
+      </p>
+    } @else if (errorProfesionales(); as mensaje) {
+      <div class="campo barra-consulta__ancho">
+        <app-alerta tipo="error" titulo="No pudimos leer los profesionales de la sede">
+          <p>{{ mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="cargarProfesionales()">
+              Reintentar la lista de profesionales
+            </button>
+          </p>
+        </app-alerta>
+      </div>
+    } @else {
+      <div class="campo barra-consulta__profesional">
+        <label for="cambios-profesional">Profesional</label>
+        <select
+          id="cambios-profesional"
+          [value]="membershipElegido() ?? ''"
+          (change)="elegirProfesional($any($event.target).value)"
+        >
+          <option value="">Elegí un profesional</option>
+          @for (profesional of profesionales(); track profesional.id ?? $index) {
+            <option [value]="profesional.id">
+              {{ profesional.accountName || profesional.accountEmail }}
+            </option>
+          }
+        </select>
+      </div>
+      @if (!listaCompleta()) {
+        <p class="ayuda barra-consulta__ancho">{{ textoListaIncompleta }}</p>
+      }
+    }
+  </div>
+
+  <form [formGroup]="formulario" (ngSubmit)="buscar()" novalidate>
+    <app-filtros
+      limpiable
+      [activos]="filtrosActivos()"
+      [resultados]="estado().tipo === 'listo' ? totalCambios() : null"
+      [unidad]="['cambio', 'cambios']"
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="cambios-q">Buscar en los cambios</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="cambios-q"
+            type="search"
+            autocomplete="off"
+            formControlName="q"
+            placeholder="Buscar por motivo o tipo de cambio"
+          />
+        </div>
+      </div>
+      <button filtro-frecuente type="submit" class="boton">Buscar</button>
+
+      <div class="grilla-campos">
+        <fieldset class="grupo cambios__fila-completa">
+          <legend>Qué cambió</legend>
+          <div class="cambios__grupos">
+            @for (grupo of grupos; track grupo.etiqueta) {
+              <label class="opcion-casilla">
+                <input
+                  type="checkbox"
+                  [checked]="grupoMarcado(grupo.etiqueta)"
+                  (change)="alternarGrupo(grupo.etiqueta, $any($event.target).checked)"
+                />
+                {{ grupo.etiqueta }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="campo">
+          <label for="cambios-desde">Cambios desde</label>
+          <input id="cambios-desde" type="date" formControlName="desde" />
+        </div>
+        <div class="campo">
+          <label for="cambios-hasta">Hasta (incluido)</label>
+          <input id="cambios-hasta" type="date" formControlName="hasta" />
+        </div>
+
+        <label class="opcion-casilla cambios__fila-completa">
+          <input id="cambios-sede" type="checkbox" formControlName="soloEstaSede" />
+          Solo los de {{ nombreDeLaSede() }}
+        </label>
+
+        <div class="cambios__fila-completa">
+          <button type="submit" class="boton boton--secundario">Aplicar filtros</button>
+        </div>
+      </div>
+    </app-filtros>
+  </form>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('inicial') {
+        @if (soloPropio()) {
+          <p class="estado estado--cargando">Leyendo tu agenda&hellip;</p>
+        } @else {
+          <app-estado-vacio
+            titulo="Elegí un profesional para ver los cambios de su agenda."
+            texto="Se muestran del más nuevo al más viejo."
+          />
+        }
+      }
+
+      @case ('cargando') {
+        <p class="estado estado--cargando">Leyendo los cambios&hellip;</p>
+      }
+
+      @case ('sin-contexto') {
+        <app-estado-vacio titulo="Todavía no elegiste un contexto de trabajo.">
+          <a class="boton" routerLink="/seleccionar-contexto">Elegir contexto</a>
+        </app-estado-vacio>
+      }
+
+      @case ('error') {
+        <app-alerta tipo="error" titulo="No pudimos leer los cambios de la agenda">
+          <p>{{ mensajeError() }}</p>
+          <p class="alerta__acciones">
+            @if (faltaContexto()) {
+              <a class="boton boton--secundario" routerLink="/seleccionar-contexto"
+                >Elegir contexto</a
+              >
+            } @else {
+              <button type="button" class="boton boton--secundario" (click)="consultar()">
+                Reintentar
+              </button>
+            }
+          </p>
+        </app-alerta>
+      }
+
+      @case ('listo') {
+        @if (cambios().length === 0) {
+          <app-estado-vacio
+            titulo="No hay cambios para mostrar."
+            texto="Probá con otros filtros o con otras fechas."
+          >
+            <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          </app-estado-vacio>
+        } @else {
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Cambios de la agenda">
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Cambios de la agenda de
+                {{
+                  nombreDelProfesional()
+                }}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="orden" columna="ocurridoEn">Cuándo</th>
+                  <th scope="col">Cambio</th>
+                  <th scope="col" class="tabla__col--secundaria">Antes → Ahora</th>
+                  <th scope="col">Quién</th>
+                  <th scope="col" class="tabla__col--secundaria">Motivo</th>
+                  <th scope="col" class="tabla__col--secundaria">Sede</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (cambio of cambios(); track cambio.id ?? $index) {
+                  <tr>
+                    <th scope="row">{{ cuando(cambio.ocurridoEn) }}</th>
+                    <td>
+                      {{ textoDeTipo(cambio.tipo) }}
+                      @if (cambio.personaNombre) {
+                        <span class="cambios__secundario">{{ cambio.personaNombre }}</span>
+                      }
+                      @if (cambio.turnoInicio) {
+                        <span class="cambios__secundario"
+                          >Turno del {{ cuando(cambio.turnoInicio) }}</span
+                        >
+                      }
+                      @if (cambio.cambioDeProfesional) {
+                        <span class="cambios__secundario">Cambió de profesional</span>
+                      }
+                      @if (cambio.cierreDeSede; as cierre) {
+                        <span class="cambios__secundario">{{ periodoDeCierre(cierre) }}</span>
+                        <span class="cambios__secundario">
+                          <span
+                            class="marca-estado"
+                            [class.marca-estado--activa]="cierre.vigente !== false"
+                            [class.marca-estado--revocada]="cierre.vigente === false"
+                            >{{ cierre.vigente === false ? 'Revocado' : 'Vigente' }}</span
+                          >
+                        </span>
+                        @if (turnosDelCierre(cierre); as turnos) {
+                          <span class="cambios__secundario">{{ turnos }}</span>
+                        }
+                      }
+                      @if (cambio.eventosRelacionados?.length) {
+                        <details class="cambios__relacionados">
+                          <summary>Detalle técnico</summary>
+                          <ul>
+                            @for (evento of cambio.eventosRelacionados; track evento.id ?? $index) {
+                              <li>
+                                {{ textoDeEventoRelacionado(evento.eventType) }} ·
+                                {{ cuando(evento.ocurridoEn) }}
+                                @if (evento.turnoId) {
+                                  · turno #{{ evento.turnoId }}
+                                }
+                              </li>
+                            }
+                          </ul>
+                        </details>
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria">
+                      @if (cambio.antes || cambio.despues) {
+                        {{ cambio.antes || '-' }} → {{ cambio.despues || '-' }}
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td>
+                      {{ quien(cambio) }}
+                      @if (nombreDeRol(cambio.actorRol); as rol) {
+                        <span class="cambios__secundario">{{ rol }}</span>
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria">
+                      @if (motivoDeCierre(cambio.cierreDeSede?.motivo); as motivo) {
+                        {{ motivo }}
+                        @if (cambio.motivo) {
+                          <span class="cambios__secundario">{{ cambio.motivo }}</span>
+                        }
+                      } @else {
+                        {{ cambio.motivo || '-' }}
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria">{{ cambio.consultorioNombre || '-' }}</td>
+                    <td class="tabla__acciones">
+                      @if (reubicacion(cambio); as consulta) {
+                        <app-acciones-de-fila [de]="textoDeTipo(cambio.tipo)">
+                          <a
+                            principal
+                            class="accion-texto"
+                            [routerLink]="rutaAgenda"
+                            [queryParams]="consulta"
+                            >Reubicar turnos</a
+                          >
+                          <a
+                            [routerLink]="rutas.excepciones"
+                            [queryParams]="{ membershipId: membershipElegido() }"
+                            >Ver cierres y aperturas</a
+                          >
+                        </app-acciones-de-fila>
+                      } @else if (turnoDeEstaSede(cambio)) {
+                        <app-acciones-de-fila [de]="textoDeTipo(cambio.tipo)">
+                          <button
+                            principal
+                            type="button"
+                            class="accion-texto"
+                            (click)="flujo.verTurno(cambio.turnoId ?? 0)"
+                          >
+                            Ver turno
+                          </button>
+                          <a
+                            [routerLink]="rutas.excepciones"
+                            [queryParams]="{ membershipId: membershipElegido() }"
+                            >Ver cierres y aperturas</a
+                          >
+                        </app-acciones-de-fila>
+                      } @else {
+                        <a
+                          class="accion-texto"
+                          [routerLink]="rutas.excepciones"
+                          [queryParams]="{ membershipId: membershipElegido() }"
+                          >Ver cierres<span class="visualmente-oculto"> y aperturas</span></a
+                        >
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <app-paginacion
+            etiqueta="Páginas de cambios de la agenda"
+            [paginaActual]="paginaActual()"
+            [totalPaginas]="totalPaginas()"
+            [total]="totalCambios()"
+            [porPagina]="porPagina()"
+            (cambioDePagina)="irAPagina($event)"
+            (cambioDePorPagina)="cambiarPorPagina($event)"
+          />
+        }
+      }
+    }
+  </div>
+</section>

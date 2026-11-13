@@ -155,6 +155,34 @@ export function erroresDeFranjasDelServidor(
   return porFila;
 }
 
+/**
+ * El primer mensaje que corresponde a una franja, o `null`. Uno solo: varios a la vez abruman.
+ *
+ * <p>Lo comparten los dos editores de horario —la lista libre del calendario y la semana del
+ * alta de sede—, que muestran el mismo error junto a la franja que falla.
+ */
+export function mensajeDeFranja(
+  lista: FranjasForm,
+  indice: number,
+  mostrarErrores: boolean,
+  erroresDelServidor: ReadonlyMap<number, string>,
+): string | null {
+  const franja = lista.at(indice);
+  const horaInvalida = (control: FormControl<string>) =>
+    control.invalid && (control.touched || mostrarErrores);
+  if (horaInvalida(franja.controls.horaDesde) || horaInvalida(franja.controls.horaHasta)) {
+    return 'Escribi las dos horas como HH:MM, por ejemplo 09:00. Para cerrar a la medianoche, 24:00.';
+  }
+  if (franja.hasError('rango') && (franja.touched || mostrarErrores)) {
+    return 'La hora de cierre tiene que ser posterior a la de apertura: una franja no cruza al día siguiente.';
+  }
+  const solapados = lista.getError('solapamiento') as number[] | null;
+  if (solapados !== null && solapados.includes(indice)) {
+    return 'Se pisa con otra franja del mismo día. Pueden tocarse en un extremo, pero no superponerse.';
+  }
+  return erroresDelServidor.get(indice) ?? null;
+}
+
 /** `Validators.pattern` no serviria: el patron admite `24:00`, que ningun regex de hora tiene. */
 function validadorDeHora(control: AbstractControl): ValidationErrors | null {
   const valor = typeof control.value === 'string' ? control.value.trim() : '';

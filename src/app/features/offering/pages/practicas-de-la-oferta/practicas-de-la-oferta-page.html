@@ -35,7 +35,7 @@
     <app-alerta tipo="error" titulo="No pudimos leer las prácticas de la oferta">
       <p>{{ mensajeDeCarga() }}</p>
       <p class="alerta__acciones">
-        <button type="button" class="boton" (click)="cargar()">Reintentar</button>
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
       </p>
     </app-alerta>
   }
@@ -47,7 +47,9 @@
         <p>{{ mensaje }}</p>
         @if (hayQueRecargar()) {
           <p class="alerta__acciones">
-            <button type="button" class="boton" (click)="cargar()">Recargar las prácticas</button>
+            <button type="button" class="boton boton--secundario" (click)="cargar()">
+              Recargar las prácticas
+            </button>
           </p>
         }
       </app-alerta>

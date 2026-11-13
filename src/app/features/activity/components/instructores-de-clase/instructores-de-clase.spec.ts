@@ -182,6 +182,37 @@ describe('InstructoresDeClaseComponent', () => {
     expect(textoDe(fixture)).toContain('Cambiar los instructores adicionales');
   });
 
+  it('un adicional sin horario en la sede nombra al instructor con el motivo del servidor', async () => {
+    const fixture = await montar();
+    clickear(fixture, 'Cambiar los instructores adicionales');
+    httpMock.expectOne(HABILITACIONES).flush({
+      restringidaPorProfesional: true,
+      profesionales: [{ membershipId: 62, nombre: 'Lic. Sosa', estado: 'ACTIVO' }],
+    });
+    await asentar(fixture);
+    casillas(fixture)
+      .find((o) => (o.parentElement?.textContent ?? '').includes('Sosa'))!
+      .click();
+    fixture.detectChanges();
+    clickear(fixture, 'Guardar los instructores');
+    // 0.158.0: fuera de su franja el 409 no trae extensiones de conflicto, solo `motivo`.
+    httpMock
+      .expectOne((p) => p.method === 'PUT')
+      .flush(
+        {
+          type: 'https://akine.app/problems/slot-no-disponible',
+          status: 409,
+          motivo: 'el instructor Lic. Sosa no atiende en ese horario en esta sede',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('No pudimos guardar los instructores');
+    expect(textoDe(fixture)).toContain(
+      'Detalle: el instructor Lic. Sosa no atiende en ese horario en esta sede',
+    );
+  });
+
   it('quitar todos avisa que queda solo el principal', async () => {
     const fixture = await montar();
     clickear(fixture, 'Cambiar los instructores adicionales');

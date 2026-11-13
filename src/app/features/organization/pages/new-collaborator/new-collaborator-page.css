@@ -1,0 +1,138 @@
+/* Disposición del alta de colaborador. Usa los colores y medidas del sistema de diseño. */
+.vinculo__formulario > .campo--6 {
+  --ancho-campo: 6;
+}
+
+.vinculo__alcance {
+  display: block;
+  min-width: 0;
+  margin-bottom: var(--esp-6);
+  padding: var(--esp-6);
+}
+
+.vinculo__alcance-cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-5);
+  margin-bottom: var(--esp-6);
+}
+
+.vinculo__alcance-icono,
+.vinculo__opcion-icono {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radio-md);
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+}
+
+.vinculo__alcance-icono {
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--tipo-md);
+}
+
+.vinculo__alcance-cabecera h2 {
+  margin: 0;
+  font-size: var(--tipo-base);
+}
+
+.vinculo__alcance-cabecera p {
+  margin: var(--esp-1) 0 0;
+  color: var(--color-texto-suave);
+}
+
+.vinculo__opciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+.vinculo__opcion {
+  min-width: 0;
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.vinculo__opcion--elegida {
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+}
+
+.vinculo__opcion-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-6);
+  min-height: 5rem;
+  padding: var(--esp-5) var(--esp-6);
+  cursor: pointer;
+}
+
+.vinculo__opcion-etiqueta input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: var(--color-acento);
+}
+
+.vinculo__opcion-etiqueta input:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.vinculo__opcion-icono {
+  width: 3rem;
+  height: 3rem;
+  font-size: var(--tipo-lg);
+}
+
+.vinculo__opcion-textos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.vinculo__opcion-textos strong {
+  font-size: var(--tipo-base);
+}
+
+.vinculo__opcion-textos > span {
+  color: var(--color-texto-suave);
+}
+
+.vinculo__selector-sede {
+  margin: 0;
+  padding: 0 var(--esp-6) var(--esp-6);
+}
+
+.vinculo__selector-sede select {
+  width: 100%;
+}
+
+@media (max-width: 56rem) {
+  .vinculo__opciones {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 40rem) {
+  .vinculo__alcance {
+    padding: var(--esp-5);
+  }
+
+  .vinculo__opcion-etiqueta {
+    gap: var(--esp-4);
+    padding: var(--esp-5);
+  }
+
+  .vinculo__selector-sede {
+    padding-inline: var(--esp-5);
+  }
+}

@@ -144,10 +144,16 @@ interface Ayudantes {
 async function medirFocoActivo(page: Page): Promise<MedicionDeFoco | null> {
   return page.evaluate(() => {
     const a = (window as unknown as { __akineA11y: Ayudantes }).__akineA11y;
-    const el = document.activeElement;
-    if (el === null || el === document.body || el === document.documentElement) {
+    const activo = document.activeElement;
+    if (activo === null || activo === document.body || activo === document.documentElement) {
       return null;
     }
+    // Un campo sin anillo propio dentro de una caja que lo dibuja con `:focus-within` (la pastilla
+    // de filtro o la fecha de la agenda): el indicador es el de la caja, y se mide ese.
+    const delCampo = getComputedStyle(activo).outlineStyle === 'none';
+    const caja = activo.parentElement;
+    const el =
+      delCampo && caja !== null && getComputedStyle(caja).outlineStyle !== 'none' ? caja : activo;
     const estilo = getComputedStyle(el);
     const offset = Number.parseFloat(estilo.outlineOffset) || 0;
     const grosor = Number.parseFloat(estilo.outlineWidth) || 0;
@@ -164,7 +170,7 @@ async function medirFocoActivo(page: Page): Promise<MedicionDeFoco | null> {
       medido = Math.min(medido, a.ratio(estilo.outlineColor, fondoPropio));
     }
     return {
-      elemento: a.nombre(el),
+      elemento: a.nombre(activo),
       estilo: estilo.outlineStyle,
       grosor,
       color: estilo.outlineColor,
@@ -240,8 +246,27 @@ async function medirBordes(page: Page): Promise<MedicionDeBorde[]> {
       'input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not(:disabled),' +
       'select:not(:disabled), textarea:not(:disabled), button:not(:disabled), a.boton';
     const medidos: MedicionDeBorde[] = [];
-    for (const el of document.querySelectorAll(selector)) {
-      if (!a.visible(el)) continue;
+    for (const campo of document.querySelectorAll(selector)) {
+      if (!a.visible(campo)) continue;
+      // Un campo sin caja propia dentro de una que la dibuja (pastilla de filtro, fecha de la
+      // agenda) se ve como esa caja: se mide el borde del contenedor contra lo que lo rodea. Un
+      // campo transparente (`opacity: 0`, el input de fecha que cubre el rotulo) tampoco se ve.
+      const propio = getComputedStyle(campo);
+      const sinCaja =
+        Number.parseFloat(propio.opacity) === 0 ||
+        (!(propio.borderTopStyle !== 'none' && Number.parseFloat(propio.borderTopWidth) > 0) &&
+          !a.opaco(propio.backgroundColor));
+      const contenedor = campo.parentElement;
+      const estiloContenedor = contenedor === null ? null : getComputedStyle(contenedor);
+      const el =
+        sinCaja &&
+        !campo.matches('button, a.boton') &&
+        contenedor !== null &&
+        estiloContenedor !== null &&
+        estiloContenedor.borderTopStyle !== 'none' &&
+        Number.parseFloat(estiloContenedor.borderTopWidth) > 0
+          ? contenedor
+          : campo;
       const estilo = getComputedStyle(el);
       const fondo = a.fondoOpaco(el.parentElement);
       const conBorde =
@@ -254,7 +279,7 @@ async function medirBordes(page: Page): Promise<MedicionDeBorde[]> {
       // de formulario no entran aca: siempre necesitan su contorno.
       if (!conBorde && relleno === null && el.matches('button, a.boton')) continue;
       medidos.push({
-        elemento: a.nombre(el),
+        elemento: a.nombre(campo),
         borde,
         relleno,
         fondo,

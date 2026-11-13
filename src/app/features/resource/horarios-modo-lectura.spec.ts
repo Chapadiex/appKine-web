@@ -7,7 +7,12 @@ import { provideRouter } from '@angular/router';
 import { CalendarioSedePage } from './pages/calendario/calendario-sede-page';
 import { ExcepcionesPage } from './pages/excepciones/excepciones-page';
 import { HorarioSemanalPage } from './pages/horarios/horario-semanal-page';
-import { PERMISO_COLABORADOR_READ, PERMISO_CONSULTORIO_MANAGE } from '../../core/models/permisos';
+import {
+  PERMISO_AGENDA_EXCEPCIONES,
+  PERMISO_AGENDA_HORARIO,
+  PERMISO_COLABORADOR_READ,
+  PERMISO_CONSULTORIO_MANAGE,
+} from '../../core/models/permisos';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import {
   RUTA_PERMISOS_EFECTIVOS,
@@ -30,7 +35,12 @@ const CALENDARIO = rutaCalendarioSede(SEDE);
 
 /** Solo lectura: el rol `PROFESIONAL` de la matriz de permisos. */
 const SOLO_LECTURA = [PERMISO_COLABORADOR_READ];
-const GESTION = [PERMISO_COLABORADOR_READ, PERMISO_CONSULTORIO_MANAGE];
+const GESTION = [
+  PERMISO_COLABORADOR_READ,
+  PERMISO_CONSULTORIO_MANAGE,
+  PERMISO_AGENDA_HORARIO,
+  PERMISO_AGENDA_EXCEPCIONES,
+];
 
 const ANA = {
   id: PROFESIONAL,
@@ -143,20 +153,20 @@ describe('Modo lectura de las pantallas de horarios', () => {
     expect(contenido).toContain('12:00');
 
     // Y ninguna de las tres acciones se ofrece.
-    expect(boton(fixture, 'Agregar un bloque')).toBeUndefined();
+    expect(boton(fixture, 'Agregar horario')).toBeUndefined();
     expect(boton(fixture, 'Editar')).toBeUndefined();
     expect(boton(fixture, 'Dar de baja')).toBeUndefined();
 
     // El cartel nombra el permiso que falta. Sin el, una pantalla sin un solo boton se lee
     // como una pantalla que no termino de cargar.
     expect(contenido).toContain('Modo lectura');
-    expect(contenido).toContain('consultorio:manage');
+    expect(contenido).toContain('agenda:horario');
   });
 
   it('con consultorio:manage el horario semanal si ofrece las acciones', async () => {
     const fixture = await montarSemanal(GESTION);
 
-    expect(boton(fixture, 'Agregar un bloque')).toBeDefined();
+    expect(boton(fixture, 'Agregar horario')).toBeDefined();
     expect(boton(fixture, 'Editar')).toBeDefined();
     expect(boton(fixture, 'Dar de baja')).toBeDefined();
     expect(texto(fixture)).not.toContain('Modo lectura');

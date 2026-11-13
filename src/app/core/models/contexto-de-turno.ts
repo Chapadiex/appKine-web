@@ -21,7 +21,15 @@ export interface ContextoDeTurno {
   readonly fecha?: string;
   /** Instante elegido, UTC. Con esto no se busca: se valida ese horario. */
   readonly inicio?: string;
+  /**
+   * El turno que ocupa ese horario, cuando se pide un sobreturno a conciencia desde el turno: el
+   * formulario abre directo el paso del sobreturno, con el aviso y el motivo obligatorio.
+   */
+  readonly sobreturnoDe?: number;
 }
+
+/** Con que operacion abre el detalle de un turno. Sin dato, el resumen. */
+export type VistaInicialDeTurno = 'resumen' | 'reprogramar' | 'cancelar';
 
 export type OrigenDeTurno =
   | 'AGENDA'
@@ -38,6 +46,6 @@ export type OrigenDeTurno =
 export type SolicitudDeTurnos =
   | { readonly tipo: 'nuevo'; readonly contexto: ContextoDeTurno }
   | { readonly tipo: 'multiple'; readonly contexto: ContextoDeTurno }
-  | { readonly tipo: 'detalle'; readonly turnoId: number }
+  | { readonly tipo: 'detalle'; readonly turnoId: number; readonly vista?: VistaInicialDeTurno }
   | { readonly tipo: 'espera'; readonly contexto: ContextoDeTurno }
   | { readonly tipo: 'bloqueo'; readonly contexto: ContextoDeTurno };
