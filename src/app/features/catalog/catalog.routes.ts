@@ -28,6 +28,14 @@ import { PERMISO_CATALOGO_READ } from '../../core/models/permisos';
  */
 export const routes: Routes = [
   {
+    // Definiciones de medida del examen fisico y su sentido de mejora (M06, M31 RF-M31-003).
+    path: 'mediciones',
+    canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
+    loadComponent: () => import('./pages/mediciones/mediciones-page').then((m) => m.MedicionesPage),
+    title: 'AKINE - Medidas del examen físico',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'nomencladores/:nomencladorId/vigencias',
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
     loadComponent: () => import('./pages/vigencias/vigencias-page').then((m) => m.VigenciasPage),
