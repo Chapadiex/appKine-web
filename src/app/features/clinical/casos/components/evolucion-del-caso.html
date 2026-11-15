@@ -66,7 +66,7 @@
               <p class="estado estado--vacio">Sin alertas con los umbrales actuales.</p>
             } @else {
               <ul class="evolucion__alertas" data-testid="evolucion-alertas">
-                @for (alerta of alertas(); track alerta.codigo) {
+                @for (alerta of alertas(); track $index) {
                   <li class="evolucion__alerta">
                     <span
                       class="marca-estado"
@@ -176,7 +176,7 @@
             @if (ind.tratamientos?.length) {
               <h3>Tratamientos realizados</h3>
               <ul class="evolucion__tratamientos">
-                @for (t of ind.tratamientos; track t.practica) {
+                @for (t of ind.tratamientos; track $index) {
                   <li>
                     {{ t.practica }}: {{ plural(t.sesiones, 'sesión', 'sesiones') }}, la última el
                     {{ fecha(t.ultima) }}
