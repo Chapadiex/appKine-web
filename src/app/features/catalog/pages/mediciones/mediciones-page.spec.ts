@@ -113,7 +113,6 @@ describe('MedicionesPage', () => {
       maximo: 10,
     });
     alta.flush({ ...rom, id: 9, name: 'Dolor EVA' });
-    httpMock.expectOne((r) => r.method === 'GET' && r.url === LISTA).flush({ content: [rom] });
   });
 
   it('dejar "Sin definir" en una medida que lo tenia manda clearMejoraCuando', async () => {
@@ -131,7 +130,6 @@ describe('MedicionesPage', () => {
     expect(edicion.request.body).toMatchObject({ clearMejoraCuando: true, version: 3 });
     expect(edicion.request.body.mejoraCuando).toBeUndefined();
     edicion.flush({ ...rom, mejoraCuando: undefined });
-    httpMock.expectOne((r) => r.method === 'GET' && r.url === LISTA).flush({ content: [] });
   });
 
   it('vaciar el minimo y el maximo de una medida con rango manda clearRango', async () => {
@@ -148,7 +146,6 @@ describe('MedicionesPage', () => {
     const edicion = httpMock.expectOne((r) => r.method === 'PATCH');
     expect(edicion.request.body).toMatchObject({ clearRango: true });
     edicion.flush(rom);
-    httpMock.expectOne((r) => r.method === 'GET' && r.url === LISTA).flush({ content: [] });
   });
 
   it('un alta sin codigo o con un rango que no es numero no sale y dice por que', async () => {

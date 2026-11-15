@@ -18,6 +18,8 @@ import { EvolucionDelCasoSerieResponse } from '../../../../api/generated/model/e
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import { formatearFecha } from '../../../../shared/utils/instantes';
+import { ladoLegible } from '../../models/examen-y-tratamiento';
 import { Justificacion } from '../../services/historia-clinica-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
 import { EvolucionApi } from '../evolucion-api';
@@ -39,12 +41,6 @@ interface FilaDeSerie {
 }
 
 const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
-
-const LADOS: Readonly<Record<string, string>> = {
-  IZQUIERDA: 'Izquierda',
-  DERECHA: 'Derecha',
-  NO_APLICA: '—',
-};
 
 /**
  * La evolucion de un Caso Clinico (M31): alertas e indicadores calculados por el servidor sobre las
@@ -101,7 +97,7 @@ export class EvolucionDelCaso {
       filas.push({
         clave: `${m.definicionId}-${m.lateralidad}`,
         medida: m.nombre ?? m.codigo ?? 'Medida',
-        lado: LADOS[m.lateralidad ?? 'NO_APLICA'] ?? '—',
+        lado: m.lateralidad === 'NO_APLICA' ? '—' : ladoLegible(m.lateralidad),
         unidad: m.unidad ?? '',
         serie: m.serie ?? { puntos: [] },
         unidadesDifieren: m.unidadesDifieren ?? false,
@@ -144,9 +140,7 @@ export class EvolucionDelCaso {
   }
 
   protected fecha(valor: string | undefined | null): string {
-    if (!valor) return '—';
-    const [anio, mes, dia] = valor.split('-');
-    return `${dia}/${mes}/${anio}`;
+    return formatearFecha(valor) || '—';
   }
 
   private cargar(): void {

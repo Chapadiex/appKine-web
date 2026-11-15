@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable, Subscription, of, switchMap } from 'rxjs';
 
 import { DefinicionesDeMedicionService } from '../../../../api/generated/api/definiciones-de-medicion.service';
@@ -19,7 +20,6 @@ import {
   CreateMedicionDefinicionRequestTipoEnum,
 } from '../../../../api/generated/model/create-medicion-definicion-request';
 import { UpdateMedicionDefinicionRequestMejoraCuandoEnum } from '../../../../api/generated/model/update-medicion-definicion-request';
-import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { PERMISO_CONSULTORIO_MANAGE } from '../../../../core/models/permisos';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
@@ -36,6 +36,8 @@ import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
+import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import { traducirErrorCatalogo } from '../../models/catalogo-errors';
 import {
   ETIQUETA_PESTANAS_DE_CATALOGO,
   PESTANAS_DE_CATALOGO,
@@ -108,14 +110,20 @@ export class MedicionesPage {
   protected readonly busqueda = signal('');
   protected readonly filtroAlcance = signal<Alcance>('TODOS');
 
+  /** La clave de busqueda de cada fila se normaliza una vez por lectura, no en cada tecla. */
+  private readonly conClave = computed(() =>
+    this.definiciones().map((d) => ({ d, clave: normalizar(`${d.name ?? ''} ${d.codigo ?? ''}`) })),
+  );
+
   protected readonly filtradas = computed(() => {
     const texto = normalizar(this.busqueda());
     const alcance = this.filtroAlcance();
-    return this.definiciones().filter(
-      (d) =>
-        (alcance === 'TODOS' || d.alcance === alcance) &&
-        (texto === '' || normalizar(`${d.name ?? ''} ${d.codigo ?? ''}`).includes(texto)),
-    );
+    return this.conClave()
+      .filter(
+        ({ d, clave }) =>
+          (alcance === 'TODOS' || d.alcance === alcance) && (texto === '' || clave.includes(texto)),
+      )
+      .map(({ d }) => d);
   });
 
   protected readonly tabla = tablaLocal(this.filtradas, {
@@ -143,7 +151,9 @@ export class MedicionesPage {
     mejoraCuando: ['' as Sentido],
   });
 
-  private readonly tipoElegido = signal<Tipo>('NUMERICO');
+  private readonly tipoElegido = toSignal(this.formulario.controls.tipo.valueChanges, {
+    initialValue: 'NUMERICO' as Tipo,
+  });
   protected readonly esNumerica = computed(
     () => this.tipoElegido() === 'NUMERICO' || this.tipoElegido() === 'ESCALA',
   );
@@ -152,7 +162,6 @@ export class MedicionesPage {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.pedido?.unsubscribe());
-    this.formulario.controls.tipo.valueChanges.subscribe((tipo) => this.tipoElegido.set(tipo));
     effect(() => {
       this.contexto.contextEpoch();
       untracked(() => this.cargar());
@@ -191,7 +200,6 @@ export class MedicionesPage {
     this.formulario.reset();
     this.formulario.controls.codigo.enable();
     this.formulario.controls.tipo.enable();
-    this.tipoElegido.set('NUMERICO');
     this.errorDelPanel.set(null);
     this.enPanel.set('alta');
   }
@@ -209,7 +217,6 @@ export class MedicionesPage {
     });
     this.formulario.controls.codigo.disable();
     this.formulario.controls.tipo.disable();
-    this.tipoElegido.set((d.tipo as Tipo) ?? 'NUMERICO');
     this.errorDelPanel.set(null);
     this.enPanel.set(d);
   }
@@ -220,6 +227,7 @@ export class MedicionesPage {
 
   protected guardar(): void {
     const panel = this.enPanel();
+    if (panel === null) return;
     const v = this.formulario.getRawValue();
     const numerica = this.esNumerica();
     const problema = this.problemaDelFormulario(v, numerica, panel);
@@ -244,28 +252,25 @@ export class MedicionesPage {
               mejoraCuando: sentido && CreateMedicionDefinicionRequestMejoraCuandoEnum[sentido],
             },
           })
-        : panel
-          ? this.api.updateMedicionDefinicion({
-              definicionId: panel.id!,
-              updateMedicionDefinicionRequest: {
-                name: v.name.trim(),
-                descripcion: v.descripcion.trim(),
-                unidad: numerica ? v.unidad.trim() || undefined : undefined,
-                minimo: numerica ? numero(v.minimo) : undefined,
-                maximo: numerica ? numero(v.maximo) : undefined,
-                // Vaciar los dos extremos es quitar el rango: un campo omitido es "no tocar".
-                clearRango:
-                  numerica &&
-                  v.minimo.trim() === '' &&
-                  v.maximo.trim() === '' &&
-                  (panel.minimo !== undefined || panel.maximo !== undefined),
-                mejoraCuando: sentido && UpdateMedicionDefinicionRequestMejoraCuandoEnum[sentido],
-                clearMejoraCuando: numerica && v.mejoraCuando === '' && !!panel.mejoraCuando,
-                version: panel.version!,
-              },
-            })
-          : null;
-    if (peticion === null) return;
+        : this.api.updateMedicionDefinicion({
+            definicionId: panel.id!,
+            updateMedicionDefinicionRequest: {
+              name: v.name.trim(),
+              descripcion: v.descripcion.trim(),
+              unidad: numerica ? v.unidad.trim() || undefined : undefined,
+              minimo: numerica ? numero(v.minimo) : undefined,
+              maximo: numerica ? numero(v.maximo) : undefined,
+              // Vaciar los dos extremos es quitar el rango: un campo omitido es "no tocar".
+              clearRango:
+                numerica &&
+                v.minimo.trim() === '' &&
+                v.maximo.trim() === '' &&
+                (panel.minimo !== undefined || panel.maximo !== undefined),
+              mejoraCuando: sentido && UpdateMedicionDefinicionRequestMejoraCuandoEnum[sentido],
+              clearMejoraCuando: numerica && v.mejoraCuando === '' && !!panel.mejoraCuando,
+              version: panel.version!,
+            },
+          });
     this.enviando.set(true);
     this.errorDelPanel.set(null);
     peticion.subscribe({
@@ -273,11 +278,16 @@ export class MedicionesPage {
         this.enviando.set(false);
         this.enPanel.set(null);
         this.avisos.exito(`Se guardó la medida ${guardada.name ?? ''}.`);
-        this.cargar();
+        // La respuesta trae la fila guardada: se reemplaza o se agrega sin releer el catalogo.
+        this.definiciones.update((lista) =>
+          lista.some((d) => d.id === guardada.id)
+            ? lista.map((d) => (d.id === guardada.id ? guardada : d))
+            : [...lista, guardada],
+        );
       },
       error: (error: unknown) => {
         this.enviando.set(false);
-        this.errorDelPanel.set(mensajeDe(error));
+        this.errorDelPanel.set(traducirErrorCatalogo(error).mensaje);
       },
     });
   }
@@ -319,7 +329,8 @@ export class MedicionesPage {
         this.definiciones.set(definiciones);
         this.estado.set({ tipo: 'listo' });
       },
-      error: (error: unknown) => this.estado.set({ tipo: 'error', mensaje: mensajeDe(error) }),
+      error: (error: unknown) =>
+        this.estado.set({ tipo: 'error', mensaje: traducirErrorCatalogo(error).mensaje }),
     });
   }
 
@@ -341,21 +352,15 @@ export class MedicionesPage {
   }
 }
 
-function esNumeroOVacio(valor: string): boolean {
-  const limpio = valor.trim().replace(',', '.');
-  return limpio === '' || !Number.isNaN(Number(limpio));
-}
-
 function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
+/** El numero del campo, con coma o punto decimal; `undefined` si esta vacio o no es un numero. */
 function numero(valor: string): number | undefined {
-  const limpio = valor.trim().replace(',', '.');
-  return limpio === '' || Number.isNaN(Number(limpio)) ? undefined : Number(limpio);
+  return numeroDeclarado(valor.replace(',', '.')) ?? undefined;
 }
 
-function mensajeDe(error: unknown): string {
-  if (error instanceof AkineHttpError) return error.mensaje;
-  return 'No pudimos completar la operación. Volvé a intentar en un momento.';
+function esNumeroOVacio(valor: string): boolean {
+  return valor.trim() === '' || numero(valor) !== undefined;
 }
