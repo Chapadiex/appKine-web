@@ -14,6 +14,10 @@
  */
 export interface UpdateMedicionDefinicionRequest { 
     /**
+     * Deja la medida sin sentido de mejora declarado
+     */
+    clearMejoraCuando?: boolean;
+    /**
      * Saca el rango de la definicion. Hace explicito lo que un campo omitido no puede expresar: \'no toques el rango\' y \'sacale el rango\' son dos intenciones distintas
      */
     clearRango?: boolean;
@@ -25,6 +29,10 @@ export interface UpdateMedicionDefinicionRequest {
      * Nuevo techo del rango. Se ignora si clearRango es true
      */
     maximo?: number;
+    /**
+     * Nuevo sentido de mejora. Se ignora si clearMejoraCuando es true
+     */
+    mejoraCuando?: UpdateMedicionDefinicionRequestMejoraCuandoEnum;
     /**
      * Nuevo piso del rango. Se ignora si clearRango es true
      */
@@ -42,4 +50,10 @@ export interface UpdateMedicionDefinicionRequest {
      */
     version: number;
 }
+export enum UpdateMedicionDefinicionRequestMejoraCuandoEnum {
+    SUBE = 'SUBE',
+    BAJA = 'BAJA'
+};
+
+
 

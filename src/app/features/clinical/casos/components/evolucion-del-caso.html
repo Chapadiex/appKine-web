@@ -1,0 +1,190 @@
+@if (estado().tipo !== 'oculta') {
+  <section
+    class="tarjeta evolucion"
+    aria-labelledby="titulo-evolucion"
+    data-testid="evolucion-del-caso"
+  >
+    <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+      <h2 id="titulo-evolucion">Evolución</h2>
+      <app-ayuda titulo="Evolución del caso">
+        <p>
+          Cálculo automático sobre las sesiones cerradas del caso. No reemplaza el criterio
+          profesional: cada alerta dice qué se observó y en qué sesiones, para que lo revises.
+        </p>
+        <p>
+          Las series usan solo las sesiones con asistencia. Las cancelaciones del profesional o de
+          la institución no cuentan como inasistencia. Las sesiones sin caso asignado no entran.
+        </p>
+      </app-ayuda>
+    </div>
+
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando" role="status">Calculando la evolución…</p>
+      }
+
+      @case ('error') {
+        @if (estado(); as e) {
+          @if (e.tipo === 'error') {
+            <app-alerta tipo="error" titulo="No pudimos calcular la evolución">
+              <p>{{ e.error.mensaje }}</p>
+              @if (e.error.causa !== 'sin-permiso' && e.error.causa !== 'requiere-justificacion') {
+                <p class="alerta__acciones">
+                  <button type="button" class="boton boton--secundario" (click)="releer()">
+                    Reintentar
+                  </button>
+                </p>
+              }
+            </app-alerta>
+          }
+        }
+      }
+
+      @case ('listo') {
+        @if (evolucion(); as ev) {
+          <p class="evolucion__resumen">
+            {{ ev.sesionesAnalizadas }} sesiones analizadas, {{ ev.sesionesPresentes }} con
+            asistencia
+            @if (ev.desde) {
+              · del {{ fecha(ev.desde) }} al {{ fecha(ev.hasta) }}
+            }
+          </p>
+
+          @for (advertencia of ev.advertencias ?? []; track advertencia) {
+            <app-alerta tipo="advertencia">
+              <p>{{ advertencia }}</p>
+            </app-alerta>
+          }
+
+          @if (insuficiente(); as aviso) {
+            <p class="estado estado--vacio" data-testid="evolucion-insuficiente">
+              {{ aviso.texto }}
+            </p>
+          } @else {
+            <h3>Alertas</h3>
+            @if (alertas().length === 0) {
+              <p class="estado estado--vacio">Sin alertas con los umbrales actuales.</p>
+            } @else {
+              <ul class="evolucion__alertas" data-testid="evolucion-alertas">
+                @for (alerta of alertas(); track alerta.codigo) {
+                  <li class="evolucion__alerta">
+                    <span
+                      class="marca-estado"
+                      [class.marca-estado--suspendida]="alerta.severidad === 'ATENCION'"
+                      [class.marca-estado--info]="alerta.severidad !== 'ATENCION'"
+                    >
+                      {{ severidad(alerta) }}
+                    </span>
+                    <p class="evolucion__texto">{{ alerta.texto }}</p>
+                    @if (alerta.sesiones?.length) {
+                      <p class="evolucion__sesiones">
+                        Sesiones:
+                        @for (sesionId of alerta.sesiones; track sesionId; let i = $index) {
+                          <a [routerLink]="['/atencion/sesiones', sesionId]">{{ i + 1 }}</a>
+                        }
+                      </p>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          }
+
+          @if (ev.indicadores; as ind) {
+            <h3>Indicadores</h3>
+            <dl class="historia__datos">
+              @if (ind.adherencia; as a) {
+                <div>
+                  <dt>Adherencia</dt>
+                  <dd>
+                    {{ a.inasistencias }} inasistencias en {{ a.citas }} citas
+                    @if (a.porcentaje !== undefined && a.porcentaje !== null) {
+                      ({{ a.porcentaje }} %)
+                    }
+                  </dd>
+                </div>
+              }
+              @if (ind.frecuencia; as f) {
+                <div>
+                  <dt>Frecuencia</dt>
+                  <dd>
+                    {{ numero(f.realPorSemana) }} por semana en las últimas {{ f.semanas }}
+                    @if (f.planificadaPorSemana) {
+                      · plan: {{ f.planificadaPorSemana }}
+                    }
+                  </dd>
+                </div>
+              }
+              @if (ev.plan; as p) {
+                <div>
+                  <dt>Plan</dt>
+                  <dd>
+                    {{ p.estado === 'ACTIVO' ? 'Activo' : 'Suspendido' }}, versión
+                    {{ p.versionVigente }}
+                    @if (p.completo) {
+                      · completo
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+
+            @if (series().length > 0) {
+              <div
+                class="tabla-scroll"
+                tabindex="0"
+                role="region"
+                aria-label="Series de la evolución"
+              >
+                <table class="tabla">
+                  <caption class="visualmente-oculto">
+                    Primer y último valor de cada medida en las sesiones del caso
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Medida</th>
+                      <th scope="col">Lado</th>
+                      <th scope="col">Primero</th>
+                      <th scope="col">Último</th>
+                      <th scope="col">Diferencia</th>
+                      <th scope="col">Sesiones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (fila of series(); track fila.clave) {
+                      <tr>
+                        <th scope="row">{{ fila.medida }}</th>
+                        <td>{{ fila.lado }}</td>
+                        <td>{{ numero(fila.serie.primero) }} {{ fila.unidad }}</td>
+                        <td>{{ numero(fila.serie.ultimo) }} {{ fila.unidad }}</td>
+                        <td>
+                          @if (fila.unidadesDifieren) {
+                            Cambió la unidad
+                          } @else {
+                            {{ diferencia(fila.serie.diferencia) }}
+                          }
+                        </td>
+                        <td>{{ fila.serie.puntos?.length ?? 0 }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (ind.tratamientos?.length) {
+              <h3>Tratamientos realizados</h3>
+              <ul class="evolucion__tratamientos">
+                @for (t of ind.tratamientos; track t.practica) {
+                  <li>
+                    {{ t.practica }}: {{ t.sesiones }} sesiones, la última el {{ fecha(t.ultima) }}
+                  </li>
+                }
+              </ul>
+            }
+          }
+        }
+      }
+    }
+  </section>
+}

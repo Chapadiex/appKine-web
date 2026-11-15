@@ -64,6 +64,10 @@ describe('CasoDetallePage', () => {
   afterEach(() => {
     // "Nuevo turno" lo ofrece una directiva de permisos, que los pide al dibujarse.
     httpMock.match(RUTA_PERMISOS_EFECTIVOS).forEach((r) => r.flush({ permissions: [] }));
+    // La evolucion del caso (M31) se pide aparte; apagada en el despliegue responde 404.
+    httpMock
+      .match((r) => r.url.endsWith('/evolucion'))
+      .forEach((r) => r.flush({ status: 404 }, { status: 404, statusText: 'N' }));
     httpMock.verify();
   });
 

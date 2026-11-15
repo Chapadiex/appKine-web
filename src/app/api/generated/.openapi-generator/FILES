@@ -63,6 +63,8 @@ api/entradas-clinicas.service.ts
 api/entradas-clinicas.serviceInterface.ts
 api/espacios.service.ts
 api/espacios.serviceInterface.ts
+api/evolucion-del-caso.service.ts
+api/evolucion-del-caso.serviceInterface.ts
 api/excepciones-de-disponibilidad.service.ts
 api/excepciones-de-disponibilidad.serviceInterface.ts
 api/financiadores-y-planes.service.ts
@@ -352,6 +354,18 @@ model/evento-de-clase.ts
 model/evento-de-recepcion.ts
 model/evento-de-turno.ts
 model/evento-relacionado-de-agenda.ts
+model/evolucion-del-caso-adherencia-response.ts
+model/evolucion-del-caso-conteo-response.ts
+model/evolucion-del-caso-frecuencia-response.ts
+model/evolucion-del-caso-hallazgo-response.ts
+model/evolucion-del-caso-indicadores-response.ts
+model/evolucion-del-caso-item-de-plan-response.ts
+model/evolucion-del-caso-medicion-response.ts
+model/evolucion-del-caso-plan-response.ts
+model/evolucion-del-caso-punto-response.ts
+model/evolucion-del-caso-response.ts
+model/evolucion-del-caso-serie-response.ts
+model/evolucion-del-caso-tratamiento-response.ts
 model/excepcion-response.ts
 model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
