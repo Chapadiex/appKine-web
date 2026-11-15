@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription, of, switchMap } from 'rxjs';
 
 import { DefinicionesDeMedicionService } from '../../../../api/generated/api/definiciones-de-medicion.service';
 import { MedicionDefinicionResponse } from '../../../../api/generated/model/medicion-definicion-response';
@@ -219,13 +219,15 @@ export class MedicionesPage {
   }
 
   protected guardar(): void {
-    if (this.formulario.invalid) {
-      this.formulario.markAllAsTouched();
-      return;
-    }
     const panel = this.enPanel();
     const v = this.formulario.getRawValue();
     const numerica = this.esNumerica();
+    const problema = this.problemaDelFormulario(v, numerica, panel);
+    if (problema !== null) {
+      this.formulario.markAllAsTouched();
+      this.errorDelPanel.set(problema);
+      return;
+    }
     const sentido = numerica && v.mejoraCuando !== '' ? v.mejoraCuando : undefined;
     const peticion =
       panel === 'alta'
@@ -251,6 +253,12 @@ export class MedicionesPage {
                 unidad: numerica ? v.unidad.trim() || undefined : undefined,
                 minimo: numerica ? numero(v.minimo) : undefined,
                 maximo: numerica ? numero(v.maximo) : undefined,
+                // Vaciar los dos extremos es quitar el rango: un campo omitido es "no tocar".
+                clearRango:
+                  numerica &&
+                  v.minimo.trim() === '' &&
+                  v.maximo.trim() === '' &&
+                  (panel.minimo !== undefined || panel.maximo !== undefined),
                 mejoraCuando: sentido && UpdateMedicionDefinicionRequestMejoraCuandoEnum[sentido],
                 clearMejoraCuando: numerica && v.mejoraCuando === '' && !!panel.mejoraCuando,
                 version: panel.version!,
@@ -274,6 +282,31 @@ export class MedicionesPage {
     });
   }
 
+  /** Lo que impide guardar, dicho para el usuario; `null` si el formulario esta bien. */
+  private problemaDelFormulario(
+    v: ReturnType<typeof this.formulario.getRawValue>,
+    numerica: boolean,
+    panel: 'alta' | MedicionDefinicionResponse | null,
+  ): string | null {
+    const faltan: string[] = [];
+    if (panel === 'alta' && v.codigo.trim() === '') faltan.push('el código');
+    if (v.name.trim() === '') faltan.push('el nombre');
+    if (numerica && v.unidad.trim() === '') faltan.push('la unidad');
+    if (faltan.length > 0) return `Completá ${faltan.join(', ')}.`;
+    if (numerica && (!esNumeroOVacio(v.minimo) || !esNumeroOVacio(v.maximo))) {
+      return 'El mínimo y el máximo tienen que ser números, por ejemplo 0 o 12,5.';
+    }
+    if (
+      numerica &&
+      panel !== 'alta' &&
+      (v.minimo.trim() === '') !== (v.maximo.trim() === '') &&
+      (panel?.minimo !== undefined || panel?.maximo !== undefined)
+    ) {
+      return 'Para quitar el rango vaciá el mínimo y el máximo; para cambiarlo, completá los dos.';
+    }
+    return this.formulario.invalid ? 'Revisá los campos: alguno supera el largo permitido.' : null;
+  }
+
   protected cargar(): void {
     this.pedido?.unsubscribe();
     if (this.contexto.consultorioId() === null) {
@@ -281,16 +314,36 @@ export class MedicionesPage {
       return;
     }
     this.estado.set({ tipo: 'cargando' });
-    this.pedido = this.api
-      .searchMedicionDefiniciones({ estado: 'ACTIVO', alcance: 'TODOS', size: 100 })
-      .subscribe({
-        next: (pagina) => {
-          this.definiciones.set(pagina.content ?? []);
-          this.estado.set({ tipo: 'listo' });
-        },
-        error: (error: unknown) => this.estado.set({ tipo: 'error', mensaje: mensajeDe(error) }),
-      });
+    this.pedido = this.todasLasPaginas(0, []).subscribe({
+      next: (definiciones) => {
+        this.definiciones.set(definiciones);
+        this.estado.set({ tipo: 'listo' });
+      },
+      error: (error: unknown) => this.estado.set({ tipo: 'error', mensaje: mensajeDe(error) }),
+    });
   }
+
+  /** La lista entera: el servidor pagina de a 100 y la tabla ordena y filtra en el cliente. */
+  private todasLasPaginas(
+    page: number,
+    acumuladas: readonly MedicionDefinicionResponse[],
+  ): Observable<readonly MedicionDefinicionResponse[]> {
+    return this.api
+      .searchMedicionDefiniciones({ estado: 'ACTIVO', alcance: 'TODOS', size: 100, page })
+      .pipe(
+        switchMap((pagina) => {
+          const todas = [...acumuladas, ...(pagina.content ?? [])];
+          return page + 1 < (pagina.totalPages ?? 1)
+            ? this.todasLasPaginas(page + 1, todas)
+            : of(todas);
+        }),
+      );
+  }
+}
+
+function esNumeroOVacio(valor: string): boolean {
+  const limpio = valor.trim().replace(',', '.');
+  return limpio === '' || !Number.isNaN(Number(limpio));
 }
 
 function normalizar(texto: string): string {

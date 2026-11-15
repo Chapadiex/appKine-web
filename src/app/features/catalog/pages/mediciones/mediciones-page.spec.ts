@@ -134,6 +134,56 @@ describe('MedicionesPage', () => {
     httpMock.expectOne((r) => r.method === 'GET' && r.url === LISTA).flush({ content: [] });
   });
 
+  it('vaciar el minimo y el maximo de una medida con rango manda clearRango', async () => {
+    const fixture = await montar();
+    const pagina = fixture.componentInstance as unknown as {
+      abrirEdicion(d: unknown): void;
+      guardar(): void;
+      formulario: { patchValue(v: unknown): void };
+    };
+    pagina.abrirEdicion(rom);
+    pagina.formulario.patchValue({ minimo: '', maximo: '' });
+    pagina.guardar();
+
+    const edicion = httpMock.expectOne((r) => r.method === 'PATCH');
+    expect(edicion.request.body).toMatchObject({ clearRango: true });
+    edicion.flush(rom);
+    httpMock.expectOne((r) => r.method === 'GET' && r.url === LISTA).flush({ content: [] });
+  });
+
+  it('un alta sin codigo o con un rango que no es numero no sale y dice por que', async () => {
+    const fixture = await montar();
+    const pagina = fixture.componentInstance as unknown as {
+      abrirAlta(): void;
+      guardar(): void;
+      formulario: { patchValue(v: unknown): void };
+    };
+    pagina.abrirAlta();
+    pagina.formulario.patchValue({ name: 'Fuerza', unidad: 'kg' });
+    pagina.guardar();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Completá el código');
+
+    pagina.formulario.patchValue({ codigo: 'FZA', maximo: '1O' });
+    pagina.guardar();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('tienen que ser números');
+    httpMock.expectNone((r) => r.method === 'POST');
+  });
+
+  it('trae todas las paginas del servidor', async () => {
+    const fixture = TestBed.createComponent(MedicionesPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne((r) => r.url === LISTA && r.params.get('page') === '0')
+      .flush({ content: [rom], totalPages: 2 });
+    httpMock
+      .expectOne((r) => r.url === LISTA && r.params.get('page') === '1')
+      .flush({ content: [marcha], totalPages: 2 });
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')).toHaveLength(2);
+  });
+
   async function montar(): Promise<ComponentFixture<MedicionesPage>> {
     const fixture = TestBed.createComponent(MedicionesPage);
     fixture.detectChanges();
