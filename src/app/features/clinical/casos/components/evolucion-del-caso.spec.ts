@@ -147,6 +147,55 @@ describe('EvolucionDelCaso', () => {
     expect(el.textContent).not.toContain('Reintentar');
   });
 
+  it('arma las series con valores faltantes, el plan suspendido y los tratamientos', async () => {
+    const fixture = await montar(null);
+    httpMock.expectOne(RUTA).flush({
+      ...base,
+      sesionesAnalizadas: 1,
+      hallazgos: [],
+      plan: { estado: 'SUSPENDIDO', versionVigente: 2, completo: true, items: [] },
+      indicadores: {
+        ...base.indicadores,
+        dolor: { puntos: [] },
+        frecuencia: { semanas: 4, realPorSemana: 0.5 },
+        mediciones: [
+          {
+            definicionId: 5,
+            codigo: 'ROM',
+            lateralidad: 'IZQUIERDA',
+            unidad: 'grados',
+            unidadesDifieren: false,
+            serie: { puntos: [{ sesionId: 1 }], primero: 90, ultimo: 100, diferencia: 10 },
+          },
+          { definicionId: 6, lateralidad: 'NO_APLICA', unidadesDifieren: true },
+        ],
+        tratamientos: [{ practica: 'Fisioterapia', sesiones: 1, ultima: '2026-11-01' }],
+      },
+    });
+    await estabilizar(fixture);
+
+    const el = fixture.nativeElement as HTMLElement;
+    const filas = el.querySelectorAll('tbody tr');
+    expect(filas).toHaveLength(2);
+    expect(filas[0].textContent).toContain('ROM');
+    expect(filas[0].textContent).toContain('+10');
+    expect(filas[1].textContent).toContain('Medida');
+    expect(filas[1].textContent).toContain('—');
+    expect(el.textContent).toContain('1 sesión analizada');
+    expect(el.textContent).toContain('Suspendido');
+    expect(el.textContent).toContain('completo');
+    expect(el.textContent).toContain('Fisioterapia: 1 sesión');
+  });
+
+  it('sin sede elegida no pide nada y no muestra la sección', async () => {
+    TestBed.inject(TenantContextStore).clear();
+    const fixture = await montar(null);
+    httpMock.expectNone(RUTA);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-testid="evolucion-del-caso"]'),
+    ).toBeNull();
+  });
+
   async function montar(justificacion: string | null): Promise<ComponentFixture<EvolucionDelCaso>> {
     const fixture = TestBed.createComponent(EvolucionDelCaso);
     fixture.componentRef.setInput('casoId', 9);
