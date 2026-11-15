@@ -1,0 +1,42 @@
+.evolucion h3 {
+  margin-top: var(--esp-6);
+}
+
+.evolucion__resumen {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.evolucion__alertas,
+.evolucion__tratamientos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--esp-4);
+}
+
+.evolucion__alerta {
+  display: grid;
+  gap: var(--esp-2);
+  padding: var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+}
+
+.evolucion__alerta .marca-estado {
+  justify-self: start;
+}
+
+.evolucion__texto {
+  margin: 0;
+}
+
+.evolucion__sesiones {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}

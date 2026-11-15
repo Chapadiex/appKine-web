@@ -1,0 +1,265 @@
+<app-cabecera-de-pagina titulo="Catálogo clínico">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Las medidas del examen físico: qué se mide, en qué unidad y con qué rango. Las que carga la
+      plataforma se ven y no se editan; las de este centro se administran acá.
+    </p>
+    <p class="ayuda-contextual__subtitulo">Sentido de mejora</p>
+    <p>
+      En una medida numérica o de escala podés decir si el paciente mejora cuando el valor sube (un
+      rango de movimiento) o cuando baja (el dolor). Con ese dato, la evolución del caso avisa
+      cuando una medida va en contra. Sin él, la serie se muestra y no se califica.
+    </p>
+  </app-ayuda>
+  <div cabeceraAcciones>
+    <ng-container *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Dar de alta una medida de este centro
+      </button>
+    </ng-container>
+  </div>
+
+  <app-pestanas [pestanas]="pestanasDeCatalogo" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Medidas del examen físico que este centro puede usar">
+  <app-filtros
+    [activos]="filtroAlcance() === 'TODOS' ? 0 : 1"
+    [resultados]="estado().tipo === 'listo' ? filtradas().length : null"
+    [unidad]="['medida', 'medidas']"
+    limpiable
+    (limpiar)="busqueda.set(''); filtroAlcance.set('TODOS')"
+  >
+    <div class="campo" filtro-principal>
+      <label class="visualmente-oculto" for="busqueda-mediciones">Buscar</label>
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="busqueda-mediciones"
+          type="search"
+          placeholder="Buscar por nombre o código"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-alcance-mediciones">De quién</label>
+      <select
+        id="filtro-alcance-mediciones"
+        [value]="filtroAlcance()"
+        (change)="filtroAlcance.set($any($event.target).value)"
+      >
+        <option value="TODOS">De la plataforma y de este centro</option>
+        <option value="GLOBAL">Solo las de la plataforma</option>
+        <option value="ORGANIZACION">Solo las de este centro</option>
+      </select>
+    </div>
+  </app-filtros>
+
+  <div aria-live="polite">
+    @switch (estado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Cargando las medidas&hellip;</p>
+      }
+      @case ('sin-contexto') {
+        <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
+      }
+      @case ('error') {
+        @if (estado(); as e) {
+          @if (e.tipo === 'error') {
+            <app-alerta tipo="error" titulo="No pudimos leer las medidas">
+              <p>{{ e.mensaje }}</p>
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="cargar()">
+                  Reintentar
+                </button>
+              </p>
+            </app-alerta>
+          }
+        }
+      }
+      @case ('listo') {
+        @if (filtradas().length === 0) {
+          <app-estado-vacio
+            titulo="No hay medidas que coincidan"
+            texto="Probá con otra búsqueda o dá de alta una medida del centro."
+          />
+        } @else {
+          <div
+            class="tabla-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="Medidas del examen físico"
+          >
+            <table class="tabla">
+              <caption class="visualmente-oculto">
+                Medidas del examen físico con su tipo, unidad, rango, sentido de mejora y de quién
+                son
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
+                  <th scope="col">Unidad y rango</th>
+                  <th scope="col">Sentido de mejora</th>
+                  <th scope="col">De quién es</th>
+                  <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of tabla.visibles(); track d.id) {
+                  <tr>
+                    <th scope="row">{{ d.name }}</th>
+                    <td>{{ d.codigo }}</td>
+                    <td>{{ tipoEnPalabras(d.tipo) }}</td>
+                    <td>
+                      @if (d.unidad) {
+                        {{ d.unidad }} · {{ rango(d) }}
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>
+                      @if (d.tipo === 'NUMERICO' || d.tipo === 'ESCALA') {
+                        {{ sentidoEnPalabras(d.mejoraCuando) }}
+                      } @else {
+                        No aplica
+                      }
+                    </td>
+                    <td>
+                      <span class="etiqueta">{{
+                        d.alcance === 'GLOBAL' ? 'De la plataforma' : 'De este centro'
+                      }}</span>
+                    </td>
+                    <td class="tabla__acciones">
+                      @if (d.alcance !== 'GLOBAL' && puedeGestionar()) {
+                        <button
+                          type="button"
+                          class="boton boton--secundario boton--chico"
+                          (click)="abrirEdicion(d)"
+                          [attr.aria-label]="'Editar ' + d.name"
+                        >
+                          Editar
+                        </button>
+                      } @else if (d.alcance === 'GLOBAL') {
+                        <span class="ayuda">La mantiene AKINE.</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <app-paginacion
+            [paginaActual]="tabla.pagina()"
+            [totalPaginas]="tabla.totalPaginas()"
+            [total]="tabla.total()"
+            [porPagina]="tabla.porPagina()"
+            etiqueta="Páginas de las medidas"
+            (cambioDePagina)="tabla.irA($event)"
+            (cambioDePorPagina)="tabla.cambiarPorPagina($event)"
+          />
+        }
+      }
+    }
+  </div>
+</section>
+
+@if (enPanel() !== null) {
+  <app-panel-lateral
+    [titulo]="tituloDelPanel()"
+    subtitulo="La ve solo tu organización"
+    (cerrar)="cerrarPanel()"
+  >
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      @if (errorDelPanel(); as error) {
+        <app-alerta tipo="error" titulo="No pudimos guardar la medida">
+          <p>{{ error }}</p>
+        </app-alerta>
+      }
+
+      <div class="campo campo--4">
+        <label for="medida-codigo">Código</label>
+        <input id="medida-codigo" type="text" formControlName="codigo" autocomplete="off" />
+        <p class="ayuda">Clave estable: queda copiada en cada medición y no se puede cambiar.</p>
+      </div>
+
+      <div class="campo campo--8">
+        <label for="medida-nombre">Nombre</label>
+        <input id="medida-nombre" type="text" formControlName="name" autocomplete="off" />
+      </div>
+
+      <div class="campo campo--12">
+        <label for="medida-descripcion">Cómo se toma (opcional)</label>
+        <input
+          id="medida-descripcion"
+          type="text"
+          formControlName="descripcion"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="campo campo--4">
+        <label for="medida-tipo">Tipo de valor</label>
+        <select id="medida-tipo" formControlName="tipo">
+          @for (tipo of tipos; track tipo[0]) {
+            <option [value]="tipo[0]">{{ tipo[1] }}</option>
+          }
+        </select>
+        @if (!esAlta()) {
+          <p class="ayuda">El tipo no se cambia después del alta.</p>
+        }
+      </div>
+
+      @if (esNumerica()) {
+        <div class="campo campo--4">
+          <label for="medida-unidad">Unidad</label>
+          <input id="medida-unidad" type="text" formControlName="unidad" autocomplete="off" />
+          <p class="ayuda">Obligatoria en las medidas numéricas y de escala: grados, cm, puntos.</p>
+        </div>
+
+        <div class="campo campo--2">
+          <label for="medida-minimo">Mínimo (opcional)</label>
+          <input id="medida-minimo" type="text" inputmode="decimal" formControlName="minimo" />
+        </div>
+
+        <div class="campo campo--2">
+          <label for="medida-maximo">Máximo (opcional)</label>
+          <input id="medida-maximo" type="text" inputmode="decimal" formControlName="maximo" />
+        </div>
+
+        <div class="campo campo--6">
+          <label for="medida-sentido">Sentido de mejora</label>
+          <select
+            id="medida-sentido"
+            formControlName="mejoraCuando"
+            aria-describedby="medida-sentido-ayuda"
+          >
+            <option value="">Sin definir</option>
+            <option value="SUBE">Mejora cuando sube</option>
+            <option value="BAJA">Mejora cuando baja</option>
+          </select>
+          <p class="ayuda" id="medida-sentido-ayuda">
+            Con él, la evolución del caso avisa cuando la medida va en contra. Sin él, la serie se
+            muestra y no se califica.
+          </p>
+        </div>
+      }
+
+      <p class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando…' : 'Guardar' }}
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+          Cancelar
+        </button>
+      </p>
+    </form>
+  </app-panel-lateral>
+}

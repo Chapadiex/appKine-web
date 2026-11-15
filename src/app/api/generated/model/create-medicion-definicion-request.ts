@@ -30,6 +30,10 @@ export interface CreateMedicionDefinicionRequest {
      */
     maximo?: number;
     /**
+     * Hacia donde se mueve el valor cuando el paciente mejora. Solo en NUMERICO y ESCALA. Si se omite, la medida se muestra y no se califica
+     */
+    mejoraCuando?: CreateMedicionDefinicionRequestMejoraCuandoEnum;
+    /**
      * Piso del rango admitido, INCLUSIVE. Solo en los tipos numericos. Se evalua AL REGISTRAR y nunca al leer
      */
     minimo?: number;
@@ -49,6 +53,10 @@ export interface CreateMedicionDefinicionRequest {
 export enum CreateMedicionDefinicionRequestAlcanceEnum {
     GLOBAL = 'GLOBAL',
     ORGANIZACION = 'ORGANIZACION'
+};
+export enum CreateMedicionDefinicionRequestMejoraCuandoEnum {
+    SUBE = 'SUBE',
+    BAJA = 'BAJA'
 };
 export enum CreateMedicionDefinicionRequestTipoEnum {
     NUMERICO = 'NUMERICO',

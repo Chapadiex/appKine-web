@@ -46,6 +46,10 @@ export interface MedicionDefinicionResponse {
      */
     maximo?: number;
     /**
+     * Hacia donde se mueve el valor cuando el paciente mejora. null si no se declaro
+     */
+    mejoraCuando?: MedicionDefinicionResponseMejoraCuandoEnum;
+    /**
      * Piso del rango admitido al registrar, INCLUSIVE
      */
     minimo?: number;
@@ -70,6 +74,10 @@ export interface MedicionDefinicionResponse {
      */
     version?: number;
 }
+export enum MedicionDefinicionResponseMejoraCuandoEnum {
+    SUBE = 'SUBE',
+    BAJA = 'BAJA'
+};
 export enum MedicionDefinicionResponseTipoEnum {
     NUMERICO = 'NUMERICO',
     ESCALA = 'ESCALA',
