@@ -17,6 +17,10 @@ import { OpcionDePersonaDelAsistente } from './opcion-de-persona-del-asistente';
 export interface RespuestaAsistenteResponse { 
     advertencias: Array<string>;
     /**
+     * El SELECT que respondio una consulta libre (la pregunta no entraba en ninguna intencion y el usuario tiene asistente:sql); null en las demas
+     */
+    consulta?: string;
+    /**
      * Ruta del frontend donde ver el detalle
      */
     enlace?: string;

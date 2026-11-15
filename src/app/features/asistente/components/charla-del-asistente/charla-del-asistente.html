@@ -76,6 +76,12 @@
                 }
               </details>
             }
+            @if (r.consulta) {
+              <details class="asistente__datos">
+                <summary>Ver la consulta</summary>
+                <pre class="asistente__consulta"><code>{{ r.consulta }}</code></pre>
+              </details>
+            }
             @if (r.enlace) {
               <a class="asistente__enlace" [routerLink]="r.enlace">Ver el detalle</a>
             }

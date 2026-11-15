@@ -84,6 +84,7 @@ const VALORES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   tipo: { DINERO: 'dinero', CONTEO: 'cantidad', PORCENTAJE: 'porcentaje' },
 };
 const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
+const INSTANTE_ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
 export interface TablaDeDatos {
   readonly columnas: readonly string[];
@@ -318,16 +319,20 @@ export class CharlaDelAsistente {
       if (valor === null || valor === undefined) {
         return '—';
       }
-      if (clave === 'inicio' && typeof valor === 'string') {
+      // Instantes ISO (de las intenciones y de las consultas libres) en la zona de la sede.
+      if (typeof valor === 'string' && INSTANTE_ISO.test(valor)) {
         return formatearInstante(valor, zona) ?? valor;
       }
-      if (clave === 'valor' && typeof valor === 'number') {
+      if (typeof valor === 'number') {
         return NUMERO.format(valor);
+      }
+      if (typeof valor === 'boolean') {
+        return valor ? 'sí' : 'no';
       }
       return VALORES[clave]?.[String(valor)] ?? String(valor);
     };
     return {
-      columnas: claves.map((clave) => ETIQUETAS[clave] ?? clave),
+      columnas: claves.map((clave) => ETIQUETAS[clave] ?? clave.replaceAll('_', ' ')),
       filas: visibles.map((fila) => claves.map((clave) => celda(fila, clave))),
       total: respuesta.filas.length,
     };
