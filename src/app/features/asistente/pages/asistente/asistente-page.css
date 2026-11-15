@@ -1,0 +1,113 @@
+.asistente {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+.asistente__aviso {
+  flex: 1 1 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+.asistente__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  min-height: 12rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.asistente__inicio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-3);
+}
+.asistente__sugerencias,
+.asistente__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--esp-2);
+}
+.asistente__opciones {
+  justify-content: flex-start;
+  margin-top: var(--esp-2);
+}
+.asistente__burbuja {
+  align-self: flex-start;
+  max-width: min(46rem, 90%);
+  min-width: 0;
+  padding: var(--esp-3);
+  border: 1px solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+.asistente__burbuja--usuario {
+  align-self: flex-end;
+  background: var(--color-marca-fondo);
+  color: var(--color-marca-texto);
+  border-color: var(--color-marca-borde);
+}
+.asistente__burbuja--error {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+  border-color: var(--color-peligro);
+}
+.asistente__texto {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.asistente__texto--espera {
+  color: var(--color-texto-suave);
+}
+.asistente__advertencias {
+  margin: var(--esp-2) 0 0;
+  padding-left: var(--esp-4);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+.asistente__datos {
+  margin-top: var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+.asistente__datos summary {
+  cursor: pointer;
+  font-weight: var(--peso-semi);
+}
+.asistente__datos .tabla-scroll {
+  margin-top: var(--esp-2);
+}
+.asistente__nota {
+  margin: var(--esp-1) 0 0;
+  color: var(--color-texto-suave);
+}
+.asistente__enlace {
+  display: inline-block;
+  margin-top: var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+.asistente__caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+.asistente__caja textarea {
+  font: inherit;
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.asistente__pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.asistente__contador {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}

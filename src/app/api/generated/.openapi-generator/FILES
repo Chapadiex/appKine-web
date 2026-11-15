@@ -15,6 +15,8 @@ api/agenda.serviceInterface.ts
 api/api.ts
 api/asistencia-de-clases.service.ts
 api/asistencia-de-clases.serviceInterface.ts
+api/asistente.service.ts
+api/asistente.serviceInterface.ts
 api/atencion-clinica-grupal.service.ts
 api/atencion-clinica-grupal.serviceInterface.ts
 api/auditoria.service.ts
@@ -248,6 +250,7 @@ model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consulta-asistente-request.ts
 model/consulta-evento-aclaracion.ts
 model/consulta-evento-error.ts
 model/consulta-evento-espera.ts
@@ -395,6 +398,7 @@ model/inscripcion.ts
 model/instructor-adicional.ts
 model/instructores-de-clase.ts
 model/integrante-del-equipo.ts
+model/interpretacion-dto.ts
 model/intervalo-horario-response.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
@@ -445,6 +449,7 @@ model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts
 model/oferta-response.ts
 model/opcion-de-aclaracion-response.ts
+model/opcion-de-persona-del-asistente.ts
 model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -535,6 +540,7 @@ model/resend-activation-request.ts
 model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
 model/resolver-autorizacion-request.ts
+model/respuesta-asistente-response.ts
 model/resultado-de-anulacion-de-pase.ts
 model/resultado-de-asistencia.ts
 model/resultado-de-atencion-grupal.ts
@@ -597,6 +603,7 @@ model/turno-de-calendario.ts
 model/turno-de-consulta-request.ts
 model/turno-del-dia.ts
 model/turno-omitido.ts
+model/turno-previo-request.ts
 model/turno.ts
 model/turnos-de-persona.ts
 model/turnos-de-sede.ts

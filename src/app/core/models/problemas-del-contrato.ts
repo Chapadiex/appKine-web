@@ -19,6 +19,7 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'arancel-inactivo',
   'arancel-solapado',
   'archivo-no-aceptado',
+  'asistente-deshabilitado',
   'asistente-no-disponible',
   'autorizacion-already-inactive',
   'autorizacion-inactiva',
