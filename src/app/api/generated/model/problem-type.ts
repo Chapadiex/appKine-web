@@ -476,6 +476,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_CONSULTA_OCUPADA = 'https://akine.app/problems/consulta-ocupada',
 
-    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_NO_DISPONIBLE = 'https://akine.app/problems/asistente-no-disponible'
+    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_NO_DISPONIBLE = 'https://akine.app/problems/asistente-no-disponible',
+
+    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_DESHABILITADO = 'https://akine.app/problems/asistente-deshabilitado'
 }
 
