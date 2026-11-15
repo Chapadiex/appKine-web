@@ -40,7 +40,7 @@ export function traducirErrorAsistente(error: unknown): ErrorAsistente {
       return { mensaje: 'No tenés permiso para usar el asistente.', causa: 'sin-permiso' };
     case 'validation-error':
       return {
-        mensaje: 'La pregunta no es válida: escribí hasta 300 caracteres.',
+        mensaje: error.detalle || 'La pregunta no es válida. Revisala y volvé a intentar.',
         causa: 'datos-invalidos',
       };
     default:

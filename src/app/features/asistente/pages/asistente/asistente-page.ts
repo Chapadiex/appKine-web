@@ -16,10 +16,12 @@ import { Subscription } from 'rxjs';
 import { InterpretacionDto } from '../../../../api/generated/model/interpretacion-dto';
 import { OpcionDePersonaDelAsistente } from '../../../../api/generated/model/opcion-de-persona-del-asistente';
 import { RespuestaAsistenteResponse } from '../../../../api/generated/model/respuesta-asistente-response';
+import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { formatearInstante } from '../../../../shared/utils/instantes';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
 
@@ -56,6 +58,13 @@ const ETIQUETAS: Readonly<Record<string, string>> = {
   moneda: 'Moneda',
 };
 
+/** La tabla de una respuesta, ya armada: se calcula una vez al llegar y no en cada render. */
+export interface TablaDeDatos {
+  readonly columnas: readonly string[];
+  readonly filas: readonly (readonly string[])[];
+  readonly total: number;
+}
+
 export interface MensajeDelAsistente {
   readonly rol: 'usuario' | 'asistente';
   readonly texto: string;
@@ -63,6 +72,7 @@ export interface MensajeDelAsistente {
   /** La pregunta que originó la respuesta: una opción elegida la reenvía con el `personaId`. */
   readonly pregunta?: string;
   readonly respuesta?: RespuestaAsistenteResponse;
+  readonly tabla?: TablaDeDatos;
 }
 
 /**
@@ -79,10 +89,12 @@ export interface MensajeDelAsistente {
 export class AsistentePage {
   private readonly api = inject(AsistenteApi);
   private readonly tenantContext = inject(TenantContextStore);
+  private readonly diaDeLaSede = inject(DiaDeLaSede);
 
   protected readonly aviso = AVISO_FIJO;
   protected readonly maxPregunta = MAX_PREGUNTA;
   protected readonly sugerencias = SUGERENCIAS;
+  protected readonly maxFilas = MAX_FILAS_VISIBLES;
 
   protected readonly mensajes = signal<readonly MensajeDelAsistente[]>([]);
   protected readonly texto = signal('');
@@ -163,40 +175,6 @@ export class AsistentePage {
     this.texto.set('');
   }
 
-  protected columnas(respuesta: RespuestaAsistenteResponse): string[] {
-    const claves = new Set<string>();
-    for (const fila of respuesta.filas.slice(0, MAX_FILAS_VISIBLES)) {
-      for (const [clave, valor] of Object.entries(fila)) {
-        if (!CLAVES_OCULTAS.has(clave) && valor !== null && valor !== undefined) {
-          claves.add(clave);
-        }
-      }
-    }
-    return [...claves];
-  }
-
-  protected filasVisibles(respuesta: RespuestaAsistenteResponse): object[] {
-    return respuesta.filas.slice(0, MAX_FILAS_VISIBLES);
-  }
-
-  protected etiquetaDeColumna(clave: string): string {
-    return ETIQUETAS[clave] ?? clave;
-  }
-
-  protected celda(fila: object, clave: string): string {
-    const valor = (fila as Record<string, unknown>)[clave];
-    if (valor === null || valor === undefined) {
-      return '—';
-    }
-    if (clave === 'inicio' && typeof valor === 'string') {
-      const fecha = new Date(valor);
-      return Number.isNaN(fecha.getTime())
-        ? valor
-        : fecha.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
-    }
-    return String(valor);
-  }
-
   private preguntar(pregunta: string, visible: string, personaId?: number): void {
     const sede = this.tenantContext.consultorioId();
     if (sede === null) {
@@ -212,7 +190,14 @@ export class AsistentePage {
     this.abortar();
     this.suscripcion = this.api.consultar(sede, pregunta, historial, personaId).subscribe({
       next: (respuesta) => {
-        this.cambiarUltimo((m) => ({ ...m, estado: 'listo', texto: respuesta.texto, respuesta }));
+        const tabla = respuesta.filas.length > 0 ? this.armarTabla(respuesta) : undefined;
+        this.cambiarUltimo((m) => ({
+          ...m,
+          estado: 'listo',
+          texto: respuesta.texto,
+          respuesta,
+          tabla,
+        }));
         this.anuncio.set('Respuesta lista');
       },
       error: (error: unknown) => this.fallar(error),
@@ -229,6 +214,39 @@ export class AsistentePage {
       }
     }
     return turnos.slice(-MAX_TURNOS);
+  }
+
+  /** Columnas con dato en las primeras filas (sin ids internos), y fechas en la zona de la sede. */
+  private armarTabla(respuesta: RespuestaAsistenteResponse): TablaDeDatos {
+    const visibles = respuesta.filas.slice(0, MAX_FILAS_VISIBLES) as Record<string, unknown>[];
+    const claves = [
+      ...new Set(
+        visibles.flatMap((fila) =>
+          Object.entries(fila)
+            .filter(
+              ([clave, valor]) =>
+                !CLAVES_OCULTAS.has(clave) && valor !== null && valor !== undefined,
+            )
+            .map(([clave]) => clave),
+        ),
+      ),
+    ];
+    const zona = this.diaDeLaSede.zona();
+    const celda = (fila: Record<string, unknown>, clave: string): string => {
+      const valor = fila[clave];
+      if (valor === null || valor === undefined) {
+        return '—';
+      }
+      if (clave === 'inicio' && typeof valor === 'string') {
+        return formatearInstante(valor, zona) ?? valor;
+      }
+      return String(valor);
+    };
+    return {
+      columnas: claves.map((clave) => ETIQUETAS[clave] ?? clave),
+      filas: visibles.map((fila) => claves.map((clave) => celda(fila, clave))),
+      total: respuesta.filas.length,
+    };
   }
 
   private abortar(): void {

@@ -9,7 +9,6 @@
       ves acá. No guarda la charla; se pierde al salir o al cambiar de sede.
     </p>
   </app-ayuda>
-  <span class="asistente__aviso">{{ aviso }}</span>
   <div cabeceraAcciones class="acciones-fila">
     <button type="button" class="boton boton--secundario" (click)="nuevaCharla()">
       Nueva charla
@@ -18,6 +17,7 @@
 </app-cabecera-de-pagina>
 
 <section class="tarjeta asistente" aria-label="Charla con el asistente de datos">
+  <p class="asistente__aviso">{{ aviso }}</p>
   <div #lista class="asistente__lista">
     @if (deshabilitado()) {
       <app-estado-vacio titulo="El asistente no está habilitado en este entorno." />
@@ -66,31 +66,31 @@
                 }
               </ul>
             }
-            @if (r.filas.length > 0) {
+            @if (m.tabla; as tabla) {
               <details class="asistente__datos">
-                <summary>Ver los datos ({{ r.filas.length }})</summary>
+                <summary>Ver los datos ({{ tabla.total }})</summary>
                 <div class="tabla-scroll">
                   <table class="tabla">
                     <thead>
                       <tr>
-                        @for (c of columnas(r); track c) {
-                          <th scope="col">{{ etiquetaDeColumna(c) }}</th>
+                        @for (c of tabla.columnas; track $index) {
+                          <th scope="col">{{ c }}</th>
                         }
                       </tr>
                     </thead>
                     <tbody>
-                      @for (f of filasVisibles(r); track $index) {
+                      @for (fila of tabla.filas; track $index) {
                         <tr>
-                          @for (c of columnas(r); track c) {
-                            <td>{{ celda(f, c) }}</td>
+                          @for (valor of fila; track $index) {
+                            <td>{{ valor }}</td>
                           }
                         </tr>
                       }
                     </tbody>
                   </table>
                 </div>
-                @if (r.filas.length > 10) {
-                  <p class="asistente__nota">Se muestran las primeras 10.</p>
+                @if (tabla.total > maxFilas) {
+                  <p class="asistente__nota">Se muestran las primeras {{ maxFilas }}.</p>
                 }
               </details>
             }

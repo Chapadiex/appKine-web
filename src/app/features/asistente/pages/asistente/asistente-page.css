@@ -4,10 +4,7 @@
   gap: var(--esp-3);
 }
 .asistente__aviso {
-  flex: 1 1 100%;
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  margin: 0;
   font-size: var(--tipo-sm);
   color: var(--color-texto-suave);
 }

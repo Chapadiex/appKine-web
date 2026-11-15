@@ -19,31 +19,15 @@ export interface TurnoPrevio {
 export class AsistenteApi {
   private readonly api = inject(AsistenteService);
 
-  /**
-   * <p><b>El `Accept` va fijo en `application/json`</b>: sin él el cliente generado elige
-   * `application/problem+json`, el primer tipo de la lista, para una respuesta que es JSON común.
-   */
   consultar(
     consultorioId: number,
     pregunta: string,
     historial: readonly TurnoPrevio[],
     personaId?: number,
   ): Observable<RespuestaAsistenteResponse> {
-    return this.api.consultarAsistente(
-      {
-        consultorioId,
-        consultaAsistenteRequest: {
-          pregunta,
-          historial: historial.map((t) => ({
-            pregunta: t.pregunta,
-            interpretacion: t.interpretacion,
-          })),
-          personaId,
-        },
-      },
-      'body',
-      false,
-      { httpHeaderAccept: 'application/json' },
-    );
+    return this.api.consultarAsistente({
+      consultorioId,
+      consultaAsistenteRequest: { pregunta, historial: [...historial], personaId },
+    });
   }
 }
