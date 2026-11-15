@@ -141,6 +141,9 @@ export class CharlaDelAsistente {
 
   private readonly lista = viewChild<ElementRef<HTMLElement>>('lista');
   private suscripcion: Subscription | null = null;
+  /** Burbuja que se está escribiendo y cuántos caracteres ya se ven. */
+  private readonly escritura = signal<{ indice: number; largo: number } | null>(null);
+  private temporizador: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.abortar());
@@ -158,6 +161,7 @@ export class CharlaDelAsistente {
     });
     effect(() => {
       this.mensajes();
+      this.escritura();
       const el = this.lista()?.nativeElement;
       if (el) {
         queueMicrotask(() => {
@@ -232,9 +236,53 @@ export class CharlaDelAsistente {
           tabla,
         }));
         this.anuncio.set('Respuesta lista');
+        this.escribir(this.mensajes().length - 1, respuesta.texto.length);
       },
       error: (error: unknown) => this.fallar(error),
     });
+  }
+
+  /** Texto de la burbuja: mientras se escribe, sólo lo que ya apareció. */
+  protected textoVisible(m: MensajeDelAsistente, indice: number): string {
+    const escritura = this.escritura();
+    return escritura?.indice === indice ? m.texto.slice(0, escritura.largo) : m.texto;
+  }
+
+  protected escribiendo(indice: number): boolean {
+    return this.escritura()?.indice === indice;
+  }
+
+  /**
+   * Efecto de escritura: la respuesta ya llegó entera (sale de una plantilla del servidor) y se
+   * revela de a poco, en no más de ~1,5 s. Sin animación si el usuario pidió movimiento reducido.
+   * Los datos, opciones y enlace aparecen al terminar.
+   */
+  private escribir(indice: number, total: number): void {
+    this.terminarEscritura();
+    const reducido =
+      typeof window.matchMedia !== 'function' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducido || total === 0) {
+      return;
+    }
+    const paso = Math.max(2, Math.ceil(total / 75));
+    this.escritura.set({ indice, largo: 0 });
+    this.temporizador = setInterval(() => {
+      const actual = this.escritura();
+      if (!actual || actual.largo + paso >= total) {
+        this.terminarEscritura();
+      } else {
+        this.escritura.set({ indice, largo: actual.largo + paso });
+      }
+    }, 20);
+  }
+
+  private terminarEscritura(): void {
+    if (this.temporizador !== null) {
+      clearInterval(this.temporizador);
+      this.temporizador = null;
+    }
+    this.escritura.set(null);
   }
 
   /** Las últimas preguntas con su interpretación, para que "¿y la semana pasada?" se entienda. */
@@ -286,6 +334,7 @@ export class CharlaDelAsistente {
   }
 
   private abortar(): void {
+    this.terminarEscritura();
     this.suscripcion?.unsubscribe();
     this.suscripcion = null;
   }

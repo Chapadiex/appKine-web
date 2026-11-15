@@ -24,9 +24,9 @@
           @if (m.estado === 'esperando') {
             <p class="asistente__texto asistente__texto--espera">Consultando…</p>
           } @else {
-            <p class="asistente__texto">{{ m.texto }}</p>
+            <p class="asistente__texto">{{ textoVisible(m, $index) }}</p>
           }
-          @if (m.respuesta; as r) {
+          @if (!escribiendo($index) && m.respuesta; as r) {
             @if (r.opciones.length > 0) {
               <div class="asistente__opciones" role="group" aria-label="Elegí la persona">
                 @for (o of r.opciones; track o.personaId) {
