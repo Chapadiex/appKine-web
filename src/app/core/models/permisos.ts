@@ -286,3 +286,12 @@ export const PERMISO_BIBLIOTECA_MANAGE = 'biblioteca:manage';
  * `/consulta`: el guard y la entrada del menu son UX, la autoridad es el backend.
  */
 export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';
+
+/**
+ * Preguntarle al asistente de datos (contrato 0.170.0). Copiado de
+ * `assistant.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Es solo la puerta:
+ * cada respuesta corre con los permisos del usuario. Gobierna `/asistente`.
+ */
+export const PERMISO_ASISTENTE_USE = 'asistente:use';
