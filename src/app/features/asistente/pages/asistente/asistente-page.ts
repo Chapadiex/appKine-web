@@ -59,6 +59,32 @@ const ETIQUETAS: Readonly<Record<string, string>> = {
 };
 
 /** La tabla de una respuesta, ya armada: se calcula una vez al llegar y no en cada render. */
+/**
+ * Los valores de estado que manda el backend, en palabras. Locales a esta pantalla: ADR-0004 no deja
+ * importar los formateadores de turnos, asistencia ni reportes desde otra funcionalidad.
+ */
+const VALORES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  estado: {
+    RESERVADO: 'reservado',
+    CONFIRMADO: 'confirmado',
+    PRESENTE: 'presente, esperando',
+    EN_ATENCION: 'en atención',
+    ATENDIDO: 'atendido',
+    AUSENTE: 'ausente',
+    RETIRADO: 'se retiró sin atenderse',
+    CANCELADO: 'cancelado',
+  },
+  resultado: { PRESENTE: 'presente', PRESENTE_TARDE: 'llegó tarde', AUSENTE: 'ausente' },
+  estadoClase: {
+    PROGRAMADA: 'programada',
+    EN_CURSO: 'en curso',
+    REALIZADA: 'realizada',
+    CANCELADA: 'cancelada',
+  },
+  tipo: { DINERO: 'dinero', CONTEO: 'cantidad', PORCENTAJE: 'porcentaje' },
+};
+const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
+
 export interface TablaDeDatos {
   readonly columnas: readonly string[];
   readonly filas: readonly (readonly string[])[];
@@ -240,7 +266,10 @@ export class AsistentePage {
       if (clave === 'inicio' && typeof valor === 'string') {
         return formatearInstante(valor, zona) ?? valor;
       }
-      return String(valor);
+      if (clave === 'valor' && typeof valor === 'number') {
+        return NUMERO.format(valor);
+      }
+      return VALORES[clave]?.[String(valor)] ?? String(valor);
     };
     return {
       columnas: claves.map((clave) => ETIQUETAS[clave] ?? clave),
