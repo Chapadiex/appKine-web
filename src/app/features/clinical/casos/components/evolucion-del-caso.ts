@@ -38,6 +38,8 @@ interface FilaDeSerie {
   readonly unidadesDifieren: boolean;
 }
 
+const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
+
 const LADOS: Readonly<Record<string, string>> = {
   IZQUIERDA: 'Izquierda',
   DERECHA: 'Derecha',
@@ -129,12 +131,16 @@ export class EvolucionDelCaso {
   }
 
   protected numero(valor: number | undefined | null): string {
-    return valor === undefined || valor === null ? '—' : String(valor);
+    return valor === undefined || valor === null ? '—' : NUMERO.format(valor);
   }
 
   protected diferencia(valor: number | undefined | null): string {
     if (valor === undefined || valor === null) return '—';
-    return valor > 0 ? `+${valor}` : String(valor);
+    return valor > 0 ? `+${NUMERO.format(valor)}` : NUMERO.format(valor);
+  }
+
+  protected plural(cantidad: number | undefined, singular: string, plural: string): string {
+    return `${cantidad ?? 0} ${cantidad === 1 ? singular : plural}`;
   }
 
   protected fecha(valor: string | undefined | null): string {

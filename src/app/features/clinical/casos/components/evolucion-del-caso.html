@@ -43,8 +43,8 @@
       @case ('listo') {
         @if (evolucion(); as ev) {
           <p class="evolucion__resumen">
-            {{ ev.sesionesAnalizadas }} sesiones analizadas, {{ ev.sesionesPresentes }} con
-            asistencia
+            {{ plural(ev.sesionesAnalizadas, 'sesión analizada', 'sesiones analizadas') }},
+            {{ ev.sesionesPresentes }} con asistencia
             @if (ev.desde) {
               · del {{ fecha(ev.desde) }} al {{ fecha(ev.hasta) }}
             }
@@ -97,7 +97,8 @@
                 <div>
                   <dt>Adherencia</dt>
                   <dd>
-                    {{ a.inasistencias }} inasistencias en {{ a.citas }} citas
+                    {{ plural(a.inasistencias, 'inasistencia', 'inasistencias') }} en
+                    {{ plural(a.citas, 'cita', 'citas') }} del caso
                     @if (a.porcentaje !== undefined && a.porcentaje !== null) {
                       ({{ a.porcentaje }} %)
                     }
@@ -177,7 +178,8 @@
               <ul class="evolucion__tratamientos">
                 @for (t of ind.tratamientos; track t.practica) {
                   <li>
-                    {{ t.practica }}: {{ t.sesiones }} sesiones, la última el {{ fecha(t.ultima) }}
+                    {{ t.practica }}: {{ plural(t.sesiones, 'sesión', 'sesiones') }}, la última el
+                    {{ fecha(t.ultima) }}
                   </li>
                 }
               </ul>
