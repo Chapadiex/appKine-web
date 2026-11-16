@@ -79,6 +79,15 @@
 .asistente__datos .tabla-scroll {
   margin-top: var(--esp-2);
 }
+.asistente__consulta {
+  margin: var(--esp-2) 0 0;
+  padding: var(--esp-2);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  font-size: var(--tipo-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .asistente__nota {
   margin: var(--esp-1) 0 0;
   color: var(--color-texto-suave);
@@ -107,4 +116,30 @@
 .asistente__contador {
   font-size: var(--tipo-sm);
   color: var(--color-texto-suave);
+}
+
+/* Panel flotante: la charla ocupa el alto del panel y la lista es la que se desplaza. */
+:host {
+  display: block;
+}
+:host(.charla--compacta) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+:host(.charla--compacta) .asistente {
+  flex: 1;
+  min-height: 0;
+}
+:host(.charla--compacta) .asistente__lista {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+:host(.charla--compacta) .asistente__burbuja {
+  max-width: 92%;
+}
+:host(.charla--compacta) .asistente__sugerencias {
+  flex-direction: column;
+  align-items: stretch;
 }

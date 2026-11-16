@@ -1,0 +1,105 @@
+/*
+ * Abajo a la izquierda, a la derecha de la barra lateral: los avisos ocupan la esquina derecha.
+ * Sin barra lateral fija (tablet y móvil) se pega al borde.
+ */
+:host {
+  --flotante-izquierda: calc(var(--ancho-barra-lateral) + var(--esp-4));
+}
+
+.disparador {
+  position: fixed;
+  left: var(--flotante-izquierda);
+  bottom: var(--esp-4);
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: 2.75rem;
+  padding: 0 var(--esp-4);
+  border: var(--borde-fino) solid var(--color-accion-fondo);
+  border-radius: 999px;
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font: inherit;
+  font-weight: var(--peso-semi);
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+}
+.disparador:hover {
+  filter: brightness(1.08);
+}
+.disparador__icono {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.panel {
+  position: fixed;
+  left: var(--flotante-izquierda);
+  bottom: calc(var(--esp-4) + 3.5rem);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  width: min(26rem, calc(100vw - var(--flotante-izquierda) - var(--esp-4)));
+  height: min(36rem, calc(100dvh - 7rem));
+  padding: var(--esp-4);
+  border: 1px solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+  box-sizing: border-box;
+}
+.panel[hidden] {
+  display: none;
+}
+.panel__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2);
+}
+.panel__titulo {
+  margin: 0;
+  font-size: var(--tipo-md);
+}
+.panel__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+.panel__cerrar {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.panel__charla {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 63.99rem) {
+  :host {
+    --flotante-izquierda: var(--esp-4);
+  }
+}
+@media (max-width: 30rem) {
+  .disparador__texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .disparador {
+    padding: 0;
+    width: 2.75rem;
+    justify-content: center;
+  }
+}
