@@ -295,3 +295,12 @@ export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';
  * cada respuesta corre con los permisos del usuario. Gobierna `/asistente`.
  */
 export const PERMISO_ASISTENTE_USE = 'asistente:use';
+
+/**
+ * Dictar por voz en los campos de texto (contrato 0.175.0). Copiado de
+ * `assistant.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Sin él no se
+ * dibuja el botón del micrófono; la autoridad es el backend.
+ */
+export const PERMISO_DICTADO_USE = 'dictado:use';

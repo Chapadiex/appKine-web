@@ -1,6 +1,7 @@
 import { traducirErrorInvitacion } from '../models/invitacion-errors';
 import { traducirErrorActividad } from '../../features/activity/models/actividad-errors';
 import { traducirErrorAsistente } from '../../features/asistente/models/asistente-errors';
+import { traducirErrorDictado } from '../../shared/dictado/dictado-errors';
 import { traducirErrorAsistencia } from '../../features/activity/models/asistencia-errors';
 import { traducirErrorPase } from '../../features/activity/models/pase-errors';
 import { traducirError } from '../../features/auth/models/auth-errors';
@@ -52,6 +53,7 @@ describe('un 400 con `errors` llega a la persona en cada traductor', () => {
     ['invitacion', traducirErrorInvitacion],
     ['actividad', traducirErrorActividad],
     ['asistente', traducirErrorAsistente],
+    ['dictado', traducirErrorDictado],
     ['asistencia', traducirErrorAsistencia],
     ['pase', traducirErrorPase],
     ['auth', traducirError],

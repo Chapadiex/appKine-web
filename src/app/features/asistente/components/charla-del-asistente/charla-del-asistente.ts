@@ -23,6 +23,7 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
+import { Dictado } from '../../../../shared/dictado/dictado.directive';
 
 let siguienteId = 0;
 const MAX_PREGUNTA = 300;
@@ -109,7 +110,7 @@ export interface MensajeDelAsistente {
 @Component({
   selector: 'app-charla-del-asistente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EstadoVacio, RouterLink],
+  imports: [Dictado, EstadoVacio, RouterLink],
   host: { class: 'charla', '[class.charla--compacta]': 'compacta()' },
   templateUrl: './charla-del-asistente.html',
   styleUrl: './charla-del-asistente.css',

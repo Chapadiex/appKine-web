@@ -64,6 +64,9 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { PropuestaDeEvaluacionDictada } from '../../../../api/generated/model/propuesta-de-evaluacion-dictada';
+import { Dictado } from '../../../../shared/dictado/dictado.directive';
+import { DictadoDeEvaluacion } from '../../components/dictado-de-evaluacion/dictado-de-evaluacion';
 import { publicarMigas } from '../../../../core/services/migas.store';
 
 /** Milisegundos de quietud antes de que el autosave dispare. */
@@ -179,6 +182,8 @@ const ESPERA_AUTOSAVE = 1_500;
     TratamientosDeSesion,
     ConfirmacionConMotivo,
     PanelLateral,
+    Dictado,
+    DictadoDeEvaluacion,
   ],
   templateUrl: './atencion-page.html',
   styleUrl: '../../atencion.css',
@@ -1103,6 +1108,50 @@ export class AtencionPage {
 
   protected elegirLateralidad(valor: string): void {
     this.dolorLateralidad.set(comoLateralidad(valor));
+  }
+
+  /**
+   * Vuelca en los campos lo que la persona marcó de la evaluación dictada. No guarda: queda para
+   * «Guardar evaluación», como si lo hubiera cargado a mano. Motivo y limitación sólo se ven en la
+   * evaluación completa, así que si vienen se pasa a ese modo; lo que no entró en ningún campo se
+   * agrega a las notas.
+   */
+  protected aplicarDictado(p: PropuestaDeEvaluacionDictada): void {
+    if (p.dolorEva !== undefined && p.dolorEva !== null) {
+      this.dolorEva.set(p.dolorEva);
+    }
+    if (p.dolorZona) {
+      this.dolorZona.set(p.dolorZona);
+    }
+    if (p.dolorLateralidad) {
+      this.dolorLateralidad.set(comoLateralidad(p.dolorLateralidad));
+    }
+    if (p.evolucion) {
+      this.evolucion.set(comoEvolucion(p.evolucion));
+    }
+    if (p.objetivoSesion) {
+      this.objetivoSesion.set(p.objetivoSesion);
+    }
+    if (p.motivoClinico || p.limitacionFuncional) {
+      this.cambiarModo(true);
+      if (p.motivoClinico) {
+        this.motivoClinico.set(p.motivoClinico);
+      }
+      if (p.limitacionFuncional) {
+        this.limitacionFuncional.set(p.limitacionFuncional);
+      }
+    }
+    if (p.restante) {
+      const actuales = this.notas().trimEnd();
+      this.escribirNotas(actuales ? `${actuales}\n${p.restante}` : p.restante);
+    }
+    this.avisos.info('Dictado aplicado', {
+      descripcion: 'Revisá los campos y guardá la evaluación.',
+    });
+  }
+
+  protected avisarDictado(mensaje: string): void {
+    this.avisos.error(mensaje);
   }
 
   protected cambiarModo(completa: boolean): void {

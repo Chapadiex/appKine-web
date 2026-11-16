@@ -540,6 +540,11 @@
               </fieldset>
             </div>
 
+            <app-dictado-de-evaluacion
+              (aplicar)="aplicarDictado($event)"
+              (problema)="avisarDictado($event)"
+            />
+
             <fieldset class="grupo-plano">
               <legend>Dolor (EVA, escala 0 a 10)</legend>
 
@@ -577,6 +582,7 @@
                 >
                 <input
                   id="atencion-zona"
+                  appDictado
                   name="atencion-zona"
                   type="text"
                   list="atencion-zonas"
@@ -646,6 +652,7 @@
                 </label>
                 <input
                   id="atencion-objetivo"
+                  appDictado
                   name="atencion-objetivo"
                   type="text"
                   maxlength="500"
@@ -661,6 +668,7 @@
                   </label>
                   <input
                     id="atencion-motivo"
+                    appDictado
                     name="atencion-motivo"
                     type="text"
                     maxlength="500"
@@ -680,6 +688,7 @@
                   </label>
                   <input
                     id="atencion-limitacion"
+                    appDictado
                     name="atencion-limitacion"
                     type="text"
                     maxlength="500"
@@ -730,6 +739,7 @@
               </label>
               <textarea
                 id="atencion-notas"
+                appDictado
                 name="atencion-notas"
                 rows="6"
                 maxlength="65000"
@@ -807,6 +817,7 @@
                 <label for="cierre-nota">Nota de cierre</label>
                 <textarea
                   id="cierre-nota"
+                  appDictado
                   name="cierre-nota"
                   rows="4"
                   maxlength="2000"
@@ -894,6 +905,7 @@
                     </label>
                     <textarea
                       id="cierre-indicaciones"
+                      appDictado
                       name="cierre-indicaciones"
                       rows="3"
                       maxlength="1000"

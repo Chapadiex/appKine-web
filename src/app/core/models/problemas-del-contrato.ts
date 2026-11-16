@@ -90,6 +90,8 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'derivacion-ambigua',
   'derivacion-con-sesion',
   'derivacion-no-accesible',
+  'dictado-deshabilitado',
+  'dictado-no-disponible',
   'documento-numero-taken',
   'egreso-comprobante-duplicado',
   'egreso-con-pagos',
