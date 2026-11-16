@@ -207,6 +207,18 @@ describe('PlanPage', () => {
       });
     });
 
+    it('el motivo que trae una sugerencia aceptada abre la versión nueva ya escrito', async () => {
+      history.replaceState({ motivoModificacion: 'Revisar la progresión de la carga.' }, '');
+      const fixture = await activo();
+
+      const motivo = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+        '#plan-motivo-modificacion',
+      );
+      expect(motivo?.value).toBe('Revisar la progresión de la carga.');
+      // Se usa una vez: recargar no vuelve a abrir el editor.
+      expect(history.state?.motivoModificacion).toBeUndefined();
+    });
+
     it('"Programar sesiones restantes" abre la programación múltiple', async () => {
       const fixture = await activo();
 

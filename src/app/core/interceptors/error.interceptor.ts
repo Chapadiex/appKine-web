@@ -250,6 +250,17 @@ export function esSinPermiso(error: unknown): boolean {
  * <p>Corolario de la regla dura: aca tampoco hay ninguna rama por 403. Un 403 es "falta
  * contexto" o "no tenes permiso" y la sesion sigue siendo valida.
  */
+const PROBLEMAS_DE_MODELO_LOCAL: ReadonlySet<string> = new Set([
+  'modelo-ocupado',
+  'modelo-no-disponible',
+]);
+
+function esDeUnModeloLocal(cuerpo: unknown): boolean {
+  return (
+    esProblemDetail(cuerpo) && PROBLEMAS_DE_MODELO_LOCAL.has(ultimoSegmento(cuerpo.type ?? ''))
+  );
+}
+
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const servicio = inject(ServicioNoDisponibleStore);
 
@@ -272,7 +283,9 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
 
       // 503: aviso global y NO destructivo. Aca no se toca el token ni se navega -eso es del
       // `authInterceptor`, y solo ante 401-; la pantalla recibe igual su error y decide.
-      if (error.status === 503) {
+      // Salvo los 503 de un modelo local ocupado o caido (sugerencias de evolucion): el backend
+      // anda, y la pantalla que pidio ya muestra el texto del problema con su "Reintentar".
+      if (error.status === 503 && !esDeUnModeloLocal(error.error)) {
         servicio.avisar(espera);
       }
 

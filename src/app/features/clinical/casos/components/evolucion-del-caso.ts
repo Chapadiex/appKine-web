@@ -23,6 +23,7 @@ import { ladoLegible } from '../../models/examen-y-tratamiento';
 import { Justificacion } from '../../services/historia-clinica-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
 import { EvolucionApi } from '../evolucion-api';
+import { SugerenciasDeEvolucion } from './sugerencias-de-evolucion';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -51,7 +52,7 @@ const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
  */
 @Component({
   selector: 'app-evolucion-del-caso',
-  imports: [Alerta, Ayuda, RouterLink],
+  imports: [Alerta, Ayuda, RouterLink, SugerenciasDeEvolucion],
   templateUrl: './evolucion-del-caso.html',
   styleUrl: './evolucion-del-caso.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +63,8 @@ export class EvolucionDelCaso {
 
   readonly casoId = input.required<number>();
   readonly justificacion = input<Justificacion>(null);
+  /** El plan del caso: a donde lleva una sugerencia aceptada (M31 fase 2). */
+  readonly rutaPlan = input<string | null>(null);
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
 

@@ -295,3 +295,12 @@ export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';
  * cada respuesta corre con los permisos del usuario. Gobierna `/asistente`.
  */
 export const PERMISO_ASISTENTE_USE = 'asistente:use';
+
+/**
+ * Pedir y responder sugerencias de revisión del tratamiento en la evolución de un caso (M31 fase 2,
+ * contrato 0.171.0). Copiado de `encounter.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen los roles que registran sesiones, y se exige además de `hc:read` y la relación o el
+ * motivo declarado. Leer el historial también lo pide: sin él la sección no se muestra.
+ */
+export const PERMISO_EVOLUCION_SUGERIR = 'evolucion:sugerir';

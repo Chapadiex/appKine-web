@@ -1,0 +1,120 @@
+.sugerencias {
+  display: grid;
+  gap: var(--esp-4);
+  margin-top: var(--esp-6);
+}
+
+.sugerencias h3 {
+  margin: 0;
+}
+
+.sugerencias__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+}
+
+.sugerencias__nota,
+.sugerencias__resumen {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.sugerencias__lista,
+.sugerencias__pedidos,
+.sugerencias__anteriores {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--esp-4);
+}
+
+.sugerencia {
+  display: grid;
+  gap: var(--esp-3);
+  padding: var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.sugerencia p {
+  margin: 0;
+}
+
+.sugerencia__hallazgo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-3);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.sugerencia__codigo {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto);
+}
+
+.sugerencia__sesiones {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.sugerencia__texto {
+  overflow-wrap: anywhere;
+}
+
+.sugerencia__respaldo {
+  display: grid;
+  gap: var(--esp-2);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.sugerencia__fundamento > summary {
+  color: var(--color-enlace);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  /* Area de acierto de 24 px (WCAG 2.5.8). */
+  min-height: 1.5rem;
+}
+
+.sugerencia__fundamento > p {
+  margin-top: var(--esp-2);
+  color: var(--color-texto);
+  overflow-wrap: anywhere;
+}
+
+.sugerencia__acciones {
+  justify-content: flex-end;
+}
+
+.sugerencia__respuesta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.sugerencias__pedidos summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-4);
+  min-height: 1.5rem;
+  cursor: pointer;
+}
+
+.sugerencias__anteriores {
+  margin-top: var(--esp-3);
+  padding-left: var(--esp-5);
+  font-size: var(--tipo-sm);
+  overflow-wrap: anywhere;
+}

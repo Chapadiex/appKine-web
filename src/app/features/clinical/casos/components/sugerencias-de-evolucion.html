@@ -1,0 +1,286 @@
+@if (historial().tipo !== 'oculta') {
+  <section
+    class="sugerencias"
+    aria-labelledby="titulo-sugerencias"
+    data-testid="sugerencias-de-evolucion"
+  >
+    <div class="sugerencias__cabecera">
+      <div class="titulo-con-ayuda">
+        <h3 id="titulo-sugerencias">Sugerencias para revisar</h3>
+        <app-ayuda titulo="Sugerencias para revisar">
+          <p>
+            Generadas por un modelo local a partir de la biblioteca del centro. No son indicaciones:
+            la conducta la decide el profesional.
+          </p>
+          <p>
+            Cada sugerencia parte de una alerta de la evolución y cita el libro y las páginas que la
+            respaldan. Aceptarla no cambia el plan: "Usar en nueva versión del plan" solo lleva el
+            texto al motivo del formulario, que revisás antes de guardar.
+          </p>
+        </app-ayuda>
+      </div>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        data-testid="pedir-sugerencias"
+        [disabled]="generando() || historial().tipo === 'cargando'"
+        (click)="pedir()"
+      >
+        Pedir sugerencias
+      </button>
+    </div>
+
+    @if (generando()) {
+      <p class="estado estado--cargando" role="status" data-testid="sugerencias-generando">
+        Generando sugerencias… puede tardar hasta un minuto.
+      </p>
+    }
+
+    @if (rechazoAlPedir(); as r) {
+      <app-alerta
+        [tipo]="r.reintentable ? 'advertencia' : 'error'"
+        titulo="No pudimos generar sugerencias"
+      >
+        <p>{{ r.mensaje }}</p>
+        @if (r.reintentable) {
+          <p class="alerta__acciones">
+            <button type="button" class="boton boton--secundario" (click)="pedir()">
+              Reintentar
+            </button>
+          </p>
+        }
+      </app-alerta>
+    }
+
+    @if (rechazoAlResponder(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos registrar la respuesta">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    @for (advertencia of advertencias(); track advertencia) {
+      <app-alerta tipo="advertencia">
+        <p>{{ advertencia }}</p>
+      </app-alerta>
+    }
+
+    @switch (historial().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando" role="status">Leyendo las sugerencias…</p>
+      }
+      @case ('error') {
+        @if (historial(); as h) {
+          @if (h.tipo === 'error') {
+            <app-alerta tipo="error" titulo="No pudimos leer las sugerencias">
+              <p>{{ h.mensaje }}</p>
+            </app-alerta>
+          }
+        }
+      }
+    }
+
+    @if (resultado(); as r) {
+      @if (r.resultado === 'SIN_MATERIAL') {
+        <p class="estado estado--vacio" data-testid="sugerencias-sin-material">
+          La biblioteca no tiene material suficiente para estos hallazgos.
+        </p>
+      } @else if (r.resultado === 'SIN_HALLAZGOS_ELEGIBLES') {
+        <p class="estado estado--vacio" data-testid="sugerencias-sin-hallazgos">
+          El caso no tiene alertas que se puedan respaldar con la biblioteca.
+        </p>
+      } @else if (actuales().length === 0) {
+        <p class="estado estado--vacio">
+          Ninguna sugerencia pasó la revisión automática. Podés volver a pedirlas más tarde.
+        </p>
+      }
+      @if (r.descartadas) {
+        <p class="sugerencias__nota">
+          {{ r.descartadas }}
+          {{ r.descartadas === 1 ? 'propuesta no pasó' : 'propuestas no pasaron' }} la revisión
+          automática y no se muestran.
+        </p>
+      }
+    } @else if (historial().tipo === 'listo' && actuales().length === 0 && !generando()) {
+      @if (anteriores().length === 0) {
+        <p class="estado estado--vacio" data-testid="sugerencias-vacio">
+          Todavía no se pidieron sugerencias para este caso.
+        </p>
+      }
+    }
+
+    @if (actuales().length > 0) {
+      <ul class="sugerencias__lista" data-testid="sugerencias-lista">
+        @for (s of actuales(); track s.id) {
+          <li class="sugerencia">
+            <p class="sugerencia__hallazgo">
+              <span class="sugerencia__codigo">{{ hallazgo(s.hallazgo) }}</span>
+              @if (s.sesiones?.length) {
+                <span class="sugerencia__sesiones">
+                  · Sesiones
+                  @for (sesionId of s.sesiones; track sesionId; let i = $index) {
+                    <a
+                      [routerLink]="['/atencion/sesiones', sesionId]"
+                      [attr.aria-label]="'Sesión ' + (i + 1) + ' del hallazgo'"
+                      >{{ i + 1 }}</a
+                    >
+                  }
+                </span>
+              }
+            </p>
+            <p class="sugerencia__texto">{{ s.texto }}</p>
+
+            <div class="sugerencia__respaldo">
+              @if (s.fundamento) {
+                <details class="sugerencia__fundamento">
+                  <summary>Fundamento</summary>
+                  <p>{{ s.fundamento }}</p>
+                </details>
+              }
+              @for (cita of s.citas ?? []; track $index) {
+                <p class="sugerencia__fuente">Fuente: {{ fuente(cita) }}</p>
+              }
+            </div>
+
+            @if (s.respuesta === 'PENDIENTE') {
+              <div class="acciones sugerencia__acciones">
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  data-testid="aceptar-sugerencia"
+                  [disabled]="respondiendo() !== null"
+                  (click)="aceptar(s)"
+                >
+                  {{ puedeVersionar() ? 'Usar en nueva versión del plan' : 'Marcar como útil' }}
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  data-testid="descartar-sugerencia"
+                  [disabled]="respondiendo() !== null"
+                  (click)="abrirDescarte(s)"
+                >
+                  Descartar
+                </button>
+              </div>
+            } @else {
+              <p class="sugerencia__respuesta">
+                <span
+                  class="marca-estado"
+                  [class.marca-estado--activa]="s.respuesta === 'ACEPTADA'"
+                  [class.marca-estado--neutra]="s.respuesta !== 'ACEPTADA'"
+                >
+                  {{ s.respuesta === 'ACEPTADA' ? 'Aceptada' : 'Descartada' }}
+                </span>
+                @if (s.motivoDescarte) {
+                  <span>{{ s.motivoDescarte }}</span>
+                }
+              </p>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (anteriores().length > 0) {
+      <details class="seccion-plegable sugerencias__historial" data-testid="sugerencias-historial">
+        <summary>
+          Historial ({{ anteriores().length }}
+          {{ anteriores().length === 1 ? 'pedido anterior' : 'pedidos anteriores' }})
+        </summary>
+        <ul class="sugerencias__pedidos">
+          @for (p of anteriores(); track p.generacionId) {
+            <li>
+              <details>
+                <summary>
+                  <span>{{ fechaYHora(p.solicitadaEn) || 'Sin fecha' }}</span>
+                  <span class="sugerencias__resumen">{{ resumen(p) }}</span>
+                </summary>
+                <ul class="sugerencias__anteriores">
+                  @for (s of p.sugerencias; track s.id) {
+                    <li>
+                      <span class="sugerencia__codigo">{{ hallazgo(s.hallazgo) }}:</span>
+                      {{ s.texto }}
+                      <span class="sugerencias__resumen">
+                        ·
+                        {{
+                          s.respuesta === 'ACEPTADA'
+                            ? 'Aceptada'
+                            : s.respuesta === 'DESCARTADA'
+                              ? 'Descartada'
+                              : 'Pendiente'
+                        }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </details>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  </section>
+}
+
+@if (descartando(); as s) {
+  <app-panel-lateral titulo="Descartar la sugerencia" (cerrar)="cerrarDescarte()">
+    <form (submit)="$event.preventDefault(); confirmarDescarte()">
+      <p class="sugerencia__texto">{{ s.texto }}</p>
+      <fieldset class="grupo">
+        <legend>Motivo del descarte</legend>
+        @for (motivo of motivos; track motivo; let i = $index) {
+          <label class="opcion-radio">
+            <input
+              type="radio"
+              name="motivo-descarte"
+              [value]="motivo"
+              [checked]="opcionDeDescarte() === motivo"
+              (change)="opcionDeDescarte.set(motivo)"
+            />
+            {{ motivo }}
+          </label>
+        }
+        <label class="opcion-radio">
+          <input
+            type="radio"
+            name="motivo-descarte"
+            data-testid="descarte-otro"
+            [value]="otroMotivo"
+            [checked]="opcionDeDescarte() === otroMotivo"
+            (change)="opcionDeDescarte.set(otroMotivo)"
+          />
+          Otro motivo
+        </label>
+      </fieldset>
+      @if (opcionDeDescarte() === otroMotivo) {
+        <div class="campo">
+          <label for="descarte-texto">Contá por qué la descartás</label>
+          <textarea
+            id="descarte-texto"
+            rows="3"
+            [attr.maxlength]="maximoDelMotivo"
+            aria-describedby="descarte-texto-ayuda"
+            [value]="textoDeDescarte()"
+            (input)="textoDeDescarte.set($any($event.target).value)"
+          ></textarea>
+          <p id="descarte-texto-ayuda" class="ayuda">
+            {{ textoDeDescarte().length }} de {{ maximoDelMotivo }} caracteres.
+          </p>
+        </div>
+      }
+      <div class="acciones">
+        <button type="button" class="boton boton--secundario" (click)="cerrarDescarte()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="boton"
+          data-testid="confirmar-descarte"
+          [disabled]="motivoDeDescarte() === '' || respondiendo() !== null"
+        >
+          Descartar
+        </button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
