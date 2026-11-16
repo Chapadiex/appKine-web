@@ -125,6 +125,8 @@ api/sesion.service.ts
 api/sesion.serviceInterface.ts
 api/sesiones.service.ts
 api/sesiones.serviceInterface.ts
+api/sugerencias-de-evolucion.service.ts
+api/sugerencias-de-evolucion.serviceInterface.ts
 api/suscripciones.service.ts
 api/suscripciones.serviceInterface.ts
 api/timeline-clinico.service.ts
@@ -597,6 +599,11 @@ model/subscription-response.ts
 model/subscription-transition-page-response.ts
 model/subscription-transition-request.ts
 model/subscription-transition-response.ts
+model/sugerencia-de-evolucion-cita-response.ts
+model/sugerencia-de-evolucion-generacion-response.ts
+model/sugerencia-de-evolucion-page-response.ts
+model/sugerencia-de-evolucion-response.ts
+model/sugerencia-de-evolucion-respuesta-request.ts
 model/support-access-response.ts
 model/suspender-plan-tratamiento-request.ts
 model/terms-response.ts

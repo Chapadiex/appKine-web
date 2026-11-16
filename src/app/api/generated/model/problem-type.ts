@@ -478,6 +478,14 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_NO_DISPONIBLE = 'https://akine.app/problems/asistente-no-disponible',
 
-    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_DESHABILITADO = 'https://akine.app/problems/asistente-deshabilitado'
+    HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_DESHABILITADO = 'https://akine.app/problems/asistente-deshabilitado',
+
+    HTTPS___AKINE_APP_PROBLEMS_GENERACION_EN_CURSO = 'https://akine.app/problems/generacion-en-curso',
+
+    HTTPS___AKINE_APP_PROBLEMS_MODELO_OCUPADO = 'https://akine.app/problems/modelo-ocupado',
+
+    HTTPS___AKINE_APP_PROBLEMS_MODELO_NO_DISPONIBLE = 'https://akine.app/problems/modelo-no-disponible',
+
+    HTTPS___AKINE_APP_PROBLEMS_SUGERENCIA_YA_RESPONDIDA = 'https://akine.app/problems/sugerencia-ya-respondida'
 }
 

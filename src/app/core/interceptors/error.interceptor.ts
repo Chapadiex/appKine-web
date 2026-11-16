@@ -239,6 +239,21 @@ export function esSinPermiso(error: unknown): boolean {
 }
 
 /**
+ * Los 503 de un modelo local ocupado o caido (sugerencias de evolucion). No publican el aviso
+ * global: el backend anda, y la pantalla que pidio ya muestra el texto del problema.
+ */
+const PROBLEMAS_DE_MODELO_LOCAL: ReadonlySet<string> = new Set([
+  'modelo-ocupado',
+  'modelo-no-disponible',
+]);
+
+function esDeUnModeloLocal(cuerpo: unknown): boolean {
+  return (
+    esProblemDetail(cuerpo) && PROBLEMAS_DE_MODELO_LOCAL.has(ultimoSegmento(cuerpo.type ?? ''))
+  );
+}
+
+/**
  * Traduce los errores HTTP a un tipo unico y accionable.
  *
  * <p><b>Este interceptor NO toca el token.</b> Es traduccion pura. El ciclo de vida de la
@@ -272,7 +287,9 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
 
       // 503: aviso global y NO destructivo. Aca no se toca el token ni se navega -eso es del
       // `authInterceptor`, y solo ante 401-; la pantalla recibe igual su error y decide.
-      if (error.status === 503) {
+      // Salvo los 503 de un modelo local ocupado o caido (sugerencias de evolucion): el backend
+      // anda, y la pantalla que pidio ya muestra el texto del problema con su "Reintentar".
+      if (error.status === 503 && !esDeUnModeloLocal(error.error)) {
         servicio.avisar(espera);
       }
 
