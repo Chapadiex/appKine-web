@@ -104,12 +104,14 @@
   color: var(--color-texto-suave);
 }
 
+/* Sin `display: flex`: el summary perderia el triangulo que dice que se despliega. */
 .sugerencias__pedidos summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-2) var(--esp-4);
   min-height: 1.5rem;
   cursor: pointer;
+}
+
+.sugerencias__pedidos summary .sugerencias__resumen {
+  margin-left: var(--esp-4);
 }
 
 .sugerencias__anteriores {
