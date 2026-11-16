@@ -1,4 +1,8 @@
-<section class="asistente" [class.tarjeta]="!compacta()" aria-label="Charla con el asistente de datos">
+<section
+  class="asistente"
+  [class.tarjeta]="!compacta()"
+  aria-label="Charla con el asistente de datos"
+>
   <p class="asistente__aviso">{{ aviso }}</p>
   <div #lista class="asistente__lista">
     @if (deshabilitado()) {
