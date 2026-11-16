@@ -538,6 +538,33 @@ describe('errorInterceptor', () => {
       httpMock.expectOne('/api/v1/version').flush({});
       expect(aviso.aviso()).toBeNull();
     });
+
+    it('el 503 de un modelo local ocupado no publica el aviso global; otro 503 sí', async () => {
+      const aviso = TestBed.inject(ServicioNoDisponibleStore);
+      const avisar = vi.spyOn(aviso, 'avisar');
+      const ruta = '/api/v1/consultorios/7/casos/41/evolucion/sugerencias';
+
+      const ocupado = esperarError(http.post(ruta, null));
+      httpMock
+        .expectOne(ruta)
+        .flush(
+          { type: 'https://akine.app/problems/modelo-ocupado', status: 503, detail: 'Ocupado.' },
+          { status: 503, statusText: 'Service Unavailable' },
+        );
+      expect((await ocupado).problemType).toBe('modelo-ocupado');
+      expect(avisar).not.toHaveBeenCalled();
+      expect(aviso.aviso()).toBeNull();
+
+      const caido = esperarError(http.get('/api/v1/pacientes'));
+      httpMock
+        .expectOne('/api/v1/pacientes')
+        .flush(
+          { type: 'https://akine.app/problems/service-unavailable', status: 503 },
+          { status: 503, statusText: 'Service Unavailable' },
+        );
+      await caido;
+      expect(avisar).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

@@ -239,16 +239,8 @@ export function esSinPermiso(error: unknown): boolean {
 }
 
 /**
- * Traduce los errores HTTP a un tipo unico y accionable.
- *
- * <p><b>Este interceptor NO toca el token.</b> Es traduccion pura. El ciclo de vida de la
- * sesion -renovar ante un 401, limpiar cuando el refresh falla- vive entero en
- * `authInterceptor`, que es el que sabe si ese 401 termino en una sesion recuperada o en
- * una perdida. Cuando el borrado vivia aca, un 401 recuperable dejaba el token en `null`
- * durante todo el refresh y la aplicacion parpadeaba al login antes de volver.
- *
- * <p>Corolario de la regla dura: aca tampoco hay ninguna rama por 403. Un 403 es "falta
- * contexto" o "no tenes permiso" y la sesion sigue siendo valida.
+ * Los 503 de un modelo local ocupado o caido (sugerencias de evolucion). No publican el aviso
+ * global: el backend anda, y la pantalla que pidio ya muestra el texto del problema.
  */
 const PROBLEMAS_DE_MODELO_LOCAL: ReadonlySet<string> = new Set([
   'modelo-ocupado',
@@ -261,6 +253,18 @@ function esDeUnModeloLocal(cuerpo: unknown): boolean {
   );
 }
 
+/**
+ * Traduce los errores HTTP a un tipo unico y accionable.
+ *
+ * <p><b>Este interceptor NO toca el token.</b> Es traduccion pura. El ciclo de vida de la
+ * sesion -renovar ante un 401, limpiar cuando el refresh falla- vive entero en
+ * `authInterceptor`, que es el que sabe si ese 401 termino en una sesion recuperada o en
+ * una perdida. Cuando el borrado vivia aca, un 401 recuperable dejaba el token en `null`
+ * durante todo el refresh y la aplicacion parpadeaba al login antes de volver.
+ *
+ * <p>Corolario de la regla dura: aca tampoco hay ninguna rama por 403. Un 403 es "falta
+ * contexto" o "no tenes permiso" y la sesion sigue siendo valida.
+ */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const servicio = inject(ServicioNoDisponibleStore);
 

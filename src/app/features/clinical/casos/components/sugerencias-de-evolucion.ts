@@ -201,12 +201,14 @@ export class SugerenciasDeEvolucion {
     this.pedidos().filter((p) => p.generacionId !== this.generacionActual()),
   );
 
+  /**
+   * Solo `TEXTO_OMITIDO`, traducido. Las demas advertencias del pedido son las de la fase 1 (sesiones
+   * sin caso, recorte por tope), que la tarjeta de evolucion ya muestra: no se repiten aca.
+   */
   protected readonly advertencias = computed(() =>
-    (this.resultado()?.advertencias ?? []).map((a) =>
-      a === TEXTO_OMITIDO
-        ? 'Se omitió un texto de la historia que parecía contener instrucciones.'
-        : a,
-    ),
+    (this.resultado()?.advertencias ?? []).includes(TEXTO_OMITIDO)
+      ? ['Se omitió un texto de la historia que parecía contener instrucciones.']
+      : [],
   );
 
   private pedidoDelHistorial: Subscription | null = null;
@@ -300,6 +302,7 @@ export class SugerenciasDeEvolucion {
 
   protected cerrarDescarte(): void {
     this.descartando.set(null);
+    this.rechazoAlResponder.set(null);
   }
 
   protected confirmarDescarte(): void {
@@ -337,10 +340,13 @@ export class SugerenciasDeEvolucion {
         },
         error: (error: unknown) => {
           this.respondiendo.set(null);
-          this.descartando.set(null);
           this.rechazoAlResponder.set(rechazo(error).mensaje);
-          // Ya respondida o cambiada por otra persona: se relee para mostrar lo que quedo.
-          if (error instanceof AkineHttpError && error.status === 409) this.cargarHistorial();
+          // Ya respondida o cambiada por otra persona: el descarte ya no aplica, se cierra el panel y
+          // se relee para mostrar lo que quedo. Ante otro error el panel sigue abierto con el motivo.
+          if (error instanceof AkineHttpError && error.status === 409) {
+            this.descartando.set(null);
+            this.cargarHistorial();
+          }
         },
       });
   }

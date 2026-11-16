@@ -52,7 +52,8 @@
       </app-alerta>
     }
 
-    @if (rechazoAlResponder(); as mensaje) {
+    <!-- Con el panel de descarte abierto, el error se muestra adentro del panel. -->
+    @if (descartando() === null && rechazoAlResponder(); as mensaje) {
       <app-alerta tipo="error" titulo="No pudimos registrar la respuesta">
         <p>{{ mensaje }}</p>
       </app-alerta>
@@ -267,6 +268,11 @@
             {{ textoDeDescarte().length }} de {{ maximoDelMotivo }} caracteres.
           </p>
         </div>
+      }
+      @if (rechazoAlResponder(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos registrar el descarte">
+          <p data-testid="descarte-error">{{ mensaje }}</p>
+        </app-alerta>
       }
       <div class="acciones">
         <button type="button" class="boton boton--secundario" (click)="cerrarDescarte()">
