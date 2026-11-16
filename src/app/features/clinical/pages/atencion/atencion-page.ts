@@ -874,6 +874,8 @@ export class AtencionPage {
       return;
     }
 
+    // Las notas con autosave pendiente viajan despues: mandarlas a la vez chocaria por version.
+    const notasPendientes = this.temporizador !== null;
     this.cancelarAutosave();
     this.guardando.set(true);
     this.error.set(null);
@@ -894,6 +896,9 @@ export class AtencionPage {
       next: (sesion) => {
         this.guardando.set(false);
         this.adoptarSoloVersion(sesion);
+        if (notasPendientes) {
+          this.programarAutosave();
+        }
       },
       error: (error: unknown) => this.fallo(error),
     });
