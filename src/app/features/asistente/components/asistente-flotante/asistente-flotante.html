@@ -1,0 +1,43 @@
+@if (visible()) {
+  <!-- El panel queda montado mientras el botón se ve: cerrar y abrir no pierde la charla. -->
+  <section
+    id="asistente-flotante-panel"
+    class="panel"
+    aria-labelledby="asistente-flotante-titulo"
+    [hidden]="!abierto()"
+  >
+    <header class="panel__cabecera">
+      <h2 id="asistente-flotante-titulo" class="panel__titulo">Asistente de datos</h2>
+      <div class="panel__acciones">
+        <button type="button" class="boton boton--secundario boton--chico" (click)="nuevaCharla()">
+          Nueva charla
+        </button>
+        <button type="button" class="panel__cerrar" (click)="cerrar()">
+          <span aria-hidden="true">×</span>
+          <span class="visualmente-oculto">Cerrar el asistente</span>
+        </button>
+      </div>
+    </header>
+    <app-charla-del-asistente class="panel__charla" [compacta]="true" />
+  </section>
+
+  <button
+    #disparador
+    type="button"
+    class="disparador"
+    aria-controls="asistente-flotante-panel"
+    [attr.aria-expanded]="abierto()"
+    (click)="alternar()"
+  >
+    <svg class="disparador__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M4 5h16v10H9l-5 4z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linejoin="round"
+      />
+    </svg>
+    <span class="disparador__texto">{{ abierto() ? 'Cerrar' : 'Asistente' }}</span>
+  </button>
+}

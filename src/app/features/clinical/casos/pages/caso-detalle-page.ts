@@ -32,6 +32,7 @@ import { fechaYHora, rotulo } from '../../models/etiquetas-de-historia';
 import { SedeClinicaApi } from '../../services/sede-clinica-api';
 import { VisitaClinica } from '../../services/visita-clinica';
 import { CasosApi } from '../casos-api';
+import { EvolucionDelCaso } from '../components/evolucion-del-caso';
 import { ErrorCaso, errorDeCausaCaso, traducirErrorCaso } from '../casos-errors';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -77,6 +78,7 @@ type Operacion = 'editar' | 'equipo' | 'cerrar' | 'reabrir';
     PermisoDirective,
     Alerta,
     NgTemplateOutlet,
+    EvolucionDelCaso,
   ],
   templateUrl: './caso-detalle-page.html',
   styleUrl: '../../pages/historia-clinica/historia-clinica.css',

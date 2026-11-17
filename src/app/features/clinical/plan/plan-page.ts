@@ -199,6 +199,12 @@ export class PlanPage {
     return new Map(delPlan?.prestaciones?.map((p) => [p.ofertaId, p]));
   });
 
+  /**
+   * El motivo que trae una sugerencia de evolucion aceptada (M31 fase 2), por estado de navegacion y
+   * no por URL. Se usa una vez: abre el editor de la version nueva con el motivo ya escrito.
+   */
+  private motivoPrecargado = leerMotivoDeLaNavegacion();
+
   private pedido: Subscription | null = null;
   private pedidoDelPlan: Subscription | null = null;
   private pedidoDeAgenda: Subscription | null = null;
@@ -509,6 +515,7 @@ export class PlanPage {
         this.planId.set(elegido?.id ?? null);
         this.estado.set({ tipo: 'listo' });
         this.cargarDetalle();
+        this.abrirConMotivoPrecargado();
       },
       error: (error: unknown) => {
         // El caso y la lista comparten acceso: el mismo 403 o 404 vale para los dos.
@@ -520,6 +527,17 @@ export class PlanPage {
         );
       },
     });
+  }
+
+  /** Solo sobre un plan ACTIVO o SUSPENDIDO: el motivo de modificacion es de la version 2 en adelante. */
+  private abrirConMotivoPrecargado(): void {
+    const motivo = this.motivoPrecargado;
+    if (motivo === null) return;
+    this.motivoPrecargado = null;
+    const estado = this.plan()?.estado;
+    if (estado !== 'ACTIVO' && estado !== 'SUSPENDIDO') return;
+    this.modificar();
+    this.motivoModificacion.set(motivo);
   }
 
   private cargarDetalle(): void {
@@ -576,6 +594,22 @@ function planVigente(planes: readonly PlanTratamiento[]): PlanTratamiento | unde
     if (plan) return plan;
   }
   return planes[0];
+}
+
+/**
+ * `history.state.motivoModificacion`, si vino, y lo saca del historial para que recargar la pagina
+ * no vuelva a abrir el editor.
+ */
+function leerMotivoDeLaNavegacion(): string | null {
+  const estado: unknown = globalThis.history?.state;
+  if (typeof estado !== 'object' || estado === null || !('motivoModificacion' in estado)) {
+    return null;
+  }
+  const { motivoModificacion, ...resto } = estado as Record<string, unknown>;
+  globalThis.history.replaceState(resto, '');
+  return typeof motivoModificacion === 'string' && motivoModificacion.trim() !== ''
+    ? motivoModificacion
+    : null;
 }
 
 function esEnteroPositivo(valor: string): boolean {

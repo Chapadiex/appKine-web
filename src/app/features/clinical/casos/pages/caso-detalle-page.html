@@ -90,6 +90,12 @@
         </div>
       </section>
 
+      <app-evolucion-del-caso
+        [casoId]="c.id!"
+        [justificacion]="visita.motivo()"
+        [rutaPlan]="visita.rutaPlan(c.id!)"
+      />
+
       <div class="historia__columnas">
         <div class="historia__principal">
           <section class="tarjeta" aria-labelledby="titulo-equipo">

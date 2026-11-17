@@ -1,0 +1,118 @@
+<section
+  class="asistente"
+  [class.tarjeta]="!compacta()"
+  aria-label="Charla con el asistente de datos"
+>
+  <p class="asistente__aviso">{{ aviso }}</p>
+  <div #lista class="asistente__lista">
+    @if (deshabilitado()) {
+      <app-estado-vacio titulo="El asistente no está habilitado en este entorno." />
+    } @else if (mensajes().length === 0) {
+      <div class="asistente__inicio">
+        <app-estado-vacio titulo="Preguntá algo sobre los datos de la sede." />
+        <div class="asistente__sugerencias" role="group" aria-label="Preguntas de ejemplo">
+          @for (s of sugerencias; track s) {
+            <button type="button" class="boton boton--secundario" (click)="usarSugerencia(s)">
+              {{ s }}
+            </button>
+          }
+        </div>
+      </div>
+    } @else {
+      @for (m of mensajes(); track $index) {
+        <div
+          class="asistente__burbuja"
+          [class.asistente__burbuja--usuario]="m.rol === 'usuario'"
+          [class.asistente__burbuja--error]="m.estado === 'error'"
+        >
+          @if (m.estado === 'esperando') {
+            <p class="asistente__texto asistente__texto--espera">Consultando…</p>
+          } @else {
+            <p class="asistente__texto">{{ textoVisible(m, $index) }}</p>
+          }
+          @if (!escribiendo($index) && m.respuesta; as r) {
+            @if (r.opciones.length > 0) {
+              <div class="asistente__opciones" role="group" aria-label="Elegí la persona">
+                @for (o of r.opciones; track o.personaId) {
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="enCurso()"
+                    (click)="elegirOpcion(m, o)"
+                  >
+                    {{ o.etiqueta }}
+                  </button>
+                }
+              </div>
+            }
+            @if (r.advertencias.length > 0) {
+              <ul class="asistente__advertencias">
+                @for (a of r.advertencias; track $index) {
+                  <li>{{ a }}</li>
+                }
+              </ul>
+            }
+            @if (m.tabla; as tabla) {
+              <details class="asistente__datos">
+                <summary>Ver los datos ({{ tabla.total }})</summary>
+                <div class="tabla-scroll">
+                  <table class="tabla">
+                    <thead>
+                      <tr>
+                        @for (c of tabla.columnas; track $index) {
+                          <th scope="col">{{ c }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (fila of tabla.filas; track $index) {
+                        <tr>
+                          @for (valor of fila; track $index) {
+                            <td>{{ valor }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                @if (tabla.total > maxFilas) {
+                  <p class="asistente__nota">Se muestran las primeras {{ maxFilas }}.</p>
+                }
+              </details>
+            }
+            @if (r.consulta) {
+              <details class="asistente__datos">
+                <summary>Ver la consulta</summary>
+                <pre class="asistente__consulta"><code>{{ r.consulta }}</code></pre>
+              </details>
+            }
+            @if (r.enlace) {
+              <a class="asistente__enlace" [routerLink]="r.enlace">Ver el detalle</a>
+            }
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <div class="visualmente-oculto" aria-live="polite" role="status">{{ anuncio() }}</div>
+
+  <form class="asistente__caja" (submit)="$event.preventDefault(); enviar()">
+    <label class="visualmente-oculto" [for]="idPregunta">Tu pregunta</label>
+    <textarea
+      [id]="idPregunta"
+      name="pregunta"
+      rows="2"
+      placeholder="Por ejemplo: ¿Juan vino esta semana?"
+      [maxLength]="maxPregunta"
+      [value]="texto()"
+      [disabled]="deshabilitado()"
+      (input)="alEscribir($event)"
+      (keydown)="alTeclear($event)"
+    ></textarea>
+    <div class="asistente__pie">
+      <span class="asistente__contador">{{ texto().length }} / {{ maxPregunta }}</span>
+      <button type="submit" class="boton" [disabled]="!puedeEnviar()">Preguntar</button>
+    </div>
+  </form>
+</section>

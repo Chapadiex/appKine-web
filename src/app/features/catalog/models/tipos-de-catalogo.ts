@@ -93,6 +93,7 @@ export const PESTANAS_DE_CATALOGO: readonly Pestana[] = [
     ruta: `/catalogo/${tipo.slug}`,
     exacta: true,
   })),
-  // Medidas del examen fisico: otra pantalla, mismo catalogo clinico (13/11/2026).
-  { etiqueta: 'Medidas', ruta: '/catalogo/medidas', exacta: true },
+  // Las medidas del examen fisico no son un tipo de concepto: tienen tipo de valor, unidad, rango y
+  // sentido de mejora, y su propia pantalla (M31).
+  { etiqueta: 'Mediciones', ruta: '/catalogo/mediciones', exacta: true },
 ];

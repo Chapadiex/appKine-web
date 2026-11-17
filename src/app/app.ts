@@ -81,6 +81,7 @@ export class App {
   private readonly anclaAvisos = viewChild.required('avisos', { read: ViewContainerRef });
   private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
   private readonly anclaPie = viewChild.required('pie', { read: ViewContainerRef });
+  private readonly anclaAsistente = viewChild.required('asistente', { read: ViewContainerRef });
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
@@ -116,6 +117,15 @@ export class App {
           }
         },
         // Sin el chunk (red caida, despliegue nuevo) no hay avisos, pero la pantalla sigue.
+        () => undefined,
+      );
+      // Asistente de datos flotante: decide solo si se dibuja (sesión, sede y permiso).
+      import('./features/asistente/components/asistente-flotante/asistente-flotante').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaAsistente().createComponent(m.AsistenteFlotante);
+          }
+        },
         () => undefined,
       );
       // Pie institucional del centro: decide solo si se dibuja (contexto y datos cargados).

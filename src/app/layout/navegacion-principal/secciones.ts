@@ -1,6 +1,7 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
   PERMISO_BIBLIOTECA_CONSULTAR,
+  PERMISO_ASISTENTE_USE,
   PERMISO_BIBLIOTECA_MANAGE,
   PERMISO_CAJA_OPERATE,
   PERMISO_CATALOGO_READ,
@@ -126,6 +127,11 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Consultar biblioteca',
         ruta: '/consulta',
         permisos: [PERMISO_BIBLIOTECA_CONSULTAR],
+      },
+      {
+        etiqueta: 'Asistente de datos',
+        ruta: '/asistente',
+        permisos: [PERMISO_ASISTENTE_USE],
       },
     ],
   },

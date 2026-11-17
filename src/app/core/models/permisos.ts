@@ -292,3 +292,21 @@ export const PERMISO_BIBLIOTECA_MANAGE = 'biblioteca:manage';
  * `/consulta`: el guard y la entrada del menu son UX, la autoridad es el backend.
  */
 export const PERMISO_BIBLIOTECA_CONSULTAR = 'biblioteca:consultar';
+
+/**
+ * Preguntarle al asistente de datos (contrato 0.170.0). Copiado de
+ * `assistant.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen `ORG_ADMIN`, `CONSULTORIO_ADMIN`, `PROFESIONAL` y `ADMINISTRATIVO`. Es solo la puerta:
+ * cada respuesta corre con los permisos del usuario. Gobierna `/asistente`.
+ */
+export const PERMISO_ASISTENTE_USE = 'asistente:use';
+
+/**
+ * Pedir y responder sugerencias de revisión del tratamiento en la evolución de un caso (M31 fase 2,
+ * contrato 0.171.0). Copiado de `encounter.domain.PermissionCodes`.
+ *
+ * <p>Lo tienen los roles que registran sesiones, y se exige además de `hc:read` y la relación o el
+ * motivo declarado. Leer el historial también lo pide: sin él la sección no se muestra.
+ */
+export const PERMISO_EVOLUCION_SUGERIR = 'evolucion:sugerir';

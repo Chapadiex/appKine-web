@@ -1,0 +1,19 @@
+<app-cabecera-de-pagina titulo="Asistente de datos">
+  <app-ayuda titulo="Sobre el asistente">
+    <p>
+      Preguntá en tus palabras: si una persona vino o tiene la sesión cargada, quiénes vienen un
+      día, quiénes fueron a una clase, o los números de facturación, turnos y ocupación de clases.
+    </p>
+    <p>
+      Responde con los datos de la sede activa y con tus permisos: lo que no ves en pantalla, no lo
+      ves acá. No guarda la charla; se pierde al salir o al cambiar de sede.
+    </p>
+  </app-ayuda>
+  <div cabeceraAcciones class="acciones-fila">
+    <button type="button" class="boton boton--secundario" (click)="nuevaCharla()">
+      Nueva charla
+    </button>
+  </div>
+</app-cabecera-de-pagina>
+
+<app-charla-del-asistente />
