@@ -211,7 +211,7 @@ export class DerivarParticipante {
       partes.push(`abierto el ${apertura}`);
     }
     if (this.ofertaId() !== null && caso.ofertaId === this.ofertaId()) {
-      partes.push('de la oferta de esta clase');
+      partes.push('de la actividad de esta clase');
     }
     return partes.join(' · ');
   }

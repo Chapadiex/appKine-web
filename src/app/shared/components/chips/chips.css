@@ -1,0 +1,118 @@
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hueco-tocable);
+}
+
+.chip-tactil,
+.chip-tactil-otra {
+  min-height: var(--alto-tocable);
+  padding: var(--esp-2) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
+.chip-tactil {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* El elegido: relleno del color de acción y un tilde, no sólo color. */
+.chip-tactil[aria-pressed='true'] {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+.chip-tactil[aria-pressed='true']::before {
+  content: '✓ ';
+}
+
+.chip-tactil:disabled,
+.chip-tactil-otra:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .chip-tactil:not(:disabled):hover {
+    border-color: var(--color-acento);
+  }
+}
+
+.chip-tactil:focus-visible,
+.chip-tactil-otra:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Evolución: cada tono con su color, en reposo tenue y elegido encendido. */
+.chip-tactil--mejor {
+  --tono: var(--color-exito-texto);
+  --tinte: var(--color-exito-fondo);
+  --vivo: var(--color-exito-vivo);
+  --sobre-vivo: var(--color-exito-sobre-vivo);
+  --borde-vivo: var(--color-exito);
+}
+
+.chip-tactil--igual {
+  --tono: var(--color-aviso-texto);
+  --tinte: var(--color-aviso-fondo);
+  --vivo: var(--color-aviso-vivo);
+  --sobre-vivo: var(--color-aviso-sobre-vivo);
+  --borde-vivo: var(--color-aviso);
+}
+
+.chip-tactil--peor {
+  --tono: var(--color-peligro-texto);
+  --tinte: var(--color-peligro-fondo);
+  --vivo: var(--color-peligro-vivo);
+  --sobre-vivo: var(--color-peligro-sobre-vivo);
+  --borde-vivo: var(--color-peligro);
+}
+
+.chip-tactil--neutro {
+  --tono: var(--color-texto);
+  --tinte: var(--color-superficie-sutil);
+  --vivo: var(--color-neutro-vivo);
+  --sobre-vivo: var(--color-neutro-sobre-vivo);
+  --borde-vivo: var(--color-texto-suave);
+}
+
+:is(.chip-tactil--mejor, .chip-tactil--igual, .chip-tactil--peor, .chip-tactil--neutro) {
+  border-color: var(--tono);
+  background: var(--tinte);
+  color: var(--tono);
+}
+
+:is(
+  .chip-tactil--mejor,
+  .chip-tactil--igual,
+  .chip-tactil--peor,
+  .chip-tactil--neutro
+)[aria-pressed='true'] {
+  border-color: var(--borde-vivo);
+  border-width: var(--borde-medio);
+  background: var(--vivo);
+  color: var(--sobre-vivo);
+}
+
+/* "Otra…": con forma de chip, punteado mientras está vacío. */
+.chip-tactil-otra {
+  width: 9rem;
+  border-style: dashed;
+}
+
+.chip-tactil-otra:not(:placeholder-shown) {
+  border-style: solid;
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+}

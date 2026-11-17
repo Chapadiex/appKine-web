@@ -52,6 +52,12 @@ export interface ReclasificarAdjuntoClinicoRequestParams {
     xJustificacionAcceso?: string;
 }
 
+export interface RevisarAdjuntoRequestParams {
+    historiaClinicaId: number;
+    adjuntoId: number;
+    xJustificacionAcceso?: string;
+}
+
 export interface SubirAdjuntoClinicoRequestParams {
     historiaClinicaId: number;
     categoria: 'ESTUDIO' | 'INFORME' | 'IMAGEN' | 'CONSENTIMIENTO_CLINICO' | 'EVOLUCION_ESCANEADA' | 'OTRO';
@@ -97,6 +103,14 @@ export interface AdjuntosClinicosServiceInterface {
 * @param requestParameters
      */
     reclasificarAdjuntoClinico(requestParameters: ReclasificarAdjuntoClinicoRequestParams, extraHttpRequestParams?: any): Observable<AdjuntoClinicoResponse>;
+
+    /**
+     * Marcar revisado un archivo declarado por el paciente
+     * DP-47. El profesional valida lo que trajo el paciente. Idempotente: revisar uno ya revisado devuelve como esta. Un adjunto que no es DECLARADO es 409 dato-no-declarado; uno dado de baja, 409 adjunto-clinico-inactivo. Exige hc:write y se audita como DATO_DECLARADO_REVISADO.
+     * @endpoint put /api/v1/historias-clinicas/{historiaClinicaId}/adjuntos/{adjuntoId}/revision
+* @param requestParameters
+     */
+    revisarAdjunto(requestParameters: RevisarAdjuntoRequestParams, extraHttpRequestParams?: any): Observable<AdjuntoClinicoResponse>;
 
     /**
      * Subir un documento clinico

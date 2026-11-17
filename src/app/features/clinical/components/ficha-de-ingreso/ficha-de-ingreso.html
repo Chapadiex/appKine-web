@@ -1,0 +1,104 @@
+<section class="tarjeta ficha" aria-labelledby="ficha-titulo">
+  <header class="ficha__cabeza">
+    <h2 id="ficha-titulo">Ficha de ingreso</h2>
+    @if (ficha(); as actual) {
+      <span
+        class="marca-estado"
+        [class.marca-estado--activa]="!sinRevisar()"
+        [class.marca-estado--suspendida]="sinRevisar()"
+      >
+        {{ sinRevisar() ? 'Sin revisar' : 'Revisada' }}
+      </span>
+      @if (puedeRevisar() && sinRevisar()) {
+        <button type="button" class="boton boton--secundario boton--chico" (click)="revisar.emit()">
+          Revisado
+        </button>
+      }
+    }
+    <span class="ficha__estado" role="status">{{ guardando() ? 'Guardando…' : '' }}</span>
+  </header>
+
+  <div class="ficha__fila">
+    <div class="ficha__campo ficha__campo--ancho">
+      <label for="ficha-ocupacion">Ocupación</label>
+      <app-buscador-con-alta
+        idCampo="ficha-ocupacion"
+        placeholder="Buscá o agregá"
+        [opciones]="nombresDeOcupacion()"
+        [formControl]="ocupacion"
+        (elegido)="elegirOcupacion($event)"
+      />
+    </div>
+    <div class="ficha__campo ficha__campo--numero">
+      <label for="ficha-peso">Peso (kg)</label>
+      <app-numero-con-pasos
+        idCampo="ficha-peso"
+        etiqueta="Peso"
+        [paso]="0.5"
+        [decimales]="1"
+        [min]="1"
+        [max]="400"
+        [deshabilitado]="soloLectura()"
+        [(valor)]="peso"
+        (invalido)="marcarInvalido('peso', $event)"
+        (confirmado)="salirDeCampo()"
+      />
+    </div>
+    <div class="ficha__campo ficha__campo--numero">
+      <label for="ficha-altura">Altura (cm)</label>
+      <app-numero-con-pasos
+        idCampo="ficha-altura"
+        etiqueta="Altura"
+        [min]="30"
+        [max]="250"
+        [deshabilitado]="soloLectura()"
+        [(valor)]="altura"
+        (invalido)="marcarInvalido('altura', $event)"
+        (confirmado)="salirDeCampo()"
+      />
+    </div>
+    <div class="ficha__campo ficha__campo--imc">
+      <span class="ficha__etiqueta">IMC</span>
+      <output aria-live="polite">{{ imc() ?? '—' }}</output>
+    </div>
+    <div class="ficha__campo">
+      <span class="ficha__etiqueta">Actividad física</span>
+      <app-chips
+        etiqueta="Actividad física"
+        [opciones]="actividades"
+        [deshabilitado]="soloLectura()"
+        [valor]="actividad() || null"
+        (valorChange)="elegirActividad($event)"
+      />
+    </div>
+    <app-texto-opcional
+      class="ficha__campo ficha__campo--ancho"
+      idCampo="ficha-detalle"
+      etiqueta="¿Cuál?"
+      placeholder="Ej.: camina 3 veces por semana"
+      [maxlength]="120"
+      [deshabilitado]="soloLectura()"
+      [(valor)]="detalle"
+      (confirmado)="salirDeCampo()"
+    />
+  </div>
+
+  @if (numeroInvalido(); as mensaje) {
+    <p id="ficha-numero-error" class="campo__error" role="alert">{{ mensaje }}</p>
+  }
+
+  <fieldset class="ficha__enfermedades">
+    <legend>¿Tiene…?</legend>
+    @for (e of enfermedades; track e[0]) {
+      <label class="ficha__tilde" [title]="enfermedadesFijas().has(e[0]) ? motivoFijo() : ''">
+        <input
+          type="checkbox"
+          [checked]="enfermedadesTildadas().has(e[0])"
+          [disabled]="soloLectura() || enfermedadesFijas().has(e[0])"
+          (change)="alTildar(e[0], e[1], $event)"
+        />
+        {{ e[1] }}
+      </label>
+    }
+  </fieldset>
+</section>

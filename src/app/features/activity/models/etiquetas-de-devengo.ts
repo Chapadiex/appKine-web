@@ -43,7 +43,7 @@ export function avisoDeDevengo(devengo: DevengoDeClase | undefined): AvisoDeDeve
     case 'SIN_PRECIO':
       return {
         texto:
-          'la oferta no tiene precio vigente el día de la clase: no se genero deuda. La ' +
+          'la actividad no tiene precio vigente el día de la clase: no se genero deuda. La ' +
           'asistencia quedo registrada igual.',
         aviso: true,
       };

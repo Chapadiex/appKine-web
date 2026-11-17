@@ -37,6 +37,7 @@ import {
 } from '../../../api/generated/model/membership-response';
 import { OfertaResponse } from '../../../api/generated/model/oferta-response';
 import { PersonaResponse } from '../../../api/generated/model/persona-response';
+import { PersonaPageResponse } from '../../../api/generated/model/persona-page-response';
 import { PoliticaDeEnmienda } from '../../../api/generated/model/politica-de-enmienda';
 import { ReemplazarProfesionalDeSesion } from '../../../api/generated/model/reemplazar-profesional-de-sesion';
 
@@ -388,6 +389,18 @@ export class ClinicalApi {
     return this.personas
       .buscarPersonas({ q: q === '' ? undefined : q, estado: 'ACTIVO', perfil: 'TODOS', size: 10 })
       .pipe(map((pagina) => pagina.content ?? []));
+  }
+
+  /** Pacientes activos (con perfil clinico), paginados, para el buscador de historias clinicas. */
+  buscarPacientes(texto: string, pagina: number, tamano: number): Observable<PersonaPageResponse> {
+    const q = texto.trim();
+    return this.personas.buscarPersonas({
+      q: q === '' ? undefined : q,
+      estado: 'ACTIVO',
+      perfil: 'CON_PERFIL',
+      page: pagina,
+      size: tamano,
+    });
   }
 
   /** Casos ACTIVOS de la historia de una persona. Vacio si no tiene historia o no se pudo leer. */

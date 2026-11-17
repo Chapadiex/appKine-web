@@ -76,6 +76,8 @@ export const routes: Routes = [
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atención clínica',
+    // Toda la pantalla (13/11/2026): la atencion tiene tablas y una columna lateral.
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     // Atencion de un participante de una clase (AKINE-08.05): ya existe —la abrio el panel de la
@@ -84,6 +86,7 @@ export const routes: Routes = [
     canActivate: [contextGuard],
     loadComponent: () => import('./pages/atencion/atencion-page').then((m) => m.AtencionPage),
     title: 'AKINE - Atención clínica',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     // Panel de atencion clinica de una clase (AKINE-08.05): una atencion por participante y Caso.

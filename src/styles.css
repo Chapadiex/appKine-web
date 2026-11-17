@@ -28,6 +28,14 @@ body {
   padding: 0;
 }
 
+/*
+ * El lugar de la barra de desplazamiento queda reservado siempre: sin esto, una pantalla que pasa
+ * a tener scroll (la agenda en Mes) se angosta 15 px y todo lo de la barra se corre.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: var(--fuente-base);
   font-size: var(--tipo-sm);

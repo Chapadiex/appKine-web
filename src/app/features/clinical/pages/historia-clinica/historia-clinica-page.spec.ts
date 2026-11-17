@@ -81,6 +81,10 @@ describe('HistoriaClinicaPage', () => {
   afterEach(() => {
     // Las ofertas de la sede son accesorias (nombres en los casos): se contestan vacias.
     httpMock.match((r) => r.url.endsWith('/ofertas')).forEach((r) => r.flush([]));
+    // La ficha de ingreso se pide aparte: sin ficha, 204.
+    httpMock
+      .match((r) => r.url.endsWith('/ficha'))
+      .forEach((r) => r.flush(null, { status: 204, statusText: 'No Content' }));
     // Los permisos de la cabecera de la persona también son accesorios.
     httpMock
       .match((r) => r.url.endsWith('/me/permissions'))

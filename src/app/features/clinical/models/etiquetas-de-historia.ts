@@ -27,12 +27,12 @@ export const CATEGORIAS_DE_ADJUNTO: Readonly<Record<AdjuntoClinicoResponseCatego
   };
 
 export const TIPOS_DE_ANTECEDENTE: Readonly<Record<AntecedenteResponseTipoEnum, string>> = {
-  MEDICO: 'Medico',
-  QUIRURGICO: 'Quirurgico',
+  MEDICO: 'Médico',
+  QUIRURGICO: 'Quirúrgico',
   ALERGIA: 'Alergia',
-  MEDICACION: 'Medicacion',
+  MEDICACION: 'Medicación',
   FAMILIAR: 'Familiar',
-  HABITO: 'Habito',
+  HABITO: 'Hábito',
   OTRO: 'Otro',
 };
 

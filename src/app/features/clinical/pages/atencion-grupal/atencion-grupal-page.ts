@@ -151,7 +151,7 @@ const ETIQUETAS_DE_ASISTENCIA: Readonly<Record<string, string>> = {
     PanelLateral,
   ],
   templateUrl: './atencion-grupal-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', './atencion-grupal.css'],
 })
 export class AtencionGrupalPage {
   /** Ruta de navegacion de la barra superior (UX-13). */

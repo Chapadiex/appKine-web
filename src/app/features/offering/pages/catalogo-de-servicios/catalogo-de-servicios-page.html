@@ -2,7 +2,7 @@
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Que existe como concepto: kinesiologia respiratoria, pilates terapeutico, yoga. Como lo presta
-      tu sede —con que nombre, duración, precio y desde cuando— se define en las ofertas.
+      tu sede —con que nombre, duración, precio y desde cuando— se define en las actividades.
     </p>
     <p class="ayuda-contextual__subtitulo">Servicios de AKINE y servicios del centro</p>
     <p>
@@ -19,7 +19,7 @@
     </p>
     <p>
       Lo que si administra tu centro son las
-      <a routerLink="/servicios/ofertas">ofertas de la sede</a>: ahi se define el nombre comercial,
+      <a routerLink="/servicios/ofertas">actividades de la sede</a>: ahi se define el nombre comercial,
       la duración, el precio y la vigencia con la que cada servicio se presta acá.
     </p>
   </app-ayuda>
@@ -77,8 +77,8 @@
         <option value="TODOS">Todos</option>
       </select>
       <p class="ayuda" id="filtro-estado-servicio-ayuda">
-        Un servicio dado de baja no se borra: las ofertas que ya lo usan siguen funcionando. Lo que
-        no se puede es crear ofertas nuevas sobre el.
+        Un servicio dado de baja no se borra: las actividades que ya lo usan siguen funcionando. Lo que
+        no se puede es crear actividades nuevas sobre el.
       </p>
     </div>
   </app-filtros>
@@ -114,7 +114,7 @@
           } @else {
             <app-estado-vacio
               titulo="Todavía no hay servicios activos en el catálogo"
-              texto="Los servicios son la base de las ofertas de cada sede."
+              texto="Los servicios son la base de las actividades de cada sede."
             >
               @if (puedeCrear()) {
                 <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
@@ -198,15 +198,12 @@
                       <td class="tabla__acciones">
                         @if (servicio.estado === 'ACTIVO' && puedeMutar(servicio)) {
                           <app-acciones-de-fila [de]="servicio.nombre ?? ''">
-                            <a
+                            <button
                               principal
+                              type="button"
                               class="boton boton--secundario boton--chico"
-                              routerLink="/servicios/ofertas"
-                              [queryParams]="{ servicio: servicio.id }"
+                              (click)="abrirPanel(servicio, 'editar')"
                             >
-                              En la sede
-                            </a>
-                            <button type="button" (click)="abrirPanel(servicio, 'editar')">
                               Editar
                             </button>
                             <button
@@ -217,14 +214,20 @@
                               Dar de baja
                             </button>
                           </app-acciones-de-fila>
-                        } @else if (servicio.estado === 'ACTIVO') {
-                          <a
+                        } @else if (puedePersonalizar(servicio)) {
+                          <!--
+                            Servicio de AKINE: editarlo crea una copia de la organizacion (todas sus
+                            sedes). AKINE y los demas centros no cambian.
+                          -->
+                          <button
+                            type="button"
                             class="boton boton--secundario boton--chico"
-                            routerLink="/servicios/ofertas"
-                            [queryParams]="{ servicio: servicio.id }"
+                            (click)="abrirPanel(servicio, 'editar')"
                           >
-                            En la sede
-                          </a>
+                            Editar
+                          </button>
+                        } @else if (servicio.alcance !== 'ORGANIZACION') {
+                          <span class="ayuda">La mantiene AKINE.</span>
                         }
                       </td>
                     }
@@ -257,7 +260,9 @@
     ancho="amplio"
     [titulo]="
       modo === 'editar'
-        ? 'Editar servicio'
+        ? personalizando()
+          ? 'Personalizar servicio para tu organización'
+          : 'Editar servicio'
         : puedeAdministrar()
           ? 'Nuevo servicio del catálogo global'
           : 'Nuevo servicio'
@@ -277,6 +282,14 @@
       (ngSubmit)="modo === 'alta' ? enviarAlta() : enviarEdicion()"
       novalidate
     >
+      @if (modo === 'editar' && personalizando()) {
+        <app-alerta tipo="info" titulo="Es un servicio de AKINE">
+          <p>
+            Al guardar se crea una copia para <b>toda tu organización</b> (todas las sedes, no solo
+            esta), y tus actividades pasan a usarla. AKINE y los otros centros no cambian.
+          </p>
+        </app-alerta>
+      }
       @if (errorAccion() && !duplicado()) {
         <app-alerta
           tipo="error"
@@ -294,7 +307,7 @@
               }
               @if (rechazadoPorRol()) {
                 <a class="boton boton--secundario" routerLink="/servicios/ofertas">
-                  Ir a las ofertas de la sede
+                  Ir a las actividades de la sede
                 </a>
               }
             </p>
@@ -484,9 +497,9 @@
           Modalidad
           <app-ayuda titulo="Modalidad">
             <p>Cómo se realiza el servicio: una persona por turno, o varias en el mismo turno.</p>
-            <p>La capacidad máxima de lo grupal se configura al crear la oferta en cada sede.</p>
+            <p>La capacidad máxima de lo grupal se configura al crear la actividad en cada sede.</p>
             @if (modo === 'editar') {
-              <p>Es la propuesta para las ofertas nuevas: no cambia las ya creadas.</p>
+              <p>Es la propuesta para las actividades nuevas: no cambia las ya creadas.</p>
             }
           </app-ayuda>
         </span>
@@ -497,7 +510,7 @@
         <app-icono nombre="pacientes" />
         Seguimiento clínico
         <app-ayuda titulo="Seguimiento clínico">
-          <p>Se proponen por defecto y se pueden ajustar en la oferta de cada sede.</p>
+          <p>Se proponen por defecto y se pueden ajustar en la actividad de cada sede.</p>
         </app-ayuda>
       </h3>
 
@@ -602,7 +615,7 @@
               }
               @if (rechazadoPorRol()) {
                 <a class="boton boton--secundario" routerLink="/servicios/ofertas">
-                  Ir a las ofertas de la sede
+                  Ir a las actividades de la sede
                 </a>
               }
             </p>
@@ -621,8 +634,8 @@
         (cancelado)="cerrarPanel()"
       >
         <p class="ayuda ayuda--fija">
-          La baja <b>NO cascadea</b>: las ofertas de los centros que ya lo usan siguen funcionando y
-          conservan sus historicos. Lo que se impide es crear ofertas nuevas sobre el.
+          La baja <b>NO cascadea</b>: las actividades de los centros que ya lo usan siguen funcionando y
+          conservan sus historicos. Lo que se impide es crear actividades nuevas sobre el.
         </p>
       </app-confirmacion-con-motivo>
     </app-panel-lateral>

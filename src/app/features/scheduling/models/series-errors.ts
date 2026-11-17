@@ -150,7 +150,7 @@ function causaDeOcurrencia(base: ErrorAgenda): string {
         ? 'choca con otro turno'
         : `choca con otro turno del ${base.recurso}`;
     case 'oferta-no-agendable':
-      return 'cae en un día en que la oferta no se puede agendar';
+      return 'cae en un día en que la actividad no se puede agendar';
     default:
       return 'no tiene lugar';
   }

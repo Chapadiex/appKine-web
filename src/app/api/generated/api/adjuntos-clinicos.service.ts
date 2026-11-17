@@ -37,6 +37,7 @@ import {
     DescargarAdjuntoClinicoRequestParams,
     ListarAdjuntosClinicosRequestParams,
     ReclasificarAdjuntoClinicoRequestParams,
+    RevisarAdjuntoRequestParams,
     SubirAdjuntoClinicoRequestParams
 } from './adjuntos-clinicos.serviceInterface';
 
@@ -408,6 +409,76 @@ export class AdjuntosClinicosService extends BaseService implements AdjuntosClin
             {
                 context: localVarHttpContext,
                 body: reclasificarAdjuntoClinicoRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Marcar revisado un archivo declarado por el paciente
+     * DP-47. El profesional valida lo que trajo el paciente. Idempotente: revisar uno ya revisado devuelve como esta. Un adjunto que no es DECLARADO es 409 dato-no-declarado; uno dado de baja, 409 adjunto-clinico-inactivo. Exige hc:write y se audita como DATO_DECLARADO_REVISADO.
+     * @endpoint put /api/v1/historias-clinicas/{historiaClinicaId}/adjuntos/{adjuntoId}/revision
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public revisarAdjunto(requestParameters: RevisarAdjuntoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AdjuntoClinicoResponse>;
+    public revisarAdjunto(requestParameters: RevisarAdjuntoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AdjuntoClinicoResponse>>;
+    public revisarAdjunto(requestParameters: RevisarAdjuntoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AdjuntoClinicoResponse>>;
+    public revisarAdjunto(requestParameters: RevisarAdjuntoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const historiaClinicaId = requestParameters?.historiaClinicaId;
+        if (historiaClinicaId === null || historiaClinicaId === undefined) {
+            throw new Error('Required parameter historiaClinicaId was null or undefined when calling revisarAdjunto.');
+        }
+        const adjuntoId = requestParameters?.adjuntoId;
+        if (adjuntoId === null || adjuntoId === undefined) {
+            throw new Error('Required parameter adjuntoId was null or undefined when calling revisarAdjunto.');
+        }
+        const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xJustificacionAcceso !== undefined && xJustificacionAcceso !== null) {
+            localVarHeaders = localVarHeaders.set('X-Justificacion-Acceso', String(xJustificacionAcceso));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/${this.configuration.encodeParam({name: "historiaClinicaId", value: historiaClinicaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/adjuntos/${this.configuration.encodeParam({name: "adjuntoId", value: adjuntoId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/revision`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<AdjuntoClinicoResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

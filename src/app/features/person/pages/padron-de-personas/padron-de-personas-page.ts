@@ -24,6 +24,9 @@ import {
   PERMISO_COBRO_REGISTER,
   PERMISO_PACIENTE_MANAGE,
   PERMISO_PASE_READ,
+  PERMISO_HC_DECLARAR,
+  PERMISO_HC_READ,
+  PERMISO_HC_WRITE,
 } from '../../../../core/models/permisos';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { RouterLink } from '@angular/router';
@@ -49,6 +52,10 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import {
+  FiltroRapido,
+  FiltrosRapidos,
+} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -118,6 +125,8 @@ type TipoAccion = 'editar' | 'activar-perfil';
  * quien hace este trabajo. La pantalla no lo explica en la interfaz —seria ruido— pero el mensaje
  * de "sin contexto" pide las dos cosas.
  */
+type FiltroHistoria = 'TODOS' | 'CON_HISTORIA' | 'SIN_HISTORIA';
+
 @Component({
   selector: 'app-padron-de-personas-page',
   imports: [
@@ -128,6 +137,7 @@ type TipoAccion = 'editar' | 'activar-perfil';
     ColumnaOrdenable,
     Filtros,
     Icono,
+    FiltrosRapidos,
     ReactiveFormsModule,
     PermisoDirective,
     ConfirmacionConMotivo,
@@ -156,6 +166,21 @@ export class PadronDePersonasPage {
   protected readonly permisoCobro = PERMISO_COBRO_REGISTER;
   /** Los pases de la persona (M29) viven en `activity`; aca es solo una URL. */
   protected readonly permisoPase = PERMISO_PASE_READ;
+
+  /** Sin `hc:read` (el ORG_ADMIN por defecto) se informa que tiene historia, sin el enlace. */
+  protected puedeVerHistoria(): boolean {
+    return this.permisos.tiene(PERMISO_HC_READ);
+  }
+
+  /** Abrir una historia exige escribirla, y la pantalla que la abre también la lee. */
+  /** DP-47: cargar lo que declara el paciente, sin leer la historia. */
+  protected puedeDeclarar(): boolean {
+    return this.permisos.tiene(PERMISO_HC_DECLARAR);
+  }
+
+  protected puedeAbrirHistoria(): boolean {
+    return this.permisos.tiene(PERMISO_HC_READ) && this.permisos.tiene(PERMISO_HC_WRITE);
+  }
   private readonly permisos = inject(PermissionsStore);
 
   /** Cuantas acciones tiene la fila para quien mira: con tres o mas va el menu "⋯". */
@@ -212,13 +237,28 @@ export class PadronDePersonasPage {
   protected readonly filtroTipo = signal<TipoDePersona>('TODAS');
   protected readonly tiposDePersona = TIPOS_DE_PERSONA;
 
+  /** Con o sin historia clinica (13/11/2026): filtro a la vista, con su conteo. */
+  protected readonly filtroHistoria = signal<FiltroHistoria>('TODOS');
+  private readonly conteoHistoria = signal<{ con: number; sin: number } | null>(null);
+  protected readonly opcionesDeHistoria = computed<readonly FiltroRapido[]>(() => {
+    const conteo = this.conteoHistoria();
+    return [
+      { valor: 'TODOS', etiqueta: 'Todas', cantidad: conteo ? conteo.con + conteo.sin : 0 },
+      { valor: 'CON_HISTORIA', etiqueta: 'Con historia clínica', cantidad: conteo?.con ?? 0 },
+      { valor: 'SIN_HISTORIA', etiqueta: 'Sin historia clínica', cantidad: conteo?.sin ?? 0 },
+    ];
+  });
+
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(
     () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroTipo() !== 'TODAS'),
   );
   /** Hay algo elegido: busqueda o filtros del embudo. Separa "no hay nadie" de "no coincide". */
   protected readonly hayFiltros = computed(
-    () => this.texto().trim() !== '' || this.filtrosAvanzadosActivos() > 0,
+    () =>
+      this.texto().trim() !== '' ||
+      this.filtrosAvanzadosActivos() > 0 ||
+      this.filtroHistoria() !== 'TODOS',
   );
 
   protected readonly pagina = signal(0);
@@ -278,7 +318,8 @@ export class PadronDePersonasPage {
       // persona sin DNI es un caso real y exigirlo obligaria al mostrador a inventar uno.
       apellido: ['', [textoRequerido]],
       nombre: ['', [textoRequerido]],
-      tipoDocumento: [''],
+      // DNI por defecto: es el caso de casi todo el padron. Sin numero, el tipo no viaja.
+      tipoDocumento: ['DNI'],
       numeroDocumento: [''],
       fechaNacimiento: ['', [fechaDeNacimientoPosible]],
       email: ['', [Validators.email]],
@@ -336,11 +377,18 @@ export class PadronDePersonasPage {
     this.cargar();
   }
 
+  protected elegirHistoria(valor: string): void {
+    this.filtroHistoria.set(valor as FiltroHistoria);
+    this.pagina.set(0);
+    this.cargar();
+  }
+
   /** Vuelve la busqueda y los filtros del embudo a su valor por defecto. */
   protected limpiarFiltros(): void {
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
     this.filtroTipo.set('TODAS');
+    this.filtroHistoria.set('TODOS');
     this.pagina.set(0);
     this.cargar();
   }
@@ -358,11 +406,13 @@ export class PadronDePersonasPage {
 
   protected cargar(): void {
     this.estado.set({ tipo: 'cargando' });
+    this.cargarConteoHistoria();
     this.api
       .buscar({
         texto: this.texto(),
         estado: this.filtroEstado(),
         ...filtrosDeTipo(this.filtroTipo()),
+        historia: this.filtroHistoria(),
         pagina: this.pagina(),
         tamano: this.porPagina(),
         sort: this.orden.sort(),
@@ -378,6 +428,37 @@ export class PadronDePersonasPage {
           });
         },
       });
+  }
+
+  /**
+   * Los dos conteos del filtro de historia, con la misma busqueda y los mismos filtros del embudo.
+   * Dos pedidos de una fila: el backend devuelve el total y no hace falta traer personas.
+   */
+  private cargarConteoHistoria(): void {
+    const base = {
+      texto: this.texto(),
+      estado: this.filtroEstado(),
+      ...filtrosDeTipo(this.filtroTipo()),
+      pagina: 0,
+      tamano: 1,
+    };
+    forkJoin({
+      con: this.api.buscar({ ...base, historia: 'CON_HISTORIA' }),
+      sin: this.api.buscar({ ...base, historia: 'SIN_HISTORIA' }),
+    })
+      .pipe(catchError(() => of(null)))
+      .subscribe((r) =>
+        this.conteoHistoria.set(
+          r ? { con: r.con.totalElements ?? 0, sin: r.sin.totalElements ?? 0 } : null,
+        ),
+      );
+  }
+
+  /** Iniciales para el avatar de la fila. */
+  protected iniciales(persona: PersonaResponse): string {
+    return (
+      ((persona.apellido?.trim()[0] ?? '') + (persona.nombre?.trim()[0] ?? '')).toUpperCase() || '?'
+    );
   }
 
   // -------------------------------------------------------------------------------------
@@ -642,6 +723,7 @@ export class PadronDePersonasPage {
     this.texto.set('');
     this.filtroEstado.set('ACTIVO');
     this.filtroTipo.set('TODAS');
+    this.filtroHistoria.set('TODOS');
     this.pagina.set(0);
     this.porPagina.set(FILAS_POR_PAGINA_INICIAL);
     this.orden.reiniciar();

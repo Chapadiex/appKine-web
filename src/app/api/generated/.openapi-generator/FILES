@@ -47,6 +47,8 @@ api/consumo-de-autorizaciones.service.ts
 api/consumo-de-autorizaciones.serviceInterface.ts
 api/convenios-y-aranceles.service.ts
 api/convenios-y-aranceles.serviceInterface.ts
+api/datos-declarados.service.ts
+api/datos-declarados.serviceInterface.ts
 api/definiciones-de-medicion.service.ts
 api/definiciones-de-medicion.serviceInterface.ts
 api/derivacion-clinica-de-participantes.service.ts
@@ -87,6 +89,8 @@ api/notificaciones.service.ts
 api/notificaciones.serviceInterface.ts
 api/obligaciones.service.ts
 api/obligaciones.serviceInterface.ts
+api/ocupaciones.service.ts
+api/ocupaciones.serviceInterface.ts
 api/ordenes-medicas.service.ts
 api/ordenes-medicas.serviceInterface.ts
 api/organizaciones.service.ts
@@ -160,6 +164,7 @@ model/agregar-item-a-presentacion.ts
 model/ajuste-de-saldo-de-pase.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
+model/alta-de-ocupacion-request.ts
 model/alta-en-lista-de-espera.ts
 model/alta-sede-franja-horaria-request.ts
 model/alta-sede-primer-box-request.ts
@@ -297,6 +302,7 @@ model/cuenta-corriente-de-financiador.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
 model/datos-administrativos-de-historia-response.ts
+model/datos-declarados-response.ts
 model/datos-fiscales-efectivos-response.ts
 model/deactivate-bloque-request.ts
 model/deactivate-catalogo-request.ts
@@ -355,6 +361,8 @@ model/evento-relacionado-de-agenda.ts
 model/excepcion-response.ts
 model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
+model/ficha-de-ingreso-request.ts
+model/ficha-de-ingreso-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
@@ -440,6 +448,7 @@ model/notification-page-response.ts
 model/notification-response.ts
 model/obligacion.ts
 model/ocupacion-en-otra-sede.ts
+model/ocupacion-response.ts
 model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts

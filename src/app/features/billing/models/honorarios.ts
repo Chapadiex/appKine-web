@@ -39,7 +39,7 @@ export function agruparPorOferta(
   }
   return [...grupos.entries()].map(([ofertaId, delGrupo]) => ({
     ofertaId,
-    ofertaNombre: delGrupo[0].ofertaNombre || `Oferta #${ofertaId}`,
+    ofertaNombre: delGrupo[0].ofertaNombre || `Actividad #${ofertaId}`,
     lineas: delGrupo,
     claseIds: delGrupo.map((l) => l.claseId as number),
     total: sumaDeCentavos(delGrupo.map((l) => aCentavos(l.importeColaborador) ?? 0)),
@@ -58,7 +58,7 @@ export function motivoDeExclusionEnPalabras(motivo: string | undefined): string 
     case Motivo.YA_LIQUIDADA:
       return 'Ya liquidada a este colaborador';
     case Motivo.SIN_HONORARIO:
-      return 'La oferta no tenia tarifa de honorario ese día';
+      return 'La actividad no tenia tarifa de honorario ese día';
     case Motivo.SIN_PRESENTES:
       return 'Ningún participante presente';
     case Motivo.SIN_IMPORTE:

@@ -1,7 +1,9 @@
 @if (estado().tipo !== 'oculto') {
   <section class="tarjeta" aria-labelledby="titulo-historia-administrativa">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-historia-administrativa">Historia clínica: datos administrativos</h2>
+      <h2 id="titulo-historia-administrativa">
+        <app-icono nombre="capas" />Historia clínica: datos administrativos
+      </h2>
       <app-ayuda titulo="Historia clinica: datos administrativos">
         <p>
           Si tiene historia, desde cuando, sus casos y quien la atiende. Nada clínico: el contenido
@@ -26,10 +28,13 @@
 
     @if (lectura(); as l) {
       @if (!l.datos.tieneHistoriaClinica) {
-        <app-estado-vacio
-          titulo="Esta persona todavía no tiene historia clínica"
-          texto="La historia clínica se maneja en el módulo clínico."
-        />
+        <p class="estado estado--vacio historia-vacia">
+          <app-icono nombre="capas" />
+          <span
+            ><b>Todavía no tiene historia clínica.</b> Se abre con la primera carga de datos o la
+            primera atención.</span
+          >
+        </p>
       } @else {
         <dl class="detalle">
           <dt>Historia abierta el</dt>
@@ -45,7 +50,9 @@
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="caso">Caso</th>
                   <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="estado">Estado</th>
-                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="oferta">Oferta</th>
+                  <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="oferta">
+                    Actividad
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tablaDeCasos" columna="abierto">Abierto</th>
                   <th
                     scope="col"
@@ -90,6 +97,13 @@
           </div>
           <app-pie-de-tabla [tabla]="tablaDeCasos" etiqueta="Páginas de casos de la historia" />
         }
+      }
+      @if (puedeDeclarar()) {
+        <p class="ficha-enlace">
+          <a class="enlace" [routerLink]="['/pacientes', personaId(), 'datos-declarados']">
+            Cargar datos que declara el paciente
+          </a>
+        </p>
       }
     }
   </section>

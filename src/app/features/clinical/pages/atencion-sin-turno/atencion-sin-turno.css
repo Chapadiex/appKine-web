@@ -1,0 +1,68 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+/* La persona elegida en "Atender sin turno": iniciales y la accion para cambiarla. */
+.persona-elegida {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-5);
+  margin: 0 0 var(--esp-6);
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.persona-elegida__iniciales {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.persona-elegida__nombre {
+  flex: 1;
+  font-weight: var(--peso-medio);
+}
+
+/* Las personas que coinciden con la busqueda: filas, no botones apilados sueltos. */
+.lista-candidatas {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.lista-candidatas li + li {
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.lista-candidatas button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--esp-4) var(--esp-6);
+  border: 0;
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lista-candidatas button:hover {
+  background: var(--color-hover);
+}
+
+.lista-candidatas button:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}

@@ -28,6 +28,14 @@ import { PERMISO_CATALOGO_READ } from '../../core/models/permisos';
  */
 export const routes: Routes = [
   {
+    // Medidas del examen fisico (13/11/2026): estatica, antes que :tipo.
+    path: 'medidas',
+    canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
+    loadComponent: () => import('./pages/medidas/medidas-page').then((m) => m.MedidasPage),
+    title: 'AKINE - Medidas del examen físico',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'nomencladores/:nomencladorId/vigencias',
     canActivate: [permissionGuard(PERMISO_CATALOGO_READ)],
     loadComponent: () => import('./pages/vigencias/vigencias-page').then((m) => m.VigenciasPage),

@@ -125,6 +125,14 @@ export const routes: Routes = [
     title: 'AKINE - Abrir una sede',
   },
   {
+    // Editar usa la misma pantalla de pasos que el alta (13/11/2026).
+    path: 'sedes/:sedeId/editar',
+    canActivate: [permissionGuard(PERMISO_CONSULTORIO_MANAGE)],
+    loadComponent: () =>
+      import('./pages/new-consultorio/new-consultorio-page').then((m) => m.NewConsultorioPage),
+    title: 'AKINE - Editar sede',
+  },
+  {
     path: 'sedes',
     loadComponent: () =>
       import('./pages/consultorios/consultorios-page').then((m) => m.ConsultoriosPage),

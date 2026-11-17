@@ -1,0 +1,29 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.texto-opcional__campo {
+  width: 100%;
+  min-height: var(--alto-control);
+}
+
+/* La pista del micrófono sólo tiene sentido con teclado en pantalla. */
+.texto-opcional__pista {
+  display: none;
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+@media (pointer: coarse) {
+  .texto-opcional__pista {
+    display: block;
+  }
+}
+
+:host-context(:root[data-puntero='tactil']) .texto-opcional__pista {
+  display: block;
+}

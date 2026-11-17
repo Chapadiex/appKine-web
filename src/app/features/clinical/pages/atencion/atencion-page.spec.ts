@@ -485,8 +485,9 @@ describe('AtencionPage', () => {
 
     apretarRadio(fixture, 'PRESENTE');
     escribirEn(fixture, '#cierre-nota', 'Terapia manual.');
-    elegir(fixture, '#cierre-tolerancia', 'REGULAR');
-    elegir(fixture, '#cierre-conducta', 'ALTA');
+    // Tolerancia y conducta son chips (modo táctil): un toque, sin menú.
+    apretar(fixture, 'Regular');
+    apretar(fixture, 'Alta');
     fixture.detectChanges();
     apretar(fixture, 'Cerrar la atención');
 
@@ -509,6 +510,23 @@ describe('AtencionPage', () => {
     // En lectura se muestra el rotulo y no el valor crudo del enum: "ALTA" a secas no dice nada.
     expect(texto(fixture)).toContain('Regular');
     expect(texto(fixture)).toContain('Alta');
+  });
+
+  it('cambiar de pestaña conserva lo escrito', async () => {
+    const fixture = await montar();
+    escribirEn(fixture, '#atencion-objetivo', 'Ganar rango de hombro');
+    fixture.detectChanges();
+
+    apretar(fixture, 'Notas');
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector<HTMLElement>('#panel-evaluacion')?.hidden).toBe(true);
+    expect(raiz.querySelector<HTMLElement>('#panel-notas')?.hidden).toBe(false);
+
+    apretar(fixture, 'Evaluación');
+    expect(raiz.querySelector<HTMLElement>('#panel-evaluacion')?.hidden).toBe(false);
+    expect(raiz.querySelector<HTMLInputElement>('#atencion-objetivo')?.value).toBe(
+      'Ganar rango de hombro',
+    );
   });
 
   it('una sesión que ya venia cerrada se abre directamente en lectura', async () => {
@@ -939,7 +957,9 @@ describe('AtencionPage', () => {
   it('cada paso de la escala se anuncia empezando por el número que se ve (WCAG 2.5.3)', async () => {
     const fixture = await montar();
     const pasos = Array.from(
-      fixture.nativeElement.querySelectorAll('.escala__paso') as NodeListOf<HTMLButtonElement>,
+      fixture.nativeElement.querySelectorAll(
+        '.escala-tactil__paso',
+      ) as NodeListOf<HTMLButtonElement>,
     );
     for (const paso of pasos) {
       const visible = (paso.textContent ?? '').trim();

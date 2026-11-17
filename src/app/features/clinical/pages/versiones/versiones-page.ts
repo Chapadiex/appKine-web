@@ -34,7 +34,7 @@ import { publicarMigas } from '../../../../core/services/migas.store';
   selector: 'app-versiones-page',
   imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta, EstadoVacio],
   templateUrl: './versiones-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', './versiones.css'],
 })
 export class VersionesPage {
   /** Ruta de navegacion de la barra superior. */

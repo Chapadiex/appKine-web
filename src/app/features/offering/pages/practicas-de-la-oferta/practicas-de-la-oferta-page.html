@@ -1,15 +1,15 @@
-<app-cabecera-de-pagina titulo="Prácticas de la oferta">
+<app-cabecera-de-pagina titulo="Prácticas de la actividad">
   <app-ayuda titulo="Sobre esta pantalla">
-    <p>Que prácticas del catalogo puede prestar esta oferta, y cual es la principal.</p>
+    <p>Que prácticas del catalogo puede prestar esta actividad, y cual es la principal.</p>
     <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
     <p>
-      La oferta es lo que el centro vende; la práctica es lo que el financiador reconoce y paga. La
+      La actividad es lo que el centro vende; la práctica es lo que el financiador reconoce y paga. La
       <b>cobertura aplicable</b> de un paciente se calcula sobre estas prácticas, y cuando una
       sesión cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el
       consumo de la autorización usan la <b>práctica principal</b>. Si se registraron tratamientos,
       manda la práctica realizada.
     </p>
-    <p>Esta lista dice lo que la oferta <b>puede</b> prestar, no lo que se presto en una sesión.</p>
+    <p>Esta lista dice lo que la actividad <b>puede</b> prestar, no lo que se presto en una sesión.</p>
   </app-ayuda>
 
   <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
@@ -17,14 +17,14 @@
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado" role="status">Cargando las prácticas de la oferta…</p>
+    <p class="estado" role="status">Cargando las prácticas de la actividad…</p>
   }
 
   @case ('sin-contexto') {
     <section class="estado estado--vacio">
       <h2>Elegí una sede</h2>
       <p>
-        Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
+        Las actividades son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
         sesión sigue abierta.
       </p>
       <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
@@ -32,7 +32,7 @@
   }
 
   @case ('error') {
-    <app-alerta tipo="error" titulo="No pudimos leer las prácticas de la oferta">
+    <app-alerta tipo="error" titulo="No pudimos leer las prácticas de la actividad">
       <p>{{ mensajeDeCarga() }}</p>
       <p class="alerta__acciones">
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
@@ -65,7 +65,7 @@
 
         @if (seleccion().length === 0) {
           <p class="ayuda" role="status">
-            <b>Sin prácticas, la oferta no le devenga nada a ningún financiador</b> y ninguna
+            <b>Sin prácticas, la actividad no le devenga nada a ningún financiador</b> y ninguna
             cobertura le aplica. Una lista vacía NO significa "todas": es lo que corresponde a una
             actividad que no se factura a obras sociales, como Pilates.
           </p>
@@ -103,7 +103,7 @@
                   </button>
                   @if (fila.fueraDelCatalogo) {
                     <p class="ayuda ayuda--fija">
-                      El catalogo dio de baja esta práctica. La oferta la conserva y sigue valiendo,
+                      El catalogo dio de baja esta práctica. La actividad la conserva y sigue valiendo,
                       pero si era la principal conviene elegir otra.
                     </p>
                   }
@@ -189,7 +189,7 @@
           <h2 id="baja-titulo">Dadas de baja</h2>
           <app-ayuda titulo="Dadas de baja">
             <p>
-              Prácticas que la oferta tuvo y se quitaron. Quedan como historia; para volver a sumar
+              Prácticas que la actividad tuvo y se quitaron. Quedan como historia; para volver a sumar
               una, buscala y agregala.
             </p>
           </app-ayuda>

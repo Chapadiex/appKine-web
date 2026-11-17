@@ -37,7 +37,7 @@ export function advertenciasDelPlan(
   }
 
   for (const item of avance?.items ?? []) {
-    const nombre = item.ofertaNombre ?? `Oferta #${item.ofertaId}`;
+    const nombre = item.ofertaNombre ?? `Actividad #${item.ofertaId}`;
     const autorizadas = item.autorizadas;
     if (autorizadas !== undefined && autorizadas !== null) {
       if ((item.realizadas ?? 0) > autorizadas) {
@@ -73,7 +73,7 @@ export function advertenciasDelPlan(
     for (const ofertaId of ofertasDelPlan) {
       const oferta = ofertas.find((o) => o.id === ofertaId);
       if (oferta === undefined) continue;
-      const nombre = oferta.nombreComercial ?? `Oferta #${ofertaId}`;
+      const nombre = oferta.nombreComercial ?? `Actividad #${ofertaId}`;
       if (oferta.estado === 'INACTIVO' || oferta.vigenteHoy === false) {
         avisos.push(
           `${nombre} ya no esta vigente en la sede. El plan sigue valido, pero no se puede volver ` +

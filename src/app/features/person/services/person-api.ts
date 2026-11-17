@@ -63,6 +63,8 @@ export class PersonApi {
     readonly perfil: FiltroPerfil;
     /** Sin él, indistinto. */
     readonly actividad?: FiltroActividad;
+    /** Con o sin historia clinica (13/11/2026). Sin el, indistinto. */
+    readonly historia?: BuscarPersonasRequestParams['historia'];
     readonly pagina: number;
     readonly tamano: number;
     /** Orden pedido al servidor (DP-45). Sin el, por apellido y nombre. */
@@ -75,6 +77,7 @@ export class PersonApi {
       perfil: filtros.perfil,
       // `TODOS` no viaja: es el defecto del backend y la URL queda como antes del filtro.
       actividad: filtros.actividad === 'TODOS' ? undefined : filtros.actividad,
+      historia: filtros.historia === 'TODOS' ? undefined : filtros.historia,
       page: filtros.pagina,
       size: filtros.tamano,
       sort: filtros.sort,

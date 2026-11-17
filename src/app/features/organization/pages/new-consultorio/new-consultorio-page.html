@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Abrir una sede">
+<app-cabecera-de-pagina [titulo]="editando() ? 'Editar sede' : 'Abrir una sede'">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una sede es un consultorio de esta organización: tiene su propia zona horaria, su propia
@@ -23,8 +23,11 @@
   mapa y visibilidad a la derecha.
 -->
 <section class="asistente" aria-labelledby="titulo-alta-sede">
-  <ol class="asistente__pasos" aria-label="Pasos para abrir la sede">
-    @for (item of pasos; track item.numero) {
+  <ol
+    class="asistente__pasos"
+    [attr.aria-label]="editando() ? 'Pasos para editar la sede' : 'Pasos para abrir la sede'"
+  >
+    @for (item of pasos(); track item.numero) {
       <li
         class="asistente__paso"
         [class.asistente__paso--hecho]="item.numero < paso() || hecho()"
@@ -35,7 +38,9 @@
           <button type="button" class="asistente__volver" (click)="irAPaso(item.numero)">
             <span class="asistente__marca" aria-hidden="true">✓</span>
             <span class="asistente__textos">
-              <span class="asistente__titulo">{{ item.titulo }}</span>
+              <span class="asistente__titulo"
+                ><app-icono class="asistente__icono" [nombre]="item.icono" />{{ item.titulo }}</span
+              >
               <span class="asistente__sub">{{ item.sub }}</span>
             </span>
             <span class="visualmente-oculto">(hecho, volver a este paso)</span>
@@ -45,7 +50,9 @@
             item.numero < paso() || hecho() ? '✓' : item.numero
           }}</span>
           <span class="asistente__textos">
-            <span class="asistente__titulo">{{ item.titulo }}</span>
+            <span class="asistente__titulo"
+              ><app-icono class="asistente__icono" [nombre]="item.icono" />{{ item.titulo }}</span
+            >
             <span class="asistente__sub">{{ item.sub }}</span>
           </span>
         }
@@ -56,7 +63,7 @@
   <div class="asistente__contenido">
     <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
       @if (hecho()) {
-        Sede creada
+        {{ editando() ? 'Cambios guardados' : 'Sede creada' }}
       } @else {
         <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
         @switch (paso()) {
@@ -67,10 +74,10 @@
             ¿Dónde está {{ resumen().nombre }}?
           }
           @case (3) {
-            Configuración inicial
+            {{ editando() ? 'Datos fiscales' : 'Configuración inicial' }}
           }
           @case (4) {
-            Revisá y creá {{ resumen().nombre }}
+            {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
           }
         }
       }
@@ -85,7 +92,10 @@
       >
         <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige. -->
         @if (mensajeError(); as mensaje) {
-          <app-alerta tipo="error" titulo="No pudimos crear la sede">
+          <app-alerta
+            tipo="error"
+            [titulo]="editando() ? 'No pudimos guardar los cambios' : 'No pudimos crear la sede'"
+          >
             <p>{{ mensaje }}</p>
             <!--
               El tope del plan no se resuelve reintentando: hay que cambiar de plan. Ofrecer solo
@@ -331,93 +341,101 @@
           @case (3) {
             <!-- Instruccion de un paso: va a la vista. -->
             <p class="asistente__nota">
-              Todo es opcional: podés seguir sin cargar nada y completarlo después.
+              @if (editando()) {
+                El horario se cambia en el calendario de la sede y los boxes en Espacios.
+              } @else {
+                Todo es opcional: podés seguir sin cargar nada y completarlo después.
+              }
             </p>
 
             <div class="asistente__grilla asistente__grilla--horario">
-              <section class="bloque" aria-labelledby="titulo-horario-general">
-                <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
-                  Horario de atención
-                </h3>
-                <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
-                <p class="bloque__ayuda">
-                  <b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.
-                </p>
-                <app-horario-semanal
-                  idBase="sede-horario"
-                  [franjas]="horario"
-                  [mostrarErrores]="intentos() > 0"
-                  [erroresDelServidor]="erroresHorario()"
-                />
-              </section>
+              @if (!editando()) {
+                <section class="bloque" aria-labelledby="titulo-horario-general">
+                  <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
+                    Horario de atención
+                  </h3>
+                  <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
+                  <p class="bloque__ayuda">
+                    <b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.
+                  </p>
+                  <app-horario-semanal
+                    idBase="sede-horario"
+                    [franjas]="horario"
+                    [mostrarErrores]="intentos() > 0"
+                    [erroresDelServidor]="erroresHorario()"
+                  />
+                </section>
+              }
 
               <div class="asistente__columna">
-                <fieldset class="bloque" aria-describedby="sede-box-ayuda">
-                  <legend class="bloque__titulo">Primer box</legend>
-                  <p class="bloque__ayuda" id="sede-box-ayuda">
-                    Si le ponés nombre, la sede y el box se crean juntos. Si no, lo agregás desde
-                    Espacios.
-                  </p>
+                @if (!editando()) {
+                  <fieldset class="bloque" aria-describedby="sede-box-ayuda">
+                    <legend class="bloque__titulo">Primer box</legend>
+                    <p class="bloque__ayuda" id="sede-box-ayuda">
+                      Si le ponés nombre, la sede y el box se crean juntos. Si no, lo agregás desde
+                      Espacios.
+                    </p>
 
-                  <div class="pila-de-campos">
-                    <div class="campo">
-                      <label for="sede-boxNombre">Nombre del box</label>
-                      <input
-                        id="sede-boxNombre"
-                        type="text"
-                        formControlName="boxNombre"
-                        autocomplete="off"
-                        placeholder="Box 1"
-                        [attr.aria-invalid]="errorPrimerBox() !== null"
-                        [attr.aria-describedby]="
-                          errorPrimerBox() !== null ? 'sede-box-error' : null
-                        "
-                      />
-                    </div>
-
-                    <div class="campo">
-                      <label for="sede-boxCapacidad">Pacientes a la vez</label>
-                      <div class="contador">
-                        <button
-                          type="button"
-                          class="contador__boton"
-                          aria-label="Uno menos"
-                          aria-controls="sede-boxCapacidad"
-                          (click)="cambiarCapacidad(-1)"
-                        >
-                          −
-                        </button>
+                    <div class="pila-de-campos">
+                      <div class="campo">
+                        <label for="sede-boxNombre">Nombre del box</label>
                         <input
-                          id="sede-boxCapacidad"
-                          class="contador__valor"
-                          type="number"
-                          min="1"
-                          placeholder="1"
-                          formControlName="boxCapacidad"
-                          [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                          id="sede-boxNombre"
+                          type="text"
+                          formControlName="boxNombre"
+                          autocomplete="off"
+                          placeholder="Box 1"
+                          [attr.aria-invalid]="errorPrimerBox() !== null"
+                          [attr.aria-describedby]="
+                            errorPrimerBox() !== null ? 'sede-box-error' : null
+                          "
                         />
-                        <button
-                          type="button"
-                          class="contador__boton"
-                          aria-label="Uno más"
-                          aria-controls="sede-boxCapacidad"
-                          (click)="cambiarCapacidad(1)"
-                        >
-                          +
-                        </button>
                       </div>
-                      @if (mostrarError('boxCapacidad')) {
-                        <p class="campo__error" id="sede-boxCapacidad-error">
-                          Tiene que ser un número mayor que cero.
-                        </p>
-                      }
-                    </div>
-                  </div>
 
-                  @if (errorPrimerBox(); as mensaje) {
-                    <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
-                  }
-                </fieldset>
+                      <div class="campo">
+                        <label for="sede-boxCapacidad">Pacientes a la vez</label>
+                        <div class="contador">
+                          <button
+                            type="button"
+                            class="contador__boton"
+                            aria-label="Uno menos"
+                            aria-controls="sede-boxCapacidad"
+                            (click)="cambiarCapacidad(-1)"
+                          >
+                            −
+                          </button>
+                          <input
+                            id="sede-boxCapacidad"
+                            class="contador__valor"
+                            type="number"
+                            min="1"
+                            placeholder="1"
+                            formControlName="boxCapacidad"
+                            [attr.aria-invalid]="mostrarError('boxCapacidad')"
+                          />
+                          <button
+                            type="button"
+                            class="contador__boton"
+                            aria-label="Uno más"
+                            aria-controls="sede-boxCapacidad"
+                            (click)="cambiarCapacidad(1)"
+                          >
+                            +
+                          </button>
+                        </div>
+                        @if (mostrarError('boxCapacidad')) {
+                          <p class="campo__error" id="sede-boxCapacidad-error">
+                            Tiene que ser un número mayor que cero.
+                          </p>
+                        }
+                      </div>
+                    </div>
+
+                    @if (errorPrimerBox(); as mensaje) {
+                      <p class="campo__error" id="sede-box-error">{{ mensaje }}</p>
+                    }
+                  </fieldset>
+                }
 
                 <fieldset class="bloque fiscales">
                   <legend class="bloque__titulo">Datos fiscales</legend>
@@ -597,40 +615,44 @@
                 </button>
               </div>
 
-              <div class="confirmacion__fila">
-                <dt>Horario</dt>
-                <dd>
-                  @if (resumen().horario.length === 0) {
-                    <span class="confirmacion__secundario">
-                      Sin horario por ahora: la agenda no se limita.
-                    </span>
-                  } @else {
-                    <ul class="resumen__lista confirmacion__lista">
-                      @for (linea of resumen().horario; track $index) {
-                        <li>{{ linea }}</li>
-                      }
-                    </ul>
-                    <app-semana-dibujada [franjas]="resumen().franjas" />
-                  }
-                </dd>
-                <button type="button" class="enlace-boton" (click)="irAPaso(3)">
-                  Cambiar<span class="visualmente-oculto"> el horario</span>
-                </button>
-              </div>
+              @if (!editando()) {
+                <div class="confirmacion__fila">
+                  <dt>Horario</dt>
+                  <dd>
+                    @if (resumen().horario.length === 0) {
+                      <span class="confirmacion__secundario">
+                        Sin horario por ahora: la agenda no se limita.
+                      </span>
+                    } @else {
+                      <ul class="resumen__lista confirmacion__lista">
+                        @for (linea of resumen().horario; track $index) {
+                          <li>{{ linea }}</li>
+                        }
+                      </ul>
+                      <app-semana-dibujada [franjas]="resumen().franjas" />
+                    }
+                  </dd>
+                  <button type="button" class="enlace-boton" (click)="irAPaso(3)">
+                    Cambiar<span class="visualmente-oculto"> el horario</span>
+                  </button>
+                </div>
+              }
 
-              <div class="confirmacion__fila">
-                <dt>Primer box</dt>
-                <dd>
-                  @if (resumen().box; as box) {
-                    {{ box }}
-                  } @else {
-                    <span class="confirmacion__secundario">Sin box por ahora</span>
-                  }
-                </dd>
-                <button type="button" class="enlace-boton" (click)="irAPaso(3)">
-                  Cambiar<span class="visualmente-oculto"> el primer box</span>
-                </button>
-              </div>
+              @if (!editando()) {
+                <div class="confirmacion__fila">
+                  <dt>Primer box</dt>
+                  <dd>
+                    @if (resumen().box; as box) {
+                      {{ box }}
+                    } @else {
+                      <span class="confirmacion__secundario">Sin box por ahora</span>
+                    }
+                  </dd>
+                  <button type="button" class="enlace-boton" (click)="irAPaso(3)">
+                    Cambiar<span class="visualmente-oculto"> el primer box</span>
+                  </button>
+                </div>
+              }
 
               <div class="confirmacion__fila">
                 <dt>Datos fiscales</dt>
@@ -663,7 +685,7 @@
                 @if (espera.activa()) {
                   Espera {{ espera.segundos() }} s
                 } @else {
-                  Crear sede
+                  {{ editando() ? 'Guardar cambios' : 'Crear sede' }}
                 }
               </button>
               <button type="button" class="boton boton--secundario" (click)="volver()">

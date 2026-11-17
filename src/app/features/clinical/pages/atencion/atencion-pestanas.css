@@ -1,0 +1,212 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+/*
+ * La evaluacion previa, pegada al campo de dolor.
+ *
+ * Es la unica pieza de la pantalla que existe por una razon clinica y no de formulario: se
+ * dibuja como un aviso y no como texto de ayuda para que se lea ANTES de cargar el numero.
+ */
+.previa {
+  margin: 0 0 var(--esp-5);
+  padding: var(--esp-4) var(--esp-5);
+  border-left: var(--borde-acento) solid var(--color-info);
+  border-radius: var(--radio-sm);
+  background: var(--color-info-fondo);
+  color: var(--color-texto);
+  font-size: var(--tipo-md);
+}
+
+.previa__rotulo {
+  font-weight: var(--peso-semi);
+}
+
+.chip {
+  min-height: 2.25rem;
+  padding: var(--esp-2) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+/* El chip elegido va en azul claro, como en el lienzo. */
+.chip[aria-pressed='true'] {
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+}
+
+.chip:hover {
+  border-color: var(--color-acento);
+}
+
+.chip:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Lo que acompana al titulo del paso del lado derecho (el modo de la evaluacion). */
+.paso__extremo {
+  margin-left: auto;
+}
+
+.paso__extremo.segmentado {
+  margin-bottom: 0;
+}
+
+/* Lado y evolucion lado a lado (13/11/2026); en pantalla angosta, uno debajo del otro. */
+.fila-de-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+/* Evolucion arranca en la mitad, con una linea que la separa del lado. */
+.fila-de-chips > .grupo-plano + .grupo-plano {
+  padding-left: var(--esp-6);
+  border-left: var(--borde-fino) solid var(--color-borde);
+}
+
+/* Los dos titulos a la misma altura aunque uno tenga el "?". */
+.fila-de-chips > .grupo-plano > legend {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: 2rem;
+}
+
+@media (max-width: 48rem) {
+  .fila-de-chips {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fila-de-chips > .grupo-plano + .grupo-plano {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+.fila-de-chips > .grupo-plano .chip {
+  padding-inline: var(--esp-4);
+}
+
+/*
+ * Seleccion bien marcada (13/11/2026): relleno del color de accion, texto claro y un tilde.
+ * Va antes de los colores de dolor y evolucion, que la reemplazan con el suyo.
+ */
+.chip[aria-pressed='true'] {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+/*
+ * Atención en pestañas (modo táctil, 16/11/2026). Cabecera fija con los datos y "Cerrar ▸", la
+ * fila de pestañas y un panel que scrollea por dentro: la página entra entera en una tablet
+ * apaisada (1024×768) y el botón de cierre nunca queda fuera de la vista.
+ */
+.atencion--pestanas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.atencion__cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-6);
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.atencion__resumen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-6);
+  min-width: 0;
+}
+
+.atencion__resumen h2 {
+  margin: 0;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.datos-atencion--en-linea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-1) var(--esp-6);
+  margin: 0;
+  font-size: var(--tipo-xs);
+}
+
+.datos-atencion--en-linea > div {
+  display: flex;
+  gap: var(--esp-2);
+  align-items: baseline;
+}
+
+.atencion__ir-a-cierre {
+  width: auto;
+  margin-left: auto;
+}
+
+.atencion__gestion > summary {
+  min-height: var(--alto-tocable);
+}
+
+/*
+ * El panel activo usa el alto que queda: 100dvh menos la barra superior, la cabecera de la página,
+ * la de la atención y las pestañas. Lo que no entra scrollea dentro del panel, no la página.
+ */
+.atencion__panel {
+  max-height: calc(100dvh - var(--atencion-reservado, 18rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--esp-2) var(--esp-1) var(--esp-4);
+}
+
+.atencion__panel[hidden] {
+  display: none;
+}
+
+.atencion__fila-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+.atencion__titulo-panel {
+  margin: 0;
+  font-size: var(--tipo-md);
+}
+
+.atencion__panel .pie-tarjeta {
+  margin-top: var(--esp-4);
+}
+
+.atencion__panel .grupo-plano {
+  margin-bottom: var(--esp-4);
+}
+
+/* En pantalla angosta (teléfono) el panel no se encierra: scrollea la página como siempre. */
+@media (max-width: 40rem) {
+  .atencion__panel {
+    max-height: none;
+    overflow: visible;
+  }
+}

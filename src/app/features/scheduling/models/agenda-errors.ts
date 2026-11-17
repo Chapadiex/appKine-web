@@ -218,12 +218,12 @@ const MENSAJE_SIN_PERMISO =
   'centro.';
 
 const MENSAJE_NO_ENCONTRADO =
-  'Eso ya no existe, o no es de esta sede. Volvé al buscador y elegí una oferta del listado ' +
+  'Eso ya no existe, o no es de esta sede. Volvé al buscador y elegí una actividad del listado ' +
   'actual.';
 
 const MENSAJE_OFERTA_NO_AGENDABLE =
-  'Esta oferta no se puede agendar: esta dada de baja, o su vigencia no toca las fechas que ' +
-  'pediste. Elegí otra oferta, u otro rango de fechas.';
+  'Esta actividad no se puede agendar: esta dada de baja, o su vigencia no toca las fechas que ' +
+  'pediste. Elegí otra actividad, u otro rango de fechas.';
 
 const MENSAJE_SLOT_NO_DISPONIBLE =
   'Ese horario dejo de estar disponible mientras lo mirabas. No reservamos nada. Recarga la ' +

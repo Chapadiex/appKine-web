@@ -115,6 +115,18 @@ export class OfferingApi {
   }
 
   /**
+   * Personaliza para la organizacion (todas sus sedes) un servicio del catalogo de AKINE: el
+   * backend crea una copia propia con estos cambios y le pasa las ofertas de la organizacion. El
+   * servicio de AKINE y los demas centros no cambian. Devuelve la copia, con otro id.
+   */
+  personalizarServicio(
+    servicioId: number,
+    cuerpo: UpdateServicioRequest,
+  ): Observable<ServicioResponse> {
+    return this.api.personalizarServicio({ servicioId, updateServicioRequest: cuerpo });
+  }
+
+  /**
    * Baja logica de un servicio global, con motivo obligatorio.
    *
    * <p>La baja <b>no cascadea</b> (diseno 7.8): las ofertas de los centros que lo referencian

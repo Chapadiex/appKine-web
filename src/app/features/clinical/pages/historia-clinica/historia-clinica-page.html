@@ -60,6 +60,101 @@
 
   @case ('lista') {
     @if (historia(); as hc) {
+      <!-- DP-47: lo que declaro el paciente espera revision del profesional. -->
+      @if (declaradosSinRevisar() > 0) {
+        <app-alerta tipo="advertencia" titulo="Datos declarados por el paciente sin revisar">
+          <p>
+            Hay {{ declaradosSinRevisar() }}
+            {{ declaradosSinRevisar() === 1 ? 'dato declarado' : 'datos declarados' }} por el
+            paciente sin revisar. Lo que cuenta el paciente puede no ser exacto: revisalo antes de
+            usarlo.
+          </p>
+          @if (antecedentesPendientes().length || adjuntosPendientes().length) {
+            <ul class="historia__declarados">
+              @for (antecedente of antecedentesPendientes(); track antecedente.id) {
+                <li>
+                  <span class="marca-estado marca-estado--suspendida">Sin revisar</span>
+                  <span>
+                    <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+                    @if (detalleDe(antecedente); as detalle) {
+                      <span class="historia__detalle">· {{ detalle }}</span>
+                    }
+                    @if (antecedente.cargadoPorNombre) {
+                      <span class="ayuda">· cargado por {{ antecedente.cargadoPorNombre }}</span>
+                    }
+                  </span>
+                  @if (puedeRevisar()) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [disabled]="revisando() === antecedente.id"
+                      (click)="revisarAntecedente(antecedente.id!)"
+                    >
+                      <app-icono nombre="tilde" />
+                      Revisado<span class="visualmente-oculto"
+                        >: {{ antecedente.descripcion }}</span
+                      >
+                    </button>
+                  }
+                </li>
+              }
+              @for (adjunto of adjuntosPendientes(); track adjunto.id) {
+                <li>
+                  <span class="marca-estado marca-estado--suspendida">Sin revisar</span>
+                  <button
+                    type="button"
+                    class="accion-texto"
+                    [attr.aria-expanded]="adjuntoDeclaradoAbierto() === adjunto.id"
+                    (click)="alternarAdjuntoDeclarado(adjunto.id!)"
+                  >
+                    <app-icono nombre="documento" />
+                    {{ adjunto.titulo || adjunto.nombreArchivo }}
+                  </button>
+                  @if (puedeRevisar()) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [disabled]="revisando() === adjunto.id"
+                      (click)="revisarAdjunto(adjunto.id!)"
+                    >
+                      <app-icono nombre="tilde" />
+                      Revisado<span class="visualmente-oculto"
+                        >: {{ adjunto.titulo || adjunto.nombreArchivo }}</span
+                      >
+                    </button>
+                  }
+                  @if (adjuntoDeclaradoAbierto() === adjunto.id) {
+                    <app-visor-de-adjunto
+                      [historiaClinicaId]="hc.id!"
+                      [adjuntoId]="adjunto.id!"
+                      [justificacion]="justificacion()"
+                    />
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </app-alerta>
+      }
+
+      @if (ficha() || puedeRevisar()) {
+        <app-ficha-de-ingreso
+          class="historia__ficha"
+          [ficha]="ficha()"
+          [ocupaciones]="ocupaciones()"
+          [enfermedadesTildadas]="enfermedadesTildadas()"
+          [enfermedadesFijas]="enfermedadesTildadas()"
+          motivoFijo="Ya registrado: se da de baja desde los antecedentes"
+          [guardando]="guardandoFicha()"
+          [puedeRevisar]="puedeRevisar()"
+          [soloLectura]="!puedeRevisar()"
+          (guardar)="guardarFicha($event)"
+          (agregarOcupacion)="agregarOcupacion($event)"
+          (tildar)="tildarEnfermedad($event)"
+          (revisar)="revisarFicha()"
+        />
+      }
+
       <section class="tarjeta" aria-labelledby="titulo-paciente">
         <h2 id="titulo-paciente">Historia clínica</h2>
         <dl class="historia__datos">
@@ -87,24 +182,184 @@
 
         <div class="historia__resumen">
           <div>
-            <h3>Resumen clínico</h3>
-            @if (hc.resumen) {
+            <div class="historia__subtitulo">
+              <h3>Resumen clínico</h3>
+              @if (puedeRevisar() && !editandoResumen()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario boton--chico"
+                  (click)="editarResumen()"
+                >
+                  {{ hc.resumen ? 'Editar' : 'Escribir' }}
+                </button>
+              }
+            </div>
+            @if (editandoResumen()) {
+              <form class="historia__carga" (submit)="$event.preventDefault(); guardarResumen()">
+                <div class="campo">
+                  <label for="hc-resumen">Resumen clínico</label>
+                  <textarea
+                    id="hc-resumen"
+                    rows="5"
+                    [value]="resumenEscrito()"
+                    (input)="resumenEscrito.set($any($event.target).value)"
+                  ></textarea>
+                </div>
+                @if (errorResumen(); as mensaje) {
+                  <p class="campo__error" role="alert">{{ mensaje }}</p>
+                }
+                <div class="historia__acciones-carga">
+                  <button
+                    type="submit"
+                    class="boton boton--primario boton--chico"
+                    [disabled]="guardandoResumen()"
+                  >
+                    {{ guardandoResumen() ? 'Guardando…' : 'Guardar resumen' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="cancelarResumen()"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            } @else if (hc.resumen) {
               <p class="historia__cuerpo">{{ hc.resumen }}</p>
             } @else {
               <p class="estado estado--vacio">Sin resumen cargado.</p>
             }
           </div>
           <div>
-            <h3>Antecedentes vigentes</h3>
+            <div class="historia__subtitulo">
+              <h3>Antecedentes vigentes</h3>
+              @if (puedeRevisar() && !agregandoAntecedente()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario boton--chico"
+                  (click)="abrirAltaDeAntecedente()"
+                >
+                  <app-icono nombre="agregar" />
+                  Agregar
+                </button>
+              }
+            </div>
+            @if (agregandoAntecedente()) {
+              <form
+                class="historia__carga"
+                (submit)="$event.preventDefault(); guardarAntecedente()"
+              >
+                <fieldset class="grupo-plano">
+                  <legend>Tipo</legend>
+                  <app-chips
+                    id="hc-antecedente-tipo"
+                    etiqueta="Tipo de antecedente"
+                    [opciones]="opcionesDeTipo"
+                    [deseleccionable]="false"
+                    [valor]="tipoNuevo()"
+                    (valorChange)="elegirTipo($event)"
+                  />
+                </fieldset>
+                <div class="campo">
+                  <label for="hc-antecedente-descripcion">Descripción</label>
+                  <textarea
+                    id="hc-antecedente-descripcion"
+                    rows="3"
+                    maxlength="1000"
+                    [value]="descripcionNueva()"
+                    (input)="descripcionNueva.set($any($event.target).value)"
+                    [attr.aria-invalid]="intentoAntecedente() && !descripcionNueva().trim()"
+                    aria-describedby="error-antecedente-nuevo"
+                  ></textarea>
+                </div>
+                @if (tipoNuevo() === 'QUIRURGICO') {
+                  <div class="historia__cirugia">
+                    <fieldset class="grupo-plano historia__zona">
+                      <legend>Zona <span class="campo__opcional">(opcional)</span></legend>
+                      <app-chips
+                        etiqueta="Zona de la cirugía"
+                        idOtra="hc-antecedente-zona"
+                        [opciones]="opcionesDeZona"
+                        [permitirOtra]="true"
+                        [valor]="zonaEnChips().chip"
+                        [textoOtra]="zonaEnChips().otra"
+                        (valorChange)="elegirZonaDeCirugia($event)"
+                        (textoOtraChange)="zonaNueva.set($event)"
+                      />
+                    </fieldset>
+                    <div class="campo">
+                      <label for="hc-antecedente-anio"
+                        >Año <span class="campo__opcional">(opcional)</span></label
+                      >
+                      <app-numero-con-pasos
+                        idCampo="hc-antecedente-anio"
+                        etiqueta="Año"
+                        [min]="1900"
+                        [max]="anioMaximo"
+                        [valor]="anioNumero()"
+                        [desdeVacio]="anioMaximo"
+                        (invalido)="anioInvalido.set($event)"
+                        (valorChange)="anioNuevo.set($event === null ? '' : '' + $event)"
+                      />
+                    </div>
+                    <app-texto-opcional
+                      class="campo"
+                      idCampo="hc-antecedente-lugar"
+                      etiqueta="Dónde"
+                      [maxlength]="160"
+                      [valor]="lugarNuevo()"
+                      (valorChange)="lugarNuevo.set($event)"
+                    />
+                  </div>
+                }
+                @if (intentoAntecedente() && !descripcionNueva().trim()) {
+                  <p id="error-antecedente-nuevo" class="campo__error" role="alert">
+                    Escribí la descripción.
+                  </p>
+                } @else if (errorAntecedente(); as mensaje) {
+                  <p id="error-antecedente-nuevo" class="campo__error" role="alert">
+                    {{ mensaje }}
+                  </p>
+                }
+                <div class="historia__acciones-carga">
+                  <button
+                    type="submit"
+                    class="boton boton--primario boton--chico"
+                    [disabled]="guardandoAntecedente()"
+                  >
+                    {{ guardandoAntecedente() ? 'Guardando…' : 'Guardar antecedente' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario boton--chico"
+                    (click)="cancelarAltaDeAntecedente()"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            }
             @if (hc.antecedentes?.length) {
               <ul class="historia__antecedentes">
                 @for (antecedente of hc.antecedentes; track antecedente.id) {
                   <li>
                     <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+                    @if (detalleDe(antecedente); as detalle) {
+                      <span class="historia__detalle">· {{ detalle }}</span>
+                    }
+                    @if (marcaDeclarado(antecedente); as marca) {
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--suspendida]="marca === 'Declarado · sin revisar'"
+                        [class.marca-estado--info]="marca !== 'Declarado · sin revisar'"
+                        >{{ marca }}</span
+                      >
+                    }
                   </li>
                 }
               </ul>
-            } @else {
+            } @else if (!agregandoAntecedente()) {
               <p class="estado estado--vacio">Sin antecedentes registrados.</p>
             }
           </div>
@@ -113,6 +368,13 @@
 
       <app-casos-de-la-historia [historiaClinicaId]="hc.id!" (cambiaron)="huboCambios()" />
 
+      <!-- Las sesiones a mano (13/11/2026): cada atencion se abre sin pasar por su turno. -->
+      <app-sesiones-de-la-historia
+        [historiaClinicaId]="hc.id!"
+        [justificacion]="justificacion()"
+        [recargas]="recargas()"
+      />
+
       <div class="historia__columnas">
         <div class="historia__principal">
           <app-timeline-clinico
@@ -120,6 +382,7 @@
             [justificacion]="justificacion()"
             [recargas]="recargas()"
             [seleccionado]="claveElegida()"
+            [marcasDeAdjuntos]="marcasDeAdjuntos()"
             (elegido)="elegir($event)"
           />
         </div>
@@ -139,6 +402,16 @@
                   />
                 }
                 @case ('ADJUNTO_CLINICO') {
+                  @if (marcasDeAdjuntos().get(evento.referencia!); as marca) {
+                    <p>
+                      <span
+                        class="marca-estado"
+                        [class.marca-estado--suspendida]="marca === 'Declarado · sin revisar'"
+                        [class.marca-estado--info]="marca !== 'Declarado · sin revisar'"
+                        >{{ marca }}</span
+                      >
+                    </p>
+                  }
                   <app-visor-de-adjunto
                     [historiaClinicaId]="hc.id!"
                     [adjuntoId]="evento.referencia!"
@@ -149,6 +422,9 @@
                   @if (antecedenteElegido(); as antecedente) {
                     <p>
                       <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
+                      @if (detalleDe(antecedente); as detalle) {
+                        <span class="historia__detalle">· {{ detalle }}</span>
+                      }
                     </p>
                   } @else {
                     <p class="ayuda">
@@ -159,9 +435,13 @@
                 }
                 @case ('SESION') {
                   <p class="ayuda">
-                    Sesión cerrada. Lo que se registro en ella se consulta desde la atención: el
-                    timeline la muestra como hecho, sin repetir su contenido.
+                    Sesión cerrada. Lo que se registró en ella se ve en la atención.
                   </p>
+                  <div class="acciones">
+                    <a class="boton" [routerLink]="['/atencion/sesiones', evento.referencia]">
+                      Abrir la atención
+                    </a>
+                  </div>
                 }
               }
 

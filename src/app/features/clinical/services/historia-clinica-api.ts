@@ -12,7 +12,9 @@ import {
   AdjuntoClinicoResponse,
   AdjuntoClinicoResponseCategoriaEnum,
 } from '../../../api/generated/model/adjunto-clinico-response';
+import { AntecedenteResponse } from '../../../api/generated/model/antecedente-response';
 import { CasoClinico } from '../../../api/generated/model/caso-clinico';
+import { RegistrarAntecedenteRequest } from '../../../api/generated/model/registrar-antecedente-request';
 import { EntradaClinicaResponse } from '../../../api/generated/model/entrada-clinica-response';
 import { EntradaClinicaVersionResponse } from '../../../api/generated/model/entrada-clinica-version-response';
 import { HistoriaClinicaResponse } from '../../../api/generated/model/historia-clinica-response';
@@ -70,6 +72,38 @@ export class HistoriaClinicaApi {
   abrir(personaId: number, justificacion: Justificacion): Observable<HistoriaClinicaResponse> {
     return this.historias.abrirOObtenerHistoriaClinica({
       personaId,
+      ...motivoDeAcceso(justificacion),
+    });
+  }
+
+  /**
+   * Reemplaza el resumen clinico (exige `hc:write`). `expectedVersion` es la `version` de la
+   * historia leida: si otro guardo antes, 409 y hay que releer.
+   */
+  actualizarResumen(
+    personaId: number,
+    texto: string,
+    expectedVersion: number,
+    justificacion: Justificacion,
+  ): Observable<HistoriaClinicaResponse> {
+    return this.historias.actualizarResumenHistoriaClinica({
+      personaId,
+      actualizarResumenRequest: { texto, expectedVersion },
+      ...motivoDeAcceso(justificacion),
+    });
+  }
+
+  /** Registra un antecedente que cargo el profesional (exige `hc:write`). */
+  registrarAntecedente(
+    personaId: number,
+    tipo: RegistrarAntecedenteRequest['tipo'],
+    descripcion: string,
+    justificacion: Justificacion,
+    detalle: Pick<RegistrarAntecedenteRequest, 'zona' | 'anio' | 'lugar' | 'codigo'> = {},
+  ): Observable<AntecedenteResponse> {
+    return this.historias.registrarAntecedenteClinico({
+      personaId,
+      registrarAntecedenteRequest: { tipo, descripcion, ...detalle },
       ...motivoDeAcceso(justificacion),
     });
   }

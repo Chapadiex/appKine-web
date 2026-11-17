@@ -1,0 +1,78 @@
+<section class="tarjeta" aria-labelledby="titulo-sesiones">
+  <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
+    <h2 id="titulo-sesiones">Sesiones</h2>
+    <span class="sesiones__cuenta" aria-label="Sesiones cargadas">{{ cuenta() }}</span>
+    <app-ayuda titulo="Sesiones del paciente">
+      <p>
+        Todas las atenciones del paciente en la organización, de la más reciente a la más antigua,
+        tengan o no un turno detrás.
+      </p>
+      <p>
+        «Abrir la atención» muestra lo que se registró en ella: evaluación, mediciones y
+        tratamientos. Una sesión cerrada no se edita: se enmienda desde la misma pantalla.
+      </p>
+    </app-ayuda>
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="estado estado--error" role="alert">{{ mensaje }}</p>
+    <div class="acciones">
+      <button type="button" class="boton boton--secundario" (click)="reintentar()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (sesiones().length === 0) {
+    @if (cargando()) {
+      <p class="estado estado--cargando" role="status">Buscando las sesiones…</p>
+    } @else {
+      <app-estado-vacio
+        icono="calendario"
+        titulo="Todavía no tiene sesiones"
+        texto="Cuando se cierre la primera atención, va a aparecer acá."
+      />
+    }
+  } @else {
+    <ol class="sesiones">
+      @for (sesion of sesiones(); track sesion.id) {
+        <li class="sesiones__item">
+          <span class="sesiones__fecha" aria-hidden="true">
+            <span class="sesiones__dia">{{ sesion.dia }}</span>
+            <span class="sesiones__mes">{{ sesion.mes }}</span>
+          </span>
+          <span class="sesiones__texto">
+            <span class="sesiones__titulo">{{ sesion.titulo }}</span>
+            <span class="sesiones__meta">
+              <span class="visualmente-oculto">{{ sesion.dia }} de {{ sesion.mes }} de</span>
+              {{ sesion.diaDeSemana }} · {{ sesion.anio }} · {{ sesion.hora }} h ·
+              <span class="sesiones__hace">{{ sesion.hace }}</span>
+            </span>
+          </span>
+          <a
+            class="boton boton--secundario boton--chico"
+            [routerLink]="['/atencion/sesiones', sesion.id]"
+          >
+            Abrir la atención<span class="visualmente-oculto">
+              del {{ sesion.dia }} de {{ sesion.mes }}</span
+            >
+          </a>
+        </li>
+      }
+    </ol>
+    @if (cursor() !== null) {
+      <div class="acciones sesiones__mas">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="cargando()"
+          (click)="verMas()"
+        >
+          @if (cargando()) {
+            Cargando…
+          } @else {
+            Ver sesiones anteriores
+          }
+        </button>
+      </div>
+    }
+  }
+</section>

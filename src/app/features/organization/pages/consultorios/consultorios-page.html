@@ -216,14 +216,13 @@
                     <td class="tabla__acciones">
                       @if (sede.estado !== 'INACTIVO') {
                         <app-acciones-de-fila *akinePermiso="permisoManage" [de]="sede.name ?? ''">
-                          <button
+                          <a
                             principal
-                            type="button"
                             class="boton boton--secundario boton--chico"
-                            (click)="abrirPanel(sede, 'editar')"
+                            [routerLink]="['/organizacion/sedes', sede.id, 'editar']"
                           >
                             Editar
-                          </button>
+                          </a>
                           <!--
                             El calendario trabaja sobre la sede del contexto: en otra fila
                             mostraria el horario de la sede equivocada.

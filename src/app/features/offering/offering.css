@@ -429,3 +429,19 @@ form > .acciones.formulario-servicio__descartar {
 .formulario-servicio__descartar-texto b {
   display: block;
 }
+
+/* Titulos de seccion con icono en el alta y la edicion de una actividad (13/11/2026). */
+.seccion-con-icono {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin-top: var(--esp-4);
+  padding-top: var(--esp-3);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.seccion-con-icono > app-icono,
+.seccion-plegable > summary > app-icono {
+  flex: none;
+  color: var(--color-acento);
+}

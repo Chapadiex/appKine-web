@@ -36,7 +36,7 @@ export const VENTANA_MAXIMA = 3650;
   selector: 'app-politica-de-enmienda-page',
   imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta],
   templateUrl: './politica-de-enmienda-page.html',
-  styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css'],
+  styleUrls: ['../../atencion.css', '../historia-clinica/historia-clinica.css', './politica-de-enmienda.css'],
 })
 export class PoliticaDeEnmiendaPage {
   /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */

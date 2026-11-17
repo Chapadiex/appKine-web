@@ -14,6 +14,18 @@
  */
 export interface AntecedenteResponse { 
     /**
+     * Año de una cirugia (ficha de ingreso), o null
+     */
+    anio?: number;
+    /**
+     * Nombre de quien lo registro, o null si la cuenta ya no resuelve
+     */
+    cargadoPorNombre?: string;
+    /**
+     * Enfermedad de la lista de la ficha de ingreso, o null
+     */
+    codigo?: AntecedenteResponseCodigoEnum;
+    /**
      * Motivo declarado de la baja, o null
      */
     deactivationReason?: string;
@@ -30,6 +42,14 @@ export interface AntecedenteResponse {
      */
     id?: number;
     /**
+     * Donde se hizo la cirugia (ficha de ingreso), o null
+     */
+    lugar?: string;
+    /**
+     * Por que camino entro (DP-47): PROFESIONAL desde la historia, o DECLARADO por el paciente, que espera revision
+     */
+    origen?: AntecedenteResponseOrigenEnum;
+    /**
      * Instante UTC en que se registro
      */
     registradoEn?: string;
@@ -37,6 +57,14 @@ export interface AntecedenteResponse {
      * Cuenta que lo registro
      */
     registradoPor?: number;
+    /**
+     * Instante UTC de la revision de un dato declarado, o null si no se reviso
+     */
+    revisadoEn?: string;
+    /**
+     * Nombre del profesional que reviso el dato declarado, o null
+     */
+    revisadoPorNombre?: string;
     /**
      * Clase de antecedente
      */
@@ -49,7 +77,27 @@ export interface AntecedenteResponse {
      * Si el antecedente sigue vigente
      */
     vigente?: boolean;
+    /**
+     * Zona de una cirugia (ficha de ingreso), o null
+     */
+    zona?: string;
 }
+export enum AntecedenteResponseCodigoEnum {
+    DIABETES = 'DIABETES',
+    HIPERTENSION = 'HIPERTENSION',
+    CARDIOPATIA = 'CARDIOPATIA',
+    MARCAPASOS = 'MARCAPASOS',
+    OSTEOPOROSIS = 'OSTEOPOROSIS',
+    ANTICOAGULADO = 'ANTICOAGULADO',
+    EMBARAZO = 'EMBARAZO',
+    CANCER = 'CANCER',
+    EPILEPSIA = 'EPILEPSIA',
+    RESPIRATORIA = 'RESPIRATORIA'
+};
+export enum AntecedenteResponseOrigenEnum {
+    PROFESIONAL = 'PROFESIONAL',
+    DECLARADO = 'DECLARADO'
+};
 export enum AntecedenteResponseTipoEnum {
     MEDICO = 'MEDICO',
     QUIRURGICO = 'QUIRURGICO',

@@ -1,0 +1,51 @@
+:host {
+  display: flex;
+  gap: var(--esp-1);
+  overflow-x: auto;
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  scrollbar-width: thin;
+}
+
+.pestana-interna {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: var(--alto-control);
+  padding: 0 var(--esp-6);
+  border: 0;
+  border-bottom: var(--borde-acento) solid transparent;
+  background: transparent;
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* La activa: borde inferior grueso, texto fuerte y peso, no sólo color. */
+.pestana-interna[aria-selected='true'] {
+  border-bottom-color: var(--color-acento);
+  color: var(--color-texto);
+  font-weight: var(--peso-semi);
+}
+
+@media (hover: hover) {
+  .pestana-interna:hover {
+    color: var(--color-texto);
+  }
+}
+
+.pestana-interna:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+.pestana-interna__punto {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-acento);
+}

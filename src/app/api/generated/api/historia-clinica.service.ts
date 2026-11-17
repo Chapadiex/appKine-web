@@ -25,6 +25,10 @@ import { BajaDeAntecedenteRequest } from '../model/baja-de-antecedente-request';
 // @ts-ignore
 import { DatosAdministrativosDeHistoriaResponse } from '../model/datos-administrativos-de-historia-response';
 // @ts-ignore
+import { FichaDeIngresoRequest } from '../model/ficha-de-ingreso-request';
+// @ts-ignore
+import { FichaDeIngresoResponse } from '../model/ficha-de-ingreso-response';
+// @ts-ignore
 import { HistoriaClinicaResponse } from '../model/historia-clinica-response';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
@@ -42,7 +46,11 @@ import {
     DarDeBajaAntecedenteClinicoRequestParams,
     ListarAntecedentesClinicosRequestParams,
     RegistrarAntecedenteClinicoRequestParams,
+    RegistrarFichaDeIngresoRequestParams,
+    RevisarAntecedenteRequestParams,
+    RevisarFichaDeIngresoRequestParams,
     VerDatosAdministrativosDeHistoriaClinicaRequestParams,
+    VerFichaDeIngresoRequestParams,
     VerHistoriaClinicaRequestParams
 } from './historia-clinica.serviceInterface';
 
@@ -457,6 +465,222 @@ export class HistoriaClinicaService extends BaseService implements HistoriaClini
     }
 
     /**
+     * Guardar la ficha de ingreso (profesional)
+     * Reemplaza la ficha entera y exige la version leida (null si no existe); otra version es 409 concurrent-modification. Queda revisada por quien la guarda. La persona tiene que tener historia. Exige hc:write.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/ficha
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public registrarFichaDeIngreso(requestParameters: RegistrarFichaDeIngresoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<FichaDeIngresoResponse>;
+    public registrarFichaDeIngreso(requestParameters: RegistrarFichaDeIngresoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<FichaDeIngresoResponse>>;
+    public registrarFichaDeIngreso(requestParameters: RegistrarFichaDeIngresoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<FichaDeIngresoResponse>>;
+    public registrarFichaDeIngreso(requestParameters: RegistrarFichaDeIngresoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling registrarFichaDeIngreso.');
+        }
+        const fichaDeIngresoRequest = requestParameters?.fichaDeIngresoRequest;
+        if (fichaDeIngresoRequest === null || fichaDeIngresoRequest === undefined) {
+            throw new Error('Required parameter fichaDeIngresoRequest was null or undefined when calling registrarFichaDeIngreso.');
+        }
+        const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xJustificacionAcceso !== undefined && xJustificacionAcceso !== null) {
+            localVarHeaders = localVarHeaders.set('X-Justificacion-Acceso', String(xJustificacionAcceso));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ficha`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<FichaDeIngresoResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: fichaDeIngresoRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Marcar revisado un antecedente declarado por el paciente
+     * DP-47. El profesional valida lo que declaro el paciente. Idempotente: revisar uno ya revisado devuelve como esta. Un antecedente que no es DECLARADO es 409 dato-no-declarado. Exige hc:write y se audita como DATO_DECLARADO_REVISADO.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/antecedentes/{antecedenteId}/revision
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public revisarAntecedente(requestParameters: RevisarAntecedenteRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<AntecedenteResponse>;
+    public revisarAntecedente(requestParameters: RevisarAntecedenteRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<AntecedenteResponse>>;
+    public revisarAntecedente(requestParameters: RevisarAntecedenteRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<AntecedenteResponse>>;
+    public revisarAntecedente(requestParameters: RevisarAntecedenteRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling revisarAntecedente.');
+        }
+        const antecedenteId = requestParameters?.antecedenteId;
+        if (antecedenteId === null || antecedenteId === undefined) {
+            throw new Error('Required parameter antecedenteId was null or undefined when calling revisarAntecedente.');
+        }
+        const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xJustificacionAcceso !== undefined && xJustificacionAcceso !== null) {
+            localVarHeaders = localVarHeaders.set('X-Justificacion-Acceso', String(xJustificacionAcceso));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/antecedentes/${this.configuration.encodeParam({name: "antecedenteId", value: antecedenteId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/revision`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<AntecedenteResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Marcar revisada la ficha de ingreso
+     * Idempotente: una ya revisada se devuelve como esta. Exige hc:write.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/ficha/revision
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public revisarFichaDeIngreso(requestParameters: RevisarFichaDeIngresoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<FichaDeIngresoResponse>;
+    public revisarFichaDeIngreso(requestParameters: RevisarFichaDeIngresoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<FichaDeIngresoResponse>>;
+    public revisarFichaDeIngreso(requestParameters: RevisarFichaDeIngresoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<FichaDeIngresoResponse>>;
+    public revisarFichaDeIngreso(requestParameters: RevisarFichaDeIngresoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling revisarFichaDeIngreso.');
+        }
+        const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xJustificacionAcceso !== undefined && xJustificacionAcceso !== null) {
+            localVarHeaders = localVarHeaders.set('X-Justificacion-Acceso', String(xJustificacionAcceso));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ficha/revision`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<FichaDeIngresoResponse>('put', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Ver los datos administrativos de la Historia Clinica de una persona
      * Matriz de permisos §32, \&quot;Ver Historia Clinica\&quot; del ADMINISTRATIVO: Limitado, que la matriz define como solo metadatos administrativos y NUNCA contenido clinico. Devuelve si la persona tiene historia, cuando se abrio, sus casos (numero, estado, oferta, fechas) y el equipo tratante vigente de cada uno. No trae resumen, antecedentes, diagnostico, objetivo ni motivo de cierre.  Exige paciente:read (lo tiene el personal, no el rol PACIENTE). No pide justificacion de acceso y no se audita como acceso clinico: no expone contenido clinico. Una persona propia sin historia responde 200 con tieneHistoriaClinica &#x3D; false; una persona de otra organizacion, o sin perfil de paciente vigente, 404.
      * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/datos-administrativos
@@ -506,6 +730,72 @@ export class HistoriaClinicaService extends BaseService implements HistoriaClini
         let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/datos-administrativos`;
         const { basePath, withCredentials } = this.configuration;
         return this.httpClient.request<DatosAdministrativosDeHistoriaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver la ficha de ingreso
+     * 204 si todavia no se cargo. Exige hc:read mas relacion asistencial o motivo.
+     * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/ficha
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public verFichaDeIngreso(requestParameters: VerFichaDeIngresoRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<FichaDeIngresoResponse>;
+    public verFichaDeIngreso(requestParameters: VerFichaDeIngresoRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<FichaDeIngresoResponse>>;
+    public verFichaDeIngreso(requestParameters: VerFichaDeIngresoRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<FichaDeIngresoResponse>>;
+    public verFichaDeIngreso(requestParameters: VerFichaDeIngresoRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const personaId = requestParameters?.personaId;
+        if (personaId === null || personaId === undefined) {
+            throw new Error('Required parameter personaId was null or undefined when calling verFichaDeIngreso.');
+        }
+        const xJustificacionAcceso = requestParameters?.xJustificacionAcceso;
+
+        let localVarHeaders = this.defaultHeaders;
+        if (xJustificacionAcceso !== undefined && xJustificacionAcceso !== null) {
+            localVarHeaders = localVarHeaders.set('X-Justificacion-Acceso', String(xJustificacionAcceso));
+        }
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/historias-clinicas/por-persona/${this.configuration.encodeParam({name: "personaId", value: personaId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ficha`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<FichaDeIngresoResponse>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

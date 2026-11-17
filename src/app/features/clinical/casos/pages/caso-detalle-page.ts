@@ -110,7 +110,7 @@ export class CasoDetallePage {
   protected readonly nombreDeOferta = computed(() => {
     const caso = this.caso();
     if (caso?.ofertaNombre) return caso.ofertaNombre;
-    return caso?.ofertaId === undefined ? 'Sin oferta' : `Oferta #${caso.ofertaId}`;
+    return caso?.ofertaId === undefined ? 'Sin actividad' : `Actividad #${caso.ofertaId}`;
   });
   protected readonly habilitados = signal<readonly ProfesionalHabilitado[]>([]);
 

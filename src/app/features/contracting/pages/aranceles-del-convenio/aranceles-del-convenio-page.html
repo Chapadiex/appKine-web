@@ -99,7 +99,7 @@
           id="buscar-arancel"
           type="search"
           autocomplete="off"
-          placeholder="Buscar por práctica u oferta"
+          placeholder="Buscar por práctica o actividad"
           [value]="busqueda()"
           (input)="busqueda.set($any($event.target).value)"
         />
@@ -374,24 +374,24 @@
       </div>
 
       <div class="campo campo--6">
-        <label for="alta-arancel-oferta">Oferta (opcional)</label>
+        <label for="alta-arancel-oferta">Actividad (opcional)</label>
         <select
           id="alta-arancel-oferta"
           formControlName="ofertaId"
           aria-describedby="alta-arancel-oferta-ayuda"
         >
-          <option value="">General: vale para cualquier oferta</option>
+          <option value="">General: vale para cualquier actividad</option>
           @for (oferta of ofertasCandidatas(); track oferta.id) {
             <option [value]="oferta.id">Solo en {{ oferta.nombreComercial }}</option>
           }
         </select>
         <p class="ayuda" id="alta-arancel-oferta-ayuda">
-          Con una oferta, es el precio de la práctica dentro de esa oferta y manda sobre el general.
-          Aparecen las ofertas activas que admiten obra social y declaran la práctica.
+          Con una actividad, es el precio de la práctica dentro de esa actividad y manda sobre el general.
+          Aparecen las actividades activas que admiten obra social y declaran la práctica.
         </p>
         @if (formularioAlta.controls.practicaId.value !== '' && ofertasCandidatas().length === 0) {
           <p class="ayuda ayuda--fija">
-            <b>Ninguna oferta de la sede cumple las tres condiciones para esta práctica.</b>
+            <b>Ninguna actividad de la sede cumple las tres condiciones para esta práctica.</b>
           </p>
         }
       </div>

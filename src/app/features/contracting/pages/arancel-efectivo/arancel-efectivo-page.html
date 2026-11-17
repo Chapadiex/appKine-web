@@ -106,19 +106,19 @@
       </div>
 
       <div class="campo campo--3">
-        <label for="consulta-oferta">Oferta (opcional)</label>
+        <label for="consulta-oferta">Actividad (opcional)</label>
         <select
           id="consulta-oferta"
           formControlName="ofertaId"
           aria-describedby="consulta-oferta-ayuda"
         >
-          <option value="">Sin oferta: arancel general del convenio</option>
+          <option value="">Sin actividad: arancel general del convenio</option>
           @for (oferta of ofertas(); track oferta.id) {
             <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
           }
         </select>
         <p class="ayuda" id="consulta-oferta-ayuda">
-          Manda el arancel propio de la oferta y, si no tiene, el general del convenio.
+          Manda el arancel propio de la actividad y, si no tiene, el general del convenio.
         </p>
       </div>
 

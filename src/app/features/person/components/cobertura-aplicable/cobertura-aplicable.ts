@@ -116,7 +116,7 @@ export class CoberturaAplicable {
     const convenio = arancel.convenioCodigo ? `convenio ${arancel.convenioCodigo}` : 'convenio';
     return arancel.ofertaId === undefined || arancel.ofertaId === null
       ? `Arancel general del ${convenio}`
-      : `Arancel propio de esta oferta en el ${convenio}`;
+      : `Arancel propio de esta actividad en el ${convenio}`;
   }
 
   protected requisitos(arancel: CoberturaParaOfertaArancel): string {

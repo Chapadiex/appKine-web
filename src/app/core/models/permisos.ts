@@ -207,6 +207,12 @@ export const PERMISO_HC_READ = 'hc:read';
 export const PERMISO_HC_WRITE = 'hc:write';
 
 /**
+ * Declarar en la Historia Clinica lo que cuenta o trae el paciente, sin leerla (DP-47). Ofrece la
+ * pestaña "Datos declarados" y "Cargar datos" en el padron; revisar lo declarado pide `hc:write`.
+ */
+export const PERMISO_HC_DECLARAR = 'hc:declarar';
+
+/**
  * Registrar atenciones clinicas (M14). Solo decide si se OFRECE el enlace a la atencion clinica de
  * una clase (AKINE-08.05): escribir en una atencion es ademas de quien la lleva, y eso lo decide el
  * backend (409 `sesion-ajena`).

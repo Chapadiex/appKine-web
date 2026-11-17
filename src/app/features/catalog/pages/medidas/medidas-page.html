@@ -1,0 +1,260 @@
+<app-cabecera-de-pagina titulo="Catálogo clínico">
+  <app-ayuda titulo="Sobre las medidas">
+    <p>
+      Las <b>medidas</b> son lo que se puede registrar en el <b>Examen físico</b> de una atención:
+      qué se mide, en qué unidad y con qué rango. Por ejemplo, flexión de rodilla en grados de 0 a
+      150, o un test que da positivo o negativo.
+    </p>
+    <p>
+      Las de <b>AKINE</b> las ven todos los centros y no se editan desde acá. Las
+      <b>de este centro</b> las das de alta vos. El tipo y el código no se cambian después: definen
+      cómo se leen las mediciones ya tomadas.
+    </p>
+  </app-ayuda>
+  <div cabeceraAcciones>
+    <ng-container *akinePermiso="permisoManage">
+      <button type="button" class="boton" (click)="abrirAlta()">
+        <app-icono nombre="agregar" />
+        Nueva medida
+      </button>
+    </ng-container>
+  </div>
+
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Medidas del examen físico">
+  <div class="medidas-barra">
+    <div class="campo-busqueda medidas-barra__buscar">
+      <app-icono class="campo-busqueda__icono" nombre="buscar" />
+      <label class="visualmente-oculto" for="busqueda-medidas">Buscar</label>
+      <input
+        id="busqueda-medidas"
+        type="search"
+        placeholder="Buscar por nombre o código"
+        autocomplete="off"
+        [value]="busqueda()"
+        (input)="busqueda.set($any($event.target).value)"
+      />
+    </div>
+    @if (medidas(); as lista) {
+      <span class="medidas-barra__total">
+        {{ filtradas().length }} {{ filtradas().length === 1 ? 'medida' : 'medidas' }}
+      </span>
+    }
+  </div>
+
+  @if (errorDeCarga(); as mensaje) {
+    <app-alerta tipo="error" titulo="No pudimos leer las medidas">
+      <p>{{ mensaje }}</p>
+      <p class="alerta__acciones">
+        <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
+      </p>
+    </app-alerta>
+  } @else if (medidas() === null) {
+    <p class="estado estado--cargando" aria-live="polite">Leyendo las medidas…</p>
+  } @else if ((medidas() ?? []).length === 0) {
+    <div class="medidas-vacio">
+      <app-icono nombre="capas" />
+      <div>
+        <p>
+          <b>Todavía no hay medidas.</b> Sin ellas, el Examen físico no ofrece nada para cargar.
+        </p>
+        @if (puedeGestionar()) {
+          <p class="medidas-vacio__acciones">
+            <button
+              type="button"
+              class="boton"
+              [disabled]="cargandoBase()"
+              (click)="cargarMedidasBase()"
+            >
+              {{ cargandoBase() ? 'Cargando…' : 'Cargar medidas típicas de kinesiología' }}
+            </button>
+            <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
+              Crear una a mano
+            </button>
+          </p>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado de medidas">
+      <table class="tabla tabla--medidas">
+        <thead>
+          <tr>
+            <th scope="col">Medida</th>
+            <th scope="col">Código</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Unidad y rango</th>
+            <th scope="col">De quién es</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (medida of filtradas(); track medida.id) {
+            <tr>
+              <td>
+                <b>{{ medida.name }}</b>
+                @if (medida.descripcion) {
+                  <span class="medidas-descripcion">{{ medida.descripcion }}</span>
+                }
+              </td>
+              <td>{{ medida.codigo }}</td>
+              <td>{{ etiquetaDeTipo(medida.tipo) }}</td>
+              <td>{{ rangoDe(medida) || '—' }}</td>
+              <td>
+                <span class="etiqueta">{{ esGlobal(medida) ? 'AKINE' : 'De este centro' }}</span>
+              </td>
+              <td class="tabla__acciones">
+                @if (esGlobal(medida)) {
+                  <span class="ayuda">La mantiene AKINE.</span>
+                } @else if (puedeGestionar()) {
+                  <app-acciones-de-fila [de]="medida.name ?? ''">
+                    <button
+                      principal
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      (click)="abrirEdicion(medida)"
+                    >
+                      Editar
+                    </button>
+                    <button type="button" class="accion--peligro" (click)="abrirBaja(medida)">
+                      Dar de baja
+                    </button>
+                  </app-acciones-de-fila>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="estado estado--vacio">
+                Ninguna medida coincide con la búsqueda.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (panel(); as abierto) {
+  @if (abierto.tipo === 'baja') {
+    <app-panel-lateral
+      [titulo]="'Dar de baja ' + (abierto.medida.name ?? '')"
+      (cerrar)="cerrarPanel()"
+    >
+      @if (errorAccion(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la medida">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+      <app-confirmacion-con-motivo
+        idCampo="baja-medida-motivo"
+        [titulo]="'Dar de baja ' + (abierto.medida.name ?? '')"
+        [mostrarTitulo]="false"
+        etiqueta="Motivo de la baja"
+        textoConfirmar="Dar de baja"
+        [enviando]="enviando()"
+        (confirmado)="darDeBaja($event)"
+        (cancelado)="cerrarPanel()"
+      >
+        <p class="ayuda ayuda--fija">
+          Las mediciones ya tomadas con esta medida se conservan; deja de ofrecerse en el examen.
+        </p>
+      </app-confirmacion-con-motivo>
+    </app-panel-lateral>
+  } @else {
+    <app-panel-lateral
+      [titulo]="abierto.tipo === 'alta' ? 'Nueva medida' : 'Editar ' + (abierto.medida.name ?? '')"
+      subtitulo="Lo que se va a poder registrar en el Examen físico."
+      (cerrar)="cerrarPanel()"
+    >
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        @if (errorAccion(); as mensaje) {
+          <app-alerta tipo="error" titulo="No pudimos guardar la medida">
+            <p>{{ mensaje }}</p>
+          </app-alerta>
+        }
+
+        <h3 class="formulario__seccion seccion-medida"><app-icono nombre="info" />Qué se mide</h3>
+        <div class="campo campo--8">
+          <label for="medida-nombre">Nombre</label>
+          <input
+            id="medida-nombre"
+            type="text"
+            formControlName="name"
+            placeholder="Flexión de rodilla"
+          />
+        </div>
+        <div class="campo campo--4">
+          <label for="medida-codigo">Código</label>
+          <input
+            id="medida-codigo"
+            type="text"
+            formControlName="codigo"
+            placeholder="ROM_FLEX_RODILLA"
+          />
+        </div>
+
+        <fieldset class="campo campo--12 tipo-de-medida">
+          <legend>Tipo</legend>
+          <div class="pastillas" role="radiogroup" aria-label="Tipo de medida">
+            @for (tipo of tipos; track tipo.valor) {
+              <label class="pastilla" [title]="tipo.ayuda">
+                <input type="radio" name="tipo" [value]="tipo.valor" formControlName="tipo" />
+                <span>{{ tipo.etiqueta }}</span>
+              </label>
+            }
+          </div>
+          @if (abierto.tipo === 'editar') {
+            <p class="ayuda ayuda--fija">El tipo y el código no se cambian después del alta.</p>
+          }
+        </fieldset>
+
+        @if (llevaUnidad()) {
+          <h3 class="formulario__seccion seccion-medida">
+            <app-icono nombre="configuracion" />Unidad y rango
+          </h3>
+          <div class="campo campo--4">
+            <label for="medida-unidad">Unidad</label>
+            <input
+              id="medida-unidad"
+              type="text"
+              formControlName="unidad"
+              placeholder="°, cm, puntos"
+            />
+          </div>
+          <div class="campo campo--4">
+            <label for="medida-minimo"
+              >Mínimo <span class="campo__opcional">(opcional)</span></label
+            >
+            <input id="medida-minimo" type="text" inputmode="decimal" formControlName="minimo" />
+          </div>
+          <div class="campo campo--4">
+            <label for="medida-maximo"
+              >Máximo <span class="campo__opcional">(opcional)</span></label
+            >
+            <input id="medida-maximo" type="text" inputmode="decimal" formControlName="maximo" />
+          </div>
+        }
+
+        <div class="campo campo--12">
+          <label for="medida-descripcion"
+            >Descripción <span class="campo__opcional">(opcional)</span></label
+          >
+          <input id="medida-descripcion" type="text" formControlName="descripcion" />
+        </div>
+
+        <div class="acciones acciones--pie">
+          <button type="submit" class="boton" [disabled]="enviando()">
+            {{ abierto.tipo === 'alta' ? 'Crear medida' : 'Guardar cambios' }}
+          </button>
+          <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </app-panel-lateral>
+  }
+}

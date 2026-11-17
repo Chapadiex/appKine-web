@@ -68,10 +68,10 @@
   <!-- RF-M08-006: tener una cobertura no dice que aplique a una oferta concreta. -->
   <section class="tarjeta" aria-labelledby="titulo-aplicable">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-aplicable">Qué cobertura aplica a una oferta</h2>
-      <app-ayuda titulo="Qué cobertura aplica a una oferta">
+      <h2 id="titulo-aplicable">Qué cobertura aplica a una actividad</h2>
+      <app-ayuda titulo="Qué cobertura aplica a una actividad">
         <p>
-          Una cobertura vigente puede no aplicar: depende de que la oferta admita obra social y de
+          Una cobertura vigente puede no aplicar: depende de que la actividad admita obra social y de
           que el centro tenga convenio y arancel para su práctica ese día. Esto
           <b>solo consulta</b>: con que se atiende se elige en la recepción.
         </p>
@@ -80,14 +80,14 @@
 
     @if (!consultaAbierta()) {
       <button type="button" class="boton boton--secundario" (click)="abrirConsulta()">
-        Consultar por oferta
+        Consultar por actividad
       </button>
     } @else {
       <div class="grilla-12">
         <div class="campo campo--4">
-          <label for="consulta-oferta">Oferta</label>
+          <label for="consulta-oferta">Actividad</label>
           <select id="consulta-oferta" (change)="elegirOferta($any($event.target).value)">
-            <option value="">Elegí una oferta</option>
+            <option value="">Elegí una actividad</option>
             @for (oferta of ofertas(); track oferta.id) {
               <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
             }

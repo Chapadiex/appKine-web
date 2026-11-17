@@ -58,7 +58,7 @@ export const routes: Routes = [
       import('./pages/ofertas-de-la-sede/ofertas-de-la-sede-page').then(
         (m) => m.OfertasDeLaSedePage,
       ),
-    title: 'AKINE - Ofertas de la sede',
+    title: 'AKINE - Actividades de la sede',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
@@ -70,7 +70,7 @@ export const routes: Routes = [
       import('./pages/habilitaciones-de-la-oferta/habilitaciones-de-la-oferta-page').then(
         (m) => m.HabilitacionesDeLaOfertaPage,
       ),
-    title: 'AKINE - Habilitaciones de la oferta',
+    title: 'AKINE - Habilitaciones de la actividad',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
@@ -80,7 +80,7 @@ export const routes: Routes = [
       import('./pages/practicas-de-la-oferta/practicas-de-la-oferta-page').then(
         (m) => m.PracticasDeLaOfertaPage,
       ),
-    title: 'AKINE - Prácticas de la oferta',
+    title: 'AKINE - Prácticas de la actividad',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
@@ -92,7 +92,7 @@ export const routes: Routes = [
       import('./pages/precios-particulares-de-la-oferta/precios-particulares-de-la-oferta-page').then(
         (m) => m.PreciosParticularesDeLaOfertaPage,
       ),
-    title: 'AKINE - Precios particulares de la oferta',
+    title: 'AKINE - Precios particulares de la actividad',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
@@ -105,7 +105,7 @@ export const routes: Routes = [
       import('./pages/honorarios-por-clase-de-la-oferta/honorarios-por-clase-de-la-oferta-page').then(
         (m) => m.HonorariosPorClaseDeLaOfertaPage,
       ),
-    title: 'AKINE - Honorarios por clase de la oferta',
+    title: 'AKINE - Honorarios por clase de la actividad',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {

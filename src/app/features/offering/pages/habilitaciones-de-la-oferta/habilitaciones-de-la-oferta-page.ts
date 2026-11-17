@@ -88,7 +88,7 @@ interface Candidato {
 export class HabilitacionesDeLaOfertaPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
   private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
     { etiqueta: 'Habilitaciones' },
   ]);
 
@@ -547,7 +547,7 @@ export class HabilitacionesDeLaOfertaPage {
         advertencia: fila.vinculoVigente
           ? ''
           : 'Su vinculo con el centro ya no esta vigente: aunque figure habilitado, hoy no puede ' +
-            'prestar la oferta.',
+            'prestar la actividad.',
       });
     }
 
@@ -600,7 +600,7 @@ export class HabilitacionesDeLaOfertaPage {
  * administrador apretando un boton apagado sin saber que recargar lo destraba.
  */
 const MENSAJE_SIN_OFERTA =
-  'No pudimos leer la oferta, y sin su versión no se puede guardar: mandar una versión inventada ' +
+  'No pudimos leer la actividad, y sin su versión no se puede guardar: mandar una versión inventada ' +
   'pisaria la edicion de otra persona. Las casillas que marcaste NO se guardaron. Recarga la ' +
   'configuración y volvé a marcarlas.';
 
@@ -619,7 +619,7 @@ function duracionValida(escrita: string): boolean {
 
 /** Sin sede elegida no hay oferta: el problema es el contexto, no la oferta. */
 const MENSAJE_SIN_SEDE =
-  'No hay una sede elegida, y la oferta pertenece a una. Elegí la sede y volvé a entrar.';
+  'No hay una sede elegida, y la actividad pertenece a una. Elegí la sede y volvé a entrar.';
 
 /**
  * La union de lo habilitado y lo candidato, ordenada por etiqueta.

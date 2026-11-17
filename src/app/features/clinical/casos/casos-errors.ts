@@ -47,10 +47,10 @@ const MENSAJES: Readonly<Record<CausaCaso, string>> = {
   'caso-cerrado':
     'Este caso esta cerrado y no admite cambios. Si hay que retomarlo, primero reabrilo con motivo.',
   'posible-duplicado':
-    'Ya hay un caso activo de la misma oferta para esta persona. Revisalo antes de crear otro: si ' +
+    'Ya hay un caso activo de la misma actividad para esta persona. Revisalo antes de crear otro: si ' +
     'de todas formas corresponde uno nuevo, confirma para seguir.',
   'oferta-no-vigente':
-    'Esa oferta no esta vigente hoy en esta sede, así que no puede motivar un caso. Elegí otra.',
+    'Esa actividad no esta vigente hoy en esta sede, así que no puede motivar un caso. Elegí otra.',
   'suscripcion-suspendida':
     'La suscripción de la organización esta suspendida, así que no se pueden gestionar casos clínicos.',
   conflicto:

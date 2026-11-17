@@ -1,0 +1,40 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+/* El enlace de vuelta, arriba del titulo: es la miga de pan del lienzo. */
+.miga {
+  margin: 0 0 var(--esp-3);
+  font-size: var(--tipo-xs);
+}
+
+.miga .enlace {
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+
+.miga .enlace:hover {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+.franja-info > .enlace {
+  margin-left: auto;
+}
+
+.lista-plana {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-plana > li {
+  padding: var(--esp-5) 0;
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.lista-plana > li:last-child {
+  border-bottom: 0;
+}
+
+.lista-plana p {
+  margin: 0 0 var(--esp-3);
+}

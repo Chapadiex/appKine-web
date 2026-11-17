@@ -35,11 +35,11 @@ const TEXTOS_SIN_SLOTS: Readonly<Record<DiaDeAgendaMotivoSinSlotsEnum, string>> 
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_HORARIO]:
     'Ningún profesional habilitado tiene horario cargado este día. Se carga desde Horarios.',
   [DiaDeAgendaMotivoSinSlotsEnum.OFERTA_NO_VIGENTE]:
-    'La oferta no esta vigente este día. Su vigencia se edita desde Ofertas de la sede.',
+    'La actividad no esta vigente este día. Su vigencia se edita desde Actividades de la sede.',
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_PROFESIONAL]:
-    'La oferta necesita un profesional y ninguno de los habilitados atiende este día.',
+    'La actividad necesita un profesional y ninguno de los habilitados atiende este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.SIN_ESPACIO]:
-    'La oferta necesita un espacio y ninguno de los habilitados esta en servicio este día.',
+    'La actividad necesita un espacio y ninguno de los habilitados esta en servicio este día.',
   [DiaDeAgendaMotivoSinSlotsEnum.FRANJA_MAS_CORTA_QUE_LA_OFERTA]:
     'Las franjas de atención de este día son más cortas que lo que dura el turno, así que no ' +
     'entra ninguno completo.',

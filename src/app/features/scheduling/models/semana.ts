@@ -98,7 +98,7 @@ export function diaCorto(fecha: string): string {
     .replace(',', '');
 }
 
-/** `26 de octubre al 1 de noviembre de 2026` para el rotulo de la semana. */
+/** `16 al 22 de noviembre de 2026`, o `26 oct al 1 nov de 2026` si cambia el mes. */
 export function rotuloDeSemana(lunes: string): string {
   const desde = new Date(`${lunes}T00:00:00Z`);
   if (Number.isNaN(desde.getTime())) {
@@ -110,5 +110,15 @@ export function rotuloDeSemana(lunes: string): string {
     month: 'long',
     timeZone: 'UTC',
   });
-  return `${diaYMes.format(desde)} al ${diaYMes.format(hasta)} de ${hasta.getUTCFullYear()}`;
+  const anio = hasta.getUTCFullYear();
+  // Corto, para que entre en la barra de la agenda (13/11/2026): el mes una sola vez si no cambia.
+  if (desde.getUTCMonth() === hasta.getUTCMonth()) {
+    return `${desde.getUTCDate()} al ${diaYMes.format(hasta)} de ${anio}`;
+  }
+  const corto = new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
+  return `${corto.format(desde)} al ${corto.format(hasta)} de ${anio}`;
 }

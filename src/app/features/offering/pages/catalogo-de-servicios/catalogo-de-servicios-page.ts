@@ -143,7 +143,29 @@ export class CatalogoDeServiciosPage {
   }
 
   protected readonly etiquetaDeAlcance = (servicio: ServicioResponse): string =>
-    servicio.alcance === 'ORGANIZACION' ? 'Del centro' : 'AKINE';
+    servicio.personalizaServicioId != null
+      ? 'Personalizado'
+      : servicio.alcance === 'ORGANIZACION'
+        ? 'Del centro'
+        : 'AKINE';
+
+  /**
+   * Un administrador de la organizacion "edita" un servicio de AKINE personalizandolo: se crea una
+   * copia de su organizacion, valida para todas sus sedes. La plataforma edita el global directo.
+   */
+  protected puedePersonalizar(servicio: ServicioResponse): boolean {
+    return (
+      servicio.alcance !== 'ORGANIZACION' &&
+      servicio.estado === 'ACTIVO' &&
+      this.puedeGestionarDelCentro()
+    );
+  }
+
+  /** El panel abierto edita un servicio de AKINE que se va a personalizar. */
+  protected readonly personalizando = computed(() => {
+    const original = this.original();
+    return original !== null && original !== undefined && this.puedePersonalizar(original);
+  });
 
   /**
    * `true` cuando ya se sabe la respuesta —incluida una consulta fallida, que el store resuelve
@@ -509,16 +531,16 @@ export class CatalogoDeServiciosPage {
         this.avisos.exito('Servicio creado', {
           descripcion:
             idDelCentro === undefined
-              ? `${cuerpo.nombre}. Lo ven todos los centros; cada uno lo ofrece creando su oferta.`
+              ? `${cuerpo.nombre}. Lo ven todos los centros; cada uno lo ofrece creando su actividad.`
               : `${cuerpo.nombre} ya está en el catálogo de tu organización. Para usarlo en una ` +
-                'sede, creá su oferta.',
+                'sede, creá su actividad.',
           // El alta de oferta con el servicio ya elegido. Sólo el del centro: la plataforma no
           // opera una sede.
           ...(idDelCentro === undefined
             ? {}
             : {
                 accion: {
-                  etiqueta: 'Crear oferta',
+                  etiqueta: 'Crear actividad',
                   ejecutar: () => {
                     this.router
                       .navigate(['/servicios/ofertas'], {
@@ -559,10 +581,21 @@ export class CatalogoDeServiciosPage {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
 
-    this.api.editarServicio(panel.id, cambios).subscribe({
+    const personalizar = this.personalizando();
+    const pedido = personalizar
+      ? this.api.personalizarServicio(panel.id, cambios)
+      : this.api.editarServicio(panel.id, cambios);
+    pedido.subscribe({
       next: (actualizado) => {
         this.cerrarPanel();
-        this.avisos.exito('Cambios guardados', { descripcion: actualizado.nombre ?? undefined });
+        this.avisos.exito(
+          personalizar ? 'Servicio personalizado para tu organización' : 'Cambios guardados',
+          {
+            descripcion: personalizar
+              ? `${actualizado.nombre ?? ''}: vale para todas las sedes de tu organización.`
+              : (actualizado.nombre ?? undefined),
+          },
+        );
         this.cargar();
       },
       error: (error: unknown) => this.fallarEdicion(error),
@@ -593,8 +626,8 @@ export class CatalogoDeServiciosPage {
         this.cerrarPanel();
         this.avisos.exito('Servicio dado de baja', {
           descripcion:
-            `${nombre ? nombre + '. ' : ''}Las ofertas que ya lo usan siguen funcionando; no se ` +
-            'pueden crear ofertas nuevas sobre él.',
+            `${nombre ? nombre + '. ' : ''}Las actividades que ya lo usan siguen funcionando; no se ` +
+            'pueden crear actividades nuevas sobre él.',
         });
         this.cargar();
       },

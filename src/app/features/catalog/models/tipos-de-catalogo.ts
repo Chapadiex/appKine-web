@@ -87,8 +87,12 @@ export function esGlobal(concepto: CatalogoConceptoResponse): boolean {
 export const ETIQUETA_PESTANAS_DE_CATALOGO = 'Tipo de catálogo';
 
 /** Una pestana por tipo: cada una es una ruta propia (`/catalogo/:tipo`). */
-export const PESTANAS_DE_CATALOGO: readonly Pestana[] = TIPOS_DE_CATALOGO.map((tipo) => ({
-  etiqueta: tipo.plural,
-  ruta: `/catalogo/${tipo.slug}`,
-  exacta: true,
-}));
+export const PESTANAS_DE_CATALOGO: readonly Pestana[] = [
+  ...TIPOS_DE_CATALOGO.map((tipo) => ({
+    etiqueta: tipo.plural,
+    ruta: `/catalogo/${tipo.slug}`,
+    exacta: true,
+  })),
+  // Medidas del examen fisico: otra pantalla, mismo catalogo clinico (13/11/2026).
+  { etiqueta: 'Medidas', ruta: '/catalogo/medidas', exacta: true },
+];

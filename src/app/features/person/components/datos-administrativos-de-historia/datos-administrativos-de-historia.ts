@@ -14,12 +14,16 @@ import { CasoAdministrativoResponse } from '../../../../api/generated/model/caso
 import { CasoProfesional } from '../../../../api/generated/model/caso-profesional';
 import { DatosAdministrativosDeHistoriaResponse } from '../../../../api/generated/model/datos-administrativos-de-historia-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_HC_DECLARAR } from '../../../../core/models/permisos';
+import { RouterLink } from '@angular/router';
 import { HistoriaAdministrativaApi } from '../../services/historia-administrativa-api';
 import { fechaEnPalabras } from '../../models/etiquetas-de-ficha';
 import { traducirErrorPersona } from '../../models/person-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
@@ -52,7 +56,7 @@ type Estado =
  * accesorios: si fallan, o el caso es de otra sede, se muestra el identificador.
  */
 @Component({
-  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, PieDeTabla],
+  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, Icono, PieDeTabla, RouterLink],
   selector: 'app-datos-administrativos-de-historia',
   templateUrl: './datos-administrativos-de-historia.html',
   styleUrl: '../../person.css',
@@ -61,6 +65,12 @@ export class DatosAdministrativosDeHistoria {
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(HistoriaAdministrativaApi);
   private readonly contexto = inject(TenantContextStore);
+  private readonly permisos = inject(PermissionsStore);
+
+  /** DP-47: quien puede cargar lo que declara el paciente (mostrador, profesional, dueño). */
+  protected puedeDeclarar(): boolean {
+    return this.permisos.tiene(PERMISO_HC_DECLARAR);
+  }
 
   readonly personaId = input.required<number>();
 
@@ -110,8 +120,8 @@ export class DatosAdministrativosDeHistoria {
 
   protected nombreDeOferta(caso: CasoAdministrativoResponse): string {
     const id = caso.ofertaId;
-    if (id === undefined) return 'Sin oferta';
-    return this.lectura()?.ofertas.get(id) ?? `Oferta #${id}`;
+    if (id === undefined) return 'Sin actividad';
+    return this.lectura()?.ofertas.get(id) ?? `Actividad #${id}`;
   }
 
   protected nombreDeProfesional(miembro: CasoProfesional): string {

@@ -1,6 +1,6 @@
-<app-cabecera-de-pagina titulo="Precios particulares de la oferta">
+<app-cabecera-de-pagina titulo="Precios particulares de la actividad">
   <app-ayuda titulo="Sobre esta pantalla">
-    <p>Cuanto paga quien se atiende como particular en esta oferta, por periodo.</p>
+    <p>Cuanto paga quien se atiende como particular en esta actividad, por periodo.</p>
     <p class="ayuda-contextual__subtitulo">
       El precio particular manda sobre el de lista, y no se edita
     </p>
@@ -46,7 +46,7 @@
       }
 
       @case ('error') {
-        <app-alerta tipo="error" titulo="No pudimos leer los precios de la oferta">
+        <app-alerta tipo="error" titulo="No pudimos leer los precios de la actividad">
           <p>{{ mensajeDeCarga() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
@@ -65,7 +65,7 @@
       @case ('listo') {
         @if (precios().length === 0) {
           <app-estado-vacio
-            titulo="Esta oferta no tiene precios particulares todavía"
+            titulo="Esta actividad no tiene precios particulares todavía"
             texto="Sin precios por vigencia, todos los días rige el precio de lista."
           >
             <button
@@ -81,7 +81,7 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Precios particulares">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Precios particulares de la oferta, con su importe, su vigencia, la situación y las
+                Precios particulares de la actividad, con su importe, su vigencia, la situación y las
                 acciones.
               </caption>
               <thead>
@@ -204,7 +204,7 @@
           </p>
         }
         <p class="ayuda" id="alta-precio-moneda-ayuda">
-          Tres letras (ARS, USD). Si la oferta tiene precio de lista, se propone su moneda.
+          Tres letras (ARS, USD). Si la actividad tiene precio de lista, se propone su moneda.
         </p>
       </div>
 
@@ -241,7 +241,7 @@
         <app-alerta
           class="campo--ancho"
           tipo="advertencia"
-          titulo="Se superpone con otro precio de la oferta"
+          titulo="Se superpone con otro precio de la actividad"
           id="alta-precio-solapado"
         >
           <p>{{ errorAccion() }}</p>
@@ -297,7 +297,7 @@
           />
           <p class="ayuda ayuda--fija" id="fin-precio-hasta-ayuda">
             Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin fin previsto.
-            Extenderlo puede chocar con otro precio de la oferta.
+            Extenderlo puede chocar con otro precio de la actividad.
           </p>
         </div>
 
@@ -305,7 +305,7 @@
           <app-alerta
             class="campo--ancho"
             tipo="advertencia"
-            titulo="Se superpone con otro precio de la oferta"
+            titulo="Se superpone con otro precio de la actividad"
             id="fin-precio-solapado"
           >
             <p>{{ errorAccion() }}</p>
