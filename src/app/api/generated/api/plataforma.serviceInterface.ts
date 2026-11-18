@@ -38,7 +38,7 @@ export interface GrantSupportAccessRequestParams {
 
 export interface ListPlatformOrganizationsRequestParams {
     q?: string;
-    status?: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
+    status?: 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
     page?: number;
     size?: number;
     sort?: 'nombre,asc' | 'nombre,desc' | 'slug,asc' | 'slug,desc' | 'creadaEn,asc' | 'creadaEn,desc';

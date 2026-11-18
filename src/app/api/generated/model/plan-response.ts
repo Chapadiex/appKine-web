@@ -30,6 +30,10 @@ export interface PlanResponse {
      * Nombre comercial del plan
      */
     name?: string;
+    /**
+     * Si la plataforma lo ofrece hoy al dar de alta o cambiar la contratacion de un centro. Los planes anteriores al 18/11/2026 siguen vigentes para quien los tiene y no se ofrecen
+     */
+    ofrecido?: boolean;
 }
 export enum PlanResponseFeaturesEnum {
     REPORTES_AVANZADOS = 'REPORTES_AVANZADOS',

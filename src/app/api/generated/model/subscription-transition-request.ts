@@ -27,11 +27,13 @@ export interface SubscriptionTransitionRequest {
     toStatus: SubscriptionTransitionRequestToStatusEnum;
 }
 export enum SubscriptionTransitionRequestExpectedStatusEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'
 };
 export enum SubscriptionTransitionRequestToStatusEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'

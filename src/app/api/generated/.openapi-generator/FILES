@@ -47,6 +47,8 @@ api/consultorios.service.ts
 api/consultorios.serviceInterface.ts
 api/consumo-de-autorizaciones.service.ts
 api/consumo-de-autorizaciones.serviceInterface.ts
+api/contratacion.service.ts
+api/contratacion.serviceInterface.ts
 api/convenios-y-aranceles.service.ts
 api/convenios-y-aranceles.serviceInterface.ts
 api/datos-declarados.service.ts
@@ -105,6 +107,8 @@ api/organizaciones.service.ts
 api/organizaciones.serviceInterface.ts
 api/pases.service.ts
 api/pases.serviceInterface.ts
+api/pedidos-de-prueba.service.ts
+api/pedidos-de-prueba.serviceInterface.ts
 api/personas.service.ts
 api/personas.serviceInterface.ts
 api/planes-de-tratamiento.service.ts
@@ -174,6 +178,8 @@ model/agregar-item-a-presentacion.ts
 model/ajuste-de-saldo-de-pase.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
+model/alta-de-centro-request.ts
+model/alta-de-centro-response.ts
 model/alta-de-ocupacion-request.ts
 model/alta-en-lista-de-espera.ts
 model/alta-sede-franja-horaria-request.ts
@@ -277,6 +283,7 @@ model/consultorio-response.ts
 model/consumo-de-credito.ts
 model/contexto-de-agenda.ts
 model/contexto-de-proxima-sesion.ts
+model/contratacion-response.ts
 model/convenio-aplicado.ts
 model/convenio-response.ts
 model/crear-plan-tratamiento-request.ts
@@ -330,6 +337,7 @@ model/derivacion-de-participante.ts
 model/derivaciones-de-participante.ts
 model/derivar-participante.ts
 model/descartar-de-lista-de-espera.ts
+model/descartar-solicitud-request.ts
 model/desvinculacion-impacto-response.ts
 model/detalle-operativo-de-clase.ts
 model/deuda-de-venta.ts
@@ -615,6 +623,9 @@ model/sesion.ts
 model/sesiones-de-prestacion.ts
 model/simular-edicion-bloque-request.ts
 model/slot-disponible.ts
+model/solicitud-de-prueba-page-response.ts
+model/solicitud-de-prueba-request.ts
+model/solicitud-de-prueba-response.ts
 model/subscription-response.ts
 model/subscription-transition-page-response.ts
 model/subscription-transition-request.ts
@@ -658,6 +669,7 @@ model/update-calendario-request.ts
 model/update-catalogo-concepto-request.ts
 model/update-cobertura-request.ts
 model/update-consultorio-request.ts
+model/update-contratacion-request.ts
 model/update-convenio-request.ts
 model/update-espacio-request.ts
 model/update-excepcion-request.ts
