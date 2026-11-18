@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { OpcionChip } from '../../../../shared/components/chips/chips';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -10,6 +10,7 @@ import {
   ServiciosElegidos,
   recomendarPlan,
 } from '../../models/armador-de-plan';
+import { EleccionDelArmador } from '../../models/eleccion-del-armador';
 
 /**
  * Armador de la sección de planes: tres preguntas y el plan que corresponde con lo que incluye.
@@ -39,17 +40,34 @@ export class ArmadorDePlan {
     { valor: 'no', etiqueta: 'Por ahora no' },
   ];
 
-  protected readonly sedes = signal<string | null>('una');
-  protected readonly servicios = signal<string | null>('kinesiologia');
-  protected readonly ia = signal<string | null>('no');
+  /** La elección vive en la página: el formulario del pedido de prueba la usa para precargarse. */
+  protected readonly eleccion = inject(EleccionDelArmador);
 
   protected readonly planes = PLANES;
 
   protected readonly recomendacion = computed(() =>
     recomendarPlan({
-      sedes: (this.sedes() ?? 'una') as CantidadDeSedes,
-      servicios: (this.servicios() ?? 'kinesiologia') as ServiciosElegidos,
-      ia: (this.ia() ?? 'no') as ConIa,
+      sedes: this.eleccion.sedes(),
+      servicios: this.eleccion.servicios(),
+      ia: this.eleccion.ia(),
     }),
   );
+
+  protected elegirSedes(valor: string | null): void {
+    if (valor !== null) {
+      this.eleccion.sedes.set(valor as CantidadDeSedes);
+    }
+  }
+
+  protected elegirServicios(valor: string | null): void {
+    if (valor !== null) {
+      this.eleccion.servicios.set(valor as ServiciosElegidos);
+    }
+  }
+
+  protected elegirIa(valor: string | null): void {
+    if (valor !== null) {
+      this.eleccion.ia.set(valor as ConIa);
+    }
+  }
 }

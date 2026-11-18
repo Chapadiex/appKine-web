@@ -5,8 +5,10 @@ import { RUTA_LOGIN } from '../../core/models/rutas';
 import { Icono, NombreDeIcono } from '../../shared/components/icono/icono';
 import { AgendaDeMuestra } from './components/agenda-de-muestra/agenda-de-muestra';
 import { ArmadorDePlan } from './components/armador-de-plan/armador-de-plan';
+import { PedidoDePrueba } from './components/pedido-de-prueba/pedido-de-prueba';
 import { MapaDeSedes } from './components/mapa-de-sedes/mapa-de-sedes';
 import { SeccionIa } from './components/seccion-ia/seccion-ia';
+import { EleccionDelArmador } from './models/eleccion-del-armador';
 
 interface Servicio {
   readonly titulo: string;
@@ -32,9 +34,6 @@ interface Pregunta {
   readonly respuesta: string;
 }
 
-/** Placeholder hasta el formulario del pedido de prueba (etapa 4 del plan de la landing). */
-export const MAILTO_PRUEBA = 'mailto:hola@akine.app?subject=Prueba%20gratis%20de%2030%20d%C3%ADas';
-
 /**
  * Landing pública de AKINE, en `/` (`appKine-api/docs/diseno/AKINE-landing-y-ofertas.md` §4).
  * Sin datos del backend ni precios: todo el texto vive acá. Quien tiene sesión no la ve: lo manda
@@ -43,13 +42,21 @@ export const MAILTO_PRUEBA = 'mailto:hola@akine.app?subject=Prueba%20gratis%20de
 @Component({
   selector: 'app-landing-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icono, AgendaDeMuestra, ArmadorDePlan, MapaDeSedes, SeccionIa],
+  imports: [
+    RouterLink,
+    Icono,
+    AgendaDeMuestra,
+    ArmadorDePlan,
+    MapaDeSedes,
+    SeccionIa,
+    PedidoDePrueba,
+  ],
   templateUrl: './landing-page.html',
   styleUrls: ['./landing-comun.css', './landing-page.css'],
+  providers: [EleccionDelArmador],
 })
 export class LandingPage {
   protected readonly rutaLogin = RUTA_LOGIN;
-  protected readonly mailtoPrueba = MAILTO_PRUEBA;
 
   protected readonly servicios: readonly Servicio[] = [
     {

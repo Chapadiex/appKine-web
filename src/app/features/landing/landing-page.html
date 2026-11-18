@@ -191,22 +191,9 @@
         </ol>
       </div>
 
-      <!--
-        PLACEHOLDER: este panel lo reemplaza el formulario del pedido de prueba (etapa 4 de
-        AKINE-landing-y-ofertas.md §5 y §8). El formulario entra ENTERO acá adentro, en
-        `.prueba__panel`: el panel ya tiene el ancho, el relleno y el fondo de un formulario, así
-        que no hay que rediseñar la sección. Al enchufarlo se borran el párrafo y el mailto.
-      -->
+      <!-- El pedido de prueba (AKINE-landing-y-ofertas.md §5): formulario público, sin sesión. -->
       <div class="prueba__panel">
-        <h3 class="prueba__titulo">Pedí tu prueba</h3>
-        <p>
-          Escribinos con el nombre de tu centro, cuántas sedes tiene y qué servicios das. Te
-          respondemos por correo.
-        </p>
-        <a class="boton boton--grande prueba__accion" [href]="mailtoPrueba">
-          <app-icono nombre="correo" /> Escribinos para pedirla
-        </a>
-        <p class="prueba__correo">o directo a <b>hola&#64;akine.app</b></p>
+        <app-pedido-de-prueba />
       </div>
     </div>
   </section>

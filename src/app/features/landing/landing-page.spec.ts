@@ -1,12 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+
+import { provideApi } from '../../api/generated/provide-api';
 
 import { LandingPage } from './landing-page';
 import { recomendarPlan } from './models/armador-de-plan';
 
 describe('LandingPage', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideApi(''),
+      ],
+    });
   });
 
   it('muestra todas las secciones de la landing y el CTA a la prueba', () => {
@@ -21,9 +32,7 @@ describe('LandingPage', () => {
     expect(raiz.querySelector('a[href="#prueba"]')).not.toBeNull();
     // Sin autoregistro: los centros los crea la plataforma.
     expect(raiz.textContent).not.toContain('Crear una cuenta');
-    expect(raiz.querySelector('.prueba__panel a')?.getAttribute('href')).toMatch(
-      /^mailto:hola@akine\.app\?subject=/,
-    );
+    expect(raiz.querySelector('#prueba form app-segmentado')).not.toBeNull();
     expect(raiz.querySelectorAll('#preguntas details').length).toBeGreaterThan(3);
   });
 
@@ -43,6 +52,9 @@ describe('LandingPage', () => {
 
     expect(plan()).toBe('Red');
     expect(raiz.querySelector('.plan--elegido')?.textContent).toContain('Red');
+    // El pedido de prueba se precarga con lo elegido en el armador.
+    const sedesDelPedido = raiz.querySelector<HTMLInputElement>('#pedido-sedes input:checked');
+    expect(sedesDelPedido?.value).toBe('MAS_DE_TRES');
   });
 });
 

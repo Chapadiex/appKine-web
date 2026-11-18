@@ -5,7 +5,8 @@
       <app-segmentado
         etiqueta="¿Cuántas sedes tiene tu centro?"
         [opciones]="opcionesDeSedes"
-        [(valor)]="sedes"
+        [valor]="eleccion.sedes()"
+        (valorChange)="elegirSedes($event)"
       />
     </div>
     <div class="pregunta">
@@ -13,7 +14,8 @@
       <app-segmentado
         etiqueta="¿Qué servicios das?"
         [opciones]="opcionesDeServicios"
-        [(valor)]="servicios"
+        [valor]="eleccion.servicios()"
+        (valorChange)="elegirServicios($event)"
       />
     </div>
     <div class="pregunta">
@@ -21,7 +23,8 @@
       <app-segmentado
         etiqueta="¿Sumás inteligencia artificial?"
         [opciones]="opcionesDeIa"
-        [(valor)]="ia"
+        [valor]="eleccion.ia()"
+        (valorChange)="elegirIa($event)"
       />
     </div>
 
