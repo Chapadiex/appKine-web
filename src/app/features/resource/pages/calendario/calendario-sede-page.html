@@ -1,10 +1,10 @@
 <app-cabecera-de-pagina titulo="Calendario de la sede">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      El horario general de <b>{{ nombreDeLaSede() }}</b
-      >, si la sede cierra los feriados de su calendario nacional y cuáles son los feriados que caen
-      en el período que estás mirando. Un centro de guardia atiende los feriados: por eso esto se
-      decide por sede y no una sola vez para toda la organización.
+      El horario general de <b>{{ nombreDeLaSede() }}</b>, si la sede cierra los feriados de su
+      calendario nacional y cuáles son los feriados que caen en el período que estás mirando. Un
+      centro de guardia atiende los feriados: por eso esto se decide por sede y no una sola vez para
+      toda la organización.
     </p>
     <p>Ningún profesional puede tener franjas fuera del horario general de su sede.</p>
   </app-ayuda>
@@ -168,8 +168,7 @@
               Con la casilla marcada, los feriados de la lista se descuentan del horario de todos
               los profesionales de la sede.
               @if (politica(); as actual) {
-                Calendario nacional en uso: <b>{{ actual.pais }}</b
-                >.
+                Calendario nacional en uso: <b>{{ actual.pais }}</b>.
               }
             </p>
 
