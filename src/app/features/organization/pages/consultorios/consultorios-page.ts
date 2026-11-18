@@ -1,16 +1,4 @@
-import {
-  Component,
-  viewChild,
-  ElementRef,
-  Injector,
-  afterNextRender,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -31,12 +19,9 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { RUTA_SELECTOR_CONTEXTO } from '../../../../core/models/rutas';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { UpdateConsultorioRequest } from '../../../../api/generated/model/update-consultorio-request';
-import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
+import { traducirErrorConsultorio } from '../../models/consultorio-errors';
 import { MOTIVO_SEDE_INACTIVA, PARAM_MOTIVO } from '../../models/motivo-de-seleccion';
-import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
-import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
-import { textoRequerido } from '../../../../shared/validators/texto-requerido';
+import { etiquetaDeZona } from '../../models/zonas-horarias';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
@@ -51,60 +36,17 @@ import {
 import { textoDeBusqueda } from '../../../../shared/utils/texto-de-busqueda';
 import { ListOrganizationConsultoriosRequestParams } from '../../../../api/generated/api/organizaciones.serviceInterface';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
-import { validadorDeCuit } from '../../../../shared/utils/cuit';
-import { tieneDireccion } from '../../models/direccion';
-import { EditorDeUbicacion } from '../../components/editor-de-ubicacion/editor-de-ubicacion';
-import {
-  cargarUbicacion,
-  crearUbicacionForm,
-  origenParaElCable,
-  ubicacionDelFormulario,
-} from '../../models/ubicacion-form';
 
 /** Filtro de estado del listado. Los tres valores son los del contrato. */
 type FiltroEstado = 'ACTIVO' | 'INACTIVO' | 'TODOS';
-
-/** Operacion abierta sobre una fila. Solo una a la vez. */
-type TipoAccion = 'editar' | 'baja';
-
-/** Campos de texto opcionales: los que el `PATCH` puede BORRAR con una cadena vacia. */
-const CAMPOS_INSTITUCIONALES = [
-  'alias',
-  'legalName',
-  'taxId',
-  'addressLine',
-  'phone',
-  'contactEmail',
-] as const;
-
-/** Partes de la direccion fisica, con la misma regla de borrado que los institucionales. */
-const PARTES_DE_DIRECCION = [
-  'pais',
-  'provincia',
-  'ciudad',
-  'calle',
-  'numero',
-  'codigoPostal',
-  'piso',
-  'referencias',
-] as const;
-
-/** Pestañas del panel de edicion. */
-type PestanaDeEdicion = 'general' | 'ubicacion' | 'institucional';
-
-const PESTANAS: readonly { readonly id: PestanaDeEdicion; readonly rotulo: string }[] = [
-  { id: 'general', rotulo: 'General' },
-  { id: 'ubicacion', rotulo: 'Ubicación' },
-  { id: 'institucional', rotulo: 'Datos fiscales' },
-];
 
 /**
  * Sedes (consultorios) de la organizacion activa (M01, AKINE-02.01).
  *
  * <p>Consume `GET /organizations/{orgId}/consultorios` —que <b>no</b> exige
  * `consultorio:manage`, porque es la misma lectura que necesita el selector de contexto— y
- * las dos mutaciones que si lo exigen: `PATCH .../{id}` y `POST .../{id}/deactivate`. El
- * `orgId` sale de {@link TenantContextStore}: la pantalla no guarda una copia.
+ * la baja, que si lo exige: `POST .../{id}/deactivate`. La edicion vive en su propia pantalla
+ * (`/organizacion/sedes/:id/editar`). El `orgId` sale de {@link TenantContextStore}: la pantalla no guarda una copia.
  *
  * <p><b>Las sedes inactivas no se ocultan: se muestran como inactivas.</b> La baja es
  * logica y su historia sigue siendo relevante —turnos, sesiones y cobros historicos siguen
@@ -113,33 +55,23 @@ const PESTANAS: readonly { readonly id: PestanaDeEdicion; readonly rotulo: strin
  * la que la baja es logica. El filtro de estado existe igual, visible y con `ACTIVO` por
  * defecto: el uso normal es el dia a dia, no la revision del historial.
  *
- * <p><b>La `version` viaja en cada edicion.</b> Si quedo vieja el backend responde
- * `409 concurrent-modification` y no se pisa nada: la pantalla relee la sede, actualiza la
- * base de comparacion y deja el panel abierto con lo que el usuario habia escrito, para que
- * pueda decidir con los datos actuales a la vista.
- *
- * <p><b>Semantica `PATCH`: omitido no es lo mismo que vacio.</b> Ver
- * {@link armarCambios}.
- *
  * <p><b>Reacciona a `contextEpoch`.</b> Cambiar de organizacion sin recargar dejaria en
  * pantalla las sedes de la anterior bajo la nueva, y un panel de baja a medio llenar
  * apuntando a un id de otro tenant es peor que uno vacio.
  *
  * <p><b>Las acciones van detras de `*akinePermiso`, que es UX y no seguridad.</b> Quien
- * llegue sin `consultorio:manage` ve la tabla completa y ningun boton; si igual arma el
- * `PATCH` con curl, el backend responde `403`. Ocultar no autoriza.
+ * llegue sin `consultorio:manage` ve la tabla completa y ningun boton; si igual arma la
+ * baja con curl, el backend responde `403`. Ocultar no autoriza.
  */
 @Component({
   selector: 'app-consultorios-page',
   imports: [
     CabeceraDePagina,
-
     Alerta,
     Ayuda,
     Icono,
     Filtros,
     ColumnaOrdenable,
-    ReactiveFormsModule,
     RouterLink,
     PermisoDirective,
     Paginacion,
@@ -147,7 +79,6 @@ const PESTANAS: readonly { readonly id: PestanaDeEdicion; readonly rotulo: strin
     ConfirmacionConMotivo,
     AccionesDeFila,
     PanelLateral,
-    EditorDeUbicacion,
   ],
   templateUrl: './consultorios-page.html',
   styleUrl: '../../organization.css',
@@ -158,14 +89,10 @@ export class ConsultoriosPage {
   private readonly tenantContext = inject(TenantContextStore);
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly formBuilder = inject(FormBuilder);
-  private readonly injector = inject(Injector);
 
   protected readonly sedesDelContexto = inject(SedesDelContexto);
 
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
-  protected readonly zonas = zonasHorarias();
   protected readonly etiquetaDeZona = etiquetaDeZona;
 
   protected readonly estado = signal<EstadoDeListado<ConsultorioPageResponse>>({
@@ -195,10 +122,8 @@ export class ConsultoriosPage {
     CamposDeSort<ListOrganizationConsultoriosRequestParams['sort']>
   >(() => this.recargarDesdeElPrincipio());
 
-  /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
-  protected readonly panel = signal<{ readonly id: number; readonly tipo: TipoAccion } | null>(
-    null,
-  );
+  /** Sede con el panel de baja abierto, o `null`. Solo una a la vez. */
+  protected readonly panel = signal<{ readonly id: number } | null>(null);
 
   /**
    * La sede del panel abierto. El panel lateral vive fuera de la tabla (refactor UX/UI del
@@ -211,46 +136,8 @@ export class ConsultoriosPage {
       : (this.sedesDeLaPagina().find((sede) => sede.id === panel.id) ?? null);
   });
 
-  /** Pestaña del panel de edicion: lo que hace funcionar la sede, o sus datos institucionales. */
-  protected readonly pestanaEdicion = signal<PestanaDeEdicion>('general');
-  protected readonly pestanas = PESTANAS;
-
-  /** El editor de ubicacion del panel, para redibujar el mapa al mostrar su pestaña. */
-  private readonly editorDeUbicacion = viewChild(EditorDeUbicacion);
-
-  /** Direccion fisica y punto en el mapa de la sede en edicion. */
-  protected readonly ubicacionEdicion = crearUbicacionForm();
-
-  /**
-   * Sede tal como la devolvio el backend la ultima vez, para el panel abierto.
-   *
-   * <p>Es la <b>base de comparacion</b> del `PATCH`: sin ella no se puede distinguir un
-   * campo que el usuario no toco de uno que vacio a proposito. Se reemplaza cuando la sede
-   * se relee tras un conflicto de concurrencia, porque a partir de ahi lo que hay guardado
-   * es otra cosa.
-   */
-  private readonly original = signal<ConsultorioResponse | null>(null);
-
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
-  protected readonly causaAccion = signal<CausaConsultorio | null>(null);
-  protected readonly intentos = signal(0);
-
-  /** Datos de la sede. `slotMinutes` va como texto: el `input` siempre entrega texto. */
-  protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    name: ['', [textoRequerido]],
-    alias: [''],
-    timezone: [''],
-    slotMinutes: [''],
-    phone: [''],
-    contactEmail: ['', [Validators.email]],
-    agendaHabilitada: [true],
-    direccionPublica: [true],
-    datosFiscalesPropios: [false],
-    legalName: [''],
-    taxId: ['', [validadorDeCuit]],
-    addressLine: [''],
-  });
 
   protected readonly sedesDeLaPagina = this.vista.filas;
   protected readonly totalPaginas = this.vista.totalPaginas;
@@ -356,116 +243,26 @@ export class ConsultoriosPage {
     return id !== undefined && id === this.tenantContext.consultorioId();
   }
 
-  protected abrirPanel(sede: ConsultorioResponse, tipo: TipoAccion): void {
+  /** Abre el panel de baja de la sede. La edicion vive en su propia pantalla. */
+  protected abrirPanel(sede: ConsultorioResponse): void {
     const id = sede.id;
     if (id === undefined) {
       return;
     }
 
     this.cerrarPanel();
-    this.pestanaEdicion.set('general');
-    this.panel.set({ id, tipo });
-
-    if (tipo === 'editar') {
-      this.original.set(sede);
-      this.cargarFormulario(sede);
-    }
+    this.panel.set({ id });
   }
 
   protected cerrarPanel(): void {
     this.panel.set(null);
-    this.original.set(null);
     this.enviando.set(false);
     this.errorAccion.set(null);
-    this.causaAccion.set(null);
-    this.intentos.set(0);
-  }
-
-  /** Muestra una pestaña. El mapa nace en una pestaña oculta: se redibuja al mostrarla. */
-  protected mostrarPestana(pestana: PestanaDeEdicion): void {
-    this.pestanaEdicion.set(pestana);
-    if (pestana === 'ubicacion') {
-      afterNextRender(() => this.editorDeUbicacion()?.redibujar(), { injector: this.injector });
-    }
-  }
-
-  /** Flechas entre las pestañas del panel: cambia a la vecina y lleva el foco a la elegida. */
-  protected cambiarPestana(desde: PestanaDeEdicion, paso: 1 | -1): void {
-    const indice = PESTANAS.findIndex((pestana) => pestana.id === desde);
-    const destino = PESTANAS[(indice + paso + PESTANAS.length) % PESTANAS.length].id;
-    this.mostrarPestana(destino);
-    this.enfocar(`#editar-pestana-${destino}`);
-  }
-
-  protected mostrarErrorEdicion(campo: 'name' | 'contactEmail' | 'taxId'): boolean {
-    const control = this.formularioEdicion.controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
   }
 
   /** La direccion de una fila del listado, o lo que la reemplaza. */
   protected direccionDe(sede: ConsultorioResponse): string | null {
     return sede.direccionFormateada ?? null;
-  }
-
-  /**
-   * Envia solo lo que cambio.
-   *
-   * <p>El resultado sin cambios reales es un cuerpo con `version` y nada mas, que el
-   * backend acepta sin tocar nada. No se corta antes a proposito: la sede pudo haber
-   * cambiado en el servidor y un `PATCH` vacio es la forma barata de enterarse.
-   */
-  protected enviarEdicion(): void {
-    const panel = this.panel();
-    const orgId = this.tenantContext.organizationId();
-    if (panel === null || orgId === null || this.enviando()) {
-      return;
-    }
-
-    this.intentos.update((valor) => valor + 1);
-    if (this.formularioEdicion.invalid || this.ubicacionEdicion.invalid) {
-      this.formularioEdicion.markAllAsTouched();
-      this.ubicacionEdicion.markAllAsTouched();
-      // El campo invalido puede estar en otra pestaña: se muestra antes de enfocarlo.
-      const controles = this.formularioEdicion.controls;
-      const [pestana, selector]: [PestanaDeEdicion, string] =
-        controles.name.invalid || controles.contactEmail.invalid
-          ? ['general', controles.name.invalid ? '#editar-name' : '#editar-email']
-          : this.ubicacionEdicion.invalid
-            ? ['ubicacion', '#editar-ubicacion-latitud']
-            : ['institucional', '#editar-taxId'];
-      this.mostrarPestana(pestana);
-      afterNextRender(() => this.enfocar(selector), { injector: this.injector });
-      return;
-    }
-
-    const cambios = this.armarCambios();
-    if (cambios === null) {
-      return;
-    }
-
-    this.enviando.set(true);
-    this.errorAccion.set(null);
-    this.causaAccion.set(null);
-    const nombre = this.formularioEdicion.controls.name.value.trim();
-
-    this.consultorios
-      .updateConsultorio({
-        orgId,
-        consultorioId: panel.id,
-        updateConsultorioRequest: cambios,
-      })
-      .subscribe({
-        next: () => {
-          this.cerrarPanel();
-          this.avisos.exito('Cambios guardados', { descripcion: nombre });
-          // Las sedes alimentan selectores de otras pantallas: un nombre editado que quedara
-          // cacheado seguiria mostrandose viejo hasta el proximo cambio de contexto.
-          this.sedesDelContexto.invalidar();
-          this.sedesDelContexto.asegurarCargadas();
-          this.cargar();
-        },
-        error: (error: unknown) => this.fallarEdicion(error, orgId, panel.id),
-      });
   }
 
   /**
@@ -484,7 +281,6 @@ export class ConsultoriosPage {
 
     this.enviando.set(true);
     this.errorAccion.set(null);
-    this.causaAccion.set(null);
 
     const nombre = this.sedesDeLaPagina().find((sede) => sede.id === panel.id)?.name ?? 'La sede';
     const eraLaDelContexto = this.esLaDelContexto(panel.id);
@@ -532,177 +328,9 @@ export class ConsultoriosPage {
       });
   }
 
-  /**
-   * Traduce el cuerpo del `PATCH` distinguiendo <b>omitido</b> de <b>cadena vacia</b>.
-   *
-   * <p>El contrato le da a las dos formas significados opuestos: un campo <b>ausente</b> no
-   * se toca, y un campo con <b>cadena vacia</b> se borra. Un formulario que mande siempre
-   * todos los campos no puede expresar "no lo toques", asi que borraria en cada guardado los
-   * datos institucionales que otra persona hubiera cargado entre medio, sin que nadie pida
-   * nada.
-   *
-   * <p>La regla es la comparacion contra {@link original}, que es lo que el backend
-   * devolvio:
-   *
-   * <pre>
-   * valor igual al original          -&gt; se omite      (el usuario no lo toco)
-   * valor distinto y no vacio        -&gt; se manda      (lo cambio)
-   * valor vaciado, original con dato -&gt; se manda ''   (lo borro a proposito)
-   * valor vacio, original vacio      -&gt; se omite      (nunca hubo nada)
-   * </pre>
-   *
-   * <p>`name`, `timezone` y `slotMinutes` <b>no</b> son borrables —el contrato no les da
-   * significado a la cadena vacia—, asi que solo se mandan cuando cambian a un valor real.
-   */
-  private armarCambios(): UpdateConsultorioRequest | null {
-    const original = this.original();
-    const version = original?.version;
-    if (original === null || version === undefined) {
-      // Sin `version` no hay edicion posible: mandarla en `0` pisaria el cambio de otro, que
-      // es exactamente lo que el control de concurrencia optimista existe para impedir.
-      this.errorAccion.set(
-        'No pudimos leer la versión de esta sede. Cerra el panel, recarga el listado y volvé a intentar.',
-      );
-      return null;
-    }
-
-    const valores = this.formularioEdicion.getRawValue();
-    const cambios: UpdateConsultorioRequest = { version };
-
-    const nombre = valores.name.trim();
-    if (nombre !== (original.name ?? '')) {
-      cambios.name = nombre;
-    }
-
-    if (valores.timezone !== '' && valores.timezone !== (original.timezone ?? '')) {
-      cambios.timezone = valores.timezone;
-    }
-
-    // `numeroDeclarado` y no `valores.slotMinutes !== ''`: vaciar el campo entrega `null`, y la
-    // guarda vieja lo convertia en un `0` que viajaba como un cambio deliberado de duracion.
-    const slot = numeroDeclarado(valores.slotMinutes);
-    if (slot !== null && slot !== original.slotMinutes) {
-      cambios.slotMinutes = slot;
-    }
-
-    for (const campo of CAMPOS_INSTITUCIONALES) {
-      const actual = valores[campo].trim();
-      const previo = original[campo] ?? '';
-      if (actual !== previo) {
-        // Aca `actual` puede ser '' a proposito: es la forma que el contrato define para
-        // borrar el campo, y por eso se manda en vez de omitirse.
-        cambios[campo] = actual;
-      }
-    }
-
-    for (const campo of ['agendaHabilitada', 'direccionPublica', 'datosFiscalesPropios'] as const) {
-      if (valores[campo] !== (original[campo] ?? campo !== 'datosFiscalesPropios')) {
-        cambios[campo] = valores[campo];
-      }
-    }
-
-    const ubicacion = ubicacionDelFormulario(this.ubicacionEdicion);
-    const hayDireccion = tieneDireccion(ubicacion.direccion);
-    for (const parte of PARTES_DE_DIRECCION) {
-      const actual = ubicacion.direccion[parte] ?? '';
-      const previo = original[parte] ?? '';
-      // El pais arranca en Argentina para no pedirlo; sin ninguna otra parte cargada, un pais
-      // solo no es una direccion y no viaja.
-      if (parte === 'pais' && !hayDireccion && previo === '') {
-        continue;
-      }
-      if (actual !== previo) {
-        cambios[parte] = actual;
-      }
-    }
-
-    const previa = original.ubicacion ?? null;
-    const latitudPrevia = previa?.latitud ?? null;
-    const longitudPrevia = previa?.longitud ?? null;
-    const punto = ubicacion.coordenadas;
-    if (punto === null) {
-      if (latitudPrevia !== null) {
-        // Las dos en `null` es la forma que el contrato define para quitar el punto.
-        cambios.ubicacion = { latitud: null, longitud: null };
-      }
-    } else if (
-      punto.latitud !== latitudPrevia ||
-      punto.longitud !== longitudPrevia ||
-      (ubicacion.origen ?? 'MANUAL') !== (previa?.origen ?? 'MANUAL')
-    ) {
-      cambios.ubicacion = {
-        latitud: punto.latitud,
-        longitud: punto.longitud,
-        origen: origenParaElCable(ubicacion.origen),
-      };
-    }
-
-    return cambios;
-  }
-
-  private cargarFormulario(sede: ConsultorioResponse): void {
-    this.formularioEdicion.reset({
-      name: sede.name ?? '',
-      alias: sede.alias ?? '',
-      timezone: sede.timezone ?? '',
-      slotMinutes: sede.slotMinutes === undefined ? '' : String(sede.slotMinutes),
-      phone: sede.phone ?? '',
-      contactEmail: sede.contactEmail ?? '',
-      agendaHabilitada: sede.agendaHabilitada ?? true,
-      direccionPublica: sede.direccionPublica ?? true,
-      datosFiscalesPropios: sede.datosFiscalesPropios ?? false,
-      legalName: sede.legalName ?? '',
-      taxId: sede.taxId ?? '',
-      addressLine: sede.addressLine ?? '',
-    });
-    cargarUbicacion(this.ubicacionEdicion, {
-      ...sede,
-      latitud: sede.ubicacion?.latitud,
-      longitud: sede.ubicacion?.longitud,
-      origen: sede.ubicacion?.origen,
-    });
-  }
-
-  /**
-   * Falla de la edicion. El conflicto de concurrencia tiene tratamiento propio.
-   *
-   * <p>Ante `409 concurrent-modification` <b>no se pisa nada y no se cierra el panel</b>: se
-   * relee la sede del servidor, se toma esa lectura como base de comparacion nueva —con su
-   * `version` nueva— y se deja en pantalla lo que el usuario habia escrito. Asi puede ver el
-   * mensaje, comparar con lo que quedo guardado y confirmar de nuevo si sigue queriendo su
-   * cambio. Reintentar en silencio con la version nueva seria justamente pisar el cambio del
-   * otro, que es lo que el `409` existe para evitar.
-   */
-  private fallarEdicion(error: unknown, orgId: number, consultorioId: number): void {
-    const traducido = traducirErrorConsultorio(error);
-    this.enviando.set(false);
-    this.errorAccion.set(traducido.mensaje);
-    this.causaAccion.set(traducido.causa);
-
-    if (traducido.causa !== 'concurrencia') {
-      return;
-    }
-
-    this.consultorios
-      .getConsultorio({ orgId, consultorioId })
-      .pipe(catchError(() => of(null)))
-      .subscribe((sede) => {
-        if (sede === null) {
-          return;
-        }
-        this.original.set(sede);
-        this.cargar();
-      });
-  }
-
   private fallar(error: unknown): void {
     const traducido = traducirErrorConsultorio(error);
     this.enviando.set(false);
     this.errorAccion.set(traducido.mensaje);
-    this.causaAccion.set(traducido.causa);
-  }
-
-  private enfocar(selector: string): void {
-    this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
 }
