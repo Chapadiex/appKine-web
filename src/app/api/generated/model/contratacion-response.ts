@@ -18,6 +18,10 @@ export interface ContratacionResponse {
      */
     adicionales?: Array<ContratacionResponseAdicionalesEnum>;
     /**
+     * El centro lo dio de alta o lo ajusto la plataforma. Sin esto es un centro autoregistrado o anterior al 18/11/2026, y tiene los dos servicios y la IA
+     */
+    definidaPorPlataforma?: boolean;
+    /**
      * Estado guardado de la suscripcion
      */
     estado?: ContratacionResponseEstadoEnum;

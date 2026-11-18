@@ -109,19 +109,22 @@ test.describe('Suscripcion contra el backend real', () => {
         await expect(plataforma.getByTestId('suscripcion-version')).toHaveText(
           String(inicial.version),
         );
-        await plataforma.getByLabel('Plan nuevo').selectOption('PROFESIONAL');
-        const cambio = respuestaDe(plataforma, 'POST', /\/subscription\/plan-changes$/);
-        await plataforma.getByRole('button', { name: 'Cambiar el plan' }).click();
+        // Desde el 18/11/2026 el plan se cambia con la contratacion completa (plan ofrecido,
+        // servicios y adicionales). Un centro autoregistrado tiene los dos servicios y la IA.
+        await plataforma.getByLabel('Plan', { exact: true }).selectOption('CRECIMIENTO');
+        const cambio = respuestaDe(plataforma, 'PUT', /\/contratacion$/);
+        await plataforma.getByRole('button', { name: 'Guardar la contratación' }).click();
         const respuesta = await cambio;
         expect(respuesta.status(), await respuesta.text()).toBe(200);
-        expect(respuesta.request().postDataJSON()).toEqual({
-          planCode: 'PROFESIONAL',
-          expectedVersion: inicial.version,
+        expect(respuesta.request().postDataJSON()).toMatchObject({
+          planCode: 'CRECIMIENTO',
+          contratar: false,
+          version: inicial.version,
         });
         await expect(
           plataforma
             .getByRole('region', { name: 'Notificaciones', exact: true })
-            .getByText('Plan cambiado'),
+            .getByText('Contratación guardada'),
         ).toBeVisible();
         await expect(plataforma.getByTestId('suscripcion-plan')).not.toHaveText(inicial.planName);
       } finally {

@@ -99,6 +99,11 @@
   padding-top: var(--esp-8);
 }
 
+/* Sin barra pero con tablas (consola de plataforma): la ruta pide `ancho: 'amplio'`. */
+.shell--sin-barra .contenido.contenido--amplio {
+  max-width: 76rem;
+}
+
 .contenido:focus {
   outline: none;
 }

@@ -3,6 +3,7 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
 import { CalendarioDeSedeService } from '../../api/generated/api/calendario-de-sede.service';
+import { ContratacionService } from '../../api/generated/api/contratacion.service';
 import { OrganizacionesService } from '../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../models/permisos';
 import { PermissionsStore } from '../services/permissions.store';
@@ -49,6 +50,7 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   const primerosPasos = inject(PrimerosPasosStore);
   const organizaciones = inject(OrganizacionesService);
   const calendarios = inject(CalendarioDeSedeService);
+  const contratacion = inject(ContratacionService);
   const router = inject(Router);
 
   // Al recargar la pagina la sesion todavia se esta restaurando: sin esperarla, el contexto se ve
@@ -70,6 +72,17 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
     if (!permisos.tiene(PERMISO_CONSULTORIO_MANAGE)) {
       return of(true);
     }
+    // Solo un centro en prueba: nace del alta de la plataforma (18/11/2026), que es como entra
+    // todo centro nuevo. Un centro autoregistrado o ya contratado no se desvia nunca.
+    return contratacion.getContratacionDeOrganizacion({ orgId }).pipe(
+      switchMap((c) =>
+        c.estado === 'PRUEBA' && !c.soloLectura ? sedeSinHorario(orgId) : of(true),
+      ),
+      catchError(() => of(true)),
+    );
+  }
+
+  function sedeSinHorario(orgId: number): Observable<boolean | UrlTree> {
     return organizaciones
       .listOrganizationConsultorios({ orgId, estado: 'ACTIVO', page: 0, size: 2 })
       .pipe(
