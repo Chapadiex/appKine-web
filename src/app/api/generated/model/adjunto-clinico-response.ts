@@ -14,6 +14,10 @@
  */
 export interface AdjuntoClinicoResponse { 
     /**
+     * Nombre de quien lo subio, o null si la cuenta ya no resuelve
+     */
+    cargadoPorNombre?: string;
+    /**
      * Clasificacion clinica del documento
      */
     categoria?: AdjuntoClinicoResponseCategoriaEnum;
@@ -62,6 +66,18 @@ export interface AdjuntoClinicoResponse {
      */
     nombreArchivo?: string;
     /**
+     * Por que camino entro (DP-47): PROFESIONAL desde la historia, o DECLARADO por el paciente, que espera revision
+     */
+    origen?: AdjuntoClinicoResponseOrigenEnum;
+    /**
+     * Instante UTC de la revision de un dato declarado, o null si no se reviso
+     */
+    revisadoEn?: string;
+    /**
+     * Nombre del profesional que reviso el dato declarado, o null
+     */
+    revisadoPorNombre?: string;
+    /**
      * Instante UTC de la carga
      */
     subidoEn?: string;
@@ -97,6 +113,10 @@ export enum AdjuntoClinicoResponseEstadoEnum {
 export enum AdjuntoClinicoResponseEstadoCicloDeVidaEnum {
     ACTIVO = 'ACTIVO',
     INACTIVO = 'INACTIVO'
+};
+export enum AdjuntoClinicoResponseOrigenEnum {
+    PROFESIONAL = 'PROFESIONAL',
+    DECLARADO = 'DECLARADO'
 };
 
 

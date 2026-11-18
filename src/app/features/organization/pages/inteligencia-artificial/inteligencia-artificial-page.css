@@ -1,0 +1,63 @@
+.ia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-6);
+}
+
+.ia__encabezado {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.ia__titulo {
+  margin: 0;
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+/* El estado va a la derecha; en pantalla angosta baja debajo del texto. */
+.ia__funcion {
+  flex-wrap: wrap;
+}
+
+.ia__funcion .interruptor__textos {
+  flex: 1 1 18rem;
+}
+
+.ia__funcion input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ia__estado {
+  flex: none;
+  margin-left: auto;
+}
+
+.ia__pantallas {
+  display: block;
+  margin-top: var(--esp-1);
+}
+
+.ia__linea {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: 0;
+}
+
+.ia__modelo {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-sm);
+  overflow-wrap: anywhere;
+}
+
+.ia__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  margin: 0;
+}

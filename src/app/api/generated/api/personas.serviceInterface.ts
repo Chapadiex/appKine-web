@@ -35,6 +35,7 @@ export interface BuscarPersonasRequestParams {
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
     perfil?: 'CON_PERFIL' | 'SIN_PERFIL' | 'TODOS';
     actividad?: 'CON_ACTIVIDAD' | 'SIN_ACTIVIDAD' | 'TODOS';
+    historia?: 'CON_HISTORIA' | 'SIN_HISTORIA' | 'TODOS';
     page?: number;
     size?: number;
     sort?: 'apellido,asc' | 'apellido,desc' | 'nombre,asc' | 'nombre,desc' | 'documento,asc' | 'documento,desc' | 'nacimiento,asc' | 'nacimiento,desc' | 'alta,asc' | 'alta,desc';

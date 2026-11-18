@@ -13,6 +13,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
 
 import { PERMISO_ASISTENTE_USE } from '../../../../core/models/permisos';
+import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -35,6 +36,7 @@ import { CharlaDelAsistente } from '../charla-del-asistente/charla-del-asistente
 export class AsistenteFlotante {
   private readonly router = inject(Router);
   private readonly permisos = inject(PermissionsStore);
+  private readonly funcionesIa = inject(FuncionesIaStore);
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
 
@@ -55,6 +57,7 @@ export class AsistenteFlotante {
       this.session.estado() === 'activa' &&
       this.tenant.context() !== null &&
       this.permisos.tiene(PERMISO_ASISTENTE_USE) &&
+      this.funcionesIa.activa('ASISTENTE') &&
       !/^\/asistente(\/|\?|$)/.test(this.url()),
   );
 

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { funcionIaGuard } from '../../core/guards/funcion-ia.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 import { PERMISO_BIBLIOTECA_MANAGE } from '../../core/models/permisos';
@@ -14,14 +15,14 @@ import { PERMISO_BIBLIOTECA_MANAGE } from '../../core/models/permisos';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE)],
+    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE), funcionIaGuard('BIBLIOTECA')],
     loadComponent: () => import('./pages/biblioteca/biblioteca-page').then((m) => m.BibliotecaPage),
     title: 'AKINE - Biblioteca',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: ':libroId',
-    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE)],
+    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE), funcionIaGuard('BIBLIOTECA')],
     loadComponent: () =>
       import('./pages/libro-detalle/libro-detalle-page').then((m) => m.LibroDetallePage),
     title: 'AKINE - Biblioteca',
