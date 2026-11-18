@@ -78,8 +78,7 @@
               <ul>
                 @for (fallo of resumen.fallos; track fallo.inscripcionId) {
                   <li>
-                    <b>{{ fallo.nombre }}</b
-                    >: {{ fallo.mensaje }}
+                    <b>{{ fallo.nombre }}</b>: {{ fallo.mensaje }}
                     @if (fallo.derivacionIds.length > 0) {
                       @if (eleccionEnLote(fallo.inscripcionId); as eleccion) {
                         @if (eleccion.error; as problema) {

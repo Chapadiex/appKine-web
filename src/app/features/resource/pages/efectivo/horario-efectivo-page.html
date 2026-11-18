@@ -1,9 +1,9 @@
 <app-cabecera-de-pagina titulo="Horario del profesional">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Qué días y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b
-      >, una vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de
-      la sede y los suyos, la vigencia de su vínculo y la política de feriados. Cada franja dice
+      Qué días y horas <b>concretas</b> atiende un profesional en <b>{{ nombreDeLaSede() }}</b>, una
+      vez aplicadas todas las reglas juntas: su horario semanal, los cierres y aperturas de la sede
+      y los suyos, la vigencia de su vínculo y la política de feriados. Cada franja dice
       <b>qué regla la produjo</b>, y cada día vacío dice <b>por qué</b> quedó vacío.
     </p>
     <p>Las excepciones siempre tienen prioridad sobre el horario semanal.</p>
@@ -176,8 +176,7 @@
             </span>
             @if (timezone(); as zona) {
               <span class="resumen-efectivo__zona">
-                Las horas estan en la zona de la sede: <b>{{ zona }}</b
-                >.
+                Las horas estan en la zona de la sede: <b>{{ zona }}</b>.
               </span>
             }
           </p>

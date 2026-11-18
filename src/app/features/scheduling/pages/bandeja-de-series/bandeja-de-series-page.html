@@ -84,8 +84,7 @@
 <section class="tarjeta" aria-label="Series de turnos">
   @if (persona(); as filtrada) {
     <p class="filtro-persona">
-      Solo las series de <b>{{ filtrada.nombre || 'la persona #' + filtrada.id }}</b
-      >.
+      Solo las series de <b>{{ filtrada.nombre || 'la persona #' + filtrada.id }}</b>.
       <button type="button" class="boton-texto" (click)="quitarPersona()">
         Ver las de todos los pacientes
       </button>

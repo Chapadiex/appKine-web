@@ -770,8 +770,7 @@
                 @for (evento of eventos(); track evento.id) {
                   <li>
                     @if (deOtroTurno(evento); as origen) {
-                      <span class="ayuda">{{ origen }}</span
-                      ><br />
+                      <span class="ayuda">{{ origen }}</span><br />
                     }
                     <span class="flujo__historial-cuando">{{ instante(evento.ocurridoEn) }}</span>
                     {{ textoDeEvento(evento.tipo) }}
