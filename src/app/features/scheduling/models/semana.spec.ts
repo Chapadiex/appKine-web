@@ -21,7 +21,10 @@ describe('semana del calendario', () => {
       '2026-10-31',
       '2026-11-01',
     ]);
-    expect(rotuloDeSemana('2026-10-26')).toBe('26 de octubre al 1 de noviembre de 2026');
+    // Rótulo corto para la barra de la agenda: mes abreviado si la semana cambia de mes...
+    expect(rotuloDeSemana('2026-10-26')).toBe('26 oct al 1 nov de 2026');
+    // ...y el mes una sola vez si no cambia.
+    expect(rotuloDeSemana('2026-11-16')).toBe('16 al 22 de noviembre de 2026');
   });
 
   it('reparte cada turno en el día de la SEDE, no en el de UTC', () => {

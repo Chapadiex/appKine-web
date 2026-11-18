@@ -80,7 +80,11 @@ describe('BarraSuperior', () => {
     );
     expect(enlace(html, 'Consola de plataforma')).toBeUndefined();
     expect(html.querySelector('app-selector-de-sede')).toBeNull();
-    expect(html.querySelector('app-menu-de-perfil')).not.toBeNull();
+    // El menu llega por un import() dinamico: con la suite entera y cobertura tarda mas que un tick.
+    await vi.waitFor(async () => {
+      await fixture.whenStable();
+      expect(html.querySelector('app-menu-de-perfil')).not.toBeNull();
+    });
 
     adminDePlataforma.set(true);
     fixture.detectChanges();

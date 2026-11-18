@@ -304,7 +304,11 @@ describe('AtencionPage', () => {
   it('sin previa dice que es la primera sesión, en vez de dejar el hueco vacío', async () => {
     const fixture = await montar(PRIMERA_SESION);
 
-    expect(grupoDeDolor(fixture)).toContain('Primera sesión evaluada de este paciente');
+    // Va como marca en la cabecera: no ocupa lugar en el formulario, y el dolor no muestra previa.
+    const marca = (fixture.nativeElement as HTMLElement).querySelector('.marca-estado--info');
+    expect(marca?.textContent?.trim()).toBe('Primera sesión');
+    expect(marca?.getAttribute('title')).toContain('No hay una sesión anterior');
+    expect(grupoDeDolor(fixture)).not.toContain('La vez pasada');
   });
 
   // -------------------------------------------------------------------------------------
@@ -333,9 +337,10 @@ describe('AtencionPage', () => {
   it('los campos de la evaluación toman la grilla de 12 con anchos por dato (UX-14)', async () => {
     const fixture = await montar();
     const raiz = fixture.nativeElement as HTMLElement;
-    const zona = raiz.querySelector('#atencion-zona')?.closest('.campo');
-    expect(zona?.classList).toContain('campo--4');
-    expect(zona?.parentElement?.classList).toContain('grilla-12');
+    // Zona, lado y evolución son chips (modo táctil); los textos van en la grilla de 12.
+    const objetivo = raiz.querySelector('#atencion-objetivo')?.closest('app-texto-opcional');
+    expect(objetivo?.classList).toContain('campo--12');
+    expect(objetivo?.parentElement?.classList).toContain('grilla-12');
     // Las notas siguen a todo el ancho: un textarea ocupa la fila entera de la grilla.
     expect(raiz.querySelector('#atencion-notas')?.closest('.campo')?.className).not.toMatch(
       /campo--\d/,
@@ -345,12 +350,15 @@ describe('AtencionPage', () => {
   it('NO_APLICA viaja como valor cargado, que no es lo mismo que dejarlo vacío', async () => {
     const fixture = await montar();
 
-    const lateralidad = fixture.nativeElement.querySelector(
-      '#atencion-lateralidad',
-    ) as HTMLSelectElement;
-    lateralidad.value = 'NO_APLICA';
-    lateralidad.dispatchEvent(new Event('change'));
+    const noAplica = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '#atencion-lateralidad button',
+      ) as NodeListOf<HTMLButtonElement>,
+    ).find((b) => (b.textContent ?? '').trim() === 'No aplica') as HTMLButtonElement;
+    noAplica.click();
+    // "Otra…" zona del grupo de chips: se toma al confirmar el campo.
     escribirEn(fixture, '#atencion-zona', 'Lumbar');
+    fixture.nativeElement.querySelector('#atencion-zona').dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     apretar(fixture, 'Guardar evaluación');

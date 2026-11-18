@@ -11,6 +11,22 @@ import { provideApi } from '../../../../api/generated/provide-api';
 
 const RUTA_ALTA = '/api/v1/organizations/1/consultorios';
 const RUTA_ORGANIZACION = '/api/v1/organizations/1';
+const RUTA_SEDE = '/api/v1/organizations/1/consultorios/3';
+
+/** La sede que se edita en `sedes/3/editar`. */
+const CENTRO = {
+  id: 3,
+  organizationId: 1,
+  name: 'Sede Centro',
+  timezone: 'America/Argentina/Cordoba',
+  slotMinutes: 30,
+  legalName: 'Kine Centro SRL',
+  taxId: '30-71094127-7',
+  phone: '351 400 0000',
+  active: true,
+  estado: 'ACTIVO',
+  version: 4,
+};
 
 /** CUIT con digito verificador correcto segun el modulo 11 (y el mismo con el digito mal). */
 const CUIT_VALIDO = '20-12345678-6';
@@ -354,6 +370,149 @@ describe('NewConsultorioPage', () => {
       alta.flush({ id: 9, name: 'Sede Norte' }, { status: 201, statusText: 'Created' });
     });
   });
+
+  // -----------------------------------------------------------------------------------------
+  // Edicion (13/11/2026): "Editar" del listado de sedes abre esta misma pantalla de pasos.
+  // -----------------------------------------------------------------------------------------
+
+  it('editar: el PATCH manda solo lo que cambio, lo vaciado como cadena vacía y lo intacto ni aparece', async () => {
+    const fixture = await montarEdicion();
+
+    // Se cambia el nombre, se BORRA el telefono vaciandolo y no se toca la razon social.
+    escribir(fixture, '#sede-name', 'Sede Centro Nueva');
+    escribir(fixture, '#sede-phone', '');
+    enviar(fixture, 4);
+
+    const peticion = httpMock.expectOne(
+      (candidata) => candidata.method === 'PATCH' && candidata.url === RUTA_SEDE,
+    );
+    const cuerpo = peticion.request.body as Record<string, unknown>;
+    expect(cuerpo).toEqual({ version: 4, name: 'Sede Centro Nueva', phone: '' });
+    // La razon social ni siquiera viaja: mandarla -aunque fuera su valor actual- la pisaria
+    // en cada guardado, y con ella cualquier correccion que otra persona hubiera hecho.
+    expect('legalName' in cuerpo).toBe(false);
+    expect('timezone' in cuerpo).toBe(false);
+
+    peticion.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 5 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('Cambios guardados');
+    expect(aviso?.descripcion).toBe('Sede Centro Nueva');
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenCalledWith('/organizacion/sedes');
+  });
+
+  /**
+   * Vaciar un campo de texto es "borralo"; vaciar uno numerico NO es "ponelo en cero": un
+   * `<input type="number">` vaciado entrega `null`, y `Number(null)` mandaria `slotMinutes: 0`.
+   */
+  it('editar: vaciar la duración del turno no manda un cero, el campo directamente no viaja', async () => {
+    const fixture = await montarEdicion();
+
+    escribir(fixture, '#sede-name', 'Sede Centro Nueva');
+    escribir(fixture, '#sede-slotMinutes', '');
+    enviar(fixture, 4);
+
+    const peticion = httpMock.expectOne((candidata) => candidata.method === 'PATCH');
+    const cuerpo = peticion.request.body as Record<string, unknown>;
+    expect(cuerpo).toEqual({ version: 4, name: 'Sede Centro Nueva' });
+    expect('slotMinutes' in cuerpo).toBe(false);
+
+    peticion.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 5 });
+    await fixture.whenStable();
+  });
+
+  it('editar: una versión vieja no pisa nada, relee la sede, avisa y conserva lo escrito', async () => {
+    const fixture = await montarEdicion();
+
+    escribir(fixture, '#sede-name', 'Sede Centro Nueva');
+    enviar(fixture, 4);
+    responderConflicto();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Se relee la sede para tomar la version nueva como base: reintentar en silencio con ella
+    // seria justamente pisar el cambio del otro, que es lo que el 409 evita.
+    httpMock.expectOne(RUTA_SEDE).flush({ ...CENTRO, name: 'Sede Centro Sur', version: 9 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Alguien mas edito esta sede');
+    expect(TestBed.inject(Router).navigateByUrl).not.toHaveBeenCalled();
+
+    // Si el usuario insiste, el reintento lleva lo que escribio y la version releida.
+    enviar(fixture);
+    const reintento = httpMock.expectOne((candidata) => candidata.method === 'PATCH');
+    const cuerpo = reintento.request.body as Record<string, unknown>;
+    expect(cuerpo['version']).toBe(9);
+    expect(cuerpo['name']).toBe('Sede Centro Nueva');
+    reintento.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 10 });
+    await fixture.whenStable();
+  });
+
+  it('editar: si la relectura posterior al 409 también falla, el mensaje queda y no se sale', async () => {
+    const fixture = await montarEdicion();
+
+    escribir(fixture, '#sede-name', 'Sede Centro Nueva');
+    enviar(fixture, 4);
+    responderConflicto();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(RUTA_SEDE)
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(texto(fixture)).toContain('Alguien mas edito esta sede');
+    expect(TestBed.inject(Router).navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it('editar: un email mal formado o un nombre vacío no salen al backend', async () => {
+    const fixture = await montarEdicion();
+
+    // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
+    // veria un error generico en vez del campo marcado.
+    escribir(fixture, '#sede-contactEmail', 'esto-no-es-un-mail');
+    enviar(fixture, 4);
+    httpMock.expectNone((peticion) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('Ese email no tiene una forma válida');
+
+    // Un nombre de solo espacios es un nombre vacio: viajaria como un renombre a cadena vacia.
+    escribir(fixture, '#sede-contactEmail', '');
+    escribir(fixture, '#sede-name', '   ');
+    enviar(fixture, 4);
+    httpMock.expectNone((peticion) => peticion.method === 'PATCH');
+    expect(texto(fixture)).toContain('La sede necesita un nombre');
+  });
+
+  function responderConflicto() {
+    httpMock
+      .expectOne((candidata) => candidata.method === 'PATCH')
+      .flush(
+        {
+          type: 'https://akine.app/problems/concurrent-modification',
+          detail: 'La versión enviada quedo vieja',
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+  }
+
+  /** Monta la pantalla en modo edicion de la sede 3, con la sede ya leida. */
+  async function montarEdicion() {
+    const fixture = TestBed.createComponent(NewConsultorioPage);
+    fixture.componentRef.setInput('sedeId', '3');
+    fixture.detectChanges();
+    httpMock
+      .expectOne(RUTA_ORGANIZACION)
+      .flush({ id: 1, name: 'Belgrano', version: 1, taxId: '30-71094127-7' });
+    httpMock.expectOne(RUTA_SEDE).flush(CENTRO);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    return fixture;
+  }
 
   /** Monta la pantalla y responde la lectura de la organizacion que hace al arrancar. */
   function montar() {

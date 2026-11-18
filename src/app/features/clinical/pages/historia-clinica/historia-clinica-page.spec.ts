@@ -1,5 +1,9 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -114,15 +118,22 @@ describe('HistoriaClinicaPage', () => {
     await estabilizar(fixture);
 
     // El timeline y los casos del filtro tambien llevan el motivo: cada lectura se audita.
-    const timeline = httpMock.expectOne((r: HttpRequest<unknown>) => r.url === TIMELINE);
+    // La lista de sesiones sale del mismo timeline, filtrado por origen SESION.
+    const timelines = httpMock.match((r: HttpRequest<unknown>) => r.url === TIMELINE);
+    expect(timelines).toHaveLength(2);
     const casos = httpMock.match((r: HttpRequest<unknown>) => r.url === CASOS);
-    expect(timeline.request.headers.get(HEADER)).toBe('Interconsulta');
     expect(casos.length).toBeGreaterThan(0);
-    for (const pedido of casos) {
+    for (const pedido of [...timelines, ...casos]) {
+      expect(pedido.request.headers.get(HEADER)).toBe('Interconsulta');
+    }
+    casos.forEach((pedido) => pedido.flush([]));
+    responderTimeline(timelines, PAGINA);
+    await estabilizar(fixture);
+    // Lo que se relee despues (los casos del listado) tambien lleva el motivo.
+    for (const pedido of httpMock.match((r: HttpRequest<unknown>) => r.url === CASOS)) {
       expect(pedido.request.headers.get(HEADER)).toBe('Interconsulta');
       pedido.flush([]);
     }
-    timeline.flush(PAGINA);
     await estabilizar(fixture);
 
     expect(texto(fixture)).toContain('Prueba, Lucia');
@@ -144,7 +155,12 @@ describe('HistoriaClinicaPage', () => {
     boton(fixture, 'Abrir la historia clínica').click();
     httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'PUT').flush(HISTORIA);
     await estabilizar(fixture);
-    httpMock.expectOne((r) => r.url === TIMELINE).flush({ eventos: [] });
+    responderTimeline(
+      httpMock.match((r) => r.url === TIMELINE),
+      { eventos: [] },
+    );
+    httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
+    await estabilizar(fixture);
     httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
     await estabilizar(fixture);
 
@@ -173,7 +189,12 @@ describe('HistoriaClinicaPage', () => {
       const fixture = await montar();
       httpMock.expectOne((r) => r.url === HISTORIA_POR_PERSONA).flush(HISTORIA);
       await estabilizar(fixture);
-      httpMock.expectOne((r) => r.url === TIMELINE).flush(PAGINA);
+      responderTimeline(
+        httpMock.match((r) => r.url === TIMELINE),
+        PAGINA,
+      );
+      httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
+      await estabilizar(fixture);
       httpMock.match((r) => r.url === CASOS).forEach((r) => r.flush([]));
       await estabilizar(fixture);
 
@@ -188,6 +209,17 @@ describe('HistoriaClinicaPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture;
+  }
+
+  /**
+   * Contesta las lecturas del timeline: la del timeline completo con `pagina`, y la de la lista de
+   * sesiones (filtrada por origen `SESION`) vacía.
+   */
+  function responderTimeline(pedidos: TestRequest[], pagina: object): void {
+    expect(pedidos).toHaveLength(2);
+    for (const pedido of pedidos) {
+      pedido.flush(pedido.request.params.has('origen') ? { eventos: [] } : pagina);
+    }
   }
 
   async function estabilizar(fixture: ComponentFixture<HistoriaClinicaPage>): Promise<void> {

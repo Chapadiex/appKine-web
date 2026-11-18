@@ -79,7 +79,7 @@ describe('CasosDeLaHistoria', () => {
     expect(lineas[0]).toContain('Caso 1 · Kinesiologia');
     expect(lineas[0]).toContain('Lopez, Maria (Responsable)');
     expect(lineas[0]).toContain('Activo');
-    expect(lineas[1]).toContain('Caso 2 · Oferta #14');
+    expect(lineas[1]).toContain('Caso 2 · Actividad #14');
     expect(lineas[1]).toContain('Cerrado');
     // Los nombres vienen en el caso (0.107.0): no se piden habilitaciones solo para resolverlos.
     httpMock.expectNone(HABILITACIONES);
@@ -101,7 +101,7 @@ describe('CasosDeLaHistoria', () => {
     expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('descending');
     expect(filas(fixture)[0]).toContain('Caso 2');
 
-    buscar(fixture, 'oferta #14');
+    buscar(fixture, 'actividad #14');
     expect(filas(fixture)).toHaveLength(1);
     expect(raiz.querySelector('.filtros-barra__resultados')?.textContent).toContain('1 caso');
   });

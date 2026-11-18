@@ -110,21 +110,18 @@ describe('CatalogoDeServiciosPage', () => {
 
     expect(anfitrion.textContent).toContain('Tu cuenta tiene rol de plataforma');
     expect(anfitrion.textContent).toContain('Nuevo servicio');
-    // "En la sede" a la vista (11/11/2026); Editar y la baja, destructiva, en el menu "⋯".
+    // Editar a la vista; la baja, destructiva, en el menu "⋯".
     const acciones = [...anfitrion.querySelectorAll('tbody button')].map((boton) =>
       (boton.textContent ?? '').trim(),
     );
     expect(acciones).toEqual([
+      'Editar',
       'Más acciones de Kinesiologia respiratoria',
-      'Editar',
       'Dar de baja',
-      'Más acciones de Pilates',
       'Editar',
+      'Más acciones de Pilates',
       'Dar de baja',
     ]);
-    expect(
-      anfitrion.querySelector('tbody a[href^="/servicios/ofertas?servicio="]')?.textContent,
-    ).toContain('En la sede');
 
     // Y hay salida hacia lo que el centro SI administra.
     expect(anfitrion.querySelector('a[href="/servicios/ofertas"]')).not.toBeNull();
@@ -172,15 +169,37 @@ describe('CatalogoDeServiciosPage', () => {
       (boton.textContent ?? '').trim(),
     );
     expect(botones).toContain('Nuevo servicio');
-    // El global no se toca desde el centro; el propio si.
+    // El global no se edita ni se da de baja desde el centro: solo se personaliza (una copia de
+    // la organizacion). El propio, si.
     const filas = [...anfitrion.querySelectorAll('tbody tr')];
-    expect(filas[0].querySelectorAll('button').length).toBe(0);
+    const delGlobal = [...filas[0].querySelectorAll('button')].map((boton) =>
+      (boton.textContent ?? '').trim(),
+    );
+    expect(delGlobal).toEqual(['Editar']);
     expect(filas[1].textContent).toContain('Del centro');
-    expect(filas[1].querySelectorAll('button').length).toBeGreaterThan(0);
+    expect(
+      [...filas[1].querySelectorAll('button')].map((boton) => (boton.textContent ?? '').trim()),
+    ).toContain('Dar de baja');
 
     (anfitrion.querySelector('[cabeceraAcciones] button') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(anfitrion.textContent).toContain('Creá un servicio para tu organización');
+  });
+
+  it('con catalogo:manage, editar un servicio de AKINE avisa que crea una copia de la organización', async () => {
+    esAdmin.set(false);
+    gestionaCatalogo.set(true);
+    const fixture = TestBed.createComponent(CatalogoDeServiciosPage);
+    fixture.detectChanges();
+    httpMock.expectOne(esListado()).flush([KINE]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    (anfitrion.querySelector('tbody tr button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(anfitrion.textContent).toContain('Personalizar servicio para tu organización');
+    expect(anfitrion.textContent).toContain('Es un servicio de AKINE');
   });
 
   it('el filtro de estado recarga con su parametro y una lista vacía no es un error', async () => {
@@ -795,7 +814,7 @@ describe('CatalogoDeServiciosPage', () => {
     const [aviso] = avisos.avisos();
     expect(aviso?.titulo).toBe('Servicio creado');
     expect(aviso?.descripcion).toContain('catálogo de tu organización');
-    expect(aviso?.accion?.etiqueta).toBe('Crear oferta');
+    expect(aviso?.accion?.etiqueta).toBe('Crear actividad');
 
     avisos.ejecutar(aviso.id);
     expect(navegar).toHaveBeenCalledWith(['/servicios/ofertas'], {
@@ -900,7 +919,7 @@ describe('CatalogoDeServiciosPage', () => {
     expect(anfitrion.textContent).toContain('No pudimos guardar los cambios');
     expect(
       anfitrion.querySelector('app-panel-lateral a[href="/servicios/ofertas"]')?.textContent,
-    ).toContain('Ir a las ofertas de la sede');
+    ).toContain('Ir a las actividades de la sede');
   });
 
   it('un 403 en la baja también ofrece ir a las ofertas de la sede', async () => {

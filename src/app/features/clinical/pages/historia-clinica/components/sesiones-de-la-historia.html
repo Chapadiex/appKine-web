@@ -1,7 +1,9 @@
 <section class="tarjeta" aria-labelledby="titulo-sesiones">
   <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
     <h2 id="titulo-sesiones">Sesiones</h2>
-    <span class="sesiones__cuenta" aria-label="Sesiones cargadas">{{ cuenta() }}</span>
+    <span class="sesiones__cuenta"
+      ><span class="visualmente-oculto">Sesiones cargadas: </span>{{ cuenta() }}</span
+    >
     <app-ayuda titulo="Sesiones del paciente">
       <p>
         Todas las atenciones del paciente en la organización, de la más reciente a la más antigua,
