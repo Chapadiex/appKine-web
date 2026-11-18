@@ -15,6 +15,11 @@ const DATOS: Pestana = { etiqueta: 'Datos del centro', ruta: '/organizacion', ex
 const SUSCRIPCION: Pestana = { etiqueta: 'Suscripción', ruta: '/organizacion/suscripcion' };
 /** Colores, logo y datos de contacto del centro: solo quien puede editar la organizacion. */
 const MARCA: Pestana = { etiqueta: 'Marca', ruta: '/organizacion/marca' };
+/** Funciones de IA del centro y estado del motor: solo quien puede editar la organizacion. */
+const IA: Pestana = {
+  etiqueta: 'Inteligencia artificial',
+  ruta: '/organizacion/inteligencia-artificial',
+};
 const AUDITORIA: Pestana = { etiqueta: 'Auditoría', ruta: '/organizacion/auditoria' };
 const ENMIENDA: Pestana = {
   etiqueta: 'Política de enmienda',
@@ -34,7 +39,7 @@ export function pestanasDeOrganizacion(permisos: PermissionsStore): Signal<reado
   return computed(() => [
     DATOS,
     SUSCRIPCION,
-    ...(permisos.tiene(PERMISO_TENANT_UPDATE) ? [MARCA] : []),
+    ...(permisos.tiene(PERMISO_TENANT_UPDATE) ? [MARCA, IA] : []),
     ...(permisos.tiene(PERMISO_AUDITORIA_READ) ? [AUDITORIA] : []),
     ...(permisos.tiene(PERMISO_CONSULTORIO_MANAGE) ? [ENMIENDA] : []),
   ]);

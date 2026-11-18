@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { funcionIaGuard } from '../../core/guards/funcion-ia.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { PERMISO_ASISTENTE_USE } from '../../core/models/permisos';
 
@@ -10,7 +11,7 @@ import { PERMISO_ASISTENTE_USE } from '../../core/models/permisos';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [permissionGuard(PERMISO_ASISTENTE_USE)],
+    canActivate: [permissionGuard(PERMISO_ASISTENTE_USE), funcionIaGuard('ASISTENTE')],
     loadComponent: () => import('./pages/asistente/asistente-page').then((m) => m.AsistentePage),
     title: 'AKINE - Asistente de datos',
   },

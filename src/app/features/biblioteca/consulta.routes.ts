@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { funcionIaGuard } from '../../core/guards/funcion-ia.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { PERMISO_BIBLIOTECA_CONSULTAR } from '../../core/models/permisos';
 
@@ -12,7 +13,7 @@ import { PERMISO_BIBLIOTECA_CONSULTAR } from '../../core/models/permisos';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_CONSULTAR)],
+    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_CONSULTAR), funcionIaGuard('BIBLIOTECA')],
     loadComponent: () => import('./pages/consulta/consulta-page').then((m) => m.ConsultaPage),
     title: 'AKINE - Consultar biblioteca',
   },

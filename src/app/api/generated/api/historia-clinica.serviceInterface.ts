@@ -15,6 +15,8 @@ import { ActualizarResumenRequest } from '../model/models';
 import { AntecedenteResponse } from '../model/models';
 import { BajaDeAntecedenteRequest } from '../model/models';
 import { DatosAdministrativosDeHistoriaResponse } from '../model/models';
+import { FichaDeIngresoRequest } from '../model/models';
+import { FichaDeIngresoResponse } from '../model/models';
 import { HistoriaClinicaResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RegistrarAntecedenteRequest } from '../model/models';
@@ -54,8 +56,30 @@ export interface RegistrarAntecedenteClinicoRequestParams {
     xJustificacionAcceso?: string;
 }
 
+export interface RegistrarFichaDeIngresoRequestParams {
+    personaId: number;
+    fichaDeIngresoRequest: FichaDeIngresoRequest;
+    xJustificacionAcceso?: string;
+}
+
+export interface RevisarAntecedenteRequestParams {
+    personaId: number;
+    antecedenteId: number;
+    xJustificacionAcceso?: string;
+}
+
+export interface RevisarFichaDeIngresoRequestParams {
+    personaId: number;
+    xJustificacionAcceso?: string;
+}
+
 export interface VerDatosAdministrativosDeHistoriaClinicaRequestParams {
     personaId: number;
+}
+
+export interface VerFichaDeIngresoRequestParams {
+    personaId: number;
+    xJustificacionAcceso?: string;
 }
 
 export interface VerHistoriaClinicaRequestParams {
@@ -109,12 +133,44 @@ export interface HistoriaClinicaServiceInterface {
     registrarAntecedenteClinico(requestParameters: RegistrarAntecedenteClinicoRequestParams, extraHttpRequestParams?: any): Observable<AntecedenteResponse>;
 
     /**
+     * Guardar la ficha de ingreso (profesional)
+     * Reemplaza la ficha entera y exige la version leida (null si no existe); otra version es 409 concurrent-modification. Queda revisada por quien la guarda. La persona tiene que tener historia. Exige hc:write.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/ficha
+* @param requestParameters
+     */
+    registrarFichaDeIngreso(requestParameters: RegistrarFichaDeIngresoRequestParams, extraHttpRequestParams?: any): Observable<FichaDeIngresoResponse>;
+
+    /**
+     * Marcar revisado un antecedente declarado por el paciente
+     * DP-47. El profesional valida lo que declaro el paciente. Idempotente: revisar uno ya revisado devuelve como esta. Un antecedente que no es DECLARADO es 409 dato-no-declarado. Exige hc:write y se audita como DATO_DECLARADO_REVISADO.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/antecedentes/{antecedenteId}/revision
+* @param requestParameters
+     */
+    revisarAntecedente(requestParameters: RevisarAntecedenteRequestParams, extraHttpRequestParams?: any): Observable<AntecedenteResponse>;
+
+    /**
+     * Marcar revisada la ficha de ingreso
+     * Idempotente: una ya revisada se devuelve como esta. Exige hc:write.
+     * @endpoint put /api/v1/historias-clinicas/por-persona/{personaId}/ficha/revision
+* @param requestParameters
+     */
+    revisarFichaDeIngreso(requestParameters: RevisarFichaDeIngresoRequestParams, extraHttpRequestParams?: any): Observable<FichaDeIngresoResponse>;
+
+    /**
      * Ver los datos administrativos de la Historia Clinica de una persona
      * Matriz de permisos §32, \&quot;Ver Historia Clinica\&quot; del ADMINISTRATIVO: Limitado, que la matriz define como solo metadatos administrativos y NUNCA contenido clinico. Devuelve si la persona tiene historia, cuando se abrio, sus casos (numero, estado, oferta, fechas) y el equipo tratante vigente de cada uno. No trae resumen, antecedentes, diagnostico, objetivo ni motivo de cierre.  Exige paciente:read (lo tiene el personal, no el rol PACIENTE). No pide justificacion de acceso y no se audita como acceso clinico: no expone contenido clinico. Una persona propia sin historia responde 200 con tieneHistoriaClinica &#x3D; false; una persona de otra organizacion, o sin perfil de paciente vigente, 404.
      * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/datos-administrativos
 * @param requestParameters
      */
     verDatosAdministrativosDeHistoriaClinica(requestParameters: VerDatosAdministrativosDeHistoriaClinicaRequestParams, extraHttpRequestParams?: any): Observable<DatosAdministrativosDeHistoriaResponse>;
+
+    /**
+     * Ver la ficha de ingreso
+     * 204 si todavia no se cargo. Exige hc:read mas relacion asistencial o motivo.
+     * @endpoint get /api/v1/historias-clinicas/por-persona/{personaId}/ficha
+* @param requestParameters
+     */
+    verFichaDeIngreso(requestParameters: VerFichaDeIngresoRequestParams, extraHttpRequestParams?: any): Observable<FichaDeIngresoResponse>;
 
     /**
      * Ver la Historia Clinica de una persona

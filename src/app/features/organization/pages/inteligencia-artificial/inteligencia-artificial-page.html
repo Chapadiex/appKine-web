@@ -1,0 +1,215 @@
+<app-cabecera-de-pagina titulo="Inteligencia artificial">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Elegí qué funciones de inteligencia artificial usa tu centro. Al apagar una, su pantalla
+      desaparece del menú para todas las personas del centro; al prenderla, vuelve.
+    </p>
+    <p>
+      El modelo corre en el servidor del centro, no en internet: los datos de los pacientes no salen
+      de ahí. Con placa de video (GPU) cada respuesta tarda un par de segundos; sin ella, bastante
+      más.
+    </p>
+    <p>
+      Si una función dice "No disponible en el servidor", la prende quien administra la instalación,
+      no se puede prender desde acá.
+    </p>
+  </app-ayuda>
+  <app-pestanas
+    [pestanas]="pestanasDeOrganizacion()"
+    [etiqueta]="etiquetaDePestanasDeOrganizacion"
+  />
+</app-cabecera-de-pagina>
+
+<div aria-live="polite">
+  @switch (estado()) {
+    @case ('cargando') {
+      <p class="estado estado--cargando">
+        Cargando las funciones de inteligencia artificial&hellip;
+      </p>
+    }
+    @case ('error') {
+      <app-alerta tipo="error" titulo="No pudimos leer las funciones de inteligencia artificial">
+        <p>{{ mensajeDeCarga() }}</p>
+        <p class="alerta__acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </p>
+      </app-alerta>
+    }
+  }
+</div>
+
+@if (estado() === 'listo') {
+  <section class="tarjeta ia" aria-labelledby="titulo-funciones">
+    <h2 id="titulo-funciones" class="ia__titulo">Funciones del centro</h2>
+
+    @if (errorAlGuardar(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos guardar el cambio">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    @for (fila of filas(); track fila.funcion) {
+      <div class="interruptor ia__funcion" [class.ia__funcion--inactiva]="!fila.activa">
+        <input
+          [id]="'ia-' + fila.funcion"
+          type="checkbox"
+          role="switch"
+          [checked]="fila.centro"
+          [disabled]="!fila.despliegue || guardando() !== null"
+          [attr.aria-describedby]="'ia-' + fila.funcion + '-detalle'"
+          (change)="alternar(fila.funcion, $any($event.target))"
+        />
+        <span class="interruptor__textos">
+          <label class="interruptor__titulo" [for]="'ia-' + fila.funcion">{{ fila.titulo }}</label>
+          <span class="interruptor__ayuda" [id]="'ia-' + fila.funcion + '-detalle'">
+            {{ fila.uso }} <span class="ia__pantallas">{{ fila.pantallas }}</span>
+          </span>
+        </span>
+        <span class="ia__estado">
+          @if (guardando() === fila.funcion) {
+            <span class="estado estado--cargando">Guardando&hellip;</span>
+          } @else {
+            <span [class]="'marca-estado marca-estado--' + fila.estado.tono">
+              {{ fila.estado.texto }}
+            </span>
+          }
+        </span>
+      </div>
+    }
+  </section>
+}
+
+<section class="tarjeta ia" aria-labelledby="titulo-motor">
+  <div class="ia__encabezado">
+    <h2 id="titulo-motor" class="ia__titulo">Motor de modelos</h2>
+    <app-ayuda titulo="Qué es el motor">
+      <p>
+        Es el programa (Ollama) que corre el modelo de lenguaje en el servidor. "Cargar en memoria"
+        lo deja listo para que la primera pregunta no espere; "Probar" le hace una pregunta corta y
+        mide cuánto tarda.
+      </p>
+    </app-ayuda>
+  </div>
+
+  <div aria-live="polite">
+    @if (motor(); as m) {
+      @if (m.alcanzable) {
+        <p class="ia__linea">
+          <span class="marca-estado marca-estado--activa">Responde</span>
+          @if (enGpu()) {
+            <span class="marca-estado marca-estado--activa">En GPU</span>
+          }
+        </p>
+      } @else {
+        <app-alerta tipo="advertencia" titulo="El motor no responde">
+          <p>{{ m.error }}</p>
+          <p>Sin el motor, las funciones prendidas responden con error hasta que vuelva.</p>
+        </app-alerta>
+      }
+
+      @if (m.modelos.length > 0) {
+        <div class="tabla-scroll">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Modelos que usa el centro
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Modelo</th>
+                <th scope="col">Lo usa</th>
+                <th scope="col">Descargado</th>
+                <th scope="col">En memoria</th>
+                <th scope="col">Corre en</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (modelo of m.modelos; track modelo.nombre) {
+                <tr>
+                  <td class="ia__modelo">{{ modelo.nombre }}</td>
+                  <td>
+                    @for (f of modelo.funciones; track f; let ultimo = $last) {
+                      {{ nombreDeFuncion(f) }}{{ ultimo ? '' : ', ' }}
+                    }
+                  </td>
+                  <td>
+                    @if (modelo.descargado) {
+                      <span class="marca-estado marca-estado--activa">Sí</span>
+                    } @else {
+                      <span class="marca-estado marca-estado--suspendida">No</span>
+                    }
+                  </td>
+                  <td>
+                    @if (modelo.cargado) {
+                      {{ (modelo.memoriaMb / 1024).toFixed(1) }} GB
+                    } @else {
+                      <span class="marca-estado marca-estado--neutra">No</span>
+                    }
+                  </td>
+                  <td>
+                    @switch (modelo.ejecucion) {
+                      @case ('GPU') {
+                        <span class="marca-estado marca-estado--activa">GPU</span>
+                      }
+                      @case ('MIXTO') {
+                        <span class="marca-estado marca-estado--suspendida">GPU y CPU</span>
+                      }
+                      @case ('CPU') {
+                        <span class="marca-estado marca-estado--suspendida">CPU (lento)</span>
+                      }
+                      @default {
+                        <span class="marca-estado marca-estado--neutra">—</span>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else if (motorOcupado() === 'consultando') {
+      <p class="estado estado--cargando">Consultando el motor&hellip;</p>
+    }
+
+    @if (prueba(); as p) {
+      @if (p.ok) {
+        <app-alerta tipo="exito" titulo="El modelo respondió">
+          <p>Tardó {{ segundos(p.milisegundos) }} s.</p>
+        </app-alerta>
+      } @else {
+        <app-alerta tipo="error" titulo="El modelo no respondió">
+          <p>{{ p.error }}</p>
+        </app-alerta>
+      }
+    }
+  </div>
+
+  <p class="ia__acciones">
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="motorOcupado() !== null"
+      (click)="consultarMotor()"
+    >
+      <app-icono nombre="repetir" /> Actualizar
+    </button>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="motorOcupado() !== null || motor()?.alcanzable !== true"
+      (click)="precargar()"
+    >
+      {{ motorOcupado() === 'cargando' ? 'Cargando…' : 'Cargar en memoria' }}
+    </button>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      [disabled]="motorOcupado() !== null || motor()?.alcanzable !== true"
+      (click)="probar()"
+    >
+      {{ motorOcupado() === 'probando' ? 'Probando…' : 'Probar' }}
+    </button>
+  </p>
+</section>
