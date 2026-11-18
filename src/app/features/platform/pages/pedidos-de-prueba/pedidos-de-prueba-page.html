@@ -1,0 +1,255 @@
+<app-cabecera-de-pagina titulo="Pedidos de prueba">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Pedidos de prueba gratis de 30 días que llegan desde la página pública. Para aprobar uno, dalo
+      de alta: se abre el alta de centro con los datos del pedido y, al crear el centro, el pedido
+      queda aprobado y el dueño recibe la invitación. Descartar pide un motivo. Solo lo ve el equipo
+      de AKINE.
+    </p>
+  </app-ayuda>
+
+  @if (pendientes(); as cantidad) {
+    <span class="marca-estado marca-estado--info" data-testid="pedidos-pendientes">
+      {{ textoPendientes(cantidad) }}
+    </span>
+  }
+
+  <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
+
+  <a cabeceraAcciones class="boton" [routerLink]="rutaAlta">Dar de alta un centro</a>
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Bandeja de pedidos de prueba">
+  <form (submit)="$event.preventDefault(); buscar()">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="paginaDePedidos()?.total ?? null"
+      [unidad]="['pedido', 'pedidos']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="pedidos-busqueda"
+          >Centro, persona o correo del pedido</label
+        >
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="pedidos-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por centro, persona o correo"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <button filtro-frecuente type="submit" class="boton boton--secundario">Buscar pedidos</button>
+      <div class="campo">
+        <label for="pedidos-filtro-estado">Estado</label>
+        <select
+          id="pedidos-filtro-estado"
+          [value]="filtroDeEstado()"
+          (change)="filtroDeEstado.set($any($event.target).value); buscar()"
+        >
+          <option value="PENDIENTE">Solo los pendientes</option>
+          <option value="APROBADA">Solo los aprobados</option>
+          <option value="DESCARTADA">Solo los descartados</option>
+          <option value="">Todos</option>
+        </select>
+      </div>
+    </app-filtros>
+  </form>
+
+  <div aria-live="polite">
+    @switch (listado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando pedidos&hellip;</p>
+      }
+      @case ('error') {
+        <app-alerta tipo="error" titulo="No pudimos leer los pedidos">
+          <p>{{ errorDeListado()?.mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="buscar()">Reintentar</button>
+          </p>
+        </app-alerta>
+      }
+    }
+    @if (paginaDePedidos(); as p) {
+      @if (p.pedidos.length === 0 && !hayFiltros()) {
+        <app-estado-vacio
+          titulo="No hay pedidos pendientes."
+          texto="Cuando alguien pida la prueba gratis desde la página pública, aparece acá."
+        />
+      } @else if (p.pedidos.length === 0) {
+        <app-estado-vacio
+          titulo="Ningún pedido coincide con la búsqueda."
+          texto="Probá con otra búsqueda o filtros."
+        >
+          <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </app-estado-vacio>
+      } @else {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Pedidos de prueba">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Pedidos de prueba gratis, del más reciente al más viejo, con el centro y la fecha, la
+              persona y su correo, los servicios, la IA y las sedes que pide, y el estado.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" aria-sort="descending">Centro y fecha</th>
+                <th scope="col">Persona y correo</th>
+                <th scope="col">Lo que pide</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pedido of p.pedidos; track pedido.id) {
+                <tr
+                  [class.fila--seleccionada]="seleccionado()?.id === pedido.id"
+                  [attr.aria-current]="seleccionado()?.id === pedido.id ? 'true' : null"
+                >
+                  <th scope="row">
+                    {{ pedido.nombreCentro }}
+                    <span class="pedido__dato-secundario">{{ fecha(pedido.recibidaEn) }}</span>
+                  </th>
+                  <td>
+                    {{ persona(pedido) }}
+                    <span class="pedido__dato-secundario">{{ pedido.email }}</span>
+                  </td>
+                  <td>
+                    {{ servicios(pedido) }}
+                    <span class="pedido__dato-secundario"
+                      >{{ pedido.interesaIa ? 'Con IA' : 'Sin IA' }} · sedes:
+                      {{ etiquetaDeSedes(pedido.sedes).toLowerCase() }}</span
+                    >
+                  </td>
+                  <td>
+                    <span [class]="'marca-estado ' + marcaDePedido(pedido.estado).clase">{{
+                      marcaDePedido(pedido.estado).texto
+                    }}</span>
+                  </td>
+                  <td class="tabla__acciones">
+                    @if (pedido.estado === 'PENDIENTE') {
+                      <app-acciones-de-fila [de]="pedido.nombreCentro ?? 'el pedido'">
+                        <a
+                          principal
+                          class="boton boton--secundario boton--chico"
+                          [routerLink]="rutaAlta"
+                          [queryParams]="{ solicitud: pedido.id }"
+                          >Dar de alta<span class="visualmente-oculto">
+                            {{ pedido.nombreCentro }}</span
+                          ></a
+                        >
+                        <button type="button" (click)="ver(pedido)">Ver el pedido</button>
+                        <button
+                          type="button"
+                          class="accion--peligro"
+                          (click)="pedirDescarte(pedido)"
+                        >
+                          Descartar
+                        </button>
+                      </app-acciones-de-fila>
+                    } @else {
+                      <button
+                        type="button"
+                        class="boton boton--secundario boton--chico"
+                        [attr.aria-label]="'Ver el pedido de ' + pedido.nombreCentro"
+                        (click)="ver(pedido)"
+                      >
+                        Ver el pedido
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [paginaActual]="p.pagina"
+          [totalPaginas]="p.totalPaginas"
+          [total]="p.total"
+          [porPagina]="porPagina()"
+          etiqueta="Páginas de pedidos"
+          (cambioDePagina)="irAPagina($event)"
+          (cambioDePorPagina)="cambiarPorPagina($event)"
+        />
+      }
+    }
+  </div>
+</section>
+
+@if (seleccionado(); as pedido) {
+  <app-panel-lateral
+    [titulo]="pedido.nombreCentro ?? 'Pedido de prueba'"
+    [subtitulo]="'Recibido el ' + fecha(pedido.recibidaEn)"
+    (cerrar)="cerrar()"
+  >
+    @if (errorAccion(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos descartar el pedido">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    <dl class="detalle">
+      <dt>Estado</dt>
+      <dd>
+        <span [class]="'marca-estado ' + marcaDePedido(pedido.estado).clase">{{
+          marcaDePedido(pedido.estado).texto
+        }}</span>
+      </dd>
+      <dt>Persona</dt>
+      <dd>{{ persona(pedido) }}</dd>
+      <dt>Correo</dt>
+      <dd>{{ pedido.email }}</dd>
+      <dt>Teléfono</dt>
+      <dd>{{ pedido.telefono || 'No lo dejó' }}</dd>
+      <dt>Ciudad</dt>
+      <dd>{{ pedido.ciudad || 'No la dejó' }}</dd>
+      <dt>Servicios</dt>
+      <dd>{{ servicios(pedido) }}</dd>
+      <dt>Sedes</dt>
+      <dd>{{ etiquetaDeSedes(pedido.sedes) }}</dd>
+      <dt>Le interesa la IA</dt>
+      <dd>{{ pedido.interesaIa ? 'Sí' : 'No' }}</dd>
+      <dt>Comentario</dt>
+      <dd data-testid="pedido-comentario">{{ pedido.comentario || 'Sin comentario' }}</dd>
+      @if (pedido.resueltaEn) {
+        <dt>Resuelto el</dt>
+        <dd>{{ fecha(pedido.resueltaEn) }}</dd>
+      }
+      @if (pedido.motivoDescarte) {
+        <dt>Motivo del descarte</dt>
+        <dd>{{ pedido.motivoDescarte }}</dd>
+      }
+    </dl>
+
+    @if (pedido.estado === 'PENDIENTE') {
+      @if (descartando()) {
+        <app-confirmacion-con-motivo
+          class="pedido__descarte"
+          idCampo="pedido-motivo-descarte"
+          titulo="Descartar el pedido"
+          ayuda="Queda registrado en el pedido. No se le avisa a la persona."
+          textoConfirmar="Descartar el pedido"
+          [enviando]="enviando()"
+          (confirmado)="descartar($event)"
+          (cancelado)="descartando.set(false)"
+        />
+      } @else {
+        <div class="acciones acciones--pie">
+          <button type="button" class="boton boton--secundario" (click)="descartando.set(true)">
+            Descartar
+          </button>
+          <a class="boton" [routerLink]="rutaAlta" [queryParams]="{ solicitud: pedido.id }"
+            >Dar de alta el centro</a
+          >
+        </div>
+      }
+    }
+  </app-panel-lateral>
+}

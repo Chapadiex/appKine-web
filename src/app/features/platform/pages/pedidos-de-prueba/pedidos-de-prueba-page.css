@@ -1,0 +1,17 @@
+/*
+ * Dato secundario debajo del principal (correo bajo la persona, fecha bajo el centro): la consola
+ * de plataforma no tiene barra lateral y su contenido queda en 46rem, donde no entran más columnas.
+ */
+.pedido__dato-secundario {
+  display: block;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+  color: var(--color-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+/* El descarte se separa del detalle del pedido: es otra acción, no un dato más de la lista. */
+.pedido__descarte {
+  display: block;
+  margin-top: var(--esp-7);
+}

@@ -19,6 +19,21 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Pedidos de prueba gratis de la landing (18/11/2026): nueve columnas con las acciones.
+    path: 'pedidos-de-prueba',
+    loadComponent: () =>
+      import('./pages/pedidos-de-prueba/pedidos-de-prueba-page').then((m) => m.PedidosDePruebaPage),
+    title: 'AKINE - Pedidos de prueba',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
+    // Alta de un centro; con `?solicitud=<id>` aprueba un pedido de prueba.
+    path: 'centros/nuevo',
+    loadComponent: () =>
+      import('./pages/alta-de-centro/alta-de-centro-page').then((m) => m.AltaDeCentroPage),
+    title: 'AKINE - Dar de alta un centro',
+  },
+  {
     path: 'suscripciones',
     loadComponent: () =>
       import('./pages/suscripcion-de-centro/suscripcion-de-centro-page').then(

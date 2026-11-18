@@ -1,0 +1,198 @@
+<app-cabecera-de-pagina titulo="Dar de alta un centro">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Crea el centro con su primera sede y lo que contrata: el plan (cuántas sedes), los servicios y
+      el adicional de IA. Al crearlo, AKINE invita al correo del dueño como administrador de toda la
+      organización; la cuenta nace cuando acepta. Con la prueba gratis, el centro tiene 30 días y
+      después queda en solo lectura hasta que se pase a contrato.
+    </p>
+  </app-ayuda>
+
+  <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+@if (pedido().tipo === 'cargando') {
+  <p class="estado estado--cargando" role="status">Leyendo el pedido de prueba…</p>
+}
+@if (errorDePedido(); as mensaje) {
+  <app-alerta tipo="error" titulo="No pudimos leer el pedido de prueba">
+    <p>{{ mensaje }}</p>
+    <p>Podés dar de alta el centro igual: el pedido no queda aprobado.</p>
+  </app-alerta>
+}
+
+@if (pedidoResuelto(); as resuelto) {
+  <app-alerta tipo="advertencia" titulo="Ese pedido ya está resuelto">
+    <p>
+      El pedido de {{ resuelto.nombreCentro }} está
+      {{ marcaDePedido(resuelto.estado).texto.toLowerCase() }}: no se puede aprobar de nuevo.
+    </p>
+    <p class="alerta__acciones">
+      <a class="boton boton--secundario" [routerLink]="rutaPedidos">Volver a los pedidos</a>
+    </p>
+  </app-alerta>
+}
+
+@if (pedidoPendiente(); as p) {
+  <section class="tarjeta" aria-labelledby="alta-pedido-titulo" data-testid="alta-pedido">
+    <h2 id="alta-pedido-titulo">Pedido de {{ p.nombre }} {{ p.apellido }}</h2>
+    <dl class="detalle">
+      <dt>Correo</dt>
+      <dd>{{ p.email }}</dd>
+      <dt>Servicios pedidos</dt>
+      <dd>{{ serviciosPedidos(p) }}</dd>
+      <dt>Sedes</dt>
+      <dd>{{ etiquetaDeSedes(p.sedes) }}</dd>
+      <dt>Le interesa la IA</dt>
+      <dd>{{ p.interesaIa ? 'Sí' : 'No' }}</dd>
+      @if (p.comentario) {
+        <dt>Comentario</dt>
+        <dd>{{ p.comentario }}</dd>
+      }
+    </dl>
+    <p class="ayuda">
+      Los datos del pedido ya están en el formulario. Al crear el centro, el pedido queda aprobado.
+    </p>
+  </section>
+}
+
+@if (pedidoResuelto() === null) {
+  <section class="tarjeta" aria-label="Datos del centro nuevo">
+    <form [formGroup]="formulario" (ngSubmit)="crear()" novalidate>
+      @if (errorEnvio(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos crear el centro">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <h2 class="formulario__seccion">El centro</h2>
+
+      <div class="campo campo--6">
+        <label for="alta-nombre-centro">Nombre del centro</label>
+        <input
+          id="alta-nombre-centro"
+          type="text"
+          autocomplete="off"
+          formControlName="nombreCentro"
+          [attr.aria-invalid]="errorDe('nombreCentro') ? 'true' : null"
+          [attr.aria-describedby]="errorDe('nombreCentro') ? 'alta-nombre-centro-error' : null"
+        />
+        @if (errorDe('nombreCentro'); as error) {
+          <p class="campo__error" id="alta-nombre-centro-error">{{ error }}</p>
+        }
+      </div>
+
+      <div class="campo campo--6">
+        <label for="alta-nombre-sede">Nombre de la primera sede (opcional)</label>
+        <input
+          id="alta-nombre-sede"
+          type="text"
+          autocomplete="off"
+          formControlName="nombrePrimeraSede"
+          aria-describedby="alta-nombre-sede-ayuda"
+          [attr.aria-invalid]="errorDe('nombrePrimeraSede') ? 'true' : null"
+        />
+        <p class="ayuda ayuda--fija" id="alta-nombre-sede-ayuda">
+          Vacío, la sede toma el nombre del centro. El dueño la completa en su primer ingreso.
+        </p>
+        @if (errorDe('nombrePrimeraSede'); as error) {
+          <p class="campo__error">{{ error }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="alta-email">Correo del dueño</label>
+        <input
+          id="alta-email"
+          type="email"
+          autocomplete="off"
+          formControlName="emailDuenio"
+          aria-describedby="alta-email-ayuda"
+          [attr.aria-invalid]="errorDe('emailDuenio') ? 'true' : null"
+        />
+        <p class="ayuda ayuda--fija" id="alta-email-ayuda">
+          Le llega la invitación de administrador.
+        </p>
+        @if (errorDe('emailDuenio'); as error) {
+          <p class="campo__error">{{ error }}</p>
+        }
+      </div>
+
+      <div class="campo campo--4">
+        <label for="alta-zona">Zona horaria</label>
+        <select id="alta-zona" formControlName="zonaHoraria">
+          @for (zona of zonas; track zona.valor) {
+            <option [value]="zona.valor">{{ zona.etiqueta }}</option>
+          }
+        </select>
+        @if (errorDe('zonaHoraria'); as error) {
+          <p class="campo__error">{{ error }}</p>
+        }
+      </div>
+
+      <h2 class="formulario__seccion">Lo que contrata</h2>
+
+      @if (planesNoDisponibles()) {
+        <app-alerta tipo="error" titulo="No pudimos leer los planes">
+          <p>Recargá la página para volver a intentar.</p>
+        </app-alerta>
+      } @else {
+        <app-opciones-en-tarjetas
+          formControlName="planCode"
+          [opciones]="opcionesDePlan()"
+          [columnas]="opcionesDePlan().length > 2 ? 4 : 2"
+          [error]="errorDe('planCode')"
+          ><span leyenda>Plan</span></app-opciones-en-tarjetas
+        >
+      }
+
+      <fieldset
+        class="grupo"
+        formGroupName="servicios"
+        [attr.aria-invalid]="errorDe('servicios') ? 'true' : null"
+        [attr.aria-describedby]="errorDe('servicios') ? 'alta-servicios-error' : null"
+      >
+        <legend>Servicios (al menos uno)</legend>
+        @for (servicio of servicios; track servicio.valor) {
+          <label class="opcion-radio">
+            <input type="checkbox" [formControlName]="servicio.valor" />
+            {{ servicio.etiqueta }}
+          </label>
+        }
+        @if (errorDe('servicios'); as error) {
+          <p class="campo__error" id="alta-servicios-error">{{ error }}</p>
+        }
+      </fieldset>
+
+      <fieldset class="grupo">
+        <legend>Adicional y modalidad</legend>
+        <label class="opcion-radio">
+          <input type="checkbox" formControlName="ia" aria-describedby="alta-ia-ayuda" />
+          Sumar el adicional de IA
+        </label>
+        <p class="ayuda ayuda--fija" id="alta-ia-ayuda">
+          Asistente, dictado y, con Kinesiología, evolución, sugerencias y biblioteca. El centro
+          decide qué prende.
+        </p>
+        <label class="opcion-radio">
+          <input type="checkbox" formControlName="prueba" aria-describedby="alta-prueba-ayuda" />
+          Prueba gratis de 30 días
+        </label>
+        <p class="ayuda ayuda--fija" id="alta-prueba-ayuda">
+          Sin tildar, el centro arranca con la suscripción activa.
+        </p>
+      </fieldset>
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="enviando()">
+          @if (enviando()) {
+            Creando el centro…
+          } @else {
+            Crear el centro
+          }
+        </button>
+        <a class="boton boton--secundario" [routerLink]="rutaPedidos">Cancelar</a>
+      </div>
+    </form>
+  </section>
+}

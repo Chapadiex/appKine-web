@@ -11,16 +11,18 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 
 const PLANES = '/api/v1/plans';
 const LISTADO = '/api/v1/platform/organizations';
-const LECTURA = '/api/v1/platform/organizations/4/subscription';
-const CAMBIO = '/api/v1/organizations/4/subscription/plan-changes';
+const LECTURA = '/api/v1/platform/organizations/4/contratacion';
 
-const suscripcion = (version: number, planCode = 'BASICO', status = 'ACTIVA') => ({
-  id: 1,
-  organizationId: 4,
-  planCode,
-  planName: planCode === 'BASICO' ? 'Basico' : 'Profesional',
-  status,
+const contratacion = (version: number, estado = 'ACTIVA', extra: Record<string, unknown> = {}) => ({
+  planCode: 'BASE',
+  planNombre: 'Base',
+  maxSedes: 1,
+  servicios: ['KINESIOLOGIA'],
+  adicionales: [],
+  estado,
+  soloLectura: false,
   version,
+  ...extra,
 });
 
 const centro = (id: number, name: string, status = 'ACTIVA') => ({
@@ -66,60 +68,104 @@ describe('SuscripcionDeCentroPage', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('lee la suscripción por la ruta de plataforma y cambia el plan con esa versión', async () => {
+  it('lee la contratación de plataforma y la cambia con esa versión, solo con planes ofrecidos', async () => {
     const fixture = await buscar();
     httpMock.expectNone('/api/v1/organizations/4/subscription');
-    httpMock.expectOne(LECTURA).flush(suscripcion(7));
+    httpMock.expectOne(LECTURA).flush(contratacion(7));
     await estabilizar(fixture);
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('7');
+    expect(texto(fixture, '[data-testid="suscripcion-estado"]')).toBe('Activa');
+    const opciones = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('#suscripcion-plan-nuevo option'),
+    ].map((o) => (o as HTMLOptionElement).value);
+    expect(opciones).toEqual(['BASE', 'CRECIMIENTO']);
 
-    elegir(fixture, '#suscripcion-plan-nuevo', 'PROFESIONAL');
+    elegir(fixture, '#suscripcion-plan-nuevo', 'CRECIMIENTO');
+    marcarServicio(fixture, 1);
     enviar(fixture, 1);
-    const cambio = httpMock.expectOne(CAMBIO);
-    expect(cambio.request.method).toBe('POST');
-    expect(cambio.request.body).toEqual({ planCode: 'PROFESIONAL', expectedVersion: 7 });
-    cambio.flush({
-      applied: true,
-      warnings: [{ code: 'MAX_SEDES', currentUsage: 3, limitValue: 2, exceeded: true }],
+    const cambio = httpMock.expectOne(LECTURA);
+    expect(cambio.request.method).toBe('PUT');
+    expect(cambio.request.body).toEqual({
+      planCode: 'CRECIMIENTO',
+      servicios: ['KINESIOLOGIA', 'ACTIVIDADES'],
+      adicionales: [],
+      contratar: false,
+      version: 7,
     });
-    httpMock.expectOne(LECTURA).flush(suscripcion(8, 'PROFESIONAL'));
+    cambio.flush(
+      contratacion(8, 'ACTIVA', {
+        planCode: 'CRECIMIENTO',
+        planNombre: 'Crecimiento',
+        servicios: ['ACTIVIDADES', 'KINESIOLOGIA'],
+      }),
+    );
+    httpMock.expectOne((r) => r.url === LISTADO).flush(pagina([KINESIO_NORTE]));
     await estabilizar(fixture);
 
     const [aviso] = TestBed.inject(AvisosStore).avisos();
-    expect(aviso?.titulo).toBe('Plan cambiado');
-    expect(aviso?.descripcion).toContain('pasó al plan Profesional.');
-    expect(texto(fixture, '[data-testid="suscripcion-excedidos"]')).toContain(
-      'MAX_SEDES: 3 en uso, el plan admite 2',
-    );
+    expect(aviso?.titulo).toBe('Contratación guardada');
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('8');
   });
 
-  it('una versión vieja no aplica nada, lo dice y relee la suscripción', async () => {
+  it('en prueba muestra los días que quedan y pasa a contrato con contratar: true', async () => {
     const fixture = await buscar();
-    httpMock.expectOne(LECTURA).flush(suscripcion(7));
+    const enDiez = new Date(Date.now() + 9.5 * 24 * 60 * 60 * 1000).toISOString();
+    httpMock.expectOne(LECTURA).flush(contratacion(2, 'PRUEBA', { pruebaHasta: enDiez }));
+    await estabilizar(fixture);
+    expect(texto(fixture, '[data-testid="suscripcion-estado"]')).toBe('En prueba');
+    expect(texto(fixture, '[data-testid="suscripcion-prueba"]')).toContain('Quedan 10 días');
+
+    (
+      fixture.nativeElement.querySelector('[data-testid="pasar-a-contrato"]') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    const cambio = httpMock.expectOne(LECTURA);
+    expect(cambio.request.body).toEqual(
+      expect.objectContaining({ planCode: 'BASE', contratar: true, version: 2 }),
+    );
+    cambio.flush(contratacion(3));
+    httpMock.expectOne((r) => r.url === LISTADO).flush(pagina([KINESIO_NORTE]));
+    await estabilizar(fixture);
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Pasó a contrato');
+  });
+
+  it('una prueba vencida se rotula aparte y sigue pudiendo pasar a contrato', async () => {
+    const fixture = await buscar();
+    httpMock
+      .expectOne(LECTURA)
+      .flush(contratacion(2, 'PRUEBA', { pruebaHasta: '2026-01-01T00:00:00Z', soloLectura: true }));
+    await estabilizar(fixture);
+    expect(texto(fixture, '[data-testid="suscripcion-estado"]')).toBe('Prueba vencida');
+    expect(texto(fixture, '[data-testid="suscripcion-prueba"]')).toContain('solo lectura');
+    expect(fixture.nativeElement.querySelector('[data-testid="pasar-a-contrato"]')).not.toBeNull();
+  });
+
+  it('una versión vieja no aplica nada, lo dice y relee la contratación', async () => {
+    const fixture = await buscar();
+    httpMock.expectOne(LECTURA).flush(contratacion(7));
     await estabilizar(fixture);
 
-    elegir(fixture, '#suscripcion-plan-nuevo', 'PROFESIONAL');
+    elegir(fixture, '#suscripcion-plan-nuevo', 'CRECIMIENTO');
     enviar(fixture, 1);
     httpMock
-      .expectOne(CAMBIO)
+      .expectOne((r) => r.url === LECTURA && r.method === 'PUT')
       .flush(
         { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
         { status: 409, statusText: 'Conflict' },
       );
-    httpMock.expectOne(LECTURA).flush(suscripcion(9));
+    httpMock.expectOne((r) => r.url === LECTURA && r.method === 'GET').flush(contratacion(9));
     await estabilizar(fixture);
 
     // Con el panel abierto, el rechazo va arriba del formulario.
-    expect(texto(fixture, 'form app-alerta')).toContain('No se aplico nada');
+    expect(texto(fixture, 'form app-alerta')).toContain('No se aplicó nada');
     expect(texto(fixture, '[data-testid="suscripcion-version"]')).toBe('9');
   });
 
-  it('con la suscripción suspendida no ofrece cambiar el plan', async () => {
+  it('con la suscripción suspendida no ofrece cambiar la contratación', async () => {
     const fixture = await buscar();
-    httpMock.expectOne(LECTURA).flush(suscripcion(2, 'BASICO', 'SUSPENDIDA'));
+    httpMock.expectOne(LECTURA).flush(contratacion(2, 'SUSPENDIDA', { soloLectura: true }));
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('el plan solo se cambia con la suscripción activa');
+    expect(texto(fixture)).toContain('la contratación solo se cambia con la suscripción activa');
     expect(fixture.nativeElement.querySelector('#suscripcion-plan-nuevo')).toBeNull();
   });
 
@@ -131,7 +177,7 @@ describe('SuscripcionDeCentroPage', () => {
     expect(fixture.nativeElement.querySelector('#suscripcion-organizacion')).toBeNull();
 
     elegirCentro(fixture, 'Kinesio Norte');
-    httpMock.expectOne(LECTURA).flush(suscripcion(7));
+    httpMock.expectOne(LECTURA).flush(contratacion(7));
     await estabilizar(fixture);
     expect(texto(fixture, '.panel-lateral__titulo')).toBe('Kinesio Norte');
   });
@@ -211,14 +257,14 @@ describe('SuscripcionDeCentroPage', () => {
         { status: 404, statusText: 'Not Found' },
       );
     await estabilizar(fixture);
-    expect(texto(fixture)).toContain('El centro ya no esta vigente');
+    expect(texto(fixture)).toContain('El centro ya no está vigente');
   });
 
   it(
     'con una suscripción cargada no tiene violaciones de accesibilidad',
     async () => {
       const fixture = await buscar();
-      httpMock.expectOne(LECTURA).flush(suscripcion(7));
+      httpMock.expectOne(LECTURA).flush(contratacion(7));
       await estabilizar(fixture);
       await esperarSinViolaciones(fixture.nativeElement as HTMLElement);
     },
@@ -234,8 +280,9 @@ describe('SuscripcionDeCentroPage', () => {
     const fixture = TestBed.createComponent(SuscripcionDeCentroPage);
     fixture.detectChanges();
     httpMock.expectOne(PLANES).flush([
-      { code: 'BASICO', name: 'Basico' },
-      { code: 'PROFESIONAL', name: 'Profesional' },
+      { code: 'BASICO', name: 'Basico', ofrecido: false },
+      { code: 'BASE', name: 'Base', ofrecido: true },
+      { code: 'CRECIMIENTO', name: 'Crecimiento', ofrecido: true },
     ]);
     const listado = httpMock.expectOne((r) => r.url === LISTADO);
     expect(listado.request.params.has('q')).toBe(false);
@@ -284,7 +331,17 @@ describe('SuscripcionDeCentroPage', () => {
     fixture.detectChanges();
   }
 
-  /** Envia el formulario numero `indice` de la pantalla (0: buscar centros, 1: cambiar el plan). */
+  /** Tilda o destilda el servicio numero `indice` del panel (0: Kinesiologia, 1: Actividades). */
+  function marcarServicio(
+    fixture: ComponentFixture<SuscripcionDeCentroPage>,
+    indice: number,
+  ): void {
+    const casillas = fixture.nativeElement.querySelectorAll('app-panel-lateral fieldset input');
+    (casillas[indice] as HTMLInputElement).click();
+    fixture.detectChanges();
+  }
+
+  /** Envia el formulario numero `indice` de la pantalla (0: buscar centros, 1: la contratacion). */
   function enviar(fixture: ComponentFixture<SuscripcionDeCentroPage>, indice: number): void {
     const formularios = fixture.nativeElement.querySelectorAll('form');
     (formularios[indice] as HTMLFormElement).dispatchEvent(new Event('submit'));
