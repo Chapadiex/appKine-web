@@ -89,7 +89,7 @@ const ROTULOS: Readonly<Record<keyof PropuestaDeEvaluacionDictada, string>> = {
                           (change)="alternarFila(fila.clave)"
                         />
                         <span class="dictado-evaluacion__rotulo">{{ fila.rotulo }}:</span>
-                        {{ fila.valor }}
+                        <span class="dictado-evaluacion__valor">{{ fila.valor }}</span>
                       </label>
                     </li>
                   }
@@ -162,6 +162,9 @@ const ROTULOS: Readonly<Record<keyof PropuestaDeEvaluacionDictada, string>> = {
       display: flex;
       gap: 0.5rem;
       align-items: baseline;
+    }
+    .dictado-evaluacion__valor {
+      white-space: pre-line;
     }
     .dictado-evaluacion__rotulo {
       font-weight: 500;
