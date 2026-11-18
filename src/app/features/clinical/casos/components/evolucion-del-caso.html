@@ -90,6 +90,15 @@
             }
           }
 
+          @if (funcionesIa.activa('SUGERENCIAS')) {
+            <app-sugerencias-de-evolucion
+              [casoId]="casoId()"
+              [justificacion]="justificacion()"
+              [plan]="ev.plan"
+              [rutaPlan]="rutaPlan()"
+            />
+          }
+
           @if (ev.indicadores; as ind) {
             <h3>Indicadores</h3>
             <dl class="historia__datos">

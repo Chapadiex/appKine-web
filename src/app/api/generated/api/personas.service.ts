@@ -155,6 +155,7 @@ export class PersonasService extends BaseService implements PersonasServiceInter
         const estado = requestParameters?.estado;
         const perfil = requestParameters?.perfil;
         const actividad = requestParameters?.actividad;
+        const historia = requestParameters?.historia;
         const page = requestParameters?.page;
         const size = requestParameters?.size;
         const sort = requestParameters?.sort;
@@ -192,6 +193,15 @@ export class PersonasService extends BaseService implements PersonasServiceInter
             localVarQueryParameters,
             'actividad',
             <any>actividad,
+            QueryParamStyle.Form,
+            true,
+        );
+
+
+        localVarQueryParameters = this.addToHttpParams(
+            localVarQueryParameters,
+            'historia',
+            <any>historia,
             QueryParamStyle.Form,
             true,
         );

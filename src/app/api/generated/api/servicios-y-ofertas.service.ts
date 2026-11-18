@@ -81,6 +81,7 @@ import {
     ListOfertasRequestParams,
     ListPreciosParticularesDeOfertaRequestParams,
     ListServiciosRequestParams,
+    PersonalizarServicioRequestParams,
     ReemplazarDuracionesPropiasRequestParams,
     ReemplazarEspaciosHabilitadosRequestParams,
     ReemplazarPracticasDeOfertaRequestParams,
@@ -1318,6 +1319,82 @@ export class ServiciosYOfertasService extends BaseService implements ServiciosYO
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Personalizar para la organizacion un servicio del catalogo de AKINE
+     * Un servicio GLOBAL lo comparten todas las organizaciones: editarlo desde un      centro le cambiaria el dato a los demas. Esta operacion crea una COPIA propia      de la organizacion del contexto, con los cambios del cuerpo aplicados sobre los      datos del global. La copia vale a nivel ORGANIZACION, para todas sus sedes,      no para una sede.  Efectos: las ofertas de la organizacion que prestaban el global pasan a      prestar la copia; el global deja de listarse para la organizacion; el global      y las demas organizaciones no cambian. La copia conserva el codigo y se edita      y se da de baja como cualquier servicio propio.  Exige catalogo:manage en el contexto. expectedVersion es la del servicio      GLOBAL que se esta personalizando. Un servicio que ya es de la organizacion      responde 400: se edita con updateServicio.
+     * @endpoint post /api/v1/servicios/{servicioId}/personalizacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public personalizarServicio(requestParameters: PersonalizarServicioRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ServicioResponse>;
+    public personalizarServicio(requestParameters: PersonalizarServicioRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ServicioResponse>>;
+    public personalizarServicio(requestParameters: PersonalizarServicioRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ServicioResponse>>;
+    public personalizarServicio(requestParameters: PersonalizarServicioRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const servicioId = requestParameters?.servicioId;
+        if (servicioId === null || servicioId === undefined) {
+            throw new Error('Required parameter servicioId was null or undefined when calling personalizarServicio.');
+        }
+        const updateServicioRequest = requestParameters?.updateServicioRequest;
+        if (updateServicioRequest === null || updateServicioRequest === undefined) {
+            throw new Error('Required parameter updateServicioRequest was null or undefined when calling personalizarServicio.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/servicios/${this.configuration.encodeParam({name: "servicioId", value: servicioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/personalizacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ServicioResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: updateServicioRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

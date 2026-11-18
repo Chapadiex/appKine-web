@@ -58,6 +58,10 @@ export interface ServicioResponse {
      */
     nombre?: string;
     /**
+     * Servicio del catalogo de AKINE que este personaliza para la organizacion (todas sus sedes), o null. Mientras este vigente, el de AKINE no se lista para esa organizacion y sus ofertas apuntan a este
+     */
+    personalizaServicioId?: number;
+    /**
      * Si por defecto la prestacion exige un caso clinico abierto
      */
     requiereCasoClinicoDefault?: boolean;

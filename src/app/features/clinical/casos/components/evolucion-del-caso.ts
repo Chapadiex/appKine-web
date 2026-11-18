@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs';
 import { EvolucionDelCasoHallazgoResponse } from '../../../../api/generated/model/evolucion-del-caso-hallazgo-response';
 import { EvolucionDelCasoResponse } from '../../../../api/generated/model/evolucion-del-caso-response';
 import { EvolucionDelCasoSerieResponse } from '../../../../api/generated/model/evolucion-del-caso-serie-response';
+import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -23,6 +24,7 @@ import { ladoLegible } from '../../models/examen-y-tratamiento';
 import { Justificacion } from '../../services/historia-clinica-api';
 import { ErrorCaso, traducirErrorCaso } from '../casos-errors';
 import { EvolucionApi } from '../evolucion-api';
+import { SugerenciasDeEvolucion } from './sugerencias-de-evolucion';
 
 type Estado =
   | { readonly tipo: 'cargando' }
@@ -51,7 +53,7 @@ const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
  */
 @Component({
   selector: 'app-evolucion-del-caso',
-  imports: [Alerta, Ayuda, RouterLink],
+  imports: [Alerta, Ayuda, RouterLink, SugerenciasDeEvolucion],
   templateUrl: './evolucion-del-caso.html',
   styleUrl: './evolucion-del-caso.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,9 +61,12 @@ const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
 export class EvolucionDelCaso {
   private readonly api = inject(EvolucionApi);
   private readonly contexto = inject(TenantContextStore);
+  protected readonly funcionesIa = inject(FuncionesIaStore);
 
   readonly casoId = input.required<number>();
   readonly justificacion = input<Justificacion>(null);
+  /** El plan del caso: a donde lleva una sugerencia aceptada (M31 fase 2). */
+  readonly rutaPlan = input<string | null>(null);
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
 
