@@ -230,3 +230,21 @@
 .cabecera[hidden] {
   display: none;
 }
+
+/*
+  Landing pública (18/11/2026): sin barra superior ni lateral, y el contenido a todo el ancho y
+  sin margen. La landing trae su propia cabecera, su envoltura y su pie.
+*/
+.shell--landing {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.shell--landing app-navegacion-principal {
+  display: none;
+}
+
+.shell--landing .contenido {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}

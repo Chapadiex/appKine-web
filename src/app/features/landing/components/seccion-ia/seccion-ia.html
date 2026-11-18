@@ -1,0 +1,47 @@
+<section class="seccion ia" id="ia" aria-labelledby="ia-titulo">
+  <div class="formas" aria-hidden="true">
+    <span class="forma forma--menta"></span>
+    <span class="forma forma--coral"></span>
+  </div>
+  <div class="envoltura ia__fila">
+    <div>
+      <h2 class="seccion__titulo" id="ia-titulo">
+        Inteligencia artificial que no sale de tu centro.
+      </h2>
+      <p class="seccion__bajada">
+        Es un adicional que se suma a cualquier plan. El modelo corre dentro de la instalación de
+        AKINE: lo que se escribe en una historia clínica no viaja a servicios externos.
+      </p>
+      <dl class="ia__funciones">
+        @for (funcion of funcionesIa; track funcion.titulo) {
+          <div class="ia__funcion">
+            <dt><app-icono [nombre]="funcion.icono" />{{ funcion.titulo }}</dt>
+            <dd>{{ funcion.texto }}</dd>
+          </div>
+        }
+      </dl>
+      <p class="ia__nota">
+        Cada centro prende sólo lo que quiere. La evolución, las sugerencias y la biblioteca
+        necesitan el servicio de Kinesiología.
+      </p>
+    </div>
+
+    <figure class="charla">
+      <div class="charla__dibujo" aria-hidden="true">
+        <p class="charla__pregunta">¿Cuántos ausentes hubo esta semana en Sede Centro?</p>
+        <div class="charla__respuesta">
+          <p>
+            Hubo <b>6 ausentes</b> sobre 112 turnos. El martes concentró 3, todos a primera hora.
+          </p>
+          <span class="charla__fuente"
+            ><app-icono nombre="candado" />Turnos de Sede Centro, según tus permisos</span
+          >
+        </div>
+      </div>
+      <figcaption class="visualmente-oculto">
+        Ejemplo con datos inventados: alguien pregunta cuántos ausentes hubo en la semana y el
+        asistente responde con los turnos de su sede.
+      </figcaption>
+    </figure>
+  </div>
+</section>

@@ -1,0 +1,73 @@
+<div class="armador">
+  <div class="armador__preguntas">
+    <div class="pregunta">
+      <span class="pregunta__texto" aria-hidden="true">¿Cuántas sedes tiene tu centro?</span>
+      <app-segmentado
+        etiqueta="¿Cuántas sedes tiene tu centro?"
+        [opciones]="opcionesDeSedes"
+        [(valor)]="sedes"
+      />
+    </div>
+    <div class="pregunta">
+      <span class="pregunta__texto" aria-hidden="true">¿Qué servicios das?</span>
+      <app-segmentado
+        etiqueta="¿Qué servicios das?"
+        [opciones]="opcionesDeServicios"
+        [(valor)]="servicios"
+      />
+    </div>
+    <div class="pregunta">
+      <span class="pregunta__texto" aria-hidden="true">¿Sumás inteligencia artificial?</span>
+      <app-segmentado
+        etiqueta="¿Sumás inteligencia artificial?"
+        [opciones]="opcionesDeIa"
+        [(valor)]="ia"
+      />
+    </div>
+
+    <p class="armador__nota">
+      Sin precios por ahora. La prueba de 30 días es gratis y arranca con todo, para que veas qué te
+      sirve antes de elegir.
+    </p>
+  </div>
+
+  @let r = recomendacion();
+  <div class="resultado">
+    <div class="resultado__cabecera" aria-live="polite" aria-atomic="true">
+      <h3 class="resultado__plan">
+        Te corresponde <span class="resultado__nombre">{{ r.plan.nombre }}</span>
+      </h3>
+      <p class="resultado__para">{{ r.plan.sedes }}. {{ r.plan.paraQuien }}</p>
+    </div>
+
+    <div class="resultado__grupos">
+      @for (grupo of r.incluye; track grupo.titulo) {
+        <div class="incluye" role="group" [attr.aria-label]="grupo.titulo">
+          <h4 class="incluye__titulo">{{ grupo.titulo }}</h4>
+          <ul class="incluye__items">
+            @for (item of grupo.items; track item) {
+              <li><app-icono nombre="tilde" />{{ item }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <a class="boton resultado__accion" href="#prueba">Probalo gratis 30 días</a>
+  </div>
+</div>
+
+<ol class="planes" aria-label="Los tres planes">
+  @for (plan of planes; track plan.codigo) {
+    <li class="plan" [class.plan--elegido]="plan.codigo === r.plan.codigo">
+      <span class="plan__nombre">
+        {{ plan.nombre }}
+        @if (plan.codigo === r.plan.codigo) {
+          <span class="plan__marca"><app-icono nombre="tilde" />El tuyo</span>
+        }
+      </span>
+      <span class="plan__sedes">{{ plan.sedes }}</span>
+      <span class="plan__para">{{ plan.paraQuien }}</span>
+    </li>
+  }
+</ol>

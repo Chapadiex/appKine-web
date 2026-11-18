@@ -1,0 +1,145 @@
+:host {
+  display: block;
+}
+
+/* La banda azul noche: el cambio de clima de la página, con acentos menta y coral. */
+.ia {
+  overflow: hidden;
+  background: var(--color-banda-fondo);
+  color: var(--color-banda-texto);
+  scroll-margin-top: 4rem;
+}
+
+.ia .forma {
+  opacity: 0.2;
+}
+
+.ia .forma--menta {
+  width: 40rem;
+  height: 34rem;
+  top: -20rem;
+  right: -10rem;
+}
+
+.ia .forma--coral {
+  width: 26rem;
+  height: 24rem;
+  bottom: -12rem;
+  left: -6rem;
+}
+
+.ia .seccion__titulo {
+  color: var(--color-banda-texto);
+}
+
+.ia .seccion__bajada,
+.ia__nota,
+.ia__funcion dd {
+  color: var(--color-banda-texto-suave);
+}
+
+.ia ::selection {
+  background: var(--color-banda-acento);
+  color: var(--color-banda-fondo);
+}
+
+.ia__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: center;
+  gap: clamp(2.5rem, 1rem + 5vw, 6rem);
+}
+
+.ia__funciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-8) var(--esp-9);
+  margin: var(--esp-9) 0 0;
+}
+
+.ia__funcion dt {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  font-weight: var(--peso-medio);
+}
+
+.ia__funcion dt app-icono {
+  color: var(--color-banda-acento);
+}
+
+.ia__funcion dd {
+  margin: var(--esp-3) 0 0;
+  font-size: var(--tipo-sm);
+  line-height: 1.55;
+}
+
+.ia__nota {
+  margin: var(--esp-9) 0 0;
+  padding-block-start: var(--esp-6);
+  border-block-start: var(--borde-fino) solid var(--color-banda-borde);
+  font-size: var(--tipo-sm);
+}
+
+.charla {
+  margin: 0;
+}
+
+.charla__dibujo {
+  display: grid;
+  gap: var(--esp-6);
+  padding: clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  border: var(--borde-fino) solid var(--color-banda-borde);
+  border-radius: 28px 28px 28px 8px;
+  background: var(--color-banda-superficie);
+}
+
+.charla__pregunta,
+.charla__respuesta p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.charla__pregunta {
+  justify-self: end;
+  max-width: 85%;
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: 20px 20px 6px 20px;
+  background: var(--color-banda-acento);
+  color: var(--color-banda-fondo);
+  font-weight: var(--peso-medio);
+}
+
+.charla__respuesta {
+  display: grid;
+  gap: var(--esp-4);
+  max-width: 90%;
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-banda-borde);
+  border-radius: 20px 20px 20px 6px;
+  background: var(--color-banda-fondo);
+}
+
+.charla__respuesta b {
+  color: var(--color-banda-acento);
+}
+
+.charla__fuente {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-banda-texto-suave);
+  font-size: var(--tipo-2xs);
+}
+
+@media (max-width: 64rem) {
+  .ia__fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .ia__funciones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

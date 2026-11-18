@@ -1,0 +1,335 @@
+/*
+  La agenda de la portada. Mismos tokens y mismos estados que la agenda real (DESIGN.md, "Estados"):
+  color + palabra + icono, reservado punteado, bloqueado rayado. El tamaño se escala con la fuente
+  del contenedor para que la ilustración entera achique en el teléfono sin desbordar.
+*/
+:host {
+  display: block;
+  --fila: 2.75rem;
+  --ancho-horas: 3.25rem;
+}
+
+.muestra {
+  position: relative;
+  margin: 0;
+  padding-block-end: var(--esp-9);
+}
+
+.ventana {
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-escaparate);
+  font-size: var(--tipo-2xs);
+}
+
+.ventana__barra {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-5) var(--esp-6);
+  border-block-end: var(--borde-fino) solid var(--color-borde);
+}
+
+.ventana__titulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-texto-fuerte);
+}
+
+.ventana__fecha {
+  color: var(--color-texto-suave);
+}
+
+.ventana__vistas {
+  display: inline-flex;
+  margin-inline-start: auto;
+  padding: var(--esp-1);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.ventana__vista {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: var(--radio-sm);
+  color: var(--color-texto-suave);
+}
+
+.ventana__vista--actual {
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.columnas,
+.cuerpo {
+  display: grid;
+  grid-template-columns: var(--ancho-horas) repeat(3, minmax(0, 1fr));
+  column-gap: var(--esp-3);
+  padding-inline: var(--esp-4) var(--esp-5);
+}
+
+.columnas {
+  padding-block: var(--esp-4);
+  background: var(--color-tabla-encabezado);
+}
+
+.columna {
+  display: grid;
+  color: var(--color-texto-suave);
+  line-height: 1.3;
+}
+
+.columna b {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.cuerpo {
+  position: relative;
+  grid-template-rows: repeat(8, var(--fila));
+  row-gap: 0;
+  padding-block: var(--esp-4) var(--esp-5);
+  background: repeating-linear-gradient(
+      to bottom,
+      var(--color-borde-sutil) 0 1px,
+      transparent 1px var(--fila)
+    )
+    0 var(--esp-4) / 100% calc(100% - var(--esp-4) - var(--esp-5)) no-repeat;
+}
+
+.hora {
+  grid-column: 1;
+  transform: translateY(-0.5em);
+  color: var(--color-texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.bloque {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto 1fr;
+  align-content: start;
+  column-gap: var(--esp-3);
+  margin-block: 2px;
+  padding: var(--esp-2) var(--esp-4);
+  overflow: hidden;
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--color-texto);
+  line-height: 1.3;
+}
+
+/* Sobre el tinte de un estado el gris suave no llega a AA en oscuro: texto pleno, peso normal. */
+.bloque__hora {
+  color: var(--color-texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.bloque__titulo {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  font-weight: var(--peso-medio);
+  color: var(--color-texto-fuerte);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bloque__detalle {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: var(--color-texto);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bloque__estado {
+  grid-row: 1;
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+
+/* En un bloque de media hora no entra el detalle: el estado alcanza. */
+.bloque--corto .bloque__detalle {
+  display: none;
+}
+
+.bloque--confirmado {
+  background: var(--color-estado-confirmado);
+  border-color: var(--color-exito);
+}
+
+.bloque--reservado {
+  background: var(--color-estado-reservado);
+  border: var(--borde-fino) dashed var(--color-info);
+}
+
+.bloque--espera {
+  background: var(--color-estado-pendiente);
+  border-color: var(--color-aviso);
+}
+
+.bloque--bloqueado {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-estado-bloqueado) 0 6px,
+    var(--color-superficie) 6px 12px
+  );
+  border-color: var(--color-borde-control);
+}
+
+.bloque--clase {
+  background: var(--color-superficie-secundaria);
+  border-color: var(--color-borde-control);
+}
+
+/* La hora actual: la misma linea que la agenda real, y el motivo que repite la pagina. */
+.ahora {
+  position: absolute;
+  inset-inline: calc(var(--esp-4) + var(--ancho-horas)) var(--esp-5);
+  top: calc(var(--esp-4) + var(--fila) * 3.5);
+  z-index: 0;
+  height: 2px;
+  background: var(--color-accion-fondo);
+  pointer-events: none;
+}
+
+.ahora::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accion-fondo);
+}
+
+.ahora__hora {
+  position: absolute;
+  inset-inline-start: calc(-1 * var(--ancho-horas) - var(--esp-1));
+  top: -0.7em;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-medio);
+  font-variant-numeric: tabular-nums;
+}
+
+.llegada {
+  position: absolute;
+  inset-inline-end: calc(-1 * var(--esp-6));
+  inset-block-end: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  max-width: 19rem;
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+  font-size: var(--tipo-xs);
+  line-height: 1.35;
+}
+
+.llegada b {
+  display: block;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.llegada__icono {
+  display: inline-flex;
+  font-size: 1.25rem;
+  color: var(--color-exito);
+}
+
+.llegada__detalle {
+  color: var(--color-texto-suave);
+}
+
+@media (max-width: 64rem) {
+  .llegada {
+    inset-inline-end: var(--esp-4);
+  }
+}
+
+/* Teléfono: dos columnas y filas más bajas; la sala de actividades se va. */
+@media (max-width: 40rem) {
+  :host {
+    --fila: 3.25rem;
+    --ancho-horas: 2.6rem;
+  }
+
+  .columnas,
+  .cuerpo {
+    grid-template-columns: var(--ancho-horas) repeat(2, minmax(0, 1fr));
+  }
+
+  .columna--tercera,
+  .bloque--tercera,
+  .ventana__vistas {
+    display: none;
+  }
+
+  .bloque__estado {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+
+  .bloque__hora {
+    display: none;
+  }
+
+  .llegada {
+    inset-inline: var(--esp-4);
+    max-width: none;
+  }
+}
+
+/* El único momento animado de la página: el día se carga, después llega alguien. */
+@media (prefers-reduced-motion: no-preference) {
+  .bloque {
+    animation: aparecer 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i) * 55ms + 120ms);
+  }
+
+  .ahora {
+    animation: trazar 900ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both;
+    transform-origin: left center;
+  }
+
+  .llegada {
+    animation: llegar 700ms cubic-bezier(0.16, 1, 0.3, 1) 1100ms both;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes trazar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes llegar {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    filter: blur(4px);
+  }
+}

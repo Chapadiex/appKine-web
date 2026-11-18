@@ -195,6 +195,33 @@
   /* Barra lateral de la tabla desplazable que anuncia contenido escondido. Grafico: 3:1. */
   --color-desborde: var(--color-borde-control);
 
+  /* --- Landing pública (18/11/2026) ---------------------------------------------------- */
+  /* La banda de la IA: un azul noche en los dos temas, para que la sección cambie de clima sin
+     volverse un faro en oscuro. Texto 13:1, suave 8:1 y acento 8:1 sobre el fondo. */
+  --color-banda-fondo: #0f2742;
+  --color-banda-superficie: #183a5e;
+  --color-banda-borde: #34587f;
+  --color-banda-texto: #f1f5f9;
+  --color-banda-texto-suave: #bfcfe0;
+  --color-banda-acento: #5eead4;
+  /* Paleta propia de la landing: coral para actuar, menta para lo clínico y crema para la
+     portada. Sólo la usa features/landing; la app sigue con el azul de acción. Medidos AA:
+     blanco sobre coral 5,2:1, coral sobre su tinte 5,0:1, menta sobre su tinte 4,8:1. */
+  --color-landing-accion: #c2410c;
+  --color-landing-accion-hover: #9a3412;
+  --color-landing-accion-texto: #ffffff;
+  --color-landing-coral: #c2410c;
+  --color-landing-coral-tinte: #ffeee2;
+  --color-landing-menta: #0f766e;
+  --color-landing-menta-texto: #ffffff;
+  --color-landing-menta-tinte: #e0f4ee;
+  --color-landing-crema: #fff8f0;
+  --color-landing-forma-menta: #a7f3d0;
+  --color-landing-forma-coral: #fed7aa;
+  --color-landing-forma-sol: #fde68a;
+  /* La ilustración de producto de la portada: se apoya en la página como un objeto, no flota. */
+  --sombra-escaparate: 0 1px 2px rgb(16 38 63 / 0.06), 0 24px 48px -12px rgb(16 38 63 / 0.22);
+
   /* --- Tipografia --------------------------------------------------------------------- */
   /* Roboto y Roboto Mono, servidas desde el propio bundle (@fontsource, sin CDN: la CSP no cambia). */
   --fuente-base: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -349,6 +376,23 @@
     --color-estado-pendiente: #684c16;
     --color-estado-cancelado: #692d35;
     --color-estado-bloqueado: #354352;
+
+    --color-banda-fondo: #0d2340;
+    --color-banda-superficie: #17365a;
+    --color-banda-borde: #34587f;
+    --sombra-escaparate: 0 1px 2px rgb(0 0 0 / 0.3), 0 24px 48px -12px rgb(0 0 0 / 0.6);
+    --color-landing-accion: #fb923c;
+    --color-landing-accion-hover: #fdba74;
+    --color-landing-accion-texto: #1c0a03;
+    --color-landing-coral: #fdba74;
+    --color-landing-coral-tinte: #33201a;
+    --color-landing-menta: #5eead4;
+    --color-landing-menta-texto: #062421;
+    --color-landing-menta-tinte: #11302c;
+    --color-landing-crema: #18191d;
+    --color-landing-forma-menta: #134e4a;
+    --color-landing-forma-coral: #5a2a14;
+    --color-landing-forma-sol: #4a3a10;
   }
 }
 
@@ -403,6 +447,23 @@
   --color-estado-pendiente: #684c16;
   --color-estado-cancelado: #692d35;
   --color-estado-bloqueado: #354352;
+
+  --color-banda-fondo: #0d2340;
+  --color-banda-superficie: #17365a;
+  --color-banda-borde: #34587f;
+  --sombra-escaparate: 0 1px 2px rgb(0 0 0 / 0.3), 0 24px 48px -12px rgb(0 0 0 / 0.6);
+  --color-landing-accion: #fb923c;
+  --color-landing-accion-hover: #fdba74;
+  --color-landing-accion-texto: #1c0a03;
+  --color-landing-coral: #fdba74;
+  --color-landing-coral-tinte: #33201a;
+  --color-landing-menta: #5eead4;
+  --color-landing-menta-texto: #062421;
+  --color-landing-menta-tinte: #11302c;
+  --color-landing-crema: #18191d;
+  --color-landing-forma-menta: #134e4a;
+  --color-landing-forma-coral: #5a2a14;
+  --color-landing-forma-sol: #4a3a10;
 }
 
 /* Los controles nativos (select, scrollbar, calendario) siguen al tema elegido, no al sistema. */

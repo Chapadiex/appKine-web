@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 
-import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
 import { SEGMENTO_DE_TRANSITO, transitoGuard } from './layout/selector-de-sede/cambio-de-sede';
 import { SEGMENTO_HORARIOS } from './features/resource/models/rutas-de-horarios';
 import { authGuard } from './core/guards/auth.guard';
+import { landingGuard } from './core/guards/landing.guard';
 import { contextGuard } from './core/guards/context.guard';
 import { primerosPasosGuard } from './core/guards/primeros-pasos.guard';
 import { platformAdminGuard } from './core/guards/platform-admin.guard';
@@ -79,10 +79,15 @@ export const routes: Routes = [
   //
   // Los guards del destino resuelven los dos casos borde sin que esta ruta sepa nada: un
   // anonimo cae en el login y una sesion sin contexto, en el selector.
+  //
+  // Desde el 18/11/2026 `/` es la landing pública (AKINE-landing-y-ofertas.md §4): quien no tiene
+  // sesión la ve; quien tiene sesión sigue yendo a `RUTA_INICIO`, ahora por `landingGuard`.
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: RUTA_INICIO,
+    canActivate: [landingGuard],
+    loadComponent: () => import('./features/landing/landing-page').then((m) => m.LandingPage),
+    title: 'AKINE - Gestión para centros de salud y actividades',
   },
 
   // El baseline tecnico no se borra, se muda a su propia URL. Sigue siendo la unica pantalla

@@ -231,6 +231,12 @@ export class App {
     /^\/(auth|seleccionar-contexto)(\/|\?|$)/.test(this.url()),
   );
 
+  /**
+   * La landing pública (`/`, con o sin ancla): sin barra superior ni lateral y a todo el ancho.
+   * Trae su propia cabecera y su pie.
+   */
+  protected readonly esLanding = computed(() => /^\/(#|\?|$)/.test(this.url()));
+
   protected readonly ancho = toSignal(
     this.router.events.pipe(
       filter((evento) => evento instanceof NavigationEnd),

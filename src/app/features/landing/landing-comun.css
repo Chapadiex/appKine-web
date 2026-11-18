@@ -1,0 +1,62 @@
+/*
+  Lo que comparten la página de la landing y sus secciones en componente propio: la envoltura,
+  el ritmo de sección, la escala de títulos y las formas orgánicas.
+*/
+.envoltura {
+  position: relative;
+  width: 100%;
+  max-width: var(--envoltura);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* --- Formas orgánicas: manchas de color detrás del contenido -------------------------- */
+
+.formas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.forma {
+  position: absolute;
+  border-radius: 58% 42% 55% 45% / 45% 55% 45% 55%;
+  opacity: 0.85;
+}
+
+.forma--menta {
+  background: radial-gradient(closest-side, var(--color-landing-forma-menta), transparent);
+}
+
+.forma--coral {
+  background: radial-gradient(closest-side, var(--color-landing-forma-coral), transparent);
+}
+
+.forma--sol {
+  background: radial-gradient(closest-side, var(--color-landing-forma-sol), transparent);
+}
+
+.seccion {
+  position: relative;
+  padding-block: var(--seccion-y);
+  scroll-margin-top: 4rem;
+}
+
+.seccion__titulo {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: clamp(1.875rem, 1.3rem + 2vw, 2.75rem);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.seccion__bajada {
+  max-width: 40rem;
+  margin: var(--esp-6) 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-lg);
+  line-height: 1.55;
+}
