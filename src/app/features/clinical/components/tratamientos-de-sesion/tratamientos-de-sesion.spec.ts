@@ -87,7 +87,7 @@ describe('TratamientosDeSesion', () => {
         '#tratamiento-practica option',
       ) as NodeListOf<HTMLOptionElement>,
     ).map((o) => o.textContent?.trim());
-    expect(opciones).toContain('Electroterapia (ELEC)');
+    expect(opciones).toContain('Electroterapia');
     expect(opciones).toContain('Terapia manual');
     expect(opciones).not.toContain('Laser');
     expect(
@@ -102,12 +102,13 @@ describe('TratamientosDeSesion', () => {
     fixture.componentInstance.versionCambio.subscribe((v) => versiones.push(v));
     fixture.componentInstance.enVuelo.subscribe((v) => enVuelo.push(v));
 
+    // La zona escrita en "Otra…" del combo; el lado, un chip.
     escribir(fixture, '#tratamiento-zona', 'rodilla');
-    elegir(fixture, '#tratamiento-lateralidad', 'DERECHA');
+    tocar(fixture, '#tratamiento-lateralidad', 'Der');
     escribir(fixture, '#tratamiento-duracion', '15');
     elegir(fixture, '#tratamiento-espacio', '30');
     apretar(fixture, 'Agregar un parámetro');
-    escribir(fixture, '#parametro-clave-0', 'Intensidad');
+    elegir(fixture, '#parametro-clave-0', 'Intensidad');
     escribir(fixture, '#parametro-valor-0', '20');
     escribir(fixture, '#parametro-unidad-0', 'mA');
     apretar(fixture, 'Registrar el tratamiento');
@@ -140,7 +141,7 @@ describe('TratamientosDeSesion', () => {
     apretar(fixture, 'Registrar el tratamiento');
     expect(texto(fixture)).toContain('sin nombre');
 
-    escribir(fixture, '#parametro-clave-0', 'Series');
+    elegir(fixture, '#parametro-clave-0', 'Series');
     escribir(fixture, '#parametro-valor-0', 'tres');
     apretar(fixture, 'Registrar el tratamiento');
     expect(texto(fixture)).toContain('no es un número');
@@ -159,9 +160,11 @@ describe('TratamientosDeSesion', () => {
     const fixture = await montar();
     apretar(fixture, 'Agregar un parámetro');
     escribir(fixture, '#parametro-valor-0', '20');
-    elegir(fixture, '#parametro-tipo-0', 'BOOLEANO');
+    marcar(fixture, '#parametro-tipo-0', 'BOOLEANO');
     expect(fixture.nativeElement.querySelector('#parametro-unidad-0')).toBeNull();
-    elegir(fixture, '#parametro-valor-0', 'si');
+    marcar(fixture, '#parametro-valor-0', 'si');
+    // Un nombre fuera de las sugerencias se escribe con "Otro…".
+    elegir(fixture, '#parametro-clave-0', '__otro__');
     escribir(fixture, '#parametro-clave-0', 'Supervisado');
     apretar(fixture, 'Registrar el tratamiento');
     const pedido = httpMock.expectOne((p) => p.method === 'POST');
@@ -258,7 +261,9 @@ describe('TratamientosDeSesion', () => {
   it('cerrada se lee sin formulario, sin prácticas ni espacios', async () => {
     const fixture = await montar(false, [REGISTRADO]);
     expect(texto(fixture)).toContain('Electroterapia');
-    expect(texto(fixture)).toContain('15 minutos');
+    // La columna "Minutos" de la tabla compacta.
+    const fila = fixture.nativeElement.querySelector('tbody tr') as HTMLElement;
+    expect(fila.querySelectorAll('td')[3]?.textContent?.trim()).toBe('15');
     expect(fixture.nativeElement.querySelector('#tratamiento-practica')).toBeNull();
   });
 
@@ -268,13 +273,15 @@ describe('TratamientosDeSesion', () => {
     expect(raiz.querySelector('app-estado-vacio')?.textContent).toContain(
       'Todavía no hay tratamientos registrados',
     );
-    const grilla = raiz.querySelector('#tratamiento-practica')?.closest('.grilla-12');
-    expect(grilla?.querySelector('#tratamiento-duracion')).not.toBeNull();
+    // La carga va en una sola fila (13/11/2026), como la de mediciones.
+    const fila = raiz.querySelector('#tratamiento-practica')?.closest('.carga-medicion');
+    expect(fila).not.toBeNull();
+    expect(fila?.querySelector('#tratamiento-duracion')).not.toBeNull();
   });
 
   it('avisa la lateralidad sin zona antes de que el servidor la rechace', async () => {
     const fixture = await montar();
-    elegir(fixture, '#tratamiento-lateralidad', 'IZQUIERDA');
+    tocar(fixture, '#tratamiento-lateralidad', 'Izq');
     expect(texto(fixture)).toContain('sin decir de qué zona');
   });
 
@@ -357,6 +364,38 @@ describe('TratamientosDeSesion', () => {
     const campo = fixture.nativeElement.querySelector(selector) as HTMLInputElement;
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
+    // "Otra…" zona se toma en el change, como al salir del campo.
+    campo.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  /** Toca el chip rotulado `rotulo` dentro del grupo `selector`. */
+  function tocar(
+    fixture: ComponentFixture<TratamientosDeSesion>,
+    selector: string,
+    rotulo: string,
+  ) {
+    const grupo = fixture.nativeElement.querySelector(selector) as HTMLElement;
+    const chip = Array.from(grupo.querySelectorAll('button')).find(
+      (b) => (b.textContent ?? '').trim() === rotulo,
+    );
+    if (chip === undefined) {
+      throw new Error(`No hay ningún chip rotulado "${rotulo}" en ${selector}.`);
+    }
+    chip.click();
+    fixture.detectChanges();
+  }
+
+  /** Marca la opción `valor` de un `app-segmentado`. */
+  function marcar(
+    fixture: ComponentFixture<TratamientosDeSesion>,
+    selector: string,
+    valor: string,
+  ) {
+    const radio = fixture.nativeElement.querySelector(
+      `${selector} input[type="radio"][value="${valor}"]`,
+    ) as HTMLInputElement;
+    radio.click();
     fixture.detectChanges();
   }
 

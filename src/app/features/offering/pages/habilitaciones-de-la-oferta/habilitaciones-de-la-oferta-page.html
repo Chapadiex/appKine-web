@@ -1,11 +1,11 @@
-<app-cabecera-de-pagina titulo="Habilitaciones de la oferta">
+<app-cabecera-de-pagina titulo="Habilitaciones de la actividad">
   <app-ayuda titulo="Sobre esta pantalla">
-    <p>Quien puede prestar esta oferta y en que espacios de esta sede.</p>
+    <p>Quien puede prestar esta actividad y en que espacios de esta sede.</p>
     <p class="ayuda-contextual__subtitulo">Habilitar no es dar permiso</p>
     <p>
-      Habilitar dice <b>quien puede prestar</b> esta oferta y <b>donde</b>. No le da a nadie acceso
-      al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
-      habilitación sigue configurando esta oferta aunque no la preste.
+      Habilitar dice <b>quien puede prestar</b> esta actividad y <b>donde</b>. No le da a nadie
+      acceso al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un
+      administrador sin habilitación sigue configurando esta actividad aunque no la preste.
     </p>
   </app-ayuda>
 
@@ -20,14 +20,14 @@
 
 @switch (estado().tipo) {
   @case ('cargando') {
-    <p class="estado" role="status">Cargando la configuración de la oferta…</p>
+    <p class="estado" role="status">Cargando la configuración de la actividad…</p>
   }
 
   @case ('sin-contexto') {
     <section class="estado estado--vacio">
       <h2>Elegí una sede</h2>
       <p>
-        Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
+        Las actividades son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
         sesión sigue abierta.
       </p>
       <a class="boton" routerLink="/seleccionar-contexto">Elegir consultorio</a>
@@ -35,7 +35,7 @@
   }
 
   @case ('error') {
-    <app-alerta tipo="error" titulo="No pudimos leer las habilitaciones de la oferta">
+    <app-alerta tipo="error" titulo="No pudimos leer las habilitaciones de la actividad">
       <p>{{ mensajeDeCarga() }}</p>
       <p class="alerta__acciones">
         <button type="button" class="boton boton--secundario" (click)="cargar()">Reintentar</button>
@@ -50,15 +50,15 @@
           <h2 id="capacidad-titulo">Capacidad</h2>
           <app-ayuda titulo="Sobre la capacidad">
             <p>
-              La capacidad real es la menor entre la que se cargó en la oferta y la del espacio más
-              chico que esté habilitado: nadie puede atender a más gente de la que entra en el
+              La capacidad real es la menor entre la que se cargó en la actividad y la del espacio
+              más chico que esté habilitado: nadie puede atender a más gente de la que entra en el
               lugar.
             </p>
           </app-ayuda>
         </div>
         <dl class="capacidad">
           <div class="capacidad__dato">
-            <dt>Capacidad cargada en la oferta</dt>
+            <dt>Capacidad cargada en la actividad</dt>
             <dd>{{ configuracion.capacidadComercial }} personas</dd>
           </div>
           <div class="capacidad__dato">
@@ -71,8 +71,8 @@
             <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
             <span>
               La limita <b>{{ configuracion.espacioQueLimita }}</b
-              >, que admite menos gente que la oferta. Mientras ese espacio este habilitado, no se
-              puede atender a mas.
+              >, que admite menos gente que la actividad. Mientras ese espacio este habilitado, no
+              se puede atender a mas.
             </span>
           </p>
         }
@@ -83,7 +83,9 @@
         <app-alerta
           tipo="error"
           [titulo]="
-            ofertaIlegible() ? 'No pudimos leer la oferta' : 'No pudimos guardar las habilitaciones'
+            ofertaIlegible()
+              ? 'No pudimos leer la actividad'
+              : 'No pudimos guardar las habilitaciones'
           "
         >
           <p>{{ mensaje }}</p>
@@ -109,8 +111,8 @@
               <h2 id="profesionales-titulo">Profesionales</h2>
               <app-ayuda titulo="Sobre los profesionales">
                 <p>
-                  Solo los marcados van a poder prestar esta oferta. Si desmarcás a todos, la oferta
-                  vuelve a quedar disponible para cualquiera.
+                  Solo los marcados van a poder prestar esta actividad. Si desmarcás a todos, la
+                  actividad vuelve a quedar disponible para cualquiera.
                 </p>
                 <p class="ayuda-contextual__subtitulo">Duración propia</p>
                 <p>
@@ -129,7 +131,7 @@
             <p class="aviso-habilitacion" role="status">
               <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
               <span>
-                <b>Sin ninguno marcado, la oferta queda sin restringir:</b> cualquier profesional
+                <b>Sin ninguno marcado, la actividad queda sin restringir:</b> cualquier profesional
                 con vinculo vigente en esta sede va a poder prestarla. No marcar a nadie NO
                 significa que no pueda ninguno.
               </span>
@@ -138,8 +140,8 @@
 
           @if (candidatosProfesional().length === 0) {
             <app-estado-vacio
-              titulo="Todavía no hay ningún profesional configurado para esta oferta"
-              texto="Sin profesionales configurados la oferta no está restringida, así que hoy la puede prestar cualquiera. Los profesionales de la sede se administran en Colaboradores."
+              titulo="Todavía no hay ningún profesional configurado para esta actividad"
+              texto="Sin profesionales configurados la actividad no está restringida, así que hoy la puede prestar cualquiera. Los profesionales de la sede se administran en Colaboradores."
             >
               <a class="boton boton--secundario" routerLink="/organizacion/colaboradores">
                 Ir a Colaboradores
@@ -154,7 +156,7 @@
             >
               <table class="tabla">
                 <caption class="visualmente-oculto">
-                  Profesionales de la sede y si pueden prestar esta oferta
+                  Profesionales de la sede y si pueden prestar esta actividad
                 </caption>
                 <thead>
                   <tr>
@@ -240,9 +242,9 @@
               <h2 id="espacios-titulo">Espacios</h2>
               <app-ayuda titulo="Sobre los espacios">
                 <p>
-                  Solo los marcados se van a poder usar para esta oferta. Que un espacio sirva no se
-                  deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia ahi,
-                  lo habilita esta lista.
+                  Solo los marcados se van a poder usar para esta actividad. Que un espacio sirva no
+                  se deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia
+                  ahi, lo habilita esta lista.
                 </p>
               </app-ayuda>
             </div>
@@ -254,7 +256,7 @@
               <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
               <span>
                 <b
-                  >Sin ninguno marcado, la oferta se puede prestar en cualquier espacio de la
+                  >Sin ninguno marcado, la actividad se puede prestar en cualquier espacio de la
                   sede.</b
                 >
                 No marcar ninguno NO significa que no se pueda en ninguno.
@@ -265,7 +267,7 @@
           @if (candidatosEspacio().length === 0) {
             <app-estado-vacio
               titulo="Todavía no hay ningún espacio configurado"
-              texto="Sin espacios configurados, así que la oferta se puede prestar en cualquiera de la sede. Los espacios se administran en Espacios y boxes."
+              texto="Sin espacios configurados, así que la actividad se puede prestar en cualquiera de la sede. Los espacios se administran en Espacios y boxes."
             >
               <a class="boton boton--secundario" routerLink="/espacios">Ir a Espacios y boxes</a>
             </app-estado-vacio>
@@ -273,7 +275,7 @@
             <div class="tabla-scroll" tabindex="0" role="region" aria-label="Espacios habilitables">
               <table class="tabla">
                 <caption class="visualmente-oculto">
-                  Espacios de la sede y si se pueden usar para esta oferta
+                  Espacios de la sede y si se pueden usar para esta actividad
                 </caption>
                 <thead>
                   <tr>

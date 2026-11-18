@@ -246,7 +246,7 @@ export const DIAS_DE_LA_SEMANA: readonly {
 const MOTIVOS_DE_OMISION: Readonly<Record<string, string>> = {
   PASADO: 'La fecha ya pasó',
   FERIADO: 'Feriado',
-  OFERTA_NO_VIGENTE: 'La oferta no rige ese día',
+  OFERTA_NO_VIGENTE: 'La actividad no rige ese día',
   HORARIO_NO_DISPONIBLE: 'El profesional no atiende o hay un cierre',
   RECURSO_OCUPADO: 'Profesional o box ocupado',
   CAPACIDAD: 'El cupo no entra',

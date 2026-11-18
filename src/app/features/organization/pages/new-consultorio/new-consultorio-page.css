@@ -450,3 +450,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Icono de cada paso, delante del titulo (13/11/2026). */
+.asistente__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.asistente__icono {
+  flex: none;
+  color: var(--color-acento);
+}

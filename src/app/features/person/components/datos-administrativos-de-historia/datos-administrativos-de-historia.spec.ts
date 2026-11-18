@@ -90,7 +90,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     // Quien salio del equipo no atiende hoy.
     expect(texto).not.toContain('#33');
     // El caso de otra sede se muestra por identificador, sin consultar esa sede.
-    expect(texto).toContain('Oferta #99');
+    expect(texto).toContain('Actividad #99');
     expect(texto).toContain('Sin equipo vigente');
   });
 
@@ -99,7 +99,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     httpMock.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('todavía no tiene historia clínica');
+    expect(contenido(fixture)).toContain('Todavía no tiene historia clínica');
   });
 
   it('si los nombres no se pueden leer, muestra los identificadores', async () => {
@@ -110,7 +110,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     await estabilizar(fixture);
 
     const texto = contenido(fixture);
-    expect(texto).toContain('Oferta #14');
+    expect(texto).toContain('Actividad #14');
     expect(texto).toContain('Profesional #31 (responsable)');
   });
 
@@ -140,7 +140,7 @@ describe('DatosAdministrativosDeHistoria', () => {
     httpMock.expectOne(DATOS).flush({ personaId: PERSONA, tieneHistoriaClinica: false });
     await estabilizar(fixture);
 
-    expect(contenido(fixture)).toContain('todavía no tiene historia clínica');
+    expect(contenido(fixture)).toContain('Todavía no tiene historia clínica');
   });
 
   it(

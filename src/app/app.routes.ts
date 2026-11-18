@@ -270,6 +270,15 @@ export const routes: Routes = [
     children: rutasPasesDePersona,
   },
 
+  // Datos que declara el paciente (DP-47). Cuelga del padron y va ANTES que `pacientes` por lo
+  // mismo que la cuenta corriente; la feature es `clinical`, con `loadChildren` como el resto de
+  // lo clinico, para no sumar al bundle inicial.
+  {
+    path: 'pacientes/:personaId/datos-declarados',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/clinical/datos-declarados.routes').then((m) => m.routes),
+  },
+
   {
     path: 'pacientes',
     canActivate: [authGuard],

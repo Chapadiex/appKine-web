@@ -119,7 +119,9 @@ const PANTALLAS: readonly Pantalla[] = [
     ruta: '/clases/nueva',
     apiDeF9: true,
     listo: async (page) => {
-      await page.getByLabel('Oferta grupal').selectOption({ label: 'Pilates reformer' });
+      await page
+        .getByLabel('Actividad', { exact: true })
+        .selectOption({ label: 'Pilates reformer' });
       await expect(page.getByLabel('Cupo')).toBeVisible();
     },
   },
@@ -194,7 +196,7 @@ const PANTALLAS: readonly Pantalla[] = [
     apiDp43: {},
     listo: async (page) => {
       await page
-        .getByLabel('Oferta', { exact: true })
+        .getByLabel('Actividad', { exact: true })
         .selectOption({ label: 'Rehabilitacion neurologica' });
       await expect(page.getByLabel('Motivo (obligatorio)')).toBeVisible();
     },

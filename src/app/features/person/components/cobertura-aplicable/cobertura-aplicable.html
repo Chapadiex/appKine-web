@@ -1,7 +1,7 @@
 <div aria-live="polite">
   @switch (estado().tipo) {
     @case ('sin-oferta') {
-      <p class="estado estado--vacio">Elegí una oferta para ver que cobertura aplica.</p>
+      <p class="estado estado--vacio">Elegí una actividad para ver que cobertura aplica.</p>
     }
 
     @case ('cargando') {
@@ -43,7 +43,7 @@
           @if (resultado.precioParticular !== undefined && resultado.precioParticular !== null) {
             <b>{{ importe(resultado.precioParticular) }}</b>
           } @else {
-            <b>la oferta no tiene precio cargado</b>
+            <b>la actividad no tiene precio cargado</b>
           }
           <span class="ayuda">
             Particular siempre esta disponible, aunque alguna cobertura aplique.
@@ -51,7 +51,7 @@
         </p>
 
         @if (resultado.admiteObraSocial === false) {
-          <p class="ayuda">Esta oferta no admite obra social.</p>
+          <p class="ayuda">Esta actividad no admite obra social.</p>
         }
 
         @if ((resultado.aplicables?.length ?? 0) > 0) {

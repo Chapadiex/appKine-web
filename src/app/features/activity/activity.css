@@ -346,3 +346,46 @@
 .pasos-previos li + li {
   margin-top: var(--esp-2);
 }
+
+/*
+ * Programar clase compacto (13/11/2026): todo en una pantalla sin scroll. Titulos de bloque
+ * chicos, tarjetas del modo sin su descripcion (queda como descripcion accesible) y los dias de
+ * la semana en la misma fila que fechas y horas.
+ */
+.modo-de-clase {
+  max-width: 32rem;
+}
+
+.modo-de-clase ::ng-deep .opcion-en-tarjeta {
+  padding: var(--esp-2) var(--esp-4);
+}
+
+.modo-de-clase ::ng-deep .opcion-en-tarjeta__descripcion {
+  display: none;
+}
+
+.seccion-de-clase {
+  gap: var(--esp-3);
+  margin: var(--esp-3) 0 var(--esp-2);
+  padding-top: var(--esp-3);
+  font-size: var(--tipo-sm);
+}
+
+.seccion-de-clase__icono {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.campo--dias .pastillas {
+  flex-wrap: nowrap;
+}
+
+.resumen-de-clase {
+  align-items: center;
+  margin-top: var(--esp-3);
+  padding: var(--esp-2) var(--esp-4);
+}
+
+.resumen-de-clase__zona {
+  display: inline;
+}

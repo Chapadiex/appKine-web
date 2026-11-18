@@ -469,7 +469,7 @@ describe('CoberturasDelPacientePage', () => {
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.url.endsWith('/ofertas'));
 
     const boton = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (candidato) => (candidato.textContent ?? '').trim() === 'Consultar por oferta',
+      (candidato) => (candidato.textContent ?? '').trim() === 'Consultar por actividad',
     );
     boton?.click();
     fixture.detectChanges();

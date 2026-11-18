@@ -305,7 +305,7 @@ describe('AsistenciaDeClasePage', () => {
     expect(contenido).toContain('Deudas de la clase');
     expect(contenido).toContain('Gomez, Ana: se genero la deuda de la clase por');
     expect(contenido).toContain('6.000');
-    expect(contenido).toContain('Revisar: Ruiz, Caro: la oferta no tiene precio vigente');
+    expect(contenido).toContain('Revisar: Ruiz, Caro: la actividad no tiene precio vigente');
     expect(contenido).toContain('Se guardaron 2 participantes.');
     expect(contenido).not.toContain('no se pudieron guardar');
   });

@@ -91,8 +91,9 @@ describe('MedicionesDeSesion', () => {
   it('una numerica manda solo valorNumerico, con el lado en la consulta', async () => {
     const fixture = await montar();
 
-    elegir(fixture, '#medicion-definicion', '11');
-    elegir(fixture, '#medicion-lado', 'IZQUIERDA');
+    // Modo táctil: con siete medidas o menos se eligen con un toque, y el lado también.
+    tocar(fixture, '#medicion-definicion', 'Flexion de rodilla');
+    tocar(fixture, '#medicion-lado', 'Izq');
     escribir(fixture, '#medicion-valor', '97,5');
     apretar(fixture, 'Registrar la medición');
 
@@ -111,9 +112,9 @@ describe('MedicionesDeSesion', () => {
   it('una de si o no manda valorBooleano y una de texto manda valorTexto', async () => {
     const fixture = await montar();
 
-    elegir(fixture, '#medicion-definicion', '12');
+    tocar(fixture, '#medicion-definicion', 'Edema');
     const no = fixture.nativeElement.querySelectorAll(
-      'input[name="medicion-si-no"]',
+      '#medicion-valor input[type="radio"]',
     )[1] as HTMLInputElement;
     no.click();
     fixture.detectChanges();
@@ -123,7 +124,7 @@ describe('MedicionesDeSesion', () => {
     booleana.flush({ id: 2 });
     await recargar(fixture);
 
-    elegir(fixture, '#medicion-definicion', '13');
+    tocar(fixture, '#medicion-definicion', 'Marcha');
     escribir(fixture, '#medicion-valor', 'claudicante');
     escribir(fixture, '#medicion-nota', 'en pasillo');
     apretar(fixture, 'Registrar la medición');
@@ -137,10 +138,10 @@ describe('MedicionesDeSesion', () => {
   it('sin valor no manda nada y dice que falta', async () => {
     const fixture = await montar();
 
-    apretar(fixture, 'Registrar la medición');
-    expect(texto(fixture)).toContain('Elegí que medida');
+    // Sin medida elegida no se puede registrar: el botón queda apagado.
+    expect(botonRegistrar(fixture).disabled).toBe(true);
 
-    elegir(fixture, '#medicion-definicion', '11');
+    tocar(fixture, '#medicion-definicion', 'Flexion de rodilla');
     escribir(fixture, '#medicion-valor', 'mucho');
     apretar(fixture, 'Registrar la medición');
     expect(texto(fixture)).toContain('no es un número');
@@ -150,9 +151,20 @@ describe('MedicionesDeSesion', () => {
   it('fuera de rango muestra el rango que devolvio el servidor', async () => {
     const fixture = await montar();
 
-    elegir(fixture, '#medicion-definicion', '11');
-    expect(texto(fixture)).toContain('Admite de 0 a 180 grados');
+    tocar(fixture, '#medicion-definicion', 'Flexion de rodilla');
+    // El rango del catálogo va como pista sobre el campo del valor.
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('app-numero-con-pasos')
+        ?.getAttribute('title'),
+    ).toContain('Admite de 0 a 180 grados');
+    // Afuera del rango que conoce la pantalla, el campo lo marca y no sale nada.
     escribir(fixture, '#medicion-valor', '200');
+    apretar(fixture, 'Registrar la medición');
+    httpMock.expectNone((p) => p.method === 'PUT');
+
+    // El catálogo pudo cambiar: si el servidor rechaza, se muestra el rango que él devuelve.
+    escribir(fixture, '#medicion-valor', '150');
     apretar(fixture, 'Registrar la medición');
     httpMock
       .expectOne((p) => p.method === 'PUT')
@@ -181,9 +193,10 @@ describe('MedicionesDeSesion', () => {
     expect((fixture.nativeElement.querySelector('#medicion-valor') as HTMLInputElement).value).toBe(
       '95',
     );
-    expect((fixture.nativeElement.querySelector('#medicion-lado') as HTMLSelectElement).value).toBe(
-      'IZQUIERDA',
-    );
+    const lado = fixture.nativeElement.querySelector(
+      '#medicion-lado button[aria-pressed="true"]',
+    ) as HTMLButtonElement | null;
+    expect(lado?.textContent?.trim()).toBe('Izq');
     httpMock.expectNone((p) => p.method === 'PUT');
   });
 
@@ -265,7 +278,8 @@ describe('MedicionesDeSesion', () => {
     expect(raiz.querySelector('th[aria-sort]')?.getAttribute('aria-sort')).toBe('descending');
     expect(raiz.querySelector('tbody tr th')?.textContent).toContain('Fuerza');
 
-    expect(raiz.querySelector('#medicion-definicion')?.closest('.grilla-12')).not.toBeNull();
+    // La carga va en una sola fila (13/11/2026): medida, lado, valor, nota y el botón.
+    expect(raiz.querySelector('#medicion-definicion')?.closest('.carga-medicion')).not.toBeNull();
   });
 
   it(
@@ -313,11 +327,21 @@ describe('MedicionesDeSesion', () => {
     fixture.detectChanges();
   }
 
-  function elegir(fixture: ComponentFixture<MedicionesDeSesion>, selector: string, valor: string) {
-    const campo = fixture.nativeElement.querySelector(selector) as HTMLSelectElement;
-    campo.value = valor;
-    campo.dispatchEvent(new Event('change'));
+  /** Toca el chip rotulado `rotulo` dentro del grupo `selector`. */
+  function tocar(fixture: ComponentFixture<MedicionesDeSesion>, selector: string, rotulo: string) {
+    const grupo = fixture.nativeElement.querySelector(selector) as HTMLElement;
+    const chip = Array.from(grupo.querySelectorAll('button')).find((b) =>
+      (b.textContent ?? '').trim().startsWith(rotulo),
+    );
+    if (chip === undefined) {
+      throw new Error(`No hay ningún chip rotulado "${rotulo}" en ${selector}.`);
+    }
+    chip.click();
     fixture.detectChanges();
+  }
+
+  function botonRegistrar(fixture: ComponentFixture<MedicionesDeSesion>): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('.carga-medicion__boton') as HTMLButtonElement;
   }
 
   function escribir(

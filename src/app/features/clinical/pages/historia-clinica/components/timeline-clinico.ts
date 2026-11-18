@@ -142,6 +142,9 @@ export class TimelineClinico {
   readonly recargas = input(0);
   readonly seleccionado = input<string | null>(null);
 
+  /** DP-47: marca "Declarado · …" de cada adjunto declarado, por id. Los demas no llevan marca. */
+  readonly marcasDeAdjuntos = input<ReadonlyMap<number, string>>(new Map());
+
   readonly elegido = output<EventoClinicoResponse>();
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });

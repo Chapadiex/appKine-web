@@ -49,7 +49,7 @@
 >
   <div class="campo" filtro-principal>
     <label class="visualmente-oculto" for="series-busqueda"
-      >Paciente, documento, oferta o profesional</label
+      >Paciente, documento, actividad o profesional</label
     >
     <div class="campo-busqueda">
       <app-icono class="campo-busqueda__icono" nombre="buscar" />
@@ -58,7 +58,7 @@
         name="series-busqueda"
         type="search"
         autocomplete="off"
-        placeholder="Buscar por paciente, documento, oferta o profesional"
+        placeholder="Buscar por paciente, documento, actividad o profesional"
         [value]="busqueda()"
         (change)="buscar($any($event.target).value)"
       />
@@ -131,7 +131,7 @@
               <th scope="col" appOrdenable [tabla]="orden" columna="fechaDesde">
                 Patrón y vigencia
               </th>
-              <th scope="col" class="tabla__col--secundaria">Oferta y profesional</th>
+              <th scope="col" class="tabla__col--secundaria">Actividad y profesional</th>
               <th scope="col" class="tabla__col--secundaria">Avance</th>
               <th scope="col">Próximo turno</th>
               <th scope="col">Estado</th>

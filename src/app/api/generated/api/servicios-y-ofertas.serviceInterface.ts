@@ -128,6 +128,11 @@ export interface ListServiciosRequestParams {
     estado?: 'ACTIVO' | 'INACTIVO' | 'TODOS';
 }
 
+export interface PersonalizarServicioRequestParams {
+    servicioId: number;
+    updateServicioRequest: UpdateServicioRequest;
+}
+
 export interface ReemplazarDuracionesPropiasRequestParams {
     consultorioId: number;
     ofertaId: number;
@@ -308,6 +313,14 @@ export interface ServiciosYOfertasServiceInterface {
 * @param requestParameters
      */
     listServicios(requestParameters: ListServiciosRequestParams, extraHttpRequestParams?: any): Observable<Array<ServicioResponse>>;
+
+    /**
+     * Personalizar para la organizacion un servicio del catalogo de AKINE
+     * Un servicio GLOBAL lo comparten todas las organizaciones: editarlo desde un      centro le cambiaria el dato a los demas. Esta operacion crea una COPIA propia      de la organizacion del contexto, con los cambios del cuerpo aplicados sobre los      datos del global. La copia vale a nivel ORGANIZACION, para todas sus sedes,      no para una sede.  Efectos: las ofertas de la organizacion que prestaban el global pasan a      prestar la copia; el global deja de listarse para la organizacion; el global      y las demas organizaciones no cambian. La copia conserva el codigo y se edita      y se da de baja como cualquier servicio propio.  Exige catalogo:manage en el contexto. expectedVersion es la del servicio      GLOBAL que se esta personalizando. Un servicio que ya es de la organizacion      responde 400: se edita con updateServicio.
+     * @endpoint post /api/v1/servicios/{servicioId}/personalizacion
+* @param requestParameters
+     */
+    personalizarServicio(requestParameters: PersonalizarServicioRequestParams, extraHttpRequestParams?: any): Observable<ServicioResponse>;
 
     /**
      * Fijar cuanto tarda cada profesional en la oferta

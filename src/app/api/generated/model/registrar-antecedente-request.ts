@@ -14,14 +14,42 @@
  */
 export interface RegistrarAntecedenteRequest { 
     /**
+     * Ficha de ingreso: año de una cirugia (1900 al actual)
+     */
+    anio?: number;
+    /**
+     * Ficha de ingreso: enfermedad de la lista. Exige tipo MEDICO; si ya hay una vigente con ese codigo se devuelve esa, sin otra alta
+     */
+    codigo?: RegistrarAntecedenteRequestCodigoEnum;
+    /**
      * Texto clinico del antecedente
      */
     descripcion: string;
     /**
+     * Ficha de ingreso: donde se hizo la cirugia
+     */
+    lugar?: string;
+    /**
      * Clase de antecedente
      */
     tipo: RegistrarAntecedenteRequestTipoEnum;
+    /**
+     * Ficha de ingreso: zona de una cirugia
+     */
+    zona?: string;
 }
+export enum RegistrarAntecedenteRequestCodigoEnum {
+    DIABETES = 'DIABETES',
+    HIPERTENSION = 'HIPERTENSION',
+    CARDIOPATIA = 'CARDIOPATIA',
+    MARCAPASOS = 'MARCAPASOS',
+    OSTEOPOROSIS = 'OSTEOPOROSIS',
+    ANTICOAGULADO = 'ANTICOAGULADO',
+    EMBARAZO = 'EMBARAZO',
+    CANCER = 'CANCER',
+    EPILEPSIA = 'EPILEPSIA',
+    RESPIRATORIA = 'RESPIRATORIA'
+};
 export enum RegistrarAntecedenteRequestTipoEnum {
     MEDICO = 'MEDICO',
     QUIRURGICO = 'QUIRURGICO',

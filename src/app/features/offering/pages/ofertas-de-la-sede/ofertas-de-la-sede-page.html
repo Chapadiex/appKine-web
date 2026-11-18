@@ -1,18 +1,18 @@
-<app-cabecera-de-pagina titulo="Ofertas de la sede">
+<app-cabecera-de-pagina titulo="Actividades de la sede">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Como esta sede presta cada servicio del catalogo: con que nombre comercial, cuanto dura, para
-      cuanta gente, a que precio y desde cuando. El servicio dice <b>que existe</b>; la oferta dice
-      <b>como lo hacemos acá</b>.
+      cuanta gente, a que precio y desde cuando. El servicio dice <b>que existe</b>; la actividad
+      dice <b>como lo hacemos acá</b>.
     </p>
     <p class="ayuda-contextual__subtitulo">Activa y vigente hoy no son lo mismo</p>
     <p>
-      <b>Activa</b> quiere decir que la oferta no fue dada de baja. Es su estado administrativo, y
-      no depende de la fecha.
+      <b>Activa</b> quiere decir que la actividad no fue dada de baja. Es su estado administrativo,
+      y no depende de la fecha.
     </p>
     <p>
       <b>Vigente hoy</b> quiere decir que además hoy cae dentro de su ventana de vigencia, y por eso
-      se ofrece para reservar. Una oferta activa que arranca el mes que viene figura como
+      se ofrece para reservar. Una actividad activa que arranca el mes que viene figura como
       <b>activa pero todavía sin vigencia</b>: no es un error, y va a empezar a ofrecerse sola ese
       día. Lo mismo pasa con los espacios entre <i>activo</i> y <i>en servicio</i>.
     </p>
@@ -29,7 +29,7 @@
   </div>
 </app-cabecera-de-pagina>
 
-<section class="tarjeta" aria-label="Ofertas cargadas en esta sede">
+<section class="tarjeta" aria-label="Actividades cargadas en esta sede">
   <!--
     Toolbar del listado (UX-14): la busqueda por nombre (local, la lista llega entera), la
     modalidad como filtro frecuente, estado y servicio detras de "Filtros", y el contador en la
@@ -38,12 +38,12 @@
   <app-filtros
     [activos]="filtrosAvanzadosActivos()"
     [resultados]="estado().tipo === 'listo' ? tabla.total() : null"
-    [unidad]="['oferta', 'ofertas']"
+    [unidad]="['actividad', 'actividades']"
     limpiable
     (limpiar)="limpiarFiltros()"
   >
     <div class="campo" filtro-principal>
-      <label class="visualmente-oculto" for="busqueda-ofertas">Buscar ofertas</label>
+      <label class="visualmente-oculto" for="busqueda-ofertas">Buscar actividades</label>
       <div class="campo-busqueda">
         <app-icono class="campo-busqueda__icono" nombre="buscar" />
         <input
@@ -107,20 +107,20 @@
   <div aria-live="polite">
     @switch (estado().tipo) {
       @case ('cargando') {
-        <p class="estado estado--cargando">Cargando las ofertas de la sede&hellip;</p>
+        <p class="estado estado--cargando">Cargando las actividades de la sede&hellip;</p>
       }
 
       @case ('sin-contexto') {
         <p class="estado estado--vacio">Todavía no elegiste un consultorio.</p>
         <p class="ayuda">
-          Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Tu
-          sesión sigue abierta: solo falta elegir donde estas.
+          Las actividades son de una sede concreta, así que hay que saber en cual estas trabajando.
+          Tu sesión sigue abierta: solo falta elegir donde estas.
         </p>
         <a class="boton" routerLink="/seleccionar-contexto">Elegir un consultorio</a>
       }
 
       @case ('error') {
-        <app-alerta tipo="error" titulo="No pudimos leer las ofertas de la sede">
+        <app-alerta tipo="error" titulo="No pudimos leer las actividades de la sede">
           <p>{{ mensajeError() }}</p>
           <p class="alerta__acciones">
             @if (faltaContexto()) {
@@ -139,8 +139,8 @@
       @case ('listo') {
         @if (ofertasCargadas().length === 0 && !hayFiltros()) {
           <app-estado-vacio
-            titulo="Esta sede todavía no tiene ofertas activas"
-            texto="Una oferta conecta un servicio del catalogo con esta sede. Sin ninguna, esta sede no ofrece nada para reservar."
+            titulo="Esta sede todavía no tiene actividades activas"
+            texto="Una actividad conecta un servicio del catalogo con esta sede. Sin ninguna, esta sede no ofrece nada para reservar."
           >
             <button
               *akinePermiso="permisoManage"
@@ -153,7 +153,7 @@
           </app-estado-vacio>
         } @else if (ofertas().length === 0) {
           <app-estado-vacio
-            titulo="No encontramos ofertas"
+            titulo="No encontramos actividades"
             texto="Probá con otra búsqueda o filtros."
           >
             <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
@@ -161,15 +161,15 @@
             </button>
           </app-estado-vacio>
         } @else {
-          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Ofertas de la sede">
+          <div class="tabla-scroll" tabindex="0" role="region" aria-label="Actividades de la sede">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Ofertas de la sede activa, con su servicio, modalidad, duración, precio, ventana de
-                vigencia, estado y acciones.
+                Actividades de la sede activa, con su servicio, modalidad, duración, precio, ventana
+                de vigencia, estado y acciones.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Oferta</th>
+                  <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Actividad</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="servicio">Servicio</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
                   <th
@@ -278,22 +278,14 @@
                               Editar
                             </button>
                           </ng-container>
-                          <a [routerLink]="['/servicios/ofertas', oferta.id, 'habilitaciones']">
-                            Habilitaciones
-                          </a>
-                          <a [routerLink]="['/servicios/ofertas', oferta.id, 'precios']">Precios</a>
+                          <!-- Qué se hace en la sesión: lo que ofrece "Tratamiento aplicado" en la atención. -->
                           <a [routerLink]="['/servicios/ofertas', oferta.id, 'practicas']">
-                            Prácticas
+                            Qué prácticas incluye
                           </a>
                           @if (oferta.esquemaCobro === 'POR_PACK') {
                             <a routerLink="/productos">Productos de pack</a>
                           }
                           <ng-container *akinePermiso="permisoManage">
-                            @if (oferta.modalidad === 'GRUPAL') {
-                              <a [routerLink]="['/servicios/ofertas', oferta.id, 'honorarios']">
-                                Honorarios
-                              </a>
-                            }
                             <button
                               type="button"
                               [disabled]="prepagoEnVuelo() === oferta.id"
@@ -320,7 +312,7 @@
             </table>
           </div>
 
-          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de ofertas" />
+          <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de actividades" />
         }
       }
     }
@@ -334,17 +326,20 @@
   para atenderse, y plegado lo que casi siempre se hereda del servicio.
 -->
 @if (altaAbierta()) {
-  <app-panel-lateral titulo="Nueva oferta de esta sede" ancho="amplio" (cerrar)="cerrarPanel()">
+  <app-panel-lateral titulo="Nueva actividad de esta sede" ancho="amplio" (cerrar)="cerrarPanel()">
     <form [formGroup]="formularioAlta" (ngSubmit)="enviarAlta()" novalidate>
       <!-- Error general del alta: arriba del formulario, a la vista mientras se corrige (UX-12). -->
       @if (errorAccion(); as mensaje) {
-        <app-alerta tipo="error" titulo="No pudimos publicar la oferta">
+        <app-alerta tipo="error" titulo="No pudimos publicar la actividad">
           <p>{{ mensaje }}</p>
         </app-alerta>
       }
 
+      <h3 class="formulario__seccion seccion-con-icono">
+        <app-icono nombre="actividades" />Actividad
+      </h3>
       <div class="campo campo--4">
-        <label for="alta-oferta-servicio">Servicio del catalogo</label>
+        <label for="alta-oferta-servicio">Servicio del catálogo</label>
         <select
           id="alta-oferta-servicio"
           formControlName="servicioId"
@@ -358,12 +353,12 @@
         </select>
         @if (mostrarErrorAlta('servicioId')) {
           <p class="campo__error" role="alert">
-            Toda oferta cuelga de un servicio del catalogo: elegí cual.
+            Toda actividad cuelga de un servicio del catalogo: elegí cual.
           </p>
         }
         <p class="ayuda ayuda--fija" id="alta-oferta-servicio-ayuda">
           Solo los servicios <b>activos</b>. El servicio no se cambia después: otro servicio es otra
-          oferta.
+          actividad.
           @if (serviciosOfertables().length === 0) {
             <b>
               No pudimos traer el catalogo de servicios. Recarga la pantalla; si sigue vacío, revisa
@@ -410,6 +405,9 @@
         </p>
       </div>
 
+      <h3 class="formulario__seccion seccion-con-icono">
+        <app-icono nombre="horarios" />Duración y cupo
+      </h3>
       <div class="campo">
         <label for="alta-oferta-duracion">Duración (minutos)</label>
         <input
@@ -438,15 +436,15 @@
         <!-- Fija solo en una grupal: ahi el 1 es un error que el motor no rechaza. -->
         <p class="ayuda" [class.ayuda--fija]="altaEsGrupal()" id="alta-oferta-capacidad-ayuda">
           @if (altaEsGrupal()) {
-            Una oferta <b>grupal</b> necesita capacidad mayor a 1: con 1, el motor de inscripciones
-            la trata como un grupo de una persona.
+            Una actividad <b>grupal</b> necesita capacidad mayor a 1: con 1, el motor de
+            inscripciones la trata como un grupo de una persona.
           } @else {
-            Cuantas personas entran en el mismo turno. Para una oferta individual es 1.
+            Cuantas personas entran en el mismo turno. Para una actividad individual es 1.
           }
         </p>
       </div>
 
-      <h3 class="formulario__seccion">Cobro</h3>
+      <h3 class="formulario__seccion seccion-con-icono"><app-icono nombre="economia" />Cobro</h3>
 
       <div class="campo">
         <label for="alta-oferta-precio">Precio base (opcional)</label>
@@ -458,7 +456,7 @@
           aria-describedby="alta-oferta-precio-ayuda"
         />
         <p class="ayuda" id="alta-oferta-precio-ayuda">
-          Precio y moneda <b>van juntos o no va ninguno</b>. Una oferta sin precio no esta mal
+          Precio y moneda <b>van juntos o no va ninguno</b>. Una actividad sin precio no esta mal
           cargada.
         </p>
       </div>
@@ -489,8 +487,8 @@
           }
         </select>
         <p class="ayuda" id="alta-oferta-esquema-ayuda">
-          <b>POR_PACK</b> deja armar packs sobre la oferta: cada asistencia consume un credito del
-          pase. <b>POR_CLASE</b> devenga una deuda por cada clase a la que la persona asiste
+          <b>POR_PACK</b> deja armar packs sobre la actividad: cada asistencia consume un credito
+          del pase. <b>POR_CLASE</b> devenga una deuda por cada clase a la que la persona asiste
           (presente o con demora); la ausencia no genera deuda.
         </p>
       </div>
@@ -502,7 +500,9 @@
         </label>
       </div>
 
-      <h3 class="formulario__seccion">Qué necesita para atenderse</h3>
+      <h3 class="formulario__seccion seccion-con-icono">
+        <app-icono nombre="pacientes" />Qué necesita para atenderse
+      </h3>
 
       <div class="campo">
         <label class="opcion-casilla" for="alta-oferta-profesional">
@@ -537,6 +537,7 @@
       -->
       <details class="seccion-plegable">
         <summary>
+          <app-icono nombre="configuracion" />
           Más opciones
           <span class="seccion-plegable__resumen">
             Descripción, caso y registro clínico, vigencia
@@ -665,6 +666,9 @@
           "no lo toques".
         </p>
 
+        <h3 class="formulario__seccion seccion-con-icono">
+          <app-icono nombre="actividades" />Actividad
+        </h3>
         <div class="campo campo--4">
           <label for="editar-oferta-nombre">Nombre comercial</label>
           <input
@@ -712,6 +716,9 @@
           />
         </div>
 
+        <h3 class="formulario__seccion seccion-con-icono">
+          <app-icono nombre="horarios" />Duración y cupo
+        </h3>
         <div class="campo">
           <label for="editar-oferta-duracion">Duración (minutos)</label>
           <input
@@ -727,7 +734,7 @@
           <input id="editar-oferta-capacidad" type="number" min="1" formControlName="capacidad" />
         </div>
 
-        <h3 class="formulario__seccion">Cobro</h3>
+        <h3 class="formulario__seccion seccion-con-icono"><app-icono nombre="economia" />Cobro</h3>
 
         <div class="campo">
           <label for="editar-oferta-precio">Precio base</label>
@@ -754,7 +761,7 @@
               (change)="sincronizarLimpiar('precio')"
               aria-describedby="editar-oferta-limpiar-precio-ayuda"
             />
-            Dejar esta oferta sin precio
+            Dejar esta actividad sin precio
           </label>
           <p class="ayuda" id="editar-oferta-limpiar-precio-ayuda">
             Saca precio y moneda juntos, porque son un solo dato.
@@ -798,11 +805,13 @@
               formControlName="limpiarEsquemaCobro"
               (change)="sincronizarLimpiar('esquema')"
             />
-            Dejar esta oferta sin esquema de cobro
+            Dejar esta actividad sin esquema de cobro
           </label>
         </div>
 
-        <h3 class="formulario__seccion">Atención</h3>
+        <h3 class="formulario__seccion seccion-con-icono">
+          <app-icono nombre="pacientes" />Atención
+        </h3>
 
         <div class="campo">
           <label class="opcion-casilla" for="editar-oferta-caso">
@@ -840,7 +849,9 @@
           </label>
         </div>
 
-        <h3 class="formulario__seccion">Vigencia</h3>
+        <h3 class="formulario__seccion seccion-con-icono">
+          <app-icono nombre="calendario" />Vigencia
+        </h3>
 
         <div class="campo">
           <label for="editar-oferta-desde">Vigente desde</label>
@@ -861,7 +872,7 @@
               (change)="sincronizarLimpiar('vigencia')"
               aria-describedby="editar-oferta-limpiar-vigencia-ayuda"
             />
-            Que esta oferta no venza nunca
+            Que esta actividad no venza nunca
           </label>
           <p class="ayuda" id="editar-oferta-limpiar-vigencia-ayuda">
             Le saca la fecha de fin. Borrar el campo de arriba no lo hace.
@@ -888,7 +899,7 @@
   @if (panel()?.tipo === 'baja') {
     <app-panel-lateral [titulo]="'Dar de baja ' + oferta.nombreComercial" (cerrar)="cerrarPanel()">
       @if (errorAccion(); as mensaje) {
-        <app-alerta tipo="error" titulo="No pudimos dar de baja la oferta">
+        <app-alerta tipo="error" titulo="No pudimos dar de baja la actividad">
           <p>{{ mensaje }}</p>
           @if (hayQueRecargar()) {
             <p class="alerta__acciones">
@@ -911,8 +922,8 @@
         (cancelado)="cerrarPanel()"
       >
         <p class="ayuda ayuda--fija">
-          La oferta deja de admitir reservas nuevas, pero conserva sus historicos: lo que ya se
-          reservo con ella sigue siendo valido. Su nombre comercial queda libre para otra oferta.
+          La actividad deja de admitir reservas nuevas, pero conserva sus historicos: lo que ya se
+          reservo con ella sigue siendo valido. Su nombre comercial queda libre para otra actividad.
         </p>
       </app-confirmacion-con-motivo>
     </app-panel-lateral>

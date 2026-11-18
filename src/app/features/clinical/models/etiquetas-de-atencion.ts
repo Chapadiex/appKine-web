@@ -1,3 +1,4 @@
+import { ZONAS_DEL_CUERPO } from './zonas-del-cuerpo';
 import {
   CerrarSesionAsistenciaEnum,
   CerrarSesionProximaConductaEnum,
@@ -61,19 +62,7 @@ export const LATERALIDADES: readonly Opcion<GuardarEvaluacionDolorLateralidadEnu
  * libre, asi que un `select` de valores fijos le impediria al profesional escribir la zona que
  * efectivamente evaluo. Se ofrece como `datalist`, que autocompleta sin bloquear.
  */
-export const ZONAS_SUGERIDAS: readonly string[] = [
-  'Cervical',
-  'Dorsal',
-  'Lumbar',
-  'Hombro',
-  'Codo',
-  'Muñeca',
-  'Mano',
-  'Cadera',
-  'Rodilla',
-  'Tobillo',
-  'Pie',
-];
+export const ZONAS_SUGERIDAS: readonly string[] = ZONAS_DEL_CUERPO;
 
 /** La escala visual analogica completa, 0 a 10. */
 export const ESCALA_EVA: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];

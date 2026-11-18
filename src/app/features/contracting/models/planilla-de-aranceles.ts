@@ -181,7 +181,7 @@ function motivoBase(fila: FilaImportacionArancelResponse): string {
       if (fila.filaEnConflicto !== undefined && fila.filaEnConflicto !== null) {
         return (
           `Se pisa con la fila ${fila.filaEnConflicto} de esta misma planilla: la misma ` +
-          'práctica (y oferta) con períodos que se cruzan. Corregí una de las dos.'
+          'práctica (y actividad) con períodos que se cruzan. Corregí una de las dos.'
         );
       }
       if (fila.arancelExistenteId !== undefined && fila.arancelExistenteId !== null) {
@@ -190,13 +190,13 @@ function motivoBase(fila: FilaImportacionArancelResponse): string {
           'convenio. La importación no cierra vigencias: cerrale primero la del que ya está.'
         );
       }
-      return 'Se pisa con otro arancel de la misma práctica y oferta.';
+      return 'Se pisa con otro arancel de la misma práctica y actividad.';
     case 'not-found':
-      return 'La práctica o la oferta no existe, o no es accesible desde esta sede.';
+      return 'La práctica o la actividad no existe, o no es accesible desde esta sede.';
     case 'oferta-sin-obra-social':
-      return 'Esa oferta no admite obra social, así que no puede tener arancel de convenio.';
+      return 'Esa actividad no admite obra social, así que no puede tener arancel de convenio.';
     case 'practica-no-habilitada-en-oferta':
-      return 'Esa oferta no declara la práctica: no se le puede poner precio dentro de ella.';
+      return 'Esa actividad no declara la práctica: no se le puede poner precio dentro de ella.';
     case 'validation-error':
       return 'Datos invalidos.';
     default:

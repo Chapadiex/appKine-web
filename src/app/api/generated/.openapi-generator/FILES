@@ -49,6 +49,8 @@ api/consumo-de-autorizaciones.service.ts
 api/consumo-de-autorizaciones.serviceInterface.ts
 api/convenios-y-aranceles.service.ts
 api/convenios-y-aranceles.serviceInterface.ts
+api/datos-declarados.service.ts
+api/datos-declarados.serviceInterface.ts
 api/definiciones-de-medicion.service.ts
 api/definiciones-de-medicion.serviceInterface.ts
 api/derivacion-clinica-de-participantes.service.ts
@@ -75,6 +77,8 @@ api/historia-clinica.service.ts
 api/historia-clinica.serviceInterface.ts
 api/inscripciones.service.ts
 api/inscripciones.serviceInterface.ts
+api/inteligencia-artificial-del-centro.service.ts
+api/inteligencia-artificial-del-centro.serviceInterface.ts
 api/invitaciones-recibidas.service.ts
 api/invitaciones-recibidas.serviceInterface.ts
 api/invitaciones.service.ts
@@ -91,6 +95,8 @@ api/notificaciones.service.ts
 api/notificaciones.serviceInterface.ts
 api/obligaciones.service.ts
 api/obligaciones.serviceInterface.ts
+api/ocupaciones.service.ts
+api/ocupaciones.serviceInterface.ts
 api/ordenes-medicas.service.ts
 api/ordenes-medicas.serviceInterface.ts
 api/organizaciones.service.ts
@@ -166,6 +172,7 @@ model/agregar-item-a-presentacion.ts
 model/ajuste-de-saldo-de-pase.ts
 model/alcance-de-serie.ts
 model/alerta-de-autorizacion-response.ts
+model/alta-de-ocupacion-request.ts
 model/alta-en-lista-de-espera.ts
 model/alta-sede-franja-horaria-request.ts
 model/alta-sede-primer-box-request.ts
@@ -304,6 +311,7 @@ model/cuenta-corriente-de-financiador.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
 model/datos-administrativos-de-historia-response.ts
+model/datos-declarados-response.ts
 model/datos-fiscales-efectivos-response.ts
 model/deactivate-bloque-request.ts
 model/deactivate-catalogo-request.ts
@@ -349,6 +357,7 @@ model/espacio-de-agenda.ts
 model/espacio-habilitado.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
+model/estado-del-motor-response.ts
 model/evaluacion-base.ts
 model/evaluacion-previa.ts
 model/evento-clinico-response.ts
@@ -374,6 +383,8 @@ model/evolucion-del-caso-tratamiento-response.ts
 model/excepcion-response.ts
 model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
+model/ficha-de-ingreso-request.ts
+model/ficha-de-ingreso-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
@@ -383,6 +394,8 @@ model/franja-de-agenda.ts
 model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
 model/fuente-de-consulta-response.ts
+model/funcion-ia-response.ts
+model/funciones-ia-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
 model/guardar-borrador.ts
@@ -448,6 +461,7 @@ model/membership-grant-response.ts
 model/membership-page-response.ts
 model/membership-reason-request.ts
 model/membership-response.ts
+model/modelo-del-motor-response.ts
 model/models.ts
 model/modificar-plan-tratamiento-request.ts
 model/motivo-de-rechazo.ts
@@ -460,6 +474,7 @@ model/notification-page-response.ts
 model/notification-response.ts
 model/obligacion.ts
 model/ocupacion-en-otra-sede.ts
+model/ocupacion-response.ts
 model/ocurrencia-elegida.ts
 model/ocurrencia-omitida-de-serie.ts
 model/ocurrencia-prevista.ts
@@ -517,6 +532,7 @@ model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
 model/programar-serie-de-clases.ts
+model/prueba-del-motor-response.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
@@ -641,6 +657,7 @@ model/update-convenio-request.ts
 model/update-espacio-request.ts
 model/update-excepcion-request.ts
 model/update-financiador-request.ts
+model/update-funciones-ia-request.ts
 model/update-marca-request.ts
 model/update-medicion-definicion-request.ts
 model/update-oferta-request.ts

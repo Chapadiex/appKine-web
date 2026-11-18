@@ -1,6 +1,8 @@
 import {
   Component,
   DestroyRef,
+  ElementRef,
+  afterRenderEffect,
   computed,
   effect,
   inject,
@@ -12,6 +14,15 @@ import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
+import { OPCIONES_DE_ZONA } from '../../models/zonas-del-cuerpo';
+import { Escala } from '../../../../shared/components/escala/escala';
+import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
+import { TextoOpcional } from '../../../../shared/components/texto-opcional/texto-opcional';
+import {
+  PestanaInterna,
+  PestanasInternas,
+} from '../../../../shared/components/pestanas-internas/pestanas-internas';
 
 import { ClinicalApi } from '../../services/clinical-api';
 import { MedicionesDeSesion } from '../../components/mediciones-de-sesion/mediciones-de-sesion';
@@ -179,9 +190,15 @@ const ESPERA_AUTOSAVE = 1_500;
     TratamientosDeSesion,
     ConfirmacionConMotivo,
     PanelLateral,
+    Chips,
+    Escala,
+    Segmentado,
+    TextoOpcional,
+    PestanasInternas,
   ],
+  host: { '(window:resize)': 'ajustarAltoDelPanel()' },
   templateUrl: './atencion-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', './atencion-pestanas.css'],
 })
 export class AtencionPage {
   /** Ruta de navegacion de la barra superior. */
@@ -214,6 +231,38 @@ export class AtencionPage {
   protected readonly asistencias = ASISTENCIAS;
   protected readonly tolerancias = TOLERANCIAS;
   protected readonly conductas = CONDUCTAS;
+
+  // --- Modo táctil (16/11/2026): la atención en cinco pestañas, todo lo que se elige con un toque.
+  /** La pestaña visible. Las otras quedan en el DOM, ocultas: lo escrito en ellas no se pierde. */
+  protected readonly pestanaActiva = signal<PestanaDeAtencion>('evaluacion');
+  protected readonly pestanas = computed<readonly PestanaInterna[]>(() => [
+    {
+      id: 'evaluacion',
+      etiqueta: 'Evaluación',
+      conDatos:
+        this.dolorEva() !== null ||
+        this.evolucion() !== null ||
+        this.dolorZona() !== '' ||
+        this.objetivoSesion() !== '',
+    },
+    { id: 'mediciones', etiqueta: 'Mediciones' },
+    { id: 'tratamiento', etiqueta: 'Tratamiento' },
+    { id: 'notas', etiqueta: 'Notas', conDatos: this.notas().trim() !== '' },
+    { id: 'cierre', etiqueta: 'Cierre', conDatos: this.asistencia() !== null },
+  ]);
+  protected readonly opcionesDeModo: readonly OpcionChip[] = [
+    { valor: GuardarEvaluacionModoEnum.RAPIDA, etiqueta: 'Sesión rápida' },
+    { valor: GuardarEvaluacionModoEnum.COMPLETA, etiqueta: 'Evaluación completa' },
+  ];
+  protected readonly opcionesDeZona = OPCIONES_DE_ZONA;
+  protected readonly opcionesDeLado: readonly OpcionChip[] = LATERALIDADES.map((opcion) => ({
+    valor: opcion.valor,
+    etiqueta: opcion.etiqueta.split(' (')[0],
+  }));
+  protected readonly opcionesDeEvolucion: readonly OpcionChip[] = EVOLUCIONES.map((opcion) => ({
+    ...opcion,
+    tono: TONO_DE_EVOLUCION[opcion.valor],
+  }));
   protected readonly instanteEnPalabras = instanteEnPalabras;
   protected readonly notasDelBorrador = notasDelBorrador;
 
@@ -411,7 +460,15 @@ export class AtencionPage {
 
   private temporizador: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   constructor() {
+    afterRenderEffect(() => {
+      this.pestanaActiva();
+      this.sesion();
+      this.error();
+      this.ajustarAltoDelPanel();
+    });
     effect(() => {
       // Depende de la ruta y del contexto: cambiar de sede invalida el turno, que es de la
       // sede anterior.
@@ -1101,8 +1158,81 @@ export class AtencionPage {
     this.evolucion.set(this.evolucion() === valor ? null : valor);
   }
 
+  /**
+   * Zonas elegidas (13/11/2026): se pueden marcar varias. El contrato guarda la zona como un solo
+   * texto, asi que viajan juntas separadas por coma ("Hombro, Rodilla").
+   */
+  protected readonly zonasElegidas = computed(() =>
+    this.dolorZona()
+      .split(',')
+      .map((zona) => zona.trim())
+      .filter((zona) => zona !== ''),
+  );
+
+  /** Lo escrito en "Otra": las zonas elegidas que no estan entre las sugeridas. */
+  protected readonly otraZona = computed(() =>
+    this.zonasElegidas()
+      .filter((zona) => !this.zonas.includes(zona))
+      .join(', '),
+  );
+
+  protected alternarZona(zona: string): void {
+    const elegidas = this.zonasElegidas();
+    const nuevas = elegidas.includes(zona)
+      ? elegidas.filter((elegida) => elegida !== zona)
+      : [...elegidas, zona];
+    this.dolorZona.set(nuevas.join(', '));
+  }
+
+  protected escribirOtraZona(texto: string): void {
+    const sugeridas = this.zonasElegidas().filter((zona) => this.zonas.includes(zona));
+    const otras = texto.trim() === '' ? [] : [texto.trim()];
+    this.dolorZona.set([...sugeridas, ...otras].join(', '));
+  }
+
   protected elegirLateralidad(valor: string): void {
     this.dolorLateralidad.set(comoLateralidad(valor));
+  }
+
+  /** Las zonas sugeridas elegidas; lo escrito en "Otra" va aparte. */
+  protected readonly zonasSugeridasElegidas = computed(() =>
+    this.zonasElegidas().filter((zona) => this.zonas.includes(zona)),
+  );
+
+  protected elegirZonas(valor: string | readonly string[] | null): void {
+    const sugeridas = Array.isArray(valor) ? valor : [];
+    const otra = this.otraZona();
+    this.dolorZona.set([...sugeridas, ...(otra ? [otra] : [])].join(', '));
+  }
+
+  protected elegirEvolucionDe(valor: string | readonly string[] | null): void {
+    this.evolucion.set(comoEvolucion(valor));
+  }
+
+  /** De un grupo de chips de elección única al texto que esperan los métodos de siempre. */
+  protected texto(valor: string | readonly string[] | null): string {
+    return typeof valor === 'string' ? valor : '';
+  }
+
+  /**
+   * El panel activo ocupa lo que queda de la ventana hasta el padding inferior del contenido: así la
+   * página no scrollea en una tablet. Se mide porque lo de arriba (caso, avisos, la gestión plegada)
+   * cambia de alto según la atención.
+   */
+  protected ajustarAltoDelPanel(): void {
+    const host = this.host.nativeElement;
+    const panel = host.querySelector<HTMLElement>('.atencion__panel:not([hidden])');
+    if (!panel) {
+      return;
+    }
+    const arriba = panel.getBoundingClientRect().top + window.scrollY;
+    const main = host.closest('main');
+    const abajo = main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0;
+    host.style.setProperty('--atencion-reservado', `${Math.ceil(arriba + abajo)}px`);
+  }
+
+  protected irACierre(): void {
+    this.pestanaActiva.set('cierre');
   }
 
   protected cambiarModo(completa: boolean): void {
@@ -1189,3 +1319,12 @@ function textoOAusente(valor: string): string | undefined {
 function enfocarDespuesDePintar(selector: string): void {
   setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus());
 }
+
+type PestanaDeAtencion = 'evaluacion' | 'mediciones' | 'tratamiento' | 'notas' | 'cierre';
+
+const TONO_DE_EVOLUCION: Record<GuardarEvaluacionEvolucionEnum, OpcionChip['tono']> = {
+  [GuardarEvaluacionEvolucionEnum.MEJOR]: 'mejor',
+  [GuardarEvaluacionEvolucionEnum.IGUAL]: 'igual',
+  [GuardarEvaluacionEvolucionEnum.PEOR]: 'peor',
+  [GuardarEvaluacionEvolucionEnum.SIN_REFERENCIA]: 'neutro',
+};

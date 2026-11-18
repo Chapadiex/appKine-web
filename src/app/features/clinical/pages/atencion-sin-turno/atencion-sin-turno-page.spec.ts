@@ -95,7 +95,7 @@ describe('AtencionSinTurnoPage', () => {
     await elegirPaciente(fixture, [{ id: 31, numeroCaso: 1, estado: 'ACTIVO' }]);
     elegir(fixture, '#sin-turno-oferta', '5');
     escribir(fixture, '#sin-turno-motivo', 'Control');
-    expect(texto(fixture)).toContain('obligatorio para esta oferta');
+    expect(texto(fixture)).toContain('obligatorio para esta actividad');
 
     apretar(fixture, 'Iniciar atención');
     expect(texto(fixture)).toContain('exige un caso clínico');
@@ -145,7 +145,7 @@ describe('AtencionSinTurnoPage', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('app-alerta')?.textContent,
     ).toContain('No pudimos iniciar la atención');
-    expect(texto(fixture)).toContain('no esta habilitado para prestar esta oferta');
+    expect(texto(fixture)).toContain('no esta habilitado para prestar esta actividad');
 
     escribir(fixture, '#sin-turno-motivo', 'Urgencia, otra');
     apretar(fixture, 'Iniciar atención');

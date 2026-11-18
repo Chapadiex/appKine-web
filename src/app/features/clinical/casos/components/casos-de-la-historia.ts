@@ -172,7 +172,7 @@ export class CasosDeLaHistoria {
    */
   protected nombreDeOferta(caso: CasoClinico): string {
     if (caso.ofertaNombre) return caso.ofertaNombre;
-    return caso.ofertaId === undefined ? 'Sin oferta' : `Oferta #${caso.ofertaId}`;
+    return caso.ofertaId === undefined ? 'Sin actividad' : `Actividad #${caso.ofertaId}`;
   }
 
   protected estadoDe(caso: CasoClinico): string {

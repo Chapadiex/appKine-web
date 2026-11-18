@@ -289,8 +289,10 @@ export class PlanPage {
 
   protected nombreDeOferta(ofertaId: number | undefined, snapshot?: string): string {
     if (snapshot) return snapshot;
-    if (ofertaId === undefined) return 'Sin oferta';
-    return this.ofertas().find((o) => o.id === ofertaId)?.nombreComercial ?? `Oferta #${ofertaId}`;
+    if (ofertaId === undefined) return 'Sin actividad';
+    return (
+      this.ofertas().find((o) => o.id === ofertaId)?.nombreComercial ?? `Actividad #${ofertaId}`
+    );
   }
 
   /** Vigencia de la autorizacion del item contra el dia de la sede, o `null` si no tiene. */

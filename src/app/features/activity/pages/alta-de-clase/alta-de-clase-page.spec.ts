@@ -81,7 +81,7 @@ describe('AltaDeClasePage', () => {
       const opciones = Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll('#clase-oferta option'),
       ).map((o) => o.textContent?.trim());
-      expect(opciones).toEqual(['Elegí una oferta', 'Pilates reformer']);
+      expect(opciones).toEqual(['Elegí una actividad', 'Pilates reformer']);
 
       escribir(fixture, '#clase-oferta', '42');
       httpMock.expectOne(HABILITACIONES).flush({
@@ -319,7 +319,7 @@ describe('AltaDeClasePage', () => {
     expect(destinos).toEqual(['/espacios', '/servicios/catalogo', '/servicios/ofertas']);
     (raiz.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(textoDe(fixture)).toContain('Elegí la oferta de la clase');
+    expect(textoDe(fixture)).toContain('Elegí la actividad de la clase');
     httpMock.expectNone(PROGRAMAR);
   });
 
@@ -376,7 +376,7 @@ describe('AltaDeClasePage', () => {
       .flush(null, { status: 500, statusText: 'Server Error' });
     await asentar(fixture);
     const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
-    expect(alerta?.textContent).toContain('No pudimos leer las ofertas grupales');
+    expect(alerta?.textContent).toContain('No pudimos leer las actividades grupales');
     expect(alerta?.textContent).toContain('No pudimos completar la operación');
     expect(alerta?.textContent).toContain('Reintentar');
   });

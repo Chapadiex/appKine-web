@@ -170,8 +170,8 @@
               <h2 id="titulo-avance">Avance</h2>
               <app-ayuda titulo="Avance">
                 <p>
-                  Lo realizado se cuenta de las sesiones cerradas del caso, por oferta: no se carga
-                  a mano.
+                  Lo realizado se cuenta de las sesiones cerradas del caso, por actividad: no se
+                  carga a mano.
                 </p>
               </app-ayuda>
             </div>
@@ -402,18 +402,18 @@
           <fieldset>
             <legend>Items a planificar</legend>
             <p class="ayuda">
-              Por oferta habilitada hoy en la sede. Lo autorizado es aparte de lo planificado: se
+              Por actividad habilitada hoy en la sede. Lo autorizado es aparte de lo planificado: se
               declara si ya se conoce.
             </p>
             @for (fila of filas(); track $index; let i = $index) {
               <div class="campo campo--6">
-                <label [for]="'item-oferta-' + i">Oferta del item {{ i + 1 }}</label>
+                <label [for]="'item-oferta-' + i">Actividad del item {{ i + 1 }}</label>
                 <select
                   [id]="'item-oferta-' + i"
                   [value]="fila.ofertaId ?? ''"
                   (change)="editarFila(i, 'ofertaId', $any($event.target).value)"
                 >
-                  <option value="">Elegí una oferta</option>
+                  <option value="">Elegí una actividad</option>
                   @for (oferta of elegibles(); track oferta.id) {
                     <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
                   }
@@ -454,7 +454,7 @@
             }
             @if (intentoGuardar() && filasInvalidas()) {
               <p class="campo__error" role="alert">
-                Cada item necesita una oferta y una cantidad planificada mayor que cero.
+                Cada item necesita una actividad y una cantidad planificada mayor que cero.
               </p>
             }
             <div class="acciones">

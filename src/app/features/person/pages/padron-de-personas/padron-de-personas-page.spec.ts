@@ -102,6 +102,10 @@ describe('PadronDePersonasPage', () => {
   });
 
   afterEach(() => {
+    // Los conteos del filtro de historia acompañan a cada carga; no son lo que se prueba.
+    httpMock
+      .match(esConteo())
+      .forEach((r) => r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 }));
     httpMock.verify();
   });
 
@@ -111,12 +115,11 @@ describe('PadronDePersonasPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     expect(filas.length).toBe(3);
-    expect((filas[0] as HTMLElement).textContent).toContain('Persona');
-    expect((filas[1] as HTMLElement).textContent).toContain('Paciente');
+    // La columna "Paciente" es un si/no con icono; el texto accesible dice cual de los dos.
+    expect((filas[0] as HTMLElement).textContent).toContain('Sin perfil de paciente');
+    expect((filas[1] as HTMLElement).textContent).toContain('Tiene perfil de paciente');
 
-    // El texto de la columna negativa importa tanto como el de la positiva: "Sin perfil" o
-    // "Pendiente" empujarian al operador a activarle un perfil clinico para "terminar" la ficha.
-    expect(texto).not.toContain('Sin perfil');
+    // "Pendiente" empujaria al operador a activarle un perfil clinico para "terminar" la ficha.
     expect(texto).not.toContain('Pendiente');
 
     // Y la nota de arriba explica la distincion una sola vez, en vez de repetirla por fila.
@@ -310,6 +313,8 @@ describe('PadronDePersonasPage', () => {
     abrir(fixture, 'Dar de alta una persona');
     escribir(fixture, '#alta-persona-apellido', 'Perez');
     escribir(fixture, '#alta-persona-nombre', 'Ana');
+    // El tipo arranca en DNI: para este caso hay que elegir "Sin documento" a mano.
+    elegir(fixture, '#alta-persona-tipo-documento', '');
     escribir(fixture, '#alta-persona-numero-documento', '30111222');
     enviar(fixture);
 
@@ -326,7 +331,7 @@ describe('PadronDePersonasPage', () => {
     elegir(fixture, '#padron-filtro-tipo', 'AMBAS');
     const filtrada = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
-        peticion.url === PERSONAS && peticion.params.get('perfil') === 'CON_PERFIL',
+        esListado()(peticion) && peticion.params.get('perfil') === 'CON_PERFIL',
     );
     expect(filtrada.request.params.get('actividad')).toBe('CON_ACTIVIDAD');
     // El estado sigue en su defecto: los dos filtros son independientes.
@@ -342,9 +347,7 @@ describe('PadronDePersonasPage', () => {
     (fixture.nativeElement as HTMLElement)
       .querySelector<HTMLButtonElement>('th[appOrdenable] button')!
       .click();
-    const ordenada = httpMock.expectOne(
-      (peticion: HttpRequest<unknown>) => peticion.url === PERSONAS,
-    );
+    const ordenada = httpMock.expectOne(esListado());
     expect(decodeURIComponent(ordenada.request.params.get('sort')!)).toBe('apellido,asc');
     expect(ordenada.request.params.get('perfil')).toBe('CON_PERFIL');
     expect(ordenada.request.params.get('actividad')).toBe('CON_ACTIVIDAD');
@@ -357,7 +360,7 @@ describe('PadronDePersonasPage', () => {
     escribirYCambiar(fixture, '#padron-busqueda', '30.111.222');
     const buscada = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
-        peticion.url === PERSONAS && peticion.params.get('q') === '30.111.222',
+        esListado()(peticion) && peticion.params.get('q') === '30.111.222',
     );
     // La pantalla NO saca los puntos: las claves normalizadas las calcula el backend, y hacerlo
     // tambien aca daria dos normalizaciones que se despegan la primera vez que una cambie.
@@ -381,7 +384,7 @@ describe('PadronDePersonasPage', () => {
     escribirYCambiar(fixture, '#padron-busqueda', 'OSDE123456');
     const buscada = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
-        peticion.url === PERSONAS && peticion.params.get('q') === 'OSDE123456',
+        esListado()(peticion) && peticion.params.get('q') === 'OSDE123456',
     );
     expect(buscada.request.params.keys()).not.toContain('afiliado');
     buscada.flush({ ...PAGINA, content: [SIN_PERFIL], totalElements: 1 });
@@ -483,7 +486,10 @@ describe('PadronDePersonasPage', () => {
 
     escribirYCambiar(fixture, '#padron-busqueda', 'Nadie');
     httpMock
-      .expectOne((peticion: HttpRequest<unknown>) => peticion.params.get('q') === 'Nadie')
+      .expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          esListado()(peticion) && peticion.params.get('q') === 'Nadie',
+      )
       .flush({ content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -669,9 +675,19 @@ describe('PadronDePersonasPage', () => {
     return fixture;
   }
 
+  /** El listado de la tabla: excluye los dos conteos del filtro de historia (`size=1`). */
   function esListado() {
     return (peticion: HttpRequest<unknown>) =>
-      peticion.method === 'GET' && peticion.url === PERSONAS;
+      peticion.method === 'GET' && peticion.url === PERSONAS && !esConteo()(peticion);
+  }
+
+  /** Los dos pedidos de una fila que cuentan personas con y sin historia clinica. */
+  function esConteo() {
+    return (peticion: HttpRequest<unknown>) =>
+      peticion.method === 'GET' &&
+      peticion.url === PERSONAS &&
+      peticion.params.get('size') === '1' &&
+      peticion.params.has('historia');
   }
 
   function esAlta() {

@@ -298,6 +298,14 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_INACTIVO = 'https://akine.app/problems/adjunto-clinico-inactivo',
 
+    HTTPS___AKINE_APP_PROBLEMS_DATO_DECLARADO_REVISADO = 'https://akine.app/problems/dato-declarado-revisado',
+
+    HTTPS___AKINE_APP_PROBLEMS_DATO_NO_DECLARADO = 'https://akine.app/problems/dato-no-declarado',
+
+    HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_YA_EN_HISTORIA = 'https://akine.app/problems/adjunto-ya-en-historia',
+
+    HTTPS___AKINE_APP_PROBLEMS_DATO_YA_EN_HISTORIA = 'https://akine.app/problems/dato-ya-en-historia',
+
     HTTPS___AKINE_APP_PROBLEMS_ADJUNTO_CLINICO_NO_DISPONIBLE = 'https://akine.app/problems/adjunto-clinico-no-disponible',
 
     HTTPS___AKINE_APP_PROBLEMS_CURSOR_INVALIDO = 'https://akine.app/problems/cursor-invalido',

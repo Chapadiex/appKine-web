@@ -75,7 +75,7 @@ const MENSAJE_REQUIERE_JUSTIFICACION =
 const MENSAJE_NO_ENCONTRADO = 'La clase, el participante o la derivación no existen en esta sede.';
 
 const MENSAJE_OFERTA_NO_CLINICA =
-  'Esta clase no genera registro clínico: su oferta no lo pide, así que sus participantes no tienen ' +
+  'Esta clase no genera registro clínico: su actividad no lo pide, así que sus participantes no tienen ' +
   'atención clínica que abrir.';
 
 const MENSAJE_SIN_ASISTENCIA =

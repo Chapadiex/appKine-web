@@ -815,8 +815,11 @@ describe('AgendaPage', () => {
       expect(raiz(fixture).querySelectorAll('.grilla__titulo').length).toBe(7);
       expect(raiz(fixture).querySelector('.grilla--semana')).not.toBeNull();
       expect(raiz(fixture).querySelector('.grilla__titulo--hoy')?.textContent).toContain('Hoy');
-      // En la semana la agrupación no aplica: no se ofrece.
-      expect(botones(fixture)).not.toContain('Boxes');
+      // En la semana la agrupación no aplica: ocupa su lugar pero queda invisible e inerte.
+      const por = raiz(fixture).querySelector('.agenda-barra__por');
+      expect(por?.classList).toContain('agenda-barra__por--oculto');
+      expect(por?.hasAttribute('inert')).toBe(true);
+      expect(por?.getAttribute('aria-hidden')).toBe('true');
 
       clic(fixture, 'Siguiente');
       const siguiente = leida();

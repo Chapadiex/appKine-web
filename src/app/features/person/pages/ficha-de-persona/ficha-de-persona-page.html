@@ -85,7 +85,7 @@
   -->
   <section class="tarjeta ficha-identidad" aria-labelledby="titulo-identidad">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-identidad">Datos administrativos</h2>
+      <h2 id="titulo-identidad"><app-icono nombre="perfil" />Datos administrativos</h2>
       <app-ayuda titulo="Persona y paciente">
         <p>{{ perfilEnPalabras(ficha) }}</p>
       </app-ayuda>
@@ -93,27 +93,27 @@
 
     <dl class="datos ficha-datos">
       <div>
-        <dt>Documento</dt>
+        <dt><app-icono nombre="documento" />Documento</dt>
         <dd>{{ documentoEnUnaLinea(ficha) }}</dd>
       </div>
       <div>
-        <dt>Fecha de nacimiento</dt>
+        <dt><app-icono nombre="calendario" />Fecha de nacimiento</dt>
         <dd>{{ fechaEnPalabras(ficha.fechaNacimiento) || 'Sin cargar' }}</dd>
       </div>
       <div>
-        <dt>Teléfono</dt>
+        <dt><app-icono nombre="telefono" />Teléfono</dt>
         <dd>{{ ficha.telefono || 'Sin cargar' }}</dd>
       </div>
       <div>
-        <dt>Correo de contacto</dt>
+        <dt><app-icono nombre="correo" />Correo de contacto</dt>
         <dd>{{ ficha.email || 'Sin cargar' }}</dd>
       </div>
       <div>
-        <dt>Estado de la ficha</dt>
+        <dt><app-icono nombre="exito" />Estado de la ficha</dt>
         <dd>{{ personaInactiva(ficha) ? 'Dada de baja' : 'Activa' }}</dd>
       </div>
       <div>
-        <dt>Perfil clínico</dt>
+        <dt><app-icono nombre="pacientes" />Perfil clínico</dt>
         <dd>{{ ficha.esPaciente ? 'Paciente' : 'Persona' }}</dd>
       </div>
       @if (ficha.notas) {
@@ -138,20 +138,24 @@
     @for (seccion of secciones(); track seccion.seccion) {
       <section class="tarjeta" aria-labelledby="titulo-seccion-{{ seccion.seccion }}">
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-seccion-{{ seccion.seccion }}">{{ nombreDeSeccion(seccion.seccion) }}</h2>
+          <h2 id="titulo-seccion-{{ seccion.seccion }}">
+            <app-icono [nombre]="iconoDeSeccion(seccion.seccion)" />{{
+              nombreDeSeccion(seccion.seccion)
+            }}
+          </h2>
           @if (seccion.seccion === seccionCoberturas) {
             <app-ayuda titulo="Coberturas en la ficha">
               <p>
                 El número de afiliado se muestra enmascarado; el completo está en Coberturas. Tener
-                una cobertura vigente no dice que aplique a una oferta concreta: eso se consulta en
-                Coberturas, eligiendo la oferta.
+                una cobertura vigente no dice que aplique a una actividad concreta: eso se consulta
+                en Coberturas, eligiendo la actividad.
               </p>
             </app-ayuda>
           }
         </div>
 
         @if (seccion.indicadores?.length) {
-          <dl class="datos">
+          <dl class="datos ficha-cifras">
             @for (indicador of seccion.indicadores; track indicador.clave) {
               <div>
                 <dt>{{ etiquetaDeIndicador(indicador) }}</dt>
@@ -167,10 +171,7 @@
             pantalla de coberturas: aca va lo que el mostrador necesita de un vistazo.
           -->
           @if (hitosDe(seccion).length === 0) {
-            <p class="estado">
-              No tiene coberturas vigentes hoy: se atiende como particular. Es un dato, no un error:
-              la sección se consultó y no hay ninguna vigente.
-            </p>
+            <p class="estado ficha-nota">Sin coberturas vigentes: se atiende como particular.</p>
           } @else {
             <ul class="lista-cobertura">
               @for (hito of hitosDe(seccion); track $index) {
@@ -202,11 +203,10 @@
           <p class="ficha-enlace">
             <a class="enlace" [routerLink]="rutaCoberturas()">Ver coberturas del paciente</a>
           </p>
+        } @else if (seccion.seccion === seccionTurnos) {
+          <!-- Turnos: la lista que sirve es la de proximos, con su "Ver"; los hitos la repetian. -->
         } @else if (hitosDe(seccion).length === 0) {
-          <p class="estado estado--vacio">
-            Sin movimientos registrados en esta sección. Es un dato, no un error: la sección se
-            consultó y no hay nada.
-          </p>
+          <p class="estado estado--vacio ficha-nota">Sin movimientos registrados.</p>
         } @else {
           <ul class="lista-hitos">
             @for (hito of hitosDe(seccion); track $index) {
@@ -217,12 +217,12 @@
 
         @if (seccion.seccion === seccionTurnos) {
           @if (proximos(); as lista) {
-            <h3 class="formulario__seccion">Próximos turnos</h3>
+            <h3 class="ficha-subtitulo">Próximos turnos</h3>
             @if ((lista.turnos ?? []).length === 0) {
               <p class="estado estado--vacio">Sin turnos próximos.</p>
             } @else {
               <ul class="lista-hitos" aria-label="Próximos turnos">
-                @for (fila of lista.turnos; track fila.turno?.id) {
+                @for (fila of (lista.turnos ?? []).slice(0, 3); track fila.turno?.id) {
                   <li class="proximo-turno">
                     <span>
                       <b>{{ cuandoEs(fila.turno?.inicio) }}</b>
@@ -243,6 +243,9 @@
                   </li>
                 }
               </ul>
+              @if ((lista.turnos ?? []).length > 3) {
+                <p class="ayuda ayuda--fija">Y {{ (lista.turnos ?? []).length - 3 }} más.</p>
+              }
             }
           } @else if (errorDeProximos()) {
             <h3 class="formulario__seccion">Próximos turnos</h3>
@@ -279,7 +282,9 @@
     <!-- Documentacion. El detalle vive en su propia pantalla; aca va el recuento y la entrada. -->
     <section class="tarjeta" aria-labelledby="titulo-documentacion">
       <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-        <h2 id="titulo-documentacion">Documentación administrativa</h2>
+        <h2 id="titulo-documentacion">
+          <app-icono nombre="contratacion" />Documentación administrativa
+        </h2>
         <app-ayuda titulo="Documentación administrativa">
           <p>
             Un documento adjunto <b>no reemplaza un dato cargado</b>: la foto de una credencial no
@@ -291,8 +296,11 @@
       @if (totalDeAdjuntos() === 0) {
         <p class="estado estado--vacio">Esta persona no tiene documentos cargados.</p>
       } @else {
-        <p>{{ totalDeAdjuntos() }} documento(s) cargado(s):</p>
-        <dl class="datos">
+        <dl class="datos ficha-cifras">
+          <div>
+            <dt>Documentos</dt>
+            <dd>{{ totalDeAdjuntos() }}</dd>
+          </div>
           @for (conteo of adjuntosPorCategoria(); track conteo.categoria) {
             <div>
               <dt>{{ nombreDeCategoria(conteo.categoria) }}</dt>

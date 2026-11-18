@@ -125,6 +125,14 @@ export const routes: Routes = [
     title: 'AKINE - Abrir una sede',
   },
   {
+    // Editar usa la misma pantalla de pasos que el alta (13/11/2026).
+    path: 'sedes/:sedeId/editar',
+    canActivate: [permissionGuard(PERMISO_CONSULTORIO_MANAGE)],
+    loadComponent: () =>
+      import('./pages/new-consultorio/new-consultorio-page').then((m) => m.NewConsultorioPage),
+    title: 'AKINE - Editar sede',
+  },
+  {
     path: 'sedes',
     loadComponent: () =>
       import('./pages/consultorios/consultorios-page').then((m) => m.ConsultoriosPage),
@@ -136,6 +144,15 @@ export const routes: Routes = [
     canActivate: [permissionGuard(PERMISO_TENANT_UPDATE)],
     loadComponent: () => import('./pages/marca/marca-page').then((m) => m.MarcaPage),
     title: 'AKINE - Marca del centro',
+  },
+  {
+    path: 'inteligencia-artificial',
+    canActivate: [permissionGuard(PERMISO_TENANT_UPDATE)],
+    loadComponent: () =>
+      import('./pages/inteligencia-artificial/inteligencia-artificial-page').then(
+        (m) => m.InteligenciaArtificialPage,
+      ),
+    title: 'AKINE - Inteligencia artificial',
   },
   {
     path: 'auditoria',

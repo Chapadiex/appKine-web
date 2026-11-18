@@ -25,7 +25,7 @@
 .agenda-nav__boton,
 .segmento button,
 .agenda-buscar input {
-  min-height: 2.5rem;
+  min-height: var(--alto-control);
   border: var(--borde-fino) solid var(--color-borde-control);
   background: var(--color-superficie);
   color: var(--color-texto);
@@ -51,6 +51,7 @@
 }
 
 .agenda-nav__boton {
+  /* En táctil crece la altura, no el ancho: a 375 px la barra no entra con botones de 48 px. */
   min-width: 2.5rem;
   border-radius: var(--radio-sm);
 }
@@ -74,7 +75,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--esp-4);
-  min-height: 2.5rem;
+  min-height: var(--alto-control);
   padding: 0 var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-sm);
@@ -694,4 +695,78 @@ button.mes__dia:hover {
   display: flex;
   flex-wrap: wrap;
   gap: var(--esp-2) var(--esp-4);
+}
+
+/*
+ * Barra quieta (13/11/2026): el buscador no cambia de ancho al pasar entre Dia, Semana y Mes.
+ * La fecha ocupa siempre el ancho de su rotulo mas largo ("16 de noviembre al 22 de noviembre
+ * de 2026") y la vista reserva el lugar de Profesionales/Boxes aunque solo se use en Dia.
+ */
+.agenda-fecha {
+  justify-content: space-between;
+  width: 14.75rem;
+}
+
+.agenda-fecha__rotulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-barra__por {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+/*
+ * Orden de la barra, como en Horario del profesional (13/11/2026): buscador de ancho fijo, Dia/
+ * Semana/Mes, fecha y, solo en Dia, Profesionales/Boxes. Lo que sobra queda antes de Filtros,
+ * asi que nada a la izquierda se mueve al cambiar de vista.
+ */
+:host ::ng-deep .filtros-barra__principal:has(.agenda-buscar) {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  max-width: 18rem;
+}
+
+:host ::ng-deep .agenda-barra .filtros-barra__boton {
+  margin-left: auto;
+}
+
+.agenda-barra__por--oculto {
+  visibility: hidden;
+}
+
+/*
+ * En pantalla ancha la barra no se parte en dos renglones: el buscador se achica hasta su minimo
+ * antes. Recien en una pantalla angosta (donde el periodo se elige distinto) vuelve a envolver.
+ */
+@media (min-width: 64rem) {
+  :host ::ng-deep .agenda-barra .filtros-barra__fila {
+    flex-wrap: nowrap;
+    column-gap: var(--esp-2);
+  }
+}
+
+/*
+ * Modo táctil (16/11/2026): el profesional toca su agenda con el dedo. Los controles de la barra
+ * ya miden --alto-control (48 px en táctil); los turnos conservan su alto por duración (un mínimo los encimaría), y la celda
+ * libre dice "Dar turno" siempre, porque sin mouse no hay hover que la descubra.
+ */
+@media (pointer: coarse) {
+  .grilla__celda-libre {
+    display: none;
+  }
+  .grilla__celda-dar {
+    display: inline;
+  }
+}
+
+:host-context(:root[data-puntero='tactil']) .grilla__celda-libre {
+  display: none;
+}
+
+:host-context(:root[data-puntero='tactil']) .grilla__celda-dar {
+  display: inline;
 }

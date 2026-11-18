@@ -70,6 +70,10 @@ export interface PersonaResponse {
      */
     telefono?: string;
     /**
+     * Si tiene historia clinica vigente en la organizacion. Solo lo informa la busqueda del padron; en las demas respuestas viaja null
+     */
+    tieneHistoriaClinica?: boolean;
+    /**
      * Tipo de documento, o null si no declaro documento
      */
     tipoDocumento?: PersonaResponseTipoDocumentoEnum;

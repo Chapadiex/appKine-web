@@ -63,7 +63,7 @@ interface FilaPractica {
 export class PracticasDeLaOfertaPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
   private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
     { etiqueta: 'Prácticas' },
   ]);
 
@@ -278,7 +278,7 @@ function activas(respuesta: PracticasDeOfertaResponse) {
 }
 
 const MENSAJE_SIN_VERSION =
-  'No pudimos leer la versión de la oferta, y sin ella no se puede guardar: mandar una inventada ' +
+  'No pudimos leer la versión de la actividad, y sin ella no se puede guardar: mandar una inventada ' +
   'pisaria la edicion de otra persona. Recarga las prácticas y volvé a intentar.';
 
 /**
@@ -286,5 +286,5 @@ const MENSAJE_SIN_VERSION =
  * oferta ya no existe, o una practica que se agrego no es visible para el centro.
  */
 const MENSAJE_NO_ENCONTRADO =
-  'No encontramos la oferta, o alguna de las prácticas que agregaste no es visible para este ' +
+  'No encontramos la actividad, o alguna de las prácticas que agregaste no es visible para este ' +
   'centro. Recarga las prácticas y volvé a armar la lista.';

@@ -32,6 +32,11 @@ import {
 import { RegistrarMedicion } from '../../../../api/generated/model/registrar-medicion';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
+import { NumeroConPasos } from '../../../../shared/components/numero-con-pasos/numero-con-pasos';
+import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
+import { TextoOpcional } from '../../../../shared/components/texto-opcional/texto-opcional';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -66,10 +71,21 @@ const CAUSAS_DE_LA_ATENCION = new Set(['version-vieja', 'sesion-cerrada', 'sesio
  * <p><b>Completitud informa y no gatea</b>: "4 de 18" no impide cerrar.
  */
 @Component({
-  imports: [Alerta, Ayuda, ColumnaOrdenable, EstadoVacio, PieDeTabla],
+  imports: [
+    Alerta,
+    Ayuda,
+    ColumnaOrdenable,
+    EstadoVacio,
+    Icono,
+    PieDeTabla,
+    Chips,
+    NumeroConPasos,
+    Segmentado,
+    TextoOpcional,
+  ],
   selector: 'app-mediciones-de-sesion',
   templateUrl: './mediciones-de-sesion.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', '../examen-tactil.css'],
 })
 export class MedicionesDeSesion {
   private readonly api = inject(ClinicalApi);
@@ -115,6 +131,43 @@ export class MedicionesDeSesion {
   protected readonly valorTexto = signal('');
   protected readonly valorSiNo = signal<boolean | null>(null);
   protected readonly nota = signal('');
+  /** El campo numérico tiene texto que no es número: no se registra hasta corregirlo. */
+  protected readonly valorInvalido = signal(false);
+  protected readonly numeroActual = computed(() => numeroDe(this.valorNumero()));
+
+  // --- Modo táctil (16/11/2026): elegir con un toque ------------------------------------
+  /** Las medidas como chips cuando son siete o menos; con más, `null` y queda la lista. */
+  protected readonly opcionesDeMedida = computed<readonly OpcionChip[] | null>(() => {
+    const definiciones = this.definiciones();
+    if (definiciones.length > 7) {
+      return null;
+    }
+    return definiciones
+      .filter((d) => d.id !== undefined)
+      .map((d) => ({
+        valor: String(d.id),
+        etiqueta: (d.name ?? 'Medida') + (d.unidad ? ` (${d.unidad})` : ''),
+      }));
+  });
+  protected readonly opcionesDeLado: readonly OpcionChip[] = LADOS_DE_MEDICION.map((o) => ({
+    valor: o.valor,
+    etiqueta: o.valor === 'IZQUIERDA' ? 'Izq' : o.valor === 'DERECHA' ? 'Der' : 'Sin lado',
+  }));
+  protected readonly opcionesSiNo: readonly OpcionChip[] = [
+    { valor: 'true', etiqueta: 'Positivo' },
+    { valor: 'false', etiqueta: 'Negativo' },
+  ];
+
+  protected textoDe(valor: string | readonly string[] | null): string {
+    return typeof valor === 'string' ? valor : '';
+  }
+
+  /** Enter en el campo del valor registra; en los botones −/+ no. */
+  protected enterEnValor(evento: Event): void {
+    if (evento.target instanceof HTMLInputElement) {
+      this.registrar();
+    }
+  }
 
   protected readonly definicion = computed(
     () => this.definiciones().find((d) => d.id === this.definicionId()) ?? null,
@@ -270,7 +323,8 @@ export class MedicionesDeSesion {
       return;
     }
 
-    const valor = this.valorParaEnviar(definicion);
+    const valor =
+      this.valorInvalido() && this.esNumerica() ? null : this.valorParaEnviar(definicion);
     if (valor === null) {
       this.aviso.set(
         this.esNumerica()
@@ -347,6 +401,7 @@ export class MedicionesDeSesion {
   }
 
   private limpiarValor(): void {
+    this.valorInvalido.set(false);
     this.valorNumero.set('');
     this.valorTexto.set('');
     this.valorSiNo.set(null);

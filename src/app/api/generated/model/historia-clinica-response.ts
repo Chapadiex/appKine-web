@@ -32,6 +32,10 @@ export interface HistoriaClinicaResponse {
      */
     conRelacionAsistencial?: boolean;
     /**
+     * Antecedentes y adjuntos declarados por el paciente que todavia no reviso un profesional (DP-47)
+     */
+    declaradosSinRevisar?: number;
+    /**
      * Asomo del timeline: los hechos clinicos mas recientes, sin contenido clinico
      */
     eventos?: Array<EventoClinicoResponse>;
