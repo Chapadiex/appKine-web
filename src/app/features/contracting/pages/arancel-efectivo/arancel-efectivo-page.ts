@@ -165,16 +165,16 @@ export class ArancelEfectivoPage {
       return null;
     }
     if (respuesta.ofertaId !== undefined && respuesta.ofertaId !== null) {
-      return `Arancel propio de la oferta ${this.nombreDeOferta(respuesta.ofertaId)}.`;
+      return `Arancel propio de la actividad ${this.nombreDeOferta(respuesta.ofertaId)}.`;
     }
     const consultada = this.ofertaConsultada();
     if (consultada !== null) {
       return (
-        `Arancel general del convenio: la oferta ${this.nombreDeOferta(consultada)} no tiene ` +
+        `Arancel general del convenio: la actividad ${this.nombreDeOferta(consultada)} no tiene ` +
         'precio propio para esta práctica, así que rige el general.'
       );
     }
-    return 'Arancel general del convenio: vale para cualquier oferta que no tenga precio propio.';
+    return 'Arancel general del convenio: vale para cualquier actividad que no tenga precio propio.';
   });
 
   protected readonly formulario = this.formBuilder.nonNullable.group({

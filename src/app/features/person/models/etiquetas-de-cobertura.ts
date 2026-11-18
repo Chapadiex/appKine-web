@@ -105,15 +105,15 @@ export function coberturaOperable(cobertura: CoberturaResponse): boolean {
 export function motivoDeNoAplicable(motivo: string | undefined): string {
   switch (motivo) {
     case 'OFERTA_NO_ADMITE_OBRA_SOCIAL':
-      return 'La oferta no admite obra social: se atiende como particular aunque el paciente tenga cobertura.';
+      return 'La actividad no admite obra social: se atiende como particular aunque el paciente tenga cobertura.';
     case 'OFERTA_SIN_PRACTICAS':
-      return 'La oferta no declara prácticas, así que no hay nada que facturarle al financiador.';
+      return 'La actividad no declara prácticas, así que no hay nada que facturarle al financiador.';
     case 'SIN_CONVENIO_VIGENTE':
       return 'El centro no tiene convenio vigente con este financiador y plan para ese día.';
     case 'SIN_ARANCEL_VIGENTE':
       return 'Hay convenio, pero sin arancel vigente para la práctica ese día.';
     default:
-      return 'No aplica a esta oferta.';
+      return 'No aplica a esta actividad.';
   }
 }
 

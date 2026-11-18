@@ -18,7 +18,7 @@ import {
   PERMISO_TURNO_MANAGE,
 } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { PersonApi } from '../../services/person-api';
@@ -156,6 +156,20 @@ export class FichaDePersonaPage {
   protected readonly perfilEnPalabras = perfilEnPalabras;
   protected readonly personaInactiva = personaInactiva;
   protected readonly nombreDeSeccion = nombreDeSeccion;
+
+  /** El icono del titulo de cada tarjeta del resumen. */
+  protected iconoDeSeccion(seccion: string | undefined): NombreDeIcono {
+    switch (seccion) {
+      case 'economia':
+        return 'economia';
+      case 'coberturas':
+        return 'contratacion';
+      case 'turnos':
+        return 'calendario';
+      default:
+        return 'info';
+    }
+  }
   protected readonly omisionEnPalabras = omisionEnPalabras;
   protected readonly etiquetaDeIndicador = etiquetaDeIndicador;
   protected readonly valorDeIndicador = valorDeIndicador;

@@ -241,7 +241,7 @@ export function traducirErrorEgreso(error: unknown): ErrorEgreso {
   if (error.status === 404) {
     return {
       mensaje:
-        'El egreso, el pago, la liquidación o la oferta elegida no existen, o no son de esta sede.',
+        'El egreso, el pago, la liquidación o la actividad elegida no existen, o no son de esta sede.',
       causa: 'no-encontrado',
       recargar: false,
     };

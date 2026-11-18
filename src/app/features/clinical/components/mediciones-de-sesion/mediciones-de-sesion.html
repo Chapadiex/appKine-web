@@ -11,14 +11,13 @@
         eso es lo que se mide.
       </p>
     </app-ayuda>
+    <!-- El dato a la vista, en la fila del titulo y al final de la tarjeta (13/11/2026). -->
+    @if (cubiertas() !== null && disponibles() !== null) {
+      <p class="ayuda ayuda--fija cuenta-de-medidas">
+        <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas tomadas
+      </p>
+    }
   </div>
-
-  <!-- El dato queda a la vista; la explicacion, detras del "?" (regla del plan §3.2). -->
-  @if (cubiertas() !== null && disponibles() !== null) {
-    <p class="ayuda ayuda--fija">
-      <b>{{ cubiertas() }} de {{ disponibles() }}</b> medidas del catálogo tomadas en esta sesión.
-    </p>
-  }
 
   @if (cargando()) {
     <p class="estado estado--cargando">Leyendo las mediciones…</p>
@@ -40,6 +39,160 @@
     }
   }
 
+  @if (editable()) {
+    <fieldset class="grupo-plano">
+      <legend>Registrar una medición</legend>
+
+      @if (error(); as problema) {
+        @if (origenDelError() === 'registrar') {
+          <app-alerta tipo="error" titulo="No pudimos registrar la medición">
+            <p>{{ problema.mensaje }}</p>
+          </app-alerta>
+        }
+      }
+
+      @if (catalogoSinPermiso()) {
+        <p class="estado estado--error" role="status">
+          No tenés permiso para consultar el catálogo de medidas, así que no podés registrar una
+          medición nueva. Pedíselo a quien administra el centro.
+        </p>
+      } @else if (definiciones().length === 0) {
+        <p class="ayuda">
+          El catálogo de medidas está vacío: las definiciones las carga quien administra el centro.
+        </p>
+      } @else {
+        <!--
+          Carga en una sola fila (13/11/2026): medida, lado con un clic, valor y como se tomo. Enter
+          en el valor registra. El rango va como pista dentro del campo.
+        -->
+        <div class="carga-medicion">
+          @if (opcionesDeMedida(); as opciones) {
+            <!-- Modo táctil: con siete medidas o menos se elige con un toque; con más, la lista. -->
+            <fieldset class="carga-medicion__medida carga-medicion__medida--chips">
+              <legend>Medida</legend>
+              <app-chips
+                id="medicion-definicion"
+                etiqueta="Medida"
+                [opciones]="opciones"
+                [deseleccionable]="false"
+                [valor]="definicionId() === null ? null : '' + definicionId()"
+                (valorChange)="elegirDefinicion(textoDe($event))"
+              />
+            </fieldset>
+          } @else {
+            <div class="campo carga-medicion__medida">
+              <label for="medicion-definicion">Medida</label>
+              <select
+                id="medicion-definicion"
+                name="medicion-definicion"
+                (change)="elegirDefinicion($any($event.target).value)"
+              >
+                <option value="" [selected]="definicionId() === null">Elegí una medida</option>
+                @for (opcion of definiciones(); track opcion.id) {
+                  <option [value]="opcion.id" [selected]="definicionId() === opcion.id">
+                    {{ opcion.name }}{{ opcion.unidad ? ' (' + opcion.unidad + ')' : '' }}
+                  </option>
+                }
+              </select>
+            </div>
+          }
+
+          <fieldset class="carga-medicion__lado">
+            <legend>Lado</legend>
+            <app-chips
+              id="medicion-lado"
+              etiqueta="Lado"
+              [opciones]="opcionesDeLado"
+              [deseleccionable]="false"
+              [valor]="lado()"
+              (valorChange)="elegirLado(textoDe($event))"
+            />
+          </fieldset>
+
+          @if (definicion(); as elegida) {
+            @if (esNumerica()) {
+              <div class="campo carga-medicion__valor">
+                <label for="medicion-valor">
+                  Valor{{ elegida.unidad ? ' (' + elegida.unidad + ')' : '' }}
+                </label>
+                <app-numero-con-pasos
+                  idCampo="medicion-valor"
+                  [etiqueta]="elegida.name ?? 'Valor'"
+                  [decimales]="1"
+                  [min]="elegida.minimo ?? null"
+                  [max]="elegida.maximo ?? null"
+                  [valor]="numeroActual()"
+                  [attr.title]="rango()"
+                  (valorChange)="valorNumero.set($event === null ? '' : '' + $event)"
+                  (invalido)="valorInvalido.set($event)"
+                  (keydown.enter)="enterEnValor($event)"
+                />
+              </div>
+            } @else if (elegida.tipo === Tipo.BOOLEANO) {
+              <fieldset class="carga-medicion__lado">
+                <legend>Resultado</legend>
+                <app-segmentado
+                  id="medicion-valor"
+                  etiqueta="Resultado"
+                  [opciones]="opcionesSiNo"
+                  [valor]="valorSiNo() === null ? null : '' + valorSiNo()"
+                  (valorChange)="elegirSiNo($event === 'true')"
+                />
+              </fieldset>
+            } @else {
+              <div class="campo carga-medicion__texto">
+                <label for="medicion-valor">Hallazgo</label>
+                <input
+                  id="medicion-valor"
+                  name="medicion-valor"
+                  type="text"
+                  maxlength="500"
+                  [attr.aria-describedby]="aviso() ? 'medicion-falta' : null"
+                  [attr.aria-invalid]="aviso() ? 'true' : null"
+                  [value]="valorTexto()"
+                  (input)="valorTexto.set($any($event.target).value)"
+                  (keydown.enter)="registrar()"
+                />
+              </div>
+            }
+          } @else {
+            <div class="campo carga-medicion__valor">
+              <label for="medicion-valor">Valor</label>
+              <input id="medicion-valor" type="text" disabled placeholder="—" />
+            </div>
+          }
+
+          <!-- Siempre en su lugar: sin medida elegida queda deshabilitado y la fila no salta. -->
+          <app-texto-opcional
+            class="campo carga-medicion__nota"
+            idCampo="medicion-nota"
+            etiqueta="Cómo se tomó"
+            [deshabilitado]="definicionId() === null"
+            [valor]="nota()"
+            (valorChange)="nota.set($event)"
+            (keydown.enter)="registrar()"
+          />
+
+          <button
+            type="button"
+            class="boton carga-medicion__boton"
+            title="Registrar la medición (o Enter en el valor)"
+            [disabled]="guardando() || definicionId() === null"
+            (click)="registrar()"
+          >
+            <app-icono nombre="agregar" /><span class="visualmente-oculto"
+              >Registrar la medición</span
+            >
+          </button>
+        </div>
+
+        @if (aviso()) {
+          <p class="campo__error" id="medicion-falta">{{ aviso() }}</p>
+        }
+      }
+    </fieldset>
+  }
+
   @if (comparacion() !== null) {
     <p class="ayuda ayuda--fija">{{ baseline() }}</p>
 
@@ -50,7 +203,7 @@
       />
     } @else {
       <div class="tabla-scroll" role="region" aria-label="Mediciones de la sesión" tabindex="0">
-        <table class="tabla">
+        <table class="tabla tabla--mediciones">
           <caption class="visualmente-oculto">
             Mediciones de esta sesión contra la sesión anterior
           </caption>
@@ -75,7 +228,16 @@
                 <th scope="row">{{ medida.nombre }}</th>
                 <td>{{ ladoLegible(medida.lateralidad) }}</td>
                 <td>{{ valorLegible(medida.anterior) || 'Sin dato' }}</td>
-                <td>{{ valorLegible(medida.actual) || 'Todavia no' }}</td>
+                <td>
+                  <span class="valor-con-nota">
+                    {{ valorLegible(medida.actual) || 'Todavía no' }}
+                    @if (medida.actual?.nota; as nota) {
+                      <app-ayuda titulo="Cómo se tomó" icono="info" class="nota-de-medicion">
+                        <p>{{ nota }}</p>
+                      </app-ayuda>
+                    }
+                  </span>
+                </td>
                 <td>
                   @if (medida.unidadesDifieren) {
                     Unidades distintas: no se resta
@@ -117,154 +279,5 @@
       </div>
       <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de mediciones" />
     }
-  }
-
-  @if (editable()) {
-    <fieldset class="grupo-plano">
-      <legend>Registrar una medición</legend>
-
-      @if (error(); as problema) {
-        @if (origenDelError() === 'registrar') {
-          <app-alerta tipo="error" titulo="No pudimos registrar la medición">
-            <p>{{ problema.mensaje }}</p>
-          </app-alerta>
-        }
-      }
-
-      @if (catalogoSinPermiso()) {
-        <p class="estado estado--error" role="status">
-          No tenés permiso para consultar el catálogo de medidas, así que no podés registrar una
-          medición nueva. Pedíselo a quien administra el centro.
-        </p>
-      } @else if (definiciones().length === 0) {
-        <p class="ayuda">
-          El catálogo de medidas está vacío: las definiciones las carga quien administra el centro.
-        </p>
-      } @else {
-        <!-- Grilla de 12 columnas (UX-14): medida y lado; despues, el valor y como se tomo. -->
-        <div class="grilla-12">
-          <div class="campo campo--4">
-            <label for="medicion-definicion">Medida</label>
-            <select
-              id="medicion-definicion"
-              name="medicion-definicion"
-              (change)="elegirDefinicion($any($event.target).value)"
-            >
-              <option value="" [selected]="definicionId() === null">Elegí una medida</option>
-              @for (opcion of definiciones(); track opcion.id) {
-                <option [value]="opcion.id" [selected]="definicionId() === opcion.id">
-                  {{ opcion.name }}{{ opcion.unidad ? ' (' + opcion.unidad + ')' : '' }}
-                </option>
-              }
-            </select>
-          </div>
-
-          <div class="campo campo--3">
-            <label for="medicion-lado">Lado</label>
-            <select
-              id="medicion-lado"
-              name="medicion-lado"
-              aria-describedby="ayuda-medicion-lado"
-              (change)="elegirLado($any($event.target).value)"
-            >
-              @for (opcion of lados; track opcion.valor) {
-                <option [value]="opcion.valor" [selected]="lado() === opcion.valor">
-                  {{ opcion.etiqueta }}
-                </option>
-              }
-            </select>
-            <p id="ayuda-medicion-lado" class="ayuda">Los dos lados se registran por separado.</p>
-          </div>
-
-          @if (definicion(); as elegida) {
-            <!-- El valor y como se tomo, en la misma fila: son la misma medicion. -->
-            @if (esNumerica()) {
-              <div class="campo campo--3">
-                <label for="medicion-valor">
-                  Valor{{ elegida.unidad ? ' en ' + elegida.unidad : '' }}
-                </label>
-                <input
-                  id="medicion-valor"
-                  name="medicion-valor"
-                  type="text"
-                  inputmode="decimal"
-                  [attr.aria-describedby]="
-                    aviso() ? 'medicion-falta ayuda-medicion-valor' : 'ayuda-medicion-valor'
-                  "
-                  [attr.aria-invalid]="aviso() ? 'true' : null"
-                  [value]="valorNumero()"
-                  (input)="valorNumero.set($any($event.target).value)"
-                />
-                <p id="ayuda-medicion-valor" class="ayuda ayuda--fija">{{ rango() }}</p>
-              </div>
-            } @else if (elegida.tipo === Tipo.BOOLEANO) {
-              <fieldset class="grupo-plano">
-                <legend>Presente</legend>
-                <label class="opcion-radio">
-                  <input
-                    id="medicion-valor"
-                    type="radio"
-                    name="medicion-si-no"
-                    [checked]="valorSiNo() === true"
-                    (change)="elegirSiNo(true)"
-                  />
-                  Sí
-                </label>
-                <label class="opcion-radio">
-                  <input
-                    type="radio"
-                    name="medicion-si-no"
-                    [checked]="valorSiNo() === false"
-                    (change)="elegirSiNo(false)"
-                  />
-                  No
-                </label>
-              </fieldset>
-            } @else {
-              <div class="campo campo--6">
-                <label for="medicion-valor">Hallazgo</label>
-                <input
-                  id="medicion-valor"
-                  name="medicion-valor"
-                  type="text"
-                  maxlength="500"
-                  [attr.aria-describedby]="aviso() ? 'medicion-falta' : null"
-                  [attr.aria-invalid]="aviso() ? 'true' : null"
-                  [value]="valorTexto()"
-                  (input)="valorTexto.set($any($event.target).value)"
-                />
-              </div>
-            }
-
-            <div class="campo campo--6">
-              <label for="medicion-nota">
-                Cómo se tomó <span class="campo__opcional">(opcional)</span>
-              </label>
-              <input
-                id="medicion-nota"
-                name="medicion-nota"
-                type="text"
-                maxlength="500"
-                aria-describedby="ayuda-medicion-nota"
-                [value]="nota()"
-                (input)="nota.set($any($event.target).value)"
-              />
-              <p id="ayuda-medicion-nota" class="ayuda">
-                No reemplaza al valor y no entra en ninguna comparación.
-              </p>
-            </div>
-          }
-        </div>
-
-        @if (aviso()) {
-          <p class="campo__error" id="medicion-falta">{{ aviso() }}</p>
-        }
-        <div class="acciones">
-          <button type="button" class="boton" [disabled]="guardando()" (click)="registrar()">
-            Registrar la medición
-          </button>
-        </div>
-      }
-    </fieldset>
   }
 </section>

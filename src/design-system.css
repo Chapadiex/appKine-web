@@ -163,6 +163,18 @@
   --color-peligro: #b91c1c;
   --color-peligro-fondo: #fee2e2;
   --color-peligro-texto: #7f1d1d;
+  /*
+   * Amarillo "encendido" para lo elegido en una escala (EVA, evolucion): el texto de aviso como
+   * relleno daba un marron. Mismo valor en los dos temas; su texto da 9,7:1 sobre el relleno.
+   */
+  --color-aviso-vivo: #facc15;
+  --color-aviso-sobre-vivo: #422006;
+  --color-exito-vivo: #4ade80;
+  --color-exito-sobre-vivo: #052e16;
+  --color-peligro-vivo: #f87171;
+  --color-peligro-sobre-vivo: #450a0a;
+  --color-neutro-vivo: #cbd5e1;
+  --color-neutro-sobre-vivo: #0f172a;
   --color-info: #2563eb;
   --color-info-fondo: #dbeafe;
   --color-info-texto: #1e3a8a;
@@ -240,8 +252,33 @@
      fila de una tabla. Los anchos de campo los da la grilla de 12 columnas, no un numero suelto. */
   --alto-control: 2.5rem;
   --alto-control-chico: 2rem;
+  /* Lo que se elige con un toque (chip, segmento, valor de escala, +/-) y el aire entre dos de
+     ellos. Con mouse son compactos; en una tablet los agranda el bloque tactil de abajo. */
+  --alto-tocable: 2rem;
+  --hueco-tocable: var(--esp-3);
   /* Selector de contexto en una barra (profesional, sede): ancho de un nombre, no de la fila. */
   --ancho-selector: 22rem;
+}
+
+/*
+ * Modo tactil. El profesional carga con el dedo en una tablet: todo control mide al menos 44 px
+ * y hay aire entre dos blancos. Lo activa el puntero grueso del dispositivo; `data-puntero` es la
+ * llave para verlo en un escritorio. Solo medidas: los colores no cambian.
+ */
+@media (pointer: coarse) {
+  :root {
+    --alto-control: 3rem;
+    --alto-control-chico: 2.75rem;
+    --alto-tocable: 3rem;
+    --hueco-tocable: var(--esp-5);
+  }
+}
+
+:root[data-puntero='tactil'] {
+  --alto-control: 3rem;
+  --alto-control-chico: 2.75rem;
+  --alto-tocable: 3rem;
+  --hueco-tocable: var(--esp-5);
 }
 
 /*

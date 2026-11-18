@@ -1,15 +1,16 @@
 <app-cabecera-de-pagina titulo="Programar clase">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Una clase es un evento grupal único sobre una oferta grupal, con su cupo. No genera un turno
-      por persona: las inscripciones se hacen después, desde el detalle de la clase. El box se puede
-      elegir; si no se elige y la oferta lo necesita, el sistema toma uno libre.
+      Una clase es un evento grupal único de una actividad, con su cupo. No genera un turno por
+      persona: las inscripciones se hacen después, desde el detalle de la clase. El box se puede
+      elegir; si no se elige y la actividad lo necesita, el sistema toma uno libre.
     </p>
     <p>
       <b>Todas las semanas</b> programa la misma clase en los días elegidos, entre la fecha desde y
       la hasta. Cada fecha se revisa como una clase suelta: si un día cae feriado o el box está
       ocupado, ese día no se programa y te decimos por qué; los demás sí.
     </p>
+    <p>Fechas y horas van en la zona de la sede.</p>
   </app-ayuda>
 </app-cabecera-de-pagina>
 
@@ -74,9 +75,9 @@
   }
 
   @if (ofertas() === null) {
-    <p class="estado estado--cargando" aria-live="polite">Leyendo las ofertas grupales…</p>
+    <p class="estado estado--cargando" aria-live="polite">Leyendo las actividades grupales…</p>
   } @else if (errorDeOfertas(); as fallo) {
-    <app-alerta tipo="error" titulo="No pudimos leer las ofertas grupales">
+    <app-alerta tipo="error" titulo="No pudimos leer las actividades grupales">
       <p>{{ fallo.mensaje }}</p>
       <p class="alerta__acciones">
         @if (fallo.accion === 'elegir-contexto') {
@@ -98,8 +99,8 @@
           grupal, por ejemplo Yoga.
         </li>
         <li>
-          <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">La oferta de la sede</a>: ese servicio publicado
-          acá, con quiénes lo dictan.
+          <a [routerLink]="RUTA_OFERTAS_DE_LA_SEDE">La actividad en la sede</a>: ese servicio
+          publicado acá, con quiénes lo dictan.
         </li>
       </ol>
     </app-alerta>
@@ -114,7 +115,7 @@
     Actividad
   </h2>
   <div class="campo" [class.campo--4]="exigeProfesional()" [class.campo--6]="!exigeProfesional()">
-    <label for="clase-oferta">Oferta grupal</label>
+    <label for="clase-oferta">Actividad</label>
     <select
       id="clase-oferta"
       formControlName="ofertaId"
@@ -127,13 +128,13 @@
             : null
       "
     >
-      <option value="">Elegí una oferta</option>
+      <option value="">Elegí una actividad</option>
       @for (oferta of ofertas() ?? []; track oferta.id) {
         <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
       }
     </select>
     @if (invalido('ofertaId')) {
-      <p class="campo__error" id="clase-oferta-error">Elegí la oferta de la clase.</p>
+      <p class="campo__error" id="clase-oferta-error">Elegí la actividad de la clase.</p>
     }
     <p class="ayuda ayuda--fija">
       ¿No está la actividad?
@@ -155,22 +156,21 @@
           <option [value]="profesional.membershipId">{{ profesional.nombre }}</option>
         }
       </select>
-      <p class="ayuda">Tiene que estar habilitado y atender en ese horario.</p>
+      <p class="ayuda">Tiene que atender en ese horario.</p>
       @if (ofertaElegida(); as oferta) {
         <p class="ayuda ayuda--fija">
-          <a [routerLink]="rutaDeHabilitaciones(oferta.id)">Elegir quiénes dictan esta oferta</a> ·
           <a [routerLink]="RUTA_HORARIOS">Cargar su horario</a>
         </p>
       }
     </div>
   }
 
-  <!-- La oferta no admite clases (no es grupal, esta de baja o fuera de vigencia). -->
+  <!-- La actividad no admite clases (no es grupal, esta de baja o fuera de vigencia). -->
   @if (conflicto() === 'oferta') {
     <app-alerta
       class="campo--ancho"
       tipo="advertencia"
-      titulo="Esa oferta no admite clases"
+      titulo="Esa actividad no admite clases"
       id="clase-conflicto-oferta"
     >
       <p>{{ error()?.mensaje }}</p>
@@ -185,7 +185,7 @@
     Cuándo
   </h2>
   @if (modo() === 'semanal') {
-    <div class="campo campo--ancho">
+    <div class="campo campo--4 campo--dias">
       <p class="campo__rotulo" id="clase-dias-rotulo">Días de la semana</p>
       <div
         class="pastillas"
@@ -313,7 +313,7 @@
       [attr.aria-describedby]="descripcionDeCapacidad()"
     />
     <p class="ayuda" id="clase-capacidad-ayuda">
-      No puede superar la capacidad de la oferta ni la del box.
+      No puede superar la capacidad de la actividad ni la del box.
     </p>
     @if (invalido('capacidad')) {
       <p class="campo__error" id="clase-capacidad-error">El cupo es de 1 en adelante.</p>
@@ -354,7 +354,7 @@
     </div>
   }
 
-  <!-- El cupo no entra en la oferta o en el box, o queda por debajo de los ya inscriptos. -->
+  <!-- El cupo no entra en la actividad o en el box, o queda por debajo de los ya inscriptos. -->
   @if (conflicto() === 'cupo') {
     <app-alerta
       class="campo--ancho"
@@ -375,11 +375,9 @@
           <b>{{ r.fechas }} {{ r.fechas === 1 ? 'fecha' : 'fechas' }}:</b>
         }
         {{ r.texto }}
-        <span class="resumen-de-clase__zona">Fecha y horas en la zona de la sede.</span>
+        <span class="resumen-de-clase__zona">· Fecha y horas en la zona de la sede.</span>
       </span>
     </p>
-  } @else {
-    <p class="ayuda ayuda--fija">Fecha y horas en la zona de la sede.</p>
   }
 
   <!-- La principal primero en el DOM: la regla global la deja en el borde derecho. -->

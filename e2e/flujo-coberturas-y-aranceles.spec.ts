@@ -98,13 +98,13 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     // --- 3. Coberturas del paciente, por oferta ----------------------------------------------
     await coberturas.getByRole('link', { name: 'Ver coberturas del paciente' }).click();
     await expect(page).toHaveURL(new RegExp(`/pacientes/${persona.id}/coberturas$`));
-    await page.getByRole('button', { name: 'Consultar por oferta' }).click();
+    await page.getByRole('button', { name: 'Consultar por actividad' }).click();
     const resolucion = page.waitForResponse(
       (r) =>
         new URL(r.url()).pathname.endsWith('/cobertura-aplicable') &&
         new URL(r.url()).searchParams.get('ofertaId') === String(oferta.id),
     );
-    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
+    await page.getByLabel('Actividad', { exact: true }).selectOption({ label: oferta.nombre });
     expect((await resolucion).status()).toBe(200);
     await expect(
       page.getByText(`Sugerencia: atender con cobertura — ${financiador.nombre}`),

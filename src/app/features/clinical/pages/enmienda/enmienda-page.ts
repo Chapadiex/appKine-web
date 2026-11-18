@@ -110,7 +110,7 @@ interface MedicionEnEdicion {
   selector: 'app-enmienda-page',
   imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './enmienda-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', './enmienda.css'],
 })
 export class EnmiendaPage {
   /** Ruta de navegacion de la barra superior. */

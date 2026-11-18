@@ -83,7 +83,7 @@ const MENSAJE_LIMITE_SIN_PLAZO =
   'Demasiados intentos. Espera un momento antes de volver a intentar.';
 
 const MENSAJE_SIN_CONTEXTO =
-  'Las ofertas son de una sede concreta, así que hay que saber en cual estas trabajando. Eligi ' +
+  'Las actividades son de una sede concreta, así que hay que saber en cual estas trabajando. Eligi ' +
   'un consultorio y volvé a entrar. Tu sesión sigue abierta.';
 
 /**
@@ -98,17 +98,17 @@ const MENSAJE_SIN_CONTEXTO =
 const MENSAJE_SIN_ROL_DE_PLATAFORMA =
   'No tenés permiso para cambiar este servicio. Los servicios de AKINE los administra la ' +
   'plataforma; los de tu centro, quien tenga permiso para administrar su catálogo. Podés seguir ' +
-  'consultándolo, y las ofertas de la sede definen cómo se presta cada servicio.';
+  'consultándolo, y las actividades de la sede definen cómo se presta cada servicio.';
 
 const MENSAJE_SIN_PERMISO =
-  'No podés modificar las ofertas de esta sede: hace falta administrarla. Pediselo a quien la ' +
+  'No podés modificar las actividades de esta sede: hace falta administrarla. Pediselo a quien la ' +
   'administra. Consultarlas si podés, y por eso el listado se sigue viendo.';
 
 const MENSAJE_NO_ENCONTRADO_SERVICIO =
   'Ese servicio ya no existe en el catalogo. Recarga el listado para ver los que hay ahora.';
 
 const MENSAJE_NO_ENCONTRADO_OFERTA =
-  'Esa oferta ya no existe, o no es de esta sede. Recarga el listado para ver las que hay ahora.';
+  'Esa actividad ya no existe, o no es de esta sede. Recarga el listado para ver las que hay ahora.';
 
 /**
  * Concurrencia optimista.
@@ -133,7 +133,7 @@ const MENSAJE_SUSCRIPCION_SUSPENDIDA =
  * nuevo, no editar el importe, que no se edita.
  */
 const MENSAJE_PRECIO_SOLAPADO =
-  'Ya hay otro precio particular activo de esta oferta que cubre alguno de esos días, y dos ' +
+  'Ya hay otro precio particular activo de esta actividad que cubre alguno de esos días, y dos ' +
   'precios no pueden pisarse. Para subir un precio, cerrale la vigencia al actual el día anterior ' +
   'y carga el nuevo desde el día siguiente.';
 
@@ -142,7 +142,7 @@ const MENSAJE_PRECIO_INACTIVO =
   'su estado actual y, si hace falta, carga otro.';
 
 const MENSAJE_HONORARIO_SOLAPADO =
-  'Ya hay otra tarifa de honorario activa de esta oferta que cubre alguno de esos días, y dos ' +
+  'Ya hay otra tarifa de honorario activa de esta actividad que cubre alguno de esos días, y dos ' +
   'tarifas no pueden pisarse. Para cambiarla, cerrale la vigencia a la actual el día anterior y ' +
   'carga la nueva desde el día siguiente.';
 
@@ -152,14 +152,14 @@ const MENSAJE_HONORARIO_INACTIVO =
 
 const MENSAJE_PRACTICA_NO_UTILIZABLE =
   'Alguna de las prácticas que agregaste esta dada de baja o fuera de vigencia en el catalogo, ' +
-  'así que no se puede sumar a la oferta. Sacala de la lista y volvé a guardar. Las que la oferta ' +
+  'así que no se puede sumar a la actividad. Sacala de la lista y volvé a guardar. Las que la actividad ' +
   'ya tenia no se revalidan: siguen valiendo aunque el catalogo las haya dado de baja.';
 
 const MENSAJE_OFERTA_INACTIVA =
-  'Esta oferta esta dada de baja, así que no admite cambios. Volvé al listado de ofertas de la sede.';
+  'Esta actividad esta dada de baja, así que no admite cambios. Volvé al listado de actividades de la sede.';
 
 const MENSAJE_CONSULTORIO_NO_OPERABLE =
-  'La sede no esta operable en este momento, así que no se pueden cambiar sus ofertas.';
+  'La sede no esta operable en este momento, así que no se pueden cambiar sus actividades.';
 
 const MENSAJE_SERVICIO_CODIGO_EN_USO =
   'Ya hay un servicio vigente con ese código en el catálogo. Usá otro código: el de un servicio ' +
@@ -170,11 +170,11 @@ const MENSAJE_SERVICIO_NOMBRE_EN_USO =
   'mayúsculas ni acentos). Elegí otro nombre o editá el que ya existe.';
 
 const MENSAJE_SERVICIO_INACTIVO =
-  'Ese servicio está dado de baja en el catálogo: no admite ofertas nuevas ni cambios. Las ' +
-  'ofertas que ya lo prestaban siguen operando. Recargá el listado para ver los vigentes.';
+  'Ese servicio está dado de baja en el catálogo: no admite actividades nuevas ni cambios. Las ' +
+  'actividades que ya lo prestaban siguen operando. Recargá el listado para ver los vigentes.';
 
 const MENSAJE_OFERTA_YA_INACTIVA =
-  'Esa oferta ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
+  'Esa actividad ya estaba dada de baja. No hicimos nada: el estado que buscabas ya es el que hay.';
 
 const MENSAJE_CONFLICTO =
   'El servidor rechazo el cambio por un conflicto con lo que ya hay guardado. Recarga el listado ' +

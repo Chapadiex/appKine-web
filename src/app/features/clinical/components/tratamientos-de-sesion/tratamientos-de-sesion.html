@@ -29,111 +29,6 @@
     }
   }
 
-  @if (!cargando() && tratamientos().length === 0) {
-    <app-estado-vacio
-      titulo="Todavía no hay tratamientos registrados en esta sesión"
-      [texto]="editable() ? 'Registrá el primero con el formulario de abajo.' : null"
-    />
-  }
-
-  @if (tratamientos().length > 0) {
-    <ol class="lista-tratamientos">
-      @for (tratamiento of tratamientos(); track tratamiento.id) {
-        <li class="tratamiento">
-          <p class="tratamiento__titulo">
-            <b>{{ tratamiento.orden }}. {{ tratamiento.practicaNombre }}</b>
-            @if (tratamiento.practicaCodigo) {
-              <span class="ayuda"> ({{ tratamiento.practicaCodigo }})</span>
-            }
-          </p>
-          <dl class="detalle">
-            @if (tratamiento.tecnica) {
-              <dt>Técnica</dt>
-              <dd>{{ tratamiento.tecnica }}</dd>
-            }
-            @if (tratamiento.zona) {
-              <dt>Zona</dt>
-              <dd>
-                {{ tratamiento.zona }}
-                @if (tratamiento.lateralidad) {
-                  — {{ etiquetaDeLateralidad(tratamiento.lateralidad) }}
-                }
-              </dd>
-            }
-            @if (tratamiento.duracionMinutos) {
-              <dt>Duración</dt>
-              <dd>{{ tratamiento.duracionMinutos }} minutos</dd>
-            }
-            @if (tratamiento.espacioNombre) {
-              <dt>Espacio</dt>
-              <dd>{{ tratamiento.espacioNombre }}</dd>
-            }
-            @for (parametro of tratamiento.parametros ?? []; track $index) {
-              <dt>{{ parametro.clave }}</dt>
-              <dd>{{ valorLegible(parametro) }}</dd>
-            }
-            @if (tratamiento.observacion) {
-              <dt>Observación</dt>
-              <dd>{{ tratamiento.observacion }}</dd>
-            }
-          </dl>
-
-          @if (editable()) {
-            @if (dandoDeBaja() === tratamiento.id) {
-              <div class="campo">
-                <label [for]="'baja-motivo-' + tratamiento.id">
-                  Por qué se da de baja {{ tratamiento.practicaNombre }}
-                </label>
-                <textarea
-                  [id]="'baja-motivo-' + tratamiento.id"
-                  rows="2"
-                  maxlength="500"
-                  [attr.aria-describedby]="
-                    aviso() && avisoDe() === 'baja' ? 'baja-motivo-error-' + tratamiento.id : null
-                  "
-                  [attr.aria-invalid]="aviso() && avisoDe() === 'baja' ? 'true' : null"
-                  [value]="motivoBaja()"
-                  (input)="motivoBaja.set($any($event.target).value)"
-                ></textarea>
-                @if (aviso() && avisoDe() === 'baja') {
-                  <p class="campo__error" [id]="'baja-motivo-error-' + tratamiento.id">
-                    {{ aviso() }}
-                  </p>
-                }
-              </div>
-              <div class="acciones">
-                <button
-                  type="button"
-                  class="boton"
-                  [disabled]="bloqueado()"
-                  (click)="confirmarBaja()"
-                >
-                  Confirmar la baja
-                </button>
-                <button type="button" class="boton boton--secundario" (click)="cancelarBaja()">
-                  No dar de baja
-                </button>
-              </div>
-            } @else {
-              <div class="acciones">
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="bloqueado()"
-                  (click)="pedirBaja(tratamiento.id)"
-                >
-                  Dar de baja<span class="visualmente-oculto">
-                    {{ tratamiento.orden }}. {{ tratamiento.practicaNombre }}</span
-                  >
-                </button>
-              </div>
-            }
-          }
-        </li>
-      }
-    </ol>
-  }
-
   @if (editable()) {
     <fieldset class="grupo-plano">
       <legend>Registrar un tratamiento</legend>
@@ -148,13 +43,16 @@
 
       @if (practicas().length === 0) {
         <p class="ayuda">
-          La oferta de este turno no declara prácticas, así que no hay ninguna que asentar. Las
-          prácticas de una oferta las configura quien administra el centro.
+          La actividad de este turno no declara prácticas, así que no hay ninguna que asentar. Las
+          prácticas de una actividad las configura quien administra el centro.
         </p>
       } @else {
-        <!-- Grilla de 12 columnas (UX-14): cada campo ocupa lo que pide su dato. -->
-        <div class="grilla-12">
-          <div class="campo campo--4">
+        <!--
+          Carga en una fila (13/11/2026), igual que la medicion: practica, zona, lado con un clic,
+          minutos y "+". Tecnica, espacio, parametros y observacion quedan en "Mas datos".
+        -->
+        <div class="carga-medicion carga-medicion--tratamiento">
+          <div class="campo">
             <label for="tratamiento-practica">Práctica</label>
             <select
               id="tratamiento-practica"
@@ -164,246 +62,425 @@
               <option value="" [selected]="practicaId() === null">Elegí una práctica</option>
               @for (opcion of practicas(); track opcion.practicaId) {
                 <option [value]="opcion.practicaId" [selected]="practicaId() === opcion.practicaId">
-                  {{ opcion.nombre }}{{ opcion.codigo ? ' (' + opcion.codigo + ')' : '' }}
+                  {{ opcion.nombre }}
                 </option>
               }
             </select>
           </div>
 
-          <div class="campo campo--4">
-            <label for="tratamiento-tecnica">
-              Técnica o maniobra <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="tratamiento-tecnica"
-              name="tratamiento-tecnica"
-              type="text"
-              maxlength="200"
-              [value]="tecnica()"
-              (input)="tecnica.set($any($event.target).value)"
-            />
-          </div>
-
-          <div class="campo campo--4">
-            <label for="tratamiento-zona">
-              Zona tratada <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="tratamiento-zona"
-              name="tratamiento-zona"
-              type="text"
-              maxlength="120"
-              aria-describedby="ayuda-tratamiento-zona"
-              [value]="zona()"
-              (input)="zona.set($any($event.target).value)"
-            />
-            <p id="ayuda-tratamiento-zona" class="ayuda" [class.ayuda--fija]="faltaZona()">
-              @if (faltaZona()) {
-                <b>Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.</b>
-              }
-            </p>
-          </div>
-
-          <div class="campo campo--3">
-            <label for="tratamiento-lateralidad">
-              Lado <span class="campo__opcional">(opcional)</span>
-            </label>
-            <select
-              id="tratamiento-lateralidad"
-              name="tratamiento-lateralidad"
-              (change)="elegirLateralidad($any($event.target).value)"
-            >
-              <option value="" [selected]="lateralidad() === null">Sin cargar</option>
-              @for (opcion of lateralidades; track opcion.valor) {
-                <option [value]="opcion.valor" [selected]="lateralidad() === opcion.valor">
-                  {{ opcion.etiqueta }}
-                </option>
-              }
-            </select>
-          </div>
-
-          <div class="campo campo--2">
-            <label for="tratamiento-duracion">
-              Duración en minutos <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="tratamiento-duracion"
-              name="tratamiento-duracion"
-              type="text"
-              inputmode="numeric"
-              [value]="duracion()"
-              (input)="duracion.set($any($event.target).value)"
-            />
-          </div>
-
-          @if (espacios().length > 0) {
-            <div class="campo campo--3">
-              <label for="tratamiento-espacio">
-                Espacio utilizado <span class="campo__opcional">(opcional)</span>
-              </label>
-              <select
-                id="tratamiento-espacio"
-                name="tratamiento-espacio"
-                aria-describedby="ayuda-tratamiento-espacio"
-                (change)="elegirEspacio($any($event.target).value)"
+          <!--
+            Zona como combo de seleccion multiple (13/11/2026): ofrece las de la evaluacion y deja
+            escribir otra. Con varias se carga un registro por zona.
+          -->
+          <div class="campo">
+            <span class="campo__rotulo" id="tratamiento-zona-rotulo">Zona</span>
+            <details class="combo-multiple" #comboZona>
+              <summary
+                aria-labelledby="tratamiento-zona-rotulo"
+                [attr.aria-describedby]="faltaZona() ? 'ayuda-tratamiento-zona' : null"
+                [title]="
+                  zonasDeLaEvaluacion().length > 0
+                    ? 'Las zonas de la evaluación. Con varias se carga un registro por zona.'
+                    : 'Con varias se carga un registro por zona.'
+                "
               >
-                <option value="" [selected]="espacioId() === null">Sin cargar</option>
-                @for (opcion of espacios(); track opcion.id) {
-                  <option [value]="opcion.id" [selected]="espacioId() === opcion.id">
-                    {{ opcion.name }}
-                  </option>
-                }
-              </select>
-              <p id="ayuda-tratamiento-espacio" class="ayuda">
-                El que se usó de verdad, aunque no sea el reservado en el turno.
-              </p>
-            </div>
-          }
-        </div>
-
-        <!--
-          Lo opcional del tratamiento, plegado (refactor UX/UI del 28/10/2026): la practica, la zona y
-          el lado alcanzan para un registro normal. Llega abierto si ya hay algo cargado.
-        -->
-        <details class="seccion-plegable" [open]="parametros().length > 0 || observacion() !== ''">
-          <summary>
-            Parámetros y observación
-            <span class="seccion-plegable__resumen"
-              >Intensidad, series, tiempo y una nota (opcionales)</span
-            >
-          </summary>
-          <fieldset class="grupo-plano">
-            <legend>Parámetros</legend>
-            <p class="ayuda">Cada parámetro con su tipo. La unidad va solo en los números.</p>
-            <datalist id="tratamiento-claves">
-              @for (clave of claves; track clave) {
-                <option [value]="clave"></option>
-              }
-            </datalist>
-
-            @for (parametro of parametros(); track $index; let i = $index) {
-              <div class="parametro grilla-12">
-                <div class="campo campo--4">
-                  <label [for]="'parametro-clave-' + i">Nombre del parámetro {{ i + 1 }}</label>
-                  <input
-                    [id]="'parametro-clave-' + i"
-                    type="text"
-                    list="tratamiento-claves"
-                    maxlength="80"
-                    [value]="parametro.clave"
-                    (input)="cambiarParametro(i, { clave: $any($event.target).value })"
-                  />
-                </div>
-                <div class="campo campo--3">
-                  <label [for]="'parametro-tipo-' + i">Tipo del parámetro {{ i + 1 }}</label>
-                  <select
-                    [id]="'parametro-tipo-' + i"
-                    (change)="elegirTipoDeParametro(i, $any($event.target).value)"
-                  >
-                    @for (opcion of tipos; track opcion.valor) {
-                      <option
-                        [value]="opcion.valor"
-                        [selected]="parametro.tipoDato === opcion.valor"
-                      >
-                        {{ opcion.etiqueta }}
-                      </option>
-                    }
-                  </select>
-                </div>
-                @if (parametro.tipoDato === Tipo.BOOLEANO) {
-                  <div class="campo campo--3">
-                    <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
-                    <select
-                      [id]="'parametro-valor-' + i"
-                      (change)="
-                        cambiarParametro(i, {
-                          valorSiNo:
-                            $any($event.target).value === ''
-                              ? null
-                              : $any($event.target).value === 'si',
-                        })
-                      "
-                    >
-                      <option value="" [selected]="parametro.valorSiNo === null">Sin elegir</option>
-                      <option value="si" [selected]="parametro.valorSiNo === true">Sí</option>
-                      <option value="no" [selected]="parametro.valorSiNo === false">No</option>
-                    </select>
-                  </div>
-                } @else {
-                  <div class="campo campo--3">
-                    <label [for]="'parametro-valor-' + i">Valor del parámetro {{ i + 1 }}</label>
+                <span class="combo-multiple__valor">{{
+                  zonasElegidas().length > 0 ? zonasElegidas().join(', ') : 'Sin zona'
+                }}</span>
+              </summary>
+              <div class="combo-multiple__panel">
+                @for (zona of zonasOfrecidas(); track zona) {
+                  <label class="combo-multiple__opcion">
                     <input
-                      [id]="'parametro-valor-' + i"
-                      type="text"
-                      maxlength="200"
-                      [attr.inputmode]="parametro.tipoDato === Tipo.NUMERICO ? 'decimal' : null"
-                      [value]="parametro.valor"
-                      (input)="cambiarParametro(i, { valor: $any($event.target).value })"
+                      type="checkbox"
+                      [checked]="zonasElegidas().includes(zona)"
+                      (change)="alternarZona(zona)"
                     />
-                  </div>
+                    {{ zona }}
+                  </label>
                 }
-                @if (parametro.tipoDato === Tipo.NUMERICO) {
-                  <div class="campo campo--2">
-                    <label [for]="'parametro-unidad-' + i">
-                      Unidad del parámetro {{ i + 1 }}
-                      <span class="campo__opcional">(opcional)</span>
-                    </label>
-                    <input
-                      [id]="'parametro-unidad-' + i"
-                      type="text"
-                      maxlength="20"
-                      [value]="parametro.unidad"
-                      (input)="cambiarParametro(i, { unidad: $any($event.target).value })"
-                    />
-                  </div>
-                }
-                <div class="acciones">
-                  <button type="button" class="boton-texto" (click)="quitarParametro(i)">
-                    Quitar el parámetro {{ i + 1 }}
-                  </button>
-                </div>
+                <input
+                  id="tratamiento-zona"
+                  name="tratamiento-zona"
+                  type="text"
+                  maxlength="120"
+                  placeholder="Otra…"
+                  aria-label="Otra zona"
+                  [value]="otraZona()"
+                  (change)="escribirOtraZona($any($event.target).value)"
+                  (keydown.enter)="comboZona.open = false"
+                />
               </div>
-            }
+            </details>
+          </div>
 
-            <div class="acciones">
-              <button type="button" class="boton boton--secundario" (click)="agregarParametro()">
-                Agregar un parámetro
-              </button>
-            </div>
+          <fieldset class="carga-medicion__lado">
+            <legend>Lado</legend>
+            <app-chips
+              id="tratamiento-lateralidad"
+              etiqueta="Lado"
+              [opciones]="opcionesDeLado"
+              [valor]="lateralidad()"
+              (valorChange)="elegirLateralidad(textoDe($event))"
+            />
           </fieldset>
 
           <div class="campo">
-            <label for="tratamiento-observacion">
-              Observación <span class="campo__opcional">(opcional)</span>
-            </label>
-            <input
-              id="tratamiento-observacion"
-              name="tratamiento-observacion"
-              type="text"
-              maxlength="500"
-              [value]="observacion()"
-              (input)="observacion.set($any($event.target).value)"
+            <label for="tratamiento-duracion"
+              >Minutos <span class="campo__opcional">(opc.)</span></label
+            >
+            <app-numero-con-pasos
+              idCampo="tratamiento-duracion"
+              etiqueta="Minutos"
+              [paso]="5"
+              [min]="1"
+              [max]="240"
+              [decimales]="1"
+              [valor]="duracionNumero()"
+              (valorChange)="duracion.set($event === null ? '' : '' + $event)"
+              (invalido)="duracionInvalida.set($event)"
+              (keydown.enter)="enterEnCampo($event)"
             />
           </div>
-        </details>
 
-        @if (aviso() && avisoDe() === 'registrar') {
-          <p class="campo__error" id="tratamiento-falta">{{ aviso() }}</p>
-        }
-        <div class="acciones">
           <button
             type="button"
-            class="boton"
-            [disabled]="bloqueado()"
+            class="boton carga-medicion__boton"
+            title="Registrar el tratamiento"
+            [disabled]="bloqueado() || practicaId() === null"
             [attr.aria-describedby]="
               aviso() && avisoDe() === 'registrar' ? 'tratamiento-falta' : null
             "
             (click)="registrar()"
           >
-            Registrar el tratamiento
+            <app-icono nombre="agregar" /><span class="visualmente-oculto"
+              >Registrar el tratamiento</span
+            >
           </button>
         </div>
+
+        @if (faltaZona()) {
+          <p id="ayuda-tratamiento-zona" class="campo__error">
+            Elegiste un lado sin decir de qué zona, y el servidor va a rechazarlo.
+          </p>
+        }
+        @if (aviso() && avisoDe() === 'registrar') {
+          <p class="campo__error" id="tratamiento-falta">{{ aviso() }}</p>
+        }
+
+        <!--
+          Lo opcional del tratamiento, plegado (refactor UX/UI del 28/10/2026): la practica, la zona y
+          el lado alcanzan para un registro normal. Llega abierto si ya hay algo cargado.
+        -->
+        <details
+          class="seccion-plegable"
+          [open]="parametros().length > 0 || observacion() !== '' || tecnica() !== ''"
+        >
+          <summary>
+            <app-icono nombre="configuracion" />
+            Más datos
+            <span class="seccion-plegable__resumen"
+              >Técnica, espacio, parámetros y una nota (opcionales)</span
+            >
+          </summary>
+          <!--
+            Mas datos compacto (13/11/2026): tecnica, espacio y nota en una fila; los parametros como
+            filas cortas con encabezado unico y quitar con un icono.
+          -->
+          <div class="mas-datos">
+            <div class="mas-datos__fila">
+              <app-texto-opcional
+                class="campo"
+                idCampo="tratamiento-tecnica"
+                etiqueta="Técnica o maniobra"
+                [maxlength]="200"
+                [valor]="tecnica()"
+                (valorChange)="tecnica.set($event)"
+              />
+              @if (espacios().length > 0) {
+                <div class="campo">
+                  <label for="tratamiento-espacio">Espacio utilizado</label>
+                  <select
+                    id="tratamiento-espacio"
+                    name="tratamiento-espacio"
+                    title="El que se usó de verdad, aunque no sea el reservado en el turno."
+                    (change)="elegirEspacio($any($event.target).value)"
+                  >
+                    <option value="" [selected]="espacioId() === null">Sin cargar</option>
+                    @for (opcion of espacios(); track opcion.id) {
+                      <option [value]="opcion.id" [selected]="espacioId() === opcion.id">
+                        {{ opcion.name }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              }
+              <app-texto-opcional
+                class="campo"
+                idCampo="tratamiento-observacion"
+                etiqueta="Observación"
+                [valor]="observacion()"
+                (valorChange)="observacion.set($event)"
+              />
+            </div>
+
+            <fieldset class="mas-datos__parametros">
+              <legend class="visualmente-oculto">Parámetros</legend>
+              <div class="mas-datos__cabecera">
+                <span class="campo__rotulo" aria-hidden="true">Parámetros</span>
+                <button
+                  type="button"
+                  class="boton-texto"
+                  title="Cada parámetro con su tipo. La unidad va solo en los números."
+                  (click)="agregarParametro()"
+                >
+                  <app-icono nombre="agregar" /> Agregar un parámetro
+                </button>
+              </div>
+
+              @if (parametros().length > 0) {
+                <div class="parametro-fila parametro-fila--titulos" aria-hidden="true">
+                  <span>Nombre</span><span>Tipo</span><span>Valor</span><span>Unidad</span
+                  ><span></span>
+                </div>
+              }
+              @for (parametro of parametros(); track $index; let i = $index) {
+                <div class="parametro-fila campo">
+                  @if (nombreLibre(parametro)) {
+                    <input
+                      [id]="'parametro-clave-' + i"
+                      type="text"
+                      maxlength="80"
+                      placeholder="Escribí el nombre"
+                      [attr.aria-label]="'Nombre del parámetro ' + (i + 1)"
+                      [value]="parametro.clave"
+                      (input)="cambiarParametro(i, { clave: $any($event.target).value })"
+                    />
+                  } @else {
+                    <select
+                      [id]="'parametro-clave-' + i"
+                      [attr.aria-label]="'Nombre del parámetro ' + (i + 1)"
+                      (change)="elegirNombreDeParametro(i, $any($event.target).value)"
+                    >
+                      <option value="" [selected]="parametro.clave === ''">Elegí</option>
+                      @for (clave of claves; track clave) {
+                        <option [value]="clave" [selected]="parametro.clave === clave">
+                          {{ clave }}
+                        </option>
+                      }
+                      <option [value]="otroNombre">Otro…</option>
+                    </select>
+                  }
+                  <app-segmentado
+                    [id]="'parametro-tipo-' + i"
+                    [etiqueta]="'Tipo del parámetro ' + (i + 1)"
+                    [opciones]="tipos"
+                    [valor]="parametro.tipoDato"
+                    (valorChange)="elegirTipoDeParametro(i, $event ?? '')"
+                  />
+                  @if (parametro.tipoDato === Tipo.BOOLEANO) {
+                    <app-segmentado
+                      [id]="'parametro-valor-' + i"
+                      [etiqueta]="'Valor del parámetro ' + (i + 1)"
+                      [opciones]="opcionesSiNo"
+                      [valor]="
+                        parametro.valorSiNo === null ? null : parametro.valorSiNo ? 'si' : 'no'
+                      "
+                      (valorChange)="cambiarParametro(i, { valorSiNo: $event === 'si' })"
+                    />
+                  } @else if (parametro.tipoDato === Tipo.NUMERICO) {
+                    <!--
+                      Texto que no es número: queda como valor algo no numérico para que la
+                      validación de siempre lo frene al registrar, en vez de mandar el anterior.
+                    -->
+                    <app-numero-con-pasos
+                      [idCampo]="'parametro-valor-' + i"
+                      [etiqueta]="'el parámetro ' + (i + 1)"
+                      [rotuloDelCampo]="'Valor del parámetro ' + (i + 1)"
+                      [decimales]="1"
+                      [valor]="numeroDeTexto(parametro.valor)"
+                      (valorChange)="
+                        cambiarParametro(i, { valor: $event === null ? '' : '' + $event })
+                      "
+                      (invalido)="$event && cambiarParametro(i, { valor: 'no es un número' })"
+                    />
+                  } @else {
+                    <input
+                      [id]="'parametro-valor-' + i"
+                      type="text"
+                      maxlength="200"
+                      placeholder="Valor"
+                      [attr.aria-label]="'Valor del parámetro ' + (i + 1)"
+                      [value]="parametro.valor"
+                      (input)="cambiarParametro(i, { valor: $any($event.target).value })"
+                    />
+                  }
+                  @if (parametro.tipoDato === Tipo.NUMERICO) {
+                    <input
+                      [id]="'parametro-unidad-' + i"
+                      type="text"
+                      maxlength="20"
+                      placeholder="opc."
+                      [attr.aria-label]="'Unidad del parámetro ' + (i + 1) + ' (opcional)'"
+                      [value]="parametro.unidad"
+                      (input)="cambiarParametro(i, { unidad: $any($event.target).value })"
+                    />
+                  } @else {
+                    <span class="parametro-fila__vacio">—</span>
+                  }
+                  <button
+                    type="button"
+                    class="boton-icono"
+                    [title]="'Quitar el parámetro ' + (i + 1)"
+                    (click)="quitarParametro(i)"
+                  >
+                    <app-icono nombre="cerrar" /><span class="visualmente-oculto"
+                      >Quitar el parámetro {{ i + 1 }}</span
+                    >
+                  </button>
+                </div>
+              }
+            </fieldset>
+          </div>
+        </details>
       }
     </fieldset>
+  }
+
+  @if (!cargando() && tratamientos().length === 0) {
+    <app-estado-vacio
+      titulo="Todavía no hay tratamientos registrados en esta sesión"
+      [texto]="editable() ? 'Registrá el primero con la fila de arriba.' : null"
+    />
+  }
+
+  @if (tratamientos().length > 0) {
+    <!-- Tabla compacta (13/11/2026), como la de mediciones; el resto del detalle va en el "i". -->
+    <div class="tabla-scroll" role="region" aria-label="Tratamientos de la sesión" tabindex="0">
+      <table class="tabla tabla--mediciones">
+        <caption class="visualmente-oculto">
+          Tratamientos aplicados en esta sesión
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Práctica</th>
+            <th scope="col">Zona</th>
+            <th scope="col">Lado</th>
+            <th scope="col">Minutos</th>
+            @if (editable()) {
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (tratamiento of tratamientos(); track tratamiento.id) {
+            <tr>
+              <td>{{ tratamiento.orden }}</td>
+              <th scope="row">
+                <span class="valor-con-nota">
+                  {{ tratamiento.practicaNombre }}
+                  @if (
+                    tratamiento.tecnica ||
+                    tratamiento.espacioNombre ||
+                    tratamiento.observacion ||
+                    (tratamiento.parametros ?? []).length > 0
+                  ) {
+                    <app-ayuda titulo="Más datos" icono="info">
+                      <dl class="detalle">
+                        @if (tratamiento.tecnica) {
+                          <dt>Técnica</dt>
+                          <dd>{{ tratamiento.tecnica }}</dd>
+                        }
+                        @if (tratamiento.espacioNombre) {
+                          <dt>Espacio</dt>
+                          <dd>{{ tratamiento.espacioNombre }}</dd>
+                        }
+                        @for (parametro of tratamiento.parametros ?? []; track $index) {
+                          <dt>{{ parametro.clave }}</dt>
+                          <dd>{{ valorLegible(parametro) }}</dd>
+                        }
+                        @if (tratamiento.observacion) {
+                          <dt>Observación</dt>
+                          <dd>{{ tratamiento.observacion }}</dd>
+                        }
+                      </dl>
+                    </app-ayuda>
+                  }
+                </span>
+              </th>
+              <td>{{ tratamiento.zona || '—' }}</td>
+              <td>
+                {{ tratamiento.lateralidad ? etiquetaDeLateralidad(tratamiento.lateralidad) : '—' }}
+              </td>
+              <td>{{ tratamiento.duracionMinutos || '—' }}</td>
+              @if (editable()) {
+                <td class="tabla__acciones">
+                  @if (dandoDeBaja() !== tratamiento.id) {
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [disabled]="bloqueado()"
+                      (click)="pedirBaja(tratamiento.id)"
+                    >
+                      Dar de baja<span class="visualmente-oculto">
+                        {{ tratamiento.orden }}. {{ tratamiento.practicaNombre }}</span
+                      >
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+            @if (editable() && dandoDeBaja() === tratamiento.id) {
+              <tr>
+                <td colspan="6">
+                  <div class="baja-en-fila">
+                    <div class="campo">
+                      <label [for]="'baja-motivo-' + tratamiento.id">
+                        Por qué se da de baja {{ tratamiento.practicaNombre }}
+                      </label>
+                      <input
+                        type="text"
+                        [id]="'baja-motivo-' + tratamiento.id"
+                        maxlength="500"
+                        [attr.aria-describedby]="
+                          aviso() && avisoDe() === 'baja'
+                            ? 'baja-motivo-error-' + tratamiento.id
+                            : null
+                        "
+                        [attr.aria-invalid]="aviso() && avisoDe() === 'baja' ? 'true' : null"
+                        [value]="motivoBaja()"
+                        (input)="motivoBaja.set($any($event.target).value)"
+                        (keydown.enter)="confirmarBaja()"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      class="boton boton--chico"
+                      [disabled]="bloqueado()"
+                      (click)="confirmarBaja()"
+                    >
+                      Confirmar la baja
+                    </button>
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      (click)="cancelarBaja()"
+                    >
+                      No dar de baja
+                    </button>
+                  </div>
+                  @if (aviso() && avisoDe() === 'baja') {
+                    <p class="campo__error" [id]="'baja-motivo-error-' + tratamiento.id">
+                      {{ aviso() }}
+                    </p>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </section>

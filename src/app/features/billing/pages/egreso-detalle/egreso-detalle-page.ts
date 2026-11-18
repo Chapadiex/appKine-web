@@ -210,7 +210,7 @@ export class EgresoDetallePage {
       return null;
     }
     const oferta = this.ofertas().find((o) => o.id === id);
-    const nombre = oferta?.nombreComercial ?? `Oferta #${id}`;
+    const nombre = oferta?.nombreComercial ?? `Actividad #${id}`;
     return oferta !== undefined && oferta.estado !== 'ACTIVO' ? `${nombre} (dada de baja)` : nombre;
   });
   protected readonly admitePago = computed(() => admitePago(this.egreso()));

@@ -139,8 +139,8 @@ const MENSAJE_NO_ENCONTRADO: Readonly<Record<AmbitoContracting, string>> = {
     'ahora.',
   arancel: 'Ese arancel ya no existe. Recargá la grilla del convenio para ver los que hay ahora.',
   'arancel-de-oferta':
-    'No encontramos la oferta elegida en esta sede: puede haberse dado de baja o ser de otra ' +
-    'sede. Recargá la página para ver las ofertas vigentes, o dejá el arancel como general del ' +
+    'No encontramos la actividad elegida en esta sede: puede haberse dado de baja o ser de otra ' +
+    'sede. Recargá la página para ver las actividades vigentes, o dejá el arancel como general del ' +
     'convenio.',
 };
 
@@ -213,12 +213,12 @@ const MENSAJE_REFERENCIA_INACTIVA =
  * <p>Ese arancel nunca resolveria: la cobertura aplicable corta antes, en la oferta.
  */
 const MENSAJE_OFERTA_SIN_OBRA_SOCIAL =
-  'Esa oferta no admite obra social, así que un arancel del convenio para ella nunca se usaría. ' +
-  'Carga el arancel como general, o habilita la obra social en la oferta primero.';
+  'Esa actividad no admite obra social, así que un arancel del convenio para ella nunca se usaría. ' +
+  'Carga el arancel como general, o habilita la obra social en la actividad primero.';
 
 const MENSAJE_PRACTICA_FUERA_DE_LA_OFERTA =
-  'Esa oferta no declara la práctica de este arancel. Agregale la práctica a la oferta, o elegí ' +
-  'otra oferta, o dejalo como arancel general del convenio.';
+  'Esa actividad no declara la práctica de este arancel. Agregale la práctica a la actividad, o elegí ' +
+  'otra actividad, o dejalo como arancel general del convenio.';
 
 const MENSAJE_YA_DADA_DE_BAJA =
   'Esto ya estaba dado de baja, así que no hay nada que hacer. Recarga el listado para verlo con ' +

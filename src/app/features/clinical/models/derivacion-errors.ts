@@ -34,7 +34,7 @@ export function textoDeBloqueo(motivo: string): string {
 
 const BLOQUEOS: Readonly<Record<string, string>> = {
   OFERTA_NO_CLINICA:
-    'La oferta de esta clase no genera registro clínico: sus participantes no se derivan.',
+    'La actividad de esta clase no genera registro clínico: sus participantes no se derivan.',
   SIN_ASISTENCIA: 'No tiene asistencia registrada en esta clase: primero se toma lista.',
   AUSENTE:
     'Figura ausente. Solo se deriva a quien estuvo: si fue un error de la lista, corregi la ' +

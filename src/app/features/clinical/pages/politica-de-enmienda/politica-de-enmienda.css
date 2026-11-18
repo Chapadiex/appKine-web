@@ -1,0 +1,13 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+.politica__dias {
+  align-items: center;
+}
+
+.busqueda-fila.politica__dias input {
+  flex: 0 0 7rem;
+}
+
+.politica__dias .ayuda {
+  margin: 0;
+}

@@ -34,7 +34,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
   selector: 'app-atencion-sin-turno-page',
   imports: [CabeceraDePagina, Ayuda, RouterLink, Alerta],
   templateUrl: './atencion-sin-turno-page.html',
-  styleUrl: '../../atencion.css',
+  styleUrls: ['../../atencion.css', './atencion-sin-turno.css'],
 })
 export class AtencionSinTurnoPage {
   private readonly api = inject(ClinicalApi);
@@ -128,7 +128,7 @@ export class AtencionSinTurnoPage {
       personaId === undefined
         ? ['persona', 'Elegí a quien se atiende.']
         : ofertaId === null
-          ? ['oferta', 'Elegí la oferta con la que se atiende.']
+          ? ['oferta', 'Elegí la actividad con la que se atiende.']
           : motivo === ''
             ? ['motivo', 'Escribi por que se atiende sin turno: es obligatorio.']
             : this.requiereCaso() && this.casoId() === null
@@ -181,7 +181,7 @@ export class AtencionSinTurnoPage {
     }
     this.api.ofertasDeLaSede(consultorioId).subscribe({
       next: (ofertas) => this.ofertas.set(ofertas),
-      error: (error: unknown) => this.fallar('No pudimos leer las ofertas de la sede', error),
+      error: (error: unknown) => this.fallar('No pudimos leer las actividades de la sede', error),
     });
   }
 

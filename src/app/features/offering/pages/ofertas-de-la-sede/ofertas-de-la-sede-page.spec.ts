@@ -238,7 +238,7 @@ describe('OfertasDeLaSedePage', () => {
       TestBed.inject(AvisosStore)
         .avisos()
         .map((aviso) => aviso.titulo),
-    ).toEqual(['Oferta publicada']);
+    ).toEqual(['Actividad publicada']);
     expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
   });
 
@@ -365,7 +365,7 @@ describe('OfertasDeLaSedePage', () => {
     const fixture = await montarConListadoRoto(403, PROBLEMA_403);
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    expect(anfitrion.textContent).toContain('No podés modificar las ofertas de esta sede');
+    expect(anfitrion.textContent).toContain('No podés modificar las actividades de esta sede');
     // La salida NO es el selector de contexto: la sede esta elegida, lo que falta es el
     // permiso. Mandarlo a elegir consultorio de nuevo seria un bucle sin fin.
     expect(anfitrion.querySelector('a[href="/seleccionar-contexto"]')).toBeNull();
@@ -427,7 +427,7 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
     // Arriba del formulario, dentro de la alerta: al pie lo tapaba la barra de acciones.
     const alerta = anfitrion.querySelector('form app-alerta');
-    expect(alerta?.textContent).toContain('No pudimos publicar la oferta');
+    expect(alerta?.textContent).toContain('No pudimos publicar la actividad');
     expect(alerta?.textContent).toContain('Ya existe una oferta con ese nombre comercial');
     // El panel sigue abierto con lo escrito: cerrarlo obligaria a tipear todo de nuevo.
     expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
@@ -475,7 +475,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Esa oferta ya no existe');
+    expect(anfitrion.textContent).toContain('Esa actividad ya no existe');
 
     // Reintentar la baja sobre una fila que ya no existe da 404 otra vez: lo que destraba es
     // releer. Sin este boton el panel queda mostrando una oferta fantasma.
@@ -497,7 +497,7 @@ describe('OfertasDeLaSedePage', () => {
 
     expect(anfitrion.querySelector('table')).toBeNull();
     const vacio = anfitrion.querySelector('app-estado-vacio');
-    expect(vacio?.textContent).toContain('Esta sede todavía no tiene ofertas activas');
+    expect(vacio?.textContent).toContain('Esta sede todavía no tiene actividades activas');
     // Una tabla con encabezados y sin filas no dice si el filtro tapa todo o si no hay nada.
     expect(vacio?.textContent).toContain('esta sede no ofrece nada para reservar');
     // "Todavía no hay": la accion es el alta, no limpiar filtros.
@@ -510,12 +510,12 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
-      '2 ofertas',
+      '2 actividades',
     );
     expect(anfitrion.querySelector('.paginacion-pie')?.textContent).toContain('Mostrando 1–2 de 2');
     expect(anfitrion.querySelector('section.tarjeta h2')).toBeNull();
     expect(anfitrion.querySelector('section.tarjeta')?.getAttribute('aria-label')).toBe(
-      'Ofertas cargadas en esta sede',
+      'Actividades cargadas en esta sede',
     );
   });
 
@@ -526,12 +526,12 @@ describe('OfertasDeLaSedePage', () => {
     escribir(fixture, '#busqueda-ofertas', 'pilates');
     expect(anfitrion.querySelectorAll('tbody > tr').length).toBe(1);
     expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent).toContain(
-      '1 oferta',
+      '1 actividad',
     );
 
     escribir(fixture, '#busqueda-ofertas', 'yoga');
     const vacio = anfitrion.querySelector('app-estado-vacio');
-    expect(vacio?.textContent).toContain('No encontramos ofertas');
+    expect(vacio?.textContent).toContain('No encontramos actividades');
     const limpiar = [...(vacio?.querySelectorAll('button') ?? [])].find((boton) =>
       boton.textContent?.includes('Limpiar filtros'),
     );
@@ -553,7 +553,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Se dejo de prestar en esta sede');
     expect(textoDeBotones(fixture)).not.toContain('Editar');
     expect(textoDeBotones(fixture)).not.toContain('Dar de baja');
-    expect(anfitrion.querySelector('a[href="/servicios/ofertas/12/habilitaciones"]')).toBeNull();
+    expect(anfitrion.querySelector('a[href="/servicios/ofertas/12/practicas"]')).toBeNull();
   });
 
   // -----------------------------------------------------------------------------------------
@@ -571,11 +571,9 @@ describe('OfertasDeLaSedePage', () => {
     expect(botones).not.toContain('Editar');
     expect(botones).not.toContain('Dar de baja');
 
-    // Habilitaciones NO esta detras del permiso: se consulta por pertenencia, y esconderla
-    // dejaria a un profesional sin poder ver donde puede atender.
-    expect(
-      anfitrion.querySelector('a[href="/servicios/ofertas/10/habilitaciones"]'),
-    ).not.toBeNull();
+    // La configuracion de la actividad (practicas, y desde ahi sus pestañas) NO esta detras del
+    // permiso: se consulta por pertenencia, y esconderla dejaria a un profesional sin poder verla.
+    expect(anfitrion.querySelector('a[href="/servicios/ofertas/10/practicas"]')).not.toBeNull();
   });
 
   it('las acciones de la fila viven en el menu "⋯" y el filtro rapido por modalidad cuenta y acota', async () => {
@@ -614,7 +612,7 @@ describe('OfertasDeLaSedePage', () => {
 
     httpMock.expectNone(esAlta());
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Toda oferta cuelga de un servicio del catalogo');
+    expect(anfitrion.textContent).toContain('Toda actividad cuelga de un servicio del catalogo');
     expect(anfitrion.textContent).toContain('El nombre comercial es obligatorio');
   });
 
@@ -652,7 +650,7 @@ describe('OfertasDeLaSedePage', () => {
       (peticion: HttpRequest<unknown>) => peticion.method === 'PUT' && peticion.url.includes('/13'),
     );
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'No pudimos leer la versión de esta oferta',
+      'No pudimos leer la versión de esta actividad',
     );
   });
 

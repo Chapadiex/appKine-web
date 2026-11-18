@@ -92,7 +92,7 @@ describe('CoberturaAplicable', () => {
   it('sin oferta elegida no pregunta nada', async () => {
     const fixture = await montar(null);
     httpMock.expectNone(() => true);
-    expect(texto(fixture)).toContain('Elegí una oferta');
+    expect(texto(fixture)).toContain('Elegí una actividad');
   });
 
   it('explica la que aplica, con su arancel, y por que no las otras', async () => {
@@ -107,7 +107,7 @@ describe('CoberturaAplicable', () => {
     expect(contenido).toContain('atender con cobertura');
     expect(contenido).toContain('Sesión de kinesiologia (KIN-01)');
     // El arancel de la oferta manda sobre el general, y la pantalla dice cual salio.
-    expect(contenido).toContain('Arancel propio de esta oferta en el convenio CONV-OSDE');
+    expect(contenido).toContain('Arancel propio de esta actividad en el convenio CONV-OSDE');
     expect(contenido).toContain('Pide orden medica.');
     expect(contenido).toContain('La credencial esta vencida');
     // Particular siempre esta disponible, aunque una cobertura aplique.
@@ -140,8 +140,8 @@ describe('CoberturaAplicable', () => {
 
     const contenido = texto(fixture);
     expect(contenido).toContain('atender como particular');
-    expect(contenido).toContain('la oferta no tiene precio cargado');
-    expect(contenido).toContain('Esta oferta no admite obra social');
+    expect(contenido).toContain('la actividad no tiene precio cargado');
+    expect(contenido).toContain('Esta actividad no admite obra social');
     expect(contenido).toContain('no tiene coberturas financiadas vigentes');
   });
 

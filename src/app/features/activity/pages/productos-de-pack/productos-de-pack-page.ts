@@ -105,7 +105,7 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
 export class ProductosDePackPage {
   /** Fuera del menu desde el 11/11/2026: se llega desde la oferta que cobra por pack. */
   private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
     { etiqueta: 'Productos de pack y abonos' },
   ]);
 
@@ -224,7 +224,7 @@ export class ProductosDePackPage {
 
   protected nombreDeOferta(producto: Producto): string {
     const id = producto.ofertaId;
-    return id === undefined ? '' : (this.nombresDeOferta().get(id) ?? `Oferta #${id}`);
+    return id === undefined ? '' : (this.nombresDeOferta().get(id) ?? `Actividad #${id}`);
   }
 
   protected ventana(producto: Producto): string {

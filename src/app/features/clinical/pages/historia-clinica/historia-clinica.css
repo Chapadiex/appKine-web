@@ -505,3 +505,181 @@ button.timeline__boton:focus-visible {
 .politica__ejemplo span {
   font-size: var(--tipo-sm);
 }
+
+/* --- Sesiones del paciente (13/11/2026) -------------------------------------------------- */
+
+.sesiones__cuenta {
+  min-width: 1.75rem;
+  padding: 0.1rem var(--esp-3);
+  border-radius: 999px;
+  background: var(--color-seleccion);
+  color: var(--color-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  text-align: center;
+}
+
+.sesiones {
+  margin: var(--esp-4) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.sesiones__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-3) var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+  background: var(--color-superficie);
+}
+
+.sesiones__item:last-child {
+  border-bottom: 0;
+}
+
+.sesiones__item:hover {
+  background: var(--color-hover);
+}
+
+/* La fecha como hoja de calendario: el dia se lee primero. */
+.sesiones__fecha {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  padding: var(--esp-1) 0;
+  border-radius: var(--radio-md);
+  background: var(--color-seleccion);
+  line-height: 1.1;
+}
+
+.sesiones__dia {
+  font-size: 1.25rem;
+  font-weight: var(--peso-semi);
+}
+
+.sesiones__mes {
+  font-size: var(--tipo-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-texto-suave);
+}
+
+.sesiones__texto {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.sesiones__titulo {
+  font-weight: var(--peso-semi);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sesiones__meta {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.sesiones__meta::first-letter {
+  text-transform: uppercase;
+}
+
+.sesiones__hace {
+  color: var(--color-acento);
+  font-weight: var(--peso-semi);
+}
+
+.sesiones__mas {
+  margin-top: var(--esp-4);
+  justify-content: center;
+}
+
+@media (max-width: 47.99rem) {
+  .sesiones__item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .sesiones__item > .boton {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    text-align: center;
+  }
+}
+
+/* --- DP-47: datos declarados sin revisar -------------------------------------------- */
+
+.historia__declarados {
+  display: grid;
+  gap: var(--esp-3);
+  margin: var(--esp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historia__declarados > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.historia__declarados app-visor-de-adjunto {
+  flex-basis: 100%;
+}
+
+.historia__antecedentes .marca-estado {
+  margin-inline-start: var(--esp-2);
+}
+
+/* Carga del profesional sin atencion: resumen y antecedentes. */
+.historia__subtitulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+}
+
+.historia__carga {
+  display: grid;
+  gap: var(--esp-3);
+  margin-block: var(--esp-3);
+}
+
+.historia__carga textarea,
+.historia__carga select {
+  inline-size: 100%;
+}
+
+.historia__acciones-carga {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+/* Ficha de ingreso arriba y detalle de una cirugia. */
+.historia__ficha {
+  margin-block-end: var(--esp-4);
+}
+
+.historia__cirugia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.historia__detalle {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+/* Modo táctil (16/11/2026): la zona de la cirugía en chips ocupa la fila entera. */
+.historia__zona {
+  grid-column: 1 / -1;
+}

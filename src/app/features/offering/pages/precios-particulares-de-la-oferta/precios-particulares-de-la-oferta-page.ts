@@ -93,7 +93,7 @@ interface SituacionDelPrecio {
 export class PreciosParticularesDeLaOfertaPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
   private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Ofertas de la sede', ruta: '/servicios/ofertas' },
+    { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
     { etiqueta: 'Precios particulares' },
   ]);
 

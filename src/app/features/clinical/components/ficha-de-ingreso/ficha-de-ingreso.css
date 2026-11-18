@@ -1,0 +1,156 @@
+/* Ficha de ingreso: tres lineas, compacta. Solo tokens del sistema. */
+
+:host {
+  display: block;
+}
+
+.ficha {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+}
+
+.ficha__cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.ficha__cabeza h2 {
+  margin: 0;
+}
+
+.ficha__estado {
+  margin-inline-start: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.ficha__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.ficha__campo {
+  display: grid;
+  gap: var(--esp-1);
+  flex: 0 1 auto;
+  min-inline-size: 0;
+}
+
+.ficha__campo > label,
+.ficha__etiqueta {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.ficha__campo--ancho {
+  flex: 1 1 12rem;
+}
+
+.ficha__campo--numero input {
+  inline-size: 5.5rem;
+}
+
+.ficha__campo--imc output {
+  display: flex;
+  align-items: center;
+  min-height: var(--alto-control);
+  padding-inline: var(--esp-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ficha input[type='text'],
+.ficha select {
+  padding: var(--esp-2) 0.625rem;
+  min-height: var(--alto-control);
+  box-sizing: border-box;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+/* El input del buscador vive en otro componente: mismo alto y borde que el resto de la fila. */
+:host ::ng-deep .buscador-con-alta__campo input {
+  min-height: var(--alto-control);
+  box-sizing: border-box;
+  padding-block: var(--esp-2);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+:host ::ng-deep .buscador-con-alta__campo input:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.ficha input[type='text']:focus-visible,
+.ficha select:focus-visible,
+.ficha input[type='checkbox']:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.ficha input[aria-invalid='true'] {
+  border-color: var(--color-peligro);
+  border-width: var(--borde-medio);
+}
+
+.ficha .campo__error {
+  margin: 0;
+}
+
+.ficha__enfermedades {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-1) var(--hueco-tocable);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ficha__enfermedades legend {
+  float: left;
+  margin-inline-end: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.ficha__tilde {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-height: var(--alto-tocable);
+  cursor: pointer;
+}
+
+.ficha__tilde:has(input:disabled) {
+  cursor: default;
+  color: var(--color-texto-suave);
+}
+
+@media (max-width: 40rem) {
+  .ficha__campo--ancho {
+    flex-basis: 100%;
+  }
+}
+
+/* En modo táctil el tilde mismo también se agranda: el dedo apunta al cuadrito. */
+.ficha__tilde input[type='checkbox'] {
+  inline-size: calc(var(--alto-tocable) / 2);
+  block-size: calc(var(--alto-tocable) / 2);
+}
+
+app-texto-opcional.ficha__campo {
+  display: flex;
+}

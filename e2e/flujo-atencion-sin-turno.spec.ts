@@ -32,7 +32,7 @@ test.describe('Atencion sin turno contra el backend real', () => {
     await page
       .getByRole('button', { name: new RegExp(`^${persona.apellido}, ${persona.nombre}`) })
       .click();
-    await page.getByLabel('Oferta', { exact: true }).selectOption({ label: oferta.nombre });
+    await page.getByLabel('Actividad', { exact: true }).selectOption({ label: oferta.nombre });
 
     // Sin motivo no sale nada.
     await page.getByRole('button', { name: 'Iniciar atención' }).click();

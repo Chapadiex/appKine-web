@@ -171,11 +171,13 @@ if (matchers.length < PROYECTOS.length || !alcanzado) {
 // es el `main` del layout: es el destino del skip link, tiene `tabindex="-1"` y el Tab no lo
 // alcanza nunca, asi que no hay indicador que mostrar. La otra es el select de una pastilla de
 // filtro de la agenda: el anillo lo dibuja la pastilla entera con `:focus-within`, y el del select
-// quedaria doble adentro.
+// quedaria doble adentro. Lo mismo el campo de app-numero-con-pasos (modo tactil): el anillo lo
+// dibuja el control entero, con sus botones - y +, por :focus-within.
 
 const OUTLINE_PERMITIDO = new Set([
   'src/app/app.css::.contenido:focus',
   'src/app/features/scheduling/pages/agenda/agenda-page.css::.pastilla-filtro select:focus-visible',
+  'src/app/shared/components/numero-con-pasos/numero-con-pasos.css::.numero-con-pasos__campo:focus-visible',
 ]);
 
 function hojas(directorio) {

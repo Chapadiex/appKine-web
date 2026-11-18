@@ -20,8 +20,8 @@ describe('honorarios por clase', () => {
     expect(grupos[0].moneda).toBe('ARS');
   });
 
-  it('sin nombre de oferta usa el id', () => {
-    expect(agruparPorOferta([{ claseId: 1, ofertaId: 9 }])[0].ofertaNombre).toBe('Oferta #9');
+  it('sin nombre de actividad usa el id', () => {
+    expect(agruparPorOferta([{ claseId: 1, ofertaId: 9 }])[0].ofertaNombre).toBe('Actividad #9');
   });
 
   it('cada motivo de exclusion tiene su texto', () => {

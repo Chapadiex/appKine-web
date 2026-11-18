@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   untracked,
 } from '@angular/core';
@@ -16,12 +17,15 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { CreateConsultorioRequest } from '../../../../api/generated/model/create-consultorio-request';
 import { OrganizationResponse } from '../../../../api/generated/model/organization-response';
+import { ConsultorioResponse } from '../../../../api/generated/model/consultorio-response';
+import { cambiosDeSede, valoresDeSede } from '../../models/cambios-de-sede';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
@@ -49,6 +53,7 @@ import { coordenadasFormateadas } from '../../../../shared/utils/enlaces-de-mapa
 import { EditorDeUbicacion } from '../../components/editor-de-ubicacion/editor-de-ubicacion';
 import { direccionEnUnaLinea, tieneDireccion } from '../../models/direccion';
 import {
+  cargarUbicacion,
   crearUbicacionForm,
   estadoDeUbicacion,
   origenParaElCable,
@@ -71,11 +76,26 @@ type Paso = 1 | 2 | 3 | 4;
 const ULTIMO_PASO: Paso = 4;
 
 /** Los cuatro pasos del alta, con lo que se carga en cada uno. */
-const PASOS: readonly { readonly numero: Paso; readonly titulo: string; readonly sub: string }[] = [
-  { numero: 1, titulo: 'Datos de la sede', sub: 'Nombre, agenda, contacto y visibilidad' },
-  { numero: 2, titulo: 'Ubicación', sub: 'Dirección y punto en el mapa' },
-  { numero: 3, titulo: 'Configuración inicial', sub: 'Opcional: horario, box y datos fiscales' },
-  { numero: 4, titulo: 'Confirmación', sub: 'Revisar y crear' },
+const PASOS: readonly {
+  readonly numero: Paso;
+  readonly titulo: string;
+  readonly sub: string;
+  readonly icono: NombreDeIcono;
+}[] = [
+  {
+    numero: 1,
+    titulo: 'Datos de la sede',
+    sub: 'Nombre, agenda, contacto y visibilidad',
+    icono: 'edificio',
+  },
+  { numero: 2, titulo: 'Ubicación', sub: 'Dirección y punto en el mapa', icono: 'sede' },
+  {
+    numero: 3,
+    titulo: 'Configuración inicial',
+    sub: 'Opcional: horario, box y datos fiscales',
+    icono: 'configuracion',
+  },
+  { numero: 4, titulo: 'Confirmación', sub: 'Revisar y crear', icono: 'tilde' },
 ];
 
 /** Duracion de turno que rige si no se cambia (la misma que el backend). */
@@ -135,6 +155,7 @@ const PATRON_TELEFONO = /^\+?[\d\s().-]{6,}$/;
     Alerta,
     EditorDeUbicacion,
     MapaDeUbicacion,
+    Icono,
   ],
   templateUrl: './new-consultorio-page.html',
   styleUrls: ['../../organization.css', './new-consultorio-page.css'],
@@ -150,7 +171,29 @@ export class NewConsultorioPage {
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly pasos = PASOS;
+  /**
+   * Id de la sede a editar, desde la ruta `sedes/:sedeId/editar`. Sin el, la pantalla es el alta.
+   * Editar usa los mismos pasos que abrir una sede (13/11/2026): el horario y el primer box no
+   * estan, porque se editan en el calendario de la sede y en espacios.
+   */
+  readonly sedeId = input<string | undefined>(undefined);
+
+  protected readonly editando = computed(() => this.sedeId() !== undefined);
+
+  /** Lo que devolvio el backend: la base de comparacion del `PATCH` y su `version`. */
+  private readonly original = signal<ConsultorioResponse | null>(null);
+
+  protected readonly pasos = computed(() =>
+    this.editando()
+      ? PASOS.map((paso) =>
+          paso.numero === 3
+            ? { ...paso, titulo: 'Datos fiscales', sub: 'Propios o los de la organización' }
+            : paso.numero === 4
+              ? { ...paso, sub: 'Revisar y guardar' }
+              : paso,
+        )
+      : PASOS,
+  );
   protected readonly ultimoPaso = ULTIMO_PASO;
 
   protected readonly zonas = zonasHorarias();
@@ -299,6 +342,7 @@ export class NewConsultorioPage {
   constructor() {
     effect(() => {
       this.tenantContext.contextEpoch();
+      const sedeId = this.sedeId();
       untracked(() => {
         this.formulario.reset({
           name: '',
@@ -328,7 +372,11 @@ export class NewConsultorioPage {
         // cambiar de tenant no seria un reintento de nada.
         this.intento.set(null);
         this.organizacion.set(null);
+        this.original.set(null);
         this.leerOrganizacion();
+        if (sedeId !== undefined) {
+          this.leerSede(Number(sedeId));
+        }
       });
     });
 
@@ -343,6 +391,35 @@ export class NewConsultorioPage {
         this.erroresDeCampo.set({});
       }
     });
+  }
+
+  /** En la edicion: carga la sede en el formulario y la guarda como base de comparacion. */
+  private leerSede(consultorioId: number): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId === null || !Number.isFinite(consultorioId)) {
+      return;
+    }
+    this.consultorios
+      .getConsultorio({ orgId, consultorioId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (sede) => {
+          this.original.set(sede);
+          this.formulario.reset({
+            ...valoresDeSede(sede),
+            slotMinutes: sede.slotMinutes === undefined ? '' : String(sede.slotMinutes),
+            boxNombre: '',
+            boxCapacidad: '',
+          });
+          cargarUbicacion(this.ubicacion, {
+            ...sede,
+            latitud: sede.ubicacion?.latitud,
+            longitud: sede.ubicacion?.longitud,
+            origen: sede.ubicacion?.origen,
+          });
+        },
+        error: (error: unknown) => this.fallar(error),
+      });
   }
 
   /** Los datos fiscales que la sede hereda. Si falla, el paso 2 lo dice y sigue sirviendo. */
@@ -464,6 +541,11 @@ export class NewConsultorioPage {
       return;
     }
 
+    if (this.editando()) {
+      this.guardarEdicion(orgId);
+      return;
+    }
+
     const cuerpo = this.armarCuerpo();
     const clave = this.claveParaElCuerpo(cuerpo);
 
@@ -496,6 +578,56 @@ export class NewConsultorioPage {
           this.router.navigateByUrl('/organizacion/sedes').catch(() => undefined);
         },
         error: (error: unknown) => this.fallar(error),
+      });
+  }
+
+  /**
+   * Guarda la edicion con un `PATCH` que lleva solo lo que cambio (ver {@link cambiosDeSede}).
+   * Ante `409 concurrent-modification` se relee la sede y se conserva lo escrito: el usuario
+   * compara y vuelve a confirmar, en vez de pisar el cambio de otro.
+   */
+  private guardarEdicion(orgId: number): void {
+    const original = this.original();
+    if (original === null || original.id === undefined || original.version === undefined) {
+      this.estado.set({
+        tipo: 'error',
+        mensaje: 'No pudimos leer la versión de esta sede. Recargá la pantalla y volvé a intentar.',
+        causa: 'concurrencia',
+      });
+      return;
+    }
+    const consultorioId = original.id;
+    const cuerpo = cambiosDeSede(
+      { ...original, version: original.version },
+      this.formulario.getRawValue(),
+      this.ubicacion,
+    );
+    const nombre = this.formulario.controls.name.value.trim();
+
+    this.estado.set({ tipo: 'enviando' });
+    this.erroresDeCampo.set({});
+    this.consultorios
+      .updateConsultorio({ orgId, consultorioId, updateConsultorioRequest: cuerpo })
+      .subscribe({
+        next: () => {
+          this.sedes.invalidar();
+          this.estado.set({ tipo: 'ok' });
+          this.avisos.exito('Cambios guardados', { descripcion: nombre });
+          this.router.navigateByUrl('/organizacion/sedes').catch(() => undefined);
+        },
+        error: (error: unknown) => {
+          this.fallar(error);
+          if (this.causaError() === 'concurrencia') {
+            this.consultorios
+              .getConsultorio({ orgId, consultorioId })
+              .pipe(catchError(() => of(null)))
+              .subscribe((sede) => {
+                if (sede !== null) {
+                  this.original.set(sede);
+                }
+              });
+          }
+        },
       });
   }
 

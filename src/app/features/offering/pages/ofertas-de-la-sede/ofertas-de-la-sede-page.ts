@@ -152,7 +152,7 @@ export class OfertasDeLaSedePage {
   /** Fuera del menu desde el 11/11/2026: la ruta de navegacion lleva de vuelta al catalogo. */
   private readonly migasDeLaBarra = publicarMigas(() => [
     { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
-    { etiqueta: 'Ofertas de la sede' },
+    { etiqueta: 'Actividades de la sede' },
   ]);
 
   private readonly api = inject(OfferingApi);
@@ -363,7 +363,8 @@ export class OfertasDeLaSedePage {
     duracionMinutos: ['', [Validators.required]],
     capacidad: ['1', [Validators.required]],
     precioBase: [''],
-    moneda: [''],
+    // Pesos por defecto: es la moneda de casi todos los centros.
+    moneda: ['ARS'],
     esquemaCobro: [''],
     admiteObraSocial: [false],
     // Estos dos no heredan: el catalogo no publica un valor por defecto para ninguno.
@@ -532,7 +533,7 @@ export class OfertasDeLaSedePage {
       // en cada alta para el caso normal.
       capacidad: '1',
       precioBase: '',
-      moneda: '',
+      moneda: 'ARS',
       esquemaCobro: '',
       admiteObraSocial: false,
       requiereProfesional: true,
@@ -741,7 +742,7 @@ export class OfertasDeLaSedePage {
         // figurar "activa pero todavía sin vigencia" y el operador podria creer que fallo.
         const arrancaDespues =
           cuerpo.vigenciaDesde !== undefined && cuerpo.vigenciaDesde > this.hoy;
-        this.avisos.exito('Oferta publicada', {
+        this.avisos.exito('Actividad publicada', {
           descripcion: arrancaDespues
             ? `${creada.nombreComercial ?? cuerpo.nombreComercial}. Figura sin vigencia hasta ` +
               'su fecha de inicio y empieza a ofrecerse sola ese día.'
@@ -809,7 +810,7 @@ export class OfertasDeLaSedePage {
       next: () => {
         const nombre = this.ofertaEnPanel()?.nombreComercial;
         this.cerrarPanel();
-        this.avisos.exito('Oferta dada de baja', {
+        this.avisos.exito('Actividad dada de baja', {
           descripcion:
             `${nombre ? nombre + '. ' : ''}No admite reservas nuevas; lo ya reservado se ` +
             'conserva y su nombre comercial queda libre.',
@@ -897,7 +898,7 @@ export class OfertasDeLaSedePage {
     const version = original?.version;
     if (original === null || version === undefined) {
       this.errorAccion.set(
-        'No pudimos leer la versión de esta oferta. Cerra el panel, recarga el listado y volvé a intentar.',
+        'No pudimos leer la versión de esta actividad. Cerra el panel, recarga el listado y volvé a intentar.',
       );
       return null;
     }

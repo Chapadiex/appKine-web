@@ -113,7 +113,7 @@ test.describe('Clases grupales contra el backend real', () => {
     await navegar(page, `/clases/nueva?fecha=${fecha}`);
     await expect(page.getByRole('heading', { name: 'Programar clase', level: 1 })).toBeVisible();
     const habilitaciones = respuestaDe(page, 'GET', /\/habilitaciones$/);
-    await page.getByLabel('Oferta grupal').selectOption({ label: oferta.nombre });
+    await page.getByLabel('Actividad', { exact: true }).selectOption({ label: oferta.nombre });
     expect((await habilitaciones).status()).toBe(200);
     await page.getByLabel('Profesional a cargo').selectOption({ label: centro.profesional.nombre });
     await page.getByLabel('Box').selectOption({ label: box.nombre });

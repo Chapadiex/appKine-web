@@ -166,7 +166,7 @@ const MENSAJE_DEFINICION_INACTIVA =
   'siguen legibles.';
 
 const MENSAJE_PRACTICA_NO_UTILIZABLE =
-  'Esa práctica no se puede asentar en esta atención: se dio de baja en el catalogo o la oferta ' +
+  'Esa práctica no se puede asentar en esta atención: se dio de baja en el catalogo o la actividad ' +
   'del turno no la incluye.';
 
 const MENSAJE_PARAMETRO_INVALIDO =
@@ -204,7 +204,7 @@ const MENSAJE_CONFLICTO =
  */
 const RAZON_PRECIO_PARTICULAR: Readonly<Record<string, string>> = {
   PARTICULAR_POR_RECEPCION: 'la recepción se resolvio como particular',
-  OFERTA_SIN_OBRA_SOCIAL: 'la oferta no admite obra social',
+  OFERTA_SIN_OBRA_SOCIAL: 'la actividad no admite obra social',
   SIN_COBERTURA_APLICABLE: 'el paciente no tiene una cobertura con convenio y arancel aplicables',
 };
 
@@ -217,15 +217,15 @@ const MENSAJE_CASO_REQUERIDO =
   'desde su historia clínica) y volvé a intentar. No se registro nada.';
 
 const MENSAJE_PROFESIONAL_NO_HABILITADO =
-  'Ese profesional no esta habilitado para prestar esta oferta. Elegí otra oferta u otro ' +
-  'profesional, o pedi que lo habiliten en la oferta.';
+  'Ese profesional no esta habilitado para prestar esta actividad. Elegí otra actividad u otro ' +
+  'profesional, o pedi que lo habiliten en la actividad.';
 
 const MENSAJE_PROFESIONAL_NO_ASIGNABLE =
   'Ese profesional no puede continuar la atención: necesita un vinculo vigente en esta sede y ' +
   'permiso para registrar sesiones.';
 
 const MENSAJE_OFERTA_NO_VIGENTE =
-  'Esa oferta no esta vigente hoy en esta sede, así que no se puede atender con ella. Elegí otra.';
+  'Esa actividad no esta vigente hoy en esta sede, así que no se puede atender con ella. Elegí otra.';
 
 const MENSAJE_CLAVE_REUSADA =
   'Ese pedido ya se habia mandado con otros datos. No se abrio otra atención: revisa los datos y ' +
@@ -410,9 +410,9 @@ function mensajeSinPrecio(error: AkineHttpError): string {
   return (
     'No se pudo cerrar la atención: el paciente debe el precio particular' +
     (razon ? ` porque ${razon}` : '') +
-    ', y la oferta no tiene un precio vigente' +
+    ', y la actividad no tiene un precio vigente' +
     (dia ? ` para el ${dia}` : ' para ese día') +
-    '. La atención sigue abierta y no se perdio nada: carga el precio de la oferta y volvé a ' +
+    '. La atención sigue abierta y no se perdio nada: carga el precio de la actividad y volvé a ' +
     'cerrarla.'
   );
 }

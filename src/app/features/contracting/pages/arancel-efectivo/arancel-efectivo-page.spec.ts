@@ -136,7 +136,7 @@ describe('ArancelEfectivoPage', () => {
 
     expect(peticion.request.params.has('ofertaId')).toBe(false);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Arancel general del convenio: vale para cualquier oferta',
+      'Arancel general del convenio: vale para cualquier actividad',
     );
   });
 
@@ -145,12 +145,15 @@ describe('ArancelEfectivoPage', () => {
     const opciones = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll('#consulta-oferta option'),
     ].map((opcion) => (opcion.textContent ?? '').trim());
-    expect(opciones).toEqual(['Sin oferta: arancel general del convenio', 'Pilates terapeutico']);
+    expect(opciones).toEqual([
+      'Sin actividad: arancel general del convenio',
+      'Pilates terapeutico',
+    ]);
 
     const peticion = await consultar(fixture, { ...RESUELTO, ofertaId: 31 }, '2026-03-15', '31');
     expect(peticion.request.params.get('ofertaId')).toBe('31');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Arancel propio de la oferta Pilates terapeutico',
+      'Arancel propio de la actividad Pilates terapeutico',
     );
   });
 
@@ -160,8 +163,8 @@ describe('ArancelEfectivoPage', () => {
     await consultar(fixture, RESUELTO, '2026-03-15', '31');
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('la oferta Pilates terapeutico no tiene precio propio');
-    expect(texto).not.toContain('Arancel propio de la oferta');
+    expect(texto).toContain('la actividad Pilates terapeutico no tiene precio propio');
+    expect(texto).not.toContain('Arancel propio de la actividad');
   });
 
   it('SIN_CONVENIO_VIGENTE no es un error: manda a cobrar como particular', async () => {

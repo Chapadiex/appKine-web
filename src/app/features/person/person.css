@@ -316,3 +316,228 @@
   border: 0;
   background: none;
 }
+
+/* Iconos en los rotulos del alta y la edicion de persona (13/11/2026). */
+.campo > label > app-icono,
+.mas-opciones > summary > app-icono,
+.formulario__seccion > app-icono {
+  margin-right: var(--esp-2);
+  color: var(--color-acento);
+  vertical-align: -0.2em;
+}
+
+/*
+ * Padron compacto (13/11/2026): las 10 filas de una pagina entran sin scroll en la tabla.
+ * Menos aire vertical por celda y botones de fila mas bajos.
+ */
+.tabla--padron :is(th, td) {
+  padding-block: var(--esp-2);
+}
+
+.tabla--padron .tabla__acciones .boton--chico,
+.tabla--padron .tabla__acciones ::ng-deep button {
+  min-height: 2rem;
+}
+
+/*
+ * Ficha de la persona (13/11/2026): mas amigable y entera en una pantalla. Iconos en los titulos
+ * y en los datos, los seis datos en una fila, la historia vacia en un renglon y las cuatro
+ * tarjetas del resumen en una fila con cifras grandes.
+ */
+.ficha-identidad h2 > app-icono,
+.ficha-grilla h2 > app-icono,
+.ficha-datos dt > app-icono {
+  margin-right: var(--esp-2);
+  color: var(--color-acento);
+  vertical-align: -0.2em;
+}
+
+.ficha-identidad,
+.ficha-grilla > .tarjeta,
+.ficha-grilla__ancha ::ng-deep .tarjeta {
+  padding: var(--esp-5) var(--esp-6);
+}
+
+.ficha-identidad .titulo-con-ayuda,
+.ficha-grilla .titulo-con-ayuda {
+  margin-bottom: var(--esp-3);
+}
+
+@media (min-width: 64rem) {
+  .ficha-datos {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--esp-3) var(--esp-6);
+  }
+
+  .ficha-grilla {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ficha-grilla {
+  gap: var(--esp-5);
+  margin-bottom: var(--esp-5);
+}
+
+.ficha-cifras {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-3);
+  margin: 0 0 var(--esp-3);
+}
+
+.ficha-cifras > div {
+  padding: var(--esp-3);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.ficha-cifras dd {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+.ficha-nota {
+  margin: 0 0 var(--esp-3);
+  font-size: var(--tipo-xs);
+}
+
+.ficha-subtitulo {
+  margin: var(--esp-2) 0 var(--esp-2);
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.ficha-grilla .lista-hitos li {
+  padding: var(--esp-2) 0;
+  font-size: var(--tipo-xs);
+}
+
+.historia-vacia {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.historia-vacia > app-icono {
+  color: var(--color-acento);
+}
+
+.ficha-grilla__ancha ::ng-deep h2 > app-icono {
+  margin-right: var(--esp-2);
+  color: var(--color-acento);
+  vertical-align: -0.2em;
+}
+
+/* --- Padron: grilla con iconos, nombre y documento juntos, contacto junto (13/11/2026) --- */
+.padron-persona {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-width: 0;
+}
+
+.padron-persona__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.padron-persona__texto,
+.padron-contacto {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.padron-persona__nombre {
+  font-weight: var(--peso-semi);
+}
+
+/* Columna de sí/no: una marca, el detalle en el title. */
+.padron-col-si-no {
+  text-align: center;
+}
+
+.padron-si-no {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  cursor: help;
+}
+
+.padron-si-no--si {
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+}
+
+.padron-si-no--no {
+  border: 1.5px dashed var(--color-borde-control);
+  color: var(--color-texto-suave);
+}
+
+.padron-persona__dato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.padron-persona__dato--fuerte {
+  color: var(--color-texto);
+}
+
+.padron-persona__dato app-icono,
+.etiqueta--con-icono app-icono,
+.padron-hc app-icono {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.padron-persona__vacio {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.etiqueta--con-icono {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+}
+
+.padron-hc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-height: 2rem;
+  white-space: nowrap;
+}
+
+/* Telefono arriba y correo abajo, siempre en dos renglones. */
+.padron-contacto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.padron-contacto > .padron-persona__dato {
+  display: flex;
+}

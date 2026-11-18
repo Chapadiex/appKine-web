@@ -1,0 +1,69 @@
+:host {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.segmentado-tactil {
+  display: inline-flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  overflow: hidden;
+}
+
+.segmentado-tactil__opcion {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: var(--alto-tocable);
+  padding: 0 var(--esp-6);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.segmentado-tactil__opcion + .segmentado-tactil__opcion {
+  border-left: var(--borde-fino) solid var(--color-borde-control);
+}
+
+/* El radio sigue siendo el control: invisible, pero ocupa toda la celda. */
+.segmentado-tactil__opcion input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* El elegido: relleno de acción y tilde, no sólo color. */
+.segmentado-tactil__opcion:has(input:checked) {
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+.segmentado-tactil__opcion:has(input:checked)::before {
+  content: '✓';
+}
+
+/* Foco: anillo del color de foco con un filete de superficie por dentro, para que se vea también
+   sobre la opción elegida, que está rellena del color de acción (casi igual al de foco). */
+.segmentado-tactil__opcion:has(input:focus-visible) {
+  box-shadow:
+    inset 0 0 0 var(--foco-grosor) var(--color-foco),
+    inset 0 0 0 calc(var(--foco-grosor) + 2px) var(--color-superficie);
+}
+
+.segmentado-tactil:disabled .segmentado-tactil__opcion {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

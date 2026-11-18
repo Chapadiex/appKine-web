@@ -485,11 +485,11 @@ describe('ArancelesDelConvenioPage', () => {
         ...(fixture.nativeElement as HTMLElement).querySelectorAll('#alta-arancel-oferta option'),
       ].map((opcion) => (opcion.textContent ?? '').trim());
     // Sin practica elegida no hay oferta que pueda declararla.
-    expect(opciones()).toEqual(['General: vale para cualquier oferta']);
+    expect(opciones()).toEqual(['General: vale para cualquier actividad']);
 
     elegir(fixture, '#alta-arancel-practica', '55');
     expect(opciones()).toEqual([
-      'General: vale para cualquier oferta',
+      'General: vale para cualquier actividad',
       'Solo en Pilates terapeutico',
     ]);
 
@@ -515,7 +515,7 @@ describe('ArancelesDelConvenioPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Esa oferta no declara la práctica de este arancel',
+      'Esa actividad no declara la práctica de este arancel',
     );
   });
 
@@ -543,7 +543,7 @@ describe('ArancelesDelConvenioPage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('No encontramos la oferta elegida en esta sede');
+    expect(texto).toContain('No encontramos la actividad elegida en esta sede');
     expect(texto).not.toContain('Ese arancel ya no existe');
   });
 

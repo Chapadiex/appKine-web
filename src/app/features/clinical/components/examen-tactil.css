@@ -1,0 +1,321 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+.carga-medicion__medida {
+  flex: 2 1 11rem;
+}
+
+.carga-medicion__valor {
+  flex: 0 1 7.5rem;
+}
+
+.carga-medicion__texto,
+.carga-medicion__nota {
+  flex: 1 1 8rem;
+}
+
+.titulo-con-ayuda > .ayuda.cuenta-de-medidas {
+  margin: 0 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 47.99rem) {
+  .carga-medicion > .carga-medicion__valor,
+  .carga-medicion > .carga-medicion__texto {
+    grid-column: span 2;
+  }
+  .carga-medicion > .carga-medicion__nota {
+    grid-column: 1 / 3;
+  }
+}
+
+/* Tratamiento con el mismo diseño que la medicion (13/11/2026). */
+.carga-medicion--tratamiento {
+  grid-template-columns: minmax(10rem, 2fr) minmax(7rem, 1.2fr) auto minmax(4.5rem, 6rem) auto;
+}
+
+.carga-medicion--tratamiento {
+  grid-template-columns: minmax(12rem, 2fr) auto minmax(4.5rem, 6rem) auto;
+}
+
+.baja-en-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--esp-3);
+}
+
+.baja-en-fila > .campo {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+/* Zona como combo multiple al lado de la practica (13/11/2026). */
+.carga-medicion--tratamiento {
+  grid-template-columns: minmax(10rem, 2fr) minmax(9rem, 1.5fr) auto minmax(4.5rem, 6rem) auto;
+}
+
+.campo__rotulo {
+  display: block;
+  font-weight: var(--peso-semi);
+  white-space: nowrap;
+}
+
+.combo-multiple {
+  position: relative;
+}
+
+.combo-multiple > summary {
+  display: flex;
+  align-items: center;
+  height: 2.75rem;
+  padding: 0 2rem 0 var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  cursor: pointer;
+  list-style: none;
+}
+
+.combo-multiple > summary::-webkit-details-marker {
+  display: none;
+}
+
+.combo-multiple > summary::after {
+  content: '';
+  position: absolute;
+  right: var(--esp-4);
+  top: 1.15rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.combo-multiple > summary:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.combo-multiple__valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combo-multiple__panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--esp-1));
+  left: 0;
+  min-width: 100%;
+  display: grid;
+  gap: var(--esp-1);
+  padding: var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+}
+
+.combo-multiple__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  padding: var(--esp-1) var(--esp-2);
+  font-weight: normal;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.combo-multiple__panel input[type='text'] {
+  height: 2.25rem;
+  min-height: 2.25rem;
+}
+
+@media (max-width: 47.99rem) {
+  .carga-medicion.carga-medicion--tratamiento {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--esp-3);
+  }
+  .carga-medicion--tratamiento > :nth-child(2) {
+    grid-column: 1 / -1;
+  }
+  .carga-medicion--tratamiento > :nth-child(4) {
+    grid-column: 2;
+  }
+}
+
+/* Combo de zonas mas compacto (13/11/2026): la casilla heredaba el alto tactil de 44 px. */
+.combo-multiple__panel {
+  gap: 0;
+  padding: var(--esp-2);
+}
+
+.combo-multiple .combo-multiple__opcion {
+  min-height: 0;
+  padding: 0.3rem var(--esp-2);
+  line-height: 1.2;
+}
+
+.combo-multiple .combo-multiple__opcion input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  min-height: 0;
+  margin: 0;
+}
+
+.combo-multiple__panel input[type='text'] {
+  margin-top: var(--esp-1);
+  height: 2rem;
+  min-height: 2rem;
+}
+
+/* Mas datos compacto (13/11/2026). */
+.mas-datos {
+  display: grid;
+  gap: var(--esp-3);
+  padding-top: var(--esp-3);
+}
+
+.mas-datos__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--esp-3);
+}
+
+.mas-datos__fila > .campo {
+  margin: 0;
+}
+
+.mas-datos__parametros {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--esp-2);
+}
+
+.mas-datos__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.mas-datos__cabecera .boton-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+}
+
+.parametro-fila {
+  display: grid;
+  grid-template-columns:
+    minmax(8rem, 2fr) minmax(7rem, 1fr) minmax(7rem, 1.5fr) minmax(4rem, 0.8fr)
+    var(--alto-control);
+  gap: var(--esp-2);
+  align-items: center;
+}
+
+.parametro-fila > input,
+.parametro-fila > select {
+  height: var(--alto-control);
+  min-height: var(--alto-control);
+  padding-block: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.parametro-fila.campo {
+  margin: 0;
+}
+
+.parametro-fila--titulos {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.parametro-fila__vacio {
+  color: var(--color-texto-suave);
+  padding-left: var(--esp-2);
+}
+
+.parametro-fila .boton-icono {
+  width: var(--alto-control);
+  height: var(--alto-control);
+  min-height: var(--alto-control);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: var(--borde-fino) solid transparent;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+}
+
+.parametro-fila .boton-icono:hover {
+  border-color: var(--color-borde-control);
+  color: var(--color-texto);
+}
+
+@media (max-width: 47.99rem) {
+  .parametro-fila {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 4rem var(--alto-control);
+  }
+  .parametro-fila > :nth-child(1) {
+    grid-column: 1 / -1;
+  }
+  .parametro-fila--titulos {
+    display: none;
+  }
+}
+
+/* Chevron del combo igual al de los select (fino y suave). */
+.combo-multiple > summary::after {
+  width: 0.4375rem;
+  height: 0.4375rem;
+  top: calc(50% - 0.3rem);
+  border-right: 1.5px solid var(--color-texto-suave);
+  border-bottom: 1.5px solid var(--color-texto-suave);
+}
+
+/* Medición y tratamiento táctiles (16/11/2026): las medidas en chips van en su propia fila, y el
+   valor con −/+ toma el ancho que necesita. */
+.carga-medicion {
+  grid-template-columns: minmax(10rem, 2fr) auto auto minmax(8rem, 2fr) auto;
+}
+.carga-medicion__medida--chips {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.carga-medicion__medida--chips > legend {
+  margin-bottom: var(--esp-2);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+@media (max-width: 64rem) {
+  .carga-medicion,
+  .carga-medicion--tratamiento {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), auto));
+  }
+}
+/* Parámetros con tipo segmentado y valor con −/+: la columna toma lo que necesita. */
+.parametro-fila {
+  grid-template-columns: minmax(8rem, 1.5fr) auto minmax(10rem, auto) minmax(4rem, 0.8fr) var(
+      --alto-tocable
+    );
+  align-items: center;
+}
+@media (max-width: 64rem) {
+  .parametro-fila {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), auto));
+  }
+  .parametro-fila--titulos {
+    display: none;
+  }
+}
