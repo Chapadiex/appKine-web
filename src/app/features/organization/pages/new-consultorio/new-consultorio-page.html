@@ -1,4 +1,8 @@
-<app-cabecera-de-pagina [titulo]="editando() ? 'Editar sede' : 'Abrir una sede'">
+<app-cabecera-de-pagina
+  [titulo]="
+    configuracionInicial() ? 'Configurá tu centro' : editando() ? 'Editar sede' : 'Abrir una sede'
+  "
+>
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Una sede es un consultorio de esta organización: tiene su propia zona horaria, su propia
@@ -74,7 +78,13 @@
             ¿Dónde está {{ resumen().nombre }}?
           }
           @case (3) {
-            {{ editando() ? 'Datos fiscales' : 'Configuración inicial' }}
+            {{
+              configuracionInicial()
+                ? 'Horario de atención'
+                : editando()
+                  ? 'Datos fiscales'
+                  : 'Configuración inicial'
+            }}
           }
           @case (4) {
             {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
@@ -114,7 +124,12 @@
         @switch (paso()) {
           @case (1) {
             <p class="asistente__nota">
-              Con el nombre alcanza. Lo demás ya viene con un valor razonable.
+              @if (configuracionInicial()) {
+                Tu centro ya tiene su primera sede. Revisá sus datos y cargá cuándo atiende: con el
+                horario, la agenda empieza a ofrecer turnos.
+              } @else {
+                Con el nombre alcanza. Lo demás ya viene con un valor razonable.
+              }
             </p>
 
             <div class="asistente__grilla asistente__grilla--datos">
@@ -312,7 +327,17 @@
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
-              <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
+              @if (configuracionInicial()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="postergarConfiguracionInicial()"
+                >
+                  Ahora no
+                </button>
+              } @else {
+                <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
+              }
             </div>
           }
 
@@ -341,7 +366,7 @@
           @case (3) {
             <!-- Instruccion de un paso: va a la vista. -->
             <p class="asistente__nota">
-              @if (editando()) {
+              @if (editando() && !configuracionInicial()) {
                 El horario se cambia en el calendario de la sede y los boxes en Espacios.
               } @else {
                 Todo es opcional: podés seguir sin cargar nada y completarlo después.
@@ -349,7 +374,7 @@
             </p>
 
             <div class="asistente__grilla asistente__grilla--horario">
-              @if (!editando()) {
+              @if (!editando() || configuracionInicial()) {
                 <section class="bloque" aria-labelledby="titulo-horario-general">
                   <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
                     Horario de atención
@@ -615,7 +640,7 @@
                 </button>
               </div>
 
-              @if (!editando()) {
+              @if (!editando() || configuracionInicial()) {
                 <div class="confirmacion__fila">
                   <dt>Horario</dt>
                   <dd>
@@ -685,7 +710,13 @@
                 @if (espera.activa()) {
                   Espera {{ espera.segundos() }} s
                 } @else {
-                  {{ editando() ? 'Guardar cambios' : 'Crear sede' }}
+                  {{
+                    configuracionInicial()
+                      ? 'Guardar y empezar'
+                      : editando()
+                        ? 'Guardar cambios'
+                        : 'Crear sede'
+                  }}
                 }
               </button>
               <button type="button" class="boton boton--secundario" (click)="volver()">

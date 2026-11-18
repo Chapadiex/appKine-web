@@ -20,6 +20,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
+import { CalendarioDeSedeService } from '../../../../api/generated/api/calendario-de-sede.service';
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
 import { OrganizacionesService } from '../../../../api/generated/api/organizaciones.service';
 import { CreateConsultorioRequest } from '../../../../api/generated/model/create-consultorio-request';
@@ -28,6 +29,7 @@ import { ConsultorioResponse } from '../../../../api/generated/model/consultorio
 import { cambiosDeSede, valoresDeSede } from '../../models/cambios-de-sede';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { PrimerosPasosStore } from '../../../../core/guards/primeros-pasos.guard';
 import { CausaConsultorio, traducirErrorConsultorio } from '../../models/consultorio-errors';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { etiquetaDeZona, zonasHorarias } from '../../models/zonas-horarias';
@@ -165,6 +167,8 @@ export class NewConsultorioPage {
   private readonly organizaciones = inject(OrganizacionesService);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly sedes = inject(SedesDelContexto);
+  private readonly calendarios = inject(CalendarioDeSedeService);
+  private readonly primerosPasos = inject(PrimerosPasosStore);
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -180,6 +184,17 @@ export class NewConsultorioPage {
 
   protected readonly editando = computed(() => this.sedeId() !== undefined);
 
+  /**
+   * `?inicial=1`: la sede que creó el registro, abierta por `primerosPasosGuard` la primera vez
+   * que el dueño llega al inicio (18/11/2026). Es la edición con el horario de atención agregado
+   * al paso 3: la sede todavía no tiene uno, así que no hay nada que pisar.
+   */
+  readonly inicial = input<string | undefined>(undefined);
+
+  protected readonly configuracionInicial = computed(
+    () => this.editando() && this.inicial() === '1',
+  );
+
   /** Lo que devolvio el backend: la base de comparacion del `PATCH` y su `version`. */
   private readonly original = signal<ConsultorioResponse | null>(null);
 
@@ -187,7 +202,9 @@ export class NewConsultorioPage {
     this.editando()
       ? PASOS.map((paso) =>
           paso.numero === 3
-            ? { ...paso, titulo: 'Datos fiscales', sub: 'Propios o los de la organización' }
+            ? this.configuracionInicial()
+              ? { ...paso, titulo: 'Horario y datos fiscales', sub: 'Opcional: cuándo atiende' }
+              : { ...paso, titulo: 'Datos fiscales', sub: 'Propios o los de la organización' }
             : paso.numero === 4
               ? { ...paso, sub: 'Revisar y guardar' }
               : paso,
@@ -582,6 +599,47 @@ export class NewConsultorioPage {
   }
 
   /**
+   * Segundo paso del guardado en la configuración inicial: el horario va por el calendario de la
+   * sede, que es su dueño. Si el horario falla la sede ya quedó guardada, así que se avisa y se
+   * sigue: se completa después desde el calendario.
+   */
+  private guardarHorarioInicial(orgId: number, consultorioId: number, nombre: string): void {
+    const horarioGeneral = franjasDelFormulario(this.horario);
+    if (horarioGeneral.length === 0) {
+      this.terminarConfiguracionInicial(orgId, nombre, true);
+      return;
+    }
+    this.calendarios
+      .updateCalendarioSede({ consultorioId, updateCalendarioRequest: { horarioGeneral } })
+      .subscribe({
+        next: () => this.terminarConfiguracionInicial(orgId, nombre, true),
+        error: () => this.terminarConfiguracionInicial(orgId, nombre, false),
+      });
+  }
+
+  private terminarConfiguracionInicial(orgId: number, nombre: string, horarioOk: boolean): void {
+    this.primerosPasos.postergar(orgId);
+    this.estado.set({ tipo: 'ok' });
+    if (horarioOk) {
+      this.avisos.exito('Tu centro está listo', { descripcion: nombre });
+    } else {
+      this.avisos.error('La sede se guardó, pero el horario no', {
+        descripcion: 'Cargalo desde el calendario de la sede.',
+      });
+    }
+    this.router.navigateByUrl('/agenda').catch(() => undefined);
+  }
+
+  /** "Ahora no" de la configuración inicial: no se vuelve a ofrecer en esta pestaña. */
+  protected postergarConfiguracionInicial(): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId !== null) {
+      this.primerosPasos.postergar(orgId);
+    }
+    this.router.navigateByUrl('/agenda').catch(() => undefined);
+  }
+
+  /**
    * Guarda la edicion con un `PATCH` que lleva solo lo que cambio (ver {@link cambiosDeSede}).
    * Ante `409 concurrent-modification` se relee la sede y se conserva lo escrito: el usuario
    * compara y vuelve a confirmar, en vez de pisar el cambio de otro.
@@ -611,6 +669,10 @@ export class NewConsultorioPage {
       .subscribe({
         next: () => {
           this.sedes.invalidar();
+          if (this.configuracionInicial()) {
+            this.guardarHorarioInicial(orgId, consultorioId, nombre);
+            return;
+          }
           this.estado.set({ tipo: 'ok' });
           this.avisos.exito('Cambios guardados', { descripcion: nombre });
           this.router.navigateByUrl('/organizacion/sedes').catch(() => undefined);
