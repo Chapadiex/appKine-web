@@ -77,6 +77,8 @@ api/historia-clinica.service.ts
 api/historia-clinica.serviceInterface.ts
 api/inscripciones.service.ts
 api/inscripciones.serviceInterface.ts
+api/inteligencia-artificial-del-centro.service.ts
+api/inteligencia-artificial-del-centro.serviceInterface.ts
 api/invitaciones-recibidas.service.ts
 api/invitaciones-recibidas.serviceInterface.ts
 api/invitaciones.service.ts
@@ -355,6 +357,7 @@ model/espacio-de-agenda.ts
 model/espacio-habilitado.ts
 model/espacio-page-response.ts
 model/espacio-response.ts
+model/estado-del-motor-response.ts
 model/evaluacion-base.ts
 model/evaluacion-previa.ts
 model/evento-clinico-response.ts
@@ -391,6 +394,8 @@ model/franja-de-agenda.ts
 model/franja-fuera-de-horario-response.ts
 model/franja-resuelta-response.ts
 model/fuente-de-consulta-response.ts
+model/funcion-ia-response.ts
+model/funciones-ia-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
 model/guardar-borrador.ts
@@ -456,6 +461,7 @@ model/membership-grant-response.ts
 model/membership-page-response.ts
 model/membership-reason-request.ts
 model/membership-response.ts
+model/modelo-del-motor-response.ts
 model/models.ts
 model/modificar-plan-tratamiento-request.ts
 model/motivo-de-rechazo.ts
@@ -526,6 +532,7 @@ model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
 model/programar-serie-de-clases.ts
+model/prueba-del-motor-response.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
@@ -650,6 +657,7 @@ model/update-convenio-request.ts
 model/update-espacio-request.ts
 model/update-excepcion-request.ts
 model/update-financiador-request.ts
+model/update-funciones-ia-request.ts
 model/update-marca-request.ts
 model/update-medicion-definicion-request.ts
 model/update-oferta-request.ts

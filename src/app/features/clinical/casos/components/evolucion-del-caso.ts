@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs';
 import { EvolucionDelCasoHallazgoResponse } from '../../../../api/generated/model/evolucion-del-caso-hallazgo-response';
 import { EvolucionDelCasoResponse } from '../../../../api/generated/model/evolucion-del-caso-response';
 import { EvolucionDelCasoSerieResponse } from '../../../../api/generated/model/evolucion-del-caso-serie-response';
+import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -60,6 +61,7 @@ const NUMERO = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 3 });
 export class EvolucionDelCaso {
   private readonly api = inject(EvolucionApi);
   private readonly contexto = inject(TenantContextStore);
+  protected readonly funcionesIa = inject(FuncionesIaStore);
 
   readonly casoId = input.required<number>();
   readonly justificacion = input<Justificacion>(null);

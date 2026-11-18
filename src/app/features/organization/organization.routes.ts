@@ -146,6 +146,15 @@ export const routes: Routes = [
     title: 'AKINE - Marca del centro',
   },
   {
+    path: 'inteligencia-artificial',
+    canActivate: [permissionGuard(PERMISO_TENANT_UPDATE)],
+    loadComponent: () =>
+      import('./pages/inteligencia-artificial/inteligencia-artificial-page').then(
+        (m) => m.InteligenciaArtificialPage,
+      ),
+    title: 'AKINE - Inteligencia artificial',
+  },
+  {
     path: 'auditoria',
     canActivate: [permissionGuard(PERMISO_AUDITORIA_READ)],
     loadComponent: () => import('./pages/audit/audit-page').then((m) => m.AuditPage),

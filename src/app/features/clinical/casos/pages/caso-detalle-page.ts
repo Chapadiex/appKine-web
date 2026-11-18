@@ -18,6 +18,7 @@ import { IntegranteDelEquipoRolEnum } from '../../../../api/generated/model/inte
 import { ProfesionalHabilitado } from '../../../../api/generated/model/profesional-habilitado';
 import { PERMISO_TURNO_MANAGE } from '../../../../core/models/permisos';
 import { FlujoDeTurnosStore } from '../../../../core/services/flujo-de-turnos.store';
+import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
@@ -94,6 +95,7 @@ export class CasoDetallePage {
   private readonly avisos = inject(AvisosStore);
   private readonly sede = inject(SedeClinicaApi);
   private readonly contexto = inject(TenantContextStore);
+  protected readonly funcionesIa = inject(FuncionesIaStore);
   private readonly flujo = inject(FlujoDeTurnosStore);
   protected readonly visita = inject(VisitaClinica);
 

@@ -19,6 +19,7 @@ import {
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
+import { FuncionIa } from '../../core/services/funciones-ia.store';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -37,6 +38,12 @@ export interface Seccion {
    * raiz (la politica de enmienda es de `/atencion` y se llega desde Organizacion).
    */
   readonly tambien?: readonly string[];
+
+  /**
+   * Funcion de IA de la que depende la pantalla: si el centro la apago, o el servidor no la ofrece,
+   * la seccion no se muestra (Organizacion → Inteligencia artificial).
+   */
+  readonly funcionIa?: FuncionIa;
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -127,11 +134,13 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Consultar biblioteca',
         ruta: '/consulta',
         permisos: [PERMISO_BIBLIOTECA_CONSULTAR],
+        funcionIa: 'BIBLIOTECA',
       },
       {
         etiqueta: 'Asistente de datos',
         ruta: '/asistente',
         permisos: [PERMISO_ASISTENTE_USE],
+        funcionIa: 'ASISTENTE',
       },
     ],
   },
@@ -229,7 +238,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         ruta: '/organizacion/colaboradores',
         permisos: [PERMISO_COLABORADOR_READ],
       },
-      { etiqueta: 'Biblioteca', ruta: '/biblioteca', permisos: [PERMISO_BIBLIOTECA_MANAGE] },
+      {
+        etiqueta: 'Biblioteca',
+        ruta: '/biblioteca',
+        permisos: [PERMISO_BIBLIOTECA_MANAGE],
+        funcionIa: 'BIBLIOTECA',
+      },
     ],
   },
 ];
