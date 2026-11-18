@@ -55,6 +55,8 @@ api/definiciones-de-medicion.service.ts
 api/definiciones-de-medicion.serviceInterface.ts
 api/derivacion-clinica-de-participantes.service.ts
 api/derivacion-clinica-de-participantes.serviceInterface.ts
+api/dictado.service.ts
+api/dictado.serviceInterface.ts
 api/disponibilidad-profesional.service.ts
 api/disponibilidad-profesional.serviceInterface.ts
 api/disponibilidad.service.ts
@@ -532,6 +534,8 @@ model/profesional-de-agenda.ts
 model/profesional-habilitado.ts
 model/programar-clase.ts
 model/programar-serie-de-clases.ts
+model/proponer-evaluacion-dictada.ts
+model/propuesta-de-evaluacion-dictada.ts
 model/prueba-del-motor-response.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
@@ -627,6 +631,7 @@ model/timeline-response.ts
 model/total-por-medio-de-caja.ts
 model/totales-de-egresos-por-categoria.ts
 model/totales-de-egresos.ts
+model/transcripcion-de-dictado.ts
 model/transicion-de-plan.ts
 model/transicion-de-recepcion.ts
 model/trasladar-turno.ts

@@ -10,6 +10,8 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { Dictado } from '../../dictado/dictado.directive';
+
 /**
  * Texto libre que nunca es obligatorio (modo táctil, 16/11/2026): en la tablet escribir cuesta, así
  * que el rótulo dice "(opcional)" y, sólo en modo táctil, una pista recuerda el micrófono del
@@ -17,6 +19,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
  */
 @Component({
   selector: 'app-texto-opcional',
+  imports: [Dictado],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './texto-opcional.css',
   providers: [
@@ -28,6 +31,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     </label>
     @if (multilinea()) {
       <textarea
+        appDictado
         class="texto-opcional__campo"
         autocapitalize="sentences"
         enterkeyhint="done"
@@ -43,6 +47,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       ></textarea>
     } @else {
       <input
+        appDictado
         type="text"
         class="texto-opcional__campo"
         autocapitalize="sentences"

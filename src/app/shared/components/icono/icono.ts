@@ -79,6 +79,8 @@ const TRAZOS = {
   advertencia: 'M12 3.5l9.5 16.5h-19zM12 10v4.5M12 17.4h.01',
   error: ANILLO + 'M9 9l6 6M15 9l-6 6',
   repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
+  microfono: rectangulo(9, 3, 6, 11, 3) + 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
+  detener: rectangulo(6.5, 6.5, 11, 11, 2),
 } satisfies Record<string, string>;
 
 /** Los iconos que existen. Agregar uno es agregar su trazo en `TRAZOS`. */

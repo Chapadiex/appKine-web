@@ -471,6 +471,11 @@
           />
         </div>
 
+        <app-dictado-de-evaluacion
+          (aplicar)="aplicarDictado($event)"
+          (problema)="avisarDictado($event)"
+        />
+
         <fieldset class="grupo-plano">
           <legend>Dolor (EVA, escala 0 a 10)</legend>
           @if (hayPrevia()) {
@@ -797,6 +802,7 @@
           <div class="campo">
             <label for="cierre-nota">Nota de cierre</label>
             <textarea
+              appDictado
               id="cierre-nota"
               name="cierre-nota"
               rows="3"
