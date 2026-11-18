@@ -20,6 +20,7 @@ import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 import { FuncionIa } from '../../core/services/funciones-ia.store';
+import { ServicioContratable } from '../../core/services/contratacion.store';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -44,6 +45,12 @@ export interface Seccion {
    * la seccion no se muestra (Organizacion → Inteligencia artificial).
    */
   readonly funcionIa?: FuncionIa;
+
+  /**
+   * Servicio contratado del que depende la pantalla (18/11/2026): un centro de solo actividades no
+   * ve la parte clinica, y uno de solo kinesiologia no ve las clases.
+   */
+  readonly servicio?: ServicioContratable;
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -129,6 +136,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Atender sin turno',
         ruta: '/atencion/sin-turno',
         permisos: [PERMISO_SESION_REGISTER],
+        servicio: 'KINESIOLOGIA',
       },
       {
         etiqueta: 'Consultar biblioteca',
@@ -153,6 +161,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Historias clínicas',
         ruta: '/historia-clinica',
         permisos: [PERMISO_HC_READ],
+        servicio: 'KINESIOLOGIA',
       },
     ],
   },
@@ -160,8 +169,18 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     etiqueta: 'Actividades',
     icono: 'actividades',
     secciones: [
-      { etiqueta: 'Clases', ruta: RUTA_CLASES, permisos: [PERMISO_CLASE_READ] },
-      { etiqueta: 'Asistencia', ruta: '/asistencia', permisos: [PERMISO_INSCRIPCION_READ] },
+      {
+        etiqueta: 'Clases',
+        ruta: RUTA_CLASES,
+        permisos: [PERMISO_CLASE_READ],
+        servicio: 'ACTIVIDADES',
+      },
+      {
+        etiqueta: 'Asistencia',
+        ruta: '/asistencia',
+        permisos: [PERMISO_INSCRIPCION_READ],
+        servicio: 'ACTIVIDADES',
+      },
     ],
   },
   {
@@ -171,7 +190,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
       { etiqueta: 'Caja diaria', ruta: '/caja', permisos: [PERMISO_CAJA_OPERATE] },
       { etiqueta: 'Egresos', ruta: '/egresos', permisos: [PERMISO_CAJA_OPERATE] },
       { etiqueta: 'Honorarios', ruta: '/egresos/honorarios', permisos: [PERMISO_CAJA_OPERATE] },
-      { etiqueta: 'Presentaciones', ruta: '/presentaciones', permisos: [PERMISO_COBRO_REGISTER] },
+      {
+        etiqueta: 'Presentaciones',
+        ruta: '/presentaciones',
+        permisos: [PERMISO_COBRO_REGISTER],
+        servicio: 'KINESIOLOGIA',
+      },
       { etiqueta: 'Reportes', ruta: '/reportes', permisos: [PERMISO_REPORTE_READ] },
     ],
   },
@@ -191,16 +215,19 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Convenios de la sede',
         ruta: '/contratacion/convenios',
         permisos: [PERMISO_CONVENIO_READ],
+        servicio: 'KINESIOLOGIA',
       },
       {
         etiqueta: 'Financiadores',
         ruta: '/contratacion/financiadores',
         permisos: [PERMISO_CONVENIO_READ],
+        servicio: 'KINESIOLOGIA',
       },
       {
         etiqueta: 'Arancel efectivo',
         ruta: '/contratacion/arancel-efectivo',
         permisos: [PERMISO_CONVENIO_READ],
+        servicio: 'KINESIOLOGIA',
       },
     ],
   },
