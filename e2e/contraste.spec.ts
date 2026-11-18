@@ -346,7 +346,9 @@ test.describe('Contraste de color', () => {
     test('el alta de una clase con los campos en error', async ({ page }) => {
       await instalarApiDeContraste(page);
       await page.goto('/clases/nueva');
-      await page.getByLabel('Oferta grupal').selectOption({ label: 'Pilates reformer' });
+      await page
+        .getByLabel('Actividad', { exact: true })
+        .selectOption({ label: 'Pilates reformer' });
       await page.getByLabel('Fecha', { exact: true }).fill('');
       await page.getByLabel('Cupo').fill('0');
       await page.getByRole('button', { name: 'Programar clase' }).click();
@@ -441,7 +443,7 @@ test.describe('Contraste de color', () => {
       await instalarApiDp43(page);
       await page.goto('/atencion/sin-turno');
       await page
-        .getByLabel('Oferta', { exact: true })
+        .getByLabel('Actividad', { exact: true })
         .selectOption({ label: 'Rehabilitacion neurologica' });
       await page.getByRole('button', { name: 'Iniciar atención' }).click();
       await expect(page.getByText('Elegí a quien se atiende.')).toBeVisible();

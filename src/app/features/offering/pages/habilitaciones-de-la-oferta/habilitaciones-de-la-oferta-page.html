@@ -3,9 +3,9 @@
     <p>Quien puede prestar esta actividad y en que espacios de esta sede.</p>
     <p class="ayuda-contextual__subtitulo">Habilitar no es dar permiso</p>
     <p>
-      Habilitar dice <b>quien puede prestar</b> esta actividad y <b>donde</b>. No le da a nadie acceso
-      al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un administrador sin
-      habilitación sigue configurando esta actividad aunque no la preste.
+      Habilitar dice <b>quien puede prestar</b> esta actividad y <b>donde</b>. No le da a nadie
+      acceso al sistema ni le cambia lo que puede administrar: eso lo decide su rol. Un
+      administrador sin habilitación sigue configurando esta actividad aunque no la preste.
     </p>
   </app-ayuda>
 
@@ -50,8 +50,8 @@
           <h2 id="capacidad-titulo">Capacidad</h2>
           <app-ayuda titulo="Sobre la capacidad">
             <p>
-              La capacidad real es la menor entre la que se cargó en la actividad y la del espacio más
-              chico que esté habilitado: nadie puede atender a más gente de la que entra en el
+              La capacidad real es la menor entre la que se cargó en la actividad y la del espacio
+              más chico que esté habilitado: nadie puede atender a más gente de la que entra en el
               lugar.
             </p>
           </app-ayuda>
@@ -71,8 +71,8 @@
             <span class="aviso-habilitacion__marca" aria-hidden="true">!</span>
             <span>
               La limita <b>{{ configuracion.espacioQueLimita }}</b
-              >, que admite menos gente que la actividad. Mientras ese espacio este habilitado, no se
-              puede atender a mas.
+              >, que admite menos gente que la actividad. Mientras ese espacio este habilitado, no
+              se puede atender a mas.
             </span>
           </p>
         }
@@ -83,7 +83,9 @@
         <app-alerta
           tipo="error"
           [titulo]="
-            ofertaIlegible() ? 'No pudimos leer la actividad' : 'No pudimos guardar las habilitaciones'
+            ofertaIlegible()
+              ? 'No pudimos leer la actividad'
+              : 'No pudimos guardar las habilitaciones'
           "
         >
           <p>{{ mensaje }}</p>
@@ -109,8 +111,8 @@
               <h2 id="profesionales-titulo">Profesionales</h2>
               <app-ayuda titulo="Sobre los profesionales">
                 <p>
-                  Solo los marcados van a poder prestar esta actividad. Si desmarcás a todos, la actividad
-                  vuelve a quedar disponible para cualquiera.
+                  Solo los marcados van a poder prestar esta actividad. Si desmarcás a todos, la
+                  actividad vuelve a quedar disponible para cualquiera.
                 </p>
                 <p class="ayuda-contextual__subtitulo">Duración propia</p>
                 <p>
@@ -240,9 +242,9 @@
               <h2 id="espacios-titulo">Espacios</h2>
               <app-ayuda titulo="Sobre los espacios">
                 <p>
-                  Solo los marcados se van a poder usar para esta actividad. Que un espacio sirva no se
-                  deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia ahi,
-                  lo habilita esta lista.
+                  Solo los marcados se van a poder usar para esta actividad. Que un espacio sirva no
+                  se deduce de su tipo: elegir "Pileta" al darlo de alta no habilita hidroterapia
+                  ahi, lo habilita esta lista.
                 </p>
               </app-ayuda>
             </div>

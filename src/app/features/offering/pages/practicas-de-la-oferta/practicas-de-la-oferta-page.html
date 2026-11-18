@@ -3,13 +3,16 @@
     <p>Que prácticas del catalogo puede prestar esta actividad, y cual es la principal.</p>
     <p class="ayuda-contextual__subtitulo">Para que sirve esta lista</p>
     <p>
-      La actividad es lo que el centro vende; la práctica es lo que el financiador reconoce y paga. La
+      La actividad es lo que el centro vende; la práctica es lo que el financiador reconoce y paga.
+      La
       <b>cobertura aplicable</b> de un paciente se calcula sobre estas prácticas, y cuando una
       sesión cierra <b>sin tratamientos registrados</b>, el <b>devengo al financiador</b> y el
       consumo de la autorización usan la <b>práctica principal</b>. Si se registraron tratamientos,
       manda la práctica realizada.
     </p>
-    <p>Esta lista dice lo que la actividad <b>puede</b> prestar, no lo que se presto en una sesión.</p>
+    <p>
+      Esta lista dice lo que la actividad <b>puede</b> prestar, no lo que se presto en una sesión.
+    </p>
   </app-ayuda>
 
   <app-pestanas [pestanas]="pestanasDeOferta" [etiqueta]="etiquetaDePestanas" />
@@ -103,8 +106,8 @@
                   </button>
                   @if (fila.fueraDelCatalogo) {
                     <p class="ayuda ayuda--fija">
-                      El catalogo dio de baja esta práctica. La actividad la conserva y sigue valiendo,
-                      pero si era la principal conviene elegir otra.
+                      El catalogo dio de baja esta práctica. La actividad la conserva y sigue
+                      valiendo, pero si era la principal conviene elegir otra.
                     </p>
                   }
                 </li>
@@ -189,8 +192,8 @@
           <h2 id="baja-titulo">Dadas de baja</h2>
           <app-ayuda titulo="Dadas de baja">
             <p>
-              Prácticas que la actividad tuvo y se quitaron. Quedan como historia; para volver a sumar
-              una, buscala y agregala.
+              Prácticas que la actividad tuvo y se quitaron. Quedan como historia; para volver a
+              sumar una, buscala y agregala.
             </p>
           </app-ayuda>
         </div>

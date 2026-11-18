@@ -4,8 +4,8 @@
       Los packs de creditos y los abonos que vende esta sede. Un <b>pack</b> son clases que valen
       una cantidad de días desde la compra, sobre actividades que cobran <b>POR_PACK</b>. Un
       <b>abono</b> cubre un periodo que se elige al venderlo, con un tope de asistencias, sobre
-      actividades que cobran <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo nace
-      al vender un pase a una persona, desde
+      actividades que cobran <b>POR_ABONO</b>. Crear un producto no le da saldo a nadie; el saldo
+      nace al vender un pase a una persona, desde
       <a class="enlace" routerLink="/pacientes">Pacientes</a>, en la fila de la persona.
     </p>
   </app-ayuda>
@@ -196,8 +196,8 @@
       @if (enEdicion(); as producto) {
         <p class="ayuda ayuda--fija">
           {{ tipoDeProducto(producto) }} sobre la actividad <b>{{ nombreDeOferta(producto) }}</b
-          >. El tipo y la actividad de un producto no se cambian. Los pases ya vendidos conservan los
-          creditos, el precio y la vigencia con los que se vendieron.
+          >. El tipo y la actividad de un producto no se cambian. Los pases ya vendidos conservan
+          los creditos, el precio y la vigencia con los que se vendieron.
         </p>
       } @else {
         <div class="campo">
@@ -236,7 +236,9 @@
             }
           </p>
           @if (invalido('ofertaId')) {
-            <p class="campo__error" id="producto-ofertaId-error">Elegí la actividad del producto.</p>
+            <p class="campo__error" id="producto-ofertaId-error">
+              Elegí la actividad del producto.
+            </p>
           }
         </div>
       }

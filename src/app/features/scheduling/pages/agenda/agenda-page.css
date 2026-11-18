@@ -51,7 +51,8 @@
 }
 
 .agenda-nav__boton {
-  min-width: var(--alto-control);
+  /* En táctil crece la altura, no el ancho: a 375 px la barra no entra con botones de 48 px. */
+  min-width: 2.5rem;
   border-radius: var(--radio-sm);
 }
 

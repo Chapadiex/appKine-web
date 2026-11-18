@@ -19,8 +19,8 @@
     </p>
     <p>
       Lo que si administra tu centro son las
-      <a routerLink="/servicios/ofertas">actividades de la sede</a>: ahi se define el nombre comercial,
-      la duración, el precio y la vigencia con la que cada servicio se presta acá.
+      <a routerLink="/servicios/ofertas">actividades de la sede</a>: ahi se define el nombre
+      comercial, la duración, el precio y la vigencia con la que cada servicio se presta acá.
     </p>
   </app-ayuda>
   @if (puedeCrear()) {
@@ -77,8 +77,8 @@
         <option value="TODOS">Todos</option>
       </select>
       <p class="ayuda" id="filtro-estado-servicio-ayuda">
-        Un servicio dado de baja no se borra: las actividades que ya lo usan siguen funcionando. Lo que
-        no se puede es crear actividades nuevas sobre el.
+        Un servicio dado de baja no se borra: las actividades que ya lo usan siguen funcionando. Lo
+        que no se puede es crear actividades nuevas sobre el.
       </p>
     </div>
   </app-filtros>
@@ -634,8 +634,9 @@
         (cancelado)="cerrarPanel()"
       >
         <p class="ayuda ayuda--fija">
-          La baja <b>NO cascadea</b>: las actividades de los centros que ya lo usan siguen funcionando y
-          conservan sus historicos. Lo que se impide es crear actividades nuevas sobre el.
+          La baja <b>NO cascadea</b>: las actividades de los centros que ya lo usan siguen
+          funcionando y conservan sus historicos. Lo que se impide es crear actividades nuevas sobre
+          el.
         </p>
       </app-confirmacion-con-motivo>
     </app-panel-lateral>
