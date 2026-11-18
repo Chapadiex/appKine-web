@@ -1,0 +1,15 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+/*
+ * Tratamientos realizados y parametros (AKINE-06.04). Una lista ordenada porque el orden es la
+ * secuencia cronologica de la visita, no una preferencia de presentacion.
+ */
+.lista-tratamientos {
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.tratamiento__titulo {
+  margin: 0 0 var(--esp-3);
+}

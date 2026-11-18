@@ -1,8 +1,8 @@
-<app-cabecera-de-pagina titulo="Honorarios por clase de la oferta">
+<app-cabecera-de-pagina titulo="Honorarios por clase de la actividad">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Cuanto cobran los instructores de esta oferta por cada participante presente en una clase, por
-      periodo.
+      Cuanto cobran los instructores de esta actividad por cada participante presente en una clase,
+      por periodo.
     </p>
     <p class="ayuda-contextual__subtitulo">
       Por participante presente, repartido entre los instructores
@@ -70,7 +70,7 @@
       @case ('listo') {
         @if (tarifas().length === 0) {
           <app-estado-vacio
-            titulo="Esta oferta no tiene tarifas de honorario todavía"
+            titulo="Esta actividad no tiene tarifas de honorario todavía"
             texto="Sin tarifa, sus clases no entran en ninguna liquidación."
           >
             <button type="button" class="boton boton--secundario" (click)="abrirAlta()">
@@ -81,8 +81,8 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Tarifas de honorario">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Tarifas de honorario de la oferta, con su importe por participante, su vigencia, la
-                situación y las acciones.
+                Tarifas de honorario de la actividad, con su importe por participante, su vigencia,
+                la situación y las acciones.
               </caption>
               <thead>
                 <tr>
@@ -207,7 +207,7 @@
           </p>
         }
         <p class="ayuda" id="alta-honorario-moneda-ayuda">
-          Tres letras (ARS, USD). Se propone la del precio de lista de la oferta.
+          Tres letras (ARS, USD). Se propone la del precio de lista de la actividad.
         </p>
       </div>
 
@@ -246,7 +246,7 @@
         <app-alerta
           class="campo--ancho"
           tipo="advertencia"
-          titulo="Se superpone con otra tarifa de la oferta"
+          titulo="Se superpone con otra tarifa de la actividad"
           id="alta-honorario-solapado"
         >
           <p>{{ errorAccion() }}</p>
@@ -304,7 +304,7 @@
           />
           <p class="ayuda ayuda--fija" id="fin-honorario-hasta-ayuda">
             Último día en que rige, inclusive. <b>Vacío, se reabre</b> y queda sin fin previsto.
-            Extenderla puede chocar con otra tarifa de la oferta.
+            Extenderla puede chocar con otra tarifa de la actividad.
           </p>
         </div>
 
@@ -312,7 +312,7 @@
           <app-alerta
             class="campo--ancho"
             tipo="advertencia"
-            titulo="Se superpone con otra tarifa de la oferta"
+            titulo="Se superpone con otra tarifa de la actividad"
             id="fin-honorario-solapado"
           >
             <p>{{ errorAccion() }}</p>

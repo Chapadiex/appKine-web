@@ -1,0 +1,65 @@
+:host {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--alto-tocable), 1fr));
+  gap: var(--esp-2);
+}
+
+.escala-tactil__paso {
+  min-height: var(--alto-tocable);
+  padding: 0;
+  border: var(--borde-fino) solid var(--tono);
+  border-radius: var(--radio-sm);
+  background: var(--tinte);
+  color: var(--tono);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.escala-tactil__paso--bajo {
+  --tono: var(--color-exito-texto);
+  --tinte: var(--color-exito-fondo);
+  --vivo: var(--color-exito-vivo);
+  --sobre-vivo: var(--color-exito-sobre-vivo);
+  --borde-vivo: var(--color-exito);
+}
+
+.escala-tactil__paso--medio {
+  --tono: var(--color-aviso-texto);
+  --tinte: var(--color-aviso-fondo);
+  --vivo: var(--color-aviso-vivo);
+  --sobre-vivo: var(--color-aviso-sobre-vivo);
+  --borde-vivo: var(--color-aviso);
+}
+
+.escala-tactil__paso--alto {
+  --tono: var(--color-peligro-texto);
+  --tinte: var(--color-peligro-fondo);
+  --vivo: var(--color-peligro-vivo);
+  --sobre-vivo: var(--color-peligro-sobre-vivo);
+  --borde-vivo: var(--color-peligro);
+}
+
+/* El elegido: relleno encendido y borde doble, además del color. */
+.escala-tactil__paso[aria-pressed='true'] {
+  border-width: var(--borde-medio);
+  border-color: var(--borde-vivo);
+  background: var(--vivo);
+  color: var(--sobre-vivo);
+  font-weight: var(--peso-semi);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.escala-tactil__paso:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.escala-tactil__paso:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

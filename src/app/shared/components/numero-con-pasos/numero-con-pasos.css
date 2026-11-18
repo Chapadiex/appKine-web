@@ -1,0 +1,65 @@
+:host {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  overflow: hidden;
+}
+
+:host:focus-within {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.numero-con-pasos__paso {
+  flex: none;
+  width: max(var(--alto-tocable), var(--alto-control));
+  min-height: var(--alto-control);
+  padding: 0;
+  border: 0;
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.numero-con-pasos__paso:disabled {
+  color: var(--color-deshabilitado);
+  cursor: not-allowed;
+}
+
+.numero-con-pasos__paso:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: calc(-1 * var(--foco-grosor));
+}
+
+.numero-con-pasos__campo {
+  width: 5.5rem;
+  min-width: 0;
+  min-height: var(--alto-control);
+  padding: 0 var(--esp-2);
+  border: 0;
+  border-inline: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-texto);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.numero-con-pasos__campo:focus-visible {
+  outline: none;
+}
+
+.numero-con-pasos__campo[aria-invalid='true'] {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}

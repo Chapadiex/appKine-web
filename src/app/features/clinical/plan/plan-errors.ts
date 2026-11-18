@@ -52,7 +52,7 @@ const MENSAJES: Readonly<Record<CausaPlan, string>> = {
   'caso-no-activo':
     'El caso esta cerrado, así que no se puede planificar. Reabrilo con motivo desde el caso.',
   'oferta-no-habilitada':
-    'Una de las ofertas del plan no esta habilitada hoy en esta sede. Elegí otra o habilitala.',
+    'Una de las actividades del plan no esta habilitada hoy en esta sede. Elegí otra o habilitala.',
   validacion: 'El servidor rechazo un dato del plan. Revisa los campos y volvé a intentar.',
   conflicto:
     'El servidor rechazo la operación por un conflicto con lo que ya hay guardado. Relee el plan.',

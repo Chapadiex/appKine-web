@@ -308,7 +308,7 @@ export class BandejaDeSeriesPage {
   /** Nombre del profesional, o por que no se muestra. */
   protected profesional(fila: SerieDeTurnosResumen): string {
     if (fila.profesionalId === undefined) {
-      return 'Cualquiera de la oferta';
+      return 'Cualquiera de la actividad';
     }
     const nombre = this.profesionales()
       .get(fila.ofertaId ?? -1)

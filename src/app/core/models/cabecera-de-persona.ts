@@ -4,6 +4,7 @@ import type { ModeloDeCabeceraDeFicha } from '../../shared/components/cabecera-d
 import type { Pestana } from '../../shared/components/pestanas/pestanas';
 import {
   PERMISO_COBRO_REGISTER,
+  PERMISO_HC_DECLARAR,
   PERMISO_HC_READ,
   PERMISO_PACIENTE_READ,
   PERMISO_PASE_READ,
@@ -26,6 +27,7 @@ import {
 export type PantallaDePersona =
   | 'ficha'
   | 'historia'
+  | 'declarados'
   | 'documentos'
   | 'coberturas'
   | 'autorizaciones'
@@ -109,6 +111,10 @@ export function modeloDeCabeceraDePersona(
       etiqueta: 'Historia clínica',
       ruta: `/historia-clinica/personas/${personaId}`,
     });
+  }
+  // DP-47: quien declara (la secretaria) no lee la historia, pero carga lo que trae el paciente.
+  if (paciente && (actual === 'declarados' || tiene(PERMISO_HC_DECLARAR))) {
+    pestanas.push({ etiqueta: 'Datos declarados', ruta: `${rutaFicha}/datos-declarados` });
   }
   if (padron) {
     pestanas.push(

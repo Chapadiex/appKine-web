@@ -307,7 +307,7 @@ describe('HonorariosPorClaseDeLaOfertaPage', () => {
     expect(texto(fixture)).toContain('sus clases no entran en ninguna liquidación');
     const vacio = (fixture.nativeElement as HTMLElement).querySelector('app-estado-vacio');
     expect(vacio?.textContent).toContain('Cargar la primera tarifa');
-    expect(texto(fixture)).toContain('de esta oferta por cada participante');
+    expect(texto(fixture)).toContain('de esta actividad por cada participante');
   });
 
   it(

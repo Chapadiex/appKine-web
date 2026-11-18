@@ -115,10 +115,10 @@ describe('ProductosDePackPage', () => {
       [...(fixture.nativeElement as HTMLElement).querySelectorAll('#producto-oferta option')].map(
         (o) => o.textContent?.trim(),
       );
-    expect(opciones()).toEqual(['Elegí una oferta', 'Pilates reformer']);
+    expect(opciones()).toEqual(['Elegí una actividad', 'Pilates reformer']);
     escribir(fixture, '#producto-oferta', '42');
     escribir(fixture, '#producto-tipo', 'ABONO');
-    expect(opciones()).toEqual(['Elegí una oferta', 'Gimnasio libre']);
+    expect(opciones()).toEqual(['Elegí una actividad', 'Gimnasio libre']);
     expect(
       (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('#producto-oferta')
         ?.value,
@@ -201,7 +201,7 @@ describe('ProductosDePackPage', () => {
     const fixture = await montar([]);
     clickear(fixture, 'Nuevo producto');
     clickear(fixture, 'Crear producto');
-    expect(textoDe(fixture)).toContain('Elegí la oferta del producto.');
+    expect(textoDe(fixture)).toContain('Elegí la actividad del producto.');
     expect(textoDe(fixture)).toContain('El nombre es obligatorio.');
     httpMock.expectNone((r) => r.method === 'POST');
   });
@@ -271,7 +271,7 @@ describe('ProductosDePackPage', () => {
   it('edita con la versión leida y limpia la fecha de fin vaciada', async () => {
     const fixture = await montar([{ ...PACK, vigenciaHasta: '2026-12-31' }]);
     clickear(fixture, 'Editar');
-    expect(textoDe(fixture)).toContain('El tipo y la oferta de un producto no se cambia');
+    expect(textoDe(fixture)).toContain('El tipo y la actividad de un producto no se cambian');
     escribir(fixture, '#producto-precio', '45000');
     escribir(fixture, '#producto-hasta', '');
     clickear(fixture, 'Guardar cambios');

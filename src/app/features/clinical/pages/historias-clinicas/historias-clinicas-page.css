@@ -1,0 +1,148 @@
+/* Historias clinicas: buscador y tarjetas de paciente (13/11/2026). Solo tokens. */
+:host {
+  display: grid;
+  gap: var(--esp-6);
+}
+
+.hc-buscador {
+  display: grid;
+  gap: var(--esp-3);
+}
+
+.hc-buscador__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.hc-buscador__campo {
+  flex: 1 1 22rem;
+  margin: 0;
+}
+
+.hc-buscador__resumen {
+  margin: 0;
+  color: var(--color-texto-suave);
+  white-space: nowrap;
+}
+
+.hc-buscador__nota {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.hc-centro {
+  justify-content: center;
+}
+
+.hc-tarjetas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--esp-4);
+  transition: opacity 0.15s ease;
+}
+
+.hc-tarjetas--cargando {
+  opacity: 0.55;
+}
+
+.hc-tarjeta {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--esp-4);
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.hc-tarjeta:hover,
+.hc-tarjeta:focus-within {
+  border-color: var(--color-acento);
+  box-shadow: var(--sombra-flotante);
+}
+
+.hc-tarjeta__cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-width: 0;
+}
+
+.hc-tarjeta__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+  font-weight: var(--peso-semi);
+  letter-spacing: 0.03em;
+}
+
+.hc-tarjeta__identidad {
+  min-width: 0;
+}
+
+.hc-tarjeta__nombre {
+  margin: 0;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hc-tarjeta__documento {
+  margin: 0;
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.hc-tarjeta__datos {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--esp-3);
+  padding: var(--esp-3) 0;
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.hc-tarjeta__datos dt {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hc-tarjeta__datos dd {
+  margin: 0.1rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.hc-tarjeta__contacto {
+  grid-column: 1 / -1;
+}
+
+.hc-tarjeta__acciones {
+  display: flex;
+  gap: var(--esp-2);
+}
+
+.hc-tarjeta__acciones .boton:first-child {
+  flex: 1;
+  justify-content: center;
+}

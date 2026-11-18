@@ -1,0 +1,355 @@
+<!--
+  Datos que declara el paciente (DP-47). Una sola pantalla, sin pasos: antecedentes a la izquierda,
+  estudios y fotos a la derecha. Solo lo DECLARADO: lo que cargo un profesional no llega aca.
+-->
+<app-cabecera-de-ficha [modelo]="cabecera()" titulo="Datos declarados por el paciente">
+  <app-ayuda cabeceraAyuda titulo="Sobre esta pantalla">
+    <p>
+      Lo que el paciente cuenta o trae: alergias, medicación, estudios. Queda en su historia clínica
+      marcado <b>sin revisar</b> hasta que lo revisa un profesional.
+    </p>
+    <p>
+      Desde acá no se lee la historia: solo se ve lo que se declaró. Si cargaste algo mal y nadie lo
+      revisó todavía, lo podés dar de baja con un motivo.
+    </p>
+  </app-ayuda>
+</app-cabecera-de-ficha>
+
+@switch (estado().tipo) {
+  @case ('cargando') {
+    <p class="estado estado--cargando" role="status">Cargando los datos declarados…</p>
+  }
+
+  @case ('sin-perfil') {
+    <app-estado-vacio
+      titulo="Esta persona no tiene perfil de paciente"
+      texto="Para cargar datos de salud primero hay que activar su perfil de paciente desde la ficha."
+      icono="pacientes"
+    >
+      <a class="boton boton--secundario" [routerLink]="rutaFicha()">Ir a la ficha</a>
+    </app-estado-vacio>
+  }
+
+  @case ('error') {
+    @if (estado(); as actual) {
+      @if (actual.tipo === 'error') {
+        <app-alerta tipo="error" titulo="No pudimos cargar los datos declarados">
+          <p>{{ actual.mensaje }}</p>
+          <button type="button" class="boton boton--secundario boton--chico" (click)="cargar()">
+            Volver a intentar
+          </button>
+        </app-alerta>
+      }
+    }
+  }
+
+  @case ('lista') {
+    @if (datos(); as lista) {
+      <!-- Motivo de acceso: queda registrado con cada carga. Se cambia en linea. -->
+      @if (editandoMotivo()) {
+        <form class="declarados__motivo" (submit)="$event.preventDefault(); guardarMotivo()">
+          <label for="declarados-motivo">Motivo del acceso</label>
+          <input
+            id="declarados-motivo"
+            type="text"
+            maxlength="280"
+            [value]="motivoEscrito()"
+            (input)="motivoEscrito.set($any($event.target).value)"
+          />
+          <button type="submit" class="boton boton--secundario boton--chico">Listo</button>
+        </form>
+      } @else {
+        <p class="declarados__motivo">
+          <span
+            >Motivo registrado: <b>{{ justificacion() }}</b></span
+          >
+          <button type="button" class="accion-texto" (click)="cambiarMotivo()">Cambiar</button>
+        </p>
+      }
+
+      <app-ficha-de-ingreso
+        class="declarados__ficha"
+        [ficha]="lista.ficha ?? null"
+        [ocupaciones]="ocupaciones()"
+        [enfermedadesTildadas]="enfermedadesTildadas()"
+        [enfermedadesFijas]="enfermedadesFijas()"
+        [guardando]="guardandoFicha()"
+        (guardar)="guardarFicha($event)"
+        (agregarOcupacion)="agregarOcupacion($event)"
+        (tildar)="tildarEnfermedad($event)"
+      />
+
+      <div class="declarados">
+        <!-- Antecedentes -->
+        <section class="tarjeta declarados__panel" aria-labelledby="declarados-antecedentes-titulo">
+          <header class="declarados__cabeza">
+            <h2 id="declarados-antecedentes-titulo">Antecedentes</h2>
+            <span class="declarados__cuenta">{{ antecedentesSueltos().length }}</span>
+          </header>
+
+          <app-chips
+            id="declarados-tipo"
+            class="declarados__tipos"
+            etiqueta="Tipo de antecedente"
+            [opciones]="opcionesDeTipo"
+            [deseleccionable]="false"
+            [valor]="tipoNuevo()"
+            (valorChange)="elegirTipo($event)"
+          />
+          <form class="declarados__linea" (submit)="$event.preventDefault(); agregarAntecedente()">
+            <label class="visualmente-oculto" for="declarados-descripcion">
+              Lo que declara el paciente
+            </label>
+            <input
+              id="declarados-descripcion"
+              type="text"
+              maxlength="1000"
+              placeholder="Ej.: alérgico a la penicilina"
+              [value]="descripcionNueva()"
+              (input)="descripcionNueva.set($any($event.target).value)"
+              [attr.aria-invalid]="intentoAntecedente() && !descripcionNueva().trim()"
+              aria-describedby="declarados-descripcion-error"
+            />
+            @if (tipoNuevo() === 'QUIRURGICO') {
+              <label class="visualmente-oculto" for="declarados-anio">Año</label>
+              <app-numero-con-pasos
+                idCampo="declarados-anio"
+                etiqueta="Año"
+                [min]="1900"
+                [max]="anioMaximo"
+                [valor]="anioNumero()"
+                [desdeVacio]="anioMaximo"
+                (invalido)="anioInvalido.set($event)"
+                (valorChange)="anioNuevo.set($event === null ? '' : '' + $event)"
+              />
+              <app-texto-opcional
+                class="declarados__corto"
+                idCampo="declarados-lugar"
+                etiqueta="Dónde"
+                [maxlength]="160"
+                [valor]="lugarNuevo()"
+                (valorChange)="lugarNuevo.set($event)"
+              />
+            }
+            <button
+              type="submit"
+              class="boton boton--primario boton--chico"
+              [disabled]="guardandoAntecedente()"
+            >
+              <app-icono nombre="agregar" />
+              {{ guardandoAntecedente() ? 'Agregando…' : 'Agregar' }}
+            </button>
+          </form>
+          @if (tipoNuevo() === 'QUIRURGICO') {
+            <div class="declarados__zona">
+              <span class="declarados__rotulo"
+                >Zona de la cirugía <span class="campo__opcional">(opcional)</span></span
+              >
+              <app-chips
+                etiqueta="Zona de la cirugía"
+                idOtra="declarados-zona"
+                [opciones]="opcionesDeZona"
+                [permitirOtra]="true"
+                [valor]="zonaEnChips().chip"
+                [textoOtra]="zonaEnChips().otra"
+                (valorChange)="elegirZonaDeCirugia($event)"
+                (textoOtraChange)="zonaNueva.set($event)"
+              />
+            </div>
+          }
+          @if (intentoAntecedente() && !descripcionNueva().trim()) {
+            <p id="declarados-descripcion-error" class="campo__error" role="alert">
+              Escribí lo que declara el paciente.
+            </p>
+          } @else if (errorAntecedente(); as mensaje) {
+            <p id="declarados-descripcion-error" class="campo__error" role="alert">
+              {{ mensaje }}
+            </p>
+          }
+
+          @if (!antecedentesSueltos().length) {
+            <p class="declarados__vacio">Nada declarado todavía.</p>
+          } @else {
+            <ul class="declarados__lista" aria-label="Antecedentes declarados">
+              @for (antecedente of antecedentesSueltos(); track antecedente.id) {
+                <li class="declarados__item">
+                  <span class="declarados__etiqueta">{{ etiquetaDeTipo(antecedente.tipo) }}</span>
+                  <span class="declarados__texto">
+                    {{ antecedente.descripcion }}
+                    @if (detalleDe(antecedente); as detalle) {
+                      <span class="declarados__peso">· {{ detalle }}</span>
+                    }
+                  </span>
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--activa]="revisado(antecedente)"
+                    [class.marca-estado--suspendida]="!revisado(antecedente)"
+                    [title]="estadoDe(antecedente, antecedente.registradoEn)"
+                  >
+                    {{ revisado(antecedente) ? 'Revisado' : 'Sin revisar' }}
+                  </span>
+                  @if (!revisado(antecedente)) {
+                    <app-acciones-de-fila de="el antecedente">
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        (click)="pedirBaja('antecedentes', antecedente.id, antecedente.descripcion)"
+                      >
+                        Dar de baja
+                      </button>
+                    </app-acciones-de-fila>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <!-- Estudios y fotos -->
+        <section class="tarjeta declarados__panel" aria-labelledby="declarados-adjuntos-titulo">
+          <header class="declarados__cabeza">
+            <h2 id="declarados-adjuntos-titulo">Estudios y fotos</h2>
+            <span class="declarados__cuenta">{{ lista.adjuntos?.length ?? 0 }}</span>
+          </header>
+
+          <div
+            class="declarados__soltar"
+            [class.declarados__soltar--activo]="arrastrando()"
+            (dragover)="alArrastrar($event, true)"
+            (dragleave)="alArrastrar($event, false)"
+            (drop)="alSoltar($event)"
+          >
+            <div class="declarados__soltar-fila">
+              <label class="visualmente-oculto" for="declarados-categoria">Categoría</label>
+              <select
+                id="declarados-categoria"
+                class="declarados__tipo-campo"
+                [value]="categoriaNueva()"
+                (change)="categoriaNueva.set($any($event.target).value)"
+              >
+                @for (categoria of categoriasDeclarables; track categoria) {
+                  <option [value]="categoria" [selected]="categoria === categoriaNueva()">
+                    {{ etiquetaDeCategoria(categoria) }}
+                  </option>
+                }
+              </select>
+              <button
+                type="button"
+                class="boton boton--primario boton--chico"
+                (click)="foto.click()"
+              >
+                Sacar foto
+              </button>
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                (click)="selector.click()"
+              >
+                Elegir archivo
+              </button>
+            </div>
+            <p class="declarados__pista">
+              @if (subiendo() > 0) {
+                <span role="status">Subiendo…</span>
+              } @else {
+                o arrastrá archivos acá · PDF o imagen; las fotos se achican solas
+              }
+            </p>
+            <input
+              #foto
+              type="file"
+              accept="image/*"
+              capture="environment"
+              class="visualmente-oculto"
+              tabindex="-1"
+              aria-hidden="true"
+              (change)="elegirArchivos(foto)"
+            />
+            <input
+              #selector
+              type="file"
+              accept="image/*,application/pdf,.heic,.heif"
+              multiple
+              class="visualmente-oculto"
+              tabindex="-1"
+              aria-hidden="true"
+              (change)="elegirArchivos(selector)"
+            />
+          </div>
+          @if (errorSubida(); as mensaje) {
+            <p class="campo__error" role="alert">{{ mensaje }}</p>
+          }
+
+          @if (!lista.adjuntos?.length) {
+            <p class="declarados__vacio">Ningún archivo todavía.</p>
+          } @else {
+            <ul class="declarados__lista" aria-label="Archivos declarados">
+              @for (adjunto of lista.adjuntos; track adjunto.id) {
+                <li class="declarados__item">
+                  <span class="declarados__etiqueta">{{
+                    etiquetaDeCategoria(adjunto.categoria)
+                  }}</span>
+                  <button
+                    type="button"
+                    class="accion-texto declarados__texto"
+                    [attr.aria-expanded]="adjuntoAbierto() === adjunto.id"
+                    (click)="alternarAdjunto(adjunto.id)"
+                  >
+                    {{ adjunto.titulo || adjunto.nombreArchivo }}
+                    <span class="declarados__peso">· {{ tamano(adjunto.tamanoBytes) }}</span>
+                  </button>
+                  <span
+                    class="marca-estado"
+                    [class.marca-estado--activa]="revisado(adjunto)"
+                    [class.marca-estado--suspendida]="!revisado(adjunto)"
+                    [title]="estadoDe(adjunto, adjunto.subidoEn)"
+                  >
+                    {{ revisado(adjunto) ? 'Revisado' : 'Sin revisar' }}
+                  </span>
+                  @if (!revisado(adjunto)) {
+                    <app-acciones-de-fila de="el archivo">
+                      <button
+                        type="button"
+                        class="accion--peligro"
+                        (click)="
+                          pedirBaja('adjuntos', adjunto.id, adjunto.titulo || adjunto.nombreArchivo)
+                        "
+                      >
+                        Dar de baja
+                      </button>
+                    </app-acciones-de-fila>
+                  }
+                </li>
+                @if (adjuntoAbierto() === adjunto.id) {
+                  <li class="declarados__visor">
+                    <app-visor-de-adjunto
+                      [historiaClinicaId]="lista.historiaClinicaId ?? null"
+                      [adjuntoId]="adjunto.id!"
+                      [justificacion]="justificacion()"
+                      [descarga]="descargaDe(adjunto.id)"
+                    />
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </section>
+      </div>
+
+      @if (baja(); as pedida) {
+        <section class="tarjeta" aria-labelledby="declarados-baja-titulo">
+          <h2 id="declarados-baja-titulo" class="visualmente-oculto">Dar de baja</h2>
+          <app-confirmacion-con-motivo
+            idCampo="declarados-baja-motivo"
+            [titulo]="'Dar de baja «' + pedida.descripcion + '»'"
+            ayuda="El dato no se borra: queda en la historia como dado de baja, con este motivo."
+            textoConfirmar="Dar de baja"
+            [enviando]="dandoDeBaja()"
+            (confirmado)="confirmarBaja($event)"
+            (cancelado)="baja.set(null)"
+          />
+        </section>
+      }
+    }
+  }
+}

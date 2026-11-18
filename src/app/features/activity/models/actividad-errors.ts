@@ -84,10 +84,10 @@ const MENSAJE_SIN_PERMISO =
   'No tenés permiso para esto en esta sede: mirar la grilla pide clase:read, programar clase:manage ' +
   'y los participantes inscripción:read o inscripción:manage. Pediselo a quien administra el centro.';
 const MENSAJE_NO_ENCONTRADO =
-  'La clase, la oferta, la persona o la inscripción ya no existe, o no es de esta sede.';
+  'La clase, la actividad, la persona o la inscripción ya no existe, o no es de esta sede.';
 const MENSAJE_NO_PROGRAMABLE =
-  'Esa oferta no puede sostener una clase: tiene que ser grupal, estar activa y vigente en la ' +
-  'fecha elegida. Elegí otra oferta.';
+  'Esa actividad no puede sostener una clase: tiene que ser grupal, estar activa y vigente en la ' +
+  'fecha elegida. Elegí otra actividad.';
 const MENSAJE_TRANSICION_CLASE =
   'La clase no admite esa operación en su estado actual: ya empezo, ya termino o esta cancelada. ' +
   'Volvé a leerla.';
@@ -104,7 +104,7 @@ const MENSAJE_HONORARIOS_LIQUIDADOS =
 const MENSAJE_RECURSO_OCUPADO =
   'Ya hay un turno u otra clase que se cruza con ese horario. Elegí otro horario u otro profesional.';
 const MENSAJE_HORARIO =
-  'El profesional no atiende en ese horario, no esta habilitado para la oferta, o el box no esta ' +
+  'El profesional no atiende en ese horario, no esta habilitado para la actividad, o el box no esta ' +
   'disponible. Elegí otro horario, otro profesional u otro box.';
 const MENSAJE_YA_INSCRIPTA = 'Esa persona ya esta anotada en esta clase.';
 const MENSAJE_VERSION_VIEJA =
@@ -217,10 +217,10 @@ function mensajeDeCapacidad(error: AkineHttpError): string {
   const pedida = error.numeroDeExtension('capacidadPedida');
   const base = 'El cupo pedido no es admisible para esta clase.';
   if (maxima === null) {
-    return `${base} Revisa la capacidad de la oferta y del box.`;
+    return `${base} Revisa la capacidad de la actividad y del box.`;
   }
   return (
-    `${base} Pediste ${pedida ?? '?'} lugares y el limite es ${maxima}: lo fija la oferta, el box ` +
+    `${base} Pediste ${pedida ?? '?'} lugares y el limite es ${maxima}: lo fija la actividad, el box ` +
     'o la cantidad de personas ya inscriptas.'
   );
 }

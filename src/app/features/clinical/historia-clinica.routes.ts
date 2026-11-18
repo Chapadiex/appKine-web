@@ -27,6 +27,17 @@ import { contextGuard } from '../../core/guards/context.guard';
  * motivo—, y un guard daria la impresion contraria. La autoridad es el backend.
  */
 export const routes: Routes = [
+  // Buscador de pacientes (13/11/2026): la entrada a la historia y a las sesiones sin turno.
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [contextGuard],
+    loadComponent: () =>
+      import('./pages/historias-clinicas/historias-clinicas-page').then(
+        (m) => m.HistoriasClinicasPage,
+      ),
+    title: 'AKINE - Historias clínicas',
+  },
   {
     path: 'personas/:personaId',
     canActivate: [contextGuard],

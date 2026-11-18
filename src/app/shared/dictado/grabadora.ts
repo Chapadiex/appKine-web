@@ -22,7 +22,7 @@ export class Grabadora {
   static disponible(): boolean {
     return (
       typeof window !== 'undefined' &&
-      window.isSecureContext &&
+      window.isSecureContext === true &&
       typeof navigator.mediaDevices?.getUserMedia === 'function' &&
       typeof MediaRecorder !== 'undefined'
     );

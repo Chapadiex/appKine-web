@@ -52,7 +52,7 @@
           <input
             id="busqueda-casos"
             type="search"
-            placeholder="Buscar por número, oferta o diagnóstico"
+            placeholder="Buscar por número, actividad o diagnóstico"
             autocomplete="off"
             [value]="busqueda()"
             (input)="busqueda.set($any($event.target).value)"
@@ -194,7 +194,7 @@
         }
 
         <div class="campo campo--6">
-          <label for="caso-oferta">Oferta que motiva el caso</label>
+          <label for="caso-oferta">Actividad que motiva el caso</label>
           <select
             id="caso-oferta"
             [value]="ofertaId() ?? ''"
@@ -202,13 +202,13 @@
             [attr.aria-describedby]="intento() && faltaOferta() ? 'caso-oferta-error' : null"
             (change)="elegirOferta($any($event.target).value)"
           >
-            <option value="">Elegí una oferta</option>
+            <option value="">Elegí una actividad</option>
             @for (oferta of elegibles(); track oferta.id) {
               <option [value]="oferta.id">{{ oferta.nombreComercial }}</option>
             }
           </select>
           @if (intento() && faltaOferta()) {
-            <p id="caso-oferta-error" class="campo__error">Elegí la oferta del caso.</p>
+            <p id="caso-oferta-error" class="campo__error">Elegí la actividad del caso.</p>
           }
         </div>
 
@@ -256,8 +256,8 @@
             }
           </select>
           <p id="caso-responsable-ayuda" class="ayuda">
-            Solo se ofrecen los profesionales habilitados para esa oferta en esta sede. El equipo se
-            completa después, desde el caso.
+            Solo se ofrecen los profesionales habilitados para esa actividad en esta sede. El equipo
+            se completa después, desde el caso.
           </p>
         </div>
 

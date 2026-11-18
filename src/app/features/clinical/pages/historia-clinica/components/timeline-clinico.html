@@ -176,6 +176,17 @@
     @if (fila.tipo) {
       <span class="timeline__tipo">· {{ fila.tipo }}</span>
     }
+    @if (
+      fila.evento.origen === 'ADJUNTO_CLINICO' && marcasDeAdjuntos().get(fila.evento.referencia);
+      as marca
+    ) {
+      <span
+        class="marca-estado"
+        [class.marca-estado--suspendida]="marca === 'Declarado · sin revisar'"
+        [class.marca-estado--info]="marca !== 'Declarado · sin revisar'"
+        >{{ marca }}</span
+      >
+    }
   </span>
   <time class="timeline__fecha" [attr.datetime]="fila.evento.ocurrioEn">{{ fila.fecha }}</time>
 </ng-template>

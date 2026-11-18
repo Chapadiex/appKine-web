@@ -88,7 +88,7 @@ describe('DerivarParticipante', () => {
     expect(todo).toContain('Con 2 casos activos');
     expect(todo).toContain('Caso clínico 1');
     expect(todo).toContain('Caso clínico 2');
-    expect(todo).toContain('de la oferta de esta clase');
+    expect(todo).toContain('de la actividad de esta clase');
     expect(todo).not.toContain('Caso clínico 3');
     expect(radios(fixture)).toHaveLength(2);
     // Con dos no elige por nadie.

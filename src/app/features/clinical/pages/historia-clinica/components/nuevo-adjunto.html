@@ -17,7 +17,7 @@
       [value]="categoria()"
       (change)="elegirCategoria($any($event.target).value)"
     >
-      @for (opcion of categorias; track opcion[0]) {
+      @for (opcion of categorias(); track opcion[0]) {
         <option [value]="opcion[0]">{{ opcion[1] }}</option>
       }
     </select>

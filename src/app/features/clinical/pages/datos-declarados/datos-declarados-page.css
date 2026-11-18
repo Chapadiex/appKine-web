@@ -1,0 +1,256 @@
+/* Datos declarados (DP-47). Compacta: dos paneles en una pantalla. Solo tokens del sistema. */
+
+.declarados__motivo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+  margin-block-end: var(--esp-3);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.declarados__motivo input {
+  flex: 1 1 18rem;
+  max-inline-size: 32rem;
+}
+
+.declarados {
+  display: grid;
+  gap: var(--esp-4);
+  align-items: start;
+}
+
+/* Dos columnas solo si cada panel tiene lugar (26rem); si no, uno debajo del otro. */
+.declarados {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+}
+
+.declarados__panel {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+}
+
+.declarados__cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.declarados__cabeza h2 {
+  margin: 0;
+}
+
+.declarados__cuenta {
+  min-inline-size: 1.5rem;
+  padding-inline: var(--esp-2);
+  border-radius: 999px;
+  background: var(--color-seleccion);
+  color: var(--color-acento);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Alta en una linea: tipo, texto y boton. */
+.declarados__linea {
+  display: flex;
+  gap: var(--esp-2);
+}
+
+.declarados__linea {
+  flex-wrap: wrap;
+}
+
+.declarados__linea input {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+}
+
+.declarados__tipo-campo {
+  flex: 0 0 auto;
+  inline-size: 9.5rem;
+}
+
+/* Detalle de una cirugia en la misma linea del alta. */
+.declarados__linea .declarados__corto {
+  flex: 1 1 7rem;
+}
+
+.declarados__linea .declarados__anio {
+  flex: 0 0 5.5rem;
+  inline-size: 5.5rem;
+}
+
+.declarados__ficha {
+  margin-block-end: var(--esp-4);
+}
+
+/* Zona para soltar, con los dos botones adentro. */
+.declarados__soltar {
+  display: grid;
+  gap: var(--esp-2);
+  padding: var(--esp-3);
+  border: 1.5px dashed var(--color-borde-control);
+  border-radius: var(--radio-md);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.declarados__soltar--activo {
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+}
+
+.declarados__soltar-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.declarados__pista {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+/* Listas compactas, con su propio desplazamiento: la pagina no crece. */
+.declarados__lista {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 42vh;
+  overflow-y: auto;
+}
+
+.declarados__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+  padding-block: var(--esp-2);
+  border-block-end: 1px solid var(--color-borde);
+}
+
+.declarados__item:last-child {
+  border-block-end: 0;
+}
+
+.declarados__etiqueta {
+  flex: 0 0 auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  min-inline-size: 6rem;
+}
+
+.declarados__texto {
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.declarados__peso {
+  white-space: nowrap;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.declarados__visor {
+  padding-block: var(--esp-2);
+  background: var(--color-superficie-atenuada);
+}
+
+.declarados__vacio {
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+@media (max-width: 40rem) {
+  .declarados__linea {
+    flex-wrap: wrap;
+  }
+
+  .declarados__tipo-campo {
+    inline-size: 100%;
+  }
+
+  .declarados__etiqueta {
+    min-inline-size: 0;
+  }
+}
+
+/* Controles en linea: mismos tokens que `.campo input` del sistema, sin la columna de etiqueta. */
+.declarados :is(input[type='text'], input[type='number'], select),
+.declarados__motivo input {
+  padding: var(--esp-2) 0.625rem;
+  min-height: var(--alto-control);
+  box-sizing: border-box;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+
+.declarados :is(input[type='text'], input[type='number'], select):focus-visible,
+.declarados__motivo input:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.declarados input[aria-invalid='true'] {
+  border-color: var(--color-peligro);
+  border-width: var(--borde-medio);
+}
+
+.declarados .boton {
+  min-height: var(--alto-control);
+}
+
+/* Boton con aspecto de enlace ("Cambiar", titulo del archivo). Copia local de `.accion-texto`. */
+.accion-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-height: 1.5rem;
+  padding: var(--esp-1) var(--esp-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-enlace);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.accion-texto:hover {
+  text-decoration: underline;
+}
+
+.accion-texto:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+/* Modo táctil (16/11/2026): el tipo y la zona se eligen con un toque, cada uno en su fila. */
+.declarados__tipos {
+  margin-block-end: var(--esp-2);
+}
+
+.declarados__linea {
+  align-items: flex-end;
+}
+
+.declarados__zona {
+  display: grid;
+  gap: var(--esp-2);
+  margin-block-start: var(--esp-2);
+}
+
+.declarados__rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}

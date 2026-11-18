@@ -9,6 +9,7 @@ import {
   PERMISO_COBRO_REGISTER,
   PERMISO_COLABORADOR_READ,
   PERMISO_CONVENIO_READ,
+  PERMISO_HC_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
   PERMISO_REPORTE_READ,
@@ -146,7 +147,14 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
   {
     etiqueta: 'Pacientes',
     icono: 'pacientes',
-    secciones: [{ etiqueta: 'Padrón', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] }],
+    secciones: [
+      { etiqueta: 'Padrón', ruta: '/pacientes', permisos: [PERMISO_PACIENTE_READ] },
+      {
+        etiqueta: 'Historias clínicas',
+        ruta: '/historia-clinica',
+        permisos: [PERMISO_HC_READ],
+      },
+    ],
   },
   {
     etiqueta: 'Actividades',

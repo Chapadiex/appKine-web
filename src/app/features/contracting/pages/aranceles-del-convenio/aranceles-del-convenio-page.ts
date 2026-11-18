@@ -393,7 +393,7 @@ export class ArancelesDelConvenioPage {
       return 'General del convenio';
     }
     const oferta = this.ofertas().find((candidata) => candidata.id === arancel.ofertaId);
-    return `Solo en la oferta ${oferta?.nombreComercial ?? `#${arancel.ofertaId}`}`;
+    return `Solo en la actividad ${oferta?.nombreComercial ?? `#${arancel.ofertaId}`}`;
   }
 
   protected cambiarFecha(valor: string): void {

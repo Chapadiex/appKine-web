@@ -91,7 +91,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     const fixture = await montar();
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-    expect(texto).toContain('la oferta queda sin restringir');
+    expect(texto).toContain('la actividad queda sin restringir');
     expect(texto).toContain('cualquier profesional con vinculo vigente');
     // La lectura opuesta es la que rompe la agenda, y por eso se niega explicitamente.
     expect(texto).toContain('NO significa que no pueda ninguno');
@@ -277,7 +277,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Sala chica');
-    expect(texto).toContain('admite menos gente que la oferta');
+    expect(texto).toContain('admite menos gente que la actividad');
   });
 
   it('un espacio fuera de servicio se muestra con su advertencia', async () => {
@@ -412,13 +412,13 @@ describe('HabilitacionesDeLaOfertaPage', () => {
 
     expect(casillas(fixture)[0].checked).toBe(true);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Solo los marcados van a poder prestar esta oferta',
+      'Solo los marcados van a poder prestar esta actividad',
     );
 
     marcar(fixture, 0);
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'la oferta queda sin restringir',
+      'la actividad queda sin restringir',
     );
 
     botonPorTexto(fixture, 'Guardar los profesionales')?.click();
@@ -519,7 +519,7 @@ describe('HabilitacionesDeLaOfertaPage', () => {
         .map((aviso) => aviso.titulo),
     ).toEqual(['Profesionales habilitados guardados']);
     const alerta = (fixture.nativeElement as HTMLElement).querySelector('app-alerta');
-    expect(alerta?.textContent).toContain('No pudimos leer la oferta');
+    expect(alerta?.textContent).toContain('No pudimos leer la actividad');
     expect(alerta?.textContent).toContain('sin su versión no se puede guardar');
     expect(botonPorTexto(fixture, 'Guardar los espacios')?.disabled).toBe(true);
     expect(botonPorTexto(fixture, 'Recargar la configuración')).not.toBeNull();
@@ -571,7 +571,9 @@ describe('HabilitacionesDeLaOfertaPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Esa oferta ya no existe');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Esa actividad ya no existe',
+    );
 
     botonPorTexto(fixture, 'Recargar la configuración')?.click();
     fixture.detectChanges();

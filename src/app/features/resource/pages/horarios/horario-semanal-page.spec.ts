@@ -1,5 +1,9 @@
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -861,6 +865,398 @@ describe('HorarioSemanalPage', () => {
     expect(fixture.nativeElement.querySelector('a[href="/seleccionar-contexto"]')).not.toBeNull();
   });
 
+  // -------------------------------------------------------------------------------------
+  // Vistas, vigencias, errores y respuestas tardías
+  // -------------------------------------------------------------------------------------
+
+  /** Miercoles sin hora de inicio ni vigencia desde, con fin: los opcionales del contrato. */
+  const MIERCOLES_INCOMPLETO = {
+    id: 104,
+    consultorioId: SEDE,
+    membershipId: PROFESIONAL,
+    diaSemana: 3,
+    horaHasta: '10:00',
+    vigenciaHasta: '2099-01-01',
+    estado: 'ACTIVO',
+    version: 1,
+  };
+
+  it('las vistas de mes y de día proyectan el horario y se navegan', async () => {
+    const fixture = await montar(
+      [],
+      [
+        ...HORARIO,
+        MIERCOLES_INCOMPLETO,
+        { ...MIERCOLES_INCOMPLETO, id: 105, horaDesde: '08:00', horaHasta: '09:00' },
+      ],
+    );
+    const host = fixture.nativeElement as HTMLElement;
+
+    // En la semana, el fin de la vigencia se muestra; un bloque sin inicio no rompe la fecha.
+    expect(texto(fixture)).toContain('hasta 01/01/2099');
+
+    abrir(fixture, 'Mes');
+    expect(host.querySelector('.mes-horario')).not.toBeNull();
+    const dias = [...host.querySelectorAll<HTMLButtonElement>('button.mes-horario__dia')];
+    expect(dias.length).toBeGreaterThanOrEqual(28);
+    const etiquetas = dias.map((dia) => dia.getAttribute('aria-label') ?? '');
+    expect(etiquetas.some((e) => e.includes('no atiende'))).toBe(true);
+    expect(etiquetas.some((e) => e.includes('09:00'))).toBe(true);
+    const titulo = host.querySelector('.vista-horario__mes')?.textContent;
+
+    (host.querySelector('[aria-label="Mes siguiente"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.vista-horario__mes')?.textContent).not.toBe(titulo);
+    (host.querySelector('[aria-label="Mes anterior"]') as HTMLButtonElement).click();
+    (host.querySelector('[aria-label="Mes anterior"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    abrir(fixture, 'Hoy');
+    expect(host.querySelector('.vista-horario__mes')?.textContent).toBe(titulo);
+
+    // Un clic en una fecha abre la vista de dia de ese dia de la semana.
+    const lunes = [...host.querySelectorAll<HTMLButtonElement>('button.mes-horario__dia')].find(
+      (dia) => (dia.getAttribute('aria-label') ?? '').startsWith('Lunes'),
+    );
+    lunes?.click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.dia').length).toBe(1);
+    expect(texto(fixture)).toContain('09:00 a 12:00');
+
+    (host.querySelector('[aria-label="Miercoles"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const miercoles = host.querySelector('.dia')?.textContent ?? '';
+    expect(miercoles).toContain('08:00 a 09:00');
+    expect(miercoles).not.toContain('09:00 a 12:00');
+
+    abrir(fixture, 'Semana');
+    expect(host.querySelectorAll('.dia').length).toBe(7);
+  });
+
+  it('si el horario no se puede leer lo dice y deja reintentar', async () => {
+    const fixture = await montar([], (pedido) =>
+      pedido.flush(
+        { type: 'about:blank', status: 500, detail: 'Se cayó.' },
+        { status: 500, statusText: 'Server Error' },
+      ),
+    );
+
+    expect(texto(fixture)).toContain('No pudimos leer el horario');
+    abrir(fixture, 'Reintentar');
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('09:00 a 12:00');
+  });
+
+  it('sin contexto al leer el horario la salida es elegir consultorio', async () => {
+    const fixture = await montar([], (pedido) =>
+      pedido.flush(
+        { type: 'https://akine.app/problems/missing-tenant-context', status: 400 },
+        { status: 400, statusText: 'Bad Request' },
+      ),
+    );
+
+    expect(texto(fixture)).toContain('No pudimos leer el horario');
+    expect(texto(fixture)).toContain('Elegir un consultorio');
+    expect(texto(fixture)).not.toContain('Reintentar');
+  });
+
+  it('el alta valida días y vigencia antes de salir, y manda las fechas sólo si su modo las pide', async () => {
+    const fixture = await montar();
+    const host = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Agregar horario');
+    // La grilla de horas alterna entre 30 y 15 minutos.
+    const paso = host.querySelector<HTMLButtonElement>('.formulario-horario__paso')!;
+    expect(paso.textContent).toContain('Cada 30 min');
+    paso.click();
+    fixture.detectChanges();
+    expect(paso.textContent).toContain('Cada 15 min');
+    paso.click();
+    fixture.detectChanges();
+
+    seleccionar(fixture, '#alta-bloque-desde', '09:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '12:00');
+    elegirDias(fixture, []);
+    enviar(fixture, 'form');
+    expect(texto(fixture)).toContain('Seleccioná al menos un día');
+    elegirDias(fixture, [2, 4]);
+
+    const radios = (nombre: string) =>
+      host.querySelectorAll<HTMLInputElement>(`input[name="${nombre}"]`);
+    radios('modoInicio')[1].click();
+    fixture.detectChanges();
+    enviar(fixture, 'form');
+    expect(texto(fixture)).toContain('Elegí la fecha de inicio');
+
+    escribir(fixture, '#alta-bloque-vigencia-desde', '2026-12-01');
+    radios('modoFin')[1].click();
+    fixture.detectChanges();
+    enviar(fixture, 'form');
+    expect(texto(fixture)).toContain('Elegí la fecha de fin');
+
+    escribir(fixture, '#alta-bloque-vigencia-hasta', '2026-11-01');
+    enviar(fixture, 'form');
+    expect(texto(fixture)).toContain('El fin debe ser posterior al inicio');
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.method === 'POST' && p.url === LOTE);
+
+    escribir(fixture, '#alta-bloque-vigencia-hasta', '2027-03-01');
+    enviar(fixture, 'form');
+    const alta = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'POST' && p.url === LOTE,
+    );
+    expect(alta.request.body).toEqual({
+      diasSemana: [2, 4],
+      horaDesde: '09:00',
+      horaHasta: '12:00',
+      vigenciaDesde: '2026-12-01',
+      vigenciaHasta: '2027-03-01',
+    });
+    // Ya estaban los dos: nada nuevo, y el aviso lo dice en vez de festejar un alta.
+    alta.flush({ bloques: [], creados: 0, existentes: 2 }, { status: 201, statusText: 'Created' });
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+    expect(titulosDeAvisos()).toEqual(['Ese horario ya estaba cargado']);
+  });
+
+  it('el alta de varios días cuenta los bloques creados', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '16:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '18:00');
+    enviar(fixture, 'form');
+
+    const alta = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'POST' && p.url === LOTE,
+    );
+    expect((alta.request.body as Record<string, unknown>)['diasSemana']).toEqual([1, 2, 3, 4, 5]);
+    alta.flush({ bloques: [], creados: 5, existentes: 0 }, { status: 201, statusText: 'Created' });
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.descripcion).toContain('(5 bloques)');
+  });
+
+  it('el 409 de franja fuera del horario de la sede nombra el horario de la sede', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Agregar horario');
+    seleccionar(fixture, '#alta-bloque-desde', '06:00');
+    seleccionar(fixture, '#alta-bloque-hasta', '08:00');
+    enviar(fixture, 'form');
+
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'POST' && p.url === LOTE)
+      .flush(
+        {
+          type: 'https://akine.app/problems/franja-fuera-del-horario-de-sede',
+          status: 409,
+          franjasFueraDeHorario: [
+            { diaSemana: 1, horarioDeSede: [{ horaDesde: '08:00', horaHasta: '20:00' }] },
+          ],
+        },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('Fuera del horario de la sede');
+    // El panel sigue abierto para corregir lo escrito.
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral'),
+    ).not.toBeNull();
+  });
+
+  it('editar un bloque incompleto: hora obligatoria, sólo lo que cambió y el 409 de versión', async () => {
+    const fixture = await montar([], [MIERCOLES_INCOMPLETO]);
+
+    abrir(fixture, 'Editar');
+    expect(campo(fixture, '#editar-bloque-desde')).toBe('');
+    enviar(fixture, 'form');
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.url.includes('impacto-de-edicion'));
+    expect(texto(fixture)).toContain('Ingresá una hora válida');
+
+    seleccionar(fixture, '#editar-bloque-desde', '08:00');
+    enviar(fixture, 'form');
+    const consulta = httpMock.expectOne(`${BLOQUES}/${MIERCOLES_INCOMPLETO.id}/impacto-de-edicion`);
+    // El dia y el fin no cambiaron: no viajan.
+    expect(consulta.request.body).toEqual({ horaDesde: '08:00' });
+    consulta.flush({ turnos: [] });
+
+    const edicion = httpMock.expectOne((p: HttpRequest<unknown>) => p.method === 'PUT');
+    expect(edicion.request.body).toEqual({ version: 1, horaDesde: '08:00' });
+    edicion.flush(
+      { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
+      { status: 409, statusText: 'Conflict' },
+    );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No pudimos guardar los cambios');
+    abrir(fixture, 'Recargar el horario');
+    httpMock.expectOne(BLOQUES).flush([MIERCOLES_INCOMPLETO]);
+    await estabilizar(fixture);
+  });
+
+  it('la edición pone fin, cambia el inicio, y un rango invertido no sale', async () => {
+    const fixture = await montar();
+    const host = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Editar');
+    seleccionar(fixture, '#editar-bloque-desde', '12:00');
+    seleccionar(fixture, '#editar-bloque-hasta', '10:00');
+    enviar(fixture, 'form');
+    expect(texto(fixture)).toContain('La hora de fin debe ser posterior al inicio');
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.url.includes('impacto-de-edicion'));
+
+    seleccionar(fixture, '#editar-bloque-desde', '09:00');
+    seleccionar(fixture, '#editar-bloque-hasta', '12:00');
+    escribir(fixture, '#editar-bloque-vigencia-desde', '2026-02-02');
+    host.querySelectorAll<HTMLInputElement>('input[name="limpiarVigenciaHasta"]')[1].click();
+    fixture.detectChanges();
+    escribir(fixture, '#editar-bloque-vigencia-hasta', '2027-03-01');
+    enviar(fixture, 'form');
+
+    const consulta = httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`);
+    expect(consulta.request.body).toEqual({
+      vigenciaDesde: '2026-02-02',
+      vigenciaHasta: '2027-03-01',
+    });
+    // La consulta dice que el bloque ya no existe: guardar fallaria igual, asi que no se ofrece.
+    consulta.flush(
+      { type: 'https://akine.app/problems/not-found', status: 404 },
+      { status: 404, statusText: 'Not Found' },
+    );
+    await estabilizar(fixture);
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.method === 'PUT');
+    expect(texto(fixture)).toContain('No pudimos guardar los cambios');
+    expect(texto(fixture)).toContain('Recargar el horario');
+  });
+
+  it('quitar el fin de un bloque que lo tenía manda limpiarVigenciaHasta', async () => {
+    const conFin = { ...LUNES_MANANA, vigenciaHasta: '2027-01-01' };
+    const fixture = await montar([], [conFin]);
+
+    abrir(fixture, 'Editar');
+    expect(campo(fixture, '#editar-bloque-vigencia-hasta')).toBe('2027-01-01');
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLInputElement>('#editar-bloque-limpiar')!
+      .click();
+    fixture.detectChanges();
+    enviar(fixture, 'form');
+
+    const consulta = httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`);
+    expect(consulta.request.body).toEqual({ limpiarVigenciaHasta: true });
+    // La consulta falla por otra causa: no frena, y el proximo envio confirma igual.
+    consulta.flush({}, { status: 500, statusText: 'Server Error' });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('No pudimos calcular de antemano');
+    abrir(fixture, 'Guardar igual');
+
+    const edicion = httpMock.expectOne((p: HttpRequest<unknown>) => p.method === 'PUT');
+    expect(edicion.request.body).toEqual({ version: 1, limpiarVigenciaHasta: true });
+    edicion.flush({ ...conFin, vigenciaHasta: null, version: 2 });
+    httpMock.expectOne(BLOQUES).flush([LUNES_MANANA]);
+    await estabilizar(fixture);
+    expect(titulosDeAvisos()).toEqual(['Cambios del bloque guardados']);
+  });
+
+  it('sin versión no se edita: mandar 0 pisaría el cambio de otro', async () => {
+    const fixture = await montar([], [{ ...LUNES_MANANA, version: undefined }]);
+
+    abrir(fixture, 'Editar');
+    seleccionar(fixture, '#editar-bloque-hasta', '11:00');
+    enviar(fixture, 'form');
+
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.url.includes('impacto-de-edicion'));
+    expect(texto(fixture)).toContain('No pudimos leer la versión de este bloque');
+  });
+
+  it('cambiar lo escrito después del impacto vuelve a consultar, y una respuesta tardía se descarta', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    seleccionar(fixture, '#editar-bloque-hasta', '11:00');
+    enviar(fixture, 'form');
+    httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`).flush({
+      turnosAfectados: 1,
+      turnos: [
+        {
+          turnoId: 900,
+          membershipId: PROFESIONAL,
+          inicio: '2026-10-12T14:00:00Z',
+          fin: '2026-10-12T14:30:00Z',
+        },
+      ],
+    });
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('Guardar igual');
+
+    // Lo calculado ya no describe lo escrito: el boton vuelve a "Guardar los cambios".
+    seleccionar(fixture, '#editar-bloque-hasta', '10:30');
+    expect(texto(fixture)).toContain('Guardar los cambios');
+    enviar(fixture, 'form');
+    const tardia = httpMock.expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-edicion`);
+    expect(tardia.request.body).toEqual({ horaHasta: '10:30' });
+
+    abrir(fixture, 'Cancelar');
+    tardia.flush({ turnosAfectados: 0, turnos: [] });
+    await estabilizar(fixture);
+    httpMock.expectNone((p: HttpRequest<unknown>) => p.method === 'PUT');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
+  });
+
+  it('la baja: respuestas tardías de la consulta se descartan y el bloque ya inactivo ofrece recargar', async () => {
+    const fixture = await montar();
+    const impactoDeBaja = `${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`;
+
+    abrir(fixture, 'Dar de baja');
+    const tardia = httpMock.expectOne(impactoDeBaja);
+    abrir(fixture, 'Cancelar');
+    tardia.flush({ turnosAfectados: 0, turnos: [] });
+
+    abrir(fixture, 'Dar de baja');
+    const tardiaConError = httpMock.expectOne(impactoDeBaja);
+    abrir(fixture, 'Cancelar');
+    tardiaConError.flush({}, { status: 500, statusText: 'Server Error' });
+    await estabilizar(fixture);
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral')).toBeNull();
+
+    abrir(fixture, 'Dar de baja');
+    httpMock
+      .expectOne(impactoDeBaja)
+      .flush(
+        { type: 'https://akine.app/problems/bloque-already-inactive', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+    expect(texto(fixture)).toContain('No pudimos dar de baja el bloque');
+    abrir(fixture, 'Recargar el horario');
+    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    await estabilizar(fixture);
+  });
+
+  it('una baja que el backend rechaza por otra causa muestra el error en el panel', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Dar de baja');
+    httpMock
+      .expectOne(`${BLOQUES}/${LUNES_MANANA.id}/impacto-de-baja`)
+      .flush({ turnosAfectados: 0, turnos: [] });
+    await estabilizar(fixture);
+    escribir(fixture, '#baja-bloque-reason', 'Cambio');
+    enviar(fixture, 'akine-confirmacion-con-motivo form');
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'DELETE')
+      .flush(
+        { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await estabilizar(fixture);
+
+    expect(texto(fixture)).toContain('No pudimos dar de baja el bloque');
+    expect(texto(fixture)).toContain('Recargar el horario');
+  });
+
   it(
     'la pantalla no tiene violaciones de accesibilidad',
     async () => {
@@ -873,6 +1269,7 @@ describe('HorarioSemanalPage', () => {
   /** Monta la pantalla con contexto, permiso de gestion, el selector cargado y Ana elegida. */
   async function montar(
     otrosPermisos: readonly string[] = [],
+    horario: readonly object[] | ((pedido: TestRequest) => void) = HORARIO,
   ): Promise<ComponentFixture<HorarioSemanalPage>> {
     tenantContext.select({
       organizationId: ORG,
@@ -902,7 +1299,12 @@ describe('HorarioSemanalPage', () => {
 
     seleccionar(fixture, '#selector-profesional', String(PROFESIONAL));
 
-    httpMock.expectOne(BLOQUES).flush(HORARIO);
+    const pedido = httpMock.expectOne(BLOQUES);
+    if (typeof horario === 'function') {
+      horario(pedido);
+    } else {
+      pedido.flush(horario);
+    }
     await estabilizar(fixture);
 
     return fixture;

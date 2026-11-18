@@ -73,6 +73,15 @@
       </p>
     </div>
 
+    <!-- Con o sin historia clinica, a la vista y con su conteo (13/11/2026). -->
+    <app-filtros-rapidos
+      filtro-frecuente
+      etiqueta="Filtrar por historia clínica"
+      [opciones]="opcionesDeHistoria()"
+      [valor]="filtroHistoria()"
+      (valorChange)="elegirHistoria($event)"
+    />
+
     <div class="campo">
       <label for="padron-filtro-estado">Estado de la ficha</label>
       <select
@@ -144,13 +153,13 @@
     </app-estado-vacio>
   } @else {
     <div class="tabla-scroll" tabindex="0" role="region" aria-label="Listado del padrón">
-      <table class="tabla">
+      <table class="tabla tabla--padron">
         <thead>
           <tr>
             <th scope="col" appOrdenable [tabla]="orden" columna="apellido">Persona</th>
-            <th scope="col" appOrdenable [tabla]="orden" columna="documento">Documento</th>
             <th scope="col" class="tabla__col--secundaria">Contacto</th>
-            <th scope="col">Perfil</th>
+            <th scope="col" class="padron-col-si-no">Paciente</th>
+            <th scope="col">Historia clínica</th>
             <th scope="col">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
@@ -158,13 +167,121 @@
         <tbody>
           @for (persona of personas(); track persona.id) {
             <tr [class.fila--seleccionada]="personaEnPanel()?.id === persona.id">
-              <td>{{ nombreCompleto(persona) }}</td>
-              <td>{{ documentoEnUnaLinea(persona) }}</td>
+              <!-- Nombre arriba y documento abajo, con avatar (13/11/2026). -->
+              <td>
+                <div class="padron-persona">
+                  <span class="padron-persona__avatar" aria-hidden="true">{{
+                    iniciales(persona)
+                  }}</span>
+                  <div class="padron-persona__texto">
+                    <span class="padron-persona__nombre">{{ nombreCompleto(persona) }}</span>
+                    <span class="padron-persona__dato">
+                      <app-icono nombre="documento" />
+                      {{ documentoEnUnaLinea(persona) || 'Sin documento' }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <!-- Telefono y correo juntos, cada uno con su icono. -->
               <td class="tabla__col--secundaria">
-                {{ persona.telefono || persona.email || 'Sin contacto cargado' }}
+                @if (persona.telefono || persona.email) {
+                  <div class="padron-contacto">
+                    @if (persona.telefono) {
+                      <span class="padron-persona__dato padron-persona__dato--fuerte">
+                        <app-icono nombre="telefono" />
+                        <span class="visualmente-oculto">Teléfono:</span>
+                        {{ persona.telefono }}
+                      </span>
+                    }
+                    @if (persona.email) {
+                      <span class="padron-persona__dato">
+                        <app-icono nombre="correo" />
+                        <span class="visualmente-oculto">Correo:</span>
+                        {{ persona.email }}
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <span class="padron-persona__vacio">Sin contacto cargado</span>
+                }
+              </td>
+              <!-- Texto plano: el padrón es casi todo pacientes, la pastilla repetida era ruido. -->
+              <td class="padron-col-si-no">
+                @if (persona.esPaciente) {
+                  <span class="padron-si-no padron-si-no--si" title="Tiene perfil de paciente">
+                    <app-icono nombre="tilde" />
+                    <span class="visualmente-oculto">Tiene perfil de paciente</span>
+                  </span>
+                } @else {
+                  <span
+                    class="padron-si-no padron-si-no--no"
+                    title="Sin perfil de paciente vigente"
+                  >
+                    <app-icono nombre="menos" />
+                    <span class="visualmente-oculto">Sin perfil de paciente</span>
+                  </span>
+                }
               </td>
               <td>
-                <span class="etiqueta">{{ etiquetaDePerfil(persona) }}</span>
+                @if (persona.tieneHistoriaClinica) {
+                  @if (puedeVerHistoria()) {
+                    <a
+                      class="boton boton--chico padron-hc"
+                      [routerLink]="['/historia-clinica/personas', persona.id]"
+                      title="Abrir la historia clínica y sus sesiones"
+                    >
+                      <app-icono nombre="documento" />
+                      Ver HC<span class="visualmente-oculto">
+                        de {{ nombreCompleto(persona) }}</span
+                      >
+                    </a>
+                  } @else if (persona.esPaciente && puedeDeclarar()) {
+                    <!-- DP-47: la secretaria no lee la historia, pero carga lo que trae el paciente. -->
+                    <a
+                      class="boton boton--secundario boton--chico padron-hc"
+                      [routerLink]="['/pacientes', persona.id, 'datos-declarados']"
+                      title="Cargar lo que el paciente cuenta o trae. Queda sin revisar hasta que lo vea un profesional"
+                    >
+                      <app-icono nombre="agregar" />
+                      Cargar datos<span class="visualmente-oculto">
+                        de {{ nombreCompleto(persona) }}</span
+                      >
+                    </a>
+                  } @else {
+                    <span
+                      class="etiqueta etiqueta--con-icono"
+                      title="Abrirla requiere el permiso de ver historias clínicas"
+                    >
+                      <app-icono nombre="tilde" />
+                      Tiene historia
+                    </span>
+                  }
+                } @else if (persona.esPaciente && puedeAbrirHistoria()) {
+                  <!-- La pantalla de la historia ofrece abrirla cuando todavía no existe. -->
+                  <a
+                    class="boton boton--secundario boton--chico padron-hc"
+                    [routerLink]="['/historia-clinica/personas', persona.id]"
+                    title="Abrir la historia clínica para cargar antecedentes y adjuntos antes de atenderla"
+                  >
+                    <app-icono nombre="agregar" />
+                    Abrir HC<span class="visualmente-oculto">
+                      de {{ nombreCompleto(persona) }}</span
+                    >
+                  </a>
+                } @else if (persona.esPaciente && puedeDeclarar() && !puedeVerHistoria()) {
+                  <a
+                    class="boton boton--secundario boton--chico padron-hc"
+                    [routerLink]="['/pacientes', persona.id, 'datos-declarados']"
+                    title="Cargar lo que el paciente cuenta o trae. Queda sin revisar hasta que lo vea un profesional"
+                  >
+                    <app-icono nombre="agregar" />
+                    Cargar datos<span class="visualmente-oculto">
+                      de {{ nombreCompleto(persona) }}</span
+                    >
+                  </a>
+                } @else {
+                  <span class="padron-persona__vacio">Sin historia</span>
+                }
               </td>
               <td>
                 <span
@@ -299,7 +416,7 @@
       }
 
       <div class="campo campo--3">
-        <label for="alta-persona-apellido">Apellido</label>
+        <label for="alta-persona-apellido"><app-icono nombre="perfil" />Apellido</label>
         <input
           id="alta-persona-apellido"
           type="text"
@@ -312,7 +429,7 @@
       </div>
 
       <div class="campo campo--3">
-        <label for="alta-persona-nombre">Nombre</label>
+        <label for="alta-persona-nombre"><app-icono nombre="perfil" />Nombre</label>
         <input
           id="alta-persona-nombre"
           type="text"
@@ -326,7 +443,8 @@
 
       <div class="campo campo--2">
         <label for="alta-persona-tipo-documento"
-          >Tipo de documento <span class="campo__opcional">(opcional)</span></label
+          ><app-icono nombre="documento" />Tipo de documento
+          <span class="campo__opcional">(opcional)</span></label
         >
         <select
           id="alta-persona-tipo-documento"
@@ -345,7 +463,9 @@
       </div>
 
       <div class="campo campo--2">
-        <label for="alta-persona-numero-documento">Número de documento</label>
+        <label for="alta-persona-numero-documento"
+          ><app-icono nombre="documento" />Número de documento</label
+        >
         <input
           id="alta-persona-numero-documento"
           type="text"
@@ -391,7 +511,8 @@
 
       <div class="campo">
         <label for="alta-persona-fecha-nacimiento"
-          >Fecha de nacimiento <span class="campo__opcional">(opcional)</span></label
+          ><app-icono nombre="calendario" />Fecha de nacimiento
+          <span class="campo__opcional">(opcional)</span></label
         >
         <input
           id="alta-persona-fecha-nacimiento"
@@ -445,15 +566,17 @@
         </app-alerta>
       }
 
-      <h3 class="formulario__seccion">Contacto <span class="campo__opcional">(opcional)</span></h3>
+      <h3 class="formulario__seccion">
+        <app-icono nombre="telefono" />Contacto <span class="campo__opcional">(opcional)</span>
+      </h3>
 
       <div class="campo campo--3">
-        <label for="alta-persona-telefono">Teléfono</label>
+        <label for="alta-persona-telefono"><app-icono nombre="telefono" />Teléfono</label>
         <input id="alta-persona-telefono" type="tel" formControlName="telefono" />
       </div>
 
       <div class="campo">
-        <label for="alta-persona-email">Correo de contacto</label>
+        <label for="alta-persona-email"><app-icono nombre="correo" />Correo de contacto</label>
         <input
           id="alta-persona-email"
           type="email"
@@ -470,9 +593,14 @@
       </div>
 
       <details class="mas-opciones">
-        <summary>Observaciones: cómo llega, quién la acompaña, preferencias</summary>
+        <summary>
+          <app-icono nombre="contratacion" />Observaciones: cómo llega, quién la acompaña,
+          preferencias
+        </summary>
         <div class="campo">
-          <label for="alta-persona-notas">Observaciones administrativas</label>
+          <label for="alta-persona-notas"
+            ><app-icono nombre="contratacion" />Observaciones administrativas</label
+          >
           <textarea
             id="alta-persona-notas"
             formControlName="notas"
@@ -524,17 +652,21 @@
         }
 
         <div class="campo campo--3">
-          <label for="edicion-apellido-{{ persona.id }}">Apellido</label>
+          <label for="edicion-apellido-{{ persona.id }}"
+            ><app-icono nombre="perfil" />Apellido</label
+          >
           <input id="edicion-apellido-{{ persona.id }}" type="text" formControlName="apellido" />
         </div>
 
         <div class="campo campo--3">
-          <label for="edicion-nombre-{{ persona.id }}">Nombre</label>
+          <label for="edicion-nombre-{{ persona.id }}"><app-icono nombre="perfil" />Nombre</label>
           <input id="edicion-nombre-{{ persona.id }}" type="text" formControlName="nombre" />
         </div>
 
         <div class="campo campo--2">
-          <label for="edicion-tipo-{{ persona.id }}">Tipo de documento</label>
+          <label for="edicion-tipo-{{ persona.id }}"
+            ><app-icono nombre="documento" />Tipo de documento</label
+          >
           <select
             id="edicion-tipo-{{ persona.id }}"
             formControlName="tipoDocumento"
@@ -551,7 +683,9 @@
         </div>
 
         <div class="campo campo--2">
-          <label for="edicion-numero-{{ persona.id }}">Número de documento</label>
+          <label for="edicion-numero-{{ persona.id }}"
+            ><app-icono nombre="documento" />Número de documento</label
+          >
           <input
             id="edicion-numero-{{ persona.id }}"
             type="text"
@@ -560,7 +694,9 @@
         </div>
 
         <div class="campo">
-          <label for="edicion-nacimiento-{{ persona.id }}">Fecha de nacimiento</label>
+          <label for="edicion-nacimiento-{{ persona.id }}"
+            ><app-icono nombre="calendario" />Fecha de nacimiento</label
+          >
           <input
             id="edicion-nacimiento-{{ persona.id }}"
             type="date"
@@ -576,12 +712,16 @@
         <h3 class="formulario__seccion">Contacto</h3>
 
         <div class="campo campo--3">
-          <label for="edicion-telefono-{{ persona.id }}">Teléfono</label>
+          <label for="edicion-telefono-{{ persona.id }}"
+            ><app-icono nombre="telefono" />Teléfono</label
+          >
           <input id="edicion-telefono-{{ persona.id }}" type="tel" formControlName="telefono" />
         </div>
 
         <div class="campo">
-          <label for="edicion-email-{{ persona.id }}">Correo de contacto</label>
+          <label for="edicion-email-{{ persona.id }}"
+            ><app-icono nombre="correo" />Correo de contacto</label
+          >
           <input
             id="edicion-email-{{ persona.id }}"
             type="email"
@@ -594,7 +734,9 @@
         </div>
 
         <div class="campo">
-          <label for="edicion-notas-{{ persona.id }}">Observaciones administrativas</label>
+          <label for="edicion-notas-{{ persona.id }}"
+            ><app-icono nombre="contratacion" />Observaciones administrativas</label
+          >
           <textarea id="edicion-notas-{{ persona.id }}" formControlName="notas" rows="3"></textarea>
         </div>
 

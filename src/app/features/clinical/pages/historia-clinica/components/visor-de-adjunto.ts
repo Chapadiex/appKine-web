@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 
 import { nombreDeContentDisposition, tamanoEnPalabras } from '../../../../../shared/utils/archivos';
 import { ErrorHistoria, traducirErrorHistoria } from '../../../models/historia-errors';
@@ -54,9 +54,15 @@ export class VisorDeAdjunto {
   private readonly api = inject(HistoriaClinicaApi);
   private readonly sanitizer = inject(DomSanitizer);
 
-  readonly historiaClinicaId = input.required<number>();
+  readonly historiaClinicaId = input.required<number | null>();
   readonly adjuntoId = input.required<number>();
   readonly justificacion = input.required<Justificacion>();
+
+  /**
+   * Otra fuente del archivo (DP-47: los datos declarados se abren por persona, sin historia). Si no
+   * viene, se baja de la historia como siempre.
+   */
+  readonly descarga = input<(() => Observable<HttpResponse<Blob>>) | null>(null);
 
   protected readonly estado = signal<Estado>({ tipo: 'sin-abrir' });
 
@@ -105,13 +111,17 @@ export class VisorDeAdjunto {
   protected abrir(): void {
     this.pasarA({ tipo: 'bajando' });
     this.pedido?.unsubscribe();
-    this.pedido = this.api
-      .descargar(this.historiaClinicaId(), this.adjuntoId(), this.justificacion())
-      .subscribe({
-        next: (respuesta) => this.pasarA({ tipo: 'listo', archivo: this.preparar(respuesta) }),
-        error: (error: unknown) =>
-          this.pasarA({ tipo: 'error', error: traducirErrorHistoria(error) }),
-      });
+    const descarga = this.descarga();
+    const historiaClinicaId = this.historiaClinicaId();
+    const pedido =
+      descarga !== null
+        ? descarga()
+        : this.api.descargar(historiaClinicaId ?? 0, this.adjuntoId(), this.justificacion());
+    this.pedido = pedido.subscribe({
+      next: (respuesta) => this.pasarA({ tipo: 'listo', archivo: this.preparar(respuesta) }),
+      error: (error: unknown) =>
+        this.pasarA({ tipo: 'error', error: traducirErrorHistoria(error) }),
+    });
   }
 
   /** Todo cambio de estado pasa por aca: las URLs del archivo anterior se revocan al salir. */

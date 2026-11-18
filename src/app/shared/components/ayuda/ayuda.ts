@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { Icono } from '../icono/icono';
+import { Icono, type NombreDeIcono } from '../icono/icono';
 import { posicionFlotante } from '../../utils/posicion-flotante';
 
 let siguienteId = 0;
@@ -73,7 +73,7 @@ const HAY_POPOVER = typeof HTMLElement.prototype.showPopover === 'function';
       [attr.aria-controls]="idPanel"
       (click)="alternar()"
     >
-      <app-icono nombre="ayuda" />
+      <app-icono [nombre]="icono()" />
       <span class="visualmente-oculto">Ayuda: {{ titulo() }}</span>
     </button>
     <div
@@ -117,6 +117,9 @@ export class Ayuda {
 
   /** `amplio` para explicaciones con listas o tablas; nunca pasa del ancho de la ventana. */
   readonly tamano = input<'normal' | 'amplio'>('normal');
+
+  /** El icono del boton. `info` para un dato guardado que se consulta (13/11/2026). */
+  readonly icono = input<NombreDeIcono>('ayuda');
 
   protected readonly abierta = signal(false);
 

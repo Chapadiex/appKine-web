@@ -109,7 +109,7 @@
           </div>
 
           <div>
-            <dt>Servicio u oferta</dt>
+            <dt>Servicio o actividad</dt>
             <dd>{{ nombreDeOferta() ?? 'Sin imputar a un servicio' }}</dd>
           </div>
 
@@ -259,7 +259,7 @@
                 }
               </div>
               <div class="campo campo--4">
-                <label for="edicion-oferta">Servicio u oferta</label>
+                <label for="edicion-oferta">Servicio o actividad</label>
                 <select id="edicion-oferta" formControlName="ofertaId">
                   <option value="">Sin imputar a un servicio</option>
                   @for (oferta of ofertasElegibles(); track oferta.id) {

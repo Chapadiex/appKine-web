@@ -109,105 +109,15 @@ describe('ConsultoriosPage', () => {
     expect(texto(fixture)).toContain('Se mudo el centro a la sede Centro');
   });
 
-  it('el PATCH manda solo lo que cambio: lo vaciado como cadena vacía y lo intacto ni aparece', async () => {
+  it('Editar lleva a la pantalla de pasos de esa sede (la edición se prueba en NewConsultorioPage)', async () => {
     const fixture = await montar();
 
-    abrir(fixture, 'Editar');
-    // Se cambia el nombre, se BORRA el telefono vaciandolo y no se toca la razon social.
-    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
-    escribir(fixture, '#editar-phone', '');
-
-    enviar(fixture, 'form');
-
-    const peticion = httpMock.expectOne(
-      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
-    );
-    const cuerpo = peticion.request.body as Record<string, unknown>;
-
-    expect(cuerpo).toEqual({ version: 4, name: 'Sede Centro Nueva', phone: '' });
-    // La razon social ni siquiera viaja: mandarla -aunque fuera su valor actual- la pisaria
-    // en cada guardado, y con ella cualquier correccion que otra persona hubiera hecho.
-    expect('legalName' in cuerpo).toBe(false);
-    expect('timezone' in cuerpo).toBe(false);
-
-    peticion.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 5 });
-    responderSedes(1);
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const [aviso] = TestBed.inject(AvisosStore).avisos();
-    expect(aviso?.titulo).toBe('Cambios guardados');
-    expect(aviso?.descripcion).toBe('Sede Centro Nueva');
-    expect(fixture.nativeElement.querySelector('app-panel-lateral')).toBeNull();
-  });
-
-  /**
-   * Vaciar un campo de texto es "borralo"; vaciar uno numerico NO es "ponelo en cero".
-   *
-   * <p>Un `<input type="number">` vaciado entrega `null`, no `''`, asi que la guarda vieja
-   * —`valores.slotMinutes !== ''`— lo dejaba pasar y `Number(null)` mandaba `slotMinutes: 0`: una
-   * duracion de turno de cero minutos, que es un cambio que el operador nunca pidio. La diferencia
-   * con `#editar-phone` de arriba es del contrato, no del gesto: la cadena vacia SI es la forma de
-   * borrar un campo institucional.
-   */
-  it('vaciar la duración del turno no manda un cero: el campo directamente no viaja', async () => {
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
-    escribir(fixture, '#editar-slotMinutes', '');
-
-    enviar(fixture, 'form');
-
-    const peticion = httpMock.expectOne(
-      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
-    );
-    const cuerpo = peticion.request.body as Record<string, unknown>;
-
-    expect(cuerpo).toEqual({ version: 4, name: 'Sede Centro Nueva' });
-    expect('slotMinutes' in cuerpo).toBe(false);
-
-    peticion.flush({ ...CENTRO, name: 'Sede Centro Nueva', version: 5 });
-    responderSedes(1);
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
-    await fixture.whenStable();
-    fixture.detectChanges();
-  });
-
-  it('una versión vieja no pisa nada: relee la sede, avisa y deja el panel abierto', async () => {
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
-    enviar(fixture, 'form');
-
-    httpMock
-      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
-      .flush(
-        {
-          type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'La versión enviada quedo vieja',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    // Se relee la sede para tomar la version nueva como base: reintentar en silencio con
-    // ella seria justamente pisar el cambio del otro, que es lo que el 409 evita.
-    httpMock
-      .expectOne('/api/v1/organizations/1/consultorios/3')
-      .flush({ ...CENTRO, name: 'Sede Centro Sur', version: 9 });
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(texto(fixture)).toContain('Alguien mas edito esta sede');
-    // El panel sigue abierto con lo escrito: cerrarlo obligaria a rehacer todo para leer el
-    // mensaje, y la decision de insistir o no es del usuario.
-    expect(texto(fixture)).toContain('Editar Sede Centro');
-    expect(campo(fixture, '#editar-name')).toBe('Sede Centro Nueva');
+    const editar = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('tbody a'),
+    ].find((enlace) => (enlace.textContent ?? '').trim() === 'Editar');
+    expect(editar?.getAttribute('href')).toBe('/organizacion/sedes/3/editar');
+    // La sede dada de baja no se edita: un solo "Editar", el de la activa.
+    expect(acciones(fixture).filter((texto) => texto === 'Editar')).toHaveLength(1);
   });
 
   it('dar de baja la sede del contexto activo lleva a elegir otra, con el motivo en la URL', async () => {
@@ -276,7 +186,7 @@ describe('ConsultoriosPage', () => {
     httpMock.expectNone('/api/v1/me/permissions');
 
     expect(texto(fixture)).toContain('Abrir una sede');
-    expect(botones(fixture)).toContain('Editar');
+    expect(acciones(fixture)).toContain('Editar');
     expect(botones(fixture)).toContain('Dar de baja');
   });
 
@@ -289,7 +199,7 @@ describe('ConsultoriosPage', () => {
 
     expect(fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(2);
     expect(texto(fixture)).toContain('Sede Centro');
-    expect(botones(fixture)).not.toContain('Editar');
+    expect(acciones(fixture)).not.toContain('Editar');
     expect(botones(fixture)).not.toContain('Dar de baja');
     expect(texto(fixture)).not.toContain('Abrir una sede');
   });
@@ -448,51 +358,6 @@ describe('ConsultoriosPage', () => {
     expect(vacio.querySelector('a[href="/organizacion/sedes/nueva"]')).not.toBeNull();
   });
 
-  it('un email mal formado bloquea el PATCH en vez de gastar un rechazo del backend', async () => {
-    // El envio tiene que quedar BLOQUEADO: si saliera, el backend responderia 400 y el usuario
-    // veria un error generico en vez del campo marcado. Por eso se afirma que no hay peticion,
-    // no solo que aparece el texto.
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-email', 'esto-no-es-un-mail');
-    enviar(fixture, 'form');
-
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
-    expect(texto(fixture)).toContain('no tiene una forma valida');
-
-    // El nombre vacio tambien bloquea, y por una razon distinta: no es un dato borrable, asi
-    // que viajaria como un renombre a cadena vacia y dejaria la sede sin nombre en la tabla.
-    escribir(fixture, '#editar-email', '');
-    escribir(fixture, '#editar-name', '');
-    enviar(fixture, 'form');
-
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
-    expect(texto(fixture)).toContain('La sede necesita un nombre');
-
-    // Y un nombre de solo espacios es un nombre vacio. `Validators.required` lo daba por bueno
-    // -solo mira la longitud- y `armarCambios()` lo recortaba a '' al salir.
-    escribir(fixture, '#editar-name', '   ');
-    enviar(fixture, 'form');
-
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PATCH');
-    expect(texto(fixture)).toContain('La sede necesita un nombre');
-
-    // Y vaciar el email si vale: la cadena vacia es la forma contractual de borrar el dato.
-    escribir(fixture, '#editar-name', 'Sede Centro');
-    enviar(fixture, 'form');
-
-    const peticion = httpMock.expectOne(
-      (candidata: HttpRequest<unknown>) => candidata.method === 'PATCH',
-    );
-    expect(peticion.request.body).toEqual({ version: 4 });
-    peticion.flush(CENTRO);
-    responderSedes(1);
-    httpMock.expectOne(esListado(1)).flush(PAGINA);
-    await fixture.whenStable();
-    fixture.detectChanges();
-  });
-
   it('dar de baja la unica sede activa se explica en el panel y no cambia de contexto', async () => {
     // Un "conflicto" a secas aca no dice nada: el usuario tiene que entender que la
     // organizacion se quedaria sin ningun contexto donde entrar, y que la salida es dar de
@@ -579,37 +444,6 @@ describe('ConsultoriosPage', () => {
     expect(aviso?.titulo).toBe('No pudimos abrir la pantalla para elegir otra sede');
     expect(aviso?.duracion).toBeNull();
     consola.mockRestore();
-  });
-
-  it('si la relectura posterior al 409 también falla, el mensaje queda y el panel no se cierra', async () => {
-    // Caso encadenado: el servidor conflictua y ademas se cae. Si la relectura fallida cerrara
-    // el panel o tirara la excepcion, el usuario perderia lo escrito ADEMAS del cambio.
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-name', 'Sede Centro Nueva');
-    enviar(fixture, 'form');
-
-    httpMock
-      .expectOne((candidata: HttpRequest<unknown>) => candidata.method === 'PATCH')
-      .flush(
-        {
-          type: 'https://akine.app/problems/concurrent-modification',
-          detail: 'La versión enviada quedo vieja',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    httpMock
-      .expectOne('/api/v1/organizations/1/consultorios/3')
-      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(texto(fixture)).toContain('Alguien mas edito esta sede');
-    expect(campo(fixture, '#editar-name')).toBe('Sede Centro Nueva');
   });
 
   /** Monta la pantalla con contexto sobre la sede 3, permiso de gestion y las dos sedes. */
@@ -741,6 +575,9 @@ function enviar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   fixture.detectChanges();
 }
 
-function campo(fixture: { nativeElement: HTMLElement }, selector: string): string {
-  return fixture.nativeElement.querySelector<HTMLInputElement>(selector)?.value ?? '';
+/** Botones y enlaces: "Editar" es un enlace a la pantalla de pasos, "Dar de baja" un botón. */
+function acciones(fixture: { nativeElement: HTMLElement }): string[] {
+  return [...fixture.nativeElement.querySelectorAll('button, a')].map((elemento) =>
+    (elemento.textContent ?? '').trim(),
+  );
 }

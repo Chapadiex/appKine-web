@@ -1,0 +1,62 @@
+/* Reglas de atencion.css que usa sólo esta pantalla (separadas el 16/11/2026 por el tope de 16 kB). */
+
+.versiones__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 var(--esp-6);
+  align-items: start;
+}
+
+@container (min-width: 52rem) {
+  .versiones__grilla {
+    grid-template-columns: minmax(15rem, 1fr) minmax(0, 3fr);
+  }
+  .versiones__lista {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .versiones__detalle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.version-item {
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.version-item:last-child {
+  border-bottom: 0;
+}
+
+.version-item > summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  padding: var(--esp-5) 0;
+  cursor: pointer;
+}
+
+.version-item[open] > summary {
+  color: var(--color-acento);
+}
+
+.version-item .detalle {
+  margin-bottom: var(--esp-5);
+}
+
+.version-item__meta {
+  font-size: var(--tipo-2xs);
+  color: var(--color-texto-suave);
+}
+
+/* En la comparacion, lo que cambio: lo anterior tachado y lo nuevo resaltado, ademas de "Cambió". */
+.valor-anterior {
+  color: var(--color-peligro-texto);
+  text-decoration: line-through;
+}
+
+.valor-nuevo {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}

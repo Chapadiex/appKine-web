@@ -180,12 +180,15 @@ describe('FichaDePersonaPage', () => {
 
   it('una sección vacía dice que se consultó y no hay nada, y NO habla de permisos', async () => {
     const fixture = await montar(RESUMEN_COMPLETO);
-    const contenido = texto(fixture);
+    const vacia =
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '[aria-labelledby="titulo-seccion-clases"]',
+      )?.textContent ?? '';
 
-    expect(contenido).toContain('Sin movimientos registrados');
-    // La frase que distingue los dos casos. Si esto cambiara a "no hay datos" a secas, la seccion
-    // vacia y la prohibida volverian a leerse igual.
-    expect(contenido).toContain('se consultó y no hay nada');
+    // La vacia dice que no hay movimientos, y nada de permisos: si hablara de permisos, la
+    // seccion vacia y la prohibida volverian a leerse igual.
+    expect(vacia).toContain('Sin movimientos registrados');
+    expect(vacia).not.toContain('permiso');
   });
 
   it('la sección omitida no se confunde con la vacía: aparecen las dos, cada una con su titulo', async () => {
@@ -227,12 +230,37 @@ describe('FichaDePersonaPage', () => {
   // -------------------------------------------------------------------------------------
 
   it('muestra los indicadores con su etiqueta y su valor, y los hitos con su fecha', async () => {
-    const fixture = await montar(RESUMEN_COMPLETO);
-    const contenido = texto(fixture);
+    const fixture = await montar({
+      ...RESUMEN_COMPLETO,
+      secciones: [
+        ...RESUMEN_COMPLETO.secciones!.filter((s) => s.seccion !== 'clases'),
+        {
+          seccion: 'clases',
+          indicadores: [],
+          hitos: [
+            {
+              seccion: 'clases',
+              tipo: 'ASISTENCIA',
+              ocurrioEn: '2026-09-10T15:00:00Z',
+              titulo: 'Clase de Pilates',
+              estado: 'PRESENTE',
+            },
+          ],
+        },
+      ],
+    });
+    const raiz = fixture.nativeElement as HTMLElement;
+    const turnos =
+      raiz.querySelector('[aria-labelledby="titulo-seccion-turnos"]')?.textContent ?? '';
+    const clases =
+      raiz.querySelector('[aria-labelledby="titulo-seccion-clases"]')?.textContent ?? '';
 
-    expect(contenido).toContain('Turnos futuros');
-    expect(contenido).toContain('Turno');
-    expect(contenido).toContain('CONFIRMADO');
+    expect(turnos).toContain('Turnos futuros');
+    expect(turnos).toContain('3');
+    // Los hitos de turnos no se listan: los repite la lista de proximos turnos, con su "Ver".
+    expect(turnos).not.toContain('CONFIRMADO');
+    expect(clases).toContain('10/09/2026');
+    expect(clases).toContain('Clase de Pilates — PRESENTE');
   });
 
   // -------------------------------------------------------------------------------------
@@ -271,7 +299,7 @@ describe('FichaDePersonaPage', () => {
     });
     const contenido = texto(fixture);
 
-    expect(contenido).toContain('No tiene coberturas vigentes hoy: se atiende como particular');
+    expect(contenido).toContain('Sin coberturas vigentes: se atiende como particular');
     expect(contenido).not.toContain('Sin movimientos registrados');
   });
 

@@ -705,12 +705,18 @@ export class AgendaPage {
       return;
     }
     const arriba = grilla.getBoundingClientRect().top + window.scrollY;
-    const alto = Math.max(320, window.innerHeight - arriba - 16);
+    // En una tablet (modo táctil, 16/11/2026) los controles son más altos y la página no tiene que
+    // scrollear: la grilla se achica más antes de rendirse. Plegar los filtros le devuelve el alto.
+    const tactil =
+      document.documentElement.dataset['puntero'] === 'tactil' ||
+      window.matchMedia?.('(pointer: coarse)').matches === true;
+    const minimo = tactil ? 240 : 320;
+    const alto = Math.max(minimo, window.innerHeight - arriba - 16);
     grilla.style.setProperty('--alto-de-grilla', `${alto}px`);
     // Lo que el contenedor agrega abajo se descuenta: la pagina no tiene que crecer.
     const exceso = document.documentElement.scrollHeight - window.innerHeight;
     if (exceso > 0) {
-      grilla.style.setProperty('--alto-de-grilla', `${Math.max(320, alto - exceso)}px`);
+      grilla.style.setProperty('--alto-de-grilla', `${Math.max(minimo, alto - exceso)}px`);
     }
   };
 
