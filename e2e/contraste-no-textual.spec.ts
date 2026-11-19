@@ -49,7 +49,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
   test.describe.configure({ timeout: 90_000 });
 
   test('login', async ({ page }) => {
-    await instalarApiDeContraste(page);
+    await instalarApiDeContraste(page, { conSesion: false });
     await page.goto('/auth/ingresar');
     await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible({
       timeout: LLEGADA,

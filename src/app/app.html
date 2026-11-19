@@ -71,6 +71,7 @@
       id="contenido"
       class="contenido"
       tabindex="-1"
+      [class.contenido--ingreso]="esIngreso()"
       [class.contenido--amplio]="ancho() === 'amplio'"
     >
       @if (esAcceso()) {

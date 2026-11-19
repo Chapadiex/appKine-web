@@ -145,6 +145,19 @@
   --color-secundario-texto: var(--color-texto);
   --color-acento: #1d4ed8;
   --color-acento-claro: var(--color-seleccion);
+  /* Escenas del ingreso (19/11/2026): degradés oscuros, iguales en los dos temas, con texto
+     blanco encima (>= 4,5:1 en todos los extremos). */
+  --color-escena-1-desde: #5b21b6;
+  --color-escena-1-hasta: #be185d;
+  --color-escena-2-desde: #0f766e;
+  --color-escena-2-hasta: #1d4ed8;
+  --color-escena-3-desde: #c2410c;
+  --color-escena-3-hasta: #be123c;
+  --color-escena-4-desde: #3730a3;
+  --color-escena-4-hasta: #0e7490;
+  --color-escena-5-desde: #166534;
+  --color-escena-5-hasta: #0f766e;
+  --color-escena-texto: #ffffff;
   --color-accion-fondo: #2563eb;
   --color-accion-fondo-hover: #1d4ed8;
   --color-accion-texto: #ffffff;

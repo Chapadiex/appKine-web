@@ -222,6 +222,25 @@
   text-decoration: none;
 }
 
+/*
+  Iniciar sesión en escritorio: la marca está dentro de la escena, así que se saca de arriba y el
+  ingreso se centra en la altura. Debajo de 861 px la escena no se muestra y la marca vuelve.
+*/
+@media (min-width: 861px) {
+  .shell--acceso .contenido--ingreso {
+    justify-content: center;
+    padding-top: var(--esp-8);
+  }
+
+  .contenido--ingreso > .acceso__marca {
+    display: none;
+  }
+
+  .contenido--ingreso > .acceso__pie {
+    margin-top: 0;
+  }
+}
+
 /* En acceso tampoco va la barra lateral, aunque haya contexto (cambiar de sede desde la app). */
 .shell--acceso {
   grid-template-columns: minmax(0, 1fr);

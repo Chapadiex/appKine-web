@@ -90,7 +90,7 @@ import { abrirAcciones, abrirFiltros } from './support/filtros';
 test.describe('Contraste de color', () => {
   test.describe('sin sesion', () => {
     test('el login en reposo, con sus enlaces y su boton de accion', async ({ page }) => {
-      await instalarApiDeContraste(page);
+      await instalarApiDeContraste(page, { conSesion: false });
       await page.goto('/auth/ingresar');
       await expect(page.getByRole('heading', { name: 'Iniciar sesión', level: 1 })).toBeVisible();
 
@@ -102,7 +102,7 @@ test.describe('Contraste de color', () => {
      * vacio marca los dos campos con `aria-invalid` y pinta sus dos `.campo__error`.
      */
     test('el login con los dos campos en error', async ({ page }) => {
-      await instalarApiDeContraste(page);
+      await instalarApiDeContraste(page, { conSesion: false });
       await page.goto('/auth/ingresar');
       await page.getByRole('button', { name: 'Ingresar' }).click();
 
@@ -122,7 +122,7 @@ test.describe('Contraste de color', () => {
     test('el boton deshabilitado mientras envia, y despues el error del servidor', async ({
       page,
     }) => {
-      await instalarApiDeContraste(page);
+      await instalarApiDeContraste(page, { conSesion: false });
 
       let liberar: () => void = () => undefined;
       const enVuelo = new Promise<void>((resolver) => {
