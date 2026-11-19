@@ -30,7 +30,7 @@ import {
 } from '../../models/contratacion';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CENTROS,
 } from '../../models/pestanas-de-plataforma';
 import { RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 
@@ -85,7 +85,7 @@ export class PedidosDePruebaPage {
   private readonly pedidosDePrueba = inject(PedidosDePruebaService);
   private readonly avisos = inject(AvisosStore);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CENTROS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
   protected readonly marcaDePedido = marcaDePedido;

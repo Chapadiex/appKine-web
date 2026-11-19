@@ -32,17 +32,10 @@
   margin: 0;
 }
 
-.declarados__cabeza {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-2);
-}
-
-.declarados__cabeza h2 {
-  margin: 0;
-}
-
+/* La cuenta va dentro del `h2` de la tarjeta, como en el resto de las secciones. */
 .declarados__cuenta {
+  display: inline-block;
+  margin-inline-start: var(--esp-2);
   min-inline-size: 1.5rem;
   padding-inline: var(--esp-2);
   border-radius: 999px;
@@ -208,31 +201,6 @@
 
 .declarados .boton {
   min-height: var(--alto-control);
-}
-
-/* Boton con aspecto de enlace ("Cambiar", titulo del archivo). Copia local de `.accion-texto`. */
-.accion-texto {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-1);
-  min-height: 1.5rem;
-  padding: var(--esp-1) var(--esp-2);
-  border: 0;
-  background: transparent;
-  color: var(--color-enlace);
-  font: inherit;
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
-  cursor: pointer;
-}
-
-.accion-texto:hover {
-  text-decoration: underline;
-}
-
-.accion-texto:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
 }
 
 /* Modo táctil (16/11/2026): el tipo y la zona se eligen con un toque, cada uno en su fila. */

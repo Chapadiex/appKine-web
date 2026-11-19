@@ -5,16 +5,12 @@
 -->
 <div class="ingreso">
   <!-- En escritorio la marca vive acá y no arriba de la página: el ingreso entra entero. -->
-  <aside
-    class="ingreso__escena"
-    [style.--escena-desde]="'var(--color-escena-' + escena.tono + '-desde)'"
-    [style.--escena-hasta]="'var(--color-escena-' + escena.tono + '-hasta)'"
-  >
+  <aside class="ingreso__escena">
     <a class="ingreso__marca" routerLink="/">
       <span class="ingreso__logo" aria-hidden="true">A</span>
       <span>AKINE</span>
     </a>
-    <img class="ingreso__imagen" [src]="escena.imagen" alt="" width="400" height="320" />
+    <img class="ingreso__imagen" [src]="escena.imagen" alt="" width="1400" height="939" />
     <div class="ingreso__texto">
       <p class="ingreso__titulo">{{ escena.titulo }}</p>
       <p class="ingreso__bajada">{{ escena.bajada }}</p>

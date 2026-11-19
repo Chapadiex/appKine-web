@@ -1,0 +1,285 @@
+/*
+ * Alta de un centro en una sola pantalla: a la izquierda quién es (el pedido, si viene de uno, el
+ * centro y el dueño); a la derecha qué contrata. La barra de acciones queda pegada al pie para no
+ * tener que bajar hasta "Crear el centro". A 64rem o menos, una sola columna.
+ */
+.alta {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--esp-6);
+  align-items: start;
+}
+
+.alta__error,
+.alta__acciones {
+  grid-column: 1 / -1;
+}
+
+.alta__columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+  min-width: 0;
+}
+
+.alta__seccion {
+  margin: 0;
+  container-type: inline-size;
+}
+
+/* Campos cortos de a dos por fila; uno por fila cuando la tarjeta es angosta. */
+.alta__campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--esp-6);
+  align-items: start;
+}
+
+@container (max-width: 30rem) {
+  .alta__campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* El pedido es contexto, no formulario: superficie secundaria, sin recuadro de tarjeta. */
+.alta__pedido {
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+  color: var(--color-texto);
+}
+
+.alta__pedido-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+  margin-bottom: var(--esp-4);
+}
+
+.alta__pedido-cabecera h2 {
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.alta__pedido-marca {
+  padding: var(--esp-1) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-info);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+}
+
+.alta__pedido-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0;
+}
+
+.alta__pedido-datos dt {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+
+.alta__pedido-datos dd {
+  margin: var(--esp-1) 0 0;
+  font-size: var(--tipo-md);
+  overflow-wrap: anywhere;
+}
+
+.alta__pedido-comentario {
+  grid-column: 1 / -1;
+}
+
+/* Los planes en una fila mientras entren: cada uno es una palabra y su tope de sedes. */
+.alta__planes ::ng-deep .opciones-en-tarjetas__grilla {
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+}
+
+.alta__grupo {
+  margin: 0;
+  padding-top: var(--esp-4);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.alta__grupo + .alta__grupo {
+  margin-top: var(--esp-4);
+}
+
+.alta__grupo .ayuda {
+  margin-bottom: var(--esp-2);
+}
+
+/* Acciones pegadas al pie: "Crear el centro" siempre a la vista. */
+.alta__acciones {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin: 0;
+  padding: var(--esp-4) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+@media (max-width: 64rem) {
+  .alta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tarjetas mas compactas en esta pantalla: entra entera en una notebook (~900 px de alto). */
+.alta__seccion {
+  padding: var(--esp-6) var(--esp-7);
+}
+
+.alta__seccion h2 {
+  margin-bottom: var(--esp-4);
+}
+
+.alta__leyenda-nota {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+/*
+ * Servicios y adicional como tarjetas que se eligen, con el mismo lenguaje que los planes: borde de
+ * control en reposo y tinte del enlace con su tilde al elegirla. La casilla real queda (accesible y
+ * enfocable) pero se oculta a la vista: el estado lo dicen el borde, el fondo y la tilde.
+ */
+.alta__fichas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--esp-4);
+}
+
+.alta__ficha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.alta__ficha input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.alta__ficha:hover {
+  border-color: var(--color-enlace);
+}
+
+.alta__ficha:has(input:focus-visible) {
+  outline: var(--borde-foco, 2px) solid var(--color-foco);
+  outline-offset: 2px;
+}
+
+.alta__ficha:has(input:checked) {
+  border-color: var(--color-enlace);
+  background: color-mix(in srgb, var(--color-enlace) 9%, var(--color-superficie));
+  box-shadow: inset 0 0 0 1px var(--color-enlace);
+}
+
+.alta__ficha-icono {
+  flex-shrink: 0;
+  color: var(--color-enlace);
+}
+
+.alta__ficha-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.alta__ficha-titulo {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.alta__ficha-tilde {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--color-enlace);
+  visibility: hidden;
+}
+
+.alta__ficha:has(input:checked) .alta__ficha-tilde {
+  visibility: visible;
+}
+
+/* El sello de la IA: un distintivo del adicional, no un estado. */
+.alta__ia-sello {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+}
+
+/* Modalidad: dos opciones excluyentes en un control segmentado. */
+.alta__segmentado {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: var(--esp-1);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.alta__segmento {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-2) var(--esp-5);
+  border-radius: var(--radio-sm);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.alta__segmento input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.alta__segmento:has(input:focus-visible) {
+  outline: var(--borde-foco, 2px) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.alta__segmento:has(input:checked) {
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-texto) 18%, transparent);
+}
+
+.alta__segmento:has(input:checked) app-icono {
+  color: var(--color-enlace);
+}

@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   effect,
   inject,
   signal,
@@ -17,6 +16,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Paginacion } from '../../../../shared/components/paginacion/paginacion';
 import { ClinicalApi } from '../../services/clinical-api';
@@ -76,7 +76,7 @@ function aTarjeta(persona: PersonaResponse, hoy: Date): Tarjeta | null {
  */
 @Component({
   selector: 'app-historias-clinicas-page',
-  imports: [RouterLink, Ayuda, CabeceraDePagina, EstadoVacio, Icono, Paginacion],
+  imports: [RouterLink, Ayuda, CabeceraDePagina, EstadoVacio, Filtros, Icono, Paginacion],
   templateUrl: './historias-clinicas-page.html',
   styleUrl: './historias-clinicas-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -93,14 +93,6 @@ export class HistoriasClinicasPage {
   protected readonly tarjetas = signal<readonly Tarjeta[]>([]);
   protected readonly total = signal(0);
   protected readonly totalPaginas = signal(0);
-
-  protected readonly resumen = computed(() => {
-    const n = this.total();
-    if (this.texto().trim() !== '') {
-      return n === 1 ? '1 paciente encontrado' : `${n} pacientes encontrados`;
-    }
-    return n === 1 ? '1 paciente' : `${n} pacientes`;
-  });
 
   private readonly escritura = new Subject<string>();
   private pedido: Subscription | null = null;

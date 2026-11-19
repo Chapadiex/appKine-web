@@ -124,11 +124,9 @@
                       }
                     </th>
                     <td>
-                      <span
-                        class="marca-estado"
-                        [class]="'marca-estado ' + claseDeEstado(solicitud.estado)"
-                        >{{ etiquetaDeEstado(solicitud.estado) }}</span
-                      >
+                      <span [class]="'marca-estado ' + claseDeEstado(solicitud.estado)">{{
+                        etiquetaDeEstado(solicitud.estado)
+                      }}</span>
                     </td>
                     <td class="tabla__acciones">
                       <button
@@ -179,7 +177,11 @@
       <dt>Recibida</dt>
       <dd>{{ formatearInstante(solicitud.createdAt) ?? 'Sin fecha' }}</dd>
       <dt>Estado</dt>
-      <dd>{{ etiquetaDeEstado(solicitud.estado) }}</dd>
+      <dd>
+        <span [class]="'marca-estado ' + claseDeEstado(solicitud.estado)">{{
+          etiquetaDeEstado(solicitud.estado)
+        }}</span>
+      </dd>
       @if (solicitud.resolucionNota) {
         <dt>Nota de la resolución</dt>
         <dd>{{ solicitud.resolucionNota }}</dd>

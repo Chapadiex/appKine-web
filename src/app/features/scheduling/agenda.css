@@ -161,88 +161,52 @@ button.slot--libre:focus-visible {
   font-size: var(--tipo-xs);
 }
 
-/* Navegador de fecha del canvas: ‹ Hoy › y el rango en palabras. */
-.navegador-fecha {
+/*
+ * El dia de la recepcion (19/11/2026): ‹ Hoy › es `app-navegador-de-fecha`; aca solo lo propio de
+ * la recepcion, el campo de fecha proyectado, "Actualizar la lista" y la hora de la ultima lectura.
+ * Mismo alto de control que el resto de la barra de Atencion.
+ */
+.recepcion__dia {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--esp-2);
 }
 
-.navegador-fecha__boton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  padding: 0 var(--esp-5);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  color: var(--color-texto);
-  font: inherit;
-  font-weight: var(--peso-medio);
-  cursor: pointer;
-}
-
-.navegador-fecha__boton--flecha {
-  padding: 0;
-  color: var(--color-marca-texto-suave);
-  font-size: var(--tipo-base);
-}
-
-.navegador-fecha__boton:hover:not(:disabled) {
-  background: var(--color-hover);
-}
-
-.navegador-fecha__boton:focus-visible {
-  outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
-}
-
-/* Hora de la ultima lectura de la recepcion: dato chico al lado de los controles, no un boton. */
-.navegador-fecha__lectura {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-.navegador-fecha__etiqueta {
-  margin: 0 var(--esp-4);
-  font-size: var(--tipo-md);
-  font-weight: var(--peso-medio);
-}
-
-/* El campo de fecha compacto del navegador (recepción): alto de los botones, sin rótulo visible. */
-.navegador-fecha input[type='date'] {
-  height: 2.25rem;
+.recepcion__selector-fecha,
+.recepcion__actualizar {
+  min-height: var(--alto-control);
   padding: 0 var(--esp-4);
   border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-md);
+  border-radius: var(--radio-sm);
   background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
   font-size: var(--tipo-sm);
 }
 
-.navegador-fecha input[type='date']:focus-visible {
+.recepcion__actualizar {
+  padding: 0 var(--esp-5);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.recepcion__actualizar:hover {
+  background: var(--color-hover);
+}
+
+.recepcion__selector-fecha:focus-visible,
+.recepcion__actualizar:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: var(--foco-offset);
 }
 
-/*
- * El navegador de fecha en la barra de herramientas de Atencion (08/11/2026): controles de 40 px,
- * como el resto de la barra.
- */
-.filtros-barra--separada .navegador-fecha__boton {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radio-sm);
-}
-
-.filtros-barra--separada .navegador-fecha input[type='date'] {
-  height: 2.5rem;
-  border-radius: var(--radio-sm);
+/* Hora de la ultima lectura: dato chico al lado de los controles, no un boton. */
+.recepcion__lectura {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 /*

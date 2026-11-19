@@ -1,3 +1,9 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ACTIVIDADES,
+  pestanasDeActividades,
+} from '../../models/pestanas-de-actividades';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Location } from '@angular/common';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -18,6 +24,7 @@ import {
   lunesDeLaSemana,
   nombreDeClase,
   sumarDiasAFecha,
+  marcaDeEstadoDeClase,
   textoDeEstadoDeClase,
 } from '../../models/clases';
 import { RUTA_CLASES, RUTA_NUEVA_CLASE } from '../../models/rutas-de-clases';
@@ -87,6 +94,7 @@ interface OpcionDeFiltro {
   selector: 'app-clases-de-la-semana-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     Alerta,
     Ayuda,
     ColumnaOrdenable,
@@ -102,6 +110,8 @@ interface OpcionDeFiltro {
   styleUrls: ['../../activity.css', './clases-de-la-semana-page.css'],
 })
 export class ClasesDeLaSemanaPage {
+  protected readonly pestanas = pestanasDeActividades(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ACTIVIDADES;
   private readonly api = inject(ActivityApi);
   private readonly tenant = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
@@ -119,6 +129,7 @@ export class ClasesDeLaSemanaPage {
   protected readonly CLASES_POR_DIA_DEL_MES = CLASES_POR_DIA_DEL_MES;
   protected readonly diaEnPalabras = diaEnPalabras;
   protected readonly textoDeEstado = textoDeEstadoDeClase;
+  protected readonly marcaDeEstado = marcaDeEstadoDeClase;
   protected readonly lugaresLibres = lugaresLibres;
   protected readonly nombre = nombreDeClase;
 

@@ -39,6 +39,12 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ECONOMIA,
+  pestanasDeEconomia,
+} from '../../models/pestanas-de-economia';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import {
   FILAS_POR_PAGINA_INICIAL,
@@ -88,6 +94,7 @@ type CampoDeAlta =
 @Component({
   selector: 'app-egresos-page',
   imports: [
+    Pestanas,
     CabeceraDePagina,
     PanelLateral,
     Ayuda,
@@ -103,6 +110,9 @@ type CampoDeAlta =
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class EgresosPage {
+  protected readonly pestanas = pestanasDeEconomia(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ECONOMIA;
+
   private readonly api = inject(EgresosApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

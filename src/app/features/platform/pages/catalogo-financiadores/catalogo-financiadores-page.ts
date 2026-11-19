@@ -26,7 +26,7 @@ import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PlanesDelCatalogo } from '../../components/planes-del-catalogo/planes-del-catalogo';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CATALOGO_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import {
   releeElCatalogo,
@@ -36,6 +36,13 @@ import {
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+
+/** Criterios de la barra "Ordenar por": los mismos datos que se ven en cada entrada. */
+const CRITERIOS_DE_ORDEN: readonly { readonly columna: string; readonly etiqueta: string }[] = [
+  { columna: 'nombre', etiqueta: 'Nombre' },
+  { columna: 'codigo', etiqueta: 'Código' },
+  { columna: 'estado', etiqueta: 'Estado' },
+];
 
 type FiltroEstado = NonNullable<ListCatalogoFinanciadoresDePlataformaRequestParams['estado']>;
 type Tipo = CatalogoFinanciadorResponseTipoEnum;
@@ -109,7 +116,7 @@ export class CatalogoFinanciadoresPage {
   private readonly avisos = inject(AvisosStore);
   private readonly formBuilder = inject(FormBuilder);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CATALOGO_DE_PLATAFORMA;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly tipos = TIPOS;
 
@@ -143,8 +150,34 @@ export class CatalogoFinanciadoresPage {
     return actual.tipo === 'listo' ? actual.entradas : [];
   });
 
-  /** Paginado de la lista completa de entradas (UX-14): 10 por pagina, con el pie estandar. */
-  protected readonly paginaDeEntradas = tablaLocal(this.entradas, { columnas: {} });
+  /**
+   * Paginado y orden de la lista completa de entradas (UX-14): 10 por pagina, con el pie estandar.
+   * El catalogo se lee entero, asi que ordenar en el cliente ordena todo y no una pagina.
+   */
+  protected readonly paginaDeEntradas = tablaLocal(this.entradas, {
+    columnas: {
+      nombre: (entrada) => entrada.nombre,
+      codigo: (entrada) => entrada.codigo,
+      estado: (entrada) => (entrada.estado === 'INACTIVO' ? 'Dado de baja' : 'Activo'),
+    },
+  });
+
+  /**
+   * Las entradas son fichas con sus planes adentro, no filas: no hay `th` donde colgar
+   * `appOrdenable`. La barra "Ordenar por" usa la misma tabla, el mismo ciclo (ascendente,
+   * descendente, sin orden) y los mismos iconos que el encabezado ordenable.
+   */
+  protected readonly criteriosDeOrden = CRITERIOS_DE_ORDEN;
+
+  protected direccionDe(columna: string): 'asc' | 'desc' | null {
+    const orden = this.paginaDeEntradas.orden();
+    return orden?.columna === columna ? orden.direccion : null;
+  }
+
+  protected iconoDeOrden(columna: string): 'orden' | 'orden-asc' | 'orden-desc' {
+    const direccion = this.direccionDe(columna);
+    return direccion === null ? 'orden' : direccion === 'asc' ? 'orden-asc' : 'orden-desc';
+  }
 
   /**
    * La ultima consulta salio con busqueda o filtros: decide cual de los dos vacios es. Se toma

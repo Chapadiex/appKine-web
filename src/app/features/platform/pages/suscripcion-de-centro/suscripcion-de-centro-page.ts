@@ -21,7 +21,6 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -31,14 +30,17 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CENTROS,
 } from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
 import { ErrorContratacion, traducirErrorContratacion } from '../../models/contratacion-errors';
 import {
   SERVICIOS,
   Servicio,
+  MarcaDeEstado,
+  MarcaDePlan,
   diasRestantes,
+  marcaDePlan,
   marcaDeSuscripcion,
   planesOfrecidos,
   rotuloDeTope,
@@ -58,6 +60,13 @@ type Estado =
   | { readonly tipo: 'error'; readonly error: ErrorContratacion };
 
 type EstadoDeSuscripcion = NonNullable<ListPlatformOrganizationsRequestParams['status']>;
+
+const ESTADOS_DE_SUSCRIPCION: readonly EstadoDeSuscripcion[] = [
+  'PRUEBA',
+  'ACTIVA',
+  'SUSPENDIDA',
+  'CANCELADA',
+];
 
 /** Lo que el panel necesita del centro elegido: viene del listado o de la vuelta del alta. */
 type CentroElegido = Pick<PlatformOrganizationResponse, 'id' | 'name' | 'slug'>;
@@ -100,7 +109,6 @@ type Listado =
     CabeceraDePagina,
     Ayuda,
     ColumnaOrdenable,
-    Filtros,
     Icono,
     PanelLateral,
     Pestanas,
@@ -110,6 +118,7 @@ type Listado =
     RouterLink,
   ],
   templateUrl: './suscripcion-de-centro-page.html',
+  styleUrl: './suscripcion-de-centro-page.css',
 })
 export class SuscripcionDeCentroPage implements OnInit {
   private readonly plataforma = inject(PlataformaService);
@@ -120,8 +129,10 @@ export class SuscripcionDeCentroPage implements OnInit {
   /** `?org=<id>&nombre=<nombre>`: abre el panel de ese centro (vuelta del alta). */
   readonly org = input<string | undefined>(undefined);
   readonly nombre = input<string | undefined>(undefined);
+  /** `?situacion=PRUEBA`: abre el listado ya filtrado (lo usan los indicadores del Inicio). */
+  readonly situacion = input<string | undefined>(undefined);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CENTROS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
   protected readonly servicios = SERVICIOS;
@@ -132,9 +143,8 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly serviciosEnTexto = serviciosEnTexto;
 
   protected readonly busqueda = signal('');
-  protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('');
-  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
-  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
+  /** Arranca en ACTIVA (19/11/2026): lo que se administra a diario; "Todos" sigue a un clic. */
+  protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('ACTIVA');
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
 
   /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
@@ -225,10 +235,14 @@ export class SuscripcionDeCentroPage implements OnInit {
       next: (planes) => this.planes.set(planesOfrecidos(planes)),
       error: () => this.planesNoDisponibles.set(true),
     });
-    this.listar(0);
   }
 
   ngOnInit(): void {
+    const estado = this.situacion();
+    if (estado !== undefined && (ESTADOS_DE_SUSCRIPCION as readonly string[]).includes(estado)) {
+      this.filtroDeEstado.set(estado as EstadoDeSuscripcion);
+    }
+    this.buscar();
     const id = Number(this.org());
     if (this.org() && Number.isInteger(id) && id > 0) {
       this.elegir({ id, name: this.nombre() ?? 'Centro nuevo' });
@@ -244,6 +258,16 @@ export class SuscripcionDeCentroPage implements OnInit {
     };
     this.hayFiltros.set(q !== '' || status !== '');
     this.listar(0);
+  }
+
+  /** El estado esta a la vista y es el unico filtro: aplica apenas cambia, con el texto escrito. */
+  protected cambiarEstado(valor: string): void {
+    this.filtroDeEstado.set(
+      (ESTADOS_DE_SUSCRIPCION as readonly string[]).includes(valor)
+        ? (valor as EstadoDeSuscripcion)
+        : '',
+    );
+    this.buscar();
   }
 
   /** "Limpiar filtros": sin texto ni estado, todos los centros desde la primera pagina. */
@@ -280,6 +304,29 @@ export class SuscripcionDeCentroPage implements OnInit {
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {
     return centro.id !== undefined && centro.id === this.centro()?.id;
+  }
+
+  /** Estado de la fila: una prueba con el plazo cumplido se rotula vencida (solo lectura). */
+  protected marcaDeFila(centro: PlatformOrganizationResponse): MarcaDeEstado {
+    const dias = diasRestantes(centro.pruebaHasta);
+    return marcaDeSuscripcion(
+      centro.status,
+      centro.status === 'PRUEBA' && dias !== null && dias <= 0,
+    );
+  }
+
+  /** Cuánto le queda a una prueba gratis; fuera de prueba, una raya. */
+  protected plazoDeFila(centro: PlatformOrganizationResponse): string {
+    const dias = centro.status === 'PRUEBA' ? diasRestantes(centro.pruebaHasta) : null;
+    if (dias === null) return '—';
+    if (dias <= 0) return 'Vencida';
+    return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
+  }
+
+  /** Insignia del plan de la fila: "PB Base", "PC Crecimiento", "PR Red". */
+  protected planDeFila(centro: PlatformOrganizationResponse): MarcaDePlan {
+    const delCatalogo = this.planes().find((p) => p.code === centro.planCode)?.name;
+    return marcaDePlan(centro.planCode, centro.planName ?? delCatalogo);
   }
 
   protected fechaDeAlta(centro: PlatformOrganizationResponse): string {
@@ -354,11 +401,6 @@ export class SuscripcionDeCentroPage implements OnInit {
           if (traducido.causa === 'conflicto') this.leer();
         },
       });
-  }
-
-  /** Modificador de `.marca-estado` del listado (el estado guardado). */
-  protected claseDeEstado(estado: string | undefined): string {
-    return marcaDeSuscripcion(estado).clase;
   }
 
   protected nombreDePlan(codigo: string | undefined): string {

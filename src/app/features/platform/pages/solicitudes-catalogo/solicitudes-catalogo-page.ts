@@ -30,7 +30,7 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CATALOGO_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import { CausaSolicitud, traducirErrorSolicitud } from '../../models/solicitud-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
@@ -103,7 +103,7 @@ export class SolicitudesCatalogoPage {
   protected readonly formatearInstante = (instante: string | undefined | null): string | null =>
     formatearInstante(instante, this.diaDeLaSede.zona());
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CATALOGO_DE_PLATAFORMA;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly filtroEstado = signal<FiltroEstado>('PENDIENTE');

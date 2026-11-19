@@ -1,5 +1,13 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
+  RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA,
+  RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
+  RUTA_INICIO_DE_PLATAFORMA,
+  RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
+  RUTA_SOLICITUDES_DE_PLATAFORMA,
+  RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
+} from '../../features/platform/models/rutas-de-plataforma';
+import {
   PERMISO_BIBLIOTECA_CONSULTAR,
   PERMISO_ASISTENTE_USE,
   PERMISO_BIBLIOTECA_MANAGE,
@@ -12,15 +20,18 @@ import {
   PERMISO_HC_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
+  PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
+import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 import { FuncionIa } from '../../core/services/funciones-ia.store';
 import { ServicioContratable } from '../../core/services/contratacion.store';
+import { ContadorDePlataforma } from '../../core/services/contadores-de-plataforma.store';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -51,6 +62,12 @@ export interface Seccion {
    * ve la parte clinica, y uno de solo kinesiologia no ve las clases.
    */
   readonly servicio?: ServicioContratable;
+
+  /**
+   * Numero que la barra muestra en una insignia junto al enlace (consola de plataforma, 19/11/2026).
+   * Lo resuelve `ContadoresDePlataformaStore`; con cero o sin dato no se dibuja.
+   */
+  readonly contador?: ContadorDePlataforma;
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -101,10 +118,12 @@ export interface GrupoDeSecciones {
  *   <li><b>Organizacion</b> — `organization.routes.ts`: la ruta vacia no lleva
  *       `permissionGuard`; sus hijas si, y lo resuelve cada pantalla.</li>
  *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
- *       (`GET .../espacios` exige solo ser miembro). El alta si, con `consultorio:manage`.</li>
+ *       (`GET .../espacios` exige solo ser miembro), ni la disponibilidad por periodo. El alta si,
+ *       con `consultorio:manage`.</li>
  *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
  *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida.</li>
- *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
+ *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`; las ofertas
+ *       (Actividades de la sede) llevan solo `contextGuard`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
  *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36).</li>
  *   <li><b>Biblioteca</b> — `biblioteca.routes.ts`: las dos rutas llevan
@@ -181,6 +200,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_INSCRIPCION_READ],
         servicio: 'ACTIVIDADES',
       },
+      {
+        etiqueta: 'Productos de pack',
+        ruta: RUTA_PRODUCTOS,
+        permisos: [PERMISO_PRODUCTO_READ],
+        servicio: 'ACTIVIDADES',
+      },
     ],
   },
   {
@@ -204,6 +229,8 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'servicios',
     secciones: [
       { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+      // Sin servicio: una sede publica tanto kinesiologia como actividades (offering.routes.ts).
+      { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
       { etiqueta: 'Catálogo clínico', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
     ],
   },
@@ -236,6 +263,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'horarios',
     secciones: [
       { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
+      { etiqueta: 'Espacios habilitados', ruta: '/espacios/disponibilidad' },
       {
         etiqueta: 'Horarios de profesionales',
         ruta: RUTA_HORARIOS,
@@ -289,6 +317,48 @@ export const SECCION_PLATAFORMA: Seccion = { etiqueta: 'Plataforma', ruta: '/pla
 export const SECCIONES_DE_CUENTA: readonly Seccion[] = [
   { etiqueta: 'Mi perfil', ruta: RUTA_MI_PERFIL },
   { etiqueta: 'Preferencias', ruta: RUTA_PREFERENCIAS },
+];
+
+/**
+ * La barra lateral de la consola de plataforma (19/11/2026): la ve quien administra la plataforma
+ * sin un centro elegido. Antes la consola no tenia barra y se recorria por pestañas sueltas.
+ */
+export const GRUPOS_DE_PLATAFORMA: readonly GrupoDeSecciones[] = [
+  {
+    etiqueta: 'Inicio',
+    icono: 'plataforma',
+    secciones: [{ etiqueta: 'Inicio', ruta: RUTA_INICIO_DE_PLATAFORMA }],
+  },
+  {
+    etiqueta: 'Centros',
+    icono: 'edificio',
+    secciones: [
+      {
+        etiqueta: 'Centros y suscripciones',
+        ruta: RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
+        contador: 'centros-activos',
+      },
+      {
+        etiqueta: 'Pedidos de prueba',
+        ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
+        contador: 'pedidos-pendientes',
+      },
+      { etiqueta: 'Dar de alta un centro', ruta: RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA },
+    ],
+  },
+  {
+    etiqueta: 'Catálogo',
+    icono: 'capas',
+    secciones: [
+      {
+        etiqueta: 'Solicitudes de catálogo',
+        ruta: RUTA_SOLICITUDES_DE_PLATAFORMA,
+        contador: 'solicitudes-pendientes',
+      },
+      { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+      { etiqueta: 'Catálogo de financiadores', ruta: RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA },
+    ],
+  },
 ];
 
 /** A donde va quien entra por `/`: la agenda es la unica seccion que todo contexto puede abrir. */

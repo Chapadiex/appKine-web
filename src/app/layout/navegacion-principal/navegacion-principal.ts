@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, linkedSignal, output } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -6,12 +15,17 @@ import { filter, map, startWith } from 'rxjs';
 import { Icono } from '../../shared/components/icono/icono';
 import { FuncionesIaStore } from '../../core/services/funciones-ia.store';
 import { ContratacionStore } from '../../core/services/contratacion.store';
+import { ContadoresDePlataformaStore } from '../../core/services/contadores-de-plataforma.store';
 import { MarcaStore } from '../../core/services/marca.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
-import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
+import {
+  RUTA_INICIO_DE_PLATAFORMA,
+  RUTA_SOLICITUDES_DE_PLATAFORMA,
+} from '../../features/platform/models/rutas-de-plataforma';
 import {
   GRUPOS,
+  GRUPOS_DE_PLATAFORMA,
   GrupoDeSecciones,
   RUTA_INICIO,
   SECCION_PLATAFORMA,
@@ -56,6 +70,7 @@ export class NavegacionPrincipal {
   private readonly funcionesIa = inject(FuncionesIaStore);
   private readonly contratacion = inject(ContratacionStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
+  private readonly contadores = inject(ContadoresDePlataformaStore);
   private readonly router = inject(Router);
 
   /** En tablet, si el panel esta desplegado. En escritorio no tiene efecto. */
@@ -70,7 +85,6 @@ export class NavegacionPrincipal {
     () => this.tenant.context()?.organizationName ?? '',
   );
 
-  protected readonly rutaInicio = RUTA_INICIO;
   protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
   protected readonly seccionPlataforma = SECCION_PLATAFORMA;
   protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
@@ -84,15 +98,32 @@ export class NavegacionPrincipal {
    * nombres de los contextos, la organizacion tiene un rotulo provisorio). Los permisos, en
    * cambio, se piden apenas hay contexto: es lo que adelanta.
    */
+  /**
+   * Consola de plataforma sin centro elegido (19/11/2026): la barra muestra sus grupos. Antes la
+   * consola quedaba sin barra y se recorria con pestañas sueltas.
+   */
+  protected readonly modoPlataforma = computed(
+    () =>
+      !this.hayContexto() &&
+      this.session.estado() !== 'anonimo' &&
+      this.rolDePlataforma.esAdminDePlataforma(),
+  );
+
   protected readonly mostrarBarra = computed(
-    () => !this.session.restaurando() && this.hayContexto(),
+    () => !this.session.restaurando() && (this.hayContexto() || this.modoPlataforma()),
+  );
+
+  protected readonly rutaInicio = computed(() =>
+    this.modoPlataforma() ? RUTA_INICIO_DE_PLATAFORMA : RUTA_INICIO,
   );
 
   protected readonly grupos = computed<readonly GrupoDeSecciones[]>(() =>
-    GRUPOS.map((grupo) => ({
-      ...grupo,
-      secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
-    })).filter((grupo) => grupo.secciones.length > 0),
+    (this.modoPlataforma() ? GRUPOS_DE_PLATAFORMA : GRUPOS)
+      .map((grupo) => ({
+        ...grupo,
+        secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
+      }))
+      .filter((grupo) => grupo.secciones.length > 0),
   );
 
   private readonly url = toSignal(
@@ -137,6 +168,34 @@ export class NavegacionPrincipal {
         this.rolDePlataforma.asegurarCargado();
       }
     });
+
+    // Insignias de la consola: se piden solo en modo plataforma, y se releen en cada navegacion a
+    // una pantalla `/plataforma/...` (ahi es donde un pedido o un centro cambia de estado).
+    effect(() => {
+      if (!this.modoPlataforma()) {
+        return;
+      }
+      const enPlataforma = this.url().split(/[?#]/)[0]?.startsWith('/plataforma') === true;
+      untracked(() =>
+        enPlataforma ? this.contadores.refrescar() : this.contadores.asegurarCargados(),
+      );
+    });
+  }
+
+  /** El numero de la insignia de una seccion, o `null` si no lleva o no hay nada que contar. */
+  protected contador(seccion: Seccion): number | null {
+    if (seccion.contador === undefined) {
+      return null;
+    }
+    const valor = this.contadores.valor(seccion.contador);
+    return valor !== null && valor > 0 ? valor : null;
+  }
+
+  /** Lo que la insignia le dice a un lector de pantalla: "12 activos", "3 pendientes". */
+  protected textoDelContador(seccion: Seccion, valor: number): string {
+    return seccion.contador === 'centros-activos'
+      ? `${valor} ${valor === 1 ? 'activo' : 'activos'}`
+      : `${valor} ${valor === 1 ? 'pendiente' : 'pendientes'}`;
   }
 
   protected esActual(seccion: Seccion): boolean {

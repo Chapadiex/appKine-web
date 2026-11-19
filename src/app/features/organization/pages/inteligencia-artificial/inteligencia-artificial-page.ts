@@ -28,6 +28,9 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
+import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
+import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 
 /** Lo que la pantalla dice de cada funcion: nombre, para que sirve y que pantallas prende. */
 interface DescripcionDeFuncion {
@@ -83,7 +86,7 @@ interface FilaDeFuncion extends DescripcionDeFuncion {
  */
 @Component({
   selector: 'app-inteligencia-artificial-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta, Icono],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta, Icono, ColumnaOrdenable, PieDeTabla],
   templateUrl: './inteligencia-artificial-page.html',
   styleUrls: ['../../organization.css', './inteligencia-artificial-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -119,6 +122,19 @@ export class InteligenciaArtificialPage {
       return f === undefined ? null : this.fila(funcion, f, por);
     }).filter((f): f is FilaDeFuncion => f !== null);
   });
+
+  /** Modelos del motor: la lista llega entera, asi que se ordena y pagina en el navegador. */
+  protected readonly tablaDeModelos = tablaLocal(
+    computed(() => this.motor()?.modelos ?? []),
+    {
+      columnas: {
+        modelo: (m) => m.nombre,
+        descargado: (m) => m.descargado,
+        memoria: (m) => (m.cargado ? m.memoriaMb : null),
+        ejecucion: (m) => m.ejecucion,
+      },
+    },
+  );
 
   /** El modelo cargado corre entero en la placa de video: es lo que hace que responda rapido. */
   protected readonly enGpu = computed(() =>

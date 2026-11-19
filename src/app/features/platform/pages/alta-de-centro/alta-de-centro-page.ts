@@ -1,3 +1,4 @@
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -35,7 +36,6 @@ import {
   OpcionEnTarjeta,
   OpcionesEnTarjetas,
 } from '../../../../shared/components/opciones-en-tarjetas/opciones-en-tarjetas';
-import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { traducirErrorContratacion } from '../../models/contratacion-errors';
 import {
@@ -48,10 +48,6 @@ import {
   serviciosDelPedido,
   topeDeSedes,
 } from '../../models/contratacion';
-import {
-  ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
-} from '../../models/pestanas-de-plataforma';
 import {
   RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
   RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
@@ -121,12 +117,13 @@ type Campo = (typeof CAMPOS)[number];
     Alerta,
     Ayuda,
     CabeceraDePagina,
+    Icono,
     OpcionesEnTarjetas,
-    Pestanas,
     ReactiveFormsModule,
     RouterLink,
   ],
   templateUrl: './alta-de-centro-page.html',
+  styleUrl: './alta-de-centro-page.css',
 })
 export class AltaDeCentroPage implements OnInit {
   private readonly contratacion = inject(ContratacionService);
@@ -138,11 +135,15 @@ export class AltaDeCentroPage implements OnInit {
   /** `?solicitud=<id>` (binding de inputs del router). */
   readonly solicitud = input<string | undefined>(undefined);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
-  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly rutaPedidos = RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA;
   protected readonly zonas = ZONAS;
   protected readonly servicios = SERVICIOS;
+
+  /** Ícono de cada servicio en su tarjeta de selección. */
+  protected readonly iconoDeServicio: Readonly<Record<string, NombreDeIcono>> = {
+    KINESIOLOGIA: 'pacientes',
+    ACTIVIDADES: 'actividades',
+  };
   protected readonly etiquetaDeSedes = etiquetaDeSedes;
   protected readonly marcaDePedido = marcaDePedido;
 

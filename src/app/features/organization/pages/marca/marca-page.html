@@ -116,7 +116,7 @@
                 @if (esPropio(tema.id, campo.id)) {
                   <button
                     type="button"
-                    class="enlace-boton"
+                    class="boton-texto"
                     (click)="cambiarColor(tema.id, campo.id, null)"
                   >
                     {{ campo.reinicio
@@ -329,7 +329,7 @@
                         {{ aviso.texto }}
                         <button
                           type="button"
-                          class="enlace-boton"
+                          class="boton-texto"
                           (click)="cambiarColor(tema.id, aviso.campo, aviso.sugerido)"
                         >
                           Usar el tono sugerido

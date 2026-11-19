@@ -82,31 +82,32 @@
   </div>
 
   <div class="agenda-barra__fecha" filtro-frecuente>
-    <div class="agenda-nav" role="group" aria-label="Fecha de la agenda">
-      <button type="button" class="agenda-nav__boton" title="Anterior" (click)="mover(-1)">
-        <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Anterior</span>
-      </button>
-      <button type="button" class="agenda-nav__boton" (click)="irAHoy()">Hoy</button>
-      <button type="button" class="agenda-nav__boton" title="Siguiente" (click)="mover(1)">
-        <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Siguiente</span>
-      </button>
-    </div>
-
-    <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente, y recibe el clic. -->
-    <div class="agenda-fecha">
-      <span class="agenda-fecha__rotulo" aria-hidden="true">{{ rotuloDeFecha() }}</span>
-      <app-icono nombre="calendario" />
-      <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
-      <input
-        #selectorDeFecha
-        id="agenda-fecha"
-        type="date"
-        class="agenda-fecha__input"
-        [value]="fechaVisible()"
-        (click)="abrirCalendario(selectorDeFecha)"
-        (change)="irAFecha($any($event.target).value)"
-      />
-    </div>
+    <!-- El periodo se anuncia en el navegador; a la vista lo muestra el rotulo del calendario. -->
+    <app-navegador-de-fecha
+      etiqueta="Fecha de la agenda"
+      [unidad]="vistaEfectiva()"
+      [periodo]="rotuloDeFecha()"
+      [periodoVisible]="false"
+      (anterior)="mover(-1)"
+      (siguiente)="mover(1)"
+      (hoy)="irAHoy()"
+    >
+      <!-- El rotulo abre el calendario: el input de fecha lo cubre, transparente, y recibe el clic. -->
+      <div class="agenda-fecha">
+        <span class="agenda-fecha__rotulo" aria-hidden="true">{{ rotuloDeFecha() }}</span>
+        <app-icono nombre="calendario" />
+        <label class="visualmente-oculto" for="agenda-fecha">Fecha</label>
+        <input
+          #selectorDeFecha
+          id="agenda-fecha"
+          type="date"
+          class="agenda-fecha__input"
+          [value]="fechaVisible()"
+          (click)="abrirCalendario(selectorDeFecha)"
+          (change)="irAFecha($any($event.target).value)"
+        />
+      </div>
+    </app-navegador-de-fecha>
     @if (cargando()) {
       <span class="ayuda agenda-fecha__estado" role="status">Actualizando…</span>
     }

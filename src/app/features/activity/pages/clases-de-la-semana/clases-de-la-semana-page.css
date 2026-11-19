@@ -396,34 +396,13 @@
   color: var(--color-texto-suave);
 }
 
-/* Estado de la clase en texto: el color acompaña. */
+/*
+ * Estado de la clase en el calendario: `.marca-estado` global (color, texto e icono) en el tamano
+ * de la tarjeta del dia, que no tiene lugar para la marca de una tabla.
+ */
 .clase-estado {
-  display: inline-block;
   padding: 0 var(--esp-3);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-pastilla);
-  color: var(--color-texto-suave);
   font-size: var(--tipo-2xs);
-  font-weight: var(--peso-medio);
-  white-space: nowrap;
-}
-
-.clase-estado--en_curso {
-  border-color: var(--color-aviso);
-  background: var(--color-aviso-fondo);
-  color: var(--color-aviso-texto);
-}
-
-.clase-estado--realizada {
-  border-color: var(--color-exito);
-  background: var(--color-exito-fondo);
-  color: var(--color-exito-texto);
-}
-
-.clase-estado--cancelada {
-  border-color: var(--color-peligro);
-  background: var(--color-peligro-fondo);
-  color: var(--color-peligro-texto);
 }
 
 /* Punto de color de la actividad en la lista. */

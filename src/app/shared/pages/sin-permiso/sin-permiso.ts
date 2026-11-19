@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
+import { CabeceraDePagina } from '../../components/cabecera-de-pagina/cabecera-de-pagina';
 
 /**
  * Pantalla de "no tenes permiso para esto" (AKINE-01.03).
@@ -29,7 +30,7 @@ import { TenantContextStore } from '../../../core/services/tenant-context.store'
  */
 @Component({
   selector: 'app-sin-permiso',
-  imports: [RouterLink],
+  imports: [RouterLink, CabeceraDePagina],
   templateUrl: './sin-permiso.html',
   styleUrls: ['../pantalla-error.css', './sin-permiso.css'],
 })

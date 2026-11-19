@@ -117,15 +117,21 @@
             </caption>
             <thead>
               <tr>
-                <th scope="col">Modelo</th>
+                <th scope="col" appOrdenable [tabla]="tablaDeModelos" columna="modelo">Modelo</th>
                 <th scope="col">Lo usa</th>
-                <th scope="col">Descargado</th>
-                <th scope="col">En memoria</th>
-                <th scope="col">Corre en</th>
+                <th scope="col" appOrdenable [tabla]="tablaDeModelos" columna="descargado">
+                  Descargado
+                </th>
+                <th scope="col" appOrdenable [tabla]="tablaDeModelos" columna="memoria">
+                  En memoria
+                </th>
+                <th scope="col" appOrdenable [tabla]="tablaDeModelos" columna="ejecucion">
+                  Corre en
+                </th>
               </tr>
             </thead>
             <tbody>
-              @for (modelo of m.modelos; track modelo.nombre) {
+              @for (modelo of tablaDeModelos.visibles(); track modelo.nombre) {
                 <tr>
                   <td class="ia__modelo">{{ modelo.nombre }}</td>
                   <td>
@@ -168,6 +174,7 @@
             </tbody>
           </table>
         </div>
+        <app-pie-de-tabla [tabla]="tablaDeModelos" etiqueta="Páginas de modelos" />
       }
     } @else if (motorOcupado() === 'consultando') {
       <p class="estado estado--cargando">Consultando el motor&hellip;</p>

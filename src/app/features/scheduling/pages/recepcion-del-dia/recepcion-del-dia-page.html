@@ -67,39 +67,27 @@
   </div>
 
   <!-- El dia y "Actualizar la lista", en la barra de herramientas al lado de la busqueda. -->
-  <div
-    filtro-frecuente
-    class="navegador-fecha recepcion__dia"
-    role="group"
-    aria-label="Día de la recepción"
-  >
-    <button
-      type="button"
-      class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      title="Día anterior"
-      (click)="moverDia(-1)"
+  <div filtro-frecuente class="recepcion__dia">
+    <app-navegador-de-fecha
+      etiqueta="Día de la recepción"
+      [periodo]="diaEnPalabras()"
+      [periodoVisible]="false"
+      (anterior)="moverDia(-1)"
+      (siguiente)="moverDia(1)"
+      (hoy)="irAHoy()"
     >
-      <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto">Día anterior</span>
-    </button>
-    <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
-    <input
-      id="recepcion-fecha"
-      name="recepcion-fecha"
-      type="date"
-      [value]="dia()"
-      (change)="cambiarDia($any($event.target).value)"
-    />
-    <button
-      type="button"
-      class="navegador-fecha__boton navegador-fecha__boton--flecha"
-      title="Día siguiente"
-      (click)="moverDia(1)"
-    >
-      <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto">Día siguiente</span>
-    </button>
-    <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
+      <label class="visualmente-oculto" for="recepcion-fecha">Fecha</label>
+      <input
+        id="recepcion-fecha"
+        name="recepcion-fecha"
+        type="date"
+        class="recepcion__selector-fecha"
+        [value]="dia()"
+        (change)="cambiarDia($any($event.target).value)"
+      />
+    </app-navegador-de-fecha>
     <!-- Releer el dia es un control del mostrador, al lado de la fecha: no se mezcla con los filtros. -->
-    <button type="button" class="navegador-fecha__boton" (click)="cargar()">
+    <button type="button" class="recepcion__actualizar" (click)="cargar()">
       Actualizar la lista
     </button>
     <!--
@@ -107,7 +95,7 @@
     (otro puesto llama pacientes). La hora de la ultima lectura dice cuan fresca es.
   -->
     @if (actualizadaA(); as hora) {
-      <span class="navegador-fecha__lectura">Actualizada {{ hora }}</span>
+      <span class="recepcion__lectura">Actualizada {{ hora }}</span>
     }
   </div>
 

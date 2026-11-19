@@ -21,9 +21,8 @@
       admite a la vez— y no cuántos lugares quedan.
     </p>
   </app-ayuda>
-  <div cabeceraAcciones>
-    <a class="boton boton--secundario" routerLink="/espacios">Espacios y boxes</a>
-  </div>
+
+  <app-pestanas [pestanas]="pestanas" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 @if (sinSede()) {

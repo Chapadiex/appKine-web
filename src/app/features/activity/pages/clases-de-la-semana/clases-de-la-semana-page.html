@@ -17,6 +17,8 @@
       Programar clase
     </a>
   </div>
+
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <div class="clases">
@@ -257,8 +259,8 @@
                                 }
                               </span>
                               <span
-                                class="clase-estado"
-                                [class]="'clase-estado--' + (clase.estado ?? '').toLowerCase()"
+                                class="marca-estado clase-estado"
+                                [class]="marcaDeEstado(clase.estado)"
                                 >{{ textoDeEstado(clase.estado) }}</span
                               >
                             </span>
@@ -309,11 +311,9 @@
                         }
                       </td>
                       <td>
-                        <span
-                          class="clase-estado"
-                          [class]="'clase-estado--' + (clase.estado ?? '').toLowerCase()"
-                          >{{ textoDeEstado(clase.estado) }}</span
-                        >
+                        <span class="marca-estado" [class]="marcaDeEstado(clase.estado)">{{
+                          textoDeEstado(clase.estado)
+                        }}</span>
                       </td>
                       <td class="tabla__acciones">
                         @if (clase.id) {

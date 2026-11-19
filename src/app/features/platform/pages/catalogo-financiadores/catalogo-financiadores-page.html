@@ -109,6 +109,37 @@
             </button>
           </app-estado-vacio>
         } @else {
+          <!--
+            Las entradas son fichas con sus planes adentro, no filas de una tabla: el orden va en
+            una barra con el mismo ciclo e iconos que el encabezado ordenable (th[appOrdenable]).
+          -->
+          <div class="catalogo-orden" role="group" aria-labelledby="catalogo-orden-rotulo">
+            <span id="catalogo-orden-rotulo" class="catalogo-orden__rotulo">Ordenar por</span>
+            @for (criterio of criteriosDeOrden; track criterio.columna) {
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                [attr.aria-pressed]="direccionDe(criterio.columna) !== null"
+                (click)="paginaDeEntradas.ordenarPor(criterio.columna)"
+              >
+                {{ criterio.etiqueta }}
+                @switch (direccionDe(criterio.columna)) {
+                  @case ('asc') {
+                    <span class="visualmente-oculto">, ascendente</span>
+                  }
+                  @case ('desc') {
+                    <span class="visualmente-oculto">, descendente</span>
+                  }
+                }
+                <app-icono
+                  class="catalogo-orden__icono"
+                  [class.catalogo-orden__icono--activo]="direccionDe(criterio.columna) !== null"
+                  [nombre]="iconoDeOrden(criterio.columna)"
+                />
+              </button>
+            }
+          </div>
+
           @for (entrada of paginaDeEntradas.visibles(); track entrada.id) {
             <article
               class="catalogo-entrada"

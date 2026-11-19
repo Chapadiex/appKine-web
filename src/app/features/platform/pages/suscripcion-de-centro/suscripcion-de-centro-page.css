@@ -1,0 +1,82 @@
+/*
+ * Barra del listado de centros: busqueda, estado a la vista y el total a la derecha. En pantallas
+ * angostas se apila; el total nunca empuja a los campos.
+ */
+.barra-centros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-4) var(--esp-6);
+  margin-bottom: var(--esp-6);
+}
+
+.barra-centros > .campo {
+  margin-bottom: 0;
+}
+
+.barra-centros__busqueda {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.barra-centros__estado {
+  flex: 0 1 12rem;
+}
+
+.barra-centros__estado select {
+  width: 100%;
+}
+
+.barra-centros__total {
+  margin: 0 0 0 auto;
+  padding-bottom: var(--esp-3);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  white-space: nowrap;
+}
+
+/*
+ * Insignia del plan: sigla + nombre, con el color del escalon. Los tokens de fondo y texto se
+ * redefinen en oscuro, asi que el contraste se sostiene en los dos temas.
+ */
+.marca-plan,
+.marca-ia {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  white-space: nowrap;
+  padding: var(--esp-1) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-semi);
+}
+
+.marca-plan__sigla {
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+}
+
+.marca-plan--base {
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
+  border-color: var(--color-info);
+}
+
+.marca-plan--crecimiento {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+  border-color: var(--color-exito);
+}
+
+.marca-plan--red {
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  border-color: var(--color-aviso);
+}
+
+.marca-ia {
+  color: var(--color-acento);
+  border-color: var(--color-acento);
+  font-weight: var(--peso-fuerte);
+}

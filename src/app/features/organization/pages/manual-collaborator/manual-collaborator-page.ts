@@ -13,6 +13,7 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { BuscadorConAlta } from '../../../../shared/components/buscador-con-alta/buscador-con-alta';
+import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { PROFESIONES_SUGERIDAS } from '../../models/profesiones';
 import { SedesDelContexto } from '../../services/sedes-del-contexto';
 import { ROLES_DE_VINCULO, etiquetaDeRol } from '../../models/roles';
@@ -27,7 +28,7 @@ interface ServicioElegido {
 /** Alta preparada por el administrador; la cuenta y los vínculos nacen al aceptar la invitación. */
 @Component({
   selector: 'app-manual-collaborator-page',
-  imports: [ReactiveFormsModule, RouterLink, Alerta, BuscadorConAlta],
+  imports: [ReactiveFormsModule, RouterLink, Alerta, BuscadorConAlta, CabeceraDePagina],
   templateUrl: './manual-collaborator-page.html',
   styleUrl: './manual-collaborator-page.css',
 })

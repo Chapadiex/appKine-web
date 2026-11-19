@@ -499,20 +499,6 @@
   font-family: var(--fuente-mono);
 }
 
-.color__cabecera .enlace-boton {
-  font-size: var(--tipo-xs);
-}
-
-.enlace-boton {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-enlace);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 /* --- Aviso de contraste: avisa y deja seguir --- */
 
 .aviso-de-contraste {
@@ -531,9 +517,13 @@
   margin: 0;
 }
 
-.aviso-de-contraste .enlace-boton {
+/* Dentro de la frase del aviso: el `.boton-texto` global toma el color del aviso y va en línea. */
+.aviso-de-contraste .boton-texto {
+  min-height: 0;
+  padding: 0;
   color: inherit;
   font-weight: var(--peso-medio);
+  text-decoration: underline;
 }
 
 .aviso-de-contraste__sugerido {

@@ -12,8 +12,13 @@
 </app-cabecera-de-pagina>
 
 <section class="tarjeta hc-buscador" aria-label="Buscar un paciente">
-  <div class="hc-buscador__fila">
-    <div class="campo hc-buscador__campo">
+  <!-- Patron de listado (UX-14 §1): la busqueda es el unico filtro, a la vista y sin embudo. -->
+  <app-filtros
+    sinAvanzados
+    [resultados]="cargando() || error() ? null : total()"
+    [unidad]="['paciente', 'pacientes']"
+  >
+    <div class="campo" filtro-principal>
       <label class="visualmente-oculto" for="hc-busqueda">Buscar un paciente</label>
       <div class="campo-busqueda">
         <app-icono class="campo-busqueda__icono" nombre="buscar" />
@@ -27,10 +32,7 @@
         />
       </div>
     </div>
-    @if (!cargando() && !error()) {
-      <p class="hc-buscador__resumen" role="status">{{ resumen() }}</p>
-    }
-  </div>
+  </app-filtros>
   <p class="hc-buscador__nota">
     <app-icono nombre="candado" />
     Cada acceso a una historia queda auditado.

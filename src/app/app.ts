@@ -76,6 +76,7 @@ export class App {
   private readonly servicio = inject(ServicioNoDisponibleStore);
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
+  private readonly rolDePlataforma = inject(PlatformRoleStore);
   private readonly injector = inject(Injector);
 
   private readonly anclaNavegacion = viewChild.required('navegacion', { read: ViewContainerRef });
@@ -211,8 +212,10 @@ export class App {
     () =>
       this.navegacionMontada() &&
       !this.session.restaurando() &&
-      this.session.estado() === 'activa' &&
-      this.tenant.context() !== null,
+      ((this.session.estado() === 'activa' && this.tenant.context() !== null) ||
+        (this.session.estado() !== 'anonimo' &&
+          this.tenant.context() === null &&
+          this.rolDePlataforma.esAdminDePlataforma())),
   );
 
   protected cerrarAvisoDeServicio(): void {

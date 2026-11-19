@@ -50,7 +50,9 @@
           <h2 id="titulo-clase" class="banda-asistencia__titulo" tabindex="-1">La clase</h2>
           <p class="clase-meta">
             <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
-            <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+            <span class="marca-estado" [class]="marcaDeEstado(clase.estado)">{{
+              etiquetaDeEstadoDeClase(clase.estado)
+            }}</span>
           </p>
           <ul class="contadores" aria-label="Resumen de la asistencia">
             <li>Presentes: {{ clase.presentes ?? 0 }}</li>

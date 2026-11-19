@@ -1,0 +1,205 @@
+/*
+ * Inicio de la consola de plataforma (19/11/2026). Una franja de indicadores que ocupa el ancho y
+ * un tablero de dos columnas: lo que necesita atencion a la izquierda y la actividad a la derecha.
+ * Todo con tokens del sistema; el tono de aviso solo aparece cuando un numero pide una accion.
+ */
+:host {
+  display: block;
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--esp-5);
+  margin-block-end: var(--esp-7);
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  padding: var(--esp-6);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  text-decoration: none;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.indicador:hover {
+  border-color: var(--color-acento);
+  background: var(--color-hover);
+}
+
+.indicador__rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio, 500);
+}
+
+.indicador__icono {
+  color: var(--color-acento);
+}
+
+.indicador__valor {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-2xl);
+  font-weight: var(--peso-fuerte);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.indicador__detalle {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* Un numero que pide una accion: borde y fondo de aviso, con el icono y el texto que lo dicen. */
+.indicador--atencion {
+  border-color: var(--color-aviso);
+  background: var(--color-aviso-fondo);
+}
+
+.indicador--atencion .indicador__icono,
+.indicador--atencion .indicador__valor {
+  color: var(--color-aviso-texto);
+}
+
+.tablero {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--esp-7);
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+}
+
+.panel__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-5);
+  margin-block-end: var(--esp-5);
+}
+
+.panel__titulo {
+  margin: 0;
+  font-size: var(--tipo-lg);
+}
+
+.panel__enlace {
+  color: var(--color-enlace);
+  font-size: var(--tipo-sm);
+  white-space: nowrap;
+}
+
+.panel__vacio {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+.aviso-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: 0 0 var(--esp-5);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.tabla--compacta {
+  width: 100%;
+}
+
+.celda-fuerte {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-fuerte);
+}
+
+.celda-suave {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.celda-accion {
+  text-align: end;
+}
+
+.actividad {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actividad__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-5);
+  padding-block: var(--esp-4);
+  border-block-end: 1px solid var(--color-borde-sutil);
+}
+
+.actividad__item:last-child {
+  border-block-end: 0;
+}
+
+.actividad__principal {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.actividad__principal > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actividad__enlace {
+  color: inherit;
+  text-decoration: none;
+}
+
+.actividad__enlace:hover .celda-fuerte {
+  text-decoration: underline;
+}
+
+.actividad__lado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--esp-2);
+  flex-shrink: 0;
+}
+
+/* Notebook y tablet: el tablero pasa a una columna; los indicadores siguen en grilla. */
+@media (max-width: 64rem) {
+  .tablero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 30rem) {
+  .indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .celda-accion {
+    display: none;
+  }
+}

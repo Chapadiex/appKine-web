@@ -6,6 +6,10 @@ import { provideHttpClient } from '@angular/common/http';
 
 import { FuncionesIaStore } from '../../core/services/funciones-ia.store';
 import { ContratacionStore } from '../../core/services/contratacion.store';
+import {
+  ContadorDePlataforma,
+  ContadoresDePlataformaStore,
+} from '../../core/services/contadores-de-plataforma.store';
 import { MarcaStore } from '../../core/services/marca.store';
 import { EstadoSesion, SessionService } from '../../core/services/session.service';
 import { NavegacionPrincipal } from './navegacion-principal';
@@ -43,11 +47,15 @@ describe('NavegacionPrincipal', () => {
   let router: Router;
   let adminDePlataforma: WritableSignal<boolean>;
   let restaurando: WritableSignal<boolean>;
+  let contadores: WritableSignal<Partial<Record<ContadorDePlataforma, number>>>;
+  let refrescos: number;
 
   beforeEach(async () => {
     estado = signal<EstadoSesion>('activa');
     adminDePlataforma = signal(false);
     restaurando = signal(false);
+    contadores = signal({});
+    refrescos = 0;
 
     await TestBed.configureTestingModule({
       imports: [NavegacionPrincipal],
@@ -59,6 +67,14 @@ describe('NavegacionPrincipal', () => {
         { provide: MarcaStore, useValue: { logoUrl: signal<string | null>(null) } },
         { provide: FuncionesIaStore, useValue: { activa: () => true } },
         { provide: ContratacionStore, useValue: { tiene: () => true } },
+        {
+          provide: ContadoresDePlataformaStore,
+          useValue: {
+            valor: (c: ContadorDePlataforma) => contadores()[c] ?? null,
+            asegurarCargados: () => undefined,
+            refrescar: () => (refrescos += 1),
+          },
+        },
         provideRouter([
           { path: 'agenda', component: Pagina },
           { path: 'agenda/recepcion', component: Pagina },
@@ -170,11 +186,18 @@ describe('NavegacionPrincipal', () => {
     responderPermisos([]);
     fixture.detectChanges();
 
-    // Sin catalogo:read ni permisos de horarios, Servicios y catalogo y Espacios y horarios quedan con una sola seccion: enlace directo (11/11/2026).
-    expect(rotulos(fixture)).toEqual(['Atención', 'Configuración']);
+    // Sin catalogo:read ni permisos de horarios, Servicios y catalogo y Espacios y horarios siguen
+    // con dos secciones sin permiso cada uno (catalogo y ofertas; espacios y habilitados, 19/11/2026).
+    expect(rotulos(fixture)).toEqual([
+      'Atención',
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
     expect(enlaces(fixture)).toContain('Espacios y boxes');
     expect(enlaces(fixture)).toContain('Catálogo de servicios');
-    expect(enlaces(fixture)).not.toContain('Ofertas de la sede');
+    expect(enlaces(fixture)).toContain('Actividades de la sede');
+    expect(enlaces(fixture)).toContain('Espacios habilitados');
     expect(enlaces(fixture)).toContain('Agenda');
     expect(enlaces(fixture)).toContain('Buscar disponibilidad');
     expect(enlaces(fixture)).not.toContain('Padrón');
@@ -192,7 +215,13 @@ describe('NavegacionPrincipal', () => {
       .flush({ permissions: [PERMISO_TURNO_READ, 'clase:read', 'inscripcion:read'] });
     fixture.detectChanges();
 
-    expect(rotulos(fixture)).toEqual(['Atención', 'Actividades', 'Configuración']);
+    expect(rotulos(fixture)).toEqual([
+      'Atención',
+      'Actividades',
+      'Servicios y catálogo',
+      'Espacios y horarios',
+      'Configuración',
+    ]);
   });
 
   /** Acordeon: llega desplegado el grupo de la pantalla actual, y solo ese. */
@@ -248,6 +277,27 @@ describe('NavegacionPrincipal', () => {
     await router.navigateByUrl('/plataforma/solicitudes');
     fixture.detectChanges();
     expect(marcados(fixture)).toEqual(['Plataforma']);
+  });
+
+  /** Consola sin centro: insignias con la cantidad, ninguna en cero, relectura al navegar. */
+  it('en modo plataforma muestra los contadores mayores que cero y los relee al navegar', async () => {
+    estado.set('sin-contexto');
+    adminDePlataforma.set(true);
+    contadores.set({ 'centros-activos': 12, 'pedidos-pendientes': 0, 'solicitudes-pendientes': 3 });
+    const fixture = montar();
+    const html = fixture.nativeElement as HTMLElement;
+
+    const insignias = Array.from(html.querySelectorAll('.nav__insignia')).map((i) =>
+      i.textContent?.trim(),
+    );
+    expect(insignias).toEqual(['12', '3']);
+    expect(html.textContent).toContain('12 activos');
+    expect(html.textContent).toContain('3 pendientes');
+
+    const antes = refrescos;
+    await router.navigateByUrl('/plataforma/solicitudes');
+    fixture.detectChanges();
+    expect(refrescos).toBe(antes + 1);
   });
 
   /**

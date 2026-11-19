@@ -11,8 +11,10 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CuentasDePlataformaResponse } from '../model/models';
 import { GrantPlatformRoleRequest } from '../model/models';
 import { GrantSupportAccessRequest } from '../model/models';
+import { PanelDePlataformaResponse } from '../model/models';
 import { PlatformOrganizationPageResponse } from '../model/models';
 import { PlatformRoleResponse } from '../model/models';
 import { PlatformSubscriptionResponse } from '../model/models';
@@ -61,6 +63,20 @@ export interface RevokeSupportAccessRequestParams {
 export interface PlataformaServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Cuentas por estado
+     * Cuentas vigentes activas, pendientes de activar y bloqueadas. Reservado a la administracion de plataforma.
+     * @endpoint get /api/v1/platform/resumen/cuentas
+*/
+    getCuentasDePlataforma(extraHttpRequestParams?: any): Observable<CuentasDePlataformaResponse>;
+
+    /**
+     * Estado general de la plataforma
+     * Centros por estado de su suscripcion (activos, en prueba, por vencer en 7 dias, vencidos, suspendidos y cancelados), pedidos de prueba pendientes, las pruebas que terminan en los proximos 30 dias y los ultimos centros, pedidos y cambios de suscripcion. Todo leido de la base, sin cache. Reservado a la administracion de plataforma.
+     * @endpoint get /api/v1/platform/resumen
+*/
+    getPanelDePlataforma(extraHttpRequestParams?: any): Observable<PanelDePlataformaResponse>;
 
     /**
      * Suscripcion de un centro, para la administracion de plataforma

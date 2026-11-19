@@ -39,6 +39,11 @@ import { SerieDeReporte } from '../../../../api/generated/model/serie-de-reporte
 import { SerieDeIndicadorDeReporte } from '../../../../api/generated/model/serie-de-indicador-de-reporte';
 import { Subscription } from 'rxjs';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ECONOMIA,
+  pestanasDeEconomia,
+} from '../../models/pestanas-de-economia';
 
 type EstadoReporte =
   | { readonly tipo: 'inicial' }
@@ -78,6 +83,7 @@ type EstadoSerie =
 @Component({
   selector: 'app-reportes-page',
   imports: [
+    Pestanas,
     CabeceraDePagina,
     Ayuda,
     GraficoDeBarras,
@@ -90,6 +96,9 @@ type EstadoSerie =
   styleUrl: '../../reporting.css',
 })
 export class ReportesPage {
+  protected readonly pestanas = pestanasDeEconomia(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ECONOMIA;
+
   private readonly api = inject(ReportesApi);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);

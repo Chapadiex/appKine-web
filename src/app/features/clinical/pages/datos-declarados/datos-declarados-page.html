@@ -63,7 +63,7 @@
           <span
             >Motivo registrado: <b>{{ justificacion() }}</b></span
           >
-          <button type="button" class="accion-texto" (click)="cambiarMotivo()">Cambiar</button>
+          <button type="button" class="boton-texto" (click)="cambiarMotivo()">Cambiar</button>
         </p>
       }
 
@@ -82,10 +82,9 @@
       <div class="declarados">
         <!-- Antecedentes -->
         <section class="tarjeta declarados__panel" aria-labelledby="declarados-antecedentes-titulo">
-          <header class="declarados__cabeza">
-            <h2 id="declarados-antecedentes-titulo">Antecedentes</h2>
-            <span class="declarados__cuenta">{{ antecedentesSueltos().length }}</span>
-          </header>
+          <h2 id="declarados-antecedentes-titulo">
+            Antecedentes <span class="declarados__cuenta">{{ antecedentesSueltos().length }}</span>
+          </h2>
 
           <app-chips
             id="declarados-tipo"
@@ -207,10 +206,10 @@
 
         <!-- Estudios y fotos -->
         <section class="tarjeta declarados__panel" aria-labelledby="declarados-adjuntos-titulo">
-          <header class="declarados__cabeza">
-            <h2 id="declarados-adjuntos-titulo">Estudios y fotos</h2>
+          <h2 id="declarados-adjuntos-titulo">
+            Estudios y fotos
             <span class="declarados__cuenta">{{ lista.adjuntos?.length ?? 0 }}</span>
-          </header>
+          </h2>
 
           <div
             class="declarados__soltar"
@@ -291,7 +290,7 @@
                   }}</span>
                   <button
                     type="button"
-                    class="accion-texto declarados__texto"
+                    class="boton-texto declarados__texto"
                     [attr.aria-expanded]="adjuntoAbierto() === adjunto.id"
                     (click)="alternarAdjunto(adjunto.id)"
                   >

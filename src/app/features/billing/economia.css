@@ -251,11 +251,7 @@
   margin: 0;
 }
 
-/* Una accion destructiva en una barra de acciones: separada de las demas y en color de peligro. */
+/* Una accion destructiva en una barra de acciones (`.boton--peligro`): separada de las demas. */
 .acciones__aparte {
   margin-inline-start: auto;
-}
-
-.boton.accion--peligro {
-  color: var(--color-peligro-texto);
 }

@@ -12,7 +12,7 @@
   >
     <!-- Solo la marca: la sede activa se dice una vez, en el selector de la barra superior. -->
     <!-- Con logo cargado, la marca es la del centro; sin logo, la de AKINE. -->
-    <a class="marca" [routerLink]="rutaInicio" (click)="navegar()">
+    <a class="marca" [routerLink]="rutaInicio()" (click)="navegar()">
       @if (logoDelCentro(); as url) {
         <!-- El logo suele traer el nombre: repetirlo al lado seria decirlo dos veces. -->
         <img class="marca__imagen" [src]="url" [alt]="nombreDelCentro()" />
@@ -38,6 +38,11 @@
         >
           <app-icono class="nav__icono" [nombre]="grupo.icono" />
           {{ seccion.etiqueta }}
+          @if (contador(seccion); as valor) {
+            <!-- El numero se ve; el lector de pantalla oye "3 pendientes" como parte del nombre del enlace. -->
+            <span class="nav__insignia" aria-hidden="true">{{ valor }}</span>
+            <span class="visualmente-oculto">, {{ textoDelContador(seccion, valor) }}</span>
+          }
         </a>
       } @else {
         <!--
@@ -72,8 +77,14 @@
                   [routerLink]="seccion.ruta"
                   [attr.aria-current]="esActual(seccion) ? 'page' : null"
                   (click)="navegar()"
-                  >{{ seccion.etiqueta }}</a
                 >
+                  {{ seccion.etiqueta }}
+                  @if (contador(seccion); as valor) {
+                    <!-- El numero se ve; el lector de pantalla oye "3 pendientes" como parte del nombre del enlace. -->
+                    <span class="nav__insignia" aria-hidden="true">{{ valor }}</span>
+                    <span class="visualmente-oculto">, {{ textoDelContador(seccion, valor) }}</span>
+                  }
+                </a>
               </li>
             }
           </ul>
@@ -85,7 +96,7 @@
       Un administrador de plataforma con contexto tiene ademas su consola, separada al pie: no es
       una seccion del centro.
     -->
-    @if (esAdminDePlataforma()) {
+    @if (esAdminDePlataforma() && !modoPlataforma()) {
       <a
         class="nav__enlace nav__enlace--grupo nav__plataforma"
         [class.nav__enlace--actual]="esActual(seccionPlataforma)"

@@ -124,3 +124,31 @@ export function marcaDePedido(estado: SolicitudDePruebaResponse['estado']): Marc
 export function tieneIa(adicionales: readonly string[] | undefined): boolean {
   return (adicionales ?? []).includes('IA');
 }
+
+/** Insignia de un plan en un listado: sigla, nombre y la clase de color (texto + color, nunca solo color). */
+export interface MarcaDePlan {
+  readonly sigla: string;
+  readonly texto: string;
+  readonly clase: string;
+}
+
+/** Los tres escalones que se venden; BASICO y PROFESIONAL son los nombres viejos del base e intermedio. */
+const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { nombre: string }>> = {
+  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Base' },
+  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Básico' },
+  CRECIMIENTO: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Crecimiento' },
+  PROFESIONAL: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Profesional' },
+  RED: { sigla: 'PR', clase: 'marca-plan--red', nombre: 'Red' },
+};
+
+/**
+ * "PB Base", "PC Crecimiento", "PR Red". El nombre que manda el servidor gana sobre el de respaldo;
+ * un plan desconocido va sin sigla y en neutro.
+ */
+export function marcaDePlan(code: string | undefined, name?: string): MarcaDePlan {
+  const escalon = code === undefined ? undefined : ESCALON_DE_PLAN[code];
+  const texto = name?.trim() || escalon?.nombre || code || 'Sin plan';
+  return escalon
+    ? { sigla: escalon.sigla, texto, clase: escalon.clase }
+    : { sigla: '', texto, clase: 'marca-plan--otro' };
+}
