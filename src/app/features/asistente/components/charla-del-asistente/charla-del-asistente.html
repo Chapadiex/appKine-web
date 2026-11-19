@@ -3,7 +3,7 @@
   [class.tarjeta]="!compacta()"
   aria-label="Charla con el asistente de datos"
 >
-  <p class="asistente__aviso">{{ aviso }}</p>
+  <p class="asistente__aviso">{{ aviso() }}</p>
   <div #lista class="asistente__lista">
     @if (deshabilitado()) {
       <app-estado-vacio titulo="El asistente no está habilitado en este entorno." />
@@ -89,6 +89,11 @@
             @if (r.enlace) {
               <a class="asistente__enlace" [routerLink]="r.enlace">Ver el detalle</a>
             }
+            @if (r.accion; as accion) {
+              @if (sede(); as sedeActiva) {
+                <app-tarjeta-de-accion [accion]="accion" [consultorioId]="sedeActiva" />
+              }
+            }
           }
         </div>
       }
@@ -104,7 +109,7 @@
       appDictado
       name="pregunta"
       rows="2"
-      placeholder="Por ejemplo: ¿Juan vino esta semana?"
+      placeholder="Preguntá o contá qué pasó. Por ejemplo: ¿Juan vino esta semana?"
       [maxLength]="maxPregunta"
       [value]="texto()"
       [disabled]="deshabilitado()"

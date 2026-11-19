@@ -17,11 +17,15 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { ConfirmarAccion } from '../model/confirmar-accion';
+// @ts-ignore
 import { ConsultaAsistenteRequest } from '../model/consulta-asistente-request';
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { RespuestaAsistenteResponse } from '../model/respuesta-asistente-response';
+// @ts-ignore
+import { ResultadoDeAccion } from '../model/resultado-de-accion';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -29,7 +33,9 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     AsistenteServiceInterface,
-    ConsultarAsistenteRequestParams
+    ConfirmarAccionDelAsistenteRequestParams,
+    ConsultarAsistenteRequestParams,
+    DescartarAccionDelAsistenteRequestParams
 } from './asistente.serviceInterface';
 
 
@@ -44,8 +50,88 @@ export class AsistenteService extends BaseService implements AsistenteServiceInt
     }
 
     /**
+     * Confirmar una accion propuesta por el asistente
+     * Graba la accion con lo que quedo en la tarjeta. Requiere &#x60;asistente:acciones&#x60;, el interruptor &#x60;akine.asistente.acciones.enabled&#x60; y, ademas, el permiso de la operacion que se graba (&#x60;asistencia:manage&#x60;, &#x60;cobro:register&#x60;, &#x60;sesion:register&#x60;, &#x60;turno:manage&#x60; o &#x60;paciente:manage&#x60;): sin ese permiso responde 200 con &#x60;estado&#x60; RECHAZADA.  Solo la confirma la cuenta que la pidio, en la misma sede, antes de que venza. **Confirmar dos veces devuelve el mismo resultado sin grabar de nuevo.** Un rechazo del negocio (la caja esta cerrada, la ficha cambio) vuelve con &#x60;estado&#x60; RECHAZADA y la propuesta sigue abierta para corregirla y reintentar.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/acciones/{accionId}/confirmacion
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public confirmarAccionDelAsistente(requestParameters: ConfirmarAccionDelAsistenteRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ResultadoDeAccion>;
+    public confirmarAccionDelAsistente(requestParameters: ConfirmarAccionDelAsistenteRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ResultadoDeAccion>>;
+    public confirmarAccionDelAsistente(requestParameters: ConfirmarAccionDelAsistenteRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ResultadoDeAccion>>;
+    public confirmarAccionDelAsistente(requestParameters: ConfirmarAccionDelAsistenteRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling confirmarAccionDelAsistente.');
+        }
+        const accionId = requestParameters?.accionId;
+        if (accionId === null || accionId === undefined) {
+            throw new Error('Required parameter accionId was null or undefined when calling confirmarAccionDelAsistente.');
+        }
+        const confirmarAccion = requestParameters?.confirmarAccion;
+        if (confirmarAccion === null || confirmarAccion === undefined) {
+            throw new Error('Required parameter confirmarAccion was null or undefined when calling confirmarAccionDelAsistente.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/asistente/acciones/${this.configuration.encodeParam({name: "accionId", value: accionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/confirmacion`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ResultadoDeAccion>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: confirmarAccion,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Preguntarle al asistente de datos
-     * Responde una pregunta sobre los datos de la sede: si una persona vino o tiene la sesion cargada, quienes vienen un dia, quienes fueron a una clase y los numeros de los reportes ECONOMICO, TURNOS y CLASES. Requiere &#x60;asistente:use&#x60; y el interruptor &#x60;akine.asistente.enabled&#x60;.  Un modelo de lenguaje local **solo interpreta** la pregunta; el texto se arma con plantillas a partir de los datos, y ningun dato de la sede llega al modelo. Cada respuesta corre con los permisos del usuario: lo que no puede ver en pantalla vuelve con &#x60;resultado&#x60; SIN_PERMISO, con 200.  Si no esta claro de que persona se habla, &#x60;resultado&#x60; es ACLARACION y &#x60;opciones&#x60; trae hasta cinco: el cliente reenvia la misma pregunta con el &#x60;personaId&#x60; elegido. El servidor no guarda la conversacion: &#x60;historial&#x60; lleva las preguntas anteriores con la &#x60;interpretacion&#x60; que devolvio cada una.
+     * Responde una pregunta sobre los datos de la sede: si una persona vino o tiene la sesion cargada, quienes vienen un dia, quienes fueron a una clase y los numeros de los reportes ECONOMICO, TURNOS y CLASES. Requiere &#x60;asistente:use&#x60; y el interruptor &#x60;akine.asistente.enabled&#x60;.  Un modelo de lenguaje local **solo interpreta** la pregunta; el texto se arma con plantillas a partir de los datos, y ningun dato de la sede llega al modelo. Cada respuesta corre con los permisos del usuario: lo que no puede ver en pantalla vuelve con &#x60;resultado&#x60; SIN_PERMISO, con 200.  Si no esta claro de que persona se habla, &#x60;resultado&#x60; es ACLARACION y &#x60;opciones&#x60; trae hasta cinco: el cliente reenvia la misma pregunta con el &#x60;personaId&#x60; elegido. El servidor no guarda la conversacion: &#x60;historial&#x60; lleva las preguntas anteriores con la &#x60;interpretacion&#x60; que devolvio cada una.  Con &#x60;akine.asistente.acciones.enabled&#x60; y &#x60;asistente:acciones&#x60;, una frase que cuenta o pide algo (\&quot;vinieron todos menos Maria\&quot;, \&quot;Juan pago 15.000 en efectivo\&quot;) no se responde: &#x60;resultado&#x60; es PROPUESTA y &#x60;accion&#x60; trae una tarjeta para revisar. **Nada se graba** hasta &#x60;confirmarAccionDelAsistente&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/consultas
      * @param requestParameters
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -109,6 +195,72 @@ export class AsistenteService extends BaseService implements AsistenteServiceInt
             {
                 context: localVarHttpContext,
                 body: consultaAsistenteRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Descartar una accion propuesta por el asistente
+     * No graba nada. Descartar una accion que ya no esta propuesta no hace nada. Requiere &#x60;asistente:acciones&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/acciones/{accionId}/descarte
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public descartarAccionDelAsistente(requestParameters: DescartarAccionDelAsistenteRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any>;
+    public descartarAccionDelAsistente(requestParameters: DescartarAccionDelAsistenteRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<any>>;
+    public descartarAccionDelAsistente(requestParameters: DescartarAccionDelAsistenteRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<any>>;
+    public descartarAccionDelAsistente(requestParameters: DescartarAccionDelAsistenteRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const consultorioId = requestParameters?.consultorioId;
+        if (consultorioId === null || consultorioId === undefined) {
+            throw new Error('Required parameter consultorioId was null or undefined when calling descartarAccionDelAsistente.');
+        }
+        const accionId = requestParameters?.accionId;
+        if (accionId === null || accionId === undefined) {
+            throw new Error('Required parameter accionId was null or undefined when calling descartarAccionDelAsistente.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/consultorios/${this.configuration.encodeParam({name: "consultorioId", value: consultorioId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/asistente/acciones/${this.configuration.encodeParam({name: "accionId", value: accionId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/descarte`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<any>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
