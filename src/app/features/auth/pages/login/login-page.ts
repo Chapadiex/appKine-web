@@ -12,6 +12,49 @@ import { SessionService } from '../../../../core/services/session.service';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 
+/** Escena ilustrada que acompaña la tarjeta de ingreso (19/11/2026). */
+interface EscenaDeIngreso {
+  readonly imagen: string;
+  readonly titulo: string;
+  readonly bajada: string;
+  /** Número de los tokens `--color-escena-N-desde/hasta` del degradé (`design-system.css`). */
+  readonly tono: number;
+}
+
+/** Las imágenes viven en `public/acceso/`: se piden aparte y no pesan en el bundle. */
+const ESCENAS: readonly EscenaDeIngreso[] = [
+  {
+    imagen: 'acceso/estiramiento.svg',
+    titulo: 'Cada sesión, un paso más.',
+    bajada: 'Turnos, sesiones y evolución de cada paciente en un solo lugar.',
+    tono: 1,
+  },
+  {
+    imagen: 'acceso/paralelas.svg',
+    titulo: 'Del turno a la evolución.',
+    bajada: 'Seguí el progreso de tus pacientes sin papeles de por medio.',
+    tono: 2,
+  },
+  {
+    imagen: 'acceso/equilibrio.svg',
+    titulo: 'Clínica y gestión, en equilibrio.',
+    bajada: 'La agenda, la caja y la historia clínica, conectadas.',
+    tono: 3,
+  },
+  {
+    imagen: 'acceso/pelota.svg',
+    titulo: 'Rehabilitar es acompañar.',
+    bajada: 'Planes de tratamiento claros para todo el equipo.',
+    tono: 4,
+  },
+  {
+    imagen: 'acceso/agenda.svg',
+    titulo: 'Tu agenda, en orden.',
+    bajada: 'Turnos confirmados, recepción ágil y la semana a la vista.',
+    tono: 5,
+  },
+];
+
 /** Destino por defecto cuando la sesion ya quedo con contexto. */
 const DESTINO_POR_DEFECTO = '/organizacion';
 
@@ -30,7 +73,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
   selector: 'app-login-page',
   imports: [Alerta, ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.html',
-  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
+  styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css', './login-page.css'],
 })
 export class LoginPage {
   private readonly session = inject(SessionService);
@@ -44,6 +87,9 @@ export class LoginPage {
     /** "Mantener la sesión iniciada" (DP-45). Desmarcada por defecto: la jornada de siempre. */
     recordarme: [false],
   });
+
+  /** Una escena al azar cada vez que se abre el ingreso. */
+  protected readonly escena = ESCENAS[Math.floor(Math.random() * ESCENAS.length)];
 
   protected readonly estado = signal<EstadoFormulario>({ tipo: 'editando' });
 

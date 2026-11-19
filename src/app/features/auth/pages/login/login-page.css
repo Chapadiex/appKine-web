@@ -1,0 +1,92 @@
+/*
+ * Ingreso con escena ilustrada (19/11/2026): un panel a la izquierda con una imagen y una frase
+ * elegidas al azar, y la tarjeta de siempre a la derecha. Debajo de 860 px queda sólo la tarjeta.
+ */
+.ingreso {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: min(56rem, 100%);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+  overflow: hidden;
+  /* Alto que ya cuenta el aviso de error y el de espera por límite: cuando aparecen, el marco
+     no crece ni la escena se estira. */
+  min-height: 38rem;
+}
+
+/* Dentro del marco la tarjeta no repite borde ni esquinas, y se centra en el alto del marco. */
+.ingreso .acceso-tarjeta {
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+}
+
+.ingreso__escena {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--esp-6);
+  padding: var(--esp-8);
+  background: linear-gradient(150deg, var(--escena-desde), var(--escena-hasta));
+  color: var(--color-escena-texto);
+}
+
+.ingreso__imagen {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  margin-inline: auto;
+  margin-block: auto;
+}
+
+.ingreso__texto p {
+  margin: 0;
+}
+
+.ingreso__titulo {
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.ingreso__texto .ingreso__bajada {
+  margin-top: var(--esp-2);
+  color: color-mix(in srgb, var(--color-escena-texto) 88%, transparent);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ingreso__imagen {
+    animation: ingreso-aparece 600ms ease-out both;
+  }
+}
+
+@keyframes ingreso-aparece {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 860px) {
+  .ingreso {
+    grid-template-columns: minmax(0, 1fr);
+    width: auto;
+    min-height: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .ingreso__escena {
+    display: none;
+  }
+
+  .ingreso .acceso-tarjeta {
+    border: var(--borde-fino) solid var(--color-borde);
+    border-radius: var(--radio-lg);
+  }
+}
