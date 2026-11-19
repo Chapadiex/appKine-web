@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { landingGuard } from '../../core/guards/landing.guard';
 
 /**
  * Rutas de la feature `auth` (M02, etapa AKINE-01.02).
@@ -22,6 +23,7 @@ export const routes: Routes = [
   },
   {
     path: 'ingresar',
+    canActivate: [landingGuard],
     loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage),
     title: 'AKINE - Iniciar sesión',
   },

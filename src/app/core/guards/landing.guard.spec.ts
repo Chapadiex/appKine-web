@@ -37,13 +37,27 @@ describe('landingGuard', () => {
   });
 
   it('con sesión manda al inicio', () => {
-    session.login('kine@akine.test', 'clave-sintetica').subscribe();
-    httpMock.expectOne('/api/v1/auth/login').flush({ accessToken: 'jwt', scope: 'pre_context' });
+    iniciarSesion();
 
-    const resultado = correr();
+    expect(destino()).toBe('/agenda');
+  });
 
-    expect(resultado).toBeInstanceOf(UrlTree);
-    expect((resultado as UrlTree).toString()).toBe('/agenda');
+  it('a la administración de plataforma la manda a su consola', () => {
+    iniciarSesion();
+
+    expect(destino(true)).toBe('/plataforma');
+  });
+
+  it('si no se puede leer el rol, manda al inicio', () => {
+    iniciarSesion();
+    const resultados: unknown[] = [];
+
+    (correr() as Observable<unknown>).subscribe((r) => resultados.push(r));
+    httpMock
+      .expectOne('/api/v1/me/platform-role')
+      .flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect((resultados[0] as UrlTree).toString()).toBe('/agenda');
   });
 
   it('con la restauración en vuelo espera: quien tiene sesión no ve la landing', () => {
@@ -55,9 +69,22 @@ describe('landingGuard', () => {
     httpMock
       .expectOne('/api/v1/auth/refresh')
       .flush({ accessToken: 'jwt-restaurado', scope: 'pre_context' });
+    httpMock.expectOne('/api/v1/me/platform-role').flush({ platformAdmin: false });
 
     expect((resultados[0] as UrlTree).toString()).toBe('/agenda');
   });
+
+  function iniciarSesion(): void {
+    session.login('kine@akine.test', 'clave-sintetica').subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush({ accessToken: 'jwt', scope: 'pre_context' });
+  }
+
+  function destino(platformAdmin = false): string {
+    const resultados: unknown[] = [];
+    (correr() as Observable<unknown>).subscribe((r) => resultados.push(r));
+    httpMock.expectOne('/api/v1/me/platform-role').flush({ platformAdmin });
+    return (resultados[0] as UrlTree).toString();
+  }
 
   function correr(): unknown {
     return TestBed.runInInjectionContext(() =>

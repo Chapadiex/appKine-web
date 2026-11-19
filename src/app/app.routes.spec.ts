@@ -1,4 +1,6 @@
 import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { PlatformRoleStore } from './core/services/platform-role.store';
 import { TestBed } from '@angular/core/testing';
 import { Type } from '@angular/core';
 
@@ -34,6 +36,7 @@ describe('Rutas de la raiz de la app', () => {
       providers: [
         provideRouter(routes),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        { provide: PlatformRoleStore, useValue: { resolver: () => of(false) } },
       ],
     });
 
