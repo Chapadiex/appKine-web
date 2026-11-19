@@ -42,6 +42,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/alta-de-centro/alta-de-centro-page').then((m) => m.AltaDeCentroPage),
     title: 'AKINE - Dar de alta un centro',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
     path: 'suscripciones',

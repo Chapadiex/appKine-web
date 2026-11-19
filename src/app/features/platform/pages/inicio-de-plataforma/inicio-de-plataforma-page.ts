@@ -70,10 +70,6 @@ export class InicioDePlataformaPage {
     return panel.tipo === 'listo' ? panel.datos : null;
   });
 
-  protected readonly hoy = new Intl.DateTimeFormat('es-AR', { dateStyle: 'full' }).format(
-    new Date(),
-  );
-
   protected readonly indicadores = computed<readonly Indicador[]>(() => {
     const centros = this.datos()?.centros;
     const cuentas = this.cuentas();

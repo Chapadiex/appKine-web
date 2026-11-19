@@ -7,12 +7,6 @@
   display: block;
 }
 
-.inicio__fecha {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-  text-transform: capitalize;
-}
-
 .indicadores {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));

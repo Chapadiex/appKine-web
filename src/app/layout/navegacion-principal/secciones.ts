@@ -29,6 +29,7 @@ import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 import { FuncionIa } from '../../core/services/funciones-ia.store';
 import { ServicioContratable } from '../../core/services/contratacion.store';
+import { ContadorDePlataforma } from '../../core/services/contadores-de-plataforma.store';
 
 /** Una entrada de la navegacion principal. */
 export interface Seccion {
@@ -59,6 +60,12 @@ export interface Seccion {
    * ve la parte clinica, y uno de solo kinesiologia no ve las clases.
    */
   readonly servicio?: ServicioContratable;
+
+  /**
+   * Numero que la barra muestra en una insignia junto al enlace (consola de plataforma, 19/11/2026).
+   * Lo resuelve `ContadoresDePlataformaStore`; con cero o sin dato no se dibuja.
+   */
+  readonly contador?: ContadorDePlataforma;
 }
 
 /** Un grupo de secciones con su rotulo. Un grupo sin secciones visibles no se dibuja. */
@@ -313,8 +320,16 @@ export const GRUPOS_DE_PLATAFORMA: readonly GrupoDeSecciones[] = [
     etiqueta: 'Centros',
     icono: 'edificio',
     secciones: [
-      { etiqueta: 'Centros y suscripciones', ruta: RUTA_SUSCRIPCIONES_DE_PLATAFORMA },
-      { etiqueta: 'Pedidos de prueba', ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA },
+      {
+        etiqueta: 'Centros y suscripciones',
+        ruta: RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
+        contador: 'centros-activos',
+      },
+      {
+        etiqueta: 'Pedidos de prueba',
+        ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
+        contador: 'pedidos-pendientes',
+      },
       { etiqueta: 'Dar de alta un centro', ruta: RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA },
     ],
   },
@@ -322,7 +337,11 @@ export const GRUPOS_DE_PLATAFORMA: readonly GrupoDeSecciones[] = [
     etiqueta: 'Catálogo',
     icono: 'capas',
     secciones: [
-      { etiqueta: 'Solicitudes de catálogo', ruta: RUTA_SOLICITUDES_DE_PLATAFORMA },
+      {
+        etiqueta: 'Solicitudes de catálogo',
+        ruta: RUTA_SOLICITUDES_DE_PLATAFORMA,
+        contador: 'solicitudes-pendientes',
+      },
       { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
       { etiqueta: 'Catálogo de financiadores', ruta: RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA },
     ],

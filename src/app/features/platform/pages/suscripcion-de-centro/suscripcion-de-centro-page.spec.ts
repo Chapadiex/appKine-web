@@ -175,6 +175,11 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, 'table')).toContain('kinesio-norte');
     expect(texto(fixture, 'table')).toContain('01/10/2026');
     expect(fixture.nativeElement.querySelector('#suscripcion-organizacion')).toBeNull();
+    // Insignia del plan (BASICO es el viejo base) y la IA: sin IA, la celda solo lo dice al lector.
+    expect(texto(fixture, 'tbody .marca-plan')).toBe('PB Basico');
+    expect(fixture.nativeElement.querySelector('tbody .marca-plan--base')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('tbody .marca-ia')).toBeNull();
+    expect(texto(fixture, 'tbody')).toContain('Sin IA');
 
     elegirCentro(fixture, 'Kinesio Norte');
     httpMock.expectOne(LECTURA).flush(contratacion(7));
@@ -182,15 +187,33 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, '.panel-lateral__titulo')).toBe('Kinesio Norte');
   });
 
-  it('busca por texto y estado, y página con el filtro enviado, no con el que se escribe', async () => {
-    const fixture = await abrir([KINESIO_NORTE, centro(5, 'Kinesio Sur')], 2, 25);
-    // UX-14: el total en la toolbar (no en un parrafo suelto) y el pie estandar.
-    expect(texto(fixture, '.filtros-barra__resultados')).toBe('25 centros');
+  it('busca por texto con Enter y por estado al cambiarlo, y página con el filtro enviado', async () => {
+    const fixture = await abrir(
+      [KINESIO_NORTE, { ...centro(5, 'Kinesio Sur'), planCode: 'RED', planName: 'Red', ia: true }],
+      2,
+      25,
+    );
+    // El total en la barra, el estado a la vista (sin embudo ni boton de buscar) y el pie estandar.
+    expect(texto(fixture, '.barra-centros__total')).toBe('25 centros');
     expect(texto(fixture, '.paginacion-pie__resumen')).toBe('Mostrando 1–10 de 25');
+    expect(fixture.nativeElement.querySelector('app-filtros')).toBeNull();
+    expect(texto(fixture, 'form')).not.toContain('Buscar centros');
+    expect(
+      (fixture.nativeElement.querySelector('#suscripcion-filtro-estado') as HTMLSelectElement)
+        .value,
+    ).toBe('ACTIVA');
+    expect(texto(fixture, 'tbody tr:nth-child(2) .marca-plan')).toBe('PR Red');
+    expect(texto(fixture, 'tbody tr:nth-child(2) .marca-ia')).toBe('IA');
 
     escribir(fixture, '  norte ');
-    elegir(fixture, '#suscripcion-filtro-estado', 'SUSPENDIDA');
     enviar(fixture, 0);
+    const porTexto = httpMock.expectOne((r) => r.url === LISTADO);
+    expect(porTexto.request.params.get('q')).toBe('norte');
+    expect(porTexto.request.params.get('status')).toBe('ACTIVA');
+    porTexto.flush(pagina([KINESIO_NORTE], 0, 1, 1));
+    await estabilizar(fixture);
+
+    elegir(fixture, '#suscripcion-filtro-estado', 'SUSPENDIDA');
     const busqueda = httpMock.expectOne((r) => r.url === LISTADO);
     expect(busqueda.request.params.get('q')).toBe('norte');
     expect(busqueda.request.params.get('status')).toBe('SUSPENDIDA');
@@ -271,7 +294,7 @@ describe('SuscripcionDeCentroPage', () => {
     TIMEOUT_AXE,
   );
 
-  /** Abre la pantalla: el catalogo de planes y la primera pagina del listado, sin filtro. */
+  /** Abre la pantalla: el catalogo de planes y la primera pagina del listado, en ACTIVA. */
   async function abrir(
     centros: unknown[] = [KINESIO_NORTE],
     totalPaginas = 1,
@@ -286,7 +309,7 @@ describe('SuscripcionDeCentroPage', () => {
     ]);
     const listado = httpMock.expectOne((r) => r.url === LISTADO);
     expect(listado.request.params.has('q')).toBe(false);
-    expect(listado.request.params.has('status')).toBe(false);
+    expect(listado.request.params.get('status')).toBe('ACTIVA');
     listado.flush(pagina(centros, 0, totalPaginas, total));
     await estabilizar(fixture);
     return fixture;

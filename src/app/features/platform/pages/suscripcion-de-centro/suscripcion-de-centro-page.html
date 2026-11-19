@@ -14,54 +14,52 @@
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Centros de la plataforma">
-  <form (submit)="$event.preventDefault(); buscar()">
-    <!--
-      Toolbar de la tabla (UX-14): la búsqueda a la vista con su botón y el total en la misma fila;
-      el estado, detrás del embudo.
-    -->
-    <app-filtros
-      [activos]="filtrosAvanzadosActivos()"
-      [resultados]="paginaDeCentros()?.total ?? null"
-      [unidad]="['centro', 'centros']"
-      limpiable
-      (limpiar)="limpiarFiltros()"
-    >
-      <div class="campo" filtro-principal>
-        <label class="visualmente-oculto" for="suscripcion-busqueda"
-          >Nombre o identificador del centro</label
-        >
-        <div class="campo-busqueda">
-          <app-icono class="campo-busqueda__icono" nombre="buscar" />
-          <input
-            id="suscripcion-busqueda"
-            type="search"
-            autocomplete="off"
-            placeholder="Buscar por nombre o identificador del centro"
-            aria-describedby="suscripcion-busqueda-ayuda"
-            [value]="busqueda()"
-            (input)="busqueda.set($any($event.target).value)"
-          />
-        </div>
-        <p id="suscripcion-busqueda-ayuda" class="visualmente-oculto">
-          Busca en el nombre y en el slug del centro. Vacío, lista todos.
-        </p>
+  <!--
+    Barra del listado (19/11/2026): el estado es el unico filtro, asi que va a la vista y aplica
+    apenas cambia; el texto busca al apretar Enter. Sin embudo ni boton de buscar.
+  -->
+  <form class="barra-centros" role="search" (submit)="$event.preventDefault(); buscar()">
+    <div class="campo barra-centros__busqueda">
+      <label class="visualmente-oculto" for="suscripcion-busqueda"
+        >Nombre o identificador del centro</label
+      >
+      <div class="campo-busqueda">
+        <app-icono class="campo-busqueda__icono" nombre="buscar" />
+        <input
+          id="suscripcion-busqueda"
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o identificador del centro"
+          aria-describedby="suscripcion-busqueda-ayuda"
+          [value]="busqueda()"
+          (input)="busqueda.set($any($event.target).value)"
+        />
       </div>
-      <button filtro-frecuente type="submit" class="boton boton--secundario">Buscar centros</button>
-      <div class="campo">
-        <label for="suscripcion-filtro-estado">Estado de la suscripción</label>
-        <select
-          id="suscripcion-filtro-estado"
-          [value]="filtroDeEstado()"
-          (change)="filtroDeEstado.set($any($event.target).value)"
-        >
-          <option value="">Todos</option>
-          <option value="PRUEBA">En prueba</option>
-          <option value="ACTIVA">Activa</option>
-          <option value="SUSPENDIDA">Suspendida</option>
-          <option value="CANCELADA">Cancelada</option>
-        </select>
-      </div>
-    </app-filtros>
+      <p id="suscripcion-busqueda-ayuda" class="visualmente-oculto">
+        Busca en el nombre y en el slug del centro al apretar Enter. Vacío, lista todos.
+      </p>
+    </div>
+    <div class="campo barra-centros__estado">
+      <label for="suscripcion-filtro-estado">Estado</label>
+      <select
+        id="suscripcion-filtro-estado"
+        [value]="filtroDeEstado()"
+        (change)="cambiarEstado($any($event.target).value)"
+      >
+        <option value="" [selected]="filtroDeEstado() === ''">Todos</option>
+        <option value="ACTIVA" [selected]="filtroDeEstado() === 'ACTIVA'">Activa</option>
+        <option value="PRUEBA" [selected]="filtroDeEstado() === 'PRUEBA'">En prueba</option>
+        <option value="SUSPENDIDA" [selected]="filtroDeEstado() === 'SUSPENDIDA'">
+          Suspendida
+        </option>
+        <option value="CANCELADA" [selected]="filtroDeEstado() === 'CANCELADA'">Cancelada</option>
+      </select>
+    </div>
+    @if (paginaDeCentros(); as p) {
+      <p class="barra-centros__total" aria-live="polite">
+        {{ p.total }} {{ p.total === 1 ? 'centro' : 'centros' }}
+      </p>
+    }
   </form>
 
   <div aria-live="polite">
@@ -94,8 +92,8 @@
         <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
           <table class="tabla">
             <caption class="visualmente-oculto">
-              Centros de la plataforma, con su slug, el plan y el estado de la suscripción y la
-              fecha de alta.
+              Centros de la plataforma, con su slug, el plan, si tienen IA, el estado de la
+              suscripción y la fecha de alta.
             </caption>
             <thead>
               <tr>
@@ -110,6 +108,7 @@
                   Slug
                 </th>
                 <th scope="col">Plan</th>
+                <th scope="col">IA</th>
                 <th scope="col">Suscripción</th>
                 <th scope="col">Plazo de la prueba</th>
                 <th
@@ -132,7 +131,22 @@
                 >
                   <th scope="row">{{ c.name }}</th>
                   <td class="tabla__col--secundaria">{{ c.slug }}</td>
-                  <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
+                  <td>
+                    @let plan = planDeFila(c);
+                    <span class="marca-plan" [class]="'marca-plan ' + plan.clase">
+                      @if (plan.sigla) {
+                        <span class="marca-plan__sigla" aria-hidden="true">{{ plan.sigla }}</span>
+                      }
+                      {{ plan.texto }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (c.ia) {
+                      <span class="marca-ia">IA</span>
+                    } @else {
+                      <span class="visualmente-oculto">Sin IA</span>
+                    }
+                  </td>
                   <td>
                     <span class="marca-estado" [class]="'marca-estado ' + marcaDeFila(c).clase">{{
                       marcaDeFila(c).texto

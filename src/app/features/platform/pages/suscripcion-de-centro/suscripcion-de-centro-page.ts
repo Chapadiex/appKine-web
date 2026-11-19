@@ -21,7 +21,6 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { formatearFecha } from '../../../../shared/utils/instantes';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
@@ -39,7 +38,9 @@ import {
   SERVICIOS,
   Servicio,
   MarcaDeEstado,
+  MarcaDePlan,
   diasRestantes,
+  marcaDePlan,
   marcaDeSuscripcion,
   planesOfrecidos,
   rotuloDeTope,
@@ -108,7 +109,6 @@ type Listado =
     CabeceraDePagina,
     Ayuda,
     ColumnaOrdenable,
-    Filtros,
     Icono,
     PanelLateral,
     Pestanas,
@@ -118,6 +118,7 @@ type Listado =
     RouterLink,
   ],
   templateUrl: './suscripcion-de-centro-page.html',
+  styleUrl: './suscripcion-de-centro-page.css',
 })
 export class SuscripcionDeCentroPage implements OnInit {
   private readonly plataforma = inject(PlataformaService);
@@ -142,9 +143,8 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly serviciosEnTexto = serviciosEnTexto;
 
   protected readonly busqueda = signal('');
-  protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('');
-  /** Filtros avanzados (detras del embudo) fuera de su valor por defecto. */
-  protected readonly filtrosAvanzadosActivos = computed(() => Number(this.filtroDeEstado() !== ''));
+  /** Arranca en ACTIVA (19/11/2026): lo que se administra a diario; "Todos" sigue a un clic. */
+  protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('ACTIVA');
   protected readonly listado = signal<Listado>({ tipo: 'cargando' });
 
   /** Filas por pagina (UX-14): viaja como `size`; el usuario lo cambia desde el pie. */
@@ -241,10 +241,8 @@ export class SuscripcionDeCentroPage implements OnInit {
     const estado = this.situacion();
     if (estado !== undefined && (ESTADOS_DE_SUSCRIPCION as readonly string[]).includes(estado)) {
       this.filtroDeEstado.set(estado as EstadoDeSuscripcion);
-      this.buscar();
-    } else {
-      this.listar(0);
     }
+    this.buscar();
     const id = Number(this.org());
     if (this.org() && Number.isInteger(id) && id > 0) {
       this.elegir({ id, name: this.nombre() ?? 'Centro nuevo' });
@@ -260,6 +258,16 @@ export class SuscripcionDeCentroPage implements OnInit {
     };
     this.hayFiltros.set(q !== '' || status !== '');
     this.listar(0);
+  }
+
+  /** El estado esta a la vista y es el unico filtro: aplica apenas cambia, con el texto escrito. */
+  protected cambiarEstado(valor: string): void {
+    this.filtroDeEstado.set(
+      (ESTADOS_DE_SUSCRIPCION as readonly string[]).includes(valor)
+        ? (valor as EstadoDeSuscripcion)
+        : '',
+    );
+    this.buscar();
   }
 
   /** "Limpiar filtros": sin texto ni estado, todos los centros desde la primera pagina. */
@@ -313,6 +321,12 @@ export class SuscripcionDeCentroPage implements OnInit {
     if (dias === null) return '—';
     if (dias <= 0) return 'Vencida';
     return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
+  }
+
+  /** Insignia del plan de la fila: "PB Base", "PC Crecimiento", "PR Red". */
+  protected planDeFila(centro: PlatformOrganizationResponse): MarcaDePlan {
+    const delCatalogo = this.planes().find((p) => p.code === centro.planCode)?.name;
+    return marcaDePlan(centro.planCode, centro.planName ?? delCatalogo);
   }
 
   protected fechaDeAlta(centro: PlatformOrganizationResponse): string {

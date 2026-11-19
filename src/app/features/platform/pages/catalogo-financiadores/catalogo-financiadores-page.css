@@ -7,8 +7,35 @@
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
-.catalogo-entrada:first-child {
+.catalogo-orden + .catalogo-entrada {
   border-top: 0;
+}
+
+/*
+  Orden del catalogo: las entradas no son filas de tabla, asi que el orden va en una barra arriba
+  del listado, con el mismo icono que el encabezado ordenable (tenue sin orden, pleno con orden).
+*/
+.catalogo-orden {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  padding-block: var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.catalogo-orden__rotulo {
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  color: var(--color-texto-suave);
+}
+
+.catalogo-orden__icono {
+  opacity: 0.55;
+}
+
+.catalogo-orden__icono--activo {
+  opacity: 1;
 }
 
 /*
