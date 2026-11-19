@@ -6,6 +6,7 @@ import { CalendarioDeSedeService } from '../../api/generated/api/calendario-de-s
 import { ContratacionService } from '../../api/generated/api/contratacion.service';
 import { OrganizacionesService } from '../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../models/permisos';
+import { ContratacionStore } from '../services/contratacion.store';
 import { PermissionsStore } from '../services/permissions.store';
 import { SessionService } from '../services/session.service';
 import { TenantContextStore } from '../services/tenant-context.store';
@@ -51,6 +52,7 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   const organizaciones = inject(OrganizacionesService);
   const calendarios = inject(CalendarioDeSedeService);
   const contratacion = inject(ContratacionService);
+  const contratacionDelCentro = inject(ContratacionStore);
   const router = inject(Router);
 
   // Al recargar la pagina la sesion todavia se esta restaurando: sin esperarla, el contexto se ve
@@ -58,6 +60,13 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   return trasRestaurarSesion(estado, () => {
     const orgId = tenant.organizationId();
     if (session.estado() !== 'activa' || orgId === null || primerosPasos.estaPostergada(orgId)) {
+      return true;
+    }
+    // Lo comun, sin esperar a la red: el shell ya leyo la contratacion y el centro no esta en
+    // prueba. Un guard que pide HTTP en cada entrada demora la navegacion, y una segunda navegacion
+    // en el medio deja la pantalla anterior sin recargar.
+    const leida = contratacionDelCentro.contratacion();
+    if (leida !== null && (leida.estado !== 'PRUEBA' || leida.soloLectura)) {
       return true;
     }
     return permisos.cargados()

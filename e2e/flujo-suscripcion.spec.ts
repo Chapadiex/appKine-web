@@ -94,11 +94,11 @@ test.describe('Suscripcion contra el backend real', () => {
         expect(listado.status(), await listado.text()).toBe(200);
         const fila = plataforma.getByRole('row').filter({ hasText: nombreDelCentro });
         await expect(fila).toHaveCount(1);
-        await expect(fila).toContainText('ACTIVA');
+        await expect(fila).toContainText('Activa');
         const lectura = respuestaDe(
           plataforma,
           'GET',
-          new RegExp(`/platform/organizations/${organizationId}/subscription$`),
+          new RegExp(`/platform/organizations/${organizationId}/contratacion$`),
         );
         await fila
           .getByRole('button', { name: `Ver la suscripción de ${nombreDelCentro}` })
