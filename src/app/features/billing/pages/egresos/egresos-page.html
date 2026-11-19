@@ -9,15 +9,15 @@
       caja abierta.
     </p>
   </app-ayuda>
+  <!-- La liquidacion de honorarios se abre desde la pestana "Honorarios". -->
   <div cabeceraAcciones>
-    <a class="boton boton--secundario" routerLink="/egresos/honorarios">
-      Liquidar honorarios por clase
-    </a>
     <button type="button" class="boton" (click)="abrirAlta()">
       <app-icono nombre="agregar" />
       Registrar egreso
     </button>
   </div>
+
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <!-- ============================= Tira del mes (DP-45) ============================= -->

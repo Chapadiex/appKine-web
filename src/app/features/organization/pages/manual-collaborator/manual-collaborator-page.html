@@ -1,6 +1,5 @@
-<header class="alta-manual__cabecera">
-  <h1>Nuevo colaborador</h1>
-  <ol class="alta-manual__pasos" aria-label="Pasos del alta manual">
+<app-cabecera-de-pagina titulo="Nuevo colaborador">
+  <ol cabeceraContexto class="alta-manual__pasos" aria-label="Pasos del alta manual">
     <li
       [class.alta-manual__paso--hecho]="paso() > 1"
       [attr.aria-current]="paso() === 1 ? 'step' : null"
@@ -23,7 +22,7 @@
       >
     </li>
   </ol>
-</header>
+</app-cabecera-de-pagina>
 
 <div class="alta-manual__columnas">
   <section class="alta-manual__principal" aria-label="Datos del colaborador">
@@ -379,7 +378,8 @@
     <section class="alta-manual__panel alta-manual__persona">
       <span class="alta-manual__avatar" aria-hidden="true">{{ iniciales() }}</span>
       <div>
-        <strong>{{ nombreCompleto() }}</strong><span>{{ etiquetaDeRol() }}</span
+        <strong>{{ nombreCompleto() }}</strong
+        ><span>{{ etiquetaDeRol() }}</span
         ><span
           >{{
             formulario.controls.numeroDocumento.value

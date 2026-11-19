@@ -34,6 +34,12 @@ import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-or
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ECONOMIA,
+  pestanasDeEconomia,
+} from '../../models/pestanas-de-economia';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 type EstadoListado =
   | { readonly tipo: 'cargando' }
@@ -53,6 +59,7 @@ type EstadoListado =
 @Component({
   selector: 'app-presentaciones-page',
   imports: [
+    Pestanas,
     CabeceraDePagina,
     PanelLateral,
     Ayuda,
@@ -69,6 +76,9 @@ type EstadoListado =
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class PresentacionesPage {
+  protected readonly pestanas = pestanasDeEconomia(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ECONOMIA;
+
   private readonly api = inject(PresentacionesApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

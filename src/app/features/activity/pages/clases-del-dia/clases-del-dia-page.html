@@ -5,6 +5,8 @@
       <b>no abre una atención clínica</b> ni genera deuda.
     </p>
   </app-ayuda>
+
+  <app-pestanas [pestanas]="pestanas()" [etiqueta]="etiquetaDePestanas" />
 </app-cabecera-de-pagina>
 
 <!-- Operativa (UX-14 §3): la fecha a la vista en la barra de la tabla, todo en una tarjeta. -->
@@ -89,14 +91,9 @@
                   <td>{{ hora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</td>
                   <td>{{ clase.titulo || clase.ofertaNombre || 'Clase ' + clase.eventoId }}</td>
                   <td>
-                    <span
-                      class="marca-estado"
-                      [class.marca-estado--activa]="clase.estado === 'REALIZADA'"
-                      [class.marca-estado--info]="clase.estado === 'PROGRAMADA'"
-                      [class.marca-estado--suspendida]="clase.estado === 'EN_CURSO'"
-                      [class.marca-estado--revocada]="clase.estado === 'CANCELADA'"
-                      >{{ etiquetaDeEstado(clase.estado) }}</span
-                    >
+                    <span class="marca-estado" [class]="marcaDeEstado(clase.estado)">{{
+                      etiquetaDeEstado(clase.estado)
+                    }}</span>
                   </td>
                   <td>
                     <span class="cupo">

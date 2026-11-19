@@ -1,7 +1,8 @@
-<!-- Pagina no encontrada (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
-<section class="pantalla-error" aria-labelledby="titulo-no-encontrada">
-  <span class="pantalla-error__codigo">Error 404</span>
-  <h1 id="titulo-no-encontrada">Página no encontrada</h1>
+<!-- Pagina no encontrada: misma cabecera que el resto de la aplicacion (rediseño 19/11/2026). -->
+<section class="pantalla-error" aria-label="Página no encontrada">
+  <app-cabecera-de-pagina titulo="Página no encontrada">
+    <span class="marca-estado marca-estado--neutra">Error 404</span>
+  </app-cabecera-de-pagina>
   <p role="alert">La dirección a la que intentaste llegar no existe o se movió.</p>
   <code class="pantalla-error__ruta">{{ ruta }}</code>
   <div class="pantalla-error__acciones">

@@ -1,4 +1,8 @@
-import {} from '../../models/pestanas-de-offering';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_SERVICIOS,
+  PESTANAS_DE_SERVICIOS,
+} from '../../models/pestanas-de-offering';
 import { publicarMigas } from '../../../../core/services/migas.store';
 import {
   Component,
@@ -130,6 +134,7 @@ type Heredable = '' | 'true' | 'false';
   selector: 'app-ofertas-de-la-sede-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     AccionesDeFila,
     Alerta,
     FiltrosRapidos,
@@ -149,6 +154,8 @@ type Heredable = '' | 'true' | 'false';
   styleUrl: '../../offering.css',
 })
 export class OfertasDeLaSedePage {
+  protected readonly pestanas = PESTANAS_DE_SERVICIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_SERVICIOS;
   /** Fuera del menu desde el 11/11/2026: la ruta de navegacion lleva de vuelta al catalogo. */
   private readonly migasDeLaBarra = publicarMigas(() => [
     { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },

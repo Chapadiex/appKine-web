@@ -1,0 +1,52 @@
+/* ‹ Hoy › y el período: los controles miden lo mismo que el resto de la barra (--alto-control). */
+:host {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.navegador-de-fecha__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* En táctil crece la altura, no el ancho: a 375 px la barra no entra con botones de 48 px. */
+  min-width: 2.5rem;
+  min-height: var(--alto-control);
+  padding: 0 var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.navegador-de-fecha__boton--flecha {
+  padding: 0;
+  color: var(--color-marca-texto-suave);
+}
+
+.navegador-de-fecha__boton:hover {
+  background: var(--color-hover);
+}
+
+.navegador-de-fecha__boton:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.navegador-de-fecha__periodo {
+  margin: 0 var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-medio);
+}
+
+.navegador-de-fecha__periodo::first-letter {
+  text-transform: uppercase;
+}

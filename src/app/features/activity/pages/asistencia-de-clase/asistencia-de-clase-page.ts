@@ -1,3 +1,4 @@
+import { marcaDeEstadoDeClase } from '../../models/clases';
 import {
   Component,
   ElementRef,
@@ -152,6 +153,7 @@ export class AsistenciaDeClasePage {
   protected readonly resultados = RESULTADOS;
   protected readonly etiquetaDeResultado = etiquetaDeResultado;
   protected readonly etiquetaDeEstadoDeClase = etiquetaDeEstadoDeClase;
+  protected readonly marcaDeEstado = marcaDeEstadoDeClase;
   protected readonly etiquetaDeInscripcion = etiquetaDeEstadoDeInscripcion;
   protected readonly etiquetaDeEvento = etiquetaDeEvento;
   protected readonly cambio = descripcionDeEvento;

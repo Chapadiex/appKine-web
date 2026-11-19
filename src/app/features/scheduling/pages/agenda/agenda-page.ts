@@ -38,6 +38,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { NavegadorDeFecha } from '../../../../shared/components/navegador-de-fecha/navegador-de-fecha';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { PermisoDirective } from '../../../../shared/directives/permiso.directive';
 import { SessionService } from '../../../../core/services/session.service';
@@ -132,6 +133,7 @@ const A_REUBICAR = 'A_REUBICAR';
     EstadoVacio,
     Filtros,
     Icono,
+    NavegadorDeFecha,
     NgTemplateOutlet,
     Pestanas,
     PermisoDirective,

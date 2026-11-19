@@ -1,3 +1,10 @@
+import { marcaDeEstadoDeClase } from '../../models/clases';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ACTIVIDADES,
+  pestanasDeActividades,
+} from '../../models/pestanas-de-actividades';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -37,6 +44,7 @@ type Estado =
   selector: 'app-clases-del-dia-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     Ayuda,
     ColumnaOrdenable,
     EstadoVacio,
@@ -50,11 +58,14 @@ type Estado =
   styleUrl: '../../asistencia.css',
 })
 export class ClasesDelDiaPage {
+  protected readonly pestanas = pestanasDeActividades(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ACTIVIDADES;
   private readonly api = inject(AsistenciaApi);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly tenant = inject(TenantContextStore);
 
   protected readonly etiquetaDeEstado = etiquetaDeEstadoDeClase;
+  protected readonly marcaDeEstado = marcaDeEstadoDeClase;
   protected readonly hora = horaEnZona;
 
   protected readonly fecha = signal(this.diaDeLaSede.hoy());

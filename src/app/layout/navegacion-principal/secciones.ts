@@ -20,11 +20,13 @@ import {
   PERMISO_HC_READ,
   PERMISO_INSCRIPCION_READ,
   PERMISO_PACIENTE_READ,
+  PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
   PERMISO_SESION_REGISTER,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
+import { RUTA_PRODUCTOS } from '../../features/activity/models/rutas-de-pases';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { NombreDeIcono } from '../../shared/components/icono/icono';
 import { FuncionIa } from '../../core/services/funciones-ia.store';
@@ -116,10 +118,12 @@ export interface GrupoDeSecciones {
  *   <li><b>Organizacion</b> — `organization.routes.ts`: la ruta vacia no lleva
  *       `permissionGuard`; sus hijas si, y lo resuelve cada pantalla.</li>
  *   <li><b>Espacios</b> — `resource.routes.ts`: el listado NO lleva `permissionGuard`
- *       (`GET .../espacios` exige solo ser miembro). El alta si, con `consultorio:manage`.</li>
+ *       (`GET .../espacios` exige solo ser miembro), ni la disponibilidad por periodo. El alta si,
+ *       con `consultorio:manage`.</li>
  *   <li><b>Horarios</b> — `horarios.routes.ts`: las <b>cuatro</b> rutas llevan
  *       `permissionGuard(PERMISO_COLABORADOR_READ)`, la ruta vacia incluida.</li>
- *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`.</li>
+ *   <li><b>Servicios</b> — `offering.routes.ts`: ninguna lleva `permissionGuard`; las ofertas
+ *       (Actividades de la sede) llevan solo `contextGuard`.</li>
  *   <li><b>Catalogo</b> — `catalog.routes.ts`: las tres rutas llevan
  *       `permissionGuard(PERMISO_CATALOGO_READ)` (DP-36).</li>
  *   <li><b>Biblioteca</b> — `biblioteca.routes.ts`: las dos rutas llevan
@@ -196,6 +200,12 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_INSCRIPCION_READ],
         servicio: 'ACTIVIDADES',
       },
+      {
+        etiqueta: 'Productos de pack',
+        ruta: RUTA_PRODUCTOS,
+        permisos: [PERMISO_PRODUCTO_READ],
+        servicio: 'ACTIVIDADES',
+      },
     ],
   },
   {
@@ -219,6 +229,8 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'servicios',
     secciones: [
       { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+      // Sin servicio: una sede publica tanto kinesiologia como actividades (offering.routes.ts).
+      { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },
       { etiqueta: 'Catálogo clínico', ruta: '/catalogo', permisos: [PERMISO_CATALOGO_READ] },
     ],
   },
@@ -251,6 +263,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'horarios',
     secciones: [
       { etiqueta: 'Espacios y boxes', ruta: '/espacios' },
+      { etiqueta: 'Espacios habilitados', ruta: '/espacios/disponibilidad' },
       {
         etiqueta: 'Horarios de profesionales',
         ruta: RUTA_HORARIOS,

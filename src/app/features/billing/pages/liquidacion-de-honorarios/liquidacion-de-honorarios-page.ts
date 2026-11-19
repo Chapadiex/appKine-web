@@ -28,6 +28,12 @@ import {
 import { EgresosApi } from '../../services/egresos-api';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ECONOMIA,
+  pestanasDeEconomia,
+} from '../../models/pestanas-de-economia';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -77,6 +83,7 @@ type EstadoBorrador =
 @Component({
   selector: 'app-liquidacion-de-honorarios-page',
   imports: [
+    Pestanas,
     CabeceraDePagina,
     Ayuda,
     ReactiveFormsModule,
@@ -90,6 +97,9 @@ type EstadoBorrador =
   styleUrls: ['../../billing.css', '../../economia.css'],
 })
 export class LiquidacionDeHonorariosPage {
+  protected readonly pestanas = pestanasDeEconomia(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ECONOMIA;
+
   private readonly api = inject(EgresosApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

@@ -229,7 +229,7 @@ describe('AgendaPage', () => {
       const fixture = await montar();
       const vieja = leida();
 
-      clic(fixture, 'Siguiente');
+      clic(fixture, 'siguiente');
 
       expect(vieja.cancelled).toBe(true);
       expect(leida().request.params.get('desde')).toBe('2030-03-07');
@@ -764,7 +764,7 @@ describe('AgendaPage', () => {
       await asentar(fixture);
       expect(texto(fixture)).toContain('marzo de 2030');
 
-      clic(fixture, 'Siguiente');
+      clic(fixture, 'siguiente');
       const abril = tramos();
       expect(abril[0].request.params.get('desde')).toBe('2030-04-01');
       abril.forEach((t) => t.flush({ timezone: ZONA, turnos: [] }));
@@ -777,7 +777,7 @@ describe('AgendaPage', () => {
       leida().flush(AGENDA);
       await asentar(fixture);
 
-      clic(fixture, 'Anterior');
+      clic(fixture, 'anterior');
       const anterior = leida();
       expect(anterior.request.params.get('desde')).toBe('2030-03-05');
       anterior.flush(AGENDA);
@@ -821,7 +821,7 @@ describe('AgendaPage', () => {
       expect(por?.hasAttribute('inert')).toBe(true);
       expect(por?.getAttribute('aria-hidden')).toBe('true');
 
-      clic(fixture, 'Siguiente');
+      clic(fixture, 'siguiente');
       const siguiente = leida();
       expect(siguiente.request.params.get('desde')).toBe('2030-03-11');
       siguiente.flush(AGENDA);

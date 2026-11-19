@@ -1,7 +1,8 @@
-<!-- Sin permiso, dentro de la app (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
-<section class="pantalla-error" aria-labelledby="titulo-sin-permiso">
-  <span class="pantalla-error__codigo">Error 403</span>
-  <h1 id="titulo-sin-permiso">No tenés permiso para esta pantalla</h1>
+<!-- Sin permiso: misma cabecera que el resto de la aplicacion (rediseño 19/11/2026). -->
+<section class="pantalla-error" aria-label="No tenés permiso para esta pantalla">
+  <app-cabecera-de-pagina titulo="No tenés permiso para esta pantalla">
+    <span class="marca-estado marca-estado--neutra">Error 403</span>
+  </app-cabecera-de-pagina>
   <p>
     Tu sesión es válida, pero tu rol en
     @if (contexto(); as organizacion) {

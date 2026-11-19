@@ -102,35 +102,15 @@
   </div>
   <!-- ‹ Hoy › corre la ventana entera. Aparece con la oferta: sin ella no hay agenda que mover. -->
   @if (ofertaId() !== null) {
-    <div
+    <app-navegador-de-fecha
       filtro-frecuente
-      class="navegador-fecha"
-      role="group"
-      aria-label="Mover la ventana de fechas"
-    >
-      <button
-        type="button"
-        class="navegador-fecha__boton navegador-fecha__boton--flecha"
-        title="Semana anterior"
-        (click)="moverVentana(-1)"
-      >
-        <app-icono nombre="chevron-izquierda" /><span class="visualmente-oculto"
-          >Semana anterior</span
-        >
-      </button>
-      <button type="button" class="navegador-fecha__boton" (click)="irAHoy()">Hoy</button>
-      <button
-        type="button"
-        class="navegador-fecha__boton navegador-fecha__boton--flecha"
-        title="Semana siguiente"
-        (click)="moverVentana(1)"
-      >
-        <app-icono nombre="chevron-derecha" /><span class="visualmente-oculto"
-          >Semana siguiente</span
-        >
-      </button>
-      <span class="navegador-fecha__etiqueta">{{ etiquetaDeVentana() }}</span>
-    </div>
+      etiqueta="Mover la ventana de fechas"
+      unidad="semana"
+      [periodo]="etiquetaDeVentana()"
+      (anterior)="moverVentana(-1)"
+      (siguiente)="moverVentana(1)"
+      (hoy)="irAHoy()"
+    />
   }
 </app-filtros>
 

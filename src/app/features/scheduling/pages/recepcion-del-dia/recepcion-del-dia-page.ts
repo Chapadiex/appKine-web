@@ -71,6 +71,7 @@ import {
   FiltrosRapidos,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { NavegadorDeFecha } from '../../../../shared/components/navegador-de-fecha/navegador-de-fecha';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
@@ -214,6 +215,7 @@ const CAUSAS_QUE_RELEEN: ReadonlySet<CausaAgenda> = new Set<CausaAgenda>([
     ClasesDelDia,
     Pestanas,
     Icono,
+    NavegadorDeFecha,
     AccionesDeFila,
     FiltrosRapidos,
     PanelLateral,
@@ -255,6 +257,8 @@ export class RecepcionDelDiaPage {
 
   /** Dia que se muestra. Vive en un signal aparte del input: el selector lo mueve sin navegar. */
   protected readonly dia = signal(this.diaDeLaSede.hoy());
+  /** El dia en palabras, que el navegador de fecha anuncia al lector de pantalla. */
+  protected readonly diaEnPalabras = computed(() => fechaEnPalabras(this.dia()));
 
   /**
    * `true` mientras {@link dia} es el provisorio del navegador y todavia no se lo comparo con el

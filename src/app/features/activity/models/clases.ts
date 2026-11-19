@@ -275,3 +275,23 @@ export function fechaDeSerie(fecha: string | undefined): string {
 export function detalleDeOmisionUtil(motivo: string | undefined): boolean {
   return motivo !== 'PASADO' && motivo !== 'FERIADO';
 }
+
+/**
+ * Modificador de `.marca-estado` (design-system) para el estado de una clase: el mismo en el
+ * calendario, el listado del día y la asistencia (rediseño 19/11/2026). Color, texto e ícono
+ * dicen lo mismo: realizada es vigente, en curso pide atención, cancelada es terminal.
+ */
+export function marcaDeEstadoDeClase(estado: string | undefined): string {
+  switch (estado) {
+    case 'REALIZADA':
+      return 'marca-estado--activa';
+    case 'PROGRAMADA':
+      return 'marca-estado--info';
+    case 'EN_CURSO':
+      return 'marca-estado--suspendida';
+    case 'CANCELADA':
+      return 'marca-estado--revocada';
+    default:
+      return 'marca-estado--neutra';
+  }
+}

@@ -2,6 +2,8 @@ import { Location } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { CabeceraDePagina } from '../../components/cabecera-de-pagina/cabecera-de-pagina';
+
 /**
  * Pagina no encontrada (404 de ruta, dentro de la app).
  *
@@ -10,7 +12,7 @@ import { Router, RouterLink } from '@angular/router';
  */
 @Component({
   selector: 'app-not-found',
-  imports: [RouterLink],
+  imports: [RouterLink, CabeceraDePagina],
   templateUrl: './not-found.html',
   styleUrls: ['../pantalla-error.css', './not-found.css'],
 })

@@ -50,7 +50,9 @@
           <h2 id="titulo-clase" class="banda-asistencia__titulo" tabindex="-1">La clase</h2>
           <p class="clase-meta">
             <span>{{ fechaHora(clase.inicio, zona()) }} a {{ hora(clase.fin, zona()) }}</span>
-            <b class="clase-meta__estado">{{ etiquetaDeEstadoDeClase(clase.estado) }}</b>
+            <span class="marca-estado" [class]="marcaDeEstado(clase.estado)">{{
+              etiquetaDeEstadoDeClase(clase.estado)
+            }}</span>
           </p>
           <ul class="contadores" aria-label="Resumen de la asistencia">
             <li>Presentes: {{ clase.presentes ?? 0 }}</li>
@@ -123,7 +125,8 @@
               <ul>
                 @for (fallo of resumen.fallos; track fallo.inscripcionId) {
                   <li>
-                    <b>{{ fallo.nombre }}</b>: {{ fallo.mensaje }}
+                    <b>{{ fallo.nombre }}</b
+                    >: {{ fallo.mensaje }}
                   </li>
                 }
               </ul>
@@ -133,7 +136,8 @@
               <ul>
                 @for (consumo of resumen.consumos; track consumo.inscripcionId) {
                   <li>
-                    <b>{{ consumo.nombre }}</b>: {{ consumo.texto }}
+                    <b>{{ consumo.nombre }}</b
+                    >: {{ consumo.texto }}
                   </li>
                 }
               </ul>
@@ -390,7 +394,8 @@
             <ol class="historial">
               @for (e of h.eventos; track e.id) {
                 <li>
-                  {{ fechaHora(e.ocurridoEn, zona()) }} · <b>{{ etiquetaDeEvento(e.tipo) }}</b>:
+                  {{ fechaHora(e.ocurridoEn, zona()) }} · <b>{{ etiquetaDeEvento(e.tipo) }}</b
+                  >:
                   {{ cambio(e) }}
                 </li>
               }

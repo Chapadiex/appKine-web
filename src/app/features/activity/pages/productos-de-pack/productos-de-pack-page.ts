@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ACTIVIDADES,
+  pestanasDeActividades,
+} from '../../models/pestanas-de-actividades';
 import {
   Component,
   ElementRef,
@@ -86,6 +91,7 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
   selector: 'app-productos-de-pack-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     Alerta,
     Ayuda,
     ColumnaOrdenable,
@@ -103,6 +109,8 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
   styleUrl: '../../activity.css',
 })
 export class ProductosDePackPage {
+  protected readonly pestanas = pestanasDeActividades(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ACTIVIDADES;
   /** Fuera del menu desde el 11/11/2026: se llega desde la oferta que cobra por pack. */
   private readonly migasDeLaBarra = publicarMigas(() => [
     { etiqueta: 'Actividades de la sede', ruta: '/servicios/ofertas' },

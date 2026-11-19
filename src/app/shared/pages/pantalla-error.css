@@ -1,28 +1,25 @@
 /*
- * Pagina de error (404, sin permiso). Vivia en `design-system.css`, que entra en la carga inicial;
- * solo la usan estas dos paginas, que se cargan a pedido (06/11/2026).
+ * Pantalla de error, compartida por el 404 y el 403 (rutas diferidas: por eso no vive en
+ * `src/design-system.css`). Desde el 19/11/2026 usa `app-cabecera-de-pagina` como cualquier otra
+ * pantalla: el titulo queda donde queda en todas, y el codigo (404/403) es una marca de estado al
+ * lado del titulo. El contenido va alineado a la izquierda, sin la tarjeta centrada de antes.
+ * `p` va sin la clase del contenedor a proposito: con el atributo de la encapsulacion queda en
+ * (0,1,1), la misma especificidad que tenia `.pantalla-error p` global.
  */
 .pantalla-error {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--esp-5);
-  max-width: 30rem;
-  margin: 4rem auto 0;
+  max-width: 40rem;
 }
 
-.pantalla-error__codigo {
-  color: var(--color-texto-suave);
-  font-family: var(--fuente-mono);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
+.pantalla-error > app-cabecera-de-pagina {
+  align-self: stretch;
+  margin-bottom: 0;
 }
 
-.pantalla-error h1 {
-  margin: 0;
-}
-
-.pantalla-error p {
+p {
   margin: 0;
   color: var(--color-marca-texto-suave);
   line-height: 1.5;

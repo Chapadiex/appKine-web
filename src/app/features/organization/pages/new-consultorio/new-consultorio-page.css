@@ -373,21 +373,6 @@
   list-style: none;
 }
 
-.enlace-boton {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-enlace);
-  font: inherit;
-  font-size: var(--tipo-sm);
-  font-weight: var(--peso-medio);
-  cursor: pointer;
-}
-
-.enlace-boton:hover {
-  text-decoration: underline;
-}
-
 @media (max-width: 40rem) {
   .confirmacion__fila {
     grid-template-columns: minmax(0, 1fr) auto;

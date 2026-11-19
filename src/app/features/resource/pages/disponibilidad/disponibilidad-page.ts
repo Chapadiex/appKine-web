@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ESPACIOS,
+  PESTANAS_DE_ESPACIOS,
+} from '../../models/pestanas-de-espacios';
 import { Component, ElementRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { publicarMigas } from '../../../../core/services/migas.store';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -65,6 +70,7 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   selector: 'app-disponibilidad-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
     PieDeTabla,
     Filtros,
     EstadoVacio,
@@ -79,6 +85,8 @@ const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
   styleUrl: '../../resource.css',
 })
 export class DisponibilidadPage {
+  protected readonly pestanas = PESTANAS_DE_ESPACIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ESPACIOS;
   /** Fuera del menu desde el 11/11/2026: se llega desde Espacios y boxes y se vuelve por aca. */
   private readonly migasDeLaBarra = publicarMigas(() => [
     { etiqueta: 'Espacios y boxes', ruta: '/espacios' },

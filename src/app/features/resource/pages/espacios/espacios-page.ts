@@ -1,3 +1,8 @@
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ESPACIOS,
+  PESTANAS_DE_ESPACIOS,
+} from '../../models/pestanas-de-espacios';
 import {
   Component,
   ElementRef,
@@ -100,6 +105,7 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-espacios-page',
   imports: [
     CabeceraDePagina,
+    Pestanas,
 
     Alerta,
     Ayuda,
@@ -120,6 +126,8 @@ type TipoAccion = 'editar' | 'baja';
   styleUrl: '../../resource.css',
 })
 export class EspaciosPage {
+  protected readonly pestanas = PESTANAS_DE_ESPACIOS;
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ESPACIOS;
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly espacios = inject(EspaciosService);
   private readonly avisos = inject(AvisosStore);

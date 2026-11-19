@@ -38,6 +38,12 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
+import {
+  ETIQUETA_PESTANAS_DE_ECONOMIA,
+  pestanasDeEconomia,
+} from '../../models/pestanas-de-economia';
+import { PermissionsStore } from '../../../../core/services/permissions.store';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
@@ -99,6 +105,7 @@ const PAGINA_DE_MOVIMIENTOS = 50;
 @Component({
   selector: 'app-caja-page',
   imports: [
+    Pestanas,
     CabeceraDePagina,
     Ayuda,
     Icono,
@@ -114,6 +121,9 @@ const PAGINA_DE_MOVIMIENTOS = 50;
   styleUrls: ['../../billing.css', '../../economia.css', './caja-page.css'],
 })
 export class CajaPage {
+  protected readonly pestanas = pestanasDeEconomia(inject(PermissionsStore));
+  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_ECONOMIA;
+
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly api = inject(CajaApi);
   private readonly avisos = inject(AvisosStore);

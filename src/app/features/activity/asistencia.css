@@ -87,15 +87,6 @@
   color: var(--color-texto-suave);
 }
 
-.clase-meta__estado {
-  padding: var(--esp-1) var(--esp-4);
-  border-radius: var(--radio-pastilla);
-  background: var(--color-info-fondo);
-  color: var(--color-info-texto);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
-}
-
 /* Franja de cifras: una celda por contador, separadas por una linea fina. */
 .contadores {
   gap: 0;

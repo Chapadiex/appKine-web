@@ -22,7 +22,6 @@
 }
 
 /* Todos los controles de la barra tienen el mismo alto (40 px) y el mismo contorno (3:1, WCAG 1.4.11). */
-.agenda-nav__boton,
 .segmento button,
 .agenda-buscar input {
   min-height: var(--alto-control);
@@ -33,13 +32,6 @@
   font-size: var(--tipo-xs);
 }
 
-.agenda-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-2);
-}
-
-.agenda-nav__boton,
 .segmento button {
   display: inline-flex;
   align-items: center;
@@ -50,17 +42,6 @@
   cursor: pointer;
 }
 
-.agenda-nav__boton {
-  /* En táctil crece la altura, no el ancho: a 375 px la barra no entra con botones de 48 px. */
-  min-width: 2.5rem;
-  border-radius: var(--radio-sm);
-}
-
-.agenda-nav__boton:has(app-icono) {
-  padding: 0;
-}
-
-.agenda-nav__boton:hover,
 .segmento button:hover {
   background: var(--color-hover);
 }
