@@ -80,7 +80,6 @@
               </div>
             }
           </dl>
-          <p class="alta__nota">Los datos del pedido ya están cargados en el formulario.</p>
         </section>
       }
 
@@ -113,7 +112,7 @@
               [attr.aria-invalid]="errorDe('nombrePrimeraSede') ? 'true' : null"
             />
             <p class="ayuda ayuda--fija" id="alta-nombre-sede-ayuda">
-              Vacío, toma el nombre del centro. El dueño la completa en su primer ingreso.
+              Vacío: toma el nombre del centro.
             </p>
             @if (errorDe('nombrePrimeraSede'); as error) {
               <p class="campo__error">{{ error }}</p>
@@ -131,10 +130,7 @@
               <p class="campo__error">{{ error }}</p>
             }
           </div>
-        </div>
 
-        <h2 id="alta-duenio-titulo" class="alta__subtitulo">Dueño</h2>
-        <div class="alta__campos" role="group" aria-labelledby="alta-duenio-titulo">
           <div class="campo">
             <label for="alta-email">Correo del dueño</label>
             <input
@@ -146,7 +142,7 @@
               [attr.aria-invalid]="errorDe('emailDuenio') ? 'true' : null"
             />
             <p class="ayuda ayuda--fija" id="alta-email-ayuda">
-              Le llega la invitación como administrador de toda la organización.
+              Recibe la invitación como administrador.
             </p>
             @if (errorDe('emailDuenio'); as error) {
               <p class="campo__error">{{ error }}</p>
@@ -183,12 +179,22 @@
         [attr.aria-invalid]="errorDe('servicios') ? 'true' : null"
         [attr.aria-describedby]="errorDe('servicios') ? 'alta-servicios-error' : null"
       >
-        <legend>Servicios (al menos uno)</legend>
-        <div class="alta__en-linea">
+        <legend>Servicios <span class="alta__leyenda-nota">al menos uno</span></legend>
+        <div class="alta__fichas">
           @for (servicio of servicios; track servicio.valor) {
-            <label class="opcion-radio">
+            <label class="alta__ficha">
               <input type="checkbox" [formControlName]="servicio.valor" />
-              {{ servicio.etiqueta }}
+              <app-icono
+                class="alta__ficha-icono"
+                [nombre]="detalleDeServicio[servicio.valor].icono"
+              />
+              <span class="alta__ficha-texto">
+                <span class="alta__ficha-titulo">{{ servicio.etiqueta }}</span>
+                <span class="alta__ficha-detalle">{{
+                  detalleDeServicio[servicio.valor].para
+                }}</span>
+              </span>
+              <app-icono class="alta__ficha-tilde" nombre="tilde" />
             </label>
           }
         </div>
@@ -199,30 +205,33 @@
 
       <fieldset class="grupo alta__grupo">
         <legend>Adicional</legend>
-        <label class="opcion-radio">
+        <label class="alta__ficha alta__ficha--ia">
           <input type="checkbox" formControlName="ia" aria-describedby="alta-ia-ayuda" />
-          Sumar el adicional de IA
+          <span class="alta__ia-sello" aria-hidden="true">IA</span>
+          <span class="alta__ficha-texto">
+            <span class="alta__ficha-titulo">Inteligencia artificial</span>
+            <span class="alta__ficha-detalle" id="alta-ia-ayuda"
+              >Asistente y dictado; con Kinesiología, también evolución y biblioteca</span
+            >
+          </span>
+          <app-icono class="alta__ficha-tilde" nombre="tilde" />
         </label>
-        <p class="ayuda ayuda--fija" id="alta-ia-ayuda">
-          Asistente, dictado y, con Kinesiología, evolución, sugerencias y biblioteca. El centro
-          decide qué prende.
-        </p>
       </fieldset>
 
       <fieldset class="grupo alta__grupo" aria-describedby="alta-prueba-ayuda">
         <legend>Modalidad</legend>
-        <div class="alta__en-linea">
-          <label class="opcion-radio">
+        <div class="alta__segmentado">
+          <label class="alta__segmento">
             <input type="radio" formControlName="prueba" [value]="true" />
-            Prueba gratis de 30 días
+            <app-icono nombre="calendario" />Prueba gratis de 30 días
           </label>
-          <label class="opcion-radio">
+          <label class="alta__segmento">
             <input type="radio" formControlName="prueba" [value]="false" />
-            Activo desde hoy
+            <app-icono nombre="exito" />Activo desde hoy
           </label>
         </div>
         <p class="ayuda ayuda--fija" id="alta-prueba-ayuda">
-          Al terminar la prueba, el centro queda en solo lectura hasta que pase a contrato.
+          Al terminar la prueba queda en solo lectura hasta pasar a contrato.
         </p>
       </fieldset>
     </section>

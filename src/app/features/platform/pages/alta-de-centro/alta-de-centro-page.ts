@@ -1,3 +1,4 @@
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -112,7 +113,15 @@ type Campo = (typeof CAMPOS)[number];
 @Component({
   selector: 'app-alta-de-centro-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Alerta, Ayuda, CabeceraDePagina, OpcionesEnTarjetas, ReactiveFormsModule, RouterLink],
+  imports: [
+    Alerta,
+    Ayuda,
+    CabeceraDePagina,
+    Icono,
+    OpcionesEnTarjetas,
+    ReactiveFormsModule,
+    RouterLink,
+  ],
   templateUrl: './alta-de-centro-page.html',
   styleUrl: './alta-de-centro-page.css',
 })
@@ -129,6 +138,14 @@ export class AltaDeCentroPage implements OnInit {
   protected readonly rutaPedidos = RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA;
   protected readonly zonas = ZONAS;
   protected readonly servicios = SERVICIOS;
+
+  /** Ícono y para quién es cada servicio, en las tarjetas de selección. */
+  protected readonly detalleDeServicio: Readonly<
+    Record<string, { readonly icono: NombreDeIcono; readonly para: string }>
+  > = {
+    KINESIOLOGIA: { icono: 'pacientes', para: 'Historia clínica, sesiones y obras sociales' },
+    ACTIVIDADES: { icono: 'actividades', para: 'Clases, inscripciones, pases y abonos' },
+  };
   protected readonly etiquetaDeSedes = etiquetaDeSedes;
   protected readonly marcaDePedido = marcaDePedido;
 
