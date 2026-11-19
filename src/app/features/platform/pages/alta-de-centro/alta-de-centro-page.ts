@@ -139,12 +139,10 @@ export class AltaDeCentroPage implements OnInit {
   protected readonly zonas = ZONAS;
   protected readonly servicios = SERVICIOS;
 
-  /** Ícono y para quién es cada servicio, en las tarjetas de selección. */
-  protected readonly detalleDeServicio: Readonly<
-    Record<string, { readonly icono: NombreDeIcono; readonly para: string }>
-  > = {
-    KINESIOLOGIA: { icono: 'pacientes', para: 'Historia clínica, sesiones y obras sociales' },
-    ACTIVIDADES: { icono: 'actividades', para: 'Clases, inscripciones, pases y abonos' },
+  /** Ícono de cada servicio en su tarjeta de selección. */
+  protected readonly iconoDeServicio: Readonly<Record<string, NombreDeIcono>> = {
+    KINESIOLOGIA: 'pacientes',
+    ACTIVIDADES: 'actividades',
   };
   protected readonly etiquetaDeSedes = etiquetaDeSedes;
   protected readonly marcaDePedido = marcaDePedido;

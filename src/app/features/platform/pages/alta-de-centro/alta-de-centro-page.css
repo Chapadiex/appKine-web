@@ -156,7 +156,7 @@
  */
 .alta__fichas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: var(--esp-4);
 }
 
@@ -164,8 +164,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--esp-5);
-  padding: var(--esp-5) var(--esp-6);
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde-control);
   border-radius: var(--radio-md);
   background: var(--color-superficie);
@@ -210,12 +210,8 @@
 
 .alta__ficha-titulo {
   color: var(--color-texto-fuerte);
-  font-weight: var(--peso-fuerte);
-}
-
-.alta__ficha-detalle {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
 }
 
 .alta__ficha-tilde {
@@ -234,8 +230,8 @@
   display: inline-grid;
   flex-shrink: 0;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radio-md);
   background: var(--color-accion-fondo);
   color: var(--color-accion-texto);
@@ -259,7 +255,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--esp-3);
-  padding: var(--esp-3) var(--esp-6);
+  padding: var(--esp-2) var(--esp-5);
   border-radius: var(--radio-sm);
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);

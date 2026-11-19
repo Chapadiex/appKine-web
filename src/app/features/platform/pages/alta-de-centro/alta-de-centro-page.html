@@ -184,15 +184,9 @@
           @for (servicio of servicios; track servicio.valor) {
             <label class="alta__ficha">
               <input type="checkbox" [formControlName]="servicio.valor" />
-              <app-icono
-                class="alta__ficha-icono"
-                [nombre]="detalleDeServicio[servicio.valor].icono"
-              />
+              <app-icono class="alta__ficha-icono" [nombre]="iconoDeServicio[servicio.valor]" />
               <span class="alta__ficha-texto">
                 <span class="alta__ficha-titulo">{{ servicio.etiqueta }}</span>
-                <span class="alta__ficha-detalle">{{
-                  detalleDeServicio[servicio.valor].para
-                }}</span>
               </span>
               <app-icono class="alta__ficha-tilde" nombre="tilde" />
             </label>
@@ -206,19 +200,16 @@
       <fieldset class="grupo alta__grupo">
         <legend>Adicional</legend>
         <label class="alta__ficha alta__ficha--ia">
-          <input type="checkbox" formControlName="ia" aria-describedby="alta-ia-ayuda" />
+          <input type="checkbox" formControlName="ia" />
           <span class="alta__ia-sello" aria-hidden="true">IA</span>
           <span class="alta__ficha-texto">
-            <span class="alta__ficha-titulo">Inteligencia artificial</span>
-            <span class="alta__ficha-detalle" id="alta-ia-ayuda"
-              >Asistente y dictado; con Kinesiología, también evolución y biblioteca</span
-            >
+            <span class="alta__ficha-titulo">Sumar inteligencia artificial</span>
           </span>
           <app-icono class="alta__ficha-tilde" nombre="tilde" />
         </label>
       </fieldset>
 
-      <fieldset class="grupo alta__grupo" aria-describedby="alta-prueba-ayuda">
+      <fieldset class="grupo alta__grupo">
         <legend>Modalidad</legend>
         <div class="alta__segmentado">
           <label class="alta__segmento">
@@ -230,9 +221,6 @@
             <app-icono nombre="exito" />Activo desde hoy
           </label>
         </div>
-        <p class="ayuda ayuda--fija" id="alta-prueba-ayuda">
-          Al terminar la prueba queda en solo lectura hasta pasar a contrato.
-        </p>
       </fieldset>
     </section>
 
