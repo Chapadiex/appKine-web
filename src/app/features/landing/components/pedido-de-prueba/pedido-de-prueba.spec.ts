@@ -40,6 +40,26 @@ describe('PedidoDePrueba', () => {
     expect(raiz.querySelector('#pedido-email-error')).not.toBeNull();
   });
 
+  it('marca un campo recién después de editarlo y salir, no al pasar por él', () => {
+    const fixture = crear();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const nombre = raiz.querySelector<HTMLInputElement>('#pedido-nombre')!;
+
+    salir(nombre);
+    fixture.detectChanges();
+    expect(nombre.getAttribute('aria-invalid')).toBe('false');
+
+    escribir(fixture, '#pedido-nombre', 'A');
+    escribir(fixture, '#pedido-nombre', '');
+    // Mientras escribe, aunque ya haya pasado por el campo, todavía no.
+    expect(nombre.getAttribute('aria-invalid')).toBe('false');
+    salir(nombre);
+    fixture.detectChanges();
+    expect(nombre.getAttribute('aria-invalid')).toBe('true');
+    expect(nombre.getAttribute('aria-describedby')).toBe('pedido-nombre-error');
+    expect(raiz.querySelector('#pedido-nombre-error')!.textContent).toContain('Error:');
+  });
+
   it('envía el cuerpo con lo elegido en el armador, la clave de intento y muestra el éxito', async () => {
     eleccion.sedes.set('hasta-tres');
     eleccion.servicios.set('ambos');
@@ -117,6 +137,12 @@ describe('PedidoDePrueba', () => {
       'El correo no es válido.',
     );
   });
+
+  /** Lo que hace el navegador al dejar un campo: blur en el campo y focusout que burbujea. */
+  function salir(campo: HTMLElement): void {
+    campo.dispatchEvent(new FocusEvent('blur'));
+    campo.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  }
 
   function crear() {
     const fixture = TestBed.createComponent(PedidoDePrueba);

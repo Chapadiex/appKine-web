@@ -7,7 +7,7 @@
   overflow: hidden;
   background: var(--color-banda-fondo);
   color: var(--color-banda-texto);
-  scroll-margin-top: 4rem;
+  scroll-margin-top: 4.5rem;
 }
 
 .ia .forma {
@@ -36,6 +36,7 @@
 .ia__nota,
 .ia__funcion dd {
   color: var(--color-banda-texto-suave);
+  text-wrap: pretty;
 }
 
 .ia ::selection {
@@ -79,6 +80,8 @@
   padding-block-start: var(--esp-6);
   border-block-start: var(--borde-fino) solid var(--color-banda-borde);
   font-size: var(--tipo-sm);
+  max-width: 65ch;
+  text-wrap: pretty;
 }
 
 .charla {

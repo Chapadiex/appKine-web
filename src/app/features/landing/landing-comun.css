@@ -40,7 +40,8 @@
 .seccion {
   position: relative;
   padding-block: var(--seccion-y);
-  scroll-margin-top: 4rem;
+  /* La cabecera fija mide 4rem más su borde: el ancla no queda debajo. */
+  scroll-margin-top: 4.5rem;
 }
 
 .seccion__titulo {
@@ -59,4 +60,5 @@
   color: var(--color-texto-suave);
   font-size: var(--tipo-lg);
   line-height: 1.55;
+  text-wrap: pretty;
 }

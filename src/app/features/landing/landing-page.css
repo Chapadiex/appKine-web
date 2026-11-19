@@ -57,8 +57,8 @@
 .logo__marca {
   display: inline-grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
   border-radius: 10px 10px 10px 3px;
   background: var(--color-landing-menta);
   color: var(--color-landing-menta-texto);
@@ -176,6 +176,23 @@
   stroke: var(--color-landing-menta);
   stroke-width: 5;
   stroke-linecap: round;
+}
+
+.portada__bajada,
+.servicio__para,
+.servicio__lista li,
+.momento__texto,
+.rasgo,
+.sedes__lista li,
+.pasos li,
+.pregunta p,
+.pie__marca p {
+  text-wrap: pretty;
+}
+
+.servicio__titulo,
+.momento__titulo {
+  text-wrap: balance;
 }
 
 .portada__bajada {
@@ -359,7 +376,6 @@
   border: 3px solid var(--color-landing-menta);
   border-radius: 50%;
   background: var(--color-landing-menta-tinte);
-  transition: background-color 200ms ease-out;
 }
 
 .momento:hover .momento__hora::after {
@@ -499,8 +515,8 @@
   content: counter(paso);
   display: grid;
   place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  min-inline-size: 2.5rem;
+  min-block-size: 2.5rem;
   border-radius: 50%;
   background: var(--color-landing-accion);
   color: var(--color-landing-accion-texto);
@@ -541,8 +557,8 @@
 .pregunta summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-6);
+  gap: var(--esp-5);
+  text-wrap: balance;
   padding-block: var(--esp-7);
   color: var(--color-texto-fuerte);
   font-size: var(--tipo-lg);
@@ -566,11 +582,21 @@
   border-radius: 50%;
   background: var(--color-landing-coral-tinte);
   color: var(--color-landing-coral);
-  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  rotate: -90deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pregunta summary app-icono {
+    transition: rotate 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.pregunta summary:dir(rtl) app-icono {
+  rotate: 90deg;
 }
 
 .pregunta[open] summary app-icono {
-  transform: rotate(180deg);
+  rotate: 0deg;
 }
 
 .pregunta p {
@@ -697,12 +723,5 @@
     width: 26rem;
     height: 24rem;
     right: -12rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .momento__hora::after,
-  .pregunta summary app-icono {
-    transition: none;
   }
 }

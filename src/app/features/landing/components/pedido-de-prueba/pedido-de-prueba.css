@@ -94,7 +94,6 @@
   font-size: 1.5rem;
 }
 
-
 .pedido-ok__pasos {
   display: grid;
   gap: var(--esp-3);
@@ -110,4 +109,39 @@
 
 .pedido__ia {
   margin-block-end: var(--esp-6);
+}
+
+/* El asterisco de obligatorio: se explica una vez arriba; el lector de pantalla oye `required`. */
+.pedido__requerido {
+  color: var(--color-peligro);
+}
+
+/* Cada error empieza con el mismo icono (su texto alternativo es "Error:"), no sólo con color. */
+.pedido__error {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp-3);
+  text-wrap: pretty;
+}
+
+.pedido__error app-icono {
+  transform: translateY(0.2em);
+}
+
+/* En el teléfono un campo de menos de 16 px hace que iOS acerque la página al enfocarlo. */
+.pedido input:not([type='checkbox']),
+.pedido textarea {
+  font-size: max(1rem, 1em);
+}
+
+.pedido__titulo,
+.pedido-ok__titulo {
+  text-wrap: balance;
+}
+
+.pedido__bajada,
+.pedido-ok p,
+.pedido-ok li {
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }

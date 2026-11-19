@@ -18,10 +18,11 @@
   </div>
 } @else {
   <h3 class="pedido__titulo" id="pedido-titulo">Pedí tu prueba</h3>
-  <p class="pedido__bajada">Todos los campos son obligatorios salvo los que dicen opcional.</p>
+  <p class="pedido__bajada">Los campos con <span aria-hidden="true">*</span> son obligatorios.</p>
 
   <form
     class="pedido"
+    (focusout)="alSalir($event)"
     [formGroup]="formulario"
     (ngSubmit)="enviar()"
     novalidate
@@ -37,9 +38,13 @@
     }
 
     <div class="campo campo--3">
-      <label for="pedido-nombre">Nombre</label>
+      <label for="pedido-nombre"
+        >Nombre <span class="pedido__requerido" aria-hidden="true">*</span></label
+      >
       <input
         id="pedido-nombre"
+        name="nombre"
+        required
         type="text"
         formControlName="nombre"
         autocomplete="given-name"
@@ -47,16 +52,21 @@
         [attr.aria-describedby]="mostrarError('nombre') ? 'pedido-nombre-error' : null"
       />
       @if (mostrarError('nombre')) {
-        <p class="campo__error" id="pedido-nombre-error">
-          {{ errorDelServidor('nombre') ?? 'Escribí tu nombre.' }}
+        <p class="campo__error pedido__error" id="pedido-nombre-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('nombre') ?? 'Escribí tu nombre.' }}
         </p>
       }
     </div>
 
     <div class="campo campo--3">
-      <label for="pedido-apellido">Apellido</label>
+      <label for="pedido-apellido"
+        >Apellido <span class="pedido__requerido" aria-hidden="true">*</span></label
+      >
       <input
         id="pedido-apellido"
+        name="apellido"
+        required
         type="text"
         formControlName="apellido"
         autocomplete="family-name"
@@ -64,25 +74,34 @@
         [attr.aria-describedby]="mostrarError('apellido') ? 'pedido-apellido-error' : null"
       />
       @if (mostrarError('apellido')) {
-        <p class="campo__error" id="pedido-apellido-error">
-          {{ errorDelServidor('apellido') ?? 'Escribí tu apellido.' }}
+        <p class="campo__error pedido__error" id="pedido-apellido-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('apellido') ?? 'Escribí tu apellido.' }}
         </p>
       }
     </div>
 
     <div class="campo campo--4">
-      <label for="pedido-email">Correo electrónico</label>
+      <label for="pedido-email"
+        >Correo electrónico <span class="pedido__requerido" aria-hidden="true">*</span></label
+      >
       <input
         id="pedido-email"
+        name="email"
+        required
         type="email"
         formControlName="email"
         autocomplete="email"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
         [attr.aria-invalid]="mostrarError('email')"
         [attr.aria-describedby]="mostrarError('email') ? 'pedido-email-error' : null"
       />
       @if (mostrarError('email')) {
-        <p class="campo__error" id="pedido-email-error">
-          {{ errorDelServidor('email') ?? 'Escribí un correo válido: ahí te mandamos el acceso.' }}
+        <p class="campo__error pedido__error" id="pedido-email-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('email') ?? 'Escribí un correo válido: ahí te mandamos el acceso.' }}
         </p>
       }
     </div>
@@ -91,6 +110,7 @@
       <label for="pedido-telefono">Teléfono (opcional)</label>
       <input
         id="pedido-telefono"
+        name="telefono"
         type="tel"
         formControlName="telefono"
         autocomplete="tel"
@@ -98,14 +118,21 @@
         [attr.aria-describedby]="mostrarError('telefono') ? 'pedido-telefono-error' : null"
       />
       @if (mostrarError('telefono')) {
-        <p class="campo__error" id="pedido-telefono-error">{{ errorDelServidor('telefono') }}</p>
+        <p class="campo__error pedido__error" id="pedido-telefono-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('telefono') }}
+        </p>
       }
     </div>
 
     <div class="campo campo--4">
-      <label for="pedido-nombreCentro">Nombre del centro</label>
+      <label for="pedido-nombreCentro"
+        >Nombre del centro <span class="pedido__requerido" aria-hidden="true">*</span></label
+      >
       <input
         id="pedido-nombreCentro"
+        name="nombreCentro"
+        required
         type="text"
         formControlName="nombreCentro"
         autocomplete="organization"
@@ -113,8 +140,9 @@
         [attr.aria-describedby]="mostrarError('nombreCentro') ? 'pedido-nombreCentro-error' : null"
       />
       @if (mostrarError('nombreCentro')) {
-        <p class="campo__error" id="pedido-nombreCentro-error">
-          {{ errorDelServidor('nombreCentro') ?? 'Escribí el nombre del centro.' }}
+        <p class="campo__error pedido__error" id="pedido-nombreCentro-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('nombreCentro') ?? 'Escribí el nombre del centro.' }}
         </p>
       }
     </div>
@@ -123,6 +151,7 @@
       <label for="pedido-ciudad">Ciudad (opcional)</label>
       <input
         id="pedido-ciudad"
+        name="ciudad"
         type="text"
         formControlName="ciudad"
         autocomplete="address-level2"
@@ -130,7 +159,10 @@
         [attr.aria-describedby]="mostrarError('ciudad') ? 'pedido-ciudad-error' : null"
       />
       @if (mostrarError('ciudad')) {
-        <p class="campo__error" id="pedido-ciudad-error">{{ errorDelServidor('ciudad') }}</p>
+        <p class="campo__error pedido__error" id="pedido-ciudad-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('ciudad') }}
+        </p>
       }
     </div>
 
@@ -140,20 +172,33 @@
       [attr.aria-invalid]="mostrarError('servicios')"
       [attr.aria-describedby]="mostrarError('servicios') ? 'pedido-servicios-error' : null"
     >
-      <legend>¿Qué servicios te interesan?</legend>
+      <legend>
+        ¿Qué servicios te interesan? <span class="pedido__requerido" aria-hidden="true">*</span>
+      </legend>
       <div class="pedido__opciones">
         <label class="pedido__casilla">
-          <input id="pedido-kinesiologia" type="checkbox" formControlName="kinesiologia" />
+          <input
+            id="pedido-kinesiologia"
+            name="kinesiologia"
+            type="checkbox"
+            formControlName="kinesiologia"
+          />
           Kinesiología y rehabilitación
         </label>
         <label class="pedido__casilla">
-          <input id="pedido-actividades" type="checkbox" formControlName="actividades" />
+          <input
+            id="pedido-actividades"
+            name="actividades"
+            type="checkbox"
+            formControlName="actividades"
+          />
           Actividades
         </label>
       </div>
       @if (mostrarError('servicios')) {
-        <p class="campo__error" id="pedido-servicios-error">
-          {{ errorDelServidor('servicios') ?? 'Elegí al menos uno.' }}
+        <p class="campo__error pedido__error" id="pedido-servicios-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('servicios') ?? 'Elegí al menos uno.' }}
         </p>
       }
     </fieldset>
@@ -166,12 +211,20 @@
         [opciones]="opcionesDeSedes"
       />
       @if (mostrarError('sedes')) {
-        <p class="campo__error">{{ errorDelServidor('sedes') ?? 'Elegí cuántas sedes.' }}</p>
+        <p class="campo__error pedido__error" id="pedido-sedes-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('sedes') ?? 'Elegí cuántas sedes.' }}
+        </p>
       }
     </div>
 
     <label class="pedido__casilla pedido__ia">
-      <input type="checkbox" formControlName="interesaIa" />
+      <input
+        id="pedido-interesaIa"
+        name="interesaIa"
+        type="checkbox"
+        formControlName="interesaIa"
+      />
       Me interesa sumar la inteligencia artificial
     </label>
 
@@ -179,18 +232,24 @@
       <label for="pedido-comentario">Algo más que quieras contarnos (opcional)</label>
       <textarea
         id="pedido-comentario"
+        name="comentario"
         rows="3"
         formControlName="comentario"
         [attr.maxlength]="maximoComentario"
         [attr.aria-invalid]="mostrarError('comentario')"
-        aria-describedby="pedido-comentario-cuenta"
+        [attr.aria-describedby]="
+          mostrarError('comentario')
+            ? 'pedido-comentario-cuenta pedido-comentario-error'
+            : 'pedido-comentario-cuenta'
+        "
       ></textarea>
       <p class="ayuda ayuda--fija" id="pedido-comentario-cuenta">
         {{ largoDelComentario() }} de {{ maximoComentario }} caracteres
       </p>
       @if (mostrarError('comentario')) {
-        <p class="campo__error">
-          {{ errorDelServidor('comentario') ?? 'Hasta ' + maximoComentario + ' caracteres.' }}
+        <p class="campo__error pedido__error" id="pedido-comentario-error">
+          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+          >{{ errorDelServidor('comentario') ?? 'Hasta ' + maximoComentario + ' caracteres.' }}
         </p>
       }
     </div>
@@ -200,12 +259,15 @@
       <label for="pedido-sitioWeb">Sitio web</label>
       <input
         id="pedido-sitioWeb"
+        name="sitioWeb"
         type="text"
         formControlName="sitioWeb"
         tabindex="-1"
         autocomplete="off"
       />
     </div>
+
+    <p class="visualmente-oculto" aria-live="polite">{{ anuncio() }}</p>
 
     <div class="pedido__acciones">
       <button type="submit" class="boton boton--grande" [disabled]="bloqueado()">

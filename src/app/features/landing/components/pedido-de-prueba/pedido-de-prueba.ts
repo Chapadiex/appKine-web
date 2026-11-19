@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   afterNextRender,
   computed,
@@ -129,10 +130,21 @@ export class PedidoDePrueba {
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
   protected readonly bloqueado = computed(() => this.enviando() || this.espera.activa());
 
+  /** Campos que el visitante editó y después dejó: recién ahí se marcan sus errores. */
+  private readonly editadosYDejados = signal<ReadonlySet<Campo>>(new Set());
+
+  /** Texto de la única región viva del formulario: el error de un campo, al salir de él. */
+  protected readonly anuncio = signal('');
+  private readonly anunciados = new Set<Campo>();
+  private campoAnunciado: Campo | null = null;
+  private temporizadorDeAnuncio: ReturnType<typeof setTimeout> | undefined;
+
   private clave: string | null = null;
   private firmaDeLaClave: string | null = null;
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.temporizadorDeAnuncio));
+
     // Lo elegido en el armador precarga lo que el visitante todavía no tocó acá.
     const eleccion = this.eleccion;
     if (eleccion !== null) {
@@ -145,7 +157,11 @@ export class PedidoDePrueba {
     }
 
     for (const campo of CAMPOS) {
-      (this.formulario.controls[campo] as AbstractControl).valueChanges.subscribe(() => {
+      const control = this.formulario.controls[campo] as AbstractControl;
+      control.valueChanges.subscribe(() => {
+        if (control.valid) {
+          this.olvidarAnuncio(campo);
+        }
         if (this.erroresDelServidor()[campo] !== undefined) {
           this.erroresDelServidor.update((errores) => {
             const resto = { ...errores };
@@ -155,6 +171,39 @@ export class PedidoDePrueba {
         }
       });
     }
+  }
+
+  /**
+   * Al salir de un campo que quedó con error, lo anuncia por la región viva medio segundo después,
+   * para no pisar al lector de pantalla cuando lee el campo siguiente. Una vez por error: se vuelve
+   * a anunciar sólo si el campo se corrigió y volvió a fallar.
+   */
+  protected alSalir(evento: FocusEvent): void {
+    const campo = campoDelElemento(evento.target);
+    if (campo === undefined) {
+      return;
+    }
+    if (this.formulario.controls[campo].dirty && !this.editadosYDejados().has(campo)) {
+      this.editadosYDejados.update((campos) => new Set(campos).add(campo));
+    }
+    clearTimeout(this.temporizadorDeAnuncio);
+    this.temporizadorDeAnuncio = setTimeout(() => {
+      if (!this.mostrarError(campo) || this.anunciados.has(campo)) {
+        return;
+      }
+      const raiz = this.host.nativeElement;
+      const error = raiz.querySelector<HTMLElement>(`#pedido-${campo}-error`);
+      if (error === null) {
+        return;
+      }
+      const etiqueta =
+        campo === 'servicios'
+          ? raiz.querySelector<HTMLElement>('.pedido__grupo legend')
+          : raiz.querySelector<HTMLElement>(`label[for="pedido-${campo}"]`);
+      this.anunciados.add(campo);
+      this.campoAnunciado = campo;
+      this.anuncio.set(`${textoLeido(etiqueta)}: ${textoLeido(error)}`);
+    }, 500);
   }
 
   /** Solo para tests y diagnóstico: la clave con la que salió el último envío. */
@@ -167,7 +216,9 @@ export class PedidoDePrueba {
       return true;
     }
     const control = this.formulario.controls[campo];
-    return control.invalid && (control.touched || this.intentos() > 0);
+    // Recién después de la interacción (editar y salir) o de intentar enviar: un campo vacío por el
+    // que sólo se pasó con Tab no se marca (Modern Web Guidance, validate-input-after-interaction).
+    return control.invalid && (this.editadosYDejados().has(campo) || this.intentos() > 0);
   }
 
   protected errorDelServidor(campo: Campo): string | undefined {
@@ -183,6 +234,13 @@ export class PedidoDePrueba {
 
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
+      // Tras un envío fallido el foco va al primer campo con error y el lector lo lee ahí: los
+      // errores de este intento ya no se anuncian al salir de cada campo.
+      for (const campo of CAMPOS) {
+        if (this.formulario.controls[campo].invalid) {
+          this.anunciados.add(campo);
+        }
+      }
       this.enfocarPrimerInvalido();
       return;
     }
@@ -204,6 +262,15 @@ export class PedidoDePrueba {
       },
       error: (error: unknown) => this.fallar(error),
     });
+  }
+
+  private olvidarAnuncio(campo: Campo): void {
+    this.anunciados.delete(campo);
+    if (this.campoAnunciado === campo) {
+      clearTimeout(this.temporizadorDeAnuncio);
+      this.campoAnunciado = null;
+      this.anuncio.set('');
+    }
   }
 
   private precargar(
@@ -335,4 +402,26 @@ export class PedidoDePrueba {
       { injector: this.injector },
     );
   }
+}
+
+/** El campo del formulario al que pertenece un control, por su `id` (`pedido-<campo>`). */
+function campoDelElemento(elemento: EventTarget | null): Campo | undefined {
+  if (!(elemento instanceof HTMLElement) || !elemento.id.startsWith('pedido-')) {
+    return undefined;
+  }
+  const nombre = elemento.id.slice('pedido-'.length);
+  if (nombre === 'kinesiologia' || nombre === 'actividades') {
+    return 'servicios';
+  }
+  return CAMPOS.find((campo) => campo === nombre);
+}
+
+/** El texto como lo lee un lector de pantalla: sin lo que está `aria-hidden`. */
+function textoLeido(elemento: HTMLElement | null): string {
+  if (elemento === null) {
+    return '';
+  }
+  const copia = elemento.cloneNode(true) as HTMLElement;
+  copia.querySelectorAll('[aria-hidden="true"]').forEach((nodo) => nodo.remove());
+  return (copia.textContent ?? '').replace(/\s+/g, ' ').trim();
 }

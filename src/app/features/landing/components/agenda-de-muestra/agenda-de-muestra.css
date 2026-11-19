@@ -88,7 +88,8 @@
 
 .cuerpo {
   position: relative;
-  grid-template-rows: repeat(8, var(--fila));
+  /* Mínimo, no fijo: con más espaciado de texto la fila crece en vez de recortar (WCAG 1.4.12). */
+  grid-template-rows: repeat(8, minmax(var(--fila), auto));
   row-gap: 0;
   padding-block: var(--esp-4) var(--esp-5);
   background: repeating-linear-gradient(
