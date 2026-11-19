@@ -9,9 +9,13 @@ import { ContratacionStore } from '../../core/services/contratacion.store';
 import { MarcaStore } from '../../core/services/marca.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
-import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
+import {
+  RUTA_INICIO_DE_PLATAFORMA,
+  RUTA_SOLICITUDES_DE_PLATAFORMA,
+} from '../../features/platform/models/rutas-de-plataforma';
 import {
   GRUPOS,
+  GRUPOS_DE_PLATAFORMA,
   GrupoDeSecciones,
   RUTA_INICIO,
   SECCION_PLATAFORMA,
@@ -70,7 +74,6 @@ export class NavegacionPrincipal {
     () => this.tenant.context()?.organizationName ?? '',
   );
 
-  protected readonly rutaInicio = RUTA_INICIO;
   protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
   protected readonly seccionPlataforma = SECCION_PLATAFORMA;
   protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
@@ -84,15 +87,32 @@ export class NavegacionPrincipal {
    * nombres de los contextos, la organizacion tiene un rotulo provisorio). Los permisos, en
    * cambio, se piden apenas hay contexto: es lo que adelanta.
    */
+  /**
+   * Consola de plataforma sin centro elegido (19/11/2026): la barra muestra sus grupos. Antes la
+   * consola quedaba sin barra y se recorria con pestañas sueltas.
+   */
+  protected readonly modoPlataforma = computed(
+    () =>
+      !this.hayContexto() &&
+      this.session.estado() !== 'anonimo' &&
+      this.rolDePlataforma.esAdminDePlataforma(),
+  );
+
   protected readonly mostrarBarra = computed(
-    () => !this.session.restaurando() && this.hayContexto(),
+    () => !this.session.restaurando() && (this.hayContexto() || this.modoPlataforma()),
+  );
+
+  protected readonly rutaInicio = computed(() =>
+    this.modoPlataforma() ? RUTA_INICIO_DE_PLATAFORMA : RUTA_INICIO,
   );
 
   protected readonly grupos = computed<readonly GrupoDeSecciones[]>(() =>
-    GRUPOS.map((grupo) => ({
-      ...grupo,
-      secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
-    })).filter((grupo) => grupo.secciones.length > 0),
+    (this.modoPlataforma() ? GRUPOS_DE_PLATAFORMA : GRUPOS)
+      .map((grupo) => ({
+        ...grupo,
+        secciones: grupo.secciones.filter((seccion) => this.visible(seccion)),
+      }))
+      .filter((grupo) => grupo.secciones.length > 0),
   );
 
   private readonly url = toSignal(

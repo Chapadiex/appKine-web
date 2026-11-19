@@ -51,7 +51,31 @@
     <ng-container #anclaPerfil />
   </div>
 } @else {
-  <a class="marca" [routerLink]="rutaInicio">AKINE</a>
+  @if (sesionResuelta() && esAdminDePlataforma()) {
+    <!--
+      Consola de plataforma (19/11/2026): tiene barra lateral propia, así que la barra superior hace
+      lo mismo que con un centro (menú en tablet y título de la pantalla) y no repite la marca.
+    -->
+    <div class="barra__izquierda">
+      <button
+        type="button"
+        class="menu"
+        aria-label="Menú de navegación"
+        title="Menú de navegación"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-controls="navegacion-principal"
+        (click)="alternar()"
+      >
+        <app-icono [nombre]="menuAbierto() ? 'cerrar' : 'menu'" />
+        <span class="visualmente-oculto">Menú de navegación</span>
+      </button>
+      @if (titulo()) {
+        <p class="titulo">{{ titulo() }}</p>
+      }
+    </div>
+  } @else {
+    <a class="marca" [routerLink]="rutaInicio">AKINE</a>
+  }
 
   @if (sesionResuelta() && faltaContexto()) {
     <!--
@@ -61,15 +85,6 @@
     <p class="contexto">
       <a class="contexto__cambiar" [routerLink]="rutaSelector">Elegí donde vas a trabajar</a>
     </p>
-    <!--
-      Un administrador de plataforma no es miembro de ningun centro: este es su unico camino a la
-      consola (AKINE-A-7).
-    -->
-    @if (esAdminDePlataforma()) {
-      <p class="contexto">
-        <a class="contexto__cambiar" [routerLink]="rutaPlataforma">Consola de plataforma</a>
-      </p>
-    }
 
     <!-- Sin sede todavia no hay selector, pero la cuenta y la salida estan en el mismo lugar. -->
     <div class="barra__derecha">

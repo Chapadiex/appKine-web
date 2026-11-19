@@ -228,6 +228,7 @@ model/cambiar-caso-de-sesion.ts
 model/cambiar-fin-honorario-por-clase-request.ts
 model/cambiar-fin-precio-particular-request.ts
 model/cambio-de-agenda.ts
+model/cambio-de-suscripcion-response.ts
 model/cancel-invitacion-request.ts
 model/cancelacion-en-lote.ts
 model/cancelar-clase.ts
@@ -245,6 +246,8 @@ model/catalogo-concepto-response.ts
 model/catalogo-de-reportes-response.ts
 model/catalogo-financiador-response.ts
 model/catalogo-solicitud-response.ts
+model/centro-reciente-response.ts
+model/centros-del-panel-response.ts
 model/cerrar-caja.ts
 model/cerrar-caso-clinico-request.ts
 model/cerrar-sesion.ts
@@ -317,6 +320,7 @@ model/create-servicio-request.ts
 model/create-vigencia-request.ts
 model/created-membership-response.ts
 model/cuenta-corriente-de-financiador.ts
+model/cuentas-de-plataforma-response.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
 model/datos-administrativos-de-historia-response.ts
@@ -497,6 +501,7 @@ model/organization-response.ts
 model/pagina-de-movimientos-de-pase.ts
 model/pago-de-egreso.ts
 model/pago-de-financiador.ts
+model/panel-de-plataforma-response.ts
 model/parametro-de-tratamiento-leido.ts
 model/parametro-de-tratamiento.ts
 model/participante-en-atencion-grupal.ts
@@ -506,6 +511,7 @@ model/pase-detalle.ts
 model/pase.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
+model/pedido-reciente-response.ts
 model/perfil-de-invitacion.ts
 model/permisos-otorgables-response.ts
 model/persona-page-response.ts
@@ -545,6 +551,7 @@ model/programar-serie-de-clases.ts
 model/proponer-evaluacion-dictada.ts
 model/propuesta-de-evaluacion-dictada.ts
 model/prueba-del-motor-response.ts
+model/prueba-que-termina-response.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts

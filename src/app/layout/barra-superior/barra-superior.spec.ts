@@ -70,7 +70,7 @@ describe('BarraSuperior', () => {
     tenant = TestBed.inject(TenantContextStore);
   });
 
-  it('sin contexto ofrece elegir donde trabajar, la consola solo a quien la administra, y la cuenta', async () => {
+  it('sin contexto ofrece elegir donde trabajar y la cuenta; a la plataforma, el menú de su barra lateral', async () => {
     estado.set('sin-contexto');
     const fixture = await montar();
     const html = fixture.nativeElement as HTMLElement;
@@ -86,11 +86,12 @@ describe('BarraSuperior', () => {
       expect(html.querySelector('app-menu-de-perfil')).not.toBeNull();
     });
 
+    // Desde el 19/11/2026 la consola tiene barra lateral propia: la barra superior no repite el
+    // enlace ni la marca, y muestra el menú como con un centro.
     adminDePlataforma.set(true);
     fixture.detectChanges();
-    expect(enlace(html, 'Consola de plataforma')?.getAttribute('href')).toBe(
-      '/plataforma/solicitudes',
-    );
+    expect(enlace(html, 'Consola de plataforma')).toBeUndefined();
+    expect(html.querySelector('button[aria-controls="navegacion-principal"]')).not.toBeNull();
   });
 
   it('con contexto dice donde estoy, donde trabajo y quien soy', async () => {

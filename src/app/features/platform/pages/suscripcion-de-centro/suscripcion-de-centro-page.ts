@@ -31,13 +31,14 @@ import {
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CENTROS,
 } from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
 import { ErrorContratacion, traducirErrorContratacion } from '../../models/contratacion-errors';
 import {
   SERVICIOS,
   Servicio,
+  MarcaDeEstado,
   diasRestantes,
   marcaDeSuscripcion,
   planesOfrecidos,
@@ -58,6 +59,13 @@ type Estado =
   | { readonly tipo: 'error'; readonly error: ErrorContratacion };
 
 type EstadoDeSuscripcion = NonNullable<ListPlatformOrganizationsRequestParams['status']>;
+
+const ESTADOS_DE_SUSCRIPCION: readonly EstadoDeSuscripcion[] = [
+  'PRUEBA',
+  'ACTIVA',
+  'SUSPENDIDA',
+  'CANCELADA',
+];
 
 /** Lo que el panel necesita del centro elegido: viene del listado o de la vuelta del alta. */
 type CentroElegido = Pick<PlatformOrganizationResponse, 'id' | 'name' | 'slug'>;
@@ -120,8 +128,10 @@ export class SuscripcionDeCentroPage implements OnInit {
   /** `?org=<id>&nombre=<nombre>`: abre el panel de ese centro (vuelta del alta). */
   readonly org = input<string | undefined>(undefined);
   readonly nombre = input<string | undefined>(undefined);
+  /** `?situacion=PRUEBA`: abre el listado ya filtrado (lo usan los indicadores del Inicio). */
+  readonly situacion = input<string | undefined>(undefined);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CENTROS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
   protected readonly servicios = SERVICIOS;
@@ -225,10 +235,16 @@ export class SuscripcionDeCentroPage implements OnInit {
       next: (planes) => this.planes.set(planesOfrecidos(planes)),
       error: () => this.planesNoDisponibles.set(true),
     });
-    this.listar(0);
   }
 
   ngOnInit(): void {
+    const estado = this.situacion();
+    if (estado !== undefined && (ESTADOS_DE_SUSCRIPCION as readonly string[]).includes(estado)) {
+      this.filtroDeEstado.set(estado as EstadoDeSuscripcion);
+      this.buscar();
+    } else {
+      this.listar(0);
+    }
     const id = Number(this.org());
     if (this.org() && Number.isInteger(id) && id > 0) {
       this.elegir({ id, name: this.nombre() ?? 'Centro nuevo' });
@@ -280,6 +296,23 @@ export class SuscripcionDeCentroPage implements OnInit {
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {
     return centro.id !== undefined && centro.id === this.centro()?.id;
+  }
+
+  /** Estado de la fila: una prueba con el plazo cumplido se rotula vencida (solo lectura). */
+  protected marcaDeFila(centro: PlatformOrganizationResponse): MarcaDeEstado {
+    const dias = diasRestantes(centro.pruebaHasta);
+    return marcaDeSuscripcion(
+      centro.status,
+      centro.status === 'PRUEBA' && dias !== null && dias <= 0,
+    );
+  }
+
+  /** Cuánto le queda a una prueba gratis; fuera de prueba, una raya. */
+  protected plazoDeFila(centro: PlatformOrganizationResponse): string {
+    const dias = centro.status === 'PRUEBA' ? diasRestantes(centro.pruebaHasta) : null;
+    if (dias === null) return '—';
+    if (dias <= 0) return 'Vencida';
+    return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
   }
 
   protected fechaDeAlta(centro: PlatformOrganizationResponse): string {
@@ -354,11 +387,6 @@ export class SuscripcionDeCentroPage implements OnInit {
           if (traducido.causa === 'conflicto') this.leer();
         },
       });
-  }
-
-  /** Modificador de `.marca-estado` del listado (el estado guardado). */
-  protected claseDeEstado(estado: string | undefined): string {
-    return marcaDeSuscripcion(estado).clase;
   }
 
   protected nombreDePlan(codigo: string | undefined): string {

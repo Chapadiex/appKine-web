@@ -18,7 +18,6 @@ import { filter, map, startWith } from 'rxjs';
 
 import { Icono } from '../../shared/components/icono/icono';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
-import { RUTA_SOLICITUDES_DE_PLATAFORMA } from '../../features/platform/models/rutas-de-plataforma';
 import { RUTA_INICIO } from '../navegacion-principal/secciones';
 import { RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { SessionService } from '../../core/services/session.service';
@@ -70,7 +69,6 @@ export class BarraSuperior {
 
   protected readonly rutaInicio = RUTA_INICIO;
   protected readonly rutaSelector = RUTA_SELECTOR_CONTEXTO;
-  protected readonly rutaPlataforma = RUTA_SOLICITUDES_DE_PLATAFORMA;
   protected readonly esAdminDePlataforma = this.rolDePlataforma.esAdminDePlataforma;
 
   protected readonly sesionResuelta = computed(() => !this.session.restaurando());

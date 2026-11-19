@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Suscripción de un centro">
+<app-cabecera-de-pagina titulo="Centros y suscripciones">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
       Lo que tiene contratado cada centro: plan (cuántas sedes), servicios y adicional de IA, el
@@ -111,6 +111,7 @@
                 </th>
                 <th scope="col">Plan</th>
                 <th scope="col">Suscripción</th>
+                <th scope="col">Plazo de la prueba</th>
                 <th
                   scope="col"
                   class="tabla__col--secundaria"
@@ -133,12 +134,11 @@
                   <td class="tabla__col--secundaria">{{ c.slug }}</td>
                   <td>{{ c.planName ?? nombreDePlan(c.planCode) }}</td>
                   <td>
-                    <span
-                      class="marca-estado"
-                      [class]="'marca-estado ' + claseDeEstado(c.status)"
-                      >{{ marcaDeSuscripcion(c.status).texto }}</span
-                    >
+                    <span class="marca-estado" [class]="'marca-estado ' + marcaDeFila(c).clase">{{
+                      marcaDeFila(c).texto
+                    }}</span>
                   </td>
+                  <td class="tabla__col--secundaria">{{ plazoDeFila(c) }}</td>
                   <td class="tabla__col--secundaria">{{ fechaDeAlta(c) }}</td>
                   <td class="tabla__acciones">
                     <button
@@ -147,7 +147,7 @@
                       [attr.aria-label]="'Ver la suscripción de ' + c.name"
                       (click)="elegir(c)"
                     >
-                      Ver la suscripción
+                      Gestionar
                     </button>
                   </td>
                 </tr>

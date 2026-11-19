@@ -1,0 +1,188 @@
+<app-cabecera-de-pagina titulo="Inicio">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      El estado de la plataforma de un vistazo: cuántos centros hay y en qué situación, qué necesita
+      una acción y lo último que pasó. Cada número abre su listado. Los datos se leen al entrar;
+      «Actualizar» los vuelve a pedir.
+    </p>
+  </app-ayuda>
+
+  <span cabeceraContexto class="inicio__fecha">{{ hoy }}</span>
+
+  <button cabeceraAcciones type="button" class="boton boton--secundario" (click)="cargar()">
+    <app-icono nombre="repetir" />Actualizar
+  </button>
+  <a cabeceraAcciones class="boton" [routerLink]="rutaAlta">
+    <app-icono nombre="agregar" />Dar de alta un centro
+  </a>
+</app-cabecera-de-pagina>
+
+@if (panel().tipo === 'error') {
+  <p class="estado estado--error" role="alert">
+    No pudimos leer el estado de la plataforma. Probá «Actualizar» en un momento.
+  </p>
+}
+
+<section
+  class="indicadores"
+  aria-label="Indicadores principales"
+  [attr.aria-busy]="panel().tipo === 'cargando'"
+>
+  @for (indicador of indicadores(); track indicador.id) {
+    <a
+      class="indicador"
+      [class.indicador--atencion]="indicador.atencion && (indicador.valor ?? 0) > 0"
+      [routerLink]="indicador.ruta"
+      [queryParams]="indicador.filtro ?? null"
+      [attr.data-testid]="'indicador-' + indicador.id"
+    >
+      <span class="indicador__rotulo">
+        <app-icono class="indicador__icono" [nombre]="indicador.icono" />{{ indicador.rotulo }}
+      </span>
+      <span class="indicador__valor">{{ indicador.valor ?? '—' }}</span>
+      <span class="indicador__detalle">{{ indicador.detalle }}</span>
+    </a>
+  }
+</section>
+
+<div class="tablero">
+  <section class="tarjeta panel panel--atencion" aria-labelledby="atencion-titulo">
+    <header class="panel__cabecera">
+      <h2 id="atencion-titulo" class="panel__titulo">Necesita atención</h2>
+      <a class="panel__enlace" [routerLink]="rutaCentros" [queryParams]="{ situacion: 'PRUEBA' }"
+        >Ver centros en prueba</a
+      >
+    </header>
+
+    @if (cuentasBloqueadas() > 0) {
+      <p class="aviso-fila">
+        <span class="marca-estado marca-estado--suspendida">
+          <app-icono nombre="candado" />{{ cuentasBloqueadas() }}
+          {{ cuentasBloqueadas() === 1 ? 'cuenta bloqueada' : 'cuentas bloqueadas' }}
+        </span>
+        Se desbloquean desde la cuenta de cada persona.
+      </p>
+    }
+
+    @if (pruebas().length === 0 && panel().tipo === 'listo') {
+      <p class="panel__vacio">
+        <app-icono nombre="exito" />Ninguna prueba termina en los próximos 30 días.
+      </p>
+    } @else {
+      <table class="tabla tabla--compacta">
+        <caption class="visualmente-oculto">
+          Pruebas gratis vencidas o que terminan en 30 días
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Centro</th>
+            <th scope="col">Situación</th>
+            <th scope="col">Plazo</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (prueba of pruebas(); track prueba.organizationId) {
+            <tr>
+              <td class="celda-fuerte">{{ prueba.nombre }}</td>
+              <td>
+                <span class="marca-estado {{ prueba.marca.clase }}">
+                  <app-icono [nombre]="prueba.vencida ? 'advertencia' : 'calendario'" />{{
+                    prueba.marca.texto
+                  }}
+                </span>
+              </td>
+              <td class="celda-suave">{{ prueba.cuando }}</td>
+              <td class="celda-accion">
+                <a
+                  class="boton boton--secundario boton--chico"
+                  [routerLink]="rutaCentros"
+                  [queryParams]="{ org: prueba.organizationId, nombre: prueba.nombre }"
+                  >Gestionar</a
+                >
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+  <section class="tarjeta panel" aria-labelledby="pedidos-titulo">
+    <header class="panel__cabecera">
+      <h2 id="pedidos-titulo" class="panel__titulo">Últimos pedidos de prueba</h2>
+      <a class="panel__enlace" [routerLink]="rutaPedidos">Ver todos</a>
+    </header>
+    @if ((datos()?.ultimosPedidos ?? []).length === 0 && panel().tipo === 'listo') {
+      <p class="panel__vacio">Todavía no llegó ningún pedido desde la página pública.</p>
+    }
+    <ul class="actividad">
+      @for (pedido of datos()?.ultimosPedidos ?? []; track pedido.id) {
+        <li class="actividad__item">
+          <span class="actividad__principal">
+            <span class="celda-fuerte">{{ pedido.nombreCentro }}</span>
+            <span class="celda-suave">{{ pedido.persona }}</span>
+          </span>
+          <span class="actividad__lado">
+            <span class="marca-estado {{ marcaDelPedido(pedido.estado).clase }}">{{
+              marcaDelPedido(pedido.estado).texto
+            }}</span>
+            <time class="celda-suave" [attr.datetime]="pedido.recibidoEn">{{
+              fecha(pedido.recibidoEn)
+            }}</time>
+          </span>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="tarjeta panel" aria-labelledby="centros-titulo">
+    <header class="panel__cabecera">
+      <h2 id="centros-titulo" class="panel__titulo">Centros recientes</h2>
+      <a class="panel__enlace" [routerLink]="rutaCentros">Ver todos</a>
+    </header>
+    <ul class="actividad">
+      @for (centro of datos()?.ultimosCentros ?? []; track centro.organizationId) {
+        <li class="actividad__item">
+          <a
+            class="actividad__principal actividad__enlace"
+            [routerLink]="rutaCentros"
+            [queryParams]="{ org: centro.organizationId, nombre: centro.nombre }"
+          >
+            <span class="celda-fuerte">{{ centro.nombre }}</span>
+            <time class="celda-suave" [attr.datetime]="centro.creadoEn"
+              >Alta {{ fecha(centro.creadoEn) }}</time
+            >
+          </a>
+          <span class="marca-estado {{ marcaDeCentro(centro.estado).clase }}">{{
+            marcaDeCentro(centro.estado).texto
+          }}</span>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="tarjeta panel" aria-labelledby="cambios-titulo">
+    <header class="panel__cabecera">
+      <h2 id="cambios-titulo" class="panel__titulo">Cambios de suscripción</h2>
+    </header>
+    @if ((datos()?.ultimosCambios ?? []).length === 0 && panel().tipo === 'listo') {
+      <p class="panel__vacio">Sin cambios registrados.</p>
+    }
+    <ol class="actividad actividad--linea">
+      @for (cambio of datos()?.ultimosCambios ?? []; track $index) {
+        <li class="actividad__item">
+          <span class="actividad__principal">
+            <span class="celda-fuerte">{{ cambio.nombre }}</span>
+            <span class="celda-suave">
+              {{ rotuloDeEstado(cambio.desde) }} → {{ rotuloDeEstado(cambio.hacia) }}
+            </span>
+          </span>
+          <time class="celda-suave" [attr.datetime]="cambio.cuando">{{
+            fecha(cambio.cuando)
+          }}</time>
+        </li>
+      }
+    </ol>
+  </section>
+</div>

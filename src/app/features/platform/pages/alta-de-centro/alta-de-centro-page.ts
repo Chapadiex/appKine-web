@@ -50,7 +50,7 @@ import {
 } from '../../models/contratacion';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CENTROS,
 } from '../../models/pestanas-de-plataforma';
 import {
   RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
@@ -138,7 +138,7 @@ export class AltaDeCentroPage implements OnInit {
   /** `?solicitud=<id>` (binding de inputs del router). */
   readonly solicitud = input<string | undefined>(undefined);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CENTROS;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly rutaPedidos = RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA;
   protected readonly zonas = ZONAS;

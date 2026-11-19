@@ -21,3 +21,4 @@ export const RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/ped
 
 /** Alta de un centro desde la plataforma; con `?solicitud=<id>` aprueba un pedido de prueba. */
 export const RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/centros/nuevo`;
+export const RUTA_INICIO_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/inicio`;

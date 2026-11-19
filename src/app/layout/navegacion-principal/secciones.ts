@@ -1,5 +1,13 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
+  RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA,
+  RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
+  RUTA_INICIO_DE_PLATAFORMA,
+  RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
+  RUTA_SOLICITUDES_DE_PLATAFORMA,
+  RUTA_SUSCRIPCIONES_DE_PLATAFORMA,
+} from '../../features/platform/models/rutas-de-plataforma';
+import {
   PERMISO_BIBLIOTECA_CONSULTAR,
   PERMISO_ASISTENTE_USE,
   PERMISO_BIBLIOTECA_MANAGE,
@@ -289,6 +297,36 @@ export const SECCION_PLATAFORMA: Seccion = { etiqueta: 'Plataforma', ruta: '/pla
 export const SECCIONES_DE_CUENTA: readonly Seccion[] = [
   { etiqueta: 'Mi perfil', ruta: RUTA_MI_PERFIL },
   { etiqueta: 'Preferencias', ruta: RUTA_PREFERENCIAS },
+];
+
+/**
+ * La barra lateral de la consola de plataforma (19/11/2026): la ve quien administra la plataforma
+ * sin un centro elegido. Antes la consola no tenia barra y se recorria por pestañas sueltas.
+ */
+export const GRUPOS_DE_PLATAFORMA: readonly GrupoDeSecciones[] = [
+  {
+    etiqueta: 'Inicio',
+    icono: 'plataforma',
+    secciones: [{ etiqueta: 'Inicio', ruta: RUTA_INICIO_DE_PLATAFORMA }],
+  },
+  {
+    etiqueta: 'Centros',
+    icono: 'edificio',
+    secciones: [
+      { etiqueta: 'Centros y suscripciones', ruta: RUTA_SUSCRIPCIONES_DE_PLATAFORMA },
+      { etiqueta: 'Pedidos de prueba', ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA },
+      { etiqueta: 'Dar de alta un centro', ruta: RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA },
+    ],
+  },
+  {
+    etiqueta: 'Catálogo',
+    icono: 'capas',
+    secciones: [
+      { etiqueta: 'Solicitudes de catálogo', ruta: RUTA_SOLICITUDES_DE_PLATAFORMA },
+      { etiqueta: 'Catálogo de servicios', ruta: '/servicios/catalogo' },
+      { etiqueta: 'Catálogo de financiadores', ruta: RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA },
+    ],
+  },
 ];
 
 /** A donde va quien entra por `/`: la agenda es la unica seccion que todo contexto puede abrir. */

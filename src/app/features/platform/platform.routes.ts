@@ -9,6 +9,16 @@ import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
  */
 export const routes: Routes = [
   {
+    // Inicio de la consola (19/11/2026): estado general, lo que necesita atencion y la actividad.
+    path: 'inicio',
+    loadComponent: () =>
+      import('./pages/inicio-de-plataforma/inicio-de-plataforma-page').then(
+        (m) => m.InicioDePlataformaPage,
+      ),
+    title: 'AKINE - Inicio de la plataforma',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     path: 'solicitudes',
     loadComponent: () =>
       import('./pages/solicitudes-catalogo/solicitudes-catalogo-page').then(
@@ -39,7 +49,7 @@ export const routes: Routes = [
       import('./pages/suscripcion-de-centro/suscripcion-de-centro-page').then(
         (m) => m.SuscripcionDeCentroPage,
       ),
-    title: 'AKINE - Suscripción de un centro',
+    title: 'AKINE - Centros y suscripciones',
   },
   {
     // DP-43 (U-12): el catalogo global que los centros adoptan por copia.
@@ -51,5 +61,5 @@ export const routes: Routes = [
     title: 'AKINE - Catálogo de financiadores',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
-  { path: '', pathMatch: 'full', redirectTo: 'solicitudes' },
+  { path: '', pathMatch: 'full', redirectTo: 'inicio' },
 ];

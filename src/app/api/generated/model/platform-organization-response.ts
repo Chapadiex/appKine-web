@@ -18,6 +18,10 @@ export interface PlatformOrganizationResponse {
      */
     createdAt?: string;
     /**
+     * Tiene el adicional de IA contratado
+     */
+    ia?: boolean;
+    /**
      * Identificador de la organizacion
      */
     id?: number;
@@ -33,6 +37,10 @@ export interface PlatformOrganizationResponse {
      * Nombre comercial del plan contratado
      */
     planName?: string;
+    /**
+     * Fin de la prueba gratis, instante UTC. Solo en PRUEBA; vencido = solo lectura
+     */
+    pruebaHasta?: string;
     /**
      * Identificador legible y unico del centro
      */

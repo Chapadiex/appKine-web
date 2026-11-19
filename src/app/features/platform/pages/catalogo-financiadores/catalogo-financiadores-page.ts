@@ -26,7 +26,7 @@ import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { PlanesDelCatalogo } from '../../components/planes-del-catalogo/planes-del-catalogo';
 import {
   ETIQUETA_PESTANAS_DE_PLATAFORMA,
-  PESTANAS_DE_PLATAFORMA,
+  PESTANAS_DE_CATALOGO_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import {
   releeElCatalogo,
@@ -109,7 +109,7 @@ export class CatalogoFinanciadoresPage {
   private readonly avisos = inject(AvisosStore);
   private readonly formBuilder = inject(FormBuilder);
 
-  protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
+  protected readonly pestanasDePlataforma = PESTANAS_DE_CATALOGO_DE_PLATAFORMA;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
   protected readonly tipos = TIPOS;
 
