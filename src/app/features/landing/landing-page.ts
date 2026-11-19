@@ -1,5 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+
+import { publicarMetadatosDeLanding } from './models/metadatos-de-landing';
 
 import { RUTA_LOGIN } from '../../core/models/rutas';
 import { Icono, NombreDeIcono } from '../../shared/components/icono/icono';
@@ -59,6 +63,10 @@ interface Pregunta {
 })
 export class LandingPage {
   protected readonly rutaLogin = RUTA_LOGIN;
+
+  constructor() {
+    publicarMetadatosDeLanding(inject(Meta), inject(DOCUMENT), inject(DestroyRef));
+  }
 
   protected readonly servicios: readonly Servicio[] = [
     {
