@@ -125,3 +125,8 @@
 .accion__enlace {
   align-self: flex-start;
 }
+:host ::ng-deep .accion .dictado,
+.accion textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
