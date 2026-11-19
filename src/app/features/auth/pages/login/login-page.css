@@ -1,12 +1,13 @@
 /*
- * Ingreso con escena ilustrada (19/11/2026): un panel a la izquierda con una imagen y una frase
- * elegidas al azar, y la tarjeta de siempre a la derecha. Debajo de 860 px queda sólo la tarjeta.
+ * Ingreso con escena ilustrada (19/11/2026): un panel a la izquierda con una ilustración y una
+ * frase elegidas al azar, y la tarjeta de siempre a la derecha. Debajo de 860 px queda sólo la
+ * tarjeta.
  */
 
 /* El host es un ítem flex que se encoge a su contenido: el ancho del marco se fija acá. */
 :host {
   display: block;
-  width: min(62rem, 100%);
+  width: min(66rem, 100%);
 }
 
 .ingreso {
@@ -29,27 +30,38 @@
   border-radius: 0;
 }
 
+/*
+ * Las ilustraciones vienen sobre blanco: el panel es del mismo blanco en los dos temas, así la
+ * imagen no tiene borde visible, y la marca y la frase van en tinta oscura (contraste medible).
+ */
 .ingreso__escena {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: var(--esp-6);
+  gap: var(--esp-4);
   padding: var(--esp-8);
-  background: linear-gradient(150deg, var(--escena-desde), var(--escena-hasta));
-  color: var(--color-escena-texto);
+  border-inline-end: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-escena-fondo);
+  color: var(--color-escena-tinta);
 }
 
-/* La marca, en blanco sobre la escena: la de arriba de la página se oculta en escritorio. */
+/* La marca de la página se oculta en escritorio: vive acá. */
 .ingreso__marca {
   display: inline-flex;
   align-items: center;
   gap: var(--esp-4);
   align-self: flex-start;
-  color: var(--color-escena-texto);
+  color: var(--color-escena-tinta);
   font-size: 1.125rem;
   font-weight: var(--peso-fuerte);
   letter-spacing: 0.04em;
   text-decoration: none;
+}
+
+.ingreso__marca:hover {
+  color: var(--color-escena-tinta);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .ingreso__logo {
@@ -59,46 +71,16 @@
   width: 2rem;
   height: 2rem;
   border-radius: var(--radio-md);
-  background: var(--color-escena-texto);
-  color: var(--escena-desde);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
   font-size: 1.0625rem;
 }
 
 .ingreso__imagen {
   display: block;
-  width: 100%;
-  max-width: 27rem;
+  width: calc(100% + 2 * var(--esp-4));
   height: auto;
-  margin-inline: auto;
-  margin-block: auto;
-}
-
-/*
- * La marca y el texto van sobre un fondo liso del mismo tono que el degradé en su esquina: así
- * casi no se nota, y el contraste del texto se puede medir (axe no mide texto sobre un degradé).
- */
-.ingreso__marca,
-.ingreso__texto {
-  border-radius: var(--radio-md);
-}
-
-.ingreso__marca {
-  padding: var(--esp-1) var(--esp-2) var(--esp-1) var(--esp-1);
-  margin: calc(-1 * var(--esp-1));
-  background: var(--escena-desde);
-}
-
-.ingreso__marca:hover {
-  color: var(--color-escena-texto);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.ingreso__texto {
-  padding: var(--esp-3) var(--esp-4);
-  margin-inline: calc(-1 * var(--esp-4));
-  margin-block-end: calc(-1 * var(--esp-3));
-  background: var(--escena-hasta);
+  margin: auto calc(-1 * var(--esp-4));
 }
 
 .ingreso__texto p {
@@ -114,7 +96,7 @@
 
 .ingreso__texto .ingreso__bajada {
   margin-top: var(--esp-2);
-  color: color-mix(in srgb, var(--color-escena-texto) 88%, transparent);
+  color: var(--color-escena-tinta-suave);
   line-height: 1.5;
 }
 

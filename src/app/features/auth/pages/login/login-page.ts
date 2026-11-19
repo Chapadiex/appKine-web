@@ -19,41 +19,27 @@ interface EscenaDeIngreso {
   readonly imagen: string;
   readonly titulo: string;
   readonly bajada: string;
-  /** Número de los tokens `--color-escena-N-desde/hasta` del degradé (`design-system.css`). */
-  readonly tono: number;
 }
 
-/** Las imágenes viven en `public/acceso/`: se piden aparte y no pesan en el bundle. */
+/**
+ * Las imágenes viven en `public/acceso/` (1400 px, JPG): se piden aparte y no pesan en el bundle.
+ * Vienen sobre fondo blanco, el mismo del panel.
+ */
 const ESCENAS: readonly EscenaDeIngreso[] = [
   {
-    imagen: 'acceso/estiramiento.svg',
-    titulo: 'Cada sesión, un paso más.',
-    bajada: 'Turnos, sesiones y evolución de cada paciente en un solo lugar.',
-    tono: 1,
-  },
-  {
-    imagen: 'acceso/paralelas.svg',
-    titulo: 'Del turno a la evolución.',
-    bajada: 'Seguí el progreso de tus pacientes sin papeles de por medio.',
-    tono: 2,
-  },
-  {
-    imagen: 'acceso/equilibrio.svg',
-    titulo: 'Clínica y gestión, en equilibrio.',
-    bajada: 'La agenda, la caja y la historia clínica, conectadas.',
-    tono: 3,
-  },
-  {
-    imagen: 'acceso/pelota.svg',
+    imagen: 'acceso/paralelas-y-pelota.jpg',
     titulo: 'Rehabilitar es acompañar.',
-    bajada: 'Planes de tratamiento claros para todo el equipo.',
-    tono: 4,
+    bajada: 'El plan y la evolución de cada paciente, a la vista de todo el equipo.',
   },
   {
-    imagen: 'acceso/agenda.svg',
-    titulo: 'Tu agenda, en orden.',
-    bajada: 'Turnos confirmados, recepción ágil y la semana a la vista.',
-    tono: 5,
+    imagen: 'acceso/grupo.jpg',
+    titulo: 'Sesiones y clases, en un solo lugar.',
+    bajada: 'Turnos, inscripciones y asistencia sin planillas de por medio.',
+  },
+  {
+    imagen: 'acceso/estiramientos.jpg',
+    titulo: 'Cada sesión, un paso más.',
+    bajada: 'La agenda, la historia clínica y los cobros, conectados.',
   },
 ];
 
