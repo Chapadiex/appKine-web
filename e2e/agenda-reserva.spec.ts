@@ -91,7 +91,7 @@ test.describe('Reserva de turno contra el backend real', () => {
     const panel = panelDeTurno(page);
     await elegirPersona(panel, persona);
     // Lo que se va a reservar: fecha, hora y profesional ya vienen de la celda.
-    const resumen = panel.locator('.flujo__resumen');
+    const resumen = panel.locator('.flujo__pie-resumen');
     await expect(resumen).toContainText(rango(slot, centro.timezone));
     await expect(resumen).toContainText(centro.profesional.nombre);
 
@@ -153,7 +153,9 @@ test.describe('Reserva de turno contra el backend real', () => {
       .click();
     // UX-12: el conflicto es una alerta arriba del formulario; resuelto, desaparece.
     await expect(panel.getByText(TITULO_DE_CONFLICTO)).toHaveCount(0);
-    await expect(panel.locator('.flujo__resumen')).toContainText(rango(segundo, centro.timezone));
+    await expect(panel.locator('.flujo__pie-resumen')).toContainText(
+      rango(segundo, centro.timezone),
+    );
 
     const creado = respuestaDe(page, 'POST', RESERVA);
     await confirmar(panel).click();

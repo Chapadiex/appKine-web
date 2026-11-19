@@ -52,7 +52,7 @@ test.describe('Acceso clinico desde el Paciente 360 (D-e)', () => {
     const auditadas = sql(
       `SELECT COUNT(*) FROM audit_event WHERE organization_id=${sembrada.organizationId} ` +
         `AND actor_account_id=${cuenta} AND event_type='HISTORIA_CLINICA_ACCESSED' ` +
-        `AND (reason LIKE '%${MOTIVO_DE_ACCESO}%' OR details LIKE '%${MOTIVO_DE_ACCESO}%')`,
+        `AND (reason LIKE '%${MOTIVO_DE_ACCESO}%' OR details::text LIKE '%${MOTIVO_DE_ACCESO}%')`,
     );
     expect(Number(auditadas), 'la lectura quedo auditada con el motivo').toBeGreaterThan(0);
 

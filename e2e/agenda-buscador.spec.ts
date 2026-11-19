@@ -99,7 +99,7 @@ test.describe('Buscador de agenda contra el backend real', () => {
     ).toBeVisible();
     // El turno tomado tiene la misma franja (00:00 a 12:00) que los de d y d+3: el `toHaveCount(2)`
     // de arriba ya prueba que el dia lleno no agrega un boton.
-    await expect(page.getByText('La oferta no esta vigente este día.')).toBeVisible();
+    await expect(page.getByText('La actividad no esta vigente este día.')).toBeVisible();
 
     await expect(page.getByText('Ningún día de este rango tiene turnos disponibles')).toHaveCount(
       0,

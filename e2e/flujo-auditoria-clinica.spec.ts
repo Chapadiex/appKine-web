@@ -11,7 +11,7 @@ import { exigirCon } from './support/sembrado-pantallas-098';
  * texto unico. La administradora del centro (ORG_ADMIN, sin `auditoria:read-clinica`) busca el
  * historial de esa historia en Auditoria: ve el hecho —quien, cuando, sobre que entidad— y en el
  * motivo el marcador de redaccion, nunca el texto. El texto SI esta guardado: se lee de la tabla en
- * modo lectura (contenedor de `AKINE_E2E_MYSQL_CONTAINER`, como hace `cuenta-ciclo-real`), que es lo
+ * modo lectura (contenedor de `AKINE_E2E_DB_CONTAINER`, como hace `cuenta-ciclo-real`), que es lo
  * que prueba que la pantalla no lo muestra porque el servidor lo tapa y no porque no exista.
  */
 const REDACTADO = '[redactado: exige auditoria:read-clinica]';

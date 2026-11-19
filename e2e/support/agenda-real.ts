@@ -125,8 +125,9 @@ export function avisos(page: Page): Locator {
 /** Elige a la persona en el panel como lo hace el mostrador: escribiendo su apellido. */
 export async function elegirPersona(panel: Locator, persona: Persona): Promise<void> {
   const nombre = `${persona.apellido}, ${persona.nombre}`;
-  await panel.getByRole('searchbox', { name: 'Paciente', exact: true }).fill(persona.apellido);
-  await panel.getByRole('button', { name: new RegExp(`^${nombre}`) }).click();
+  // Desde e9071046 el buscador es un combo: un `combobox` con su lista de `option`.
+  await panel.getByRole('combobox', { name: 'Paciente', exact: true }).fill(persona.apellido);
+  await panel.getByRole('option', { name: new RegExp(`^${nombre}`) }).click();
   await expect(panel.locator('.flujo__persona-elegida')).toContainText(nombre);
 }
 

@@ -101,7 +101,7 @@ test.describe('Notificaciones fallidas con reintento contra el backend real', ()
     // Sembrado declarado (ver la cabecera): la entrega falla.
     sql(
       `UPDATE notification_outbox SET estado='FALLIDA', ` +
-        `error_sanitizado='Servidor de correo no disponible (sembrado E2E)', updated_at=NOW(6) ` +
+        `error_sanitizado='Servidor de correo no disponible (sembrado E2E)', updated_at=now() ` +
         `WHERE id=${id} AND estado='ENVIADA'`,
     );
     expect(filaDelOutbox(turno.id)?.estado).toBe('FALLIDA');
