@@ -39,6 +39,7 @@ import {
   Servicio,
   MarcaDeEstado,
   MarcaDePlan,
+  SIGLAS_DE_PLAN,
   diasRestantes,
   marcaDePlan,
   marcaDeSuscripcion,
@@ -140,6 +141,7 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly topeDeSedes = topeDeSedes;
   protected readonly tieneIa = tieneIa;
   protected readonly rotuloDeTope = rotuloDeTope;
+  protected readonly siglasDePlan = SIGLAS_DE_PLAN;
   protected readonly serviciosEnTexto = serviciosEnTexto;
 
   protected readonly busqueda = signal('');

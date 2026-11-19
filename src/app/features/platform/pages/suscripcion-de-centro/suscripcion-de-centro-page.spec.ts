@@ -176,7 +176,8 @@ describe('SuscripcionDeCentroPage', () => {
     expect(texto(fixture, 'table')).toContain('01/10/2026');
     expect(fixture.nativeElement.querySelector('#suscripcion-organizacion')).toBeNull();
     // Insignia del plan (BASICO es el viejo base) y la IA: sin IA, la celda solo lo dice al lector.
-    expect(texto(fixture, 'tbody .marca-plan')).toBe('PB Basico');
+    expect(texto(fixture, 'tbody .marca-plan__sigla')).toBe('PB');
+    expect(fixture.nativeElement.querySelector('tbody .marca-plan').title).toBe('Plan Básico');
     expect(fixture.nativeElement.querySelector('tbody .marca-plan--base')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('tbody .marca-ia')).toBeNull();
     expect(texto(fixture, 'tbody')).toContain('Sin IA');
@@ -202,7 +203,7 @@ describe('SuscripcionDeCentroPage', () => {
       (fixture.nativeElement.querySelector('#suscripcion-filtro-estado') as HTMLSelectElement)
         .value,
     ).toBe('ACTIVA');
-    expect(texto(fixture, 'tbody tr:nth-child(2) .marca-plan')).toBe('PR Red');
+    expect(texto(fixture, 'tbody tr:nth-child(2) .marca-plan__sigla')).toBe('PP');
     expect(texto(fixture, 'tbody tr:nth-child(2) .marca-ia')).toBe('IA');
 
     escribir(fixture, '  norte ');

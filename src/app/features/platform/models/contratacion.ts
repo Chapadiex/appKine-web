@@ -132,23 +132,33 @@ export interface MarcaDePlan {
   readonly clase: string;
 }
 
-/** Los tres escalones que se venden; BASICO y PROFESIONAL son los nombres viejos del base e intermedio. */
+/**
+ * Los tres escalones que se venden, con la sigla que se muestra en los listados (19/11/2026):
+ * PB = Plan Básico, PI = Plan Intermedio, PP = Plan Plus. BASICO y PROFESIONAL son los códigos
+ * viejos del básico y del intermedio.
+ */
 const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { nombre: string }>> = {
-  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Base' },
-  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Básico' },
-  CRECIMIENTO: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Crecimiento' },
-  PROFESIONAL: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Profesional' },
-  RED: { sigla: 'PR', clase: 'marca-plan--red', nombre: 'Red' },
+  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
+  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
+  CRECIMIENTO: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
+  PROFESIONAL: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
+  RED: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
 };
 
+/** La leyenda de las siglas, en el orden de los escalones, para la ayuda del listado. */
+export const SIGLAS_DE_PLAN: readonly Pick<MarcaDePlan, 'sigla' | 'texto'>[] = [
+  { sigla: 'PB', texto: 'Plan Básico' },
+  { sigla: 'PI', texto: 'Plan Intermedio' },
+  { sigla: 'PP', texto: 'Plan Plus' },
+];
+
 /**
- * "PB Base", "PC Crecimiento", "PR Red". El nombre que manda el servidor gana sobre el de respaldo;
- * un plan desconocido va sin sigla y en neutro.
+ * Un escalón conocido lleva su sigla y su nombre fijo, para que la sigla signifique siempre lo
+ * mismo. Un plan desconocido va sin sigla, en neutro y con el nombre que manda el servidor.
  */
 export function marcaDePlan(code: string | undefined, name?: string): MarcaDePlan {
   const escalon = code === undefined ? undefined : ESCALON_DE_PLAN[code];
-  const texto = name?.trim() || escalon?.nombre || code || 'Sin plan';
   return escalon
-    ? { sigla: escalon.sigla, texto, clase: escalon.clase }
-    : { sigla: '', texto, clase: 'marca-plan--otro' };
+    ? { sigla: escalon.sigla, texto: escalon.nombre, clase: escalon.clase }
+    : { sigla: '', texto: name?.trim() || code || 'Sin plan', clase: 'marca-plan--otro' };
 }

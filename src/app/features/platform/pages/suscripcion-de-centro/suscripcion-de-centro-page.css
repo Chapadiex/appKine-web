@@ -80,3 +80,116 @@
   border-color: var(--color-acento);
   font-weight: var(--peso-fuerte);
 }
+
+/*
+ * Panel de contratacion (19/11/2026). Lo vigente: el estado arriba y los datos contratados como
+ * fichas sobre una superficie sutil, para que se lea como "lo que hay" y no como un formulario.
+ */
+.vigente {
+  margin-bottom: var(--esp-7);
+  padding: var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-sutil);
+}
+
+.vigente__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-5);
+}
+
+.vigente__nota {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.vigente__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--esp-5) var(--esp-6);
+  margin: var(--esp-6) 0 0;
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.vigente__dato dt {
+  margin-bottom: var(--esp-1);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.vigente__dato dd {
+  margin: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+  overflow-wrap: anywhere;
+}
+
+.titulo-de-cambio {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-5);
+}
+
+.titulo-de-cambio h3 {
+  margin: 0;
+}
+
+/* Servicios y adicionales: cada opcion es una ficha entera clickeable, marcada con el acento. */
+.opciones {
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.opciones legend {
+  margin-bottom: var(--esp-3);
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.opciones__regla {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+.opciones__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--esp-4);
+}
+
+.opcion-ficha {
+  min-height: 2.75rem;
+  margin-bottom: 0;
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.opcion-ficha:hover {
+  background: var(--color-hover);
+}
+
+.opcion-ficha:has(input:checked) {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  box-shadow: inset 0 0 0 var(--borde-fino) var(--color-acento);
+}
+
+/* El motivo de la principal apagada: al borde izquierdo del pie (que va invertido). */
+.pie-motivo {
+  margin: 0 auto 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}

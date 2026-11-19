@@ -6,15 +6,23 @@ describe('marcaDePlan', () => {
   it('da la sigla y el color de cada escalón', () => {
     expect(marcaDePlan('BASICO')).toEqual({
       sigla: 'PB',
-      texto: 'Básico',
+      texto: 'Plan Básico',
       clase: 'marca-plan--base',
     });
-    expect(marcaDePlan('CRECIMIENTO').sigla).toBe('PC');
-    expect(marcaDePlan('RED').clase).toBe('marca-plan--red');
+    expect(marcaDePlan('CRECIMIENTO').sigla).toBe('PI');
+    expect(marcaDePlan('RED')).toEqual({
+      sigla: 'PP',
+      texto: 'Plan Plus',
+      clase: 'marca-plan--red',
+    });
   });
 
-  it('prefiere el nombre que manda el backend', () => {
-    expect(marcaDePlan('RED', '  Red de sedes ').texto).toBe('Red de sedes');
+  it('un escalón conocido lleva su nombre fijo aunque el backend mande otro', () => {
+    expect(marcaDePlan('RED', '  Red de sedes ').texto).toBe('Plan Plus');
+  });
+
+  it('un plan desconocido usa el nombre que manda el backend', () => {
+    expect(marcaDePlan('ESPECIAL', '  A medida ').texto).toBe('A medida');
   });
 
   it('un plan desconocido queda sin sigla y con su código', () => {
