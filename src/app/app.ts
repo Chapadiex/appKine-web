@@ -233,10 +233,12 @@ export class App {
   );
 
   /**
-   * La landing pública (`/`, con o sin ancla): sin barra superior ni lateral y a todo el ancho.
-   * Trae su propia cabecera y su pie.
+   * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):
+   * sin barra superior ni lateral y a todo el ancho. Traen su propia cabecera y su pie.
    */
-  protected readonly esLanding = computed(() => /^\/(#|\?|$)/.test(this.url()));
+  protected readonly esLanding = computed(() =>
+    /^\/(terminos|privacidad)?(#|\?|$)/.test(this.url()),
+  );
 
   protected readonly ancho = toSignal(
     this.router.events.pipe(

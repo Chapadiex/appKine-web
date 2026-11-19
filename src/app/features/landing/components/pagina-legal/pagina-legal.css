@@ -1,0 +1,64 @@
+:host {
+  display: block;
+  /* Las mismas medidas que la landing: la envoltura y el pie las heredan. */
+  --envoltura: 76rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+}
+
+.legal {
+  color: var(--color-texto);
+  background: var(--color-superficie-sutil);
+}
+
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-block-end: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-landing-crema);
+}
+
+.cabecera__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-5) var(--esp-9);
+  min-height: 4rem;
+}
+
+.cabecera__volver {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-underline-offset: 0.3em;
+}
+
+.legal__cuerpo {
+  max-width: 52rem;
+  padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem) clamp(3rem, 2rem + 4vw, 6rem);
+}
+
+.legal__titulo {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.legal__fecha {
+  margin: var(--esp-4) 0 var(--esp-8);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.por-completar {
+  padding-inline: var(--esp-1);
+  border-radius: var(--radio-sm);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  font-weight: var(--peso-medio);
+}

@@ -90,6 +90,21 @@ export const routes: Routes = [
     title: 'AKINE - Gestión para centros de salud y actividades',
   },
 
+  // Textos legales de la landing (borradores para revisión legal): públicos, con o sin sesión, y
+  // con el mismo marco que la landing.
+  {
+    path: 'terminos',
+    loadComponent: () =>
+      import('./features/landing/pages/terminos/terminos').then((m) => m.Terminos),
+    title: 'AKINE - Términos y condiciones',
+  },
+  {
+    path: 'privacidad',
+    loadComponent: () =>
+      import('./features/landing/pages/privacidad/privacidad').then((m) => m.Privacidad),
+    title: 'AKINE - Política de privacidad',
+  },
+
   // El baseline tecnico no se borra, se muda a su propia URL. Sigue siendo la unica pantalla
   // que prueba de punta a punta que el cliente generado, el proxy y el backend se hablan, y el
   // smoke E2E la usa para eso.

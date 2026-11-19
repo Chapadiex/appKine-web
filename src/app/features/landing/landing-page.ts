@@ -8,6 +8,7 @@ import { ArmadorDePlan } from './components/armador-de-plan/armador-de-plan';
 import { PedidoDePrueba } from './components/pedido-de-prueba/pedido-de-prueba';
 import { MapaDeSedes } from './components/mapa-de-sedes/mapa-de-sedes';
 import { SeccionIa } from './components/seccion-ia/seccion-ia';
+import { PieDeLanding } from './components/pie-de-landing/pie-de-landing';
 import { EleccionDelArmador } from './models/eleccion-del-armador';
 
 interface Servicio {
@@ -50,6 +51,7 @@ interface Pregunta {
     MapaDeSedes,
     SeccionIa,
     PedidoDePrueba,
+    PieDeLanding,
   ],
   templateUrl: './landing-page.html',
   styleUrls: ['./landing-comun.css', './landing-page.css'],

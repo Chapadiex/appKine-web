@@ -62,3 +62,27 @@
   line-height: 1.55;
   text-wrap: pretty;
 }
+
+/* --- Marca: el logo de la cabecera y del pie ------------------------------------------ */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.logo__marca {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 2rem;
+  min-block-size: 2rem;
+  border-radius: 10px 10px 10px 3px;
+  background: var(--color-landing-menta);
+  color: var(--color-landing-menta-texto);
+  font-size: var(--tipo-base);
+}
