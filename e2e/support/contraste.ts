@@ -774,7 +774,11 @@ const BORRADOR_DE_HONORARIOS = {
   ],
 };
 
-export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste> {
+export async function instalarApiDeContraste(
+  page: Page,
+  opciones: { readonly conSesion?: boolean } = {},
+): Promise<ApiDeContraste> {
+  const conSesion = opciones.conSesion ?? true;
   const api: ApiDeContraste = { padron: 'con-filas' };
 
   await page.route('**/api/v1/**', async (ruta: Route) => {
@@ -799,6 +803,11 @@ export async function instalarApiDeContraste(page: Page): Promise<ApiDeContraste
       });
 
     // --- Sesion y contexto -------------------------------------------------------------
+    // Sin sesion el refresh responde 401, que es como se llega al ingreso: con la sesion viva
+    // el ingreso lleva adentro y no se veria el formulario.
+    if (!conSesion && camino === '/api/v1/auth/refresh') {
+      return problema(401, 'invalid-refresh', 'Sin sesion.');
+    }
     if (camino === '/api/v1/auth/refresh' || camino === '/api/v1/auth/context') {
       return json({
         accessToken: 'token-sintetico-de-contraste',

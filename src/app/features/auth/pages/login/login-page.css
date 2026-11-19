@@ -73,6 +73,34 @@
   margin-block: auto;
 }
 
+/*
+ * La marca y el texto van sobre un fondo liso del mismo tono que el degradé en su esquina: así
+ * casi no se nota, y el contraste del texto se puede medir (axe no mide texto sobre un degradé).
+ */
+.ingreso__marca,
+.ingreso__texto {
+  border-radius: var(--radio-md);
+}
+
+.ingreso__marca {
+  padding: var(--esp-1) var(--esp-2) var(--esp-1) var(--esp-1);
+  margin: calc(-1 * var(--esp-1));
+  background: var(--escena-desde);
+}
+
+.ingreso__marca:hover {
+  color: var(--color-escena-texto);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.ingreso__texto {
+  padding: var(--esp-3) var(--esp-4);
+  margin-inline: calc(-1 * var(--esp-4));
+  margin-block-end: calc(-1 * var(--esp-3));
+  background: var(--escena-hasta);
+}
+
 .ingreso__texto p {
   margin: 0;
 }
