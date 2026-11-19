@@ -76,9 +76,69 @@
 }
 
 .marca-ia {
-  color: var(--color-acento);
-  border-color: var(--color-acento);
+  background: var(--color-ia-fondo);
+  color: var(--color-ia-texto);
+  border-color: var(--color-ia);
   font-weight: var(--peso-fuerte);
+}
+
+/*
+ * Globo propio en vez del `title` nativo: sale al instante, con la tipografia de la app, sobre la
+ * insignia y con su flecha. Tambien con el foco del teclado. Los colores son los del texto y la
+ * superficie invertidos, asi que se da vuelta solo en el tema oscuro.
+ */
+.marca-plan[data-globo],
+.marca-ia[data-globo] {
+  position: relative;
+  cursor: default;
+}
+
+[data-globo]::after,
+[data-globo]::before {
+  position: absolute;
+  left: 50%;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+[data-globo]::after {
+  content: attr(data-globo);
+  bottom: calc(100% + var(--esp-3));
+  transform: translateX(-50%);
+  padding: var(--esp-2) var(--esp-4);
+  border-radius: var(--radio-sm);
+  background: var(--color-texto);
+  color: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgb(16 38 63 / 0.18);
+}
+
+[data-globo]::before {
+  content: '';
+  bottom: calc(100% + var(--esp-3) - 4px);
+  width: 8px;
+  height: 8px;
+  background: var(--color-texto);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+[data-globo]:hover::after,
+[data-globo]:hover::before,
+[data-globo]:focus-visible::after,
+[data-globo]:focus-visible::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-globo]::after,
+  [data-globo]::before {
+    transition: none;
+  }
 }
 
 /*

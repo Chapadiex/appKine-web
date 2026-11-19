@@ -186,6 +186,10 @@
   --color-info: #2563eb;
   --color-info-fondo: #dbeafe;
   --color-info-texto: #1e3a8a;
+  /* Lo que es de IA (insignia del adicional): violeta, para no confundirse con el azul de info. */
+  --color-ia: #7c3aed;
+  --color-ia-fondo: #ede9fe;
+  --color-ia-texto: #4c1d95;
 
   /*
    * Estados del dominio de la agenda (norma §3). Son fondos: el texto encima es
@@ -377,6 +381,9 @@
     --color-info: #93c5fd;
     --color-info-fondo: #1d4268;
     --color-info-texto: #bfdbfe;
+    --color-ia: #a78bfa;
+    --color-ia-fondo: #3b2a6b;
+    --color-ia-texto: #ddd6fe;
 
     --color-estado-disponible: #174936;
     --color-estado-reservado: #1d4268;
@@ -448,6 +455,9 @@
   --color-info: #93c5fd;
   --color-info-fondo: #1d4268;
   --color-info-texto: #bfdbfe;
+  --color-ia: #a78bfa;
+  --color-ia-fondo: #3b2a6b;
+  --color-ia-texto: #ddd6fe;
 
   --color-estado-disponible: #174936;
   --color-estado-reservado: #1d4268;

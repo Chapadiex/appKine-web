@@ -139,11 +139,12 @@
                   <td class="tabla__col--secundaria">{{ c.slug }}</td>
                   <td>
                     @let plan = planDeFila(c);
-                    <!-- Solo la sigla a la vista; el nombre va en el titulo y para el lector. -->
+                    <!-- Solo la sigla a la vista; el nombre va en el globo y para el lector. -->
                     <span
                       class="marca-plan"
                       [class]="'marca-plan ' + plan.clase"
-                      [attr.title]="plan.sigla ? plan.texto : null"
+                      [attr.data-globo]="plan.sigla ? plan.texto : null"
+                      [attr.tabindex]="plan.sigla ? 0 : null"
                     >
                       @if (plan.sigla) {
                         <span class="marca-plan__sigla" aria-hidden="true">{{ plan.sigla }}</span>
@@ -155,7 +156,9 @@
                   </td>
                   <td>
                     @if (c.ia) {
-                      <span class="marca-ia">IA</span>
+                      <span class="marca-ia" data-globo="Adicional de IA contratado" tabindex="0"
+                        >IA</span
+                      >
                     } @else {
                       <span class="visualmente-oculto">Sin IA</span>
                     }
@@ -271,8 +274,8 @@
         <app-ayuda titulo="Cómo se guarda">
           <p>
             Se manda con la versión
-            <span data-testid="suscripcion-version">{{ c.version }}</span
-            >. Si otro cambio llega antes, no se aplica nada y la contratación se vuelve a leer.
+            <span data-testid="suscripcion-version">{{ c.version }}</span>. Si otro cambio llega
+            antes, no se aplica nada y la contratación se vuelve a leer.
           </p>
           <p>Bajar de plan no borra nada: solo se rechazan las sedes nuevas que superen el tope.</p>
         </app-ayuda>
