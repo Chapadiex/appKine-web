@@ -2,17 +2,24 @@
  * Ingreso con escena ilustrada (19/11/2026): un panel a la izquierda con una imagen y una frase
  * elegidas al azar, y la tarjeta de siempre a la derecha. Debajo de 860 px queda sólo la tarjeta.
  */
+
+/* El host es un ítem flex que se encoge a su contenido: el ancho del marco se fija acá. */
+:host {
+  display: block;
+  width: min(62rem, 100%);
+}
+
 .ingreso {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  width: min(56rem, 100%);
+  width: 100%;
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-lg);
   background: var(--color-superficie);
   overflow: hidden;
   /* Alto que ya cuenta el aviso de error y el de espera por límite: cuando aparecen, el marco
      no crece ni la escena se estira. */
-  min-height: 38rem;
+  min-height: 37rem;
 }
 
 /* Dentro del marco la tarjeta no repite borde ni esquinas, y se centra en el alto del marco. */
@@ -32,10 +39,35 @@
   color: var(--color-escena-texto);
 }
 
+/* La marca, en blanco sobre la escena: la de arriba de la página se oculta en escritorio. */
+.ingreso__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  align-self: flex-start;
+  color: var(--color-escena-texto);
+  font-size: 1.125rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.ingreso__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-escena-texto);
+  color: var(--escena-desde);
+  font-size: 1.0625rem;
+}
+
 .ingreso__imagen {
   display: block;
   width: 100%;
-  max-width: 22rem;
+  max-width: 27rem;
   height: auto;
   margin-inline: auto;
   margin-block: auto;
@@ -72,9 +104,14 @@
 }
 
 @media (max-width: 860px) {
+  :host {
+    width: auto;
+  }
+
   .ingreso {
     grid-template-columns: minmax(0, 1fr);
     width: auto;
+    justify-items: center;
     min-height: 0;
     border: 0;
     background: none;

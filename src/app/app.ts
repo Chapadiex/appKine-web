@@ -233,6 +233,12 @@ export class App {
   );
 
   /**
+   * Iniciar sesión (19/11/2026): la marca va dentro de su escena y el ingreso se centra en la
+   * altura, así entra entero. En pantallas angostas, sin escena, la marca vuelve arriba.
+   */
+  protected readonly esIngreso = computed(() => /^\/auth\/ingresar(\?|$)/.test(this.url()));
+
+  /**
    * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):
    * sin barra superior ni lateral y a todo el ancho. Traen su propia cabecera y su pie.
    */

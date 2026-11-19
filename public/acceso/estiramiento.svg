@@ -8,6 +8,7 @@
   <ellipse cx="92" cy="198" rx="9" ry="28" fill="#6ee7b7"/>
   <rect x="128" y="266" width="160" height="12" rx="6" fill="#22d3ee"/>
   <path d="M192 192 L186 262 M208 192 L214 262" stroke="#1e1b4b" stroke-width="20"/>
+  <rect x="178" y="180" width="44" height="24" rx="10" fill="#1e1b4b"/>
   <ellipse cx="182" cy="265" rx="13" ry="6" fill="#0f172a"/>
   <ellipse cx="218" cy="265" rx="13" ry="6" fill="#0f172a"/>
   <path d="M186 134 L164 78 M214 134 L236 78" stroke="#f2c094" stroke-width="13"/>
