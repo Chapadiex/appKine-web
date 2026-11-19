@@ -26,7 +26,9 @@
       <p class="accion__aviso"><span aria-hidden="true">ⓘ</span> {{ a }}</p>
     }
     @for (b of accion().bloqueos; track $index) {
-      <p class="accion__bloqueo" role="alert"><span aria-hidden="true">⚠</span> {{ b }}</p>
+      <p class="accion__bloqueo" role="alert" [id]="id + '-bloqueo-' + $index">
+        <span aria-hidden="true">⚠</span> {{ b }}
+      </p>
     }
 
     <fieldset class="accion__cuerpo" [disabled]="!editable()">
@@ -322,7 +324,7 @@
         type="button"
         class="boton"
         [disabled]="!puedeConfirmar()"
-        [attr.aria-describedby]="falta() ? id + '-falta' : null"
+        [attr.aria-describedby]="descritoPor()"
         (click)="confirmar()"
       >
         {{ estado() === 'enviando' ? 'Grabando…' : 'Confirmar' }}

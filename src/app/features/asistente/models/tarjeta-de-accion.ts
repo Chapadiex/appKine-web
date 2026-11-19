@@ -1,4 +1,16 @@
 import { ConfirmarAccion } from '../../../api/generated/model/confirmar-accion';
+import { ImputacionEnTarjeta } from '../../../api/generated/model/imputacion-en-tarjeta';
+
+/** Un importe sin el ruido de la coma flotante: 100,10 + 200,20 no es 300,30000000000007. */
+export function aCentavos(importe: number): number {
+  return Math.round(importe * 100) / 100;
+}
+
+export function sumaDeImputaciones(
+  imputaciones: readonly ImputacionEnTarjeta[] | undefined,
+): number {
+  return aCentavos((imputaciones ?? []).reduce((suma, i) => suma + (i.importe ?? 0), 0));
+}
 
 /**
  * Lo que le falta a la tarjeta para poder confirmarse, en palabras, o `null` si está completa. Es
@@ -25,7 +37,7 @@ export function motivoQueImpideConfirmar(tipo: string, borrador: ConfirmarAccion
       if (p.medio === 'EFECTIVO' && !p.cajaAbierta) {
         return 'La caja de la sede está cerrada: abrila para cobrar en efectivo.';
       }
-      const imputado = (p.imputaciones ?? []).reduce((suma, i) => suma + (i.importe ?? 0), 0);
+      const imputado = sumaDeImputaciones(p.imputaciones);
       if (
         (p.imputaciones ?? []).some(
           (i) => (i.importe ?? 0) < 0 || (i.importe ?? 0) > (i.saldo ?? 0),

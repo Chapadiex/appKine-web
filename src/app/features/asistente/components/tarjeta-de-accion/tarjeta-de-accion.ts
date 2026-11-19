@@ -6,7 +6,6 @@ import {
   inject,
   input,
   linkedSignal,
-  signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -18,7 +17,11 @@ import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
-import { motivoQueImpideConfirmar } from '../../models/tarjeta-de-accion';
+import {
+  aCentavos,
+  motivoQueImpideConfirmar,
+  sumaDeImputaciones,
+} from '../../models/tarjeta-de-accion';
 import { AsistenteApi } from '../../services/asistente-api';
 
 let siguienteId = 0;
@@ -71,9 +74,19 @@ export class TarjetaDeAccion {
       paciente: a.paciente,
     });
   });
-  protected readonly estado = signal<Estado>('propuesta');
-  protected readonly resultado = signal<ResultadoDeAccion | null>(null);
-  protected readonly rechazo = signal<string | null>(null);
+  // Atados a la acción, igual que el borrador: otra acción en la misma tarjeta arranca de cero.
+  protected readonly estado = linkedSignal<AccionPropuesta, Estado>({
+    source: this.accion,
+    computation: () => 'propuesta',
+  });
+  protected readonly resultado = linkedSignal<AccionPropuesta, ResultadoDeAccion | null>({
+    source: this.accion,
+    computation: () => null,
+  });
+  protected readonly rechazo = linkedSignal<AccionPropuesta, string | null>({
+    source: this.accion,
+    computation: () => null,
+  });
 
   protected readonly editable = computed(() => this.estado() === 'propuesta');
   protected readonly clase = computed(() => {
@@ -81,10 +94,10 @@ export class TarjetaDeAccion {
     return a?.clases?.find((c) => c.claseId === a.claseId) ?? null;
   });
   protected readonly imputado = computed(() =>
-    (this.borrador().pago?.imputaciones ?? []).reduce((suma, i) => suma + (i.importe ?? 0), 0),
+    sumaDeImputaciones(this.borrador().pago?.imputaciones),
   );
-  protected readonly anticipo = computed(
-    () => (this.borrador().pago?.total ?? 0) - this.imputado(),
+  protected readonly anticipo = computed(() =>
+    aCentavos((this.borrador().pago?.total ?? 0) - this.imputado()),
   );
   protected readonly esAlta = computed(() => this.accion().tipo === 'PACIENTE_ALTA');
 
@@ -95,6 +108,13 @@ export class TarjetaDeAccion {
       : motivoQueImpideConfirmar(this.accion().tipo, this.borrador()),
   );
   protected readonly puedeConfirmar = computed(() => this.editable() && this.falta() === null);
+  /** El texto que explica por qué "Confirmar" está apagado: tiene que existir en la pantalla. */
+  protected readonly descritoPor = computed(() => {
+    if (this.accion().bloqueos.length > 0) {
+      return `${this.id}-bloqueo-0`;
+    }
+    return this.editable() && this.falta() ? `${this.id}-falta` : null;
+  });
 
   constructor() {
     const vencimiento = setInterval(() => {
