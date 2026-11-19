@@ -92,6 +92,8 @@
   overflow-wrap: anywhere;
 }
 
+/* El correo va solo en su fila: es el dato que no se puede leer cortado. */
+.alta__pedido-correo,
 .alta__pedido-comentario {
   grid-column: 1 / -1;
 }
