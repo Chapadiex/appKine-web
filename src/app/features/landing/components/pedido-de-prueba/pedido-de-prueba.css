@@ -94,9 +94,6 @@
   font-size: 1.5rem;
 }
 
-.pedido-ok__titulo:focus {
-  outline: none;
-}
 
 .pedido-ok__pasos {
   display: grid;
