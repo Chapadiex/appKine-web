@@ -9,6 +9,8 @@ import {
   destinoInterno,
 } from '../../../../core/models/rutas';
 import { SessionService } from '../../../../core/services/session.service';
+import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
+import { catchError, of } from 'rxjs';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 
@@ -58,6 +60,9 @@ const ESCENAS: readonly EscenaDeIngreso[] = [
 /** Destino por defecto cuando la sesion ya quedo con contexto. */
 const DESTINO_POR_DEFECTO = '/organizacion';
 
+/** La consola de la administracion de plataforma (`features/platform`). */
+const DESTINO_DE_PLATAFORMA = '/plataforma';
+
 /**
  * Inicio de sesion (M02, AKINE-01.02).
  *
@@ -78,6 +83,7 @@ const DESTINO_POR_DEFECTO = '/organizacion';
 export class LoginPage {
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly rolDePlataforma = inject(PlatformRoleStore);
   private readonly ruta = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -149,7 +155,22 @@ export class LoginPage {
     return destinoInterno(solicitado) ?? DESTINO_POR_DEFECTO;
   }
 
+  /**
+   * Sin un destino pedido, la administracion de plataforma va directo a su consola: el rol le
+   * quita los permisos del centro y la pantalla por defecto le mostraria un error de permisos.
+   */
   private continuar(): void {
+    if (this.ruta.snapshot.queryParamMap.get(PARAM_VOLVER_A) !== null) {
+      this.navegarAdentro();
+      return;
+    }
+    this.rolDePlataforma
+      .resolver()
+      .pipe(catchError(() => of(false)))
+      .subscribe((admin) => this.navegarAdentro(admin ? DESTINO_DE_PLATAFORMA : undefined));
+  }
+
+  private navegarAdentro(destinoDePlataforma?: string): void {
     // `sin-contexto` no es un error: el token de login todavia no esta acotado a una
     // Organizacion y hay que elegir donde trabajar antes de operar (DP-02).
     //
@@ -158,9 +179,10 @@ export class LoginPage {
     // `volverA` original. Navegar al selector "pelado" cortaba esa cadena en su ultimo tramo
     // y devolvia a todo el mundo a la pantalla por defecto, sin importar que hubiera pedido.
     const ruta =
-      this.session.estado() === 'activa'
+      destinoDePlataforma ??
+      (this.session.estado() === 'activa'
         ? this.destino()
-        : `${RUTA_SELECTOR_CONTEXTO}?${PARAM_VOLVER_A}=${encodeURIComponent(this.destino())}`;
+        : `${RUTA_SELECTOR_CONTEXTO}?${PARAM_VOLVER_A}=${encodeURIComponent(this.destino())}`);
 
     this.estado.set({ tipo: 'ok', mensaje: 'Sesión iniciada. Te estamos llevando adentro.' });
 

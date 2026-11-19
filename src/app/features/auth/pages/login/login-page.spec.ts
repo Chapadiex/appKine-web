@@ -6,6 +6,7 @@ import { signal } from '@angular/core';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
 import { EstadoSesion, SessionService } from '../../../../core/services/session.service';
+import { PlatformRoleStore } from '../../../../core/services/platform-role.store';
 import { LoginPage } from './login-page';
 
 /**
@@ -38,15 +39,18 @@ function error(
 describe('LoginPage', () => {
   let session: SessionServiceFalsa;
   let router: Router;
+  let esAdminDePlataforma: boolean;
 
   beforeEach(async () => {
     session = new SessionServiceFalsa();
+    esAdminDePlataforma = false;
 
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
         provideRouter([]),
         { provide: SessionService, useValue: session as unknown as SessionService },
+        { provide: PlatformRoleStore, useValue: { resolver: () => of(esAdminDePlataforma) } },
       ],
     }).compileComponents();
 
@@ -123,6 +127,20 @@ describe('LoginPage', () => {
 
     expect(session.llamadas[0]?.recordarme).toBe(true);
     expect(navegar).toHaveBeenCalledWith('/organizacion');
+  });
+
+  it('la administracion de plataforma entra directo a su consola', async () => {
+    const navegar = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    session.estadoInterno.set('activa');
+    esAdminDePlataforma = true;
+
+    const fixture = crear();
+    escribir(fixture, '#login-email', 'plataforma@ejemplo.test');
+    escribir(fixture, '#login-password', 'clave-de-prueba');
+    enviar(fixture);
+    await fixture.whenStable();
+
+    expect(navegar).toHaveBeenCalledWith('/plataforma');
   });
 
   it('no llama al backend con el formulario invalido y enfoca el primer campo con error', () => {

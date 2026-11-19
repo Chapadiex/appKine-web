@@ -192,7 +192,7 @@
                   type="password"
                   formControlName="password"
                   autocomplete="new-password"
-                  placeholder="Mínimo 10 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
                   [attr.aria-describedby]="
                     mostrarErrorDe('password')
@@ -203,7 +203,7 @@
                 <app-medidor-de-contrasena [valor]="passwordEscrita()" />
                 @if (mostrarErrorDe('password')) {
                   <p class="campo__error" id="invitacion-password-error">
-                    La contraseña tiene que tener al menos 10 caracteres.
+                    La contraseña tiene que tener al menos 8 caracteres.
                   </p>
                 }
                 <p class="ayuda" id="invitacion-password-ayuda">

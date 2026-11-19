@@ -14,7 +14,7 @@ describe('MedidorDeContrasena', () => {
     const raiz = await montar('');
     expect(raiz.querySelectorAll('.medidor__tramo--lleno').length).toBe(0);
     expect(raiz.querySelector('[aria-live="polite"]')?.textContent).toContain(
-      'al menos 10 caracteres',
+      'al menos 8 caracteres',
     );
     expect(raiz.querySelector('.medidor__barra')?.getAttribute('aria-hidden')).toBe('true');
   });
@@ -23,7 +23,7 @@ describe('MedidorDeContrasena', () => {
     const raiz = await montar('abc123');
     expect(raiz.querySelectorAll('.medidor__tramo--lleno').length).toBe(2);
     const resumen = raiz.querySelector('[aria-live="polite"]')?.textContent ?? '';
-    expect(resumen).toContain('al menos 10 caracteres');
+    expect(resumen).toContain('al menos 8 caracteres');
     expect(resumen).not.toContain('letras');
   });
 

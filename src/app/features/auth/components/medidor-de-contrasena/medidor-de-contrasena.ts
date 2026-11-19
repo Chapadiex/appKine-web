@@ -10,7 +10,7 @@ interface Sugerencia {
  *
  * <p><b>Es una sugerencia y nada mas.</b> No es un validador: no toca los validadores del
  * formulario ni lo que se envia. La politica real la decide el backend y su rechazo se sigue
- * mostrando como siempre. Lo unico que replica de la pantalla es el minimo de 10 caracteres que
+ * mostrando como siempre. Lo unico que replica de la pantalla es el minimo de 8 caracteres que
  * `invitacion` ya valida; "letras" y "numeros" son consejos genericos, no una regla del sistema.
  *
  * <p><b>Accesibilidad.</b> La barra es decorativa (`aria-hidden`); el texto que cambia mientras
@@ -101,7 +101,7 @@ export class MedidorDeContrasena {
   protected readonly sugerencias = computed<readonly Sugerencia[]>(() => {
     const valor = this.valor() ?? '';
     return [
-      { texto: 'Al menos 10 caracteres', cumplida: valor.length >= 10 },
+      { texto: 'Al menos 8 caracteres', cumplida: valor.length >= 8 },
       { texto: 'Letras', cumplida: /\p{L}/u.test(valor) },
       { texto: 'Números', cumplida: /\d/.test(valor) },
     ];

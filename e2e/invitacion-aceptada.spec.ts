@@ -65,7 +65,7 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
     await page.getByRole('button', { name: 'Aceptar la invitación' }).click();
     await expect(page.getByText('El nombre es obligatorio.')).toBeVisible();
     await expect(
-      page.getByText('La contraseña tiene que tener al menos 10 caracteres.'),
+      page.getByText('La contraseña tiene que tener al menos 8 caracteres.'),
     ).toBeVisible();
 
     // --- Aceptar -----------------------------------------------------------------------------

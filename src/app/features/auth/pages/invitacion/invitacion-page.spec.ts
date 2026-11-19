@@ -176,7 +176,7 @@ describe('InvitacionPage', () => {
     fixture.detectChanges();
     aceptar(fixture);
     httpMock.expectNone(ACCEPT);
-    expect(anfitrion.textContent).toContain('al menos 10 caracteres');
+    expect(anfitrion.textContent).toContain('al menos 8 caracteres');
 
     escribir(anfitrion, '#invitacion-password', 'kinesiologia-2026');
     fixture.detectChanges();

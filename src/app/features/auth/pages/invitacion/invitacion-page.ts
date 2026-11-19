@@ -263,7 +263,7 @@ export class InvitacionPage {
       this.formularioAlta.controls.nombre.setValidators([textoRequerido]);
       this.formularioAlta.controls.password.setValidators([
         Validators.required,
-        Validators.minLength(10),
+        Validators.minLength(8),
       ]);
       this.formularioAlta.controls.nombre.updateValueAndValidity();
       this.formularioAlta.controls.password.updateValueAndValidity();
