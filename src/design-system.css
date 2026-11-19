@@ -150,6 +150,9 @@
   --color-escena-fondo: #ffffff;
   --color-escena-tinta: #0f172a;
   --color-escena-tinta-suave: #475569;
+  /* El foco dentro del panel blanco también es el del tema claro: el celeste del oscuro no llega
+     a 3:1 sobre blanco (WCAG 1.4.11). */
+  --color-escena-foco: #2563eb;
   --color-accion-fondo: #2563eb;
   --color-accion-fondo-hover: #1d4ed8;
   --color-accion-texto: #ffffff;

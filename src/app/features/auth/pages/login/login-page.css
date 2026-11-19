@@ -35,6 +35,7 @@
  * imagen no tiene borde visible, y la marca y la frase van en tinta oscura (contraste medible).
  */
 .ingreso__escena {
+  --color-foco: var(--color-escena-foco);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
