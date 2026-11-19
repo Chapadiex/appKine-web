@@ -76,6 +76,12 @@ describe('motivoQueImpideConfirmar', () => {
       'Elegí el servicio.',
     );
 
+    expect(
+      motivoQueImpideConfirmar('ATENCION', {
+        atencion: { turnoId: 3, cerrar: true, nota: 'ok', tratamientos: [{ texto: 'ejercicios' }] },
+      }),
+    ).toContain('no reconocidos');
+
     const datos = { nombre: 'Laura', apellido: 'Díaz' };
     const posiblesDuplicados = [{ id: 9, etiqueta: 'Díaz, Laura' }];
     expect(

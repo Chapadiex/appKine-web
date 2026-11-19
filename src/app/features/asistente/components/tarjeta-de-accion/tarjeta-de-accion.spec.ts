@@ -430,14 +430,16 @@ describe('TarjetaDeAccion', () => {
       expect(texto()).toContain('«ventosas»');
       boton('Quitar Magnetoterapia').click();
       fixture.detectChanges();
+      // Con un tratamiento sin reconocer no se puede cerrar: hay que quitarlo (o dejarla abierta).
+      expect(boton('Confirmar').disabled).toBe(true);
+      expect(texto()).toContain('no reconocidos');
+      boton('Quitar ventosas').click();
+      fixture.detectChanges();
       pulsar('Confirmar');
 
       expect(Object.keys(confirmaciones[0].cuerpo)).toEqual(['atencion']);
       const enviada = confirmaciones[0].cuerpo.atencion;
-      expect(enviada?.tratamientos).toEqual([
-        { practicaId: 1, nombre: 'Ultrasonido' },
-        { texto: 'ventosas' },
-      ]);
+      expect(enviada?.tratamientos).toEqual([{ practicaId: 1, nombre: 'Ultrasonido' }]);
       expect(enviada?.nota).toBe('Evoluciona bien.');
       expect(enviada?.cerrar).toBe(true);
       expect(enviada?.turnoId).toBe(5);
@@ -445,6 +447,9 @@ describe('TarjetaDeAccion', () => {
 
     it('para cerrar exige la nota; sin cerrar, no', () => {
       montar(atencion());
+
+      boton('Quitar ventosas').click();
+      fixture.detectChanges();
 
       expect(control<HTMLInputElement>('Cerrar la atención').checked).toBe(true);
       expect(boton('Confirmar').disabled).toBe(true);

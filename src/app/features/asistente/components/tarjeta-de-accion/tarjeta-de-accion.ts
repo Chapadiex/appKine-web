@@ -15,7 +15,7 @@ import { DatosDePersona } from '../../../../api/generated/model/datos-de-persona
 import { ResultadoDeAccion } from '../../../../api/generated/model/resultado-de-accion';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
-import { formatearInstante } from '../../../../shared/utils/instantes';
+import { formatearHora } from '../../../../shared/utils/instantes';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import {
   aCentavos,
@@ -126,7 +126,7 @@ export class TarjetaDeAccion {
   }
 
   protected hora(instante: string | undefined): string {
-    return instante ? (formatearInstante(instante, this.diaDeLaSede.zona()) ?? instante) : '';
+    return instante ? (formatearHora(instante, this.diaDeLaSede.zona()) ?? instante) : '';
   }
 
   protected dinero(importe: number | undefined): string {

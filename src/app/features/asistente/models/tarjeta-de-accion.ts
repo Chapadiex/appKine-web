@@ -58,6 +58,9 @@ export function motivoQueImpideConfirmar(tipo: string, borrador: ConfirmarAccion
       if (!a?.casoId && (a?.casos?.length ?? 0) > 1) {
         return 'Elegí el caso clínico.';
       }
+      if (a?.cerrar && (a.tratamientos ?? []).some((t) => !t.practicaId)) {
+        return 'Quitá los tratamientos no reconocidos o dejá la atención abierta.';
+      }
       return a?.cerrar && !a.nota?.trim() ? 'Falta la nota de cierre.' : null;
     }
     case 'PACIENTE_ALTA': {
