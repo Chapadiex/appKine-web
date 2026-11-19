@@ -5,6 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 
 import { Icono } from '../../shared/components/icono/icono';
 import { FuncionesIaStore } from '../../core/services/funciones-ia.store';
+import { ContratacionStore } from '../../core/services/contratacion.store';
 import { MarcaStore } from '../../core/services/marca.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
@@ -53,6 +54,7 @@ export class NavegacionPrincipal {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly funcionesIa = inject(FuncionesIaStore);
+  private readonly contratacion = inject(ContratacionStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
   private readonly router = inject(Router);
 
@@ -167,7 +169,9 @@ export class NavegacionPrincipal {
     const conPermiso =
       seccion.permisos === undefined || this.permisos.tieneAlguno(...seccion.permisos);
     return (
-      conPermiso && (seccion.funcionIa === undefined || this.funcionesIa.activa(seccion.funcionIa))
+      conPermiso &&
+      (seccion.funcionIa === undefined || this.funcionesIa.activa(seccion.funcionIa)) &&
+      (seccion.servicio === undefined || this.contratacion.tiene(seccion.servicio))
     );
   }
 }

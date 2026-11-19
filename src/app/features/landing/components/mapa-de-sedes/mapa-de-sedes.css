@@ -1,0 +1,114 @@
+:host {
+  display: block;
+}
+
+.mapa {
+  margin: 0;
+}
+
+.mapa__dibujo {
+  display: grid;
+  justify-items: center;
+  gap: var(--esp-9);
+  padding: clamp(1.5rem, 1rem + 2vw, 2.75rem);
+  border-radius: 28px 28px 8px 28px;
+  background: var(--color-landing-menta-tinte);
+  font-size: var(--tipo-xs);
+}
+
+.mapa__org,
+.mapa__compartido {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-5) var(--esp-7);
+  border-radius: var(--radio-pastilla);
+}
+
+.mapa__org {
+  position: relative;
+  background: var(--color-landing-menta);
+  color: var(--color-landing-menta-texto);
+  font-size: var(--tipo-sm);
+}
+
+.mapa__org app-icono {
+  font-size: 1.25rem;
+}
+
+.mapa__org span,
+.mapa__sede {
+  display: grid;
+  line-height: 1.35;
+}
+
+/* Las ramas: del nodo de la organización a cada sede. */
+.mapa__org::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: calc(var(--esp-9) / 2);
+  background: var(--color-landing-menta);
+}
+
+.mapa__sedes {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-5);
+  width: 100%;
+}
+
+.mapa__sedes::before {
+  content: '';
+  position: absolute;
+  inset-inline: 16.66%;
+  top: calc(-1 * var(--esp-9) / 2);
+  height: calc(var(--esp-9) / 2);
+  border: var(--borde-medio) solid var(--color-landing-menta);
+  border-block-end: 0;
+  border-radius: var(--radio-md) var(--radio-md) 0 0;
+}
+
+.mapa__sede {
+  gap: var(--esp-1);
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: 16px;
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+}
+
+.mapa__sede b {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.mapa__compartido {
+  width: 100%;
+  justify-content: center;
+  border: var(--borde-medio) dashed var(--color-landing-coral);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.mapa__compartido app-icono {
+  color: var(--color-landing-coral);
+}
+
+@media (max-width: 40rem) {
+  .mapa__sedes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mapa__sedes::before,
+  .mapa__org::after {
+    display: none;
+  }
+
+  .mapa__compartido {
+    border-radius: 16px;
+  }
+}

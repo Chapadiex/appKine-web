@@ -1,14 +1,18 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
+import { ContratacionService } from '../../../../api/generated/api/contratacion.service';
 import { PlanesService } from '../../../../api/generated/api/planes.service';
 import { PlataformaService } from '../../../../api/generated/api/plataforma.service';
 import { ListPlatformOrganizationsRequestParams } from '../../../../api/generated/api/plataforma.serviceInterface';
-import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
-import { LimitUsageResponse } from '../../../../api/generated/model/limit-usage-response';
+import { ContratacionResponse } from '../../../../api/generated/model/contratacion-response';
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 import { PlatformOrganizationResponse } from '../../../../api/generated/model/platform-organization-response';
-import { PlatformSubscriptionResponse } from '../../../../api/generated/model/platform-subscription-response';
+import {
+  UpdateContratacionRequestAdicionalesEnum,
+  UpdateContratacionRequestServiciosEnum,
+} from '../../../../api/generated/model/update-contratacion-request';
 import {
   FILAS_POR_PAGINA_INICIAL,
   Paginacion,
@@ -30,6 +34,19 @@ import {
   PESTANAS_DE_PLATAFORMA,
 } from '../../models/pestanas-de-plataforma';
 import { ErrorSuscripcion, traducirErrorSuscripcion } from '../../models/suscripcion-errors';
+import { ErrorContratacion, traducirErrorContratacion } from '../../models/contratacion-errors';
+import {
+  SERVICIOS,
+  Servicio,
+  diasRestantes,
+  marcaDeSuscripcion,
+  planesOfrecidos,
+  rotuloDeTope,
+  serviciosEnTexto,
+  tieneIa,
+  topeDeSedes,
+} from '../../models/contratacion';
+import { RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
@@ -37,10 +54,13 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 type Estado =
   | { readonly tipo: 'inicial' }
   | { readonly tipo: 'cargando' }
-  | { readonly tipo: 'listo'; readonly suscripcion: PlatformSubscriptionResponse }
-  | { readonly tipo: 'error'; readonly error: ErrorSuscripcion };
+  | { readonly tipo: 'listo'; readonly contratacion: ContratacionResponse }
+  | { readonly tipo: 'error'; readonly error: ErrorContratacion };
 
 type EstadoDeSuscripcion = NonNullable<ListPlatformOrganizationsRequestParams['status']>;
+
+/** Lo que el panel necesita del centro elegido: viene del listado o de la vuelta del alta. */
+type CentroElegido = Pick<PlatformOrganizationResponse, 'id' | 'name' | 'slug'>;
 
 interface PaginaDeCentros {
   readonly centros: readonly PlatformOrganizationResponse[];
@@ -55,23 +75,24 @@ type Listado =
   | { readonly tipo: 'error'; readonly error: ErrorSuscripcion };
 
 /**
- * La suscripcion de un centro y el cambio de plan, para la administracion de plataforma (PLA-06).
+ * La suscripcion y la contratacion de un centro, para la administracion de plataforma (PLA-06 y
+ * landing con prueba gratis, 18/11/2026).
  *
- * <p><b>Por que existe (D3 del pre-QA del 14/10).</b> El cambio de plan exige `expectedVersion`, y
- * la unica lectura de la suscripcion era la del tenant (`GET /organizations/{org}/subscription`),
- * que para la plataforma pide un acceso de soporte abierto. Sin soporte, la version solo salia de
- * la base. `appKine-api` #133 agrego `getPlatformSubscription` con el mismo guard que el cambio de
- * plan, y esta pantalla toma la version <b>de ahi</b>, nunca de un campo que se escriba a mano.
+ * <p><b>Una sola lectura, una sola version.</b> El panel lee la contratacion de plataforma
+ * (`getContratacionDeCentroEnPlataforma`): plan, servicios, adicionales, estado, fin de la prueba y
+ * la version de la suscripcion. El cambio (`updateContratacionDeCentro`) es un reemplazo completo
+ * con esa version; si otro cambio llego antes, 409 y la pantalla relee. Reemplaza al viejo "Cambiar
+ * el plan", que ofrecia todos los planes: ahora solo se contratan los que se ofrecen.
  *
- * <p><b>El centro se elige, no se tipea (RNF-M01-005).</b> El listado de plataforma
- * (`listPlatformOrganizations`, `appKine-api` #137) busca por nombre o slug y filtra por el estado
- * de la suscripcion. El identificador viaja por detras: la persona reconoce al centro por su
- * nombre, no por un numero interno.
+ * <p><b>La prueba.</b> `PRUEBA` muestra los dias que quedan; vencida, el centro esta en solo lectura
+ * (`soloLectura`) aunque el estado guardado siga en `PRUEBA`. "Pasar a contrato" manda
+ * `contratar: true` y la deja `ACTIVA`, vencida o no.
  *
- * <p><b>Sin contexto de tenant</b>, igual que la bandeja de solicitudes: quien la usa administra la
- * plataforma y no es miembro del centro. Tampoco trae el consumo de limites, que es dato del centro
- * y sigue detras del soporte: los limites que el plan nuevo ya excede vuelven en la respuesta del
- * cambio, como aviso.
+ * <p><b>El centro se elige, no se tipea (RNF-M01-005).</b> El listado de plataforma busca por
+ * nombre o slug y filtra por el estado de la suscripcion. Tambien se abre con `?org=<id>`, que es
+ * a donde vuelve el alta de un centro.
+ *
+ * <p><b>Sin contexto de tenant</b>: quien la usa administra la plataforma y no es miembro del centro.
  */
 @Component({
   selector: 'app-suscripcion-de-centro-page',
@@ -86,17 +107,29 @@ type Listado =
     Paginacion,
     EstadoVacio,
     Alerta,
+    RouterLink,
   ],
   templateUrl: './suscripcion-de-centro-page.html',
 })
-export class SuscripcionDeCentroPage {
+export class SuscripcionDeCentroPage implements OnInit {
   private readonly plataforma = inject(PlataformaService);
-  private readonly suscripciones = inject(SuscripcionesService);
+  private readonly contratacionDeCentro = inject(ContratacionService);
   private readonly avisos = inject(AvisosStore);
   private readonly catalogoDePlanes = inject(PlanesService);
 
+  /** `?org=<id>&nombre=<nombre>`: abre el panel de ese centro (vuelta del alta). */
+  readonly org = input<string | undefined>(undefined);
+  readonly nombre = input<string | undefined>(undefined);
+
   protected readonly pestanasDePlataforma = PESTANAS_DE_PLATAFORMA;
   protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_PLATAFORMA;
+  protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
+  protected readonly servicios = SERVICIOS;
+  protected readonly marcaDeSuscripcion = marcaDeSuscripcion;
+  protected readonly topeDeSedes = topeDeSedes;
+  protected readonly tieneIa = tieneIa;
+  protected readonly rotuloDeTope = rotuloDeTope;
+  protected readonly serviciosEnTexto = serviciosEnTexto;
 
   protected readonly busqueda = signal('');
   protected readonly filtroDeEstado = signal<EstadoDeSuscripcion | ''>('');
@@ -117,20 +150,21 @@ export class SuscripcionDeCentroPage {
   protected readonly orden = ordenDeServidor<
     CamposDeSort<ListPlatformOrganizationsRequestParams['sort']>
   >(() => this.listar(0));
-  /** El centro elegido del listado: su nombre encabeza la suscripcion. */
-  protected readonly centro = signal<PlatformOrganizationResponse | null>(null);
+  /** El centro elegido del listado: su nombre encabeza la contratacion. */
+  protected readonly centro = signal<CentroElegido | null>(null);
   protected readonly estado = signal<Estado>({ tipo: 'inicial' });
+  /** Solo los planes que se ofrecen. */
   protected readonly planes = signal<readonly PlanResponse[]>([]);
   protected readonly planesNoDisponibles = signal(false);
+
+  // Lo que se esta editando en el panel, inicializado con la ultima lectura.
   protected readonly planElegido = signal('');
+  protected readonly serviciosElegidos = signal<readonly Servicio[]>([]);
+  protected readonly iaElegida = signal(false);
+
   protected readonly enviando = signal(false);
-  /** Rechazo del ultimo cambio de plan: va arriba del formulario, dentro del panel (UX-12). */
+  /** Rechazo del ultimo cambio: va arriba del formulario, dentro del panel (UX-12). */
   protected readonly errorCambio = signal<string | null>(null);
-  /**
-   * Limites del plan nuevo que el uso actual ya supera. Es una consecuencia del cambio que tiene
-   * que seguir a la vista mientras el panel este abierto, no un aviso que se va solo.
-   */
-  protected readonly excedidos = signal<readonly LimitUsageResponse[]>([]);
 
   /** El filtro de la ultima busqueda enviada: paginar no toma lo que se esta escribiendo. */
   private filtroAplicado: Pick<ListPlatformOrganizationsRequestParams, 'q' | 'status'> = {};
@@ -145,26 +179,60 @@ export class SuscripcionDeCentroPage {
     const listado = this.listado();
     return listado.tipo === 'error' ? listado.error : null;
   });
-  protected readonly suscripcion = computed(() => {
+  protected readonly contratacion = computed(() => {
     const estado = this.estado();
-    return estado.tipo === 'listo' ? estado.suscripcion : null;
+    return estado.tipo === 'listo' ? estado.contratacion : null;
   });
   protected readonly error = computed(() => {
     const estado = this.estado();
     return estado.tipo === 'error' ? estado.error : null;
   });
-  protected readonly activa = computed(() => this.suscripcion()?.status === 'ACTIVA');
-  /** Elegir el plan vigente no es un cambio: el backend responderia `applied=false`. */
-  protected readonly mismoPlan = computed(
-    () => this.planElegido() !== '' && this.planElegido() === this.suscripcion()?.planCode,
+  protected readonly enPrueba = computed(() => this.contratacion()?.estado === 'PRUEBA');
+  /** Suspendida o cancelada: la contratacion no se cambia desde aca. */
+  protected readonly editable = computed(() => {
+    const estado = this.contratacion()?.estado;
+    return estado === 'PRUEBA' || estado === 'ACTIVA';
+  });
+  protected readonly dias = computed(() => diasRestantes(this.contratacion()?.pruebaHasta));
+  protected readonly pruebaVencida = computed(() => {
+    const dias = this.dias();
+    return this.enPrueba() && dias !== null && dias <= 0;
+  });
+  /** El plan vigente no se ofrece mas (BASICO, PROFESIONAL): hay que elegir uno ofrecido. */
+  protected readonly planNoOfrecido = computed(() => {
+    const actual = this.contratacion()?.planCode;
+    return actual !== undefined && !this.planes().some((p) => p.code === actual);
+  });
+  protected readonly planElegidoOfrecido = computed(() =>
+    this.planes().some((p) => p.code === this.planElegido()),
   );
+  protected readonly sinServicios = computed(() => this.serviciosElegidos().length === 0);
+  /** Lo editado es igual a lo leido: guardar no cambiaria nada. */
+  protected readonly sinCambios = computed(() => {
+    const c = this.contratacion();
+    if (c === null) return true;
+    const leidos = [...(c.servicios ?? [])].sort().join();
+    const elegidos = [...this.serviciosElegidos()].sort().join();
+    return (
+      this.planElegido() === c.planCode &&
+      leidos === elegidos &&
+      this.iaElegida() === tieneIa(c.adicionales)
+    );
+  });
 
   constructor() {
     this.catalogoDePlanes.listPlans().subscribe({
-      next: (planes) => this.planes.set(planes),
+      next: (planes) => this.planes.set(planesOfrecidos(planes)),
       error: () => this.planesNoDisponibles.set(true),
     });
     this.listar(0);
+  }
+
+  ngOnInit(): void {
+    const id = Number(this.org());
+    if (this.org() && Number.isInteger(id) && id > 0) {
+      this.elegir({ id, name: this.nombre() ?? 'Centro nuevo' });
+    }
   }
 
   protected buscar(): void {
@@ -195,21 +263,19 @@ export class SuscripcionDeCentroPage {
     this.listar(pagina);
   }
 
-  protected elegir(centro: PlatformOrganizationResponse): void {
+  protected elegir(centro: CentroElegido): void {
     if (centro.id === undefined) return;
     this.centro.set(centro);
     this.errorCambio.set(null);
-    this.excedidos.set([]);
     this.leer();
   }
 
-  /** Cierra el panel de la suscripcion: descarta la lectura en vuelo y el resultado. */
+  /** Cierra el panel: descarta la lectura en vuelo y el resultado. */
   protected cerrarSuscripcion(): void {
     this.pedido?.unsubscribe();
     this.centro.set(null);
     this.estado.set({ tipo: 'inicial' });
     this.errorCambio.set(null);
-    this.excedidos.set([]);
   }
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {
@@ -220,71 +286,84 @@ export class SuscripcionDeCentroPage {
     return formatearFecha(centro.createdAt) || '—';
   }
 
-  protected cambiarPlan(): void {
+  protected fechaDeFin(instante: string | undefined): string {
+    return formatearFecha(instante) || '—';
+  }
+
+  protected alternarServicio(servicio: Servicio, elegido: boolean): void {
+    this.serviciosElegidos.update((actuales) =>
+      elegido
+        ? [...actuales.filter((s) => s !== servicio), servicio]
+        : actuales.filter((s) => s !== servicio),
+    );
+  }
+
+  protected servicioElegido(servicio: Servicio): boolean {
+    return this.serviciosElegidos().includes(servicio);
+  }
+
+  /** Guarda lo editado; con `contratar`, ademas pasa la prueba a contrato. */
+  protected guardar(contratar: boolean): void {
     const orgId = this.centro()?.id;
-    const suscripcion = this.suscripcion();
+    const c = this.contratacion();
     const planCode = this.planElegido();
     if (
       orgId === undefined ||
-      suscripcion?.version === undefined ||
-      planCode === '' ||
-      this.mismoPlan() ||
-      this.enviando()
+      c?.version === undefined ||
+      !this.planElegidoOfrecido() ||
+      this.sinServicios() ||
+      this.enviando() ||
+      (!contratar && this.sinCambios())
     ) {
       return;
     }
     this.enviando.set(true);
     this.errorCambio.set(null);
-    this.excedidos.set([]);
-    const centro = this.centro()?.name ?? 'El centro';
-    this.suscripciones
-      .changeSubscriptionPlan({
+    const nombre = this.centro()?.name ?? 'El centro';
+    this.contratacionDeCentro
+      .updateContratacionDeCentro({
         orgId,
-        planChangeRequest: { planCode, expectedVersion: suscripcion.version },
+        updateContratacionRequest: {
+          planCode,
+          servicios: SERVICIOS.filter((s) => this.servicioElegido(s.valor)).map(
+            (s) => s.valor as UpdateContratacionRequestServiciosEnum,
+          ),
+          adicionales: this.iaElegida() ? [UpdateContratacionRequestAdicionalesEnum.IA] : [],
+          contratar,
+          version: c.version,
+        },
       })
       .subscribe({
-        next: (respuesta) => {
+        next: (actualizada) => {
           this.enviando.set(false);
-          this.excedidos.set((respuesta.warnings ?? []).filter((w) => w.exceeded !== false));
-          // El panel queda abierto a proposito: es el detalle de la suscripcion, y la relectura
-          // muestra el plan y la version nuevos. El resultado va al aviso global.
-          if (respuesta.applied === false) {
-            this.avisos.info('Ese plan ya era el vigente', {
-              descripcion: `${centro}: no hubo cambio.`,
-            });
-          } else {
-            this.avisos.exito('Plan cambiado', {
-              descripcion: `${centro} pasó al plan ${this.nombreDePlan(planCode)}.`,
-            });
-          }
-          // La version nueva sale de la relectura, que es la misma fuente que uso este envio.
-          this.leer();
+          this.avisos.exito(contratar ? 'Pasó a contrato' : 'Contratación guardada', {
+            descripcion: contratar
+              ? `${nombre} dejó la prueba: la suscripción está activa.`
+              : `${nombre}: plan ${actualizada.planNombre ?? actualizada.planCode}, ${serviciosEnTexto(
+                  actualizada.servicios,
+                )}.`,
+          });
+          this.mostrar(actualizada);
+          // El listado muestra plan y estado: se relee la pagina en la que estaba.
+          this.listar(this.paginaDeCentros()?.pagina ?? 0);
         },
         error: (error: unknown) => {
           this.enviando.set(false);
-          const traducido = traducirErrorSuscripcion(error);
+          const traducido = traducirErrorContratacion(error, 'contratacion');
           this.errorCambio.set(traducido.mensaje);
-          if (traducido.causa === 'version-vieja') this.leer();
+          if (traducido.causa === 'conflicto') this.leer();
         },
       });
   }
 
-  /** Modificador de `.marca-estado`: activa es vigente, suspendida reversible, cancelada terminal. */
+  /** Modificador de `.marca-estado` del listado (el estado guardado). */
   protected claseDeEstado(estado: string | undefined): string {
-    if (estado === 'ACTIVA') return 'marca-estado--activa';
-    if (estado === 'SUSPENDIDA') return 'marca-estado--suspendida';
-    return 'marca-estado--revocada';
+    return marcaDeSuscripcion(estado).clase;
   }
 
   protected nombreDePlan(codigo: string | undefined): string {
     if (!codigo) return 'sin plan';
     return this.planes().find((p) => p.code === codigo)?.name ?? codigo;
-  }
-
-  protected rotuloDeLimite(limite: LimitUsageResponse): string {
-    return `${limite.code ?? 'Limite'}: ${limite.currentUsage ?? '?'} en uso, el plan admite ${
-      limite.limitValue ?? '?'
-    }`;
   }
 
   private listar(pagina: number): void {
@@ -318,13 +397,22 @@ export class SuscripcionDeCentroPage {
     if (orgId === undefined) return;
     this.estado.set({ tipo: 'cargando' });
     this.pedido?.unsubscribe();
-    this.pedido = this.plataforma.getPlatformSubscription({ orgId }).subscribe({
-      next: (suscripcion) => {
-        this.estado.set({ tipo: 'listo', suscripcion });
-        this.planElegido.set(suscripcion.planCode ?? '');
-      },
-      error: (error: unknown) =>
-        this.estado.set({ tipo: 'error', error: traducirErrorSuscripcion(error) }),
-    });
+    this.pedido = this.contratacionDeCentro
+      .getContratacionDeCentroEnPlataforma({ orgId })
+      .subscribe({
+        next: (contratacion) => this.mostrar(contratacion),
+        error: (error: unknown) =>
+          this.estado.set({
+            tipo: 'error',
+            error: traducirErrorContratacion(error, 'contratacion'),
+          }),
+      });
+  }
+
+  private mostrar(contratacion: ContratacionResponse): void {
+    this.estado.set({ tipo: 'listo', contratacion });
+    this.planElegido.set(contratacion.planCode ?? '');
+    this.serviciosElegidos.set([...(contratacion.servicios ?? [])]);
+    this.iaElegida.set(tieneIa(contratacion.adicionales));
   }
 }

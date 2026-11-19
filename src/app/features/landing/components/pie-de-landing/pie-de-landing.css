@@ -1,0 +1,58 @@
+:host {
+  display: block;
+}
+
+/* El pie cierra con el azul noche de la banda de IA. */
+.pie {
+  padding-block: var(--esp-9) clamp(2rem, 1.5rem + 2vw, 3.5rem);
+  background: var(--color-banda-fondo);
+  color: var(--color-banda-texto);
+}
+
+.pie .logo {
+  color: var(--color-banda-texto);
+}
+
+.pie__fila {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--esp-8);
+}
+
+.pie__marca p {
+  margin: var(--esp-4) 0 0;
+}
+
+.pie__marca p,
+.pie__enlaces span {
+  color: var(--color-banda-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.pie__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-4) var(--esp-8);
+  font-size: var(--tipo-sm);
+}
+
+.pie a:focus-visible {
+  outline-color: var(--color-banda-acento);
+}
+
+.pie__enlaces a {
+  color: inherit;
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  text-underline-offset: 0.3em;
+}
+
+.pie__enlaces a:hover {
+  text-decoration: underline;
+}
+
+.pie__marca p {
+  text-wrap: pretty;
+}

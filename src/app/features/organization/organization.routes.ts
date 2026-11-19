@@ -8,6 +8,7 @@ import {
   PERMISO_TENANT_UPDATE,
 } from '../../core/models/permisos';
 import { permissionGuard } from '../../core/guards/permission.guard';
+import { primerosPasosGuard } from '../../core/guards/primeros-pasos.guard';
 import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
 
 /**
@@ -46,7 +47,9 @@ import { ANCHO_AMPLIO, DATA_ANCHO } from '../../core/models/ancho-de-contenido';
  */
 export const routes: Routes = [
   {
+    // Es donde aterriza el ingreso: la primera vez, el dueno completa su sede (18/11/2026).
     path: '',
+    canActivate: [primerosPasosGuard],
     loadComponent: () =>
       import('./pages/organization/organization-page').then((m) => m.OrganizationPage),
     title: 'AKINE - Organización',

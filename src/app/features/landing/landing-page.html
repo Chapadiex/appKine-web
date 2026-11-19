@@ -1,0 +1,219 @@
+<div class="landing">
+  <header class="cabecera">
+    <div class="cabecera__fila envoltura">
+      <a class="logo" href="#portada" aria-label="AKINE, ir al comienzo">
+        <span class="logo__marca" aria-hidden="true">A</span>
+        <span class="logo__nombre" aria-hidden="true">AKINE</span>
+      </a>
+      <nav class="cabecera__nav" aria-label="Secciones de la página">
+        <a href="#servicios">Servicios</a>
+        <a href="#planes">Planes</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <div class="cabecera__acciones">
+        <a class="boton-texto cabecera__ingresar" [routerLink]="rutaLogin">Ingresar</a>
+        <a class="boton" href="#prueba">Probalo gratis</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Portada: qué es, para quién, la acción y el producto a la vista. -->
+  <section class="portada" id="portada" aria-labelledby="portada-titulo">
+    <div class="formas" aria-hidden="true">
+      <span class="forma forma--menta"></span>
+      <span class="forma forma--coral"></span>
+      <span class="forma forma--sol"></span>
+    </div>
+    <div class="portada__fila envoltura">
+      <div class="portada__texto">
+        <h1 class="portada__titulo" id="portada-titulo">
+          El día entero de tu centro,
+          <span class="resaltado"
+            >en orden.<svg
+              class="resaltado__trazo"
+              viewBox="0 0 220 18"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M3 13c38-7 77-10 116-9 33 1 66 4 98 8" /></svg
+          ></span>
+        </h1>
+        <p class="portada__bajada">
+          Turnos, recepción, historia clínica, obras sociales, clases y caja en una sola aplicación,
+          para centros de kinesiología, rehabilitación y actividades.
+        </p>
+        <div class="portada__acciones">
+          <a class="boton boton--grande" href="#prueba">Probalo gratis 30 días</a>
+          <a class="boton boton--secundario boton--grande" href="#planes">
+            Ver planes <app-icono nombre="flecha-derecha" />
+          </a>
+        </div>
+        <ul class="portada__datos">
+          <li><app-icono nombre="sede" />Una sede o una red</li>
+          <li><app-icono nombre="operacion" />En la PC y en la tablet</li>
+          <li><app-icono nombre="preferencias" />Con tu logo y tus colores</li>
+        </ul>
+      </div>
+      <app-agenda-de-muestra class="portada__muestra" />
+    </div>
+  </section>
+
+  <!-- Los dos servicios: dos bloques de color desparejos, unidos por el "+". -->
+  <section class="seccion" id="servicios" aria-labelledby="servicios-titulo">
+    <div class="envoltura">
+      <div class="seccion__encabezado">
+        <h2 class="seccion__titulo" id="servicios-titulo">Kinesiología, actividades o las dos.</h2>
+        <p class="seccion__bajada">
+          Contratás el servicio que das. Si das los dos, la misma persona tiene una sola ficha:
+          paciente a la mañana, alumna de pilates a la tarde.
+        </p>
+      </div>
+
+      <div class="servicios">
+        @for (servicio of servicios; track servicio.titulo) {
+          <article class="servicio" [class.servicio--coral]="$index === 1">
+            <span class="servicio__icono"><app-icono [nombre]="servicio.icono" /></span>
+            <h3 class="servicio__titulo">{{ servicio.titulo }}</h3>
+            <p class="servicio__para">{{ servicio.para }}</p>
+            <ul class="servicio__lista">
+              @for (beneficio of servicio.beneficios; track beneficio) {
+                <li><app-icono nombre="tilde" />{{ beneficio }}</li>
+              }
+            </ul>
+          </article>
+        }
+        <span class="servicios__union" aria-hidden="true"><app-icono nombre="agregar" /></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lo que tienen todos: el día de un centro, de la apertura al cierre. -->
+  <section class="seccion seccion--menta" aria-labelledby="dia-titulo">
+    <div class="envoltura">
+      <div class="seccion__encabezado">
+        <h2 class="seccion__titulo" id="dia-titulo">
+          Lo que tiene todo centro, de la apertura al cierre.
+        </h2>
+        <p class="seccion__bajada">
+          Elijas el servicio que elijas, la base del mostrador viene siempre.
+        </p>
+      </div>
+
+      <ol class="dia">
+        @for (momento of dia; track momento.hora) {
+          <li class="momento">
+            <span class="momento__hora">{{ momento.hora }}</span>
+            <h3 class="momento__titulo">{{ momento.titulo }}</h3>
+            <p class="momento__texto">{{ momento.texto }}</p>
+          </li>
+        }
+      </ol>
+
+      <ul class="rasgos">
+        @for (rasgo of base; track rasgo.titulo) {
+          <li class="rasgo">
+            <app-icono [nombre]="rasgo.icono" />
+            <span
+              ><b>{{ rasgo.titulo }}.</b> {{ rasgo.texto }}</span
+            >
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Varias sedes, una organización. -->
+  <section class="seccion seccion--blanca" id="sedes" aria-labelledby="sedes-titulo">
+    <div class="envoltura sedes">
+      <div>
+        <h2 class="seccion__titulo" id="sedes-titulo">Varias sedes, una sola organización.</h2>
+        <p class="seccion__bajada">
+          Abrir la segunda sede no es empezar de nuevo: se suma a la organización que ya tenés.
+        </p>
+        <ul class="sedes__lista">
+          @for (rasgo of sedes; track rasgo.titulo) {
+            <li>
+              <span class="sedes__icono"><app-icono [nombre]="rasgo.icono" /></span>
+              <span>
+                <b>{{ rasgo.titulo }}</b>
+                {{ rasgo.texto }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <app-mapa-de-sedes />
+    </div>
+  </section>
+
+  <!-- El adicional de IA. -->
+  <app-seccion-ia />
+
+  <!-- Planes con el armador. Sin precios: todavía no están definidos. -->
+  <section class="seccion" id="planes" aria-labelledby="planes-titulo">
+    <div class="envoltura">
+      <div class="seccion__encabezado">
+        <h2 class="seccion__titulo" id="planes-titulo">Armá tu plan.</h2>
+        <p class="seccion__bajada">
+          El plan lo define la cantidad de sedes. Los servicios y la IA se suman a cualquiera.
+        </p>
+      </div>
+      <app-armador-de-plan />
+    </div>
+  </section>
+
+  <!-- Pedido de la prueba gratis. -->
+  <section class="seccion seccion--coral" id="prueba" aria-labelledby="prueba-titulo">
+    <div class="formas" aria-hidden="true">
+      <span class="forma forma--menta"></span>
+      <span class="forma forma--sol"></span>
+    </div>
+    <div class="envoltura prueba">
+      <div>
+        <h2 class="seccion__titulo" id="prueba-titulo">Probalo gratis 30 días.</h2>
+        <p class="seccion__bajada">
+          Arranca con todo prendido: los dos servicios, la IA y hasta tres sedes.
+        </p>
+        <ol class="pasos">
+          <li>
+            <span
+              ><b>Nos pedís la prueba</b> Con el nombre de tu centro y cómo te contactamos.</span
+            >
+          </li>
+          <li>
+            <span><b>Armamos tu organización</b> Te llega una invitación por correo.</span>
+          </li>
+          <li>
+            <span><b>Ponés tu contraseña</b> Cargás tu primera sede y empezás a dar turnos.</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- El pedido de prueba (AKINE-landing-y-ofertas.md §5): formulario público, sin sesión. -->
+      <div class="prueba__panel">
+        <app-pedido-de-prueba />
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion seccion--blanca" id="preguntas" aria-labelledby="preguntas-titulo">
+    <div class="envoltura preguntas">
+      <h2 class="seccion__titulo" id="preguntas-titulo">Preguntas frecuentes.</h2>
+      <div class="preguntas__lista">
+        @for (item of preguntas; track item.pregunta) {
+          <details class="pregunta">
+            <summary>
+              <app-icono nombre="flecha-abajo" />
+              {{ item.pregunta }}
+            </summary>
+            <p>{{ item.respuesta }}</p>
+          </details>
+        }
+      </div>
+    </div>
+  </section>
+
+  <app-pie-de-landing />
+</div>

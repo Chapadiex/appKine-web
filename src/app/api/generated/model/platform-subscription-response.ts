@@ -47,11 +47,13 @@ export interface PlatformSubscriptionResponse {
     version?: number;
 }
 export enum PlatformSubscriptionResponseAllowedTargetsEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'
 };
 export enum PlatformSubscriptionResponseStatusEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'

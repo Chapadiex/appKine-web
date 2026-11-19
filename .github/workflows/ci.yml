@@ -445,17 +445,18 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-  # E2E contra el backend REAL (AKINE G-9): MySQL + Mailpit + backend + frontend en el runner.
+  # E2E contra el backend REAL (AKINE G-9): PostgreSQL + Mailpit + backend + frontend en el runner.
   #
   # El backend se construye con su propio Dockerfile, desde `Chapadiex/appKine-api` en la MISMA
   # rama que este PR cuando existe y si no desde `main`, igual que el job `contrato`. La imagen
   # no se publica en ningun registry: se construye aca, con la cache de capas de Actions para no
   # bajar Maven entero en cada corrida.
   #
-  # MySQL y Mailpit salen del `compose.yaml` del backend y no de `services:` del job, porque
-  # MySQL necesita `--log-bin-trust-function-creators=1` para los triggers de V14 y un service
-  # container no admite argumentos de arranque. Ademas el contenedor queda con el nombre
-  # `akine-mysql`, que es el que usan los specs viejos para sembrar por SQL.
+  # PostgreSQL y Mailpit salen del `compose.yaml` del backend y no de `services:` del job: la base
+  # necesita el script de `ops/postgres/init` (rol, base y extensiones), y el contenedor queda con
+  # el nombre `akine-postgres`, que es el que usan los specs que siembran por SQL. Desde el
+  # 12/11/2026 el backend es solo PostgreSQL (ADR-0026); se levantan solo esos dos servicios, no el
+  # modelo de IA ni el dictado.
   #
   # La base es NUEVA en cada corrida: el catalogo global esta vacio y crear un servicio exige rol
   # de plataforma. Por eso el backend arranca con AKINE_BOOTSTRAP_ADMIN_EMAIL (DP-14) y el
@@ -510,8 +511,8 @@ jobs:
           echo "Contrato: $(grep -o '<akine.contract.version>[^<]*' pom.xml | cut -d'>' -f2)"
 
       # Proyecto `akine` explicito: la red queda como `akine_default` y el backend se engancha ahi.
-      - name: Levantar MySQL y Mailpit
-        run: docker compose -p akine -f appKine-api/compose.yaml up -d --wait
+      - name: Levantar PostgreSQL y Mailpit
+        run: docker compose -p akine -f appKine-api/compose.yaml up -d --wait postgres mailpit
 
       - name: Preparar buildx
         uses: docker/setup-buildx-action@v4
@@ -531,7 +532,7 @@ jobs:
         run: |
           docker run -d --name akine-api --network akine_default -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=local \
-            -e AKINE_DB_URL='jdbc:mysql://mysql:3306/akine_local?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC' \
+            -e AKINE_DB_URL='jdbc:postgresql://postgres:5432/akine_local' \
             -e AKINE_DB_USER=akine -e AKINE_DB_PASSWORD=akine \
             -e AKINE_MAIL_HOST=mailpit -e AKINE_MAIL_PORT=1025 \
             -e AKINE_BOOTSTRAP_ADMIN_EMAIL="$AKINE_E2E_PLATAFORMA_EMAIL" \

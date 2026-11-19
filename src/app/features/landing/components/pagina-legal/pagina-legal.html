@@ -1,0 +1,30 @@
+<div class="legal">
+  <header class="cabecera">
+    <div class="cabecera__fila envoltura">
+      <a class="logo" routerLink="/" aria-label="AKINE, volver a la página principal">
+        <span class="logo__marca" aria-hidden="true">A</span>
+        <span class="logo__nombre" aria-hidden="true">AKINE</span>
+      </a>
+      <a class="cabecera__volver" routerLink="/">Volver a la página principal</a>
+    </div>
+  </header>
+
+  <article class="envoltura legal__cuerpo" aria-labelledby="legal-titulo">
+    <h1 class="legal__titulo" id="legal-titulo">{{ titulo() }}</h1>
+    <p class="legal__fecha">Borrador del {{ fecha() }}</p>
+
+    <app-alerta
+      tipo="advertencia"
+      titulo="Borrador para revisión legal. Este texto no está vigente."
+    >
+      <p>
+        Lo publicamos para revisarlo. Los datos entre corchetes, como
+        <mark class="por-completar">[Razón social]</mark>, faltan completar.
+      </p>
+    </app-alerta>
+
+    <ng-content />
+  </article>
+
+  <app-pie-de-landing />
+</div>

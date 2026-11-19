@@ -61,7 +61,7 @@ test.describe('Historia clinica - timeline (D-a)', () => {
     const auditadas = sql(
       `SELECT COUNT(*) FROM audit_event a JOIN organization o ON o.id = a.organization_id ` +
         `WHERE o.name='${sembrada.organizacion}' AND a.event_type='HISTORIA_CLINICA_ACCESSED' ` +
-        `AND (a.reason LIKE '%${MOTIVO_DE_ACCESO}%' OR a.details LIKE '%${MOTIVO_DE_ACCESO}%')`,
+        `AND (a.reason LIKE '%${MOTIVO_DE_ACCESO}%' OR a.details::text LIKE '%${MOTIVO_DE_ACCESO}%')`,
     );
     expect(Number(auditadas), 'el acceso con motivo queda auditado').toBeGreaterThan(0);
   });

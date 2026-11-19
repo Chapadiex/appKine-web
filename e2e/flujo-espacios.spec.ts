@@ -32,13 +32,15 @@ test.describe('Espacios y boxes contra el backend real', () => {
 
     // --- Alta por pantalla ---
     await navegar(page, '/espacios');
-    await page.getByRole('link', { name: 'Dar de alta un espacio' }).click();
-    // El alta la monta el router: ver `esperarFormularioEnlazado`.
-    await esperarFormularioEnlazado(page.getByLabel('Nombre del espacio'));
-    await page.getByLabel('Nombre del espacio').fill(nombre);
-    await page.getByLabel('Personas simultáneas que admite').fill('1');
+    await page.getByRole('button', { name: 'Dar de alta un espacio' }).click();
+    // Desde el 10/11/2026 el alta es un panel lateral sobre el listado: el buscador de la tabla
+    // tambien se llama "Nombre del espacio", asi que todo se busca dentro del panel.
+    const panelDeAlta = page.getByRole('dialog', { name: 'Nuevo espacio' });
+    await esperarFormularioEnlazado(panelDeAlta.getByLabel('Nombre del espacio'));
+    await panelDeAlta.getByLabel('Nombre del espacio').fill(nombre);
+    await panelDeAlta.getByLabel('Capacidad').fill('1');
     const alta = respuestaDe(page, 'POST', /\/espacios$/);
-    await page.getByRole('button', { name: 'Dar de alta el espacio' }).click();
+    await panelDeAlta.getByRole('button', { name: 'Dar de alta el espacio' }).click();
     const creado = await alta;
     expect(creado.status(), await creado.text()).toBe(201);
     const { id: espacioId } = (await creado.json()) as { id: number };

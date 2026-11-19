@@ -43,6 +43,7 @@ export interface PlatformOrganizationResponse {
     status?: PlatformOrganizationResponseStatusEnum;
 }
 export enum PlatformOrganizationResponseStatusEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'

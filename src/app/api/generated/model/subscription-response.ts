@@ -52,11 +52,13 @@ export interface SubscriptionResponse {
     version?: number;
 }
 export enum SubscriptionResponseAllowedTargetsEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'
 };
 export enum SubscriptionResponseStatusEnum {
+    PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA'

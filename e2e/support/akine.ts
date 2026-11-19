@@ -10,7 +10,7 @@ import { APIRequestContext, Locator, Page, expect } from '@playwright/test';
  * Utilidades compartidas por los E2E de AKINE-01.02.
  *
  * <p>Todo lo que hay aca golpea el stack REAL: el backend en 8080 a traves del proxy de dev, y
- * la base `akine_local` del contenedor `akine-mysql`. No hay mocks, ni `route.fulfill()`, ni
+ * la base `akine_local` del contenedor `akine-postgres`. No hay mocks, ni `route.fulfill()`, ni
  * atajos de autenticacion: el motivo por el que los escenarios 10 y 11 quedaron diferidos desde
  * AKINE-01.01 es justamente que un atajo los pondria en verde sin probar el camino real.
  */
@@ -24,26 +24,39 @@ export const PASSWORD = 'una-contrasena-larga-y-unica-2026';
  * <p><b>Esto NO es una via legitima de la aplicacion.</b> Se usa exclusivamente para SEMBRAR
  * estado que el producto no expone de otra forma —ver {@link activarCuentaPorSql}— y jamas para
  * verificar un resultado que el E2E deberia leer de la pantalla.
+ *
+ * <p>PostgreSQL desde el 12/11/2026 (ADR-0026 del backend): antes era `akine-mysql` y los specs que
+ * sembraban por SQL fallaban todos contra un backend que ya no usaba esa base. Salida en formato
+ * de `psql -At -F tab`: sin cabecera, columnas separadas por tabulador, igual que `mysql -N -B`.
  */
 export function sql(consulta: string): string {
-  return execFileSync(
-    'docker',
-    [
-      'exec',
-      // Contenedor de `appKine-api/compose.yaml`: el mismo nombre en desarrollo y en el CI.
-      process.env['AKINE_E2E_MYSQL_CONTAINER'] ?? 'akine-mysql',
-      'mysql',
-      '-N',
-      '-B',
-      '-u',
-      'akine',
-      '-pakine',
-      process.env['AKINE_E2E_MYSQL_DB'] ?? 'akine_local',
-      '-e',
-      consulta,
-    ],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-  ).trim();
+  return (
+    execFileSync(
+      'docker',
+      [
+        'exec',
+        // Contenedor de `appKine-api/compose.yaml`: el mismo nombre en desarrollo y en el CI.
+        process.env['AKINE_E2E_DB_CONTAINER'] ?? 'akine-postgres',
+        'psql',
+        '-U',
+        'akine',
+        '-d',
+        process.env['AKINE_E2E_DB'] ?? 'akine_local',
+        '-At',
+        '-F',
+        '	',
+        '-v',
+        'ON_ERROR_STOP=1',
+        '-c',
+        consulta,
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    )
+      .trim()
+      // Un INSERT/UPDATE de psql imprime "UPDATE 1": quien siembra no lo lee, y quien lee no lo espera.
+      .replace(/^(INSERT d+ d+|UPDATE d+|DELETE d+)$/m, '')
+      .trim()
+  );
 }
 
 /** Email sintetico y unico. `@ejemplo.test` es un TLD reservado: no puede existir de verdad. */
@@ -129,7 +142,7 @@ export async function conReintentoPor429<T extends { status(): number }>(
  */
 export function activarCuentaPorSql(email: string): void {
   sql(
-    `UPDATE cuenta SET estado='ACTIVA', updated_at=NOW(6) WHERE email_normalizado='${email.toLowerCase()}'`,
+    `UPDATE cuenta SET estado='ACTIVA', updated_at=now() WHERE email_normalizado='${email.toLowerCase()}'`,
   );
   expect(
     estadoDeCuenta(email),
@@ -172,11 +185,11 @@ export function darMembership(accountId: number, organizationId: number): void {
   sql(
     `INSERT INTO membership (organization_id, consultorio_id, account_id, role_code, is_founder,` +
       ` valid_from, active, version, created_at, updated_at)` +
-      ` VALUES (${organizationId}, NULL, ${accountId}, 'ORG_ADMIN', 0,` +
+      ` VALUES (${organizationId}, NULL, ${accountId}, 'ORG_ADMIN', false,` +
       // Un minuto atras y no NOW(6): `valid_from` lo compara el backend contra SU reloj, y si el
       // del contenedor de MySQL va adelantado medio segundo la membership todavia no vale en el
       // login que sigue y la cuenta entra con un solo contexto (visto el 08/10/2026, AKINE G-9).
-      ` NOW(6) - INTERVAL 1 MINUTE, 1, 0, NOW(6), NOW(6))`,
+      ` now() - interval '1 minute', true, 0, now(), now())`,
   );
 }
 

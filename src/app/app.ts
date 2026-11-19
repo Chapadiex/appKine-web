@@ -1,3 +1,4 @@
+import { FranjaDePrueba } from './layout/franja-de-prueba/franja-de-prueba';
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
@@ -64,7 +65,7 @@ import { TenantContextStore } from './core/services/tenant-context.store';
  */
 @Component({
   selector: 'app-root',
-  imports: [BarraSuperiorDiferida, RouterLink, RouterOutlet],
+  imports: [BarraSuperiorDiferida, FranjaDePrueba, RouterLink, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -229,6 +230,14 @@ export class App {
   /** Pantallas de acceso: tarjeta centrada, sin barra superior ni lateral. */
   protected readonly esAcceso = computed(() =>
     /^\/(auth|seleccionar-contexto)(\/|\?|$)/.test(this.url()),
+  );
+
+  /**
+   * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):
+   * sin barra superior ni lateral y a todo el ancho. Traen su propia cabecera y su pie.
+   */
+  protected readonly esLanding = computed(() =>
+    /^\/(terminos|privacidad)?(#|\?|$)/.test(this.url()),
   );
 
   protected readonly ancho = toSignal(

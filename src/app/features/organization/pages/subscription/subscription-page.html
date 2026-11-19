@@ -36,6 +36,30 @@
               </div>
             }
 
+            @case ('PRUEBA') {
+              @if (contratacion.pruebaVencida()) {
+                <div class="banner banner--suspendida" role="alert">
+                  <h3>La prueba gratis terminó</h3>
+                  <p>
+                    El centro queda en <strong>solo lectura</strong>: podés consultar y exportar
+                    todo, pero no cargar nada nuevo hasta elegir un plan. Nada se borró.
+                  </p>
+                </div>
+              } @else {
+                <div class="banner banner--activa">
+                  <h3>Prueba gratis</h3>
+                  <p>
+                    El centro opera con normalidad
+                    @if (contratacion.diasDePrueba(); as dias) {
+                      : {{ dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días' }} de prueba.
+                    } @else {
+                      : la prueba termina hoy.
+                    }
+                  </p>
+                </div>
+              }
+            }
+
             @case ('SUSPENDIDA') {
               <div class="banner banner--suspendida" role="alert">
                 <h3>Suscripción suspendida</h3>
@@ -66,17 +90,27 @@
             </span>
             <span
               class="marca-estado"
-              [class.marca-estado--activa]="estadoSuscripcion() === 'ACTIVA'"
-              [class.marca-estado--suspendida]="estadoSuscripcion() === 'SUSPENDIDA'"
+              [class.marca-estado--activa]="
+                estadoSuscripcion() === 'ACTIVA' ||
+                (estadoSuscripcion() === 'PRUEBA' && !contratacion.pruebaVencida())
+              "
+              [class.marca-estado--suspendida]="
+                estadoSuscripcion() === 'SUSPENDIDA' ||
+                (estadoSuscripcion() === 'PRUEBA' && contratacion.pruebaVencida())
+              "
               [class.marca-estado--revocada]="estadoSuscripcion() === 'CANCELADA'"
               >{{
                 estadoSuscripcion() === 'ACTIVA'
                   ? 'Activa'
-                  : estadoSuscripcion() === 'SUSPENDIDA'
-                    ? 'Suspendida'
-                    : estadoSuscripcion() === 'CANCELADA'
-                      ? 'Cancelada'
-                      : suscripcion()?.status
+                  : estadoSuscripcion() === 'PRUEBA'
+                    ? contratacion.pruebaVencida()
+                      ? 'Prueba vencida'
+                      : 'En prueba'
+                    : estadoSuscripcion() === 'SUSPENDIDA'
+                      ? 'Suspendida'
+                      : estadoSuscripcion() === 'CANCELADA'
+                        ? 'Cancelada'
+                        : suscripcion()?.status
               }}</span
             >
             <span class="plan-actual__alta">

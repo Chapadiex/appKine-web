@@ -1,13 +1,16 @@
 <app-cabecera-de-pagina titulo="Suscripción de un centro">
   <app-ayuda titulo="Sobre esta pantalla">
     <p>
-      Plan, estado y versión de la suscripción de un centro, y el cambio de plan. No hace falta un
-      acceso de soporte: el consumo de límites del centro no se muestra acá. Solo lo ve el equipo de
-      AKINE.
+      Lo que tiene contratado cada centro: plan (cuántas sedes), servicios y adicional de IA, el
+      estado de la suscripción y, si está en prueba gratis, cuántos días le quedan. Desde el detalle
+      se cambia la contratación y se pasa una prueba a contrato. No hace falta un acceso de soporte.
+      Solo lo ve el equipo de AKINE.
     </p>
   </app-ayuda>
 
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
+
+  <a cabeceraAcciones class="boton" [routerLink]="rutaAlta">Dar de alta un centro</a>
 </app-cabecera-de-pagina>
 
 <section class="tarjeta" aria-label="Centros de la plataforma">
@@ -52,6 +55,7 @@
           (change)="filtroDeEstado.set($any($event.target).value)"
         >
           <option value="">Todos</option>
+          <option value="PRUEBA">En prueba</option>
           <option value="ACTIVA">Activa</option>
           <option value="SUSPENDIDA">Suspendida</option>
           <option value="CANCELADA">Cancelada</option>
@@ -132,7 +136,7 @@
                     <span
                       class="marca-estado"
                       [class]="'marca-estado ' + claseDeEstado(c.status)"
-                      >{{ c.status }}</span
+                      >{{ marcaDeSuscripcion(c.status).texto }}</span
                     >
                   </td>
                   <td class="tabla__col--secundaria">{{ fechaDeAlta(c) }}</td>
@@ -166,21 +170,21 @@
 </section>
 
 <!--
-  La suscripcion del centro elegido, en un panel lateral (refactor UX/UI del 28/10/2026). Antes
+  La contratacion del centro elegido, en un panel lateral (refactor UX/UI del 28/10/2026). Antes
   aparecia debajo del listado de centros y habia que bajar a buscarla.
 -->
 @if (centro(); as elegido) {
   <app-panel-lateral
-    [titulo]="elegido.name ?? 'Suscripción del centro'"
+    [titulo]="elegido.name ?? 'Contratación del centro'"
     [subtitulo]="elegido.slug ?? null"
     (cerrar)="cerrarSuscripcion()"
   >
     @switch (estado().tipo) {
       @case ('cargando') {
-        <p class="estado estado--cargando" role="status">Leyendo la suscripción…</p>
+        <p class="estado estado--cargando" role="status">Leyendo la contratación…</p>
       }
       @case ('error') {
-        <app-alerta tipo="error" titulo="No pudimos leer la suscripción">
+        <app-alerta tipo="error" titulo="No pudimos leer la contratación">
           <p>{{ error()?.mensaje }}</p>
           <p class="alerta__acciones">
             <button type="button" class="boton" (click)="leer()">Reintentar</button>
@@ -189,74 +193,157 @@
       }
     }
 
-    <!-- Consecuencia del cambio de plan: a la vista mientras el panel siga abierto. -->
-    @if (excedidos().length > 0) {
-      <app-alerta tipo="advertencia" titulo="El uso actual supera límites del plan nuevo">
-        <p>No se borró ni se desactivó nada: solo se rechazarán las altas que los superen.</p>
-        <ul data-testid="suscripcion-excedidos">
-          @for (limite of excedidos(); track limite.code) {
-            <li>{{ rotuloDeLimite(limite) }}</li>
-          }
-        </ul>
-      </app-alerta>
-    }
-
-    @if (suscripcion(); as s) {
+    @if (contratacion(); as c) {
       <dl class="detalle">
-        <dt>Plan</dt>
-        <dd data-testid="suscripcion-plan">{{ s.planName ?? nombreDePlan(s.planCode) }}</dd>
         <dt>Estado</dt>
         <dd>
-          <span class="marca-estado" [class]="'marca-estado ' + claseDeEstado(s.status)">{{
-            s.status
-          }}</span>
+          <span
+            data-testid="suscripcion-estado"
+            [class]="'marca-estado ' + marcaDeSuscripcion(c.estado, pruebaVencida()).clase"
+            >{{ marcaDeSuscripcion(c.estado, pruebaVencida()).texto }}</span
+          >
         </dd>
+        @if (enPrueba()) {
+          <dt>Prueba</dt>
+          <dd data-testid="suscripcion-prueba">
+            @if (pruebaVencida()) {
+              Venció el {{ fechaDeFin(c.pruebaHasta) }}: el centro está en solo lectura.
+            } @else if (dias() === 1) {
+              Queda 1 día (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
+            } @else {
+              Quedan {{ dias() }} días (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
+            }
+          </dd>
+        } @else if (c.soloLectura) {
+          <dt>Uso</dt>
+          <dd>Solo lectura: el centro ve sus datos pero no carga nada nuevo.</dd>
+        }
+        <dt>Plan</dt>
+        <dd data-testid="suscripcion-plan">
+          {{ c.planNombre ?? nombreDePlan(c.planCode) }} · {{ rotuloDeTope(c.maxSedes) }}
+        </dd>
+        <dt>Servicios</dt>
+        <dd>{{ serviciosEnTexto(c.servicios) }}</dd>
+        <dt>Adicional de IA</dt>
+        <dd>{{ tieneIa(c.adicionales) ? 'Contratado' : 'No' }}</dd>
         <dt>Versión</dt>
-        <dd data-testid="suscripcion-version">{{ s.version }}</dd>
+        <dd data-testid="suscripcion-version">{{ c.version }}</dd>
       </dl>
 
-      <h3>Cambiar el plan</h3>
-      @if (!activa()) {
+      <h3>Cambiar la contratación</h3>
+      @if (!editable()) {
         <p class="estado estado--vacio">
-          La suscripción está {{ s.status }}: el plan solo se cambia con la suscripción activa.
+          La suscripción está {{ marcaDeSuscripcion(c.estado).texto.toLowerCase() }}: la
+          contratación solo se cambia con la suscripción activa o en prueba.
         </p>
       } @else if (planesNoDisponibles()) {
         <app-alerta tipo="error" titulo="No pudimos leer el catálogo de planes">
           <p>Recargá la página para volver a intentar.</p>
         </app-alerta>
       } @else {
-        <form (submit)="$event.preventDefault(); cambiarPlan()">
+        <form (submit)="$event.preventDefault(); guardar(false)">
           @if (errorCambio(); as mensaje) {
-            <app-alerta tipo="error" titulo="No pudimos cambiar el plan">
+            <app-alerta tipo="error" titulo="No pudimos cambiar la contratación">
               <p>{{ mensaje }}</p>
             </app-alerta>
           }
 
           <div class="campo campo--ancho">
-            <label for="suscripcion-plan-nuevo">Plan nuevo</label>
+            <label for="suscripcion-plan-nuevo">Plan</label>
             <select
               id="suscripcion-plan-nuevo"
               aria-describedby="suscripcion-plan-ayuda"
               [value]="planElegido()"
               (change)="planElegido.set($any($event.target).value)"
             >
+              @if (planNoOfrecido()) {
+                <option [value]="c.planCode" disabled [selected]="planElegido() === c.planCode">
+                  {{ c.planNombre ?? c.planCode }} (ya no se ofrece)
+                </option>
+              }
               @for (plan of planes(); track plan.code) {
-                <option [value]="plan.code">{{ plan.name ?? plan.code }}</option>
+                <option [value]="plan.code" [selected]="plan.code === planElegido()">
+                  {{ plan.name ?? plan.code }} · {{ topeDeSedes(plan) }}
+                </option>
               }
             </select>
             <p id="suscripcion-plan-ayuda" class="ayuda">
-              Se manda con la versión {{ s.version }}. Si otro cambio llega antes, no se aplica nada
-              y la suscripción se vuelve a leer.
+              Bajar de plan no borra nada: solo se rechazan las sedes nuevas que superen el tope.
             </p>
           </div>
+
+          <fieldset
+            class="grupo"
+            [attr.aria-describedby]="sinServicios() ? 'suscripcion-servicios-error' : null"
+          >
+            <legend>Servicios (al menos uno)</legend>
+            @for (servicio of servicios; track servicio.valor) {
+              <label class="opcion-radio">
+                <input
+                  type="checkbox"
+                  [checked]="servicioElegido(servicio.valor)"
+                  (change)="alternarServicio(servicio.valor, $any($event.target).checked)"
+                />
+                {{ servicio.etiqueta }}
+              </label>
+            }
+            @if (sinServicios()) {
+              <p class="campo__error" id="suscripcion-servicios-error">
+                Elegí al menos un servicio.
+              </p>
+            }
+          </fieldset>
+
+          <label class="opcion-radio">
+            <input
+              type="checkbox"
+              [checked]="iaElegida()"
+              (change)="iaElegida.set($any($event.target).checked)"
+            />
+            Adicional de IA
+          </label>
+
+          <p class="ayuda">
+            Se manda con la versión {{ c.version }}. Si otro cambio llega antes, no se aplica nada y
+            la contratación se vuelve a leer.
+          </p>
+
+          <!-- En un formulario el pie se invierte: la principal va primera y queda en el borde. -->
           <div class="acciones">
-            <button type="submit" class="boton" [disabled]="enviando() || mismoPlan()">
-              @if (enviando()) {
-                Cambiando…
-              } @else {
-                Cambiar el plan
-              }
-            </button>
+            @if (enPrueba()) {
+              <button
+                type="button"
+                class="boton"
+                data-testid="pasar-a-contrato"
+                [disabled]="enviando() || sinServicios() || !planElegidoOfrecido()"
+                (click)="guardar(true)"
+              >
+                @if (enviando()) {
+                  Guardando…
+                } @else {
+                  Pasar a contrato
+                }
+              </button>
+              <button
+                type="submit"
+                class="boton boton--secundario"
+                [disabled]="enviando() || sinCambios() || sinServicios() || !planElegidoOfrecido()"
+              >
+                Guardar sin contratar
+              </button>
+            } @else {
+              <button
+                type="submit"
+                class="boton"
+                [disabled]="enviando() || sinCambios() || sinServicios() || !planElegidoOfrecido()"
+              >
+                @if (enviando()) {
+                  Guardando…
+                } @else {
+                  Guardar la contratación
+                }
+              </button>
+            }
             <button type="button" class="boton boton--secundario" (click)="cerrarSuscripcion()">
               Cerrar
             </button>

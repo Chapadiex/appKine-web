@@ -1,3 +1,4 @@
+import { ContratacionStore } from '../../../../core/services/contratacion.store';
 import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -78,6 +79,8 @@ export class SubscriptionPage {
   protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
 
   private readonly suscripciones = inject(SuscripcionesService);
+  /** Dias de prueba y vencimiento (18/11/2026). */
+  protected readonly contratacion = inject(ContratacionStore);
   private readonly tenantContext = inject(TenantContextStore);
 
   protected readonly estado = signal<EstadoSuscripcion>({ tipo: 'cargando' });

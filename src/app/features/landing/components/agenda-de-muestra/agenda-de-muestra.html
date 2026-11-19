@@ -1,0 +1,58 @@
+<figure class="muestra">
+  <div class="ventana" aria-hidden="true">
+    <div class="ventana__barra">
+      <span class="ventana__titulo">Agenda</span>
+      <span class="ventana__fecha">Martes 18 · Sede Centro</span>
+      <span class="ventana__vistas">
+        <span class="ventana__vista ventana__vista--actual">Día</span>
+        <span class="ventana__vista">Semana</span>
+      </span>
+    </div>
+
+    <div class="columnas">
+      <span></span>
+      <span class="columna"><b>Lic. Sofía Paz</b>Kinesiología</span>
+      <span class="columna"><b>Lic. Tomás Vera</b>Kinesiología</span>
+      <span class="columna columna--tercera"><b>Sala 1</b>Actividades</span>
+    </div>
+
+    <div class="cuerpo">
+      @for (hora of horas; track hora; let i = $index) {
+        <span class="hora" [style.grid-row]="i + 1">{{ hora }}</span>
+      }
+      @for (bloque of bloques; track $index; let i = $index) {
+        <div
+          class="bloque bloque--{{ bloque.estado }}"
+          [class.bloque--tercera]="bloque.columna === 3"
+          [class.bloque--corto]="bloque.filas === 1"
+          [style.grid-column]="bloque.columna + 1"
+          [style.grid-row]="bloque.desde + ' / span ' + bloque.filas"
+          [style.--i]="i"
+        >
+          <span class="bloque__hora">{{ bloque.hora }}</span>
+          <span class="bloque__titulo">{{ bloque.titulo }}</span>
+          <span class="bloque__detalle">{{ bloque.detalle }}</span>
+          <span class="bloque__estado">
+            <app-icono [nombre]="estados[bloque.estado].icono" />
+            {{ estados[bloque.estado].palabra }}
+          </span>
+        </div>
+      }
+      <span class="ahora"><span class="ahora__hora">09:45</span></span>
+    </div>
+  </div>
+
+  <div class="llegada" aria-hidden="true">
+    <span class="llegada__icono"><app-icono nombre="exito" /></span>
+    <span>
+      <b>Llegó Julián Ríos</b>
+      <span class="llegada__detalle">09:38 · Recepción lo pasó a En espera</span>
+    </span>
+  </div>
+
+  <figcaption class="visualmente-oculto">
+    Ejemplo con datos inventados: la agenda del martes de una sede, con turnos confirmados,
+    reservados y en espera para dos kinesiólogos, un horario bloqueado y dos clases en la sala de
+    actividades. La recepción avisa que llegó un paciente.
+  </figcaption>
+</figure>

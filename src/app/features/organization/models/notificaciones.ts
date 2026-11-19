@@ -24,6 +24,9 @@ export const TEXTO_TIPO: Readonly<Record<TipoNotificacion, string>> = {
   [TipoNotificacion.PASE_POR_VENCER]: 'Pase o abono por vencer',
   [TipoNotificacion.PASE_SALDO_BAJO]: 'Pase con pocos creditos',
   [TipoNotificacion.ABONO_RENOVACION_APAGADA]: 'Renovacion de abonos apagada por desvinculacion',
+  [TipoNotificacion.PEDIDO_DE_PRUEBA_RECIBIDO]: 'Pedido de prueba gratis recibido',
+  [TipoNotificacion.PRUEBA_POR_VENCER]: 'Prueba gratis por vencer',
+  [TipoNotificacion.PRUEBA_VENCIDA]: 'Prueba gratis vencida',
 };
 
 export const TEXTO_ESTADO: Readonly<Record<EstadoNotificacion, string>> = {
