@@ -89,6 +89,8 @@ api/invitaciones.service.ts
 api/invitaciones.serviceInterface.ts
 api/lista-de-espera.service.ts
 api/lista-de-espera.serviceInterface.ts
+api/manual.service.ts
+api/manual.serviceInterface.ts
 api/marca-de-la-organizacion.service.ts
 api/marca-de-la-organizacion.serviceInterface.ts
 api/mediciones-de-sesion.service.ts
@@ -366,6 +368,7 @@ model/enmendar-sesion.ts
 model/entrada-clinica-response.ts
 model/entrada-clinica-version-response.ts
 model/entrada-de-lista-de-espera.ts
+model/entrada-del-manual-response.ts
 model/equipo-del-caso-request.ts
 model/espacio-availability-response.ts
 model/espacio-de-agenda.ts
@@ -400,6 +403,8 @@ model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
 model/ficha-de-ingreso-request.ts
 model/ficha-de-ingreso-response.ts
+model/ficha-del-manual-response.ts
+model/ficha-relacionada-response.ts
 model/fijar-politica-de-enmienda.ts
 model/fila-importacion-arancel-request.ts
 model/fila-importacion-arancel-response.ts
@@ -413,6 +418,7 @@ model/funcion-ia-response.ts
 model/funciones-ia-response.ts
 model/grant-platform-role-request.ts
 model/grant-support-access-request.ts
+model/grupo-del-manual-response.ts
 model/guardar-borrador.ts
 model/guardar-evaluacion.ts
 model/habilitaciones-response.ts
@@ -432,6 +438,7 @@ model/imputacion-de-cobro.ts
 model/imputar-saldo-a-favor.ts
 model/indicador-de-reporte-response.ts
 model/indicador-response.ts
+model/indice-del-manual-response.ts
 model/ingreso-sin-inscripcion.ts
 model/iniciar-atencion-de-participante.ts
 model/iniciar-atencion-grupal-item.ts
@@ -509,6 +516,7 @@ model/parametro-de-tratamiento.ts
 model/participante-en-atencion-grupal.ts
 model/participante-operativo.ts
 model/participante.ts
+model/pasaje-del-manual-response.ts
 model/pase-detalle.ts
 model/pase.ts
 model/password-reset-confirm-request.ts

@@ -1,0 +1,216 @@
+/*
+  Panel de ayuda a la derecha. No es modal: la pantalla sigue usable al lado. Debajo de los avisos
+  (50) y arriba del asistente flotante (45), que puede quedar abierto al mismo tiempo.
+*/
+.ayuda {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  width: min(26.25rem, 100vw);
+  background: var(--color-superficie);
+  border-inline-start: 1px solid var(--color-borde);
+  box-shadow: var(--sombra-flotante);
+  color: var(--color-texto);
+}
+
+.ayuda__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  padding: var(--esp-5) var(--esp-6);
+  border-block-end: 1px solid var(--color-borde-sutil);
+}
+
+.ayuda__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: 0;
+  font-size: var(--tipo-lg);
+  color: var(--color-texto-fuerte);
+}
+
+.ayuda__titulo app-icono {
+  color: var(--color-accion-fondo);
+}
+
+.ayuda__cerrar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+}
+
+.ayuda__cerrar:hover {
+  background: var(--color-hover);
+}
+
+.ayuda__buscador {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: var(--esp-5) var(--esp-6) 0;
+  padding: 0 var(--esp-5);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  color: var(--color-texto-suave);
+}
+
+.ayuda__buscador input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--esp-4) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--color-texto);
+}
+
+.ayuda__cuerpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--esp-5) var(--esp-6);
+}
+
+.ayuda__pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  padding: var(--esp-5) var(--esp-6);
+  border-block-start: 1px solid var(--color-borde-sutil);
+}
+
+.ayuda__grupo-de-ficha {
+  margin: 0;
+  font-size: var(--tipo-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-texto-suave);
+}
+
+.ayuda__ficha {
+  margin: var(--esp-2) 0 var(--esp-5);
+  font-size: var(--tipo-xl);
+  color: var(--color-texto-fuerte);
+}
+
+.ayuda__subtitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  margin: var(--esp-6) 0 var(--esp-4);
+  font-size: var(--tipo-base);
+  color: var(--color-texto-fuerte);
+}
+
+.ayuda__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ayuda__lista li + li {
+  margin-top: var(--esp-2);
+}
+
+.ayuda__enlace,
+.ayuda__volver,
+.ayuda__resultado {
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.ayuda__enlace {
+  padding: var(--esp-2) 0;
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+.ayuda__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-5);
+  padding: 0;
+  color: var(--color-enlace);
+}
+
+.ayuda__resultado {
+  display: grid;
+  gap: var(--esp-2);
+  width: 100%;
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+}
+
+.ayuda__resultado:hover {
+  background: var(--color-hover);
+}
+
+.ayuda__resultado-titulo {
+  font-weight: 600;
+  color: var(--color-texto-fuerte);
+}
+
+.ayuda__resultado-texto {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+.ayuda__estado,
+.ayuda__vacio {
+  color: var(--color-texto-suave);
+}
+
+.ayuda__estado--error {
+  display: flex;
+  gap: var(--esp-4);
+  color: var(--color-peligro-texto);
+}
+
+.ayuda__lupa {
+  max-width: min(90vw, 80rem);
+  max-height: 90vh;
+  padding: var(--esp-6);
+  border: 0;
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie);
+}
+
+.ayuda__lupa::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.ayuda__lupa img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(90vh - 5rem);
+  height: auto;
+}
+
+.ayuda__cerrar--lupa {
+  display: grid;
+  margin-inline-start: auto;
+  margin-bottom: var(--esp-4);
+}
+
+kbd {
+  padding: 0 var(--esp-2);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-sm);
+}

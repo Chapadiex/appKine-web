@@ -11,16 +11,22 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { InterpretacionDto } from '../../../../api/generated/model/interpretacion-dto';
 import { OpcionDePersonaDelAsistente } from '../../../../api/generated/model/opcion-de-persona-del-asistente';
 import { RespuestaAsistenteResponse } from '../../../../api/generated/model/respuesta-asistente-response';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
+import { ManualStore } from '../../../../core/services/manual.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import {
+  CapturaAmpliada,
+  MarkdownSeguro,
+} from '../../../../shared/components/markdown-seguro/markdown-seguro';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { formatearInstante } from '../../../../shared/utils/instantes';
+import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
@@ -110,13 +116,15 @@ export interface MensajeDelAsistente {
 @Component({
   selector: 'app-charla-del-asistente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Dictado, EstadoVacio, RouterLink],
+  imports: [Dictado, EstadoVacio, MarkdownSeguro, RouterLink],
   host: { class: 'charla', '[class.charla--compacta]': 'compacta()' },
   templateUrl: './charla-del-asistente.html',
   styleUrl: './charla-del-asistente.css',
 })
 export class CharlaDelAsistente {
   private readonly api = inject(AsistenteApi);
+  private readonly router = inject(Router);
+  private readonly manual = inject(ManualStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
 
@@ -208,6 +216,30 @@ export class CharlaDelAsistente {
     this.preguntar(mensaje.pregunta, opcion.etiqueta, opcion.personaId);
   }
 
+  /** Deja escrita una pregunta que viene de otra pantalla (la ayuda), para que la persona la envíe. */
+  escribirPregunta(texto: string): void {
+    this.texto.set(texto);
+  }
+
+  /** Una respuesta del manual de usuario: su texto es Markdown. */
+  protected esDelManual(m: MensajeDelAsistente): boolean {
+    return m.respuesta?.interpretacion.intencion === 'COMO_SE_HACE';
+  }
+
+  /** La ficha citada por una respuesta del manual, o null. */
+  protected fichaDelManual(r: RespuestaAsistenteResponse): string | null {
+    const ficha = r.filas[0]?.['manualFicha'];
+    return typeof ficha === 'string' ? ficha : null;
+  }
+
+  protected verFicha(id: string): void {
+    this.manual.verFicha(id);
+  }
+
+  protected verCaptura(captura: CapturaAmpliada): void {
+    window.open(captura.src, '_blank', 'noopener');
+  }
+
   nuevaCharla(): void {
     this.abortar();
     this.mensajes.set([]);
@@ -227,21 +259,26 @@ export class CharlaDelAsistente {
     ]);
     this.anuncio.set('Consultando…');
     this.abortar();
-    this.suscripcion = this.api.consultar(sede, pregunta, historial, personaId).subscribe({
-      next: (respuesta) => {
-        const tabla = respuesta.filas.length > 0 ? this.armarTabla(respuesta) : undefined;
-        this.cambiarUltimo((m) => ({
-          ...m,
-          estado: 'listo',
-          texto: respuesta.texto,
-          respuesta,
-          tabla,
-        }));
-        this.anuncio.set('Respuesta lista');
-        this.escribir(this.mensajes().length - 1, respuesta.texto.length);
-      },
-      error: (error: unknown) => this.fallar(error),
-    });
+    this.suscripcion = this.api
+      .consultar(sede, pregunta, historial, personaId, rutaDePantalla(this.router.url))
+      .subscribe({
+        next: (respuesta) => {
+          const tabla =
+            respuesta.filas.length > 0 && respuesta.interpretacion.intencion !== 'COMO_SE_HACE'
+              ? this.armarTabla(respuesta)
+              : undefined;
+          this.cambiarUltimo((m) => ({
+            ...m,
+            estado: 'listo',
+            texto: respuesta.texto,
+            respuesta,
+            tabla,
+          }));
+          this.anuncio.set('Respuesta lista');
+          this.escribir(this.mensajes().length - 1, respuesta.texto.length);
+        },
+        error: (error: unknown) => this.fallar(error),
+      });
   }
 
   /** Texto de la burbuja: mientras se escribe, sólo lo que ya apareció. */

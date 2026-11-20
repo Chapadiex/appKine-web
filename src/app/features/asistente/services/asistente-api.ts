@@ -24,10 +24,11 @@ export class AsistenteApi {
     pregunta: string,
     historial: readonly TurnoPrevio[],
     personaId?: number,
+    rutaActual?: string,
   ): Observable<RespuestaAsistenteResponse> {
     return this.api.consultarAsistente({
       consultorioId,
-      consultaAsistenteRequest: { pregunta, historial: [...historial], personaId },
+      consultaAsistenteRequest: { pregunta, historial: [...historial], personaId, rutaActual },
     });
   }
 }

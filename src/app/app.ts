@@ -28,6 +28,7 @@ import { filter, map, startWith } from 'rxjs';
 
 import { AnchoDeContenido, DATA_ANCHO } from './core/models/ancho-de-contenido';
 import { AvisosStore } from './core/services/avisos.store';
+import { ManualStore } from './core/services/manual.store';
 import { FlujoDeTurnosStore } from './core/services/flujo-de-turnos.store';
 import { BarraSuperiorDiferida } from './layout/barra-superior/barra-superior-diferida';
 import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
@@ -84,6 +85,8 @@ export class App {
   private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
   private readonly anclaPie = viewChild.required('pie', { read: ViewContainerRef });
   private readonly anclaAsistente = viewChild.required('asistente', { read: ViewContainerRef });
+  private readonly anclaManual = viewChild.required('manual', { read: ViewContainerRef });
+  private readonly manual = inject(ManualStore);
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
@@ -160,6 +163,30 @@ export class App {
           flujoMontado = false;
           flujo.cerrar();
           avisos.error('No pudimos abrir el panel de turnos', {
+            descripcion: 'Revisá tu conexión y volvé a intentar.',
+          });
+        },
+      );
+    });
+
+    // El manual de usuario llega en su chunk la primera vez que se abre (entrada «Ayuda», F1 o el
+    // asistente): nada de su contenido entra al bundle inicial.
+    let manualMontado = false;
+    effect(() => {
+      if (!this.manual.abierto() || manualMontado) {
+        return;
+      }
+      manualMontado = true;
+      import('./features/manual/panel/panel-de-ayuda').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaManual().createComponent(m.PanelDeAyuda);
+          }
+        },
+        () => {
+          manualMontado = false;
+          this.manual.cerrar();
+          avisos.error('No pudimos abrir la ayuda', {
             descripcion: 'Revisá tu conexión y volvé a intentar.',
           });
         },
@@ -281,6 +308,16 @@ export class App {
 
   protected cerrarMenu(): void {
     this.menuAbierto.set(false);
+  }
+
+  /** F1 abre o cierra el manual, salvo en las pantallas de acceso (sin sesión no hay ficha). */
+  @HostListener('document:keydown.f1', ['$event'])
+  protected alternarManual(evento: Event): void {
+    if (this.esAcceso() || this.esLanding() || this.tenant.context() === null) {
+      return;
+    }
+    evento.preventDefault();
+    this.manual.alternar();
   }
 
   @HostListener('document:keydown.escape')

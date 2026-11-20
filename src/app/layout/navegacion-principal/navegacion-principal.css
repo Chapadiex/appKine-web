@@ -199,6 +199,17 @@
   margin-top: var(--esp-6);
 }
 
+/* «Ayuda» es un boton (abre un panel, no navega) con la cara de un enlace de grupo. */
+.nav__ayuda {
+  width: 100%;
+  margin-top: var(--esp-6);
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
 /*
   Tablet y menor: la barra sale de pantalla y vuelve como panel. Cerrada queda ADEMAS
   `visibility: hidden`: un `translateX` solo la saca de la vista y el Tab seguiria recorriendola.
