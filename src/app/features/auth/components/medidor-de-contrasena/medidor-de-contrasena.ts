@@ -56,8 +56,8 @@ interface Sugerencia {
     }
 
     .medidor__tramo {
-      height: 4px;
-      border-radius: 2px;
+      height: 6px;
+      border-radius: 3px;
       background: var(--color-borde);
     }
 
@@ -82,6 +82,7 @@ interface Sugerencia {
     .medidor__lista {
       display: flex;
       flex-wrap: wrap;
+      justify-content: center;
       gap: var(--esp-3);
       margin: 0;
       padding: 0;

@@ -240,17 +240,30 @@
 
               <div class="campo">
                 <label for="invitacion-password">Contraseña</label>
-                <input
-                  id="invitacion-password"
-                  type="password"
-                  formControlName="password"
-                  autocomplete="new-password"
-                  placeholder="Mínimo 8 caracteres"
-                  [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
-                  [attr.aria-describedby]="
-                    mostrarErrorDe('password') ? 'invitacion-password-error' : null
-                  "
-                />
+                <div class="campo-con-accion">
+                  <input
+                    id="invitacion-password"
+                    [type]="verPassword() ? 'text' : 'password'"
+                    formControlName="password"
+                    autocomplete="new-password"
+                    placeholder="Mínimo 8 caracteres"
+                    [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      mostrarErrorDe('password') ? 'invitacion-password-error' : null
+                    "
+                  />
+                  <button
+                    type="button"
+                    class="campo-con-accion__boton campo-con-accion__boton--icono"
+                    [attr.aria-pressed]="verPassword()"
+                    (click)="verPassword.set(!verPassword())"
+                  >
+                    <app-icono [nombre]="verPassword() ? 'ojo-tachado' : 'ojo'" />
+                    <span class="visualmente-oculto">{{
+                      verPassword() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'
+                    }}</span>
+                  </button>
+                </div>
                 <app-medidor-de-contrasena [valor]="passwordEscrita()" />
                 @if (mostrarErrorDe('password')) {
                   <p class="campo__error" id="invitacion-password-error">

@@ -26,6 +26,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** En cual de los cinco estados esta la pantalla. */
 type Estado =
@@ -72,7 +73,7 @@ type Estado =
  */
 @Component({
   selector: 'app-invitacion-page',
-  imports: [Alerta, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
+  imports: [Alerta, Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './invitacion-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -86,6 +87,8 @@ export class InvitacionPage {
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly enviando = signal(false);
+  /** Ver u ocultar la contraseña mientras se escribe. Sólo cambia el tipo del input. */
+  protected readonly verPassword = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
