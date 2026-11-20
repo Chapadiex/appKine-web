@@ -481,3 +481,9 @@
 .bloque--horario {
   position: relative;
 }
+
+/* El título del bloque flota (por el legend de los fieldsets): el horario va debajo, no al lado. */
+.bloque--horario app-horario-semanal {
+  clear: both;
+  padding-top: var(--esp-4);
+}
