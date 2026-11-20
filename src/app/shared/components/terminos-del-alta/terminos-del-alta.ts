@@ -46,7 +46,7 @@ import { Alerta } from '../alerta/alerta';
               />
               Acepto los términos y condiciones
             </label>
-            <p class="ayuda" [id]="idCasilla() + '-ayuda'">
+            <p class="ayuda ayuda--fija" [id]="idCasilla() + '-ayuda'">
               @if (url(); as enlace) {
                 <a [href]="enlace" target="_blank" rel="noopener noreferrer"
                   >Leer los términos y condiciones<span class="visualmente-oculto">

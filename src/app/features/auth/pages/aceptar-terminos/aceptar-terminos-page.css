@@ -1,24 +1,27 @@
 .terminos-formulario {
   display: grid;
-  gap: var(--espacio-4, 1rem);
+  gap: var(--esp-4);
 }
 
-.terminos__casilla {
+/* Misma casilla que la del alta (shared/components/terminos-del-alta), un punto más grande:
+   acá es la única decisión de la pantalla. */
+.campo .terminos__casilla {
   display: flex;
-  align-items: flex-start;
-  gap: var(--espacio-2, 0.5rem);
-  font-weight: 400;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 1.5rem;
+  font-size: var(--tipo-sm);
   cursor: pointer;
 }
 
 .terminos__casilla input {
-  margin-block-start: 0.2em;
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-  flex: none;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .terminos-acciones {
   display: grid;
-  gap: var(--espacio-2, 0.5rem);
+  gap: var(--esp-2);
 }

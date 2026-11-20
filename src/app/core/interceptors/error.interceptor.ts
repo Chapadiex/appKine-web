@@ -332,9 +332,12 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
         // interceptor. Pedirlos al construir el interceptor cerraría ese círculo.
         injector.get(TerminosPendientesStore).marcarPendiente();
         const router = injector.get(Router);
-        if (!router.url.startsWith(RUTA_ACEPTAR_TERMINOS)) {
+        // Si hay una navegación en curso (al recargar, la primera), el destino es ésa: router.url
+        // todavía dice "/" y se perdería a dónde iba.
+        const destino = router.currentNavigation()?.extractedUrl.toString() ?? router.url;
+        if (!destino.startsWith(RUTA_ACEPTAR_TERMINOS)) {
           router
-            .navigate([RUTA_ACEPTAR_TERMINOS], { queryParams: { [PARAM_VOLVER_A]: router.url } })
+            .navigate([RUTA_ACEPTAR_TERMINOS], { queryParams: { [PARAM_VOLVER_A]: destino } })
             .catch(() => undefined);
         }
       }

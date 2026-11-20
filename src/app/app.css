@@ -246,7 +246,13 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.shell--acceso app-navegacion-principal {
+/*
+ * `::ng-deep` porque la barra se monta con `createComponent` después de la primera pintura, y un
+ * componente creado así no lleva el atributo de encapsulamiento del shell: sin él, esta regla no
+ * alcanzaba y la barra aparecía en las pantallas de acceso con sesión abierta (19/11/2026, la de
+ * aceptar los términos).
+ */
+.shell--acceso ::ng-deep app-navegacion-principal {
   display: none;
 }
 
@@ -263,7 +269,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.shell--landing app-navegacion-principal {
+.shell--landing ::ng-deep app-navegacion-principal {
   display: none;
 }
 
