@@ -279,7 +279,7 @@ describe('NavegacionPrincipal', () => {
 
     await router.navigateByUrl('/plataforma/solicitudes');
     fixture.detectChanges();
-    expect(enlaces(fixture)).toContain('Volver al centro');
+    expect(enlaces(fixture)).toContain('Elegir centro');
     expect(enlaces(fixture)).not.toContain('Plataforma');
     expect(enlaces(fixture)).not.toContain('Agenda');
   });
