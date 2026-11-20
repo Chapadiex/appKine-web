@@ -98,8 +98,8 @@
         <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
           <table class="tabla">
             <caption class="visualmente-oculto">
-              Centros de la plataforma, con su slug, el plan, si tienen IA, el estado de la
-              suscripción y la fecha de alta.
+              Centros de la plataforma, con su slug, el plan, los servicios, si tienen IA, el estado
+              de la suscripción y la fecha de alta.
             </caption>
             <thead>
               <tr>
@@ -114,6 +114,7 @@
                   Slug
                 </th>
                 <th scope="col">Plan</th>
+                <th scope="col">Servicios</th>
                 <th scope="col">IA</th>
                 <th scope="col">Suscripción</th>
                 <th scope="col">Plazo de la prueba</th>
@@ -151,6 +152,23 @@
                         <span class="visualmente-oculto">{{ plan.texto }}</span>
                       } @else {
                         {{ plan.texto }}
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <span class="marcas-servicio">
+                      @for (s of marcasDeServicios(c.servicios); track s.valor) {
+                        <span
+                          class="marca-servicio"
+                          [class]="'marca-servicio marca-servicio--' + s.icono"
+                          [attr.data-globo]="s.texto"
+                          tabindex="0"
+                        >
+                          <app-icono [nombre]="s.icono" />
+                          <span class="visualmente-oculto">{{ s.texto }}</span>
+                        </span>
+                      } @empty {
+                        <span class="visualmente-oculto">Sin servicios</span>
                       }
                     </span>
                   </td>

@@ -178,3 +178,20 @@ const PLAN_EQUIVALENTE: Readonly<Record<string, string>> = { BASICO: 'BASE', PRO
 export function planEquivalente(code: string | undefined): string {
   return code === undefined ? '' : (PLAN_EQUIVALENTE[code] ?? code);
 }
+
+/** Un servicio contratado como insignia del listado: icono y nombre corto (va en el globo). */
+export interface MarcaDeServicio {
+  readonly valor: Servicio;
+  readonly icono: 'pacientes' | 'actividades';
+  readonly texto: string;
+}
+
+const MARCAS_DE_SERVICIO: readonly MarcaDeServicio[] = [
+  { valor: 'KINESIOLOGIA', icono: 'pacientes', texto: ETIQUETA_CORTA.KINESIOLOGIA },
+  { valor: 'ACTIVIDADES', icono: 'actividades', texto: ETIQUETA_CORTA.ACTIVIDADES },
+];
+
+/** Los servicios contratados, siempre en el mismo orden: Kinesiologia y despues Actividades. */
+export function marcasDeServicios(servicios: readonly string[] | undefined): MarcaDeServicio[] {
+  return MARCAS_DE_SERVICIO.filter((marca) => (servicios ?? []).includes(marca.valor));
+}

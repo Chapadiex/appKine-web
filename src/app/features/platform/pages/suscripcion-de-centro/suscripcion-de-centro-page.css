@@ -253,3 +253,34 @@
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
 }
+
+/* Servicios contratados del centro: un icono por servicio, con su color y el nombre en el globo. */
+.marcas-servicio {
+  display: inline-flex;
+  gap: var(--esp-2);
+}
+
+.marca-servicio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  font-size: var(--tipo-base);
+  cursor: default;
+}
+
+.marca-servicio--pacientes {
+  background: var(--color-info-fondo);
+  color: var(--color-info-texto);
+  border-color: var(--color-info);
+}
+
+.marca-servicio--actividades {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+  border-color: var(--color-exito);
+}
