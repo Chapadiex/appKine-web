@@ -168,3 +168,13 @@ export function marcaDePlan(code: string | undefined, name?: string): MarcaDePla
 export function nombreVisibleDePlan(code: string | undefined, name?: string): string {
   return marcaDePlan(code, name).texto;
 }
+
+/**
+ * Transicion, junto con los alias de arriba: el plan vigente al que equivale uno viejo. El panel lo
+ * preselecciona, asi el centro se edita sin elegir plan a mano y al guardar queda en el vigente.
+ */
+const PLAN_EQUIVALENTE: Readonly<Record<string, string>> = { BASICO: 'BASE', PROFESIONAL: 'RED' };
+
+export function planEquivalente(code: string | undefined): string {
+  return code === undefined ? '' : (PLAN_EQUIVALENTE[code] ?? code);
+}

@@ -44,6 +44,7 @@ import {
   marcaDePlan,
   marcaDeSuscripcion,
   nombreVisibleDePlan,
+  planEquivalente,
   planesOfrecidos,
   rotuloDeTope,
   serviciosEnTexto,
@@ -215,7 +216,9 @@ export class SuscripcionDeCentroPage implements OnInit {
   /** El plan vigente no esta entre los ofrecidos del catalogo: hay que elegir uno ofrecido. */
   protected readonly planNoOfrecido = computed(() => {
     const actual = this.contratacion()?.planCode;
-    return actual !== undefined && !this.planes().some((p) => p.code === actual);
+    if (actual === undefined) return false;
+    const equivalente = planEquivalente(actual);
+    return !this.planes().some((p) => p.code === equivalente);
   });
   protected readonly planElegidoOfrecido = computed(() =>
     this.planes().some((p) => p.code === this.planElegido()),
@@ -228,7 +231,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     const leidos = [...(c.servicios ?? [])].sort().join();
     const elegidos = [...this.serviciosElegidos()].sort().join();
     return (
-      this.planElegido() === c.planCode &&
+      this.planElegido() === planEquivalente(c.planCode) &&
       leidos === elegidos &&
       this.iaElegida() === tieneIa(c.adicionales)
     );
@@ -457,7 +460,7 @@ export class SuscripcionDeCentroPage implements OnInit {
 
   private mostrar(contratacion: ContratacionResponse): void {
     this.estado.set({ tipo: 'listo', contratacion });
-    this.planElegido.set(contratacion.planCode ?? '');
+    this.planElegido.set(planEquivalente(contratacion.planCode));
     this.serviciosElegidos.set([...(contratacion.servicios ?? [])]);
     this.iaElegida.set(tieneIa(contratacion.adicionales));
   }
