@@ -58,7 +58,9 @@ export class AsistenteFlotante {
       this.tenant.context() !== null &&
       this.permisos.tiene(PERMISO_ASISTENTE_USE) &&
       this.funcionesIa.activa('ASISTENTE') &&
-      !/^\/asistente(\/|\?|$)/.test(this.url()),
+      // Ni en /asistente ni en las pantallas de acceso (ingresar, invitación, elegir contexto),
+      // que pueden abrirse con una sesión de otra cuenta todavía viva.
+      !/^\/(asistente|auth|seleccionar-contexto)(\/|\?|$)/.test(this.url()),
   );
 
   constructor() {

@@ -246,7 +246,13 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.shell--acceso app-navegacion-principal {
+/*
+  La barra lateral se crea con `createComponent` en un ancla: su host no lleva el atributo de
+  encapsulación de este layout, así que un selector descendiente común nunca la alcanza y, con
+  sesión abierta, ocupaba la única columna y empujaba la tarjeta de acceso fuera de la pantalla
+  (la invitación se veía en blanco). `::ng-deep` deja sin atributo sólo el tramo del host.
+*/
+.shell--acceso ::ng-deep app-navegacion-principal {
   display: none;
 }
 
@@ -263,7 +269,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-.shell--landing app-navegacion-principal {
+.shell--landing ::ng-deep app-navegacion-principal {
   display: none;
 }
 
