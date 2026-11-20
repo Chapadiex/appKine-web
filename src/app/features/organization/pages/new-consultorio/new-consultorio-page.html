@@ -64,6 +64,9 @@
     }
   </ol>
 
+  @if (mostrarBienvenida()) {
+    <app-bienvenida-inicial [nombreCentro]="nombreDelCentro()" (empezar)="cerrarBienvenida()" />
+  }
   <div class="asistente__contenido">
     <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
       @if (hecho()) {

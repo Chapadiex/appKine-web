@@ -17,6 +17,7 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { BienvenidaInicial } from '../../components/bienvenida-inicial/bienvenida-inicial';
 import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 
@@ -157,6 +158,7 @@ const PATRON_TELEFONO = /^\+?[\d\s().-]{6,}$/;
     Alerta,
     EditorDeUbicacion,
     MapaDeUbicacion,
+    BienvenidaInicial,
     Icono,
   ],
   templateUrl: './new-consultorio-page.html',
@@ -169,6 +171,25 @@ export class NewConsultorioPage {
   private readonly sedes = inject(SedesDelContexto);
   private readonly calendarios = inject(CalendarioDeSedeService);
   private readonly primerosPasos = inject(PrimerosPasosStore);
+
+  /** La bienvenida del primer ingreso: sólo en la configuración inicial, una vez por pestaña. */
+  protected readonly mostrarBienvenida = computed(() => {
+    const orgId = this.tenantContext.organizationId();
+    return (
+      this.configuracionInicial() && orgId !== null && !this.primerosPasos.bienvenidaVista(orgId)
+    );
+  });
+
+  protected readonly nombreDelCentro = computed(
+    () => this.tenantContext.context()?.organizationName ?? 'tu centro',
+  );
+
+  protected cerrarBienvenida(): void {
+    const orgId = this.tenantContext.organizationId();
+    if (orgId !== null) {
+      this.primerosPasos.marcarBienvenidaVista(orgId);
+    }
+  }
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

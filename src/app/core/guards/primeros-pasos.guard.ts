@@ -33,6 +33,17 @@ export class PrimerosPasosStore {
   estaCompleto(orgId: number): boolean {
     return this.completos().has(orgId);
   }
+
+  /** La bienvenida se muestra una vez por centro y por pestaña. */
+  private readonly bienvenidas = signal<ReadonlySet<number>>(new Set());
+
+  marcarBienvenidaVista(orgId: number): void {
+    this.bienvenidas.update((actual) => new Set(actual).add(orgId));
+  }
+
+  bienvenidaVista(orgId: number): boolean {
+    return this.bienvenidas().has(orgId);
+  }
 }
 
 /**
