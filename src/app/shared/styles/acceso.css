@@ -449,3 +449,16 @@
   align-items: center;
   min-height: 1.5rem;
 }
+
+/* Ingresar: el botón gira mientras se verifica y se abre la pantalla siguiente. */
+.boton__giro {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: var(--esp-3);
+  vertical-align: -0.15em;
+  border: var(--borde-medio) solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: estado-girar 0.8s linear infinite;
+}

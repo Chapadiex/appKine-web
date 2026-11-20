@@ -102,7 +102,19 @@
         </p>
       </div>
 
-      <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">Ingresar</button>
+      <button
+        type="submit"
+        class="boton boton--bloque"
+        [disabled]="bloqueado() || entrando()"
+        [attr.aria-busy]="entrando() ? 'true' : null"
+      >
+        @if (entrando()) {
+          <span class="boton__giro" aria-hidden="true"></span>
+          Ingresando&hellip;
+        } @else {
+          Ingresar
+        }
+      </button>
 
       @if (espera.activa()) {
         <p class="ayuda ayuda--fija">Volvé a intentar en {{ espera.segundos() }} segundos.</p>

@@ -62,11 +62,11 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
     if (session.estado() !== 'activa' || orgId === null || primerosPasos.estaPostergada(orgId)) {
       return true;
     }
-    // Lo comun, sin esperar a la red: el shell ya leyo la contratacion y el centro no esta en
-    // prueba. Un guard que pide HTTP en cada entrada demora la navegacion, y una segunda navegacion
+    // Lo comun, sin esperar a la red: el shell ya leyo la contratacion y el centro no lo dio de
+    // alta la plataforma. Un guard que pide HTTP en cada entrada demora la navegacion, y una segunda navegacion
     // en el medio deja la pantalla anterior sin recargar.
     const leida = contratacionDelCentro.contratacion();
-    if (leida !== null && (leida.estado !== 'PRUEBA' || leida.soloLectura)) {
+    if (leida !== null && (!leida.altaPorPlataforma || leida.soloLectura)) {
       return true;
     }
     return permisos.cargados()
@@ -81,12 +81,11 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
     if (!permisos.tiene(PERMISO_CONSULTORIO_MANAGE)) {
       return of(true);
     }
-    // Solo un centro en prueba: nace del alta de la plataforma (18/11/2026), que es como entra
-    // todo centro nuevo. Un centro autoregistrado o ya contratado no se desvia nunca.
+    // Solo un centro que dio de alta la plataforma (18/11/2026), que es como entra todo centro
+    // nuevo, en prueba o ya contratado (20/11/2026: antes se exigia la prueba y un alta contratada
+    // no veia la guia). Un centro autoregistrado no se desvia nunca.
     return contratacion.getContratacionDeOrganizacion({ orgId }).pipe(
-      switchMap((c) =>
-        c.estado === 'PRUEBA' && !c.soloLectura ? sedeSinHorario(orgId) : of(true),
-      ),
+      switchMap((c) => (c.altaPorPlataforma && !c.soloLectura ? sedeSinHorario(orgId) : of(true))),
       catchError(() => of(true)),
     );
   }
