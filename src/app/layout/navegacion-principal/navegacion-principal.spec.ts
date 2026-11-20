@@ -262,8 +262,11 @@ describe('NavegacionPrincipal', () => {
     expect(marcados(fixture)).toEqual(['Agenda']);
   });
 
-  /** AKINE-A-7: con contexto, la consola del administrador de plataforma va al pie del menu. */
-  it('ofrece la consola de plataforma solo a quien la administra, y la marca como actual', async () => {
+  /**
+   * AKINE-A-7: con contexto, la consola del administrador de plataforma va al pie del menu. Adentro
+   * de la consola la barra deja los grupos del centro y ofrece la vuelta (19/11/2026).
+   */
+  it('ofrece la consola solo a quien la administra, y adentro muestra solo la consola', async () => {
     conContexto();
     const fixture = montar();
     responderPermisos([]);
@@ -276,7 +279,9 @@ describe('NavegacionPrincipal', () => {
 
     await router.navigateByUrl('/plataforma/solicitudes');
     fixture.detectChanges();
-    expect(marcados(fixture)).toEqual(['Plataforma']);
+    expect(enlaces(fixture)).toContain('Volver al centro');
+    expect(enlaces(fixture)).not.toContain('Plataforma');
+    expect(enlaces(fixture)).not.toContain('Agenda');
   });
 
   /** Consola sin centro: insignias con la cantidad, ninguna en cero, relectura al navegar. */

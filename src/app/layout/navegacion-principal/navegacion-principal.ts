@@ -106,10 +106,21 @@ export class NavegacionPrincipal {
    */
   protected readonly modoPlataforma = computed(
     () =>
-      !this.hayContexto() &&
+      (!this.hayContexto() || this.enRutaDePlataforma()) &&
       this.session.estado() !== 'anonimo' &&
       this.rolDePlataforma.esAdminDePlataforma(),
   );
+
+  /**
+   * Con centro elegido, la consola igual muestra solo sus grupos (19/11/2026): mezclados con
+   * Atencion, Servicios o Configuracion del centro parecian accesos de la plataforma. Para volver
+   * al centro queda un enlace al pie.
+   */
+  private readonly enRutaDePlataforma = computed(
+    () => this.url().split(/[?#]/)[0]?.startsWith('/plataforma') === true,
+  );
+  protected readonly volverAlCentro = computed(() => this.modoPlataforma() && this.hayContexto());
+  protected readonly rutaDelCentro = RUTA_INICIO;
 
   protected readonly mostrarBarra = computed(
     () => !this.session.restaurando() && (this.hayContexto() || this.modoPlataforma()),
@@ -177,7 +188,7 @@ export class NavegacionPrincipal {
       if (!this.modoPlataforma()) {
         return;
       }
-      const enPlataforma = this.url().split(/[?#]/)[0]?.startsWith('/plataforma') === true;
+      const enPlataforma = this.enRutaDePlataforma();
       untracked(() =>
         enPlataforma ? this.contadores.refrescar() : this.contadores.asegurarCargados(),
       );
