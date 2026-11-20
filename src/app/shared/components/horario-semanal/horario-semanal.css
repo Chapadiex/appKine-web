@@ -47,6 +47,19 @@
   font-weight: var(--peso-medio);
 }
 
+.semana__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+}
+
+.semana__copiado {
+  color: var(--color-exito-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
 .semana__resumen {
   margin: 0;
   padding: var(--esp-2) var(--esp-5);
@@ -298,8 +311,22 @@
     gap: var(--esp-2);
   }
 
+  /* El rótulo sobra arriba a la derecha: el "?" del bloque ya explica los modelos. */
   :host(.horario-modelos-arriba) .semana__rotulo {
-    margin-right: var(--esp-2);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* Un poco más de aire entre días: el paso igual entra en la pantalla. */
+  :host(.horario-modelos-arriba) .semana__dia {
+    padding: var(--esp-3) 0;
+  }
+
+  :host(.horario-modelos-arriba) .semana__cabecera {
+    margin-bottom: var(--esp-4);
   }
 
   :host(.horario-modelos-arriba) .semana__modelo {

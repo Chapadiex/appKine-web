@@ -87,11 +87,18 @@
             @case (3) {
               {{
                 configuracionInicial()
-                  ? 'Horario de atención'
+                  ? '¿Cuándo atiende ' + resumen().nombre + '?'
                   : editando()
                     ? 'Datos fiscales'
                     : 'Configuración inicial'
               }}
+              <app-ayuda titulo="Sobre este paso">
+                @if (editando() && !configuracionInicial()) {
+                  <p>El horario se cambia en el calendario de la sede y los boxes en Espacios.</p>
+                } @else {
+                  <p>Todo es opcional: podés seguir sin cargar nada y completarlo después.</p>
+                }
+              </app-ayuda>
             }
             @case (4) {
               {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
@@ -372,25 +379,16 @@
           }
 
           @case (3) {
-            <!-- Instruccion de un paso: va a la vista. -->
-            <p class="asistente__nota">
-              @if (editando() && !configuracionInicial()) {
-                El horario se cambia en el calendario de la sede y los boxes en Espacios.
-              } @else {
-                Todo es opcional: podés seguir sin cargar nada y completarlo después.
-              }
-            </p>
-
             <div class="asistente__grilla asistente__grilla--horario">
               @if (!editando() || configuracionInicial()) {
                 <section class="bloque bloque--horario" aria-labelledby="titulo-horario-general">
                   <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
-                    Horario de atención
+                    Días y horarios
+                    <app-ayuda titulo="Sobre el horario">
+                      <p><b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.</p>
+                      <p>Elegí un modelo para empezar y ajustá cada día con su interruptor.</p>
+                    </app-ayuda>
                   </h3>
-                  <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
-                  <p class="bloque__ayuda">
-                    <b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.
-                  </p>
                   <app-horario-semanal
                     class="horario-compacto horario-modelos-arriba"
                     idBase="sede-horario"
