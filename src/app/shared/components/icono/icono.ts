@@ -126,7 +126,20 @@ export type NombreDeIcono = keyof typeof TRAZOS;
   `,
 })
 export class Icono {
-  readonly nombre = input.required<NombreDeIcono>();
+  readonly nombre = input<NombreDeIcono>();
+  /**
+   * Un trazo propio en vez de uno de `TRAZOS`: lo usan las features diferidas (el manual) para no
+   * sumar dibujos al bundle inicial.
+   */
+  readonly trazoPropio = input<string | undefined>(undefined, { alias: 'trazo' });
 
-  protected readonly trazo = computed(() => TRAZOS[this.nombre()]);
+  protected readonly trazo = computed(() => {
+    const nombre = this.nombre();
+    return this.trazoPropio() ?? (nombre ? TRAZOS[nombre] : '');
+  });
+}
+
+/** `true` si el nombre es uno de los íconos de la aplicación. */
+export function esNombreDeIcono(nombre: string): nombre is NombreDeIcono {
+  return Object.hasOwn(TRAZOS, nombre);
 }
