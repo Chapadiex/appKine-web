@@ -202,6 +202,26 @@ describe('InvitacionPage', () => {
     peticion.flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: false });
   });
 
+  it('al dueño que acepta le dice que su cuenta está lista, con el tilde centrado', async () => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({
+      ...SIN_CUENTA,
+      roleCode: 'ORG_ADMIN',
+      requiereRegistro: false,
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    aceptar(fixture);
+    httpMock
+      .expectOne(ACCEPT)
+      .flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: false });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector('h1')?.textContent).toContain('Tu cuenta está lista');
+    expect(anfitrion.querySelector('.invitacion__listo .acceso-icono')).not.toBeNull();
+    expect(anfitrion.querySelector('.invitacion__marca')).not.toBeNull();
+  });
+
   it('el alta exige nombre, contraseña y los términos vigentes antes de mandar nada', async () => {
     TestBed.resetTestingModule();
     const fixture = await montarLista(SIN_CUENTA, CON_TERMINOS);

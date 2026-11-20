@@ -34,7 +34,7 @@ type Estado =
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaInvitacion }
   | { readonly tipo: 'listo'; readonly invitacion: InvitacionPreviewResponse }
-  | { readonly tipo: 'aceptada'; readonly cuentaCreada: boolean }
+  | { readonly tipo: 'aceptada'; readonly cuentaCreada: boolean; readonly administra: boolean }
   | { readonly tipo: 'rechazada' };
 
 /**
@@ -328,7 +328,11 @@ export class InvitacionPage {
     this.invitaciones.acceptInvitacion({ acceptInvitacionRequest: cuerpo }).subscribe({
       next: (respuesta) => {
         this.enviando.set(false);
-        this.estado.set({ tipo: 'aceptada', cuentaCreada: respuesta.cuentaCreada === true });
+        this.estado.set({
+          tipo: 'aceptada',
+          cuentaCreada: respuesta.cuentaCreada === true,
+          administra: this.administra(),
+        });
       },
       error: (error: unknown) => {
         this.enviando.set(false);
@@ -385,6 +389,12 @@ export class InvitacionPage {
       return;
     }
     this.session.logout().subscribe({ complete: ir });
+  }
+
+  /** `true` si quien acaba de aceptar entra a administrar el centro (el dueño). */
+  protected aceptoAdministrar(): boolean {
+    const actual = this.estado();
+    return actual.tipo === 'aceptada' && actual.administra;
   }
 
   /** `true` si la aceptacion creo la cuenta en este acto. Cambia el texto del cierre. */

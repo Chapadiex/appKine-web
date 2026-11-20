@@ -6,6 +6,13 @@
   aria-labelledby="titulo-invitacion"
   aria-live="polite"
 >
+  <!-- La marca, arriba a la izquierda como en el ingreso. El formulario la lleva en su columna. -->
+  @if (estado().tipo !== 'listo') {
+    <a class="invitacion__marca" routerLink="/">
+      <span class="invitacion__logo" aria-hidden="true">A</span>
+      <span>AKINE</span>
+    </a>
+  }
   @switch (estado().tipo) {
     @case ('cargando') {
       <h1 id="titulo-invitacion">Te invitaron a AKINE</h1>
@@ -305,21 +312,26 @@
     }
 
     @case ('aceptada') {
-      <span class="acceso-icono acceso-icono--exito" aria-hidden="true">✓</span>
-      <h1 id="titulo-invitacion">Ya sos parte del equipo</h1>
-      @if (cuentaReciencreada()) {
-        <p class="acceso-texto">
-          Tu cuenta quedó creada y activa. Entrá con tu correo y la contraseña que acabás de elegir.
-        </p>
-      } @else {
-        <p class="acceso-texto">
-          Quedaste vinculado con tu cuenta de siempre. Al elegir dónde trabajar vas a ver la
-          organización nueva.
-        </p>
-      }
-      <button type="button" class="boton boton--bloque" (click)="irAlIngreso()">
-        Iniciar sesión
-      </button>
+      <div class="invitacion__listo">
+        <span class="acceso-icono acceso-icono--exito" aria-hidden="true">✓</span>
+        <h1 id="titulo-invitacion">
+          {{ aceptoAdministrar() ? 'Tu cuenta está lista' : 'Ya sos parte del equipo' }}
+        </h1>
+        @if (cuentaReciencreada()) {
+          <p class="acceso-texto">
+            Tu cuenta quedó creada y activa. Entrá con tu correo y la contraseña que acabás de
+            elegir.
+          </p>
+        } @else {
+          <p class="acceso-texto">
+            Quedaste vinculado con tu cuenta de siempre. Al elegir dónde trabajar vas a ver la
+            organización nueva.
+          </p>
+        }
+        <button type="button" class="boton boton--bloque" (click)="irAlIngreso()">
+          Iniciar sesión
+        </button>
+      </div>
     }
 
     @case ('rechazada') {
