@@ -4,6 +4,22 @@
     "nombre": "buscar-persona",
     "ruta": "/pacientes",
     "preparacion": "Escribir en el buscador el apellido de una persona sembrada y apretar Enter, para que la tabla muestre al menos una fila.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#padron-busqueda",
+        "texto": ":personaApellido"
+      },
+      {
+        "accion": "tecla",
+        "selector": "#padron-busqueda",
+        "tecla": "Enter"
+      },
+      {
+        "accion": "esperar",
+        "selector": "table.tabla--padron tbody tr"
+      }
+    ],
     "recorte": "section[aria-label=\"Padrón de personas\"]",
     "marcas": [
       {
@@ -14,8 +30,7 @@
         "selector": "table.tabla--padron",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Escribir en el buscador el apellido de una persona sembrada y apretar Enter, para que la tabla muestre al menos una fila."
+    ]
   },
   {
     "ficha": "padron",
@@ -47,26 +62,42 @@
   {
     "ficha": "ficha-de-la-persona",
     "nombre": "pestanas",
-    "ruta": "/pacientes/:id",
+    "cuenta": "profesional",
+    "ruta": "/pacientes/:personaId",
     "preparacion": "Usar una persona con perfil de paciente y un usuario con paciente:read y hc:read, para que se vean todas las pestañas.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "app-cabecera-de-ficha nav"
+      }
+    ],
     "recorte": "app-cabecera-de-ficha",
     "marcas": [
       {
         "selector": "app-cabecera-de-ficha nav",
         "numero": 2
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Usar una persona con perfil de paciente y un usuario con paciente:read y hc:read, para que se vean todas las pestañas."
+    ]
   },
   {
     "ficha": "ficha-de-la-persona",
     "nombre": "dar-de-baja",
-    "ruta": "/pacientes/:id",
+    "ruta": "/pacientes/:personaId",
     "preparacion": "Persona activa con perfil de paciente y usuario con paciente:manage. Tocar el botón 'Más acciones de …' de la cabecera para desplegar el menú (es un popover: confirmar que queda dentro del recorte).",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "app-cabecera-de-ficha >> role=button[name=/^Más acciones de/]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Dar de baja la ficha\"]"
+      }
+    ],
     "recorte": "app-cabecera-de-ficha",
     "marcas": [
       {
-        "selector": "app-cabecera-de-ficha role=button[name=/^Más acciones de/]",
+        "selector": "app-cabecera-de-ficha >> role=button[name=/^Más acciones de/]",
         "numero": 1
       },
       {
@@ -77,14 +108,20 @@
         "selector": "role=button[name=\"Dar de baja la ficha\"]",
         "numero": 2
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Persona activa con perfil de paciente y usuario con paciente:manage. Tocar el botón 'Más acciones de …' de la cabecera para desplegar el menú (es un popover: confirmar que queda dentro del recorte)."
+    ]
   },
   {
     "ficha": "historias-clinicas",
     "nombre": "buscar-paciente",
+    "cuenta": "profesional",
     "ruta": "/historia-clinica",
     "preparacion": "Con un usuario con hc:read y al menos un paciente sembrado; sin texto en el buscador.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": ".hc-tarjeta"
+      }
+    ],
     "recorte": "#contenido",
     "marcas": [
       {
@@ -95,14 +132,20 @@
         "selector": ".hc-tarjeta >> nth=0 >> .hc-tarjeta__acciones a.boton:not(.boton--secundario)",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita un paciente con historia clínica en el centro sembrado."
+    ]
   },
   {
     "ficha": "historias-clinicas",
     "nombre": "motivo-de-acceso",
-    "ruta": "/historia-clinica/personas/:id",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaSinRelacionId",
     "preparacion": "Entrar con un profesional que no tenga relación asistencial con ese paciente en la sede (sin turnos ni sesiones con él), para que aparezca el pedido de motivo.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "#motivo-acceso"
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-justificacion\"]",
     "marcas": [
       {
@@ -113,14 +156,35 @@
         "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Entrar con un profesional que no tenga relación asistencial con ese paciente en la sede (sin turnos ni sesiones con él), para que aparezca el pedido de motivo."
+    ]
   },
   {
     "ficha": "caso-clinico",
     "nombre": "abrir-caso",
-    "ruta": "/historia-clinica/personas/:id",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaId",
     "preparacion": "Paciente con historia clínica. Si aparece el pedido de motivo, declararlo. En la tarjeta 'Casos clínicos', tocar 'Abrir un caso' para abrir el panel lateral.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#motivo-acceso",
+        "texto": "Atención programada del paciente",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Abrir un caso\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#caso-oferta"
+      }
+    ],
     "recorte": ".panel-lateral",
     "marcas": [
       {
@@ -135,14 +199,32 @@
         "selector": ".panel-lateral form button[type=submit]",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Paciente con historia clínica. Si aparece el pedido de motivo, declararlo. En la tarjeta 'Casos clínicos', tocar 'Abrir un caso' para abrir el panel lateral."
+    ]
   },
   {
     "ficha": "caso-clinico",
     "nombre": "equipo-tratante",
-    "ruta": "/historia-clinica/personas/:id/casos/:casoId",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaId/casos/:casoId",
     "preparacion": "Caso ACTIVO con al menos un profesional habilitado para su actividad que no esté en el equipo. Elegirlo en 'Sumar un profesional' para que se habilite 'Sumar'.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#motivo-acceso",
+        "texto": "Atención programada del paciente",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
+        "opcional": true
+      },
+      {
+        "accion": "seleccionar",
+        "selector": "#equipo-nuevo",
+        "indice": 1
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-equipo\"]",
     "marcas": [
       {
@@ -161,28 +243,54 @@
         "selector": "section[aria-labelledby=\"titulo-equipo\"] .acciones button",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Caso ACTIVO con al menos un profesional habilitado para su actividad que no esté en el equipo. Elegirlo en 'Sumar un profesional' para que se habilite 'Sumar'."
+    ]
   },
   {
     "ficha": "atencion",
     "nombre": "iniciar-atencion",
+    "cuenta": "profesional",
     "ruta": "/agenda/recepcion",
     "preparacion": "Usuario PROFESIONAL (sesion:register) con un turno de hoy con el paciente llegado. Abrir el detalle de ese turno en la recepción del día.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": ".tabla-scroll[aria-label='Listado de turnos'] tr:has-text(\":personaLlegadaApellido\") .acciones-de-fila__boton",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=/Ver el turno de.+:personaLlegadaApellido/]"
+      },
+      {
+        "accion": "esperar",
+        "selector": ".panel-lateral >> role=button[name=\"Iniciar atención\"]"
+      }
+    ],
     "recorte": ".panel-lateral",
     "marcas": [
       {
-        "selector": ".panel-lateral role=button[name=\"Iniciar atención\"]",
+        "selector": ".panel-lateral >> role=button[name=\"Iniciar atención\"]",
         "numero": 2
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Usuario PROFESIONAL (sesion:register) con un turno de hoy con el paciente llegado. Abrir el detalle de ese turno en la recepción del día."
+    ]
   },
   {
     "ficha": "atencion",
     "nombre": "evaluacion",
-    "ruta": "/atencion/turnos/:id",
+    "cuenta": "profesional",
+    "ruta": "/atencion/turnos/:turnoEnCursoId",
     "preparacion": "Turno de un paciente sin casos activos (la atención arranca sola) y atención en curso; pestaña 'Evaluación' activa.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#pestana-evaluacion",
+        "opcional": true
+      },
+      {
+        "accion": "esperar",
+        "selector": "#panel-evaluacion app-escala"
+      }
+    ],
     "recorte": "#panel-evaluacion",
     "marcas": [
       {
@@ -197,14 +305,28 @@
         "selector": "#panel-evaluacion .pie-tarjeta button",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Turno de un paciente sin casos activos (la atención arranca sola) y atención en curso; pestaña 'Evaluación' activa."
+    ]
   },
   {
     "ficha": "atencion",
     "nombre": "cerrar-atencion",
-    "ruta": "/atencion/turnos/:id",
+    "cuenta": "profesional",
+    "ruta": "/atencion/turnos/:turnoEnCursoId",
     "preparacion": "Atención en curso. Tocar la pestaña 'Cierre' (#pestana-cierre) y elegir 'Vino a la sesión' para que aparezca la nota de cierre.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#pestana-cierre"
+      },
+      {
+        "accion": "click",
+        "selector": "#panel-cierre label:has-text(\"Vino a la sesión\")"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#cierre-nota"
+      }
+    ],
     "recorte": "#panel-cierre",
     "marcas": [
       {
@@ -219,7 +341,6 @@
         "selector": "#panel-cierre .pie-tarjeta button",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Atención en curso. Tocar la pestaña 'Cierre' (#pestana-cierre) y elegir 'Vino a la sesión' para que aparezca la nota de cierre."
+    ]
   }
 ]

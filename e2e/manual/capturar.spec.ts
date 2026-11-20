@@ -1,8 +1,11 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { Page } from '@playwright/test';
+import { ingresarPorPantalla } from '../support/akine';
 import { expect, ingresar, navegar, test } from '../support/agenda-real';
-import { CapturaDelManual, leerCapturas } from './definicion';
+import { Centro, deAUnLogin, esperaDel429 } from '../support/sembrado';
+import { Marcadores, asegurarDatosDelManual } from './datos-del-manual';
+import { CapturaDelManual, Marca, leerCapturas } from './definicion';
 import { marcar } from './marcas';
 
 /**
@@ -10,6 +13,9 @@ import { marcar } from './marcas';
  * sintéticos). `npm run manual:capturas` las escribe en `public/manual/<ficha>/<nombre>.png`;
  * `npm run manual:verificar` recorre lo mismo sin escribir y falla si un elemento marcado ya no
  * existe. `MANUAL_FICHA=caja-diaria` limita a una ficha.
+ *
+ * <p>Los datos de ejemplo que las capturas necesitan (paciente, turnos, convenio, clases...) los
+ * siembra `datos-del-manual.ts` por la API, una vez y reusados entre corridas.
  */
 const SOLO_VERIFICAR = process.env['MANUAL_SOLO_VERIFICAR'] === '1';
 const FICHA = process.env['MANUAL_FICHA'];
@@ -20,19 +26,40 @@ const capturas = leerCapturas().filter((c) => !FICHA || c.ficha === FICHA);
 // Una por vez (el login comparte el límite por IP), pero una captura rota no corta las demás.
 test.describe.configure({ mode: 'default' });
 
-for (const captura of capturas) {
-  test(`${captura.ficha}/${captura.nombre}`, async ({ page, centro }) => {
-    test.skip(captura.omitir !== undefined, captura.omitir);
-    await ingresar(page, centro);
-    const ruta = captura.ruta
-      .replace(':organizationId', String(centro.organizationId))
-      .replace(':consultorioId', String(centro.consultorioId));
-    await navegar(page, ruta);
+let marcadores: Marcadores = {};
+
+test.beforeAll(async ({ centro }) => {
+  // La primera corrida siembra todo; las siguientes sólo releen y rehacen lo vencido.
+  test.setTimeout(300_000);
+  if (capturas.some((c) => c.omitir === undefined)) {
+    marcadores = {
+      organizationId: String(centro.organizationId),
+      consultorioId: String(centro.consultorioId),
+      ...(await asegurarDatosDelManual(centro)),
+    };
+  }
+});
+
+for (const original of capturas) {
+  test(`${original.ficha}/${original.nombre}`, async ({ page, centro }) => {
+    test.skip(original.omitir !== undefined, original.omitir);
+    test.setTimeout(90_000);
+    const captura = resolver(original, marcadores);
+    if (captura.cuenta === 'profesional') {
+      await ingresarComoProfesional(page, centro);
+    } else {
+      await ingresar(page, centro);
+    }
+    await navegar(page, captura.ruta);
     await page.waitForLoadState('networkidle');
     await prepararEstado(page, captura);
 
     const recorte = page.locator(captura.recorte).first();
     await expect(recorte, `el recorte ${captura.recorte}`).toBeVisible();
+    if (captura.ficha !== 'asistente-de-datos') {
+      // El botón flotante del asistente no es parte de la pantalla que se explica y tapa la captura.
+      await page.addStyleTag({ content: 'app-asistente-flotante { display: none !important; }' });
+    }
     await marcar(page, captura.marcas);
     if (SOLO_VERIFICAR) {
       return;
@@ -55,6 +82,57 @@ for (const captura of capturas) {
   });
 }
 
+/** Reemplaza `:marcador` por su valor en la ruta, los selectores, los textos y los valores. */
+function resolver(captura: CapturaDelManual, valores: Marcadores): CapturaDelManual {
+  const r = (texto: string): string =>
+    texto.replace(/:([a-zA-Z]+)/g, (todo, clave: string) => valores[clave] ?? todo);
+  return {
+    ...captura,
+    ruta: r(captura.ruta),
+    recorte: r(captura.recorte),
+    marcas: captura.marcas.map((m): Marca => ({ ...m, selector: r(m.selector) })),
+    pasos: captura.pasos?.map((p) => {
+      const paso = { ...p, selector: r(p.selector) };
+      if (paso.accion === 'escribir') {
+        return { ...paso, texto: r(paso.texto) };
+      }
+      if (paso.accion === 'seleccionar' && paso.valor !== undefined) {
+        return { ...paso, valor: r(paso.valor) };
+      }
+      return paso;
+    }),
+  };
+}
+
+/**
+ * Ingresa por pantalla como la profesional del centro. Su cuenta tiene dos lugares de trabajo (su
+ * consultorio propio y el centro), así que el selector de contexto pregunta: se elige el centro.
+ */
+async function ingresarComoProfesional(page: Page, centro: Centro): Promise<void> {
+  for (let intento = 1; ; intento++) {
+    const espera = await deAUnLogin(async () => {
+      const login = page.waitForResponse(
+        (r) => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/auth/login'),
+      );
+      await ingresarPorPantalla(page, centro.emailProfesional);
+      const respuesta = await login;
+      if (respuesta.status() === 429 && intento < 3) {
+        return esperaDel429(respuesta);
+      }
+      await expect(page).not.toHaveURL(/\/auth\//, { timeout: 15_000 });
+      return 0;
+    });
+    if (espera === 0) {
+      break;
+    }
+    await page.waitForTimeout(espera * 1_000);
+  }
+  if (/\/seleccionar-contexto/.test(page.url())) {
+    await page.locator('button.opcion', { hasText: centro.nombreCentro }).first().click();
+  }
+  await expect(page).not.toHaveURL(/\/(auth|seleccionar-contexto)/, { timeout: 15_000 });
+}
+
 async function prepararEstado(page: Page, captura: CapturaDelManual): Promise<void> {
   for (const paso of captura.pasos ?? []) {
     const elemento = page.locator(paso.selector).first();
@@ -65,6 +143,17 @@ async function prepararEstado(page: Page, captura: CapturaDelManual): Promise<vo
       await elemento.click();
     } else if (paso.accion === 'escribir') {
       await elemento.fill(paso.texto);
+    } else if (paso.accion === 'seleccionar') {
+      if (paso.valor !== undefined) {
+        await expect(elemento.locator(`option[value="${paso.valor}"]`)).toBeAttached();
+        await elemento.selectOption(paso.valor);
+      } else {
+        const indice = paso.indice ?? 1;
+        await expect(elemento.locator('option').nth(indice)).toBeAttached();
+        await elemento.selectOption({ index: indice });
+      }
+    } else if (paso.accion === 'tecla') {
+      await elemento.press(paso.tecla);
     } else {
       await expect(elemento).toBeVisible();
     }

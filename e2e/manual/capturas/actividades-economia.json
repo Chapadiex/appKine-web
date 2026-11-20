@@ -4,6 +4,17 @@
     "nombre": "programar-clase",
     "ruta": "/clases/nueva",
     "preparacion": "Sede con al menos una actividad grupal publicada. Elegir la primera actividad en #clase-oferta para que aparezca el campo Box.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#clase-oferta",
+        "valor": ":ofertaGrupalId"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#clase-capacidad"
+      }
+    ],
     "recorte": "form.tarjeta:has(#clase-oferta)",
     "marcas": [
       {
@@ -22,14 +33,28 @@
         "selector": "form.tarjeta:has(#clase-oferta) button[type=submit]",
         "numero": 6
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Sede con al menos una actividad grupal publicada. Elegir la primera actividad en #clase-oferta para que aparezca el campo Box."
+    ]
   },
   {
     "ficha": "clases",
     "nombre": "inscribir",
-    "ruta": "/clases/:id",
+    "ruta": "/clases/:claseId",
     "preparacion": "Clase en estado PROGRAMADA con lugar. Escribir un apellido de ejemplo en #inscribir-persona y tocar la primera persona de .lista-personas para que aparezcan la casilla y el botón Inscribir.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#inscribir-persona",
+        "texto": ":personaApellido"
+      },
+      {
+        "accion": "click",
+        "selector": ".lista-personas button >> nth=0"
+      },
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby=\"titulo-inscribir\"] .acciones button"
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-inscribir\"]",
     "marcas": [
       {
@@ -40,28 +65,42 @@
         "selector": "section[aria-labelledby=\"titulo-inscribir\"] .acciones button",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Clase en estado PROGRAMADA con lugar. Escribir un apellido de ejemplo en #inscribir-persona y tocar la primera persona de .lista-personas para que aparezcan la casilla y el botón Inscribir."
+    ]
   },
   {
     "ficha": "asistencia",
     "nombre": "iniciar-clase",
-    "ruta": "/asistencia/:id",
+    "ruta": "/asistencia/:claseHoyId",
     "preparacion": "Clase de hoy en estado PROGRAMADA con inscriptos.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Iniciar clase\"]"
+      }
+    ],
     "recorte": "section.banda-asistencia",
     "marcas": [
       {
         "selector": "role=button[name=\"Iniciar clase\"]",
         "numero": 2
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Clase de hoy en estado PROGRAMADA con inscriptos."
+    ]
   },
   {
     "ficha": "asistencia",
     "nombre": "tomar-lista",
-    "ruta": "/asistencia/:id",
+    "ruta": "/asistencia/:claseEnCursoId",
     "preparacion": "Clase en estado EN_CURSO con al menos dos inscriptos con lugar y ninguno marcado. Marcar Presente en la primera fila para que aparezca Guardar asistencia habilitado.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "fieldset.marcas >> nth=0 >> label.opcion-radio--presente"
+      },
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=/^Guardar asistencia/]"
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-participantes\"]",
     "marcas": [
       {
@@ -76,8 +115,7 @@
         "selector": "role=button[name=/^Guardar asistencia/]",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Clase en estado EN_CURSO con al menos dos inscriptos con lugar y ninguno marcado. Marcar Presente en la primera fila para que aparezca Guardar asistencia habilitado."
+    ]
   },
   {
     "ficha": "productos-de-pack",
@@ -113,8 +151,15 @@
   {
     "ficha": "productos-de-pack",
     "nombre": "vender-pase",
-    "ruta": "/pacientes/:id/pases",
+    "ruta": "/pacientes/:personaId/pases",
     "preparacion": "Persona de ejemplo; la sede tiene al menos un producto de pack vigente. Elegir el primer producto en #vender-producto.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#vender-producto",
+        "indice": 1
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-vender\"]",
     "marcas": [
       {
@@ -125,8 +170,7 @@
         "selector": "role=button[name=\"Vender pase\"]",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Persona de ejemplo; la sede tiene al menos un producto de pack vigente. Elegir el primer producto en #vender-producto."
+    ]
   },
   {
     "ficha": "egresos",
@@ -166,8 +210,14 @@
   {
     "ficha": "egresos",
     "nombre": "registrar-pago",
-    "ruta": "/egresos/:id",
+    "ruta": "/egresos/:egresoId",
     "preparacion": "Egreso en estado CONFIRMADO con saldo pendiente.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "#pago-importe"
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-pago\"]",
     "marcas": [
       {
@@ -182,8 +232,7 @@
         "selector": "section[aria-labelledby=\"titulo-pago\"] button[type=submit]",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Egreso en estado CONFIRMADO con saldo pendiente."
+    ]
   },
   {
     "ficha": "honorarios",
@@ -239,16 +288,21 @@
   {
     "ficha": "presentaciones",
     "nombre": "revision",
-    "ruta": "/presentaciones/:id",
+    "ruta": "/presentaciones/:presentacionId",
     "preparacion": "Lote en estado BORRADOR con al menos una prestación agregada y sin observaciones.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Confirmar y presentar\"]"
+      }
+    ],
     "recorte": "section[aria-labelledby=\"titulo-revision\"]",
     "marcas": [
       {
         "selector": "role=button[name=\"Confirmar y presentar\"]",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Lote en estado BORRADOR con al menos una prestación agregada y sin observaciones."
+    ]
   },
   {
     "ficha": "reportes",
@@ -273,8 +327,19 @@
   {
     "ficha": "cuenta-corriente",
     "nombre": "registrar-cobro",
-    "ruta": "/pacientes/:id/cuenta-corriente/cobrar",
+    "ruta": "/pacientes/:personaId/cuenta-corriente/cobrar",
     "preparacion": "Persona de ejemplo con al menos una deuda pendiente. Marcar la primera deuda para que aparezca su importe a imputar.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "[id^=\"deuda-\"] >> nth=0"
+      },
+      {
+        "accion": "escribir",
+        "selector": "#importe-medio-0",
+        "texto": "12000"
+      }
+    ],
     "recorte": "section.cobro-formulario",
     "marcas": [
       {
@@ -289,7 +354,6 @@
         "selector": "#importe-medio-0",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Persona de ejemplo con al menos una deuda pendiente. Marcar la primera deuda para que aparezca su importe a imputar."
+    ]
   }
 ]

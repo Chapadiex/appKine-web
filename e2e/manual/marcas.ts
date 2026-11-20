@@ -53,7 +53,7 @@ export async function marcar(page: Page, marcas: readonly Marca[]): Promise<void
           const numero = document.createElement('div');
           numero.textContent = String(c.numero);
           numero.style.cssText =
-            `position:fixed;left:${c.x + c.ancho - 6}px;top:${c.y - 16}px;width:26px;height:26px;` +
+            `position:fixed;left:${c.x + c.ancho - 6}px;top:${Math.max(2, c.y - 16)}px;width:26px;height:26px;` +
             'border-radius:50%;background:#d9480f;color:#fff;border:2px solid #fff;' +
             'font:700 14px/22px system-ui,sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.4)';
           capa.appendChild(numero);

@@ -72,8 +72,14 @@
   {
     "ficha": "actividades-de-la-sede",
     "nombre": "practicas",
-    "ruta": "/servicios/ofertas/:id/practicas",
+    "ruta": "/servicios/ofertas/:ofertaId/practicas",
     "preparacion": "Usar una actividad sembrada que ya tenga al menos una práctica declarada.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby=declaradas-titulo] legend"
+      }
+    ],
     "recorte": "main",
     "marcas": [
       {
@@ -88,8 +94,7 @@
         "selector": "section[aria-labelledby=declaradas-titulo] .acciones button.boton",
         "numero": 4
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Usar una actividad sembrada que ya tenga al menos una práctica declarada."
+    ]
   },
   {
     "ficha": "catalogo-clinico",
@@ -160,9 +165,19 @@
   {
     "ficha": "convenios",
     "nombre": "nuevo-arancel",
-    "ruta": "/contratacion/convenios/:id/aranceles",
+    "ruta": "/contratacion/convenios/:convenioId/aranceles",
     "preparacion": "Usar un convenio activo sembrado; tocar 'Cargar un arancel' y esperar el panel 'Nuevo arancel'.",
-    "recorte": "app-panel-lateral",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Cargar un arancel\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#alta-arancel-practica"
+      }
+    ],
+    "recorte": "dialog.panel-lateral[open]",
     "marcas": [
       {
         "selector": "#alta-arancel-practica",
@@ -180,14 +195,19 @@
         "selector": "app-panel-lateral form button[type=submit]",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Usar un convenio activo sembrado; tocar 'Cargar un arancel' y esperar el panel 'Nuevo arancel'."
+    ]
   },
   {
     "ficha": "convenios",
     "nombre": "importar-planilla",
-    "ruta": "/contratacion/convenios/:id/aranceles/importar",
+    "ruta": "/contratacion/convenios/:convenioId/aranceles/importar",
     "preparacion": "Usar un convenio activo sembrado; quedarse en el paso 1 y tocar 'Empezar desde el ejemplo' para que el cuadro tenga filas.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Empezar desde el ejemplo\"]"
+      }
+    ],
     "recorte": "section[aria-labelledby=titulo-paso]",
     "marcas": [
       {
@@ -202,14 +222,19 @@
         "selector": "section[aria-labelledby=titulo-paso] .asistente__acciones button.boton",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Usar un convenio activo sembrado; quedarse en el paso 1 y tocar 'Empezar desde el ejemplo' para que el cuadro tenga filas."
+    ]
   },
   {
     "ficha": "financiadores",
     "nombre": "agregar-desde-catalogo",
     "ruta": "/contratacion/financiadores/catalogo",
     "preparacion": "Con una cuenta con convenio:manage y una entrada del catálogo sin adoptar en la primera fila.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico"
+      }
+    ],
     "recorte": "section[aria-label='Financiadores del catálogo']",
     "marcas": [
       {
@@ -220,8 +245,7 @@
         "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico",
         "numero": 3
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Con una cuenta con convenio:manage y una entrada del catálogo sin adoptar en la primera fila."
+    ]
   },
   {
     "ficha": "financiadores",
@@ -259,6 +283,23 @@
     "nombre": "consultar",
     "ruta": "/contratacion/arancel-efectivo",
     "preparacion": "Elegir el financiador y el plan sembrados para que el formulario muestre valores.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#consulta-financiador",
+        "valor": ":financiadorId"
+      },
+      {
+        "accion": "seleccionar",
+        "selector": "#consulta-plan",
+        "valor": ":planId"
+      },
+      {
+        "accion": "seleccionar",
+        "selector": "#consulta-practica",
+        "valor": ":practicaId"
+      }
+    ],
     "recorte": "section[aria-labelledby=titulo-consulta]",
     "marcas": [
       {
@@ -281,8 +322,7 @@
         "selector": "section[aria-labelledby=titulo-consulta] button[type=submit]",
         "numero": 6
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Elegir el financiador y el plan sembrados para que el formulario muestre valores."
+    ]
   },
   {
     "ficha": "espacios-y-boxes",
@@ -340,7 +380,22 @@
     "nombre": "agregar-horario",
     "ruta": "/horarios",
     "preparacion": "Elegir un profesional sembrado en 'Elegí un profesional' y tocar 'Agregar horario'; esperar el panel lateral.",
-    "recorte": "app-panel-lateral",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#selector-profesional",
+        "valor": ":profesionalId"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Agregar horario\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#alta-bloque-desde"
+      }
+    ],
+    "recorte": "dialog.panel-lateral[open]",
     "marcas": [
       {
         "selector": "div[aria-label='Selección rápida de días']",
@@ -358,8 +413,7 @@
         "selector": "form.formulario-horario button[type=submit]",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Elegir un profesional sembrado en 'Elegí un profesional' y tocar 'Agregar horario'; esperar el panel lateral."
+    ]
   },
   {
     "ficha": "calendario-de-la-sede",

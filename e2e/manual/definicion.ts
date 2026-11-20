@@ -22,13 +22,26 @@ export type Paso = { readonly selector: string; readonly opcional?: boolean } & 
   | { readonly accion: 'click' }
   | { readonly accion: 'escribir'; readonly texto: string }
   | { readonly accion: 'esperar' }
+  /** Elige una opción de un `<select>`: por `valor` (admite marcadores) o, sin él, por `indice`. */
+  | { readonly accion: 'seleccionar'; readonly valor?: string; readonly indice?: number }
+  /** Aprieta una tecla con el foco en el elemento (`Enter`, por ejemplo). */
+  | { readonly accion: 'tecla'; readonly tecla: string }
 );
+
+/** Quién ingresa a sacar la captura. */
+export type CuentaDeLaCaptura = 'admin' | 'profesional';
 
 export interface CapturaDelManual {
   readonly ficha: string;
   readonly nombre: string;
-  /** Ruta de la aplicación. `:organizationId` y `:consultorioId` se reemplazan con los del centro sembrado. */
+  /**
+   * Ruta de la aplicación. `:organizationId` y `:consultorioId` se reemplazan con los del centro
+   * sembrado, y los marcadores de `datos-del-manual.ts` (`:personaId`, `:turnoId`, `:convenioId`...)
+   * con los datos de ejemplo. Los marcadores valen también en selectores, textos y valores.
+   */
   readonly ruta: string;
+  /** La administradora del centro (por defecto) o su profesional. */
+  readonly cuenta?: CuentaDeLaCaptura;
   readonly pasos?: readonly Paso[];
   /** Selector de la zona que se recorta. */
   readonly recorte: string;

@@ -163,6 +163,16 @@
     "nombre": "subir-libro",
     "ruta": "/biblioteca",
     "preparacion": "Tocar el botón «Subir libro» de la cabecera para abrir el panel Subir libro.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Subir libro\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#subir-libro-archivo"
+      }
+    ],
     "recorte": "dialog.panel-lateral",
     "marcas": [
       {
@@ -181,8 +191,7 @@
         "selector": "dialog.panel-lateral button[type=\"submit\"]",
         "numero": 5
       }
-    ],
-    "omitir": "Necesita datos que la siembra de E2E no crea: Tocar el botón «Subir libro» de la cabecera para abrir el panel Subir libro."
+    ]
   },
   {
     "ficha": "mi-perfil",
@@ -211,16 +220,22 @@
   {
     "ficha": "primeros-pasos",
     "nombre": "barra-superior",
+    "cuenta": "profesional",
     "ruta": "/agenda",
-    "preparacion": "Usar una cuenta con más de una sede para que el selector de sede sea un botón.",
+    "preparacion": "Ingresa la profesional del centro: su cuenta tiene dos lugares de trabajo (su consultorio propio y el centro), así que el selector de sede es un botón.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "header.cabecera button.disparador.sede"
+      }
+    ],
     "recorte": "header.cabecera",
     "marcas": [
       {
         "selector": "header.cabecera button.disparador.sede",
         "numero": 1
       }
-    ],
-    "omitir": "Necesita una cuenta con más de una sede para que el selector de sede sea un botón."
+    ]
   },
   {
     "ficha": "primeros-pasos",
