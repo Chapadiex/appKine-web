@@ -43,6 +43,7 @@ import {
   SERVICIOS,
   etiquetaDeSedes,
   marcaDePedido,
+  nombreVisibleDePlan,
   planesOfrecidos,
   serviciosEnTexto,
   serviciosDelPedido,
@@ -178,7 +179,7 @@ export class AltaDeCentroPage implements OnInit {
   protected readonly opcionesDePlan = computed<OpcionEnTarjeta[]>(() =>
     this.planes().map((plan) => ({
       valor: plan.code ?? '',
-      etiqueta: plan.name ?? plan.code ?? '',
+      etiqueta: nombreVisibleDePlan(plan.code, plan.name),
       descripcion: topeDeSedes(plan),
     })),
   );

@@ -140,6 +140,10 @@ const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { no
   BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
   CRECIMIENTO: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
   RED: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
+  // Transicion: una base que todavia no corrio la migracion que borra los planes viejos los sigue
+  // devolviendo. Se muestran como el plan al que pasan; borrar estas dos lineas despues.
+  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
+  PROFESIONAL: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
 };
 
 /** La leyenda de las siglas, en el orden de los escalones, para la ayuda del listado. */
@@ -158,4 +162,9 @@ export function marcaDePlan(code: string | undefined, name?: string): MarcaDePla
   return escalon
     ? { sigla: escalon.sigla, texto: escalon.nombre, clase: escalon.clase }
     : { sigla: '', texto: name?.trim() || code || 'Sin plan', clase: 'marca-plan--otro' };
+}
+
+/** El nombre que se muestra de un plan: el fijo del escalon, o el del servidor si no se conoce. */
+export function nombreVisibleDePlan(code: string | undefined, name?: string): string {
+  return marcaDePlan(code, name).texto;
 }

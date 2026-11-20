@@ -43,6 +43,7 @@ import {
   diasRestantes,
   marcaDePlan,
   marcaDeSuscripcion,
+  nombreVisibleDePlan,
   planesOfrecidos,
   rotuloDeTope,
   serviciosEnTexto,
@@ -141,6 +142,7 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly topeDeSedes = topeDeSedes;
   protected readonly tieneIa = tieneIa;
   protected readonly rotuloDeTope = rotuloDeTope;
+  protected readonly nombreVisibleDePlan = nombreVisibleDePlan;
   protected readonly siglasDePlan = SIGLAS_DE_PLAN;
   protected readonly serviciosEnTexto = serviciosEnTexto;
 
@@ -388,7 +390,7 @@ export class SuscripcionDeCentroPage implements OnInit {
           this.avisos.exito(contratar ? 'Pasó a contrato' : 'Contratación guardada', {
             descripcion: contratar
               ? `${nombre} dejó la prueba: la suscripción está activa.`
-              : `${nombre}: plan ${actualizada.planNombre ?? actualizada.planCode}, ${serviciosEnTexto(
+              : `${nombre}: plan ${nombreVisibleDePlan(actualizada.planCode, actualizada.planNombre)}, ${serviciosEnTexto(
                   actualizada.servicios,
                 )}.`,
           });

@@ -255,7 +255,8 @@
           <div class="vigente__dato">
             <dt>Plan</dt>
             <dd data-testid="suscripcion-plan">
-              {{ c.planNombre ?? nombreDePlan(c.planCode) }} · {{ rotuloDeTope(c.maxSedes) }}
+              {{ nombreVisibleDePlan(c.planCode, c.planNombre ?? nombreDePlan(c.planCode)) }} ·
+              {{ rotuloDeTope(c.maxSedes) }}
             </dd>
           </div>
           <div class="vigente__dato">
@@ -307,12 +308,12 @@
             >
               @if (planNoOfrecido()) {
                 <option [value]="c.planCode" disabled [selected]="planElegido() === c.planCode">
-                  {{ c.planNombre ?? c.planCode }} (ya no se ofrece)
+                  {{ nombreVisibleDePlan(c.planCode, c.planNombre) }} (ya no se ofrece)
                 </option>
               }
               @for (plan of planes(); track plan.code) {
                 <option [value]="plan.code" [selected]="plan.code === planElegido()">
-                  {{ plan.name ?? plan.code }} · {{ topeDeSedes(plan) }}
+                  {{ nombreVisibleDePlan(plan.code, plan.name) }} · {{ topeDeSedes(plan) }}
                 </option>
               }
             </select>
