@@ -38,6 +38,7 @@ export enum InterpretacionDtoIntencionEnum {
     ASISTENTES_CLASE = 'ASISTENTES_CLASE',
     REPORTE = 'REPORTE',
     BUSCAR_PERSONA = 'BUSCAR_PERSONA',
+    COMO_SE_HACE = 'COMO_SE_HACE',
     FUERA_DE_ALCANCE = 'FUERA_DE_ALCANCE'
 };
 

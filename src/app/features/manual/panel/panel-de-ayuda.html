@@ -1,0 +1,152 @@
+@if (manual.abierto()) {
+  <aside class="ayuda" aria-labelledby="ayuda-titulo">
+    <div class="ayuda__cabecera">
+      <h2 id="ayuda-titulo" class="ayuda__titulo" tabindex="-1" #tituloDelPanel>
+        <app-icono [trazo]="trazoManual" />
+        Ayuda
+      </h2>
+      <button type="button" class="ayuda__cerrar" (click)="cerrar()">
+        <app-icono nombre="cerrar" />
+        <span class="visualmente-oculto">Cerrar la ayuda</span>
+      </button>
+    </div>
+
+    @if (sinSede()) {
+      <div class="ayuda__cuerpo">
+        <p>
+          Elegí la sede en la que vas a trabajar y vas a ver acá la ayuda de cada pantalla. Después,
+          abrila cuando quieras con <strong>Ayuda</strong>, al pie del menú, o con la tecla
+          <kbd>F1</kbd>.
+        </p>
+      </div>
+    } @else {
+      <div class="ayuda__buscador" role="search">
+        <label class="visualmente-oculto" for="ayuda-buscar">Buscar en la ayuda</label>
+        <app-icono nombre="buscar" />
+        <input
+          id="ayuda-buscar"
+          type="search"
+          placeholder="Buscar en la ayuda"
+          autocomplete="off"
+          [value]="consulta()"
+          (input)="escribir($any($event.target).value)"
+        />
+      </div>
+
+      <div class="ayuda__cuerpo">
+        @if (resultados(); as encontrados) {
+          <section aria-labelledby="ayuda-resultados">
+            <h3 id="ayuda-resultados" class="ayuda__subtitulo">Resultados</h3>
+            @if (encontrados.length === 0) {
+              <p class="ayuda__vacio">No encontramos nada con esas palabras. Probá con otras.</p>
+            } @else {
+              <ul class="ayuda__lista">
+                @for (r of encontrados; track r.pasajeId) {
+                  <li>
+                    <button type="button" class="ayuda__resultado" (click)="abrirFicha(r.fichaId)">
+                      <span class="ayuda__resultado-titulo"
+                        >{{ r.fichaTitulo }} → {{ r.titulo }}</span
+                      >
+                      <span class="ayuda__resultado-texto">{{ r.fragmento }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        } @else if (vista() === 'indice') {
+          <button type="button" class="ayuda__volver" (click)="volverALaPantalla()">
+            <app-icono nombre="chevron-izquierda" />
+            Ayuda de esta pantalla
+          </button>
+          @if (indice(); as idx) {
+            @for (grupo of idx.grupos; track grupo.nombre) {
+              <section class="ayuda__grupo" [attr.aria-label]="grupo.nombre">
+                <h3 class="ayuda__subtitulo">{{ grupo.nombre }}</h3>
+                <ul class="ayuda__lista">
+                  @for (entrada of grupo.fichas; track entrada.id) {
+                    <li>
+                      <button type="button" class="ayuda__enlace" (click)="abrirFicha(entrada.id)">
+                        {{ entrada.titulo }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+          } @else if (error()) {
+            <p class="ayuda__estado ayuda__estado--error" role="alert">
+              <app-icono nombre="error" />
+              No pudimos traer el manual. Revisá tu conexión y volvé a intentar.
+            </p>
+          } @else {
+            <p class="ayuda__estado" role="status">Cargando el manual…</p>
+          }
+        } @else {
+          @if (cargando()) {
+            <p class="ayuda__estado" role="status">Cargando la ayuda…</p>
+          } @else if (error()) {
+            <p class="ayuda__estado ayuda__estado--error" role="alert">
+              <app-icono nombre="error" />
+              No pudimos traer la ayuda. Revisá tu conexión y volvé a intentar.
+            </p>
+          } @else if (ficha(); as f) {
+            @if (manual.fichaPedida()) {
+              <button type="button" class="ayuda__volver" (click)="volverALaPantalla()">
+                <app-icono nombre="chevron-izquierda" />
+                Ayuda de esta pantalla
+              </button>
+            }
+            <article aria-labelledby="ayuda-ficha">
+              <p class="ayuda__grupo-de-ficha">{{ f.grupo }}</p>
+              <h3 id="ayuda-ficha" class="ayuda__ficha">{{ f.titulo }}</h3>
+              <app-markdown-seguro [markdown]="f.markdown" (ampliar)="ampliar($event)" />
+            </article>
+            @if (f.relacionadas.length > 0) {
+              <section class="ayuda__relacionadas" aria-labelledby="ayuda-relacionadas">
+                <h3 id="ayuda-relacionadas" class="ayuda__subtitulo">
+                  <app-icono [trazo]="trazoRelacionadas" />
+                  Relacionadas
+                </h3>
+                <ul class="ayuda__lista">
+                  @for (r of f.relacionadas; track r.id) {
+                    <li>
+                      <button type="button" class="ayuda__enlace" (click)="abrirFicha(r.id)">
+                        {{ r.titulo }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+          } @else {
+            <p class="ayuda__vacio">
+              Esta pantalla todavía no tiene ficha. Buscá arriba o mirá todo el manual.
+            </p>
+          }
+        }
+      </div>
+
+      <div class="ayuda__pie">
+        <button type="button" class="boton boton--secundario boton--chico" (click)="verIndice()">
+          Ver todo el manual
+        </button>
+        @if (puedePreguntar()) {
+          <button type="button" class="boton boton--chico" (click)="preguntar()">
+            Preguntale al asistente
+          </button>
+        }
+      </div>
+    }
+  </aside>
+
+  <dialog class="ayuda__lupa" #lupa (close)="ampliada.set(null)" aria-label="Imagen ampliada">
+    @if (ampliada(); as img) {
+      <button type="button" class="ayuda__cerrar ayuda__cerrar--lupa" (click)="cerrarLupa()">
+        <app-icono nombre="cerrar" />
+        <span class="visualmente-oculto">Cerrar la imagen</span>
+      </button>
+      <img [src]="img.src" [alt]="img.alt" />
+    }
+  </dialog>
+}
