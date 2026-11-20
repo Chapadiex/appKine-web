@@ -129,7 +129,9 @@
 }
 
 .asistente__nota {
-  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  /* Una sola línea en escritorio: sin la medida de lectura global, que la partía en dos. */
+  max-width: none;
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-6);
   color: var(--color-texto-suave);
 }
 
