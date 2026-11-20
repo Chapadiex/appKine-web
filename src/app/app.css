@@ -225,6 +225,8 @@
 /* En acceso tampoco va la barra lateral, aunque haya contexto (cambiar de sede desde la app). */
 .shell--acceso {
   grid-template-columns: minmax(0, 1fr);
+  /* Siempre en claro (PreferenciasStore.forzarClaro) y con un fondo suave propio. */
+  background: var(--color-acceso-fondo);
 }
 
 /*

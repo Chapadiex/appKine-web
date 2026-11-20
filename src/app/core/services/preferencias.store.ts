@@ -46,9 +46,23 @@ export class PreferenciasStore {
     }
   }
 
+  /**
+   * Las pantallas de acceso (ingreso, invitación, elegir dónde trabajar) van siempre en claro
+   * (19/11/2026): es la primera impresión y las ilustraciones vienen sobre blanco. No toca la
+   * preferencia guardada; al salir vuelve la elegida.
+   */
+  forzarClaro(activo: boolean): void {
+    this.claroForzado = activo;
+    this.aplicarTema(this.temaElegido());
+  }
+
+  private claroForzado = false;
+
   private aplicarTema(tema: Tema): void {
     const raiz = this.documento.documentElement;
-    if (tema === 'sistema') {
+    if (this.claroForzado) {
+      raiz.setAttribute('data-tema', 'claro');
+    } else if (tema === 'sistema') {
       raiz.removeAttribute('data-tema');
     } else {
       raiz.setAttribute('data-tema', tema);

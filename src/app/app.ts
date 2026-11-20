@@ -86,8 +86,10 @@ export class App {
   private readonly anclaAsistente = viewChild.required('asistente', { read: ViewContainerRef });
 
   constructor() {
-    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
-    inject(PreferenciasStore);
+    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla. Las
+    // pantallas de acceso van siempre en claro.
+    const preferencias = inject(PreferenciasStore);
+    effect(() => preferencias.forzarClaro(this.esAcceso()));
 
     // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
     // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
