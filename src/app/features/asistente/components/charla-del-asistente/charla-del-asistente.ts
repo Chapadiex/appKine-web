@@ -26,6 +26,7 @@ import {
 } from '../../../../shared/components/markdown-seguro/markdown-seguro';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { formatearInstante } from '../../../../shared/utils/instantes';
+import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
@@ -259,7 +260,7 @@ export class CharlaDelAsistente {
     this.anuncio.set('Consultando…');
     this.abortar();
     this.suscripcion = this.api
-      .consultar(sede, pregunta, historial, personaId, this.router.url)
+      .consultar(sede, pregunta, historial, personaId, rutaDePantalla(this.router.url))
       .subscribe({
         next: (respuesta) => {
           const tabla =

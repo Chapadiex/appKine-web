@@ -30,8 +30,10 @@ import { FuncionesIaStore } from '../../../core/services/funciones-ia.store';
 import { ManualStore } from '../../../core/services/manual.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
 import { PreguntaAlAsistenteStore } from '../../../core/services/pregunta-al-asistente.store';
+import { SessionService } from '../../../core/services/session.service';
 import { TenantContextStore } from '../../../core/services/tenant-context.store';
 import { Icono } from '../../../shared/components/icono/icono';
+import { rutaDePantalla } from '../../../shared/utils/ruta-de-pantalla';
 import { trazoDelManual } from '../../../shared/components/markdown-seguro/iconos-de-texto';
 import {
   CapturaAmpliada,
@@ -52,7 +54,7 @@ type Vista = 'ficha' | 'indice';
   imports: [Icono, MarkdownSeguro],
   templateUrl: './panel-de-ayuda.html',
   styleUrl: './panel-de-ayuda.css',
-  host: { '(document:keydown.escape)': 'alEscape()' },
+  host: { '(document:keydown.escape)': 'alEscape($event)' },
 })
 export class PanelDeAyuda {
   private readonly api = inject(ManualApi);
@@ -62,6 +64,7 @@ export class PanelDeAyuda {
   private readonly funcionesIa = inject(FuncionesIaStore);
   private readonly preguntaAlAsistente = inject(PreguntaAlAsistenteStore);
   private readonly destruir = inject(DestroyRef);
+  private readonly session = inject(SessionService);
   protected readonly manual = inject(ManualStore);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('tituloDelPanel');
@@ -87,9 +90,9 @@ export class PanelDeAyuda {
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((evento) => evento instanceof NavigationEnd),
-      map(() => this.router.url),
+      map(() => rutaDePantalla(this.router.url)),
     ),
-    { initialValue: this.router.url },
+    { initialValue: rutaDePantalla(this.router.url) },
   );
 
   private readonly busquedas = new Subject<string>();
@@ -124,13 +127,30 @@ export class PanelDeAyuda {
       alLimpiar(() => sub.unsubscribe());
     });
 
-    // Al abrir, el foco va al título; al cerrar, vuelve a quien abrió.
+    // Al abrir, el foco va al título; al cerrar (con la X, Escape o F1), vuelve a quien abrió.
+    let estabaAbierto = false;
     effect(() => {
-      if (this.manual.abierto()) {
+      const abierto = this.manual.abierto();
+      if (abierto && !estabaAbierto) {
         this.disparador =
           document.activeElement instanceof HTMLElement ? document.activeElement : null;
         queueMicrotask(() => this.titulo()?.nativeElement.focus());
+      } else if (!abierto && estabaAbierto) {
+        queueMicrotask(() => this.disparador?.focus());
       }
+      estabaAbierto = abierto;
+    });
+
+    // Otra sede u otra persona: nada de lo leído antes sigue valiendo (lo visible depende de los
+    // permisos). Al cerrar sesión, además, se cierra.
+    effect(() => {
+      this.tenant.context();
+      if (this.session.estado() === 'anonimo') {
+        this.manual.cerrar();
+      }
+      this.indice.set(null);
+      this.resultados.set(null);
+      this.consulta.set('');
     });
 
     this.busquedas
@@ -156,6 +176,7 @@ export class PanelDeAyuda {
   }
 
   protected abrirFicha(id: string): void {
+    this.vista.set('ficha');
     this.consulta.set('');
     this.busquedas.next('');
     this.manual.verFicha(id);
@@ -163,6 +184,7 @@ export class PanelDeAyuda {
 
   protected verIndice(): void {
     this.vista.set('indice');
+    this.error.set(false);
     if (this.indice() === null) {
       this.api.indice().subscribe({
         next: (indice) => this.indice.set(indice),
@@ -194,11 +216,11 @@ export class PanelDeAyuda {
 
   protected cerrar(): void {
     this.manual.cerrar();
-    this.disparador?.focus();
   }
 
-  protected alEscape(): void {
-    if (this.ampliada()) {
+  protected alEscape(evento: Event): void {
+    // Un Escape que ya atendió otro diálogo o menú de la pantalla no cierra la ayuda.
+    if (evento.defaultPrevented || this.ampliada()) {
       return; // El dialog de la captura se cierra solo con Escape.
     }
     if (this.manual.abierto()) {

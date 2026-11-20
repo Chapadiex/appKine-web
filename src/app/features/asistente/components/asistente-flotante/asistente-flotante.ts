@@ -67,7 +67,12 @@ export class AsistenteFlotante {
     // Una pregunta que llega de la ayuda: se abre la charla con el texto escrito, sin enviarlo.
     effect(() => {
       const pendiente = this.pedidos.pendiente();
-      if (pendiente === null || !this.visible()) {
+      if (pendiente === null) {
+        return;
+      }
+      if (!this.visible()) {
+        // No se guarda para después: abriría la charla de sorpresa en otra pantalla.
+        this.pedidos.atendida();
         return;
       }
       this.abierto.set(true);

@@ -74,6 +74,11 @@
                 </ul>
               </section>
             }
+          } @else if (error()) {
+            <p class="ayuda__estado ayuda__estado--error" role="alert">
+              <app-icono nombre="error" />
+              No pudimos traer el manual. Revisá tu conexión y volvé a intentar.
+            </p>
           } @else {
             <p class="ayuda__estado" role="status">Cargando el manual…</p>
           }
