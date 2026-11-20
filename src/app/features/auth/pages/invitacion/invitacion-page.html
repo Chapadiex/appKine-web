@@ -248,9 +248,7 @@
                   placeholder="Mínimo 8 caracteres"
                   [attr.aria-invalid]="mostrarErrorDe('password') ? 'true' : null"
                   [attr.aria-describedby]="
-                    mostrarErrorDe('password')
-                      ? 'invitacion-password-error invitacion-password-ayuda'
-                      : 'invitacion-password-ayuda'
+                    mostrarErrorDe('password') ? 'invitacion-password-error' : null
                   "
                 />
                 <app-medidor-de-contrasena [valor]="passwordEscrita()" />
@@ -259,9 +257,6 @@
                     La contraseña tiene que tener al menos 8 caracteres.
                   </p>
                 }
-                <p class="ayuda" id="invitacion-password-ayuda">
-                  Es con la que vas a entrar a AKINE de ahora en más.
-                </p>
               </div>
 
               <app-terminos-del-alta
