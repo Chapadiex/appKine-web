@@ -7,6 +7,7 @@ import { EspaciosPage } from './pages/espacios/espacios-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { SessionService } from '../../core/services/session.service';
+import { TERMINOS_AL_DIA } from '../../core/testing/terminos-al-dia';
 import { routes as rutasDeLaApp } from '../../app.routes';
 
 /**
@@ -32,6 +33,7 @@ describe('Rutas de /espacios', () => {
       providers: [
         provideRouter(rutasDeLaApp),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        TERMINOS_AL_DIA,
         {
           provide: PermissionsStore,
           useValue: { cargados: () => true, tieneAlguno: () => true, tiene: () => true },
