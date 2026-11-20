@@ -110,11 +110,21 @@
 }
 
 .asistente__contenido {
-  padding: var(--esp-7) var(--esp-8) var(--esp-8);
+  /* Todos los pasos con el mismo alto: los botones no saltan de lugar entre uno y otro. */
+  display: flex;
+  flex-direction: column;
+  min-height: 37.5rem;
+  padding: var(--esp-6) var(--esp-8) var(--esp-8);
+}
+
+.asistente__contenido > form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .asistente__encabezado {
-  margin: 0 0 var(--esp-7);
+  margin: 0 0 var(--esp-5);
   font-size: var(--tipo-lg);
   font-weight: var(--peso-fuerte);
 }
@@ -386,7 +396,7 @@
 }
 
 .asistente__acciones {
-  margin-top: var(--esp-8);
+  margin-top: auto;
   padding-top: var(--esp-6);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }
@@ -447,5 +457,16 @@
 
 .asistente__icono {
   flex: none;
+  color: var(--color-acento);
+}
+
+/* Iconos de las etiquetas del resumen. */
+.resumen__lista dt {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.resumen__lista dt app-icono {
   color: var(--color-acento);
 }

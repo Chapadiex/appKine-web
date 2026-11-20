@@ -73,9 +73,24 @@
         @switch (paso()) {
           @case (1) {
             Datos de la sede
+            @if (!configuracionInicial()) {
+              <app-ayuda titulo="Sobre este paso">
+                <p>Con el nombre alcanza. Lo demás ya viene con un valor razonable.</p>
+              </app-ayuda>
+            }
           }
           @case (2) {
             ¿Dónde está {{ resumen().nombre }}?
+            <app-ayuda titulo="Sobre la ubicación">
+              <p>
+                Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les da
+                el "Cómo llegar".
+              </p>
+              <p>
+                Si el buscador no la encuentra, arrastrá el marcador o escribí las coordenadas;
+                también podés dejarla pendiente y ubicarla después.
+              </p>
+            </app-ayuda>
           }
           @case (3) {
             {{
@@ -123,14 +138,12 @@
 
         @switch (paso()) {
           @case (1) {
-            <p class="asistente__nota">
-              @if (configuracionInicial()) {
+            @if (configuracionInicial()) {
+              <p class="asistente__nota">
                 Revisá los datos de tu primera sede y cargá cuándo atiende: con el horario, la
                 agenda empieza a ofrecer turnos.
-              } @else {
-                Con el nombre alcanza. Lo demás ya viene con un valor razonable.
-              }
-            </p>
+              </p>
+            }
 
             <div class="asistente__grilla asistente__grilla--datos">
               <!-- Identificacion, agenda y contacto: la columna ancha. -->
@@ -327,27 +340,14 @@
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
-              @if (configuracionInicial()) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="postergarConfiguracionInicial()"
-                >
-                  Ahora no
-                </button>
-              } @else {
+              <!-- La configuración inicial es obligatoria (20/11/2026): no se puede salir sin el horario. -->
+              @if (!configuracionInicial()) {
                 <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
               }
             </div>
           }
 
           @case (2) {
-            <p class="asistente__nota">
-              Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les da el
-              "Cómo llegar". Si el buscador no la encuentra, arrastrá el marcador o escribí las
-              coordenadas; también podés dejarla pendiente y ubicarla después.
-            </p>
-
             <app-editor-de-ubicacion
               idBase="sede-ubicacion"
               [formulario]="ubicacion"
@@ -557,7 +557,7 @@
 
             <dl class="confirmacion">
               <div class="confirmacion__fila">
-                <dt>Sede</dt>
+                <dt><app-icono nombre="edificio" />Sede</dt>
                 <dd>
                   <span class="confirmacion__principal">
                     {{ resumen().nombre }}
@@ -578,7 +578,7 @@
               </div>
 
               <div class="confirmacion__fila">
-                <dt>Dirección</dt>
+                <dt><app-icono nombre="sede" />Dirección</dt>
                 <dd>
                   @if (resumen().direccion === '') {
                     <span class="confirmacion__secundario">Sin dirección por ahora</span>
@@ -618,7 +618,7 @@
               </div>
 
               <div class="confirmacion__fila">
-                <dt>Visibilidad</dt>
+                <dt><app-icono nombre="ojo" />Visibilidad</dt>
                 <dd>
                   <span>
                     @if (resumen().agendaHabilitada) {
@@ -642,7 +642,7 @@
 
               @if (!editando() || configuracionInicial()) {
                 <div class="confirmacion__fila">
-                  <dt>Horario</dt>
+                  <dt><app-icono nombre="horarios" />Horario</dt>
                   <dd>
                     @if (resumen().horario.length === 0) {
                       <span class="confirmacion__secundario">
@@ -665,7 +665,7 @@
 
               @if (!editando()) {
                 <div class="confirmacion__fila">
-                  <dt>Primer box</dt>
+                  <dt><app-icono nombre="capas" />Primer box</dt>
                   <dd>
                     @if (resumen().box; as box) {
                       {{ box }}
@@ -680,7 +680,7 @@
               }
 
               <div class="confirmacion__fila">
-                <dt>Datos fiscales</dt>
+                <dt><app-icono nombre="documento" />Datos fiscales</dt>
                 <dd>
                   <span class="confirmacion__secundario">
                     @if (resumen().fiscalesPropios) {

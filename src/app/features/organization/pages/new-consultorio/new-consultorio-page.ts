@@ -618,7 +618,9 @@ export class NewConsultorioPage {
   }
 
   private terminarConfiguracionInicial(orgId: number, nombre: string, horarioOk: boolean): void {
-    this.primerosPasos.postergar(orgId);
+    if (horarioOk) {
+      this.primerosPasos.marcarCompleto(orgId);
+    }
     this.estado.set({ tipo: 'ok' });
     if (horarioOk) {
       this.avisos.exito('Tu centro está listo', { descripcion: nombre });
@@ -626,15 +628,6 @@ export class NewConsultorioPage {
       this.avisos.error('La sede se guardó, pero el horario no', {
         descripcion: 'Cargalo desde el calendario de la sede.',
       });
-    }
-    this.router.navigateByUrl('/agenda').catch(() => undefined);
-  }
-
-  /** "Ahora no" de la configuración inicial: no se vuelve a ofrecer en esta pestaña. */
-  protected postergarConfiguracionInicial(): void {
-    const orgId = this.tenantContext.organizationId();
-    if (orgId !== null) {
-      this.primerosPasos.postergar(orgId);
     }
     this.router.navigateByUrl('/agenda').catch(() => undefined);
   }

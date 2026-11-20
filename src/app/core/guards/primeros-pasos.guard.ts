@@ -16,24 +16,31 @@ import { trasRestaurarSesion } from './tras-restaurar-sesion';
 export const PARAM_CONFIGURACION_INICIAL = 'inicial';
 
 /**
- * Lo que decidió quien entra por primera vez, sólo para esta pestaña.
+ * Centros que ya terminaron la configuración inicial, en esta pestaña (20/11/2026).
  *
- * <p>En memoria y no en el storage a propósito: el lint prohíbe el storage (ADR-0001), y que la
- * guía vuelva a aparecer en el próximo ingreso mientras la sede siga sin horario es lo buscado.
- * Se guarda la organización para que "Ahora no" en un centro no lo apague en otro.
+ * <p>La guía es obligatoria y el guard corre en cada navegación: sin esto, un centro dado de alta
+ * por la plataforma pediría su contratación y su calendario a la red en cada pantalla, para
+ * siempre. En memoria y no en el storage (ADR-0001): en el próximo ingreso se vuelve a mirar una vez.
  */
 @Injectable({ providedIn: 'root' })
 export class PrimerosPasosStore {
-  private readonly postergada = signal<ReadonlySet<number>>(new Set());
+  private readonly completos = signal<ReadonlySet<number>>(new Set());
 
-  postergar(orgId: number): void {
-    this.postergada.update((actual) => new Set(actual).add(orgId));
+  marcarCompleto(orgId: number): void {
+    this.completos.update((actual) => new Set(actual).add(orgId));
   }
 
-  estaPostergada(orgId: number): boolean {
-    return this.postergada().has(orgId);
+  estaCompleto(orgId: number): boolean {
+    return this.completos().has(orgId);
   }
 }
+
+/**
+ * Lo que la guía deja abrir aunque la sede no tenga horario: la configuración misma (los pasos de
+ * la sede) y nada más dentro del centro. Lo de fuera del centro —ingreso, cuenta, plataforma,
+ * landing— no lleva este guard (ver `conPrimerosPasos` en `app.routes.ts`).
+ */
+const RUTA_DE_LA_CONFIGURACION = /^\/organizacion\/sedes\/\d+\/editar(\?|$)/;
 
 /**
  * Onboarding mínimo (18/11/2026): el registro crea el centro con una sede vacía. La primera vez
@@ -41,8 +48,9 @@ export class PrimerosPasosStore {
  * pantalla de pasos de la sede para completarla, en vez de dejarlo frente a una agenda que no
  * ofrece nada.
  *
- * <p>Nunca bloquea: ante cualquier duda —sin permiso, más de una sede, un error de red— deja
- * pasar. Es UX; el backend no depende de esto.
+ * <p><b>Obligatoria desde el 20/11/2026:</b> corre en todas las pantallas del centro y lleva a la
+ * configuración hasta que la sede tenga horario. Ante cualquier duda —sin permiso, más de una
+ * sede, un error de red— deja pasar: es UX y el backend no depende de esto.
  */
 export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   const session = inject(SessionService);
@@ -59,7 +67,12 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   // vacio y la guia no aparece nunca en una carga directa.
   return trasRestaurarSesion(estado, () => {
     const orgId = tenant.organizationId();
-    if (session.estado() !== 'activa' || orgId === null || primerosPasos.estaPostergada(orgId)) {
+    if (
+      session.estado() !== 'activa' ||
+      orgId === null ||
+      primerosPasos.estaCompleto(orgId) ||
+      RUTA_DE_LA_CONFIGURACION.test(estado.url)
+    ) {
       return true;
     }
     // Lo comun, sin esperar a la red: el shell ya leyo la contratacion y el centro no lo dio de
@@ -67,6 +80,7 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
     // en el medio deja la pantalla anterior sin recargar.
     const leida = contratacionDelCentro.contratacion();
     if (leida !== null && (!leida.altaPorPlataforma || leida.soloLectura)) {
+      primerosPasos.marcarCompleto(orgId);
       return true;
     }
     return permisos.cargados()
@@ -85,7 +99,13 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
     // nuevo, en prueba o ya contratado (20/11/2026: antes se exigia la prueba y un alta contratada
     // no veia la guia). Un centro autoregistrado no se desvia nunca.
     return contratacion.getContratacionDeOrganizacion({ orgId }).pipe(
-      switchMap((c) => (c.altaPorPlataforma && !c.soloLectura ? sedeSinHorario(orgId) : of(true))),
+      switchMap((c) => {
+        if (c.altaPorPlataforma && !c.soloLectura) {
+          return sedeSinHorario(orgId);
+        }
+        primerosPasos.marcarCompleto(orgId);
+        return of(true);
+      }),
       catchError(() => of(true)),
     );
   }
@@ -98,6 +118,7 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
           const sedes = pagina.content ?? [];
           const unica = sedes.length === 1 ? sedes[0]?.id : undefined;
           if (unica === undefined) {
+            primerosPasos.marcarCompleto(orgId);
             return of(true);
           }
           // Sólo interesa el horario general: la ventana de feriados es de un día y da igual
@@ -106,13 +127,15 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
           const desde = hoy.toISOString().slice(0, 10);
           const hasta = new Date(hoy.getTime() + 86_400_000).toISOString().slice(0, 10);
           return calendarios.getCalendarioSede({ consultorioId: unica, desde, hasta }).pipe(
-            map((calendario) =>
-              (calendario.horarioGeneral?.length ?? 0) > 0
-                ? true
-                : router.createUrlTree(['/organizacion/sedes', unica, 'editar'], {
-                    queryParams: { [PARAM_CONFIGURACION_INICIAL]: '1' },
-                  }),
-            ),
+            map((calendario) => {
+              if ((calendario.horarioGeneral?.length ?? 0) > 0) {
+                primerosPasos.marcarCompleto(orgId);
+                return true;
+              }
+              return router.createUrlTree(['/organizacion/sedes', unica, 'editar'], {
+                queryParams: { [PARAM_CONFIGURACION_INICIAL]: '1' },
+              });
+            }),
           );
         }),
         catchError(() => of(true)),
