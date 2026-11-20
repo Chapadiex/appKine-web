@@ -267,6 +267,47 @@
   font-size: var(--tipo-base);
 }
 
+/*
+  Invitacion lista para aceptar (19/11/2026): en dos columnas, a que entra a la izquierda y el
+  formulario a la derecha, para que entre entera en una pantalla de notebook sin desplazarse.
+  Debajo de 48rem vuelve a una sola columna.
+*/
+.invitacion--doble {
+  width: min(56rem, calc(100vw - 2rem));
+}
+
+.invitacion__presentacion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-5);
+}
+
+.invitacion__presentacion .acceso-texto,
+.invitacion__presentacion .ayuda {
+  margin: 0;
+}
+
+.invitacion__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--esp-5);
+}
+
+@media (min-width: 48rem) {
+  .invitacion--doble {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: var(--esp-9);
+  }
+
+  .invitacion--doble .invitacion__alta:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
 /* Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces de la tarjeta. */
 .acceso-tarjeta a:not(.boton) {
   display: inline-flex;

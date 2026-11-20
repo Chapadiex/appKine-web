@@ -64,7 +64,7 @@ export const routes: Routes = [
   {
     path: 'invitacion',
     loadComponent: () => import('./pages/invitacion/invitacion-page').then((m) => m.InvitacionPage),
-    title: 'AKINE - Invitación a colaborar',
+    title: 'AKINE - Invitación',
   },
   {
     path: 'sesion-expirada',

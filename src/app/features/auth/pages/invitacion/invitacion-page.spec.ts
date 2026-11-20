@@ -109,7 +109,29 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('Sede Centro');
     // Y explica por que no va a recibir un correo de activacion, que es lo que esperaria
     // cualquiera que se haya registrado antes en AKINE.
-    expect(anfitrion.textContent).toContain('correo de activación');
+    expect(anfitrion.textContent).toContain('No vas a recibir otro correo');
+    // El codigo del rol no se muestra: es un dato interno, no algo que el invitado entienda.
+    expect(anfitrion.textContent).not.toContain('PROFESIONAL');
+    expect(anfitrion.textContent).toContain('te invitó a sumarte a su equipo');
+  });
+
+  it('a quien va a administrar el centro le da la bienvenida, no lo invita a colaborar', async () => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({
+      ...SIN_CUENTA,
+      roleCode: 'ORG_ADMIN',
+      consultorioNombre: undefined,
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('h1')?.textContent).toContain('Te damos la bienvenida');
+    expect(anfitrion.textContent).toContain('Vas a administrar Centro Belgrano');
+    expect(anfitrion.textContent).not.toContain('colabor');
+    expect(anfitrion.textContent).not.toContain('ORG_ADMIN');
+    expect(anfitrion.textContent).not.toContain('Sede');
+    expect(anfitrion.querySelector('button[type="submit"]')?.textContent).toContain(
+      'Crear mi cuenta',
+    );
   });
 
   it('a quien ya tiene cuenta no le pide nada: pedirle contraseña seria cambiarsela', async () => {

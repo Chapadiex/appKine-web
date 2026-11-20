@@ -1,5 +1,10 @@
 <!-- Invitacion a colaborar (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
-<section class="acceso-tarjeta" aria-labelledby="titulo-invitacion" aria-live="polite">
+<section
+  class="acceso-tarjeta"
+  [class.invitacion--doble]="estado().tipo === 'listo'"
+  aria-labelledby="titulo-invitacion"
+  aria-live="polite"
+>
   @switch (estado().tipo) {
     @case ('cargando') {
       <h1 id="titulo-invitacion">Te invitaron a AKINE</h1>
@@ -43,25 +48,39 @@
 
     @case ('listo') {
       @if (invitacion(); as datos) {
-        <h1 id="titulo-invitacion" class="visualmente-oculto">Te invitaron a AKINE</h1>
-        <div class="invitacion__quien">
+        <!--
+          Columna izquierda: a qué entra. Quien va a administrar el centro (el dueño que dio de
+          alta la plataforma, u otro administrador) no "colabora": se le da la bienvenida.
+        -->
+        <div class="invitacion__presentacion">
           <span class="nav-avatar-invitacion" aria-hidden="true">{{
             (datos.organizacionNombre ?? '').slice(0, 2).toUpperCase()
           }}</span>
-          <span>
-            <b>{{ datos.organizacionNombre }}</b> te invitó a colaborar
-          </span>
-        </div>
+          @if (administra()) {
+            <h1 id="titulo-invitacion">Te damos la bienvenida a AKINE</h1>
+            <p class="acceso-texto">
+              Vas a administrar <b>{{ datos.organizacionNombre }}</b>.
+              @if (requiereRegistro()) {
+                Creá tu cuenta y después entrá para configurar tu centro.
+              }
+            </p>
+          } @else {
+            <h1 id="titulo-invitacion">Te invitaron a AKINE</h1>
+            <p class="acceso-texto">
+              <b>{{ datos.organizacionNombre }}</b> te invitó a sumarte a su equipo.
+            </p>
+          }
 
-        <dl class="invitacion__datos">
-          <dt>Rol</dt>
-          <dd>{{ datos.roleCode }}</dd>
-          <dt>Sede</dt>
-          <dd>{{ datos.consultorioNombre || 'Toda la organización' }}</dd>
-          <dt>Correo</dt>
-          <dd>{{ datos.email }}</dd>
-        </dl>
-        <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
+          <dl class="invitacion__datos">
+            @if (datos.consultorioNombre) {
+              <dt>Sede</dt>
+              <dd>{{ datos.consultorioNombre }}</dd>
+            }
+            <dt>Correo</dt>
+            <dd>{{ datos.email }}</dd>
+          </dl>
+          <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
+        </div>
 
         <form [formGroup]="formularioAlta" (ngSubmit)="aceptar()" novalidate>
           <!-- Error de aceptar o rechazar: arriba del formulario, a la vista (UX-12). -->
@@ -148,40 +167,41 @@
               pedirle que la cambie sin querer.
             -->
             <section class="invitacion__alta" aria-labelledby="titulo-alta-invitado">
-              <h2 id="titulo-alta-invitado">Crea tu cuenta para aceptar</h2>
+              <h2 id="titulo-alta-invitado">Creá tu cuenta</h2>
               <p class="ayuda">
-                Todavía no tenés cuenta en AKINE. La creamos en este mismo paso: no vas a recibir
-                correo de activación, porque abrir este enlace ya confirmó tu dirección.
+                No vas a recibir otro correo: abrir este enlace ya confirmó tu dirección.
               </p>
 
               @if (!datos.perfil) {
-                <div class="campo">
-                  <label for="invitacion-nombre">Nombre</label>
-                  <input
-                    id="invitacion-nombre"
-                    type="text"
-                    formControlName="nombre"
-                    autocomplete="given-name"
-                    [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
-                    [attr.aria-describedby]="
-                      mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
-                    "
-                  />
-                  @if (mostrarErrorDe('nombre')) {
-                    <p class="campo__error" id="invitacion-nombre-error">
-                      El nombre es obligatorio.
-                    </p>
-                  }
-                </div>
+                <div class="invitacion__fila">
+                  <div class="campo">
+                    <label for="invitacion-nombre">Nombre</label>
+                    <input
+                      id="invitacion-nombre"
+                      type="text"
+                      formControlName="nombre"
+                      autocomplete="given-name"
+                      [attr.aria-invalid]="mostrarErrorDe('nombre') ? 'true' : null"
+                      [attr.aria-describedby]="
+                        mostrarErrorDe('nombre') ? 'invitacion-nombre-error' : null
+                      "
+                    />
+                    @if (mostrarErrorDe('nombre')) {
+                      <p class="campo__error" id="invitacion-nombre-error">
+                        El nombre es obligatorio.
+                      </p>
+                    }
+                  </div>
 
-                <div class="campo">
-                  <label for="invitacion-apellido">Apellido (opcional)</label>
-                  <input
-                    id="invitacion-apellido"
-                    type="text"
-                    formControlName="apellido"
-                    autocomplete="family-name"
-                  />
+                  <div class="campo">
+                    <label for="invitacion-apellido">Apellido (opcional)</label>
+                    <input
+                      id="invitacion-apellido"
+                      type="text"
+                      formControlName="apellido"
+                      autocomplete="family-name"
+                    />
+                  </div>
                 </div>
               }
 
@@ -225,7 +245,13 @@
           }
 
           <button type="submit" class="boton boton--bloque" [disabled]="bloqueado()">
-            {{ enviando() ? 'Guardando...' : 'Aceptar la invitación' }}
+            {{
+              enviando()
+                ? 'Guardando...'
+                : administra() && requiereRegistro()
+                  ? 'Crear mi cuenta'
+                  : 'Aceptar la invitación'
+            }}
           </button>
           <!-- Rechazar no crea cuenta ni compromete a nada; no hace falta explicar por que. -->
           <button type="button" class="boton-texto" (click)="rechazar()" [disabled]="enviando()">

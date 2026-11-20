@@ -118,6 +118,12 @@ export class InvitacionPage {
     return actual.tipo === 'error' && actual.causa === 'vencida';
   });
 
+  /**
+   * `true` si entra a administrar el centro: el dueño que dio de alta la plataforma u otro
+   * administrador. A esa persona se le da la bienvenida, no se la invita "a colaborar".
+   */
+  protected readonly administra = computed(() => this.invitacion()?.roleCode === 'ORG_ADMIN');
+
   /** `true` cuando hay que pedir nombre y contrasena. Lo decide el backend, no la pantalla. */
   protected readonly requiereRegistro = computed(
     () => this.invitacion()?.requiereRegistro === true,
