@@ -20,10 +20,10 @@ const limite = (value: number | null) => [
 ];
 
 const CATALOGO = [
-  { code: 'BASICO', name: 'Basico', ofrecido: false, limits: limite(1) },
-  { code: 'BASE', name: 'Base', ofrecido: true, limits: limite(1) },
-  { code: 'CRECIMIENTO', name: 'Crecimiento', ofrecido: true, limits: limite(3) },
-  { code: 'RED', name: 'Red', ofrecido: true, limits: limite(null) },
+  { code: 'RETIRADO', name: 'Retirado', ofrecido: false, limits: limite(1) },
+  { code: 'BASE', name: 'Plan Básico', ofrecido: true, limits: limite(1) },
+  { code: 'CRECIMIENTO', name: 'Plan Intermedio', ofrecido: true, limits: limite(3) },
+  { code: 'RED', name: 'Plan Plus', ofrecido: true, limits: limite(null) },
 ];
 
 const PEDIDO_PENDIENTE = {
@@ -73,9 +73,9 @@ describe('AltaDeCentroPage', () => {
       ),
     );
     expect(planes).toEqual([
-      ['Base', 'Hasta 1 sede'],
-      ['Crecimiento', 'Hasta 3 sedes'],
-      ['Red', 'Sin tope de sedes'],
+      ['Plan Básico', 'Hasta 1 sede'],
+      ['Plan Intermedio', 'Hasta 3 sedes'],
+      ['Plan Plus', 'Sin tope de sedes'],
     ]);
 
     escribir(fixture, '#alta-nombre-centro', '  Centro Nuevo ');

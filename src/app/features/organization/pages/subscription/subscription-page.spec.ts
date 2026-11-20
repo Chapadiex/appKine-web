@@ -15,8 +15,8 @@ const URL_HISTORICO = '/api/v1/organizations/1/subscription/transitions?size=20'
 const SUSCRIPCION_ACTIVA = {
   id: 1,
   organizationId: 1,
-  planCode: 'BASICO',
-  planName: 'Basico',
+  planCode: 'BASE',
+  planName: 'Plan Básico',
   status: 'ACTIVA',
   startedAt: '2026-01-15T13:45:00Z',
   version: 0,
@@ -78,7 +78,7 @@ describe('SubscriptionPage', () => {
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
     expect(texto(fixture)).toContain('Suscripción activa');
-    expect(texto(fixture)).toContain('Basico');
+    expect(texto(fixture)).toContain('Plan Básico');
     // Los codigos tecnicos no se muestran crudos.
     expect(texto(fixture)).toContain('Sedes habilitadas');
     expect(texto(fixture)).toContain('Miembros activos');
@@ -152,7 +152,7 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('No pudimos recuperar el motivo');
     // Lo importante -que esta suspendida y que es solo lectura- se muestra igual.
     expect(texto(fixture)).toContain('solo lectura');
-    expect(texto(fixture)).toContain('Basico');
+    expect(texto(fixture)).toContain('Plan Básico');
   });
 
   it('con la suscripción CANCELADA lo dice como estado final', async () => {

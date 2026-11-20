@@ -64,13 +64,13 @@ describe('RegisterPage', () => {
     completarMinimo(fixture);
     escribir(fixture, '#registro-organizationSlug', 'centro-ejemplo');
     escribir(fixture, '#registro-consultorioName', 'Sede Central');
-    escribir(fixture, '#registro-planCode', 'BASICO');
+    escribir(fixture, '#registro-planCode', 'BASE');
     enviar(fixture);
 
     const pedido = httpMock.expectOne(URL_REGISTRO);
     expect(pedido.request.body.organizationSlug).toBe('centro-ejemplo');
     expect(pedido.request.body.consultorioName).toBe('Sede Central');
-    expect(pedido.request.body.planCode).toBe('BASICO');
+    expect(pedido.request.body.planCode).toBe('BASE');
 
     pedido.flush({ message: 'ok' }, { status: 202, statusText: 'Accepted' });
   });

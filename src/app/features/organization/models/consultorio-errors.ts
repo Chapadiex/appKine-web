@@ -98,7 +98,7 @@ function mensajeDeReferenciasActivas(error: AkineHttpError): string {
  * El plan alcanzo su tope de sedes.
  *
  * <p><b>Este es el error que mas se va a ver de todo el modulo</b>, y por eso no se muestra
- * como un conflicto tecnico. El plan `BASICO` -el que queda contratado en el alta
+ * como un conflicto tecnico. El Plan Básico (`BASE`) -el que queda contratado en el alta
  * self-service- permite una sola sede, asi que cualquier centro que crezca choca con esto en
  * su primer intento de abrir la segunda. No es una falla: es el limite de lo que contrato, y
  * lo unico accionable es cambiar de plan.

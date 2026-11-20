@@ -210,7 +210,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     const dias = this.dias();
     return this.enPrueba() && dias !== null && dias <= 0;
   });
-  /** El plan vigente no se ofrece mas (BASICO, PROFESIONAL): hay que elegir uno ofrecido. */
+  /** El plan vigente no esta entre los ofrecidos del catalogo: hay que elegir uno ofrecido. */
   protected readonly planNoOfrecido = computed(() => {
     const actual = this.contratacion()?.planCode;
     return actual !== undefined && !this.planes().some((p) => p.code === actual);
@@ -325,7 +325,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
   }
 
-  /** Insignia del plan de la fila: "PB Base", "PC Crecimiento", "PR Red". */
+  /** Insignia del plan de la fila: PB, PI o PP, con el nombre en el globo. */
   protected planDeFila(centro: PlatformOrganizationResponse): MarcaDePlan {
     const delCatalogo = this.planes().find((p) => p.code === centro.planCode)?.name;
     return marcaDePlan(centro.planCode, centro.planName ?? delCatalogo);

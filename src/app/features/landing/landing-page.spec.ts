@@ -42,7 +42,7 @@ describe('LandingPage', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     const plan = (): string => raiz.querySelector('.resultado__nombre')?.textContent?.trim() ?? '';
 
-    expect(plan()).toBe('Base');
+    expect(plan()).toBe('Plan Básico');
 
     const opcion = [...raiz.querySelectorAll<HTMLInputElement>('app-armador-de-plan input')].find(
       (input) => input.value === 'mas-de-tres',
@@ -50,8 +50,8 @@ describe('LandingPage', () => {
     opcion!.click();
     fixture.detectChanges();
 
-    expect(plan()).toBe('Red');
-    expect(raiz.querySelector('.plan--elegido')?.textContent).toContain('Red');
+    expect(plan()).toBe('Plan Plus');
+    expect(raiz.querySelector('.plan--elegido')?.textContent).toContain('Plan Plus');
     // El pedido de prueba se precarga con lo elegido en el armador.
     const sedesDelPedido = raiz.querySelector<HTMLInputElement>('#pedido-sedes input:checked');
     expect(sedesDelPedido?.value).toBe('MAS_DE_TRES');
@@ -66,7 +66,7 @@ describe('recomendarPlan', () => {
     expect(r.incluye.map((g) => g.titulo)).toEqual(['1 sede', 'Kinesiología y rehabilitación']);
   });
 
-  it('dos o tres sedes con los dos servicios e IA: Crecimiento con toda la IA', () => {
+  it('dos o tres sedes con los dos servicios e IA: Plan Intermedio con toda la IA', () => {
     const r = recomendarPlan({ sedes: 'hasta-tres', servicios: 'ambos', ia: 'si' });
 
     expect(r.plan.codigo).toBe('crecimiento');

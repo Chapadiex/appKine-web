@@ -54,7 +54,7 @@ export const PLAN_SUGERIDO: Readonly<Record<Sedes, string>> = {
   MAS_DE_TRES: 'RED',
 };
 
-/** Solo los planes que se ofrecen: BASICO y PROFESIONAL siguen para quien los tiene, no se venden. */
+/** Solo los planes que el catalogo marca como ofrecidos. */
 export function planesOfrecidos(planes: readonly PlanResponse[]): PlanResponse[] {
   return planes.filter((plan) => plan.ofrecido === true);
 }
@@ -134,14 +134,11 @@ export interface MarcaDePlan {
 
 /**
  * Los tres escalones que se venden, con la sigla que se muestra en los listados (19/11/2026):
- * PB = Plan Básico, PI = Plan Intermedio, PP = Plan Plus. BASICO y PROFESIONAL son los códigos
- * viejos del básico y del intermedio.
+ * PB = Plan Básico, PI = Plan Intermedio, PP = Plan Plus.
  */
 const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { nombre: string }>> = {
   BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
-  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
   CRECIMIENTO: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
-  PROFESIONAL: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
   RED: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
 };
 

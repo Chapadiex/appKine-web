@@ -13,7 +13,7 @@ import { plataformaDisponible } from './support/sembrado-configuracion';
  *
  * <p><b>Usa una organizacion propia, no el centro compartido.</b> Una segunda sede en el centro
  * le daria a su administradora dos contextos, y todos los demas specs entran confiando en que el
- * selector no pregunta. Ademas el alta self-service nace en el plan BASICO, que admite una sola
+ * selector no pregunta. Ademas el alta self-service nace en el plan BASE, que admite una sola
  * sede: la plataforma la pasa a PROFESIONAL por el endpoint real, como hace `AltaDeSedeEnUnActoIT`.
  *
  * <p>El 409 de la baja con turnos pendientes (`consultorio-has-active-references`, E-1) lo prueba

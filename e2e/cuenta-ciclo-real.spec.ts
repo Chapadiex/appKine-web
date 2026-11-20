@@ -232,7 +232,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
           await profesionalEnElCentro.pedir(
             'POST',
             '/api/v1/organizations',
-            { name: `Intento ${nonce()}`, planCode: 'BASICO' },
+            { name: `Intento ${nonce()}`, planCode: 'BASE' },
             { 'Idempotency-Key': randomUUID() },
           ),
           403,
@@ -330,7 +330,7 @@ test.describe('Cuenta de punta a punta contra el backend real (A-6)', () => {
             accept: 'application/json, application/problem+json',
             'Idempotency-Key': clave,
           },
-          data: { name: `Organizacion E2E ${slug}`, slug, planCode: 'BASICO' },
+          data: { name: `Organizacion E2E ${slug}`, slug, planCode: 'BASE' },
         });
 
       const creada = await alta(randomUUID());

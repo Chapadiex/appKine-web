@@ -4,7 +4,7 @@ import { marcaDePlan } from './contratacion';
 
 describe('marcaDePlan', () => {
   it('da la sigla y el color de cada escalón', () => {
-    expect(marcaDePlan('BASICO')).toEqual({
+    expect(marcaDePlan('BASE')).toEqual({
       sigla: 'PB',
       texto: 'Plan Básico',
       clase: 'marca-plan--base',

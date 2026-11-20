@@ -39,19 +39,19 @@ export interface Recomendacion {
 export const PLANES: readonly Plan[] = [
   {
     codigo: 'base',
-    nombre: 'Base',
+    nombre: 'Plan Básico',
     sedes: '1 sede',
     paraQuien: 'Un consultorio o un estudio.',
   },
   {
     codigo: 'crecimiento',
-    nombre: 'Crecimiento',
+    nombre: 'Plan Intermedio',
     sedes: 'De 1 a 3 sedes',
     paraQuien: 'El centro que abre su segunda o su tercera sede.',
   },
   {
     codigo: 'red',
-    nombre: 'Red',
+    nombre: 'Plan Plus',
     sedes: 'Más de 3 sedes, a convenir',
     paraQuien: 'Cadenas y franquicias. Lo armamos con vos.',
   },
