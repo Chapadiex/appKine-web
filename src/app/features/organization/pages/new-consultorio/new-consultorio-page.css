@@ -476,3 +476,8 @@
 .resumen__lista dt app-icono {
   color: var(--color-acento);
 }
+
+/* El horario ubica sus modelos arriba a la derecha del bloque (horario-modelos-arriba). */
+.bloque--horario {
+  position: relative;
+}

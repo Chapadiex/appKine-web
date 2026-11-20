@@ -286,6 +286,29 @@
   padding-top: var(--esp-3);
 }
 
+/*
+  Modelos chicos arriba a la derecha del bloque que contiene al horario (20/11/2026): el bloque
+  tiene que ser position: relative. Debajo de 60rem vuelven a su lugar.
+*/
+@media (min-width: 60rem) {
+  :host(.horario-modelos-arriba) .semana__modelos {
+    position: absolute;
+    top: var(--esp-6);
+    right: var(--esp-6);
+    gap: var(--esp-2);
+  }
+
+  :host(.horario-modelos-arriba) .semana__rotulo {
+    margin-right: var(--esp-2);
+  }
+
+  :host(.horario-modelos-arriba) .semana__modelo {
+    min-height: 1.75rem;
+    padding: 0 var(--esp-4);
+    font-size: var(--tipo-xs);
+  }
+}
+
 @media (max-width: 40rem) {
   :host(.horario-compacto) .semana__dia {
     grid-template-columns: minmax(0, 1fr);
