@@ -6,7 +6,10 @@ import { SessionService } from '../../../../core/services/session.service';
 import { catchError, of } from 'rxjs';
 
 import { AcceptInvitacionRequest } from '../../../../api/generated/model/accept-invitacion-request';
-import { InvitacionPreviewResponse } from '../../../../api/generated/model/invitacion-preview-response';
+import {
+  InvitacionPreviewResponse,
+  InvitacionPreviewResponseServiciosEnum,
+} from '../../../../api/generated/model/invitacion-preview-response';
 import { InvitacionesRecibidasService } from '../../../../api/generated/api/invitaciones-recibidas.service';
 import {
   CausaInvitacion,
@@ -127,6 +130,22 @@ export class InvitacionPage {
    * administrador. A esa persona se le da la bienvenida, no se la invita "a colaborar".
    */
   protected readonly administra = computed(() => this.invitacion()?.roleCode === 'ORG_ADMIN');
+
+  /**
+   * La ilustración según lo que contrató el centro (19/11/2026): una persona sola para
+   * kinesiología o para actividades, y una escena con las dos cosas si contrató las dos.
+   */
+  protected readonly escena = computed(() => {
+    const servicios = this.invitacion()?.servicios ?? [];
+    const kine = servicios.includes(InvitacionPreviewResponseServiciosEnum.KINESIOLOGIA);
+    const actividades = servicios.includes(InvitacionPreviewResponseServiciosEnum.ACTIVIDADES);
+    if (kine && actividades) {
+      return { imagen: 'acceso/kine-y-actividades.jpg', ancho: 900, alto: 604, horizontal: true };
+    }
+    return actividades
+      ? { imagen: 'acceso/actividades.jpg', ancho: 360, alto: 795, horizontal: false }
+      : { imagen: 'acceso/kinesiologia.jpg', ancho: 360, alto: 795, horizontal: false };
+  });
 
   /** `true` cuando hay que pedir nombre y contrasena. Lo decide el backend, no la pantalla. */
   protected readonly requiereRegistro = computed(

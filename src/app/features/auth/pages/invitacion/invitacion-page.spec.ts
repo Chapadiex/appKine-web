@@ -139,6 +139,19 @@ describe('InvitacionPage', () => {
     );
   });
 
+  it.each([
+    [['KINESIOLOGIA'], 'acceso/kinesiologia.jpg'],
+    [['ACTIVIDADES'], 'acceso/actividades.jpg'],
+    [['ACTIVIDADES', 'KINESIOLOGIA'], 'acceso/kine-y-actividades.jpg'],
+    [[], 'acceso/kinesiologia.jpg'],
+  ])('con los servicios %j muestra %s', async (servicios, imagen) => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({ ...SIN_CUENTA, servicios });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('.invitacion__imagen')?.getAttribute('src')).toBe(imagen);
+  });
+
   it('a quien ya tiene cuenta no le pide nada: pedirle contraseña seria cambiarsela', async () => {
     TestBed.resetTestingModule();
     const fixture = await montarLista({ ...SIN_CUENTA, requiereRegistro: false });

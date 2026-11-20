@@ -2,6 +2,7 @@
 <section
   class="acceso-tarjeta"
   [class.invitacion--doble]="estado().tipo === 'listo'"
+  [class.invitacion--horizontal]="estado().tipo === 'listo' && escena().horizontal"
   aria-labelledby="titulo-invitacion"
   aria-live="polite"
 >
@@ -52,20 +53,32 @@
           Columna izquierda: a qué entra. Quien va a administrar el centro (el dueño que dio de
           alta la plataforma, u otro administrador) no "colabora": se le da la bienvenida.
         -->
-        <!-- Una persona entrenando sola, al costado: la misma familia de escenas del ingreso. -->
-        <img
-          class="invitacion__imagen"
-          src="acceso/individual.jpg"
-          alt=""
-          width="360"
-          height="795"
-        />
+        <!-- La ilustración según lo contratado: una persona sola va al costado. -->
+        @if (!escena().horizontal) {
+          <img
+            class="invitacion__imagen"
+            [src]="escena().imagen"
+            alt=""
+            [width]="escena().ancho"
+            [height]="escena().alto"
+          />
+        }
         <div class="invitacion__presentacion">
           <!-- La marca, arriba a la izquierda como en el ingreso (la de arriba se oculta). -->
           <a class="invitacion__marca" routerLink="/">
             <span class="invitacion__logo" aria-hidden="true">A</span>
             <span>AKINE</span>
           </a>
+          <!-- Kinesiología y actividades: la escena con las dos cosas, arriba de la columna. -->
+          @if (escena().horizontal) {
+            <img
+              class="invitacion__imagen invitacion__imagen--horizontal"
+              [src]="escena().imagen"
+              alt=""
+              [width]="escena().ancho"
+              [height]="escena().alto"
+            />
+          }
           @if (administra()) {
             <h1 id="titulo-invitacion">Te damos la bienvenida a AKINE</h1>
             <p class="invitacion__centro">

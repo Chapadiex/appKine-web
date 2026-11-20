@@ -322,6 +322,14 @@
   background: var(--color-escena-fondo);
 }
 
+.invitacion__imagen--horizontal {
+  max-height: 12rem;
+}
+
+.invitacion--horizontal.invitacion--doble {
+  width: min(58rem, calc(100vw - 2rem));
+}
+
 /* Debajo de 861 px la marca vuelve arriba de la tarjeta (layout) y la escena no entra. */
 @media (max-width: 860px) {
   .invitacion__marca,
@@ -385,6 +393,11 @@
   .invitacion--doble {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 7fr);
+  }
+
+  /* Con la escena horizontal no hay columna de figura: dos columnas. */
+  .invitacion--horizontal.invitacion--doble {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     align-items: start;
     gap: var(--esp-9);
   }
