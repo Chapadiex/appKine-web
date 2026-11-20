@@ -53,9 +53,11 @@
           alta la plataforma, u otro administrador) no "colabora": se le da la bienvenida.
         -->
         <div class="invitacion__presentacion">
-          <span class="nav-avatar-invitacion" aria-hidden="true">{{
-            (datos.organizacionNombre ?? '').slice(0, 2).toUpperCase()
-          }}</span>
+          <!-- La marca, arriba a la izquierda como en el ingreso (la de arriba se oculta). -->
+          <a class="invitacion__marca" routerLink="/">
+            <span class="invitacion__logo" aria-hidden="true">A</span>
+            <span>AKINE</span>
+          </a>
           @if (administra()) {
             <h1 id="titulo-invitacion">Te damos la bienvenida a AKINE</h1>
             <p class="acceso-texto">
@@ -71,14 +73,17 @@
             </p>
           }
 
-          <dl class="invitacion__datos">
-            @if (datos.consultorioNombre) {
+          <!-- El correo de la cuenta que se crea, bien a la vista: es lo que hay que confirmar. -->
+          <div class="invitacion__correo">
+            <span class="invitacion__correo-rotulo">Tu cuenta</span>
+            <span class="invitacion__correo-valor">{{ datos.email }}</span>
+          </div>
+          @if (datos.consultorioNombre) {
+            <dl class="invitacion__datos">
               <dt>Sede</dt>
               <dd>{{ datos.consultorioNombre }}</dd>
-            }
-            <dt>Correo</dt>
-            <dd>{{ datos.email }}</dd>
-          </dl>
+            </dl>
+          }
           <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
         </div>
 

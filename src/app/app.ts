@@ -237,9 +237,12 @@ export class App {
 
   /**
    * Iniciar sesión (19/11/2026): la marca va dentro de su escena y el ingreso se centra en la
-   * altura, así entra entero. En pantallas angostas, sin escena, la marca vuelve arriba.
+   * altura, así entra entero. En pantallas angostas, sin escena, la marca vuelve arriba. La
+   * invitación hace lo mismo: su marca va arriba a la izquierda dentro de la tarjeta.
    */
-  protected readonly esIngreso = computed(() => /^\/auth\/ingresar(\?|$)/.test(this.url()));
+  protected readonly esIngreso = computed(() =>
+    /^\/auth\/(ingresar|invitacion)(\?|$)/.test(this.url()),
+  );
 
   /**
    * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):

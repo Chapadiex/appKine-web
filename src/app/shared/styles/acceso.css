@@ -288,6 +288,59 @@
   margin: 0;
 }
 
+.invitacion__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto);
+  font-size: 1.125rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.invitacion__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+/* Debajo de 861 px la marca vuelve arriba de la tarjeta (layout): acá no se repite. */
+@media (max-width: 860px) {
+  .invitacion__marca {
+    display: none;
+  }
+}
+
+.invitacion__correo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.invitacion__correo-rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.invitacion__correo-valor {
+  color: var(--color-texto);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+  overflow-wrap: anywhere;
+}
+
 .invitacion__fila {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
