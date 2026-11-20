@@ -5,11 +5,32 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
   gap: var(--esp-6);
-  align-items: start;
+  /* Todas las tarjetas de una fila con el alto de la mas alta (19/11/2026). */
+  align-items: stretch;
 }
 
 .perfil-bloques > .tarjeta {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 0;
+}
+
+/* El boton de cada tarjeta, al pie: con el mismo alto quedan alineados entre si. */
+.perfil-bloques > .tarjeta > .acciones {
+  margin-top: auto;
+  padding-top: var(--esp-6);
+}
+
+/* El dato manda sobre su rotulo: rotulo de una palabra, sin partirse, y el valor en negrita. */
+.perfil-bloques .detalle dt {
+  white-space: nowrap;
+}
+
+.perfil-bloques .detalle dd {
+  min-width: 0;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-fuerte);
+  overflow-wrap: anywhere;
 }
 
 .perfil {
