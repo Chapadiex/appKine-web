@@ -113,7 +113,8 @@
   /* Todos los pasos con el mismo alto: los botones no saltan de lugar entre uno y otro. */
   display: flex;
   flex-direction: column;
-  min-height: 37.5rem;
+  /* El alto de la pantalla menos la cabecera y el stepper, con tope: cada paso ocupa lo mismo. */
+  min-height: min(37.5rem, calc(100dvh - 13rem));
   padding: var(--esp-6) var(--esp-8) var(--esp-8);
 }
 
@@ -396,9 +397,14 @@
 }
 
 .asistente__acciones {
+  /* Pegados al pie de la pantalla cuando el paso no entra: Continuar siempre a la vista. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   margin-top: auto;
-  padding-top: var(--esp-6);
+  padding-block: var(--esp-5);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  background: var(--color-superficie);
 }
 
 @media (max-width: 40rem) {

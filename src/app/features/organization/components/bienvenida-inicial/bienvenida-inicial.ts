@@ -46,7 +46,10 @@ const PASOS: readonly PasoDeLaCarga[] = [
       (cancel)="alCancelar($event)"
     >
       <div class="bienvenida__cabecera">
-        <span class="bienvenida__logo" aria-hidden="true">A</span>
+        <span class="bienvenida__marca">
+          <span class="bienvenida__logo" aria-hidden="true">A</span>
+          <span>AKINE</span>
+        </span>
         @if (diasDePrueba(); as dias) {
           <span class="bienvenida__plan bienvenida__plan--prueba">
             <app-icono nombre="calendario" />
@@ -114,12 +117,21 @@ const PASOS: readonly PasoDeLaCarga[] = [
       margin-bottom: var(--esp-6);
     }
 
+    .bienvenida__marca {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--esp-4);
+      font-size: var(--tipo-lg);
+      font-weight: var(--peso-fuerte);
+      letter-spacing: 0.04em;
+    }
+
     .bienvenida__logo {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 2.5rem;
-      height: 2.5rem;
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: var(--radio-md);
       background: var(--color-accion-fondo);
       color: var(--color-accion-texto);

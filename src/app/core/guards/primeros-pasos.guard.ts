@@ -6,6 +6,7 @@ import { CalendarioDeSedeService } from '../../api/generated/api/calendario-de-s
 import { ContratacionService } from '../../api/generated/api/contratacion.service';
 import { OrganizacionesService } from '../../api/generated/api/organizaciones.service';
 import { PERMISO_CONSULTORIO_MANAGE } from '../models/permisos';
+import { AvisosStore } from '../services/avisos.store';
 import { ContratacionStore } from '../services/contratacion.store';
 import { PermissionsStore } from '../services/permissions.store';
 import { SessionService } from '../services/session.service';
@@ -73,6 +74,7 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
   const contratacion = inject(ContratacionService);
   const contratacionDelCentro = inject(ContratacionStore);
   const router = inject(Router);
+  const avisos = inject(AvisosStore);
 
   // Al recargar la pagina la sesion todavia se esta restaurando: sin esperarla, el contexto se ve
   // vacio y la guia no aparece nunca en una carga directa.
@@ -142,6 +144,13 @@ export const primerosPasosGuard: CanActivateFn = (_ruta, estado) => {
               if ((calendario.horarioGeneral?.length ?? 0) > 0) {
                 primerosPasos.marcarCompleto(orgId);
                 return true;
+              }
+              // Ya estaba en la configuración y tocó el menú: se le explica por qué no se va.
+              if (RUTA_DE_LA_CONFIGURACION.test(router.url)) {
+                avisos.info('Primero terminemos de configurar tu centro', {
+                  descripcion:
+                    'El resto del menú se habilita cuando guardes el horario de atención de tu sede.',
+                });
               }
               return router.createUrlTree(['/organizacion/sedes', unica, 'editar'], {
                 queryParams: { [PARAM_CONFIGURACION_INICIAL]: '1' },
