@@ -68,48 +68,38 @@
     <app-bienvenida-inicial [nombreCentro]="nombreDelCentro()" (empezar)="cerrarBienvenida()" />
   }
   <div class="asistente__contenido">
-    <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
-      @if (hecho()) {
-        {{ editando() ? 'Cambios guardados' : 'Sede creada' }}
-      } @else {
-        <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
-        @switch (paso()) {
-          @case (1) {
-            Datos de la sede
-            @if (!configuracionInicial()) {
-              <app-ayuda titulo="Sobre este paso">
-                <p>Con el nombre alcanza. Lo demás ya viene con un valor razonable.</p>
-              </app-ayuda>
+    <!-- En el paso 2 el título va dentro de la columna de la dirección: así el mapa sube. -->
+    @if (hecho() || paso() !== 2) {
+      <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
+        @if (hecho()) {
+          {{ editando() ? 'Cambios guardados' : 'Sede creada' }}
+        } @else {
+          <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
+          @switch (paso()) {
+            @case (1) {
+              Datos de la sede
+              @if (!configuracionInicial()) {
+                <app-ayuda titulo="Sobre este paso">
+                  <p>Con el nombre alcanza. Lo demás ya viene con un valor razonable.</p>
+                </app-ayuda>
+              }
+            }
+            @case (3) {
+              {{
+                configuracionInicial()
+                  ? 'Horario de atención'
+                  : editando()
+                    ? 'Datos fiscales'
+                    : 'Configuración inicial'
+              }}
+            }
+            @case (4) {
+              {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
             }
           }
-          @case (2) {
-            ¿Dónde está {{ resumen().nombre }}?
-            <app-ayuda titulo="Sobre la ubicación">
-              <p>
-                Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les da
-                el "Cómo llegar".
-              </p>
-              <p>
-                Si el buscador no la encuentra, arrastrá el marcador o escribí las coordenadas;
-                también podés dejarla pendiente y ubicarla después.
-              </p>
-            </app-ayuda>
-          }
-          @case (3) {
-            {{
-              configuracionInicial()
-                ? 'Horario de atención'
-                : editando()
-                  ? 'Datos fiscales'
-                  : 'Configuración inicial'
-            }}
-          }
-          @case (4) {
-            {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
-          }
         }
-      }
-    </h2>
+      </h2>
+    }
 
     @if (!hecho()) {
       <form
@@ -356,7 +346,22 @@
               [formulario]="ubicacion"
               [mostrarErrores]="intentos() > 0"
               [nombreDeSede]="formulario.controls.name.value"
-            />
+            >
+              <h2 arriba id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
+                <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
+                ¿Dónde está {{ resumen().nombre }}?
+                <app-ayuda titulo="Sobre la ubicación">
+                  <p>
+                    Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les
+                    da el "Cómo llegar".
+                  </p>
+                  <p>
+                    Si el buscador no la encuentra, arrastrá el marcador o escribí las coordenadas;
+                    también podés dejarla pendiente y ubicarla después.
+                  </p>
+                </app-ayuda>
+              </h2>
+            </app-editor-de-ubicacion>
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>

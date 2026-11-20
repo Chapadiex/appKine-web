@@ -117,12 +117,18 @@
   margin-top: var(--esp-5);
 }
 
+/* Los cuatro botones del punto, iguales y repartidos en la fila (20/11/2026). */
 .ubicacion__enlaces {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-3);
   margin-top: var(--esp-2);
+}
+
+.ubicacion__enlaces > .boton {
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .ubicacion__encabezado {
