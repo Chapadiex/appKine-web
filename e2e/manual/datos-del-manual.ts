@@ -1,5 +1,4 @@
 import * as nodeFs from 'node:fs';
-import * as nodeOs from 'node:os';
 import * as nodePath from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -35,7 +34,10 @@ import {
  *
  * <p>Lo que la captura marca vive en el JSON de `capturas/`; acá sólo el estado previo.
  */
-const ARCHIVO = nodePath.join(nodeOs.tmpdir(), 'akine-e2e-datos-manual.json');
+// En la salida de Playwright del proyecto (gitignored) y no en el tmp del sistema: una ruta fija en un
+// directorio compartido la puede crear o leer otro usuario de la máquina (CodeQL, "insecure temporary
+// file"). Se escribe sólo para el dueño.
+const ARCHIVO = nodePath.join(__dirname, '..', '..', 'test-results', 'akine-e2e-datos-manual.json');
 
 /** Desplazamientos desde hoy de los turnos que terminan en una sesión cerrada (no tocan la recepción). */
 const DIAS_DEL_MANUAL = { deuda: 150, presentacion: 153, clase: 4, claseEnCurso: 6 } as const;
@@ -102,7 +104,10 @@ async function sembrar(centro: Centro): Promise<Marcadores> {
   if (cache.organizationId !== centro.organizationId) {
     cache = { organizationId: centro.organizationId };
   }
-  const guardar = () => nodeFs.writeFileSync(ARCHIVO, JSON.stringify(cache, null, 2));
+  const guardar = () => {
+    nodeFs.mkdirSync(nodePath.dirname(ARCHIVO), { recursive: true });
+    nodeFs.writeFileSync(ARCHIVO, JSON.stringify(cache, null, 2), { mode: 0o600 });
+  };
   const api = await ApiAkine.como(centro.emailAdmin, { reusarSesion: true });
   const profesional = await comoProfesional(centro);
   const sede = `/api/v1/consultorios/${centro.consultorioId}`;
