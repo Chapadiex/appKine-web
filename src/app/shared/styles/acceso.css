@@ -273,7 +273,7 @@
   Debajo de 48rem vuelve a una sola columna.
 */
 .invitacion--doble {
-  width: min(56rem, calc(100vw - 2rem));
+  width: min(64rem, calc(100vw - 2rem));
 }
 
 .invitacion__presentacion {
@@ -310,11 +310,45 @@
   color: var(--color-accion-texto);
 }
 
-/* Debajo de 861 px la marca vuelve arriba de la tarjeta (layout): acá no se repite. */
+/* La escena viene sobre blanco: va en su propio panel, el mismo fondo que la del ingreso. */
+.invitacion__imagen {
+  display: block;
+  align-self: center;
+  width: 100%;
+  height: auto;
+  max-height: 26rem;
+  object-fit: contain;
+  border-radius: var(--radio-md);
+  background: var(--color-escena-fondo);
+}
+
+/* Debajo de 861 px la marca vuelve arriba de la tarjeta (layout) y la escena no entra. */
 @media (max-width: 860px) {
-  .invitacion__marca {
+  .invitacion__marca,
+  .invitacion__imagen {
     display: none;
   }
+}
+
+/* El nombre del centro, lo primero que se lee después del título. */
+.invitacion__centro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin: 0;
+}
+
+.invitacion__centro-rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.invitacion__centro-nombre {
+  color: var(--color-acento);
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .invitacion__correo {
@@ -350,7 +384,7 @@
 @media (min-width: 48rem) {
   .invitacion--doble {
     display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 7fr);
     align-items: start;
     gap: var(--esp-9);
   }

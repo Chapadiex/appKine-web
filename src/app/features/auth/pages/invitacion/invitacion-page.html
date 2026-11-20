@@ -52,6 +52,14 @@
           Columna izquierda: a qué entra. Quien va a administrar el centro (el dueño que dio de
           alta la plataforma, u otro administrador) no "colabora": se le da la bienvenida.
         -->
+        <!-- Una persona entrenando sola, al costado: la misma familia de escenas del ingreso. -->
+        <img
+          class="invitacion__imagen"
+          src="acceso/individual.jpg"
+          alt=""
+          width="360"
+          height="795"
+        />
         <div class="invitacion__presentacion">
           <!-- La marca, arriba a la izquierda como en el ingreso (la de arriba se oculta). -->
           <a class="invitacion__marca" routerLink="/">
@@ -60,12 +68,13 @@
           </a>
           @if (administra()) {
             <h1 id="titulo-invitacion">Te damos la bienvenida a AKINE</h1>
-            <p class="acceso-texto">
-              Vas a administrar <b>{{ datos.organizacionNombre }}</b>.
-              @if (requiereRegistro()) {
-                Creá tu cuenta y después entrá para configurar tu centro.
-              }
+            <p class="invitacion__centro">
+              <span class="invitacion__centro-rotulo">Vas a administrar</span>
+              <span class="invitacion__centro-nombre">{{ datos.organizacionNombre }}</span>
             </p>
+            @if (requiereRegistro()) {
+              <p class="acceso-texto">Creá tu cuenta y después entrá para configurar tu centro.</p>
+            }
           } @else {
             <h1 id="titulo-invitacion">Te invitaron a AKINE</h1>
             <p class="acceso-texto">
@@ -84,7 +93,13 @@
               <dd>{{ datos.consultorioNombre }}</dd>
             </dl>
           }
-          <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
+          <!--
+            Al duenio no lo invito nadie: su centro se dio de alta con este correo. El aviso y el
+            "Rechazar" son de una invitacion de verdad, la de un colaborador.
+          -->
+          @if (!administra()) {
+            <p class="ayuda">Si ese no es tu correo, no aceptes: avisale a quien te invitó.</p>
+          }
         </div>
 
         <form [formGroup]="formularioAlta" (ngSubmit)="aceptar()" novalidate>
@@ -259,9 +274,11 @@
             }}
           </button>
           <!-- Rechazar no crea cuenta ni compromete a nada; no hace falta explicar por que. -->
-          <button type="button" class="boton-texto" (click)="rechazar()" [disabled]="enviando()">
-            Rechazar la invitación
-          </button>
+          @if (!administra()) {
+            <button type="button" class="boton-texto" (click)="rechazar()" [disabled]="enviando()">
+              Rechazar la invitación
+            </button>
+          }
         </form>
       }
     }
@@ -279,7 +296,9 @@
           organización nueva.
         </p>
       }
-      <a class="boton boton--bloque" routerLink="/auth/ingresar">Iniciar sesión</a>
+      <button type="button" class="boton boton--bloque" (click)="irAlIngreso()">
+        Iniciar sesión
+      </button>
     }
 
     @case ('rechazada') {

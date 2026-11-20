@@ -125,10 +125,15 @@ describe('InvitacionPage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('h1')?.textContent).toContain('Te damos la bienvenida');
-    expect(anfitrion.textContent).toContain('Vas a administrar Centro Belgrano');
+    expect(anfitrion.querySelector('.invitacion__centro-nombre')?.textContent).toContain(
+      'Centro Belgrano',
+    );
     expect(anfitrion.textContent).not.toContain('colabor');
     expect(anfitrion.textContent).not.toContain('ORG_ADMIN');
     expect(anfitrion.textContent).not.toContain('Sede');
+    // Al duenio no lo invito nadie: ni "avisale a quien te invito" ni "Rechazar".
+    expect(anfitrion.textContent).not.toContain('quien te invitó');
+    expect(anfitrion.textContent).not.toContain('Rechazar');
     expect(anfitrion.querySelector('button[type="submit"]')?.textContent).toContain(
       'Crear mi cuenta',
     );

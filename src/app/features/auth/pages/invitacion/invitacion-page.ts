@@ -1,6 +1,8 @@
 import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import { SessionService } from '../../../../core/services/session.service';
 import { catchError, of } from 'rxjs';
 
 import { AcceptInvitacionRequest } from '../../../../api/generated/model/accept-invitacion-request';
@@ -76,6 +78,8 @@ export class InvitacionPage {
   private readonly route = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly session = inject(SessionService);
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly enviando = signal(false);
@@ -343,6 +347,22 @@ export class InvitacionPage {
         this.errorAccion.set(traducido.mensaje);
       },
     });
+  }
+
+  /**
+   * Va al ingreso. Si en este navegador quedó abierta la sesión de otra cuenta (quien dio de alta
+   * el centro, por ejemplo), la cierra antes: si no, el ingreso la ve activa y lleva a esa cuenta
+   * en vez de dejar entrar a la que se acaba de crear.
+   */
+  protected irAlIngreso(): void {
+    const ir = (): void => {
+      this.router.navigateByUrl('/auth/ingresar').catch(() => undefined);
+    };
+    if (this.session.estado() === 'anonimo') {
+      ir();
+      return;
+    }
+    this.session.logout().subscribe({ complete: ir });
   }
 
   /** `true` si la aceptacion creo la cuenta en este acto. Cambia el texto del cierre. */
