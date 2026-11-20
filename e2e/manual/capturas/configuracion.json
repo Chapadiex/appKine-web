@@ -1,0 +1,210 @@
+[
+  {
+    "ficha": "organizacion",
+    "nombre": "datos-fiscales",
+    "ruta": "/organizacion",
+    "recorte": "section[aria-labelledby=\"titulo-organizacion\"]",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby=\"titulo-organizacion\"] p.acciones--ficha:has(+ app-contacto-del-centro) button",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "organizacion",
+    "nombre": "marca",
+    "ruta": "/organizacion/marca",
+    "recorte": "form.marca",
+    "marcas": [
+      {
+        "selector": ".temas__pestanas [role=\"tab\"]:first-child",
+        "numero": 2
+      },
+      {
+        "selector": "ul.paletas > li:first-child > button",
+        "numero": 3
+      },
+      {
+        "selector": "form.marca > .acciones button[type=\"submit\"]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "organizacion",
+    "nombre": "inteligencia-artificial",
+    "ruta": "/organizacion/inteligencia-artificial",
+    "recorte": "section[aria-labelledby=\"titulo-funciones\"]",
+    "marcas": [
+      {
+        "selector": "#ia-ASISTENTE",
+        "numero": 2
+      },
+      {
+        "selector": ".ia__funcion:has(#ia-ASISTENTE) .ia__estado",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "sedes",
+    "nombre": "alta-datos",
+    "ruta": "/organizacion/sedes/nueva",
+    "recorte": "section.asistente",
+    "marcas": [
+      {
+        "selector": "#sede-name",
+        "numero": 2
+      },
+      {
+        "selector": "section.asistente form button[type=\"submit\"]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "sedes",
+    "nombre": "alta-confirmacion",
+    "ruta": "/organizacion/sedes/nueva",
+    "preparacion": "Escribir «Sede Norte» en #sede-name y tocar «Continuar →» tres veces (Datos de la sede, Ubicación y Configuración inicial sin completar nada) hasta llegar al paso Confirmación.",
+    "recorte": "section.asistente",
+    "marcas": [
+      {
+        "selector": "dl.confirmacion",
+        "numero": 1
+      },
+      {
+        "selector": "section.asistente .asistente__acciones button[type=\"submit\"]",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "colaboradores",
+    "nombre": "invitar",
+    "ruta": "/organizacion/colaboradores/invitaciones",
+    "preparacion": "Tocar el botón «Invitar a alguien» de la cabecera para abrir el panel Nueva invitación.",
+    "recorte": "dialog.panel-lateral",
+    "marcas": [
+      {
+        "selector": "#invitacion-email",
+        "numero": 2
+      },
+      {
+        "selector": "#invitacion-rol",
+        "numero": 3
+      },
+      {
+        "selector": "#invitacion-alcance",
+        "numero": 4
+      },
+      {
+        "selector": "dialog.panel-lateral button[type=\"submit\"]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "colaboradores",
+    "nombre": "vincular",
+    "ruta": "/organizacion/colaboradores/nuevo",
+    "recorte": "section[aria-label=\"Datos del vínculo\"]",
+    "marcas": [
+      {
+        "selector": "#alta-email",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-roleCode",
+        "numero": 3
+      },
+      {
+        "selector": "fieldset.vinculo__alcance",
+        "numero": 4
+      },
+      {
+        "selector": "#alta-reason",
+        "numero": 5
+      },
+      {
+        "selector": "section[aria-label=\"Datos del vínculo\"] button[type=\"submit\"]",
+        "numero": 6
+      }
+    ]
+  },
+  {
+    "ficha": "biblioteca",
+    "nombre": "subir-libro",
+    "ruta": "/biblioteca",
+    "preparacion": "Tocar el botón «Subir libro» de la cabecera para abrir el panel Subir libro.",
+    "recorte": "dialog.panel-lateral",
+    "marcas": [
+      {
+        "selector": "#subir-libro-archivo",
+        "numero": 2
+      },
+      {
+        "selector": "#subir-libro-titulo",
+        "numero": 3
+      },
+      {
+        "selector": "#subir-libro-declaracion",
+        "numero": 4
+      },
+      {
+        "selector": "dialog.panel-lateral button[type=\"submit\"]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "mi-perfil",
+    "nombre": "cambiar-contrasena",
+    "ruta": "/mi-cuenta/perfil",
+    "recorte": "section[aria-labelledby=\"titulo-contrasena\"]",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby=\"titulo-contrasena\"] button",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "preferencias",
+    "nombre": "tema",
+    "ruta": "/mi-cuenta/preferencias",
+    "recorte": "section[aria-labelledby=\"titulo-apariencia\"]",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby=\"titulo-apariencia\"] fieldset.grupo",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "primeros-pasos",
+    "nombre": "barra-superior",
+    "ruta": "/agenda",
+    "preparacion": "Usar una cuenta con más de una sede para que el selector de sede sea un botón.",
+    "recorte": "header.cabecera",
+    "marcas": [
+      {
+        "selector": "header.cabecera button.disparador.sede",
+        "numero": 1
+      }
+    ]
+  },
+  {
+    "ficha": "primeros-pasos",
+    "nombre": "menu",
+    "ruta": "/agenda",
+    "recorte": "#navegacion-principal",
+    "marcas": [
+      {
+        "selector": "#navegacion-principal details.nav__grupo:first-of-type > summary.nav__cabecera",
+        "numero": 2
+      }
+    ]
+  }
+]

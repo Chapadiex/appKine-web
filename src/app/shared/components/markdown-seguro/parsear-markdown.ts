@@ -13,12 +13,26 @@ export type Inline =
   | { readonly tipo: 'marca'; readonly numero: number };
 
 export type Bloque =
-  | { readonly tipo: 'titulo'; readonly nivel: 2 | 3; readonly contenido: readonly Inline[]; readonly texto: string }
+  | {
+      readonly tipo: 'titulo';
+      readonly nivel: 2 | 3;
+      readonly contenido: readonly Inline[];
+      readonly texto: string;
+    }
   | { readonly tipo: 'parrafo'; readonly contenido: readonly Inline[] }
   | { readonly tipo: 'lista-ordenada'; readonly items: readonly (readonly Inline[])[] }
   | { readonly tipo: 'lista'; readonly items: readonly (readonly Inline[])[] }
-  | { readonly tipo: 'aviso'; readonly variante: 'importante' | 'consejo'; readonly contenido: readonly Inline[] }
-  | { readonly tipo: 'captura'; readonly ficha: string; readonly nombre: string; readonly alt: string };
+  | {
+      readonly tipo: 'aviso';
+      readonly variante: 'importante' | 'consejo';
+      readonly contenido: readonly Inline[];
+    }
+  | {
+      readonly tipo: 'captura';
+      readonly ficha: string;
+      readonly nombre: string;
+      readonly alt: string;
+    };
 
 const CAPTURA = /^!\[([^\]]*)\]\(captura:([a-z0-9-]+)\/([a-z0-9-]+)\)\s*$/;
 const AVISO = /^\[!(importante|consejo)\]\s*$/i;
@@ -52,7 +66,11 @@ export function parsearMarkdown(markdown: string): Bloque[] {
   };
   const cerrarAviso = (): void => {
     if (aviso) {
-      bloques.push({ tipo: 'aviso', variante: aviso.variante, contenido: parsearInline(aviso.lineas.join(' ')) });
+      bloques.push({
+        tipo: 'aviso',
+        variante: aviso.variante,
+        contenido: parsearInline(aviso.lineas.join(' ')),
+      });
       aviso = null;
     }
   };
@@ -113,7 +131,11 @@ export function parsearMarkdown(markdown: string): Bloque[] {
     if (lista && cruda.startsWith('  ')) {
       // Continuación de un ítem largo, partido en varias líneas.
       const ultimo = lista.items[lista.items.length - 1];
-      lista.items[lista.items.length - 1] = [...ultimo, { tipo: 'texto', texto: ' ' }, ...parsearInline(linea)];
+      lista.items[lista.items.length - 1] = [
+        ...ultimo,
+        { tipo: 'texto', texto: ' ' },
+        ...parsearInline(linea),
+      ];
       continue;
     }
     cerrarLista();
@@ -135,7 +157,9 @@ export function parsearInline(texto: string): Inline[] {
       resultado.push({ tipo: 'icono', nombre: m[2] });
     } else if (m[3] !== undefined) {
       resultado.push(
-        RUTA_INTERNA.test(m[4]) ? { tipo: 'enlace', ruta: m[4], texto: m[3] } : { tipo: 'texto', texto: m[0] },
+        RUTA_INTERNA.test(m[4])
+          ? { tipo: 'enlace', ruta: m[4], texto: m[3] }
+          : { tipo: 'texto', texto: m[0] },
       );
     } else if (m[5] !== undefined) {
       resultado.push({ tipo: 'marca', numero: m[5].charCodeAt(0) - 0x2460 + 1 });

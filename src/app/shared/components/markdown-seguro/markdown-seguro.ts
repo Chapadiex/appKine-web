@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Icono, esNombreDeIcono } from '../../../shared/components/icono/icono';
-import { ICONO_DE_SECCION, normalizarTitulo, trazoDelManual } from '../iconos-del-manual';
+import { Icono, esNombreDeIcono } from '../icono/icono';
+import { ICONO_DE_SECCION, normalizarTitulo, trazoDelManual } from './iconos-de-texto';
 import { parsearMarkdown } from './parsear-markdown';
 
 /** Una captura que la persona quiere ver en grande. */
@@ -16,7 +16,7 @@ export interface CapturaAmpliada {
  * el contenido no puede inyectar marcado (docs/diseno/AKINE-manual-de-usuario.md §5.7).
  */
 @Component({
-  selector: 'app-markdown-del-manual',
+  selector: 'app-markdown-seguro',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icono, NgTemplateOutlet, RouterLink],
   template: `
@@ -37,7 +37,9 @@ export interface CapturaAmpliada {
           }
         }
         @case ('parrafo') {
-          <p><ng-container *ngTemplateOutlet="enLinea; context: { $implicit: bloque.contenido }" /></p>
+          <p>
+            <ng-container *ngTemplateOutlet="enLinea; context: { $implicit: bloque.contenido }" />
+          </p>
         }
         @case ('lista-ordenada') {
           <ol class="manual__pasos">
@@ -54,7 +56,11 @@ export interface CapturaAmpliada {
           </ul>
         }
         @case ('aviso') {
-          <div class="manual__aviso" [class.manual__aviso--consejo]="bloque.variante === 'consejo'" role="note">
+          <div
+            class="manual__aviso"
+            [class.manual__aviso--consejo]="bloque.variante === 'consejo'"
+            role="note"
+          >
             <app-icono [trazo]="trazoDe(bloque.variante)" />
             <p>
               <strong>{{ bloque.variante === 'consejo' ? 'Consejo' : 'Importante' }}:</strong>
@@ -67,9 +73,15 @@ export interface CapturaAmpliada {
             type="button"
             class="manual__captura"
             [attr.aria-label]="'Ampliar la imagen: ' + bloque.alt"
-            (click)="ampliar.emit({ src: urlDeCaptura(bloque.ficha, bloque.nombre), alt: bloque.alt })"
+            (click)="
+              ampliar.emit({ src: urlDeCaptura(bloque.ficha, bloque.nombre), alt: bloque.alt })
+            "
           >
-            <img [src]="urlDeCaptura(bloque.ficha, bloque.nombre)" [alt]="bloque.alt" loading="lazy" />
+            <img
+              [src]="urlDeCaptura(bloque.ficha, bloque.nombre)"
+              [alt]="bloque.alt"
+              loading="lazy"
+            />
           </button>
         }
       }
@@ -83,14 +95,20 @@ export interface CapturaAmpliada {
           }
           @case ('icono') {
             @if (esIconoConocido(parte.nombre)) {
-              <app-icono class="manual__icono" [nombre]="$any(parte.nombre)" [trazo]="trazoDe(parte.nombre)" />
+              <app-icono
+                class="manual__icono"
+                [nombre]="$any(parte.nombre)"
+                [trazo]="trazoDe(parte.nombre)"
+              />
             }
           }
           @case ('enlace') {
             <a [routerLink]="parte.ruta">{{ parte.texto }}</a>
           }
           @case ('marca') {
-            <span class="manual__marca" [attr.aria-label]="'marca ' + parte.numero">{{ parte.numero }}</span>
+            <span class="manual__marca" [attr.aria-label]="'marca ' + parte.numero">{{
+              parte.numero
+            }}</span>
           }
           @default {
             {{ parte.texto }}
@@ -108,29 +126,29 @@ export interface CapturaAmpliada {
     .manual__seccion {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin: 1.25rem 0 0.5rem;
-      font-size: 1rem;
+      gap: var(--esp-4);
+      margin: var(--esp-7) 0 var(--esp-4);
+      font-size: var(--esp-6);
       color: var(--color-texto-fuerte);
     }
     .manual__seccion app-icono {
       color: var(--color-accion-fondo);
     }
     .manual__tarea {
-      margin: 1rem 0 0.5rem;
+      margin: var(--esp-6) 0 var(--esp-4);
       font-size: 0.95rem;
     }
     p,
     ul,
     ol {
-      margin: 0 0 0.75rem;
+      margin: 0 0 var(--esp-5);
     }
     ul,
     ol {
-      padding-inline-start: 1.25rem;
+      padding-inline-start: var(--esp-7);
     }
     li + li {
-      margin-top: 0.25rem;
+      margin-top: var(--esp-2);
     }
     .manual__icono {
       color: var(--color-accion-fondo);
@@ -150,10 +168,10 @@ export interface CapturaAmpliada {
     }
     .manual__aviso {
       display: flex;
-      gap: 0.5rem;
+      gap: var(--esp-4);
       align-items: flex-start;
-      margin: 0 0 0.75rem;
-      padding: 0.75rem;
+      margin: 0 0 var(--esp-5);
+      padding: var(--esp-5);
       border-inline-start: 3px solid var(--color-aviso);
       border-radius: var(--radio-md);
       background: var(--color-aviso-fondo);
@@ -175,7 +193,7 @@ export interface CapturaAmpliada {
     .manual__captura {
       display: block;
       width: 100%;
-      margin: 0 0 0.75rem;
+      margin: 0 0 var(--esp-5);
       padding: 0;
       border: 1px solid var(--color-borde);
       border-radius: var(--radio-md);
@@ -190,7 +208,7 @@ export interface CapturaAmpliada {
     }
   `,
 })
-export class MarkdownDelManual {
+export class MarkdownSeguro {
   readonly markdown = input.required<string>();
   readonly ampliar = output<CapturaAmpliada>();
 

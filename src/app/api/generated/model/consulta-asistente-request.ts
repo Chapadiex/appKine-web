@@ -23,5 +23,9 @@ export interface ConsultaAsistenteRequest {
      */
     personaId?: number;
     pregunta: string;
+    /**
+     * Ruta del frontend desde la que se pregunta. Las preguntas sobre como usar AKINE prefieren la ficha del manual de esa pantalla
+     */
+    rutaActual?: string;
 }
 

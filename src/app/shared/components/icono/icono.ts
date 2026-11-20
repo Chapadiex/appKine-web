@@ -103,7 +103,7 @@ export type NombreDeIcono = keyof typeof TRAZOS;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path [attr.d]="trazo()" />
+      <path [attr.d]="dibujo()" />
     </svg>
   `,
   styles: `
@@ -131,11 +131,11 @@ export class Icono {
    * Un trazo propio en vez de uno de `TRAZOS`: lo usan las features diferidas (el manual) para no
    * sumar dibujos al bundle inicial.
    */
-  readonly trazoPropio = input<string | undefined>(undefined, { alias: 'trazo' });
+  readonly trazo = input<string | undefined>(undefined);
 
-  protected readonly trazo = computed(() => {
+  protected readonly dibujo = computed(() => {
     const nombre = this.nombre();
-    return this.trazoPropio() ?? (nombre ? TRAZOS[nombre] : '');
+    return this.trazo() ?? (nombre ? TRAZOS[nombre] : '');
   });
 }
 

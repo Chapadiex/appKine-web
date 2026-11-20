@@ -15,6 +15,7 @@ import { filter, map } from 'rxjs';
 import { PERMISO_ASISTENTE_USE } from '../../../../core/models/permisos';
 import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PreguntaAlAsistenteStore } from '../../../../core/services/pregunta-al-asistente.store';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CharlaDelAsistente } from '../charla-del-asistente/charla-del-asistente';
@@ -39,6 +40,7 @@ export class AsistenteFlotante {
   private readonly funcionesIa = inject(FuncionesIaStore);
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
+  private readonly pedidos = inject(PreguntaAlAsistenteStore);
 
   protected readonly abierto = signal(false);
   private readonly disparador = viewChild<ElementRef<HTMLButtonElement>>('disparador');
@@ -62,6 +64,16 @@ export class AsistenteFlotante {
   );
 
   constructor() {
+    // Una pregunta que llega de la ayuda: se abre la charla con el texto escrito, sin enviarlo.
+    effect(() => {
+      const pendiente = this.pedidos.pendiente();
+      if (pendiente === null || !this.visible()) {
+        return;
+      }
+      this.abierto.set(true);
+      this.pedidos.atendida();
+      queueMicrotask(() => this.charla()?.escribirPregunta(pendiente.texto));
+    });
     // Si deja de verse (salió, cambió a una sede sin permiso, entró a /asistente) se cierra.
     effect(() => {
       if (!this.visible()) {
