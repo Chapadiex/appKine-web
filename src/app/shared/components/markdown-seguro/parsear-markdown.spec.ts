@@ -34,6 +34,25 @@ describe('parsearMarkdown', () => {
     ]);
   });
 
+  it('une un ítem largo partido en varias líneas y separa una cita común de un aviso', () => {
+    const bloques = parsearMarkdown(
+      ['1. Primer paso que', '   sigue en otra línea.', '', '> Una cita sin rótulo.'].join('\n'),
+    );
+
+    expect(bloques.map((b) => b.tipo)).toEqual(['lista-ordenada', 'parrafo']);
+    const lista = bloques[0];
+    expect(
+      lista.tipo === 'lista-ordenada' &&
+        lista.items[0].map((p) => ('texto' in p ? p.texto : '')).join(''),
+    ).toBe('Primer paso que sigue en otra línea.');
+  });
+
+  it('cambia de lista al pasar de pasos numerados a viñetas', () => {
+    const bloques = parsearMarkdown(['1. Uno', '- Viñeta', '', 'Texto final.'].join('\n'));
+
+    expect(bloques.map((b) => b.tipo)).toEqual(['lista-ordenada', 'lista', 'parrafo']);
+  });
+
   it('deja el HTML como texto literal', () => {
     const html = '<img src=x onerror="alert(1)">';
 

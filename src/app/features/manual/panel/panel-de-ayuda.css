@@ -75,15 +75,6 @@
   color: var(--color-texto);
 }
 
-.ayuda__buscador input:focus {
-  outline: none;
-}
-
-.ayuda__buscador:focus-within {
-  outline: 2px solid var(--color-foco);
-  outline-offset: 1px;
-}
-
 .ayuda__cuerpo {
   flex: 1;
   overflow-y: auto;
