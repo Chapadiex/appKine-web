@@ -1,8 +1,8 @@
 import { computed, inject, signal } from '@angular/core';
 
-import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
-import { RegistroYActivacionService } from '../../../api/generated/api/registro-y-activacion.service';
-import { TermsResponse } from '../../../api/generated/model/terms-response';
+import { AkineHttpError } from '../interceptors/error.interceptor';
+import { RegistroYActivacionService } from '../../api/generated/api/registro-y-activacion.service';
+import { TermsResponse } from '../../api/generated/model/terms-response';
 
 /** Lectura de `GET /api/v1/terms`. */
 export type EstadoTerminos =

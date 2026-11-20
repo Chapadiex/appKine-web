@@ -1,10 +1,13 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { Injector, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, from, of, switchMap, tap, throwError } from 'rxjs';
 
 import type { ProblemType } from '../../api/generated/model/problem-type';
 import { PROBLEMAS_DEL_CONTRATO } from '../models/problemas-del-contrato';
 import { ServicioNoDisponibleStore } from '../services/servicio-no-disponible.store';
+import { TerminosPendientesStore } from '../services/terminos-pendientes.store';
+import { PARAM_VOLVER_A, RUTA_ACEPTAR_TERMINOS } from '../models/rutas';
 
 /**
  * Formato de error del backend: RFC 7807 Problem Details.
@@ -267,6 +270,7 @@ function esDeUnModeloLocal(cuerpo: unknown): boolean {
  */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const servicio = inject(ServicioNoDisponibleStore);
+  const injector = inject(Injector);
 
   return next(request).pipe(
     // Una respuesta exitosa prueba que el servicio volvio: el aviso del 503 ya no es cierto.
@@ -319,8 +323,23 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
       }
 
       const problem = esProblemDetail(error.error) ? error.error : null;
+      const traducido = new AkineHttpError(error.status, problem, esDeRed, espera);
 
-      return throwError(() => new AkineHttpError(error.status, problem, esDeRed, espera));
+      // Los términos cambiaron con la sesión abierta (19/11/2026): a aceptarlos. La sesión sigue
+      // válida, así que no se toca el token; sólo se navega.
+      if (traducido.problemType === 'terminos-pendientes') {
+        // Se resuelven recién acá: el store lee la sesión, que usa HttpClient, que usa este
+        // interceptor. Pedirlos al construir el interceptor cerraría ese círculo.
+        injector.get(TerminosPendientesStore).marcarPendiente();
+        const router = injector.get(Router);
+        if (!router.url.startsWith(RUTA_ACEPTAR_TERMINOS)) {
+          router
+            .navigate([RUTA_ACEPTAR_TERMINOS], { queryParams: { [PARAM_VOLVER_A]: router.url } })
+            .catch(() => undefined);
+        }
+      }
+
+      return throwError(() => traducido);
     }),
   );
 };

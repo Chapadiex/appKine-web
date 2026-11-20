@@ -1,0 +1,24 @@
+.terminos-formulario {
+  display: grid;
+  gap: var(--espacio-4, 1rem);
+}
+
+.terminos__casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-2, 0.5rem);
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.terminos__casilla input {
+  margin-block-start: 0.2em;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex: none;
+}
+
+.terminos-acciones {
+  display: grid;
+  gap: var(--espacio-2, 0.5rem);
+}

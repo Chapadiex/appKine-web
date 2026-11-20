@@ -12,12 +12,12 @@ import {
 } from '../../../../core/models/invitacion-errors';
 import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
-import { TerminosDelAlta } from '../../components/terminos-del-alta/terminos-del-alta';
+import { TerminosDelAlta } from '../../../../shared/components/terminos-del-alta/terminos-del-alta';
 import {
   MENSAJE_TERMINOS_CAMBIARON,
   TerminosVigentes,
   esRechazoDeTerminos,
-} from '../../models/terminos-vigentes';
+} from '../../../../core/models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Alerta } from '../../../../shared/components/alerta/alerta';

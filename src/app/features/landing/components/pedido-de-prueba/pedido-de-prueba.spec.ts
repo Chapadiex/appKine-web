@@ -8,6 +8,7 @@ import { EleccionDelArmador } from '../../models/eleccion-del-armador';
 import { PedidoDePrueba } from './pedido-de-prueba';
 
 const URL = '/api/v1/public/solicitudes-de-prueba';
+const VERSION_TERMINOS = '2026-11-19';
 
 describe('PedidoDePrueba', () => {
   let http: HttpTestingController;
@@ -71,6 +72,7 @@ describe('PedidoDePrueba', () => {
     escribir(fixture, '#pedido-apellido', 'Ferreyra');
     escribir(fixture, '#pedido-email', 'ana@centro.test');
     escribir(fixture, '#pedido-nombreCentro', 'Centro Movimiento');
+    aceptarTerminos(fixture);
     raiz.querySelector('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
@@ -90,6 +92,8 @@ describe('PedidoDePrueba', () => {
       interesaIa: true,
       comentario: undefined,
       sitioWeb: '',
+      aceptaTerminos: true,
+      versionTerminos: VERSION_TERMINOS,
     });
     expect(raiz.querySelector('button[type="submit"]')!.textContent).toContain('Enviando');
 
@@ -102,6 +106,23 @@ describe('PedidoDePrueba', () => {
     expect(raiz.querySelector('form')).toBeNull();
   });
 
+  it('sin aceptar los términos no envía y marca la casilla', async () => {
+    const fixture = crear();
+    const raiz = fixture.nativeElement as HTMLElement;
+    escribir(fixture, '#pedido-nombre', 'Ana');
+    escribir(fixture, '#pedido-apellido', 'Ferreyra');
+    escribir(fixture, '#pedido-email', 'ana@centro.test');
+    escribir(fixture, '#pedido-nombreCentro', 'Centro');
+
+    raiz.querySelector('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    http.expectNone(URL);
+    expect(raiz.querySelector('#pedido-terminos')!.getAttribute('aria-invalid')).toBe('true');
+    expect(raiz.querySelector('#pedido-terminos-error')!.textContent).toContain('pedir la prueba');
+  });
+
   it('reusa la clave tras un corte de red y marca el campo que rechaza el backend', async () => {
     const fixture = crear();
     const raiz = fixture.nativeElement as HTMLElement;
@@ -109,6 +130,7 @@ describe('PedidoDePrueba', () => {
     escribir(fixture, '#pedido-apellido', 'Ferreyra');
     escribir(fixture, '#pedido-email', 'ana@centro.test');
     escribir(fixture, '#pedido-nombreCentro', 'Centro');
+    aceptarTerminos(fixture);
 
     raiz.querySelector('form')!.dispatchEvent(new Event('submit'));
     const primero = http.expectOne(URL);
@@ -147,7 +169,18 @@ describe('PedidoDePrueba', () => {
   function crear() {
     const fixture = TestBed.createComponent(PedidoDePrueba);
     fixture.detectChanges();
+    http.expectOne('/api/v1/terms').flush({
+      aceptacionObligatoria: true,
+      versionVigente: VERSION_TERMINOS,
+      url: '/terminos',
+    });
+    fixture.detectChanges();
     return fixture;
+  }
+
+  function aceptarTerminos(fixture: { nativeElement: HTMLElement; detectChanges(): void }): void {
+    fixture.nativeElement.querySelector<HTMLInputElement>('#pedido-terminos')!.click();
+    fixture.detectChanges();
   }
 
   function escribir(

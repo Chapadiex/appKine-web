@@ -10,6 +10,9 @@
  */
 export const RUTA_LOGIN = '/auth/ingresar';
 
+/** Pantalla para aceptar la versión vigente de los términos (19/11/2026). */
+export const RUTA_ACEPTAR_TERMINOS = '/auth/aceptar-terminos';
+
 /**
  * Pantalla que explica que la sesion caduco.
  *

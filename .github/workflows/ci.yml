@@ -528,6 +528,8 @@ jobs:
 
       # Perfil `local`: secreto de JWT de desarrollo, SMTP sin TLS contra Mailpit y CORS de
       # localhost. Es exactamente la pila con la que corren los E2E en una maquina de desarrollo.
+      # AKINE_TERMINOS_VERSION vacía: las cuentas que siembran los E2E no aceptan términos, y con
+      # la versión por defecto quedarían bloqueadas con 403 terminos-pendientes (19/11/2026).
       - name: Arrancar el backend
         run: |
           docker run -d --name akine-api --network akine_default -p 8080:8080 \
@@ -536,6 +538,7 @@ jobs:
             -e AKINE_DB_USER=akine -e AKINE_DB_PASSWORD=akine \
             -e AKINE_MAIL_HOST=mailpit -e AKINE_MAIL_PORT=1025 \
             -e AKINE_BOOTSTRAP_ADMIN_EMAIL="$AKINE_E2E_PLATAFORMA_EMAIL" \
+            -e AKINE_TERMINOS_VERSION= \
             akine-api:e2e
 
       - name: Configurar Node ${{ env.NODE_VERSION }}
