@@ -65,7 +65,8 @@
     <section class="tarjeta" aria-labelledby="titulo-contrasena">
       <h2 id="titulo-contrasena">Contraseña</h2>
       <p class="ayuda">
-        Te mandamos a {{ perfil.email }} un enlace para elegir una contraseña nueva.
+        Para cambiarla te enviamos un enlace a <strong>{{ perfil.email }}</strong>. Lo abrís y
+        elegís la contraseña nueva; hasta entonces sigue valiendo la actual.
       </p>
 
       <div class="acciones">
@@ -75,7 +76,7 @@
           [disabled]="enviandoEnlace()"
           (click)="pedirCambioDeContrasena()"
         >
-          {{ enviandoEnlace() ? 'Enviando…' : 'Cambiar contraseña' }}
+          {{ enviandoEnlace() ? 'Enviando…' : 'Enviarme el enlace' }}
         </button>
       </div>
     </section>
@@ -83,7 +84,10 @@
     <section class="tarjeta" aria-labelledby="titulo-sesiones">
       <h2 id="titulo-sesiones">Sesiones abiertas</h2>
 
-      <p class="ayuda">Si dejaste AKINE abierto en otra computadora, podés cerrarlo desde acá.</p>
+      <p class="ayuda">
+        Si dejaste AKINE abierto en otra computadora o tablet, cerralo desde acá. También se cierra
+        en este dispositivo.
+      </p>
       <div class="acciones">
         <button type="button" class="boton boton--secundario" (click)="confirmandoCierre.set(true)">
           Cerrar sesión en todos los dispositivos

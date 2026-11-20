@@ -55,7 +55,7 @@ describe('MiPerfilPage', () => {
   it('el enlace de cambio de contraseña se confirma con un aviso global', async () => {
     const fixture = await montar();
 
-    boton(fixture, 'Cambiar contraseña').click();
+    boton(fixture, 'Enviarme el enlace').click();
     const pedido = httpMock.expectOne('/api/v1/auth/password-reset');
     expect(pedido.request.body).toEqual({ email: 'ana@ejemplo.test' });
     pedido.flush(null, { status: 202, statusText: 'Accepted' });
@@ -70,7 +70,7 @@ describe('MiPerfilPage', () => {
   it('el limite de pedidos va al aviso de error sin ofrecer reintentar', async () => {
     const fixture = await montar();
 
-    boton(fixture, 'Cambiar contraseña').click();
+    boton(fixture, 'Enviarme el enlace').click();
     httpMock
       .expectOne('/api/v1/auth/password-reset')
       .flush(null, { status: 429, statusText: 'Too Many Requests' });
@@ -85,7 +85,7 @@ describe('MiPerfilPage', () => {
   it('cualquier otro fallo del enlace ofrece reintentar desde el aviso', async () => {
     const fixture = await montar();
 
-    boton(fixture, 'Cambiar contraseña').click();
+    boton(fixture, 'Enviarme el enlace').click();
     httpMock
       .expectOne('/api/v1/auth/password-reset')
       .flush(null, { status: 500, statusText: 'Error' });
