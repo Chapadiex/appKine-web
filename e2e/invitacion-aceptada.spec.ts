@@ -57,9 +57,11 @@ test.describe('Aceptar una invitacion contra el backend real', () => {
     await expect(
       page.getByRole('heading', { name: 'Te invitaron a AKINE', level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(`${centro.nombreCentro} te invitó a colaborar`)).toBeVisible();
+    await expect(
+      page.getByText(`${centro.nombreCentro} te invitó a sumarte a su equipo.`),
+    ).toBeVisible();
     await expect(page.getByRole('definition').filter({ hasText: email })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Crea tu cuenta para aceptar' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Creá tu cuenta' })).toBeVisible();
 
     // Sin nombre ni contrasena no sale nada.
     await page.getByRole('button', { name: 'Aceptar la invitación' }).click();
