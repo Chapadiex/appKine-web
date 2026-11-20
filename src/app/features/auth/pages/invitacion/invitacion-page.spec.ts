@@ -218,7 +218,7 @@ describe('InvitacionPage', () => {
     fixture.detectChanges();
 
     expect(anfitrion.querySelector('h1')?.textContent).toContain('Tu cuenta está lista');
-    expect(anfitrion.querySelector('.invitacion__listo .acceso-icono')).not.toBeNull();
+    expect(anfitrion.querySelector('.invitacion__cabecera .acceso-icono--exito')).not.toBeNull();
     expect(anfitrion.querySelector('.invitacion__marca')).not.toBeNull();
   });
 

@@ -8,10 +8,24 @@
 >
   <!-- La marca, arriba a la izquierda como en el ingreso. El formulario la lleva en su columna. -->
   @if (estado().tipo !== 'listo') {
-    <a class="invitacion__marca" routerLink="/">
-      <span class="invitacion__logo" aria-hidden="true">A</span>
-      <span>AKINE</span>
-    </a>
+    <!-- Una fila: la marca a la izquierda y el ícono del resultado en el medio. -->
+    <div class="invitacion__cabecera">
+      <a class="invitacion__marca" routerLink="/">
+        <span class="invitacion__logo" aria-hidden="true">A</span>
+        <span>AKINE</span>
+      </a>
+      @switch (estado().tipo) {
+        @case ('aceptada') {
+          <span class="acceso-icono acceso-icono--exito" aria-hidden="true">✓</span>
+        }
+        @case ('error') {
+          <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
+        }
+        @case ('sin-token') {
+          <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
+        }
+      }
+    </div>
   }
   @switch (estado().tipo) {
     @case ('cargando') {
@@ -20,7 +34,6 @@
     }
 
     @case ('sin-token') {
-      <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
       <h1 id="titulo-invitacion">El enlace está incompleto</h1>
       <p class="acceso-texto" role="alert">
         Le falta el código de la invitación. Suele pasar cuando el correo se copia a mano y se
@@ -32,7 +45,6 @@
     }
 
     @case ('error') {
-      <span class="acceso-icono acceso-icono--aviso" aria-hidden="true">!</span>
       <h1 id="titulo-invitacion">La invitación ya no está disponible</h1>
       <p class="acceso-texto" role="alert">{{ mensajeError() }}</p>
       @if (vencida()) {
@@ -313,7 +325,6 @@
 
     @case ('aceptada') {
       <div class="invitacion__listo">
-        <span class="acceso-icono acceso-icono--exito" aria-hidden="true">✓</span>
         <h1 id="titulo-invitacion">
           {{ aceptoAdministrar() ? 'Tu cuenta está lista' : 'Ya sos parte del equipo' }}
         </h1>
