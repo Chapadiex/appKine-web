@@ -72,15 +72,13 @@ describe('PanelDeAyuda', () => {
     contexto.set({ organizationId: 1, consultorioId: 1 });
     estado.set('activa');
     puedePreguntar = false;
-    api.indice
-      .mockReset()
-      .mockReturnValue(
-        of({
-          grupos: [
-            { nombre: 'Economía', fichas: [{ id: 'egresos', titulo: 'Egresos', tareas: [] }] },
-          ],
-        }),
-      );
+    api.indice.mockReset().mockReturnValue(
+      of({
+        grupos: [
+          { nombre: 'Economía', fichas: [{ id: 'egresos', titulo: 'Egresos', tareas: [] }] },
+        ],
+      }),
+    );
     api.deLaRuta.mockReset().mockReturnValue(of(CAJA));
     api.ficha.mockReset().mockReturnValue(of(EGRESOS));
     api.buscar.mockReset().mockReturnValue(of([]));
