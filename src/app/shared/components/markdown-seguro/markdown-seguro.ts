@@ -63,7 +63,7 @@ export interface CapturaAmpliada {
           >
             <app-icono [trazo]="trazoDe(bloque.variante)" />
             <p>
-              <strong>{{ bloque.variante === 'consejo' ? 'Consejo' : 'Importante' }}:</strong>
+              <strong>{{ bloque.variante === 'consejo' ? 'Consejo' : 'Importante' }}:</strong>{{ ' ' }}
               <ng-container *ngTemplateOutlet="enLinea; context: { $implicit: bloque.contenido }" />
             </p>
           </div>
