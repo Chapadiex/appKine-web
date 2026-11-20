@@ -22,7 +22,8 @@
         "selector": "form.tarjeta:has(#clase-oferta) button[type=submit]",
         "numero": 6
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Sede con al menos una actividad grupal publicada. Elegir la primera actividad en #clase-oferta para que aparezca el campo Box."
   },
   {
     "ficha": "clases",
@@ -39,7 +40,8 @@
         "selector": "section[aria-labelledby=\"titulo-inscribir\"] .acciones button",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Clase en estado PROGRAMADA con lugar. Escribir un apellido de ejemplo en #inscribir-persona y tocar la primera persona de .lista-personas para que aparezcan la casilla y el botón Inscribir."
   },
   {
     "ficha": "asistencia",
@@ -52,7 +54,8 @@
         "selector": "role=button[name=\"Iniciar clase\"]",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Clase de hoy en estado PROGRAMADA con inscriptos."
   },
   {
     "ficha": "asistencia",
@@ -73,7 +76,8 @@
         "selector": "role=button[name=/^Guardar asistencia/]",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Clase en estado EN_CURSO con al menos dos inscriptos con lugar y ninguno marcado. Marcar Presente en la primera fila para que aparezca Guardar asistencia habilitado."
   },
   {
     "ficha": "productos-de-pack",
@@ -98,6 +102,12 @@
         "selector": "app-panel-lateral form button[type=submit]",
         "numero": 7
       }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#boton-nuevo-producto"
+      }
     ]
   },
   {
@@ -115,7 +125,8 @@
         "selector": "role=button[name=\"Vender pase\"]",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Persona de ejemplo; la sede tiene al menos un producto de pack vigente. Elegir el primer producto en #vender-producto."
   },
   {
     "ficha": "egresos",
@@ -144,6 +155,12 @@
         "selector": "role=button[name=\"Cargar el borrador\"]",
         "numero": 6
       }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Registrar egreso\"]"
+      }
     ]
   },
   {
@@ -165,7 +182,8 @@
         "selector": "section[aria-labelledby=\"titulo-pago\"] button[type=submit]",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Egreso en estado CONFIRMADO con saldo pendiente."
   },
   {
     "ficha": "honorarios",
@@ -210,6 +228,12 @@
         "selector": "role=button[name=\"Abrir el borrador\"]",
         "numero": 5
       }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Nuevo lote\"]"
+      }
     ]
   },
   {
@@ -223,7 +247,8 @@
         "selector": "role=button[name=\"Confirmar y presentar\"]",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Lote en estado BORRADOR con al menos una prestación agregada y sin observaciones."
   },
   {
     "ficha": "reportes",
@@ -264,6 +289,7 @@
         "selector": "#importe-medio-0",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Persona de ejemplo con al menos una deuda pendiente. Marcar la primera deuda para que aparezca su importe a imputar."
   }
 ]

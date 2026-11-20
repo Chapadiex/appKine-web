@@ -172,6 +172,8 @@ export default defineConfig({
       dependencies: ['agenda-setup'],
       use: {
         ...devices['Desktop Chrome'],
+        // El Chrome instalado: las capturas se generan a mano y no dependen del navegador de Playwright.
+        channel: 'chrome',
         timezoneId: ZONA_DE_LA_SEDE,
         colorScheme: 'light',
         viewport: { width: 1280, height: 800 },

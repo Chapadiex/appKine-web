@@ -14,7 +14,8 @@
         "selector": "table.tabla--padron",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Escribir en el buscador el apellido de una persona sembrada y apretar Enter, para que la tabla muestre al menos una fila."
   },
   {
     "ficha": "padron",
@@ -35,6 +36,12 @@
         "selector": ".panel-lateral form.formulario-persona button[type=submit]",
         "numero": 4
       }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Dar de alta una persona\"]"
+      }
     ]
   },
   {
@@ -48,7 +55,8 @@
         "selector": "app-cabecera-de-ficha nav",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Usar una persona con perfil de paciente y un usuario con paciente:read y hc:read, para que se vean todas las pestañas."
   },
   {
     "ficha": "ficha-de-la-persona",
@@ -69,7 +77,8 @@
         "selector": "role=button[name=\"Dar de baja la ficha\"]",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Persona activa con perfil de paciente y usuario con paciente:manage. Tocar el botón 'Más acciones de …' de la cabecera para desplegar el menú (es un popover: confirmar que queda dentro del recorte)."
   },
   {
     "ficha": "historias-clinicas",
@@ -86,7 +95,8 @@
         "selector": ".hc-tarjeta >> nth=0 >> .hc-tarjeta__acciones a.boton:not(.boton--secundario)",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita un paciente con historia clínica en el centro sembrado."
   },
   {
     "ficha": "historias-clinicas",
@@ -103,7 +113,8 @@
         "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Entrar con un profesional que no tenga relación asistencial con ese paciente en la sede (sin turnos ni sesiones con él), para que aparezca el pedido de motivo."
   },
   {
     "ficha": "caso-clinico",
@@ -124,7 +135,8 @@
         "selector": ".panel-lateral form button[type=submit]",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Paciente con historia clínica. Si aparece el pedido de motivo, declararlo. En la tarjeta 'Casos clínicos', tocar 'Abrir un caso' para abrir el panel lateral."
   },
   {
     "ficha": "caso-clinico",
@@ -149,7 +161,8 @@
         "selector": "section[aria-labelledby=\"titulo-equipo\"] .acciones button",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Caso ACTIVO con al menos un profesional habilitado para su actividad que no esté en el equipo. Elegirlo en 'Sumar un profesional' para que se habilite 'Sumar'."
   },
   {
     "ficha": "atencion",
@@ -162,7 +175,8 @@
         "selector": ".panel-lateral role=button[name=\"Iniciar atención\"]",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Usuario PROFESIONAL (sesion:register) con un turno de hoy con el paciente llegado. Abrir el detalle de ese turno en la recepción del día."
   },
   {
     "ficha": "atencion",
@@ -183,7 +197,8 @@
         "selector": "#panel-evaluacion .pie-tarjeta button",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Turno de un paciente sin casos activos (la atención arranca sola) y atención en curso; pestaña 'Evaluación' activa."
   },
   {
     "ficha": "atencion",
@@ -204,6 +219,7 @@
         "selector": "#panel-cierre .pie-tarjeta button",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Atención en curso. Tocar la pestaña 'Cierre' (#pestana-cierre) y elegir 'Vino a la sesión' para que aparezca la nota de cierre."
   }
 ]

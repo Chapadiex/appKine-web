@@ -58,7 +58,7 @@
         "numero": 2
       },
       {
-        "selector": "section.asistente form button[type=\"submit\"]",
+        "selector": "role=button[name=\"Continuar →\"] >> visible=true",
         "numero": 4
       }
     ]
@@ -77,6 +77,25 @@
       {
         "selector": "section.asistente .asistente__acciones button[type=\"submit\"]",
         "numero": 3
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#sede-name",
+        "texto": "Sede Norte"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Continuar →\"]"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Continuar →\"]"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Continuar →\"]"
       }
     ]
   },
@@ -102,6 +121,12 @@
       {
         "selector": "dialog.panel-lateral button[type=\"submit\"]",
         "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Invitar a alguien\"]"
       }
     ]
   },
@@ -156,7 +181,8 @@
         "selector": "dialog.panel-lateral button[type=\"submit\"]",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: Tocar el botón «Subir libro» de la cabecera para abrir el panel Subir libro."
   },
   {
     "ficha": "mi-perfil",
@@ -193,7 +219,8 @@
         "selector": "header.cabecera button.disparador.sede",
         "numero": 1
       }
-    ]
+    ],
+    "omitir": "Necesita una cuenta con más de una sede para que el selector de sede sea un botón."
   },
   {
     "ficha": "primeros-pasos",

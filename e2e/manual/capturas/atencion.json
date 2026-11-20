@@ -18,6 +18,12 @@
         "selector": ".agenda-barra .filtros-barra__boton",
         "numero": 3
       }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=/Filtros/]"
+      }
     ]
   },
   {
@@ -43,7 +49,8 @@
         "selector": ".panel-lateral .acciones--pie >> role=button[name='Confirmar turno']",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: tocar Nuevo turno en la cabecera, elegir el paciente de ejemplo en el buscador y elegir una prestación para que se listen los horarios disponibles"
   },
   {
     "ficha": "agenda",
@@ -64,7 +71,8 @@
         "selector": ".flujo__seccion--peligro .boton--peligro",
         "numero": 4
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: tocar un turno en estado Reservado de la grilla del día para abrir su panel"
   },
   {
     "ficha": "buscar-disponibilidad",
@@ -85,7 +93,8 @@
         "selector": ".slot.slot--libre >> nth=0",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: elegir una prestación de ejemplo en el selector Prestación y esperar que se muestren los días"
   },
   {
     "ficha": "recepcion-del-dia",
@@ -102,7 +111,8 @@
         "selector": ".tabla-scroll[aria-label='Listado de turnos'] tbody tr >> nth=0 >> .acciones-de-fila__boton",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: tener en el día un turno Reservado sin llegada registrada (siembra de ejemplo)"
   },
   {
     "ficha": "recepcion-del-dia",
@@ -135,7 +145,8 @@
         "selector": "section.tarjeta[aria-label='Series de turnos'] tbody tr >> nth=0 >> .tabla__acciones .boton",
         "numero": 3
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: tener al menos una serie vigente en la sede (siembra de ejemplo)"
   },
   {
     "ficha": "series-de-turnos",
@@ -148,7 +159,8 @@
         "selector": "section[aria-labelledby='titulo-turnos-serie'] .acciones-de-fila__boton >> nth=0",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: tocar Ver serie en la primera fila de una serie vigente con turnos pendientes"
   },
   {
     "ficha": "lista-de-espera",
@@ -172,6 +184,12 @@
       {
         "selector": ".panel-lateral .acciones--pie .boton:not(.boton--secundario)",
         "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Agregar a la lista\"]"
       }
     ]
   },
@@ -197,7 +215,8 @@
         "selector": ".pie-tarjeta .boton:not(.boton--secundario)",
         "numero": 5
       }
-    ]
+    ],
+    "omitir": "Necesita una cuenta PROFESIONAL (sesion:register) en el centro sembrado."
   },
   {
     "ficha": "consultar-biblioteca",
@@ -214,7 +233,8 @@
         "selector": ".consulta__pie button[type=submit]",
         "numero": 2
       }
-    ]
+    ],
+    "omitir": "Necesita datos que la siembra de E2E no crea: escribir una pregunta de ejemplo en el campo para que el botón Enviar quede habilitado"
   },
   {
     "ficha": "asistente-de-datos",

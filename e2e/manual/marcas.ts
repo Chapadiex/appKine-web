@@ -59,7 +59,10 @@ export async function marcar(page: Page, marcas: readonly Marca[]): Promise<void
           capa.appendChild(numero);
         }
       }
-      document.body.appendChild(capa);
+      // Un dialog modal vive en la capa superior del navegador y tapa todo lo demás: la capa de marcas
+      // va adentro del dialog abierto, si hay uno.
+      const dialogo = document.querySelector('dialog[open]');
+      (dialogo ?? document.body).appendChild(capa);
     },
     { id: CAPA, cajas },
   );

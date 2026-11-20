@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icono, esNombreDeIcono } from '../icono/icono';
@@ -69,53 +69,34 @@ export interface CapturaAmpliada {
           </div>
         }
         @case ('captura') {
-          <button
-            type="button"
-            class="manual__captura"
-            [attr.aria-label]="'Ampliar la imagen: ' + bloque.alt"
-            (click)="
-              ampliar.emit({ src: urlDeCaptura(bloque.ficha, bloque.nombre), alt: bloque.alt })
-            "
-          >
-            <img
-              [src]="urlDeCaptura(bloque.ficha, bloque.nombre)"
-              [alt]="bloque.alt"
-              loading="lazy"
-            />
-          </button>
+          <!-- Una captura que todavía no se generó no se muestra rota: desaparece. -->
+          @if (!fallidas().has(bloque.ficha + '/' + bloque.nombre)) {
+            <button
+              type="button"
+              class="manual__captura"
+              [attr.aria-label]="'Ampliar la imagen: ' + bloque.alt"
+              (click)="
+                ampliar.emit({ src: urlDeCaptura(bloque.ficha, bloque.nombre), alt: bloque.alt })
+              "
+            >
+              <img
+                [src]="urlDeCaptura(bloque.ficha, bloque.nombre)"
+                [alt]="bloque.alt"
+                loading="lazy"
+                (error)="marcarFallida(bloque.ficha + '/' + bloque.nombre)"
+              />
+            </button>
+          }
         }
       }
     }
 
-    <ng-template #enLinea let-partes>
-      @for (parte of $any(partes); track $index) {
-        @switch (parte.tipo) {
-          @case ('negrita') {
-            <strong>{{ parte.texto }}</strong>
-          }
-          @case ('icono') {
-            @if (esIconoConocido(parte.nombre)) {
-              <app-icono
-                class="manual__icono"
-                [nombre]="$any(parte.nombre)"
-                [trazo]="trazoDe(parte.nombre)"
-              />
-            }
-          }
-          @case ('enlace') {
-            <a [routerLink]="parte.ruta">{{ parte.texto }}</a>
-          }
-          @case ('marca') {
-            <span class="manual__marca" [attr.aria-label]="'marca ' + parte.numero">{{
-              parte.numero
-            }}</span>
-          }
-          @default {
-            {{ parte.texto }}
-          }
-        }
-      }
-    </ng-template>
+    <!--
+      El texto en línea va en UNA sola línea, sin espacios entre bloques: cualquier salto entre los
+      @case se dibuja como un espacio y aparece antes de cada coma que sigue a una negrita.
+    -->
+    <!-- prettier-ignore -->
+    <ng-template #enLinea let-partes>@for (parte of $any(partes); track $index) {@switch (parte.tipo) {@case ('negrita') {<strong>{{ parte.texto }}</strong>}@case ('icono') {@if (esIconoConocido(parte.nombre)) {<app-icono class="manual__icono" [nombre]="$any(parte.nombre)" [trazo]="trazoDe(parte.nombre)" />}}@case ('enlace') {<a [routerLink]="parte.ruta">{{ parte.texto }}</a>}@case ('marca') {<span class="manual__marca" [attr.aria-label]="'marca ' + parte.numero">{{ parte.numero }}</span>}@default {{{ parte.texto }}}}}</ng-template>
   `,
   styles: `
     :host {
@@ -213,6 +194,11 @@ export class MarkdownSeguro {
   readonly ampliar = output<CapturaAmpliada>();
 
   protected readonly bloques = computed(() => parsearMarkdown(this.markdown()));
+  protected readonly fallidas = signal<ReadonlySet<string>>(new Set());
+
+  protected marcarFallida(clave: string): void {
+    this.fallidas.update((previas) => new Set(previas).add(clave));
+  }
 
   protected urlDeCaptura(ficha: string, nombre: string): string {
     return `/manual/${ficha}/${nombre}.png`;

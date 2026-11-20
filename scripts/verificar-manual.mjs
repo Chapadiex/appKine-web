@@ -68,7 +68,7 @@ console.log(`Manual: ${referidas.size} capturas referidas y definidas; íconos a
 
 if (process.argv.includes('--en-vivo')) {
   // Recorre las capturas contra la pila levantada, sin escribir imágenes.
-  const corrida = spawnSync('npx', ['playwright', 'test', '--project=manual'], {
+  const corrida = spawnSync('npx', ['playwright', 'test', '--project=manual', '--workers=1'], {
     cwd: raiz,
     stdio: 'inherit',
     shell: true,

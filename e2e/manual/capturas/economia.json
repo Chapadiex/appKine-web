@@ -5,8 +5,14 @@
     "ruta": "/caja",
     "recorte": "section[aria-labelledby=\"titulo-apertura\"]",
     "marcas": [
-      { "selector": "#apertura-saldo", "numero": 2 },
-      { "selector": "role=button[name=\"Abrir la caja\"]", "numero": 3 }
+      {
+        "selector": "#apertura-saldo",
+        "numero": 2
+      },
+      {
+        "selector": "role=button[name=\"Abrir la caja\"]",
+        "numero": 3
+      }
     ]
   },
   {
@@ -14,16 +20,40 @@
     "nombre": "registrar-movimiento",
     "ruta": "/caja",
     "pasos": [
-      { "accion": "escribir", "selector": "#apertura-saldo", "texto": "0", "opcional": true },
-      { "accion": "click", "selector": "role=button[name=\"Abrir la caja\"]", "opcional": true },
-      { "accion": "click", "selector": "role=button[name=\"Registrar movimiento\"]" },
-      { "accion": "esperar", "selector": "#movimiento-importe" }
+      {
+        "accion": "escribir",
+        "selector": "#apertura-saldo",
+        "texto": "0",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Abrir la caja\"]",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Registrar movimiento\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#movimiento-importe"
+      }
     ],
     "recorte": "dialog.panel-lateral[open]",
     "marcas": [
-      { "selector": "role=group[name=\"Tipo\"]", "numero": 2 },
-      { "selector": "#movimiento-importe", "numero": 3 },
-      { "selector": "role=button[name=\"Registrar el movimiento\"]", "numero": 4 }
+      {
+        "selector": "role=group[name=\"Tipo\"]",
+        "numero": 2
+      },
+      {
+        "selector": "#movimiento-importe",
+        "numero": 3
+      },
+      {
+        "selector": "role=button[name=\"Registrar el movimiento\"]",
+        "numero": 4
+      }
     ]
   },
   {
@@ -31,13 +61,25 @@
     "nombre": "arquear-cerrar",
     "ruta": "/caja",
     "pasos": [
-      { "accion": "click", "selector": "role=button[name=\"Arquear y cerrar\"]" },
-      { "accion": "esperar", "selector": "#cierre-declarado" }
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Arquear y cerrar\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#cierre-declarado"
+      }
     ],
     "recorte": "dialog.panel-lateral[open]",
     "marcas": [
-      { "selector": "#cierre-declarado", "numero": 2 },
-      { "selector": "role=button[name=\"Cerrar la caja\"]", "numero": 4 }
+      {
+        "selector": "#cierre-declarado",
+        "numero": 2
+      },
+      {
+        "selector": "role=button[name=\"Cerrar la caja\"]",
+        "numero": 4
+      }
     ]
   }
 ]

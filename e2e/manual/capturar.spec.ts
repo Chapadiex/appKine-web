@@ -17,10 +17,12 @@ const MARGEN = 20;
 
 const capturas = leerCapturas().filter((c) => !FICHA || c.ficha === FICHA);
 
-test.describe.configure({ mode: 'serial' });
+// Una por vez (el login comparte el límite por IP), pero una captura rota no corta las demás.
+test.describe.configure({ mode: 'default' });
 
 for (const captura of capturas) {
   test(`${captura.ficha}/${captura.nombre}`, async ({ page, centro }) => {
+    test.skip(captura.omitir !== undefined, captura.omitir);
     await ingresar(page, centro);
     const ruta = captura.ruta
       .replace(':organizationId', String(centro.organizationId))

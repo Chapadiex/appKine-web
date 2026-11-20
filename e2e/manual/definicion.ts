@@ -33,6 +33,10 @@ export interface CapturaDelManual {
   /** Selector de la zona que se recorta. */
   readonly recorte: string;
   readonly marcas: readonly Marca[];
+  /** Cómo llegar al estado, en palabras, cuando todavía no hay pasos automáticos. */
+  readonly preparacion?: string;
+  /** Motivo por el que no se genera todavía (necesita datos que la siembra no crea). */
+  readonly omitir?: string;
 }
 
 const CARPETA = join(__dirname, 'capturas');
