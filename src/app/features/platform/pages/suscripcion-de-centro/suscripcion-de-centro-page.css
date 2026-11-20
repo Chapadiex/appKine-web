@@ -45,9 +45,12 @@
   align-items: center;
   gap: var(--esp-2);
   white-space: nowrap;
-  padding: var(--esp-1) var(--esp-4);
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 1.75rem;
+  padding: 0 var(--esp-3);
   border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-pastilla);
+  border-radius: var(--radio-md);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-semi);
 }
@@ -255,9 +258,12 @@
 }
 
 /* Servicios contratados del centro: un icono por servicio, con su color y el nombre en el globo. */
+/* Ancho de dos iconos y centrado: un servicio solo queda al medio de la columna. */
 .marcas-servicio {
   display: inline-flex;
+  justify-content: center;
   gap: var(--esp-2);
+  min-width: calc(2 * 1.75rem + var(--esp-2));
 }
 
 .marca-servicio {
@@ -274,13 +280,13 @@
 }
 
 .marca-servicio--pacientes {
-  background: var(--color-info-fondo);
-  color: var(--color-info-texto);
-  border-color: var(--color-info);
+  background: var(--color-servicio-kine-fondo);
+  color: var(--color-servicio-kine-texto);
+  border-color: var(--color-servicio-kine);
 }
 
 .marca-servicio--actividades {
-  background: var(--color-exito-fondo);
-  color: var(--color-exito-texto);
-  border-color: var(--color-exito);
+  background: var(--color-servicio-actividad-fondo);
+  color: var(--color-servicio-actividad-texto);
+  border-color: var(--color-servicio-actividad);
 }

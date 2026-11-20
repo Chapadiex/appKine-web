@@ -190,6 +190,12 @@
   --color-ia: #7c3aed;
   --color-ia-fondo: #ede9fe;
   --color-ia-texto: #4c1d95;
+  --color-servicio-kine: #0f766e;
+  --color-servicio-kine-fondo: #ccfbf1;
+  --color-servicio-kine-texto: #134e4a;
+  --color-servicio-actividad: #be185d;
+  --color-servicio-actividad-fondo: #fce7f3;
+  --color-servicio-actividad-texto: #831843;
 
   /*
    * Estados del dominio de la agenda (norma §3). Son fondos: el texto encima es
@@ -384,6 +390,12 @@
     --color-ia: #a78bfa;
     --color-ia-fondo: #3b2a6b;
     --color-ia-texto: #ddd6fe;
+    --color-servicio-kine: #5eead4;
+    --color-servicio-kine-fondo: #134e4a;
+    --color-servicio-kine-texto: #ccfbf1;
+    --color-servicio-actividad: #f9a8d4;
+    --color-servicio-actividad-fondo: #5b1a3c;
+    --color-servicio-actividad-texto: #fbcfe8;
 
     --color-estado-disponible: #174936;
     --color-estado-reservado: #1d4268;
@@ -458,6 +470,12 @@
   --color-ia: #a78bfa;
   --color-ia-fondo: #3b2a6b;
   --color-ia-texto: #ddd6fe;
+  --color-servicio-kine: #5eead4;
+  --color-servicio-kine-fondo: #134e4a;
+  --color-servicio-kine-texto: #ccfbf1;
+  --color-servicio-actividad: #f9a8d4;
+  --color-servicio-actividad-fondo: #5b1a3c;
+  --color-servicio-actividad-texto: #fbcfe8;
 
   --color-estado-disponible: #174936;
   --color-estado-reservado: #1d4268;
