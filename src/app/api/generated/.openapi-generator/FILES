@@ -1,4 +1,5 @@
 .gitignore
+.openapi-generator-ignore
 README.md
 api.base.service.ts
 api.module.ts
@@ -159,6 +160,7 @@ model/accepted-response.ts
 model/access-token-response.ts
 model/account-response.ts
 model/account-state-change-request.ts
+model/aceptar-terminos-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
 model/active-work-context.ts
@@ -475,6 +477,7 @@ model/membership-grant-response.ts
 model/membership-page-response.ts
 model/membership-reason-request.ts
 model/membership-response.ts
+model/mis-terminos-response.ts
 model/modelo-del-motor-response.ts
 model/models.ts
 model/modificar-plan-tratamiento-request.ts

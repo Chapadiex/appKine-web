@@ -36,6 +36,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_INVALID_TOKEN = 'https://akine.app/problems/invalid-token',
 
+    HTTPS___AKINE_APP_PROBLEMS_TERMINOS_PENDIENTES = 'https://akine.app/problems/terminos-pendientes',
+
     HTTPS___AKINE_APP_PROBLEMS_MISSING_TENANT_CONTEXT = 'https://akine.app/problems/missing-tenant-context',
 
     HTTPS___AKINE_APP_PROBLEMS_CSRF_REJECTED = 'https://akine.app/problems/csrf-rejected',

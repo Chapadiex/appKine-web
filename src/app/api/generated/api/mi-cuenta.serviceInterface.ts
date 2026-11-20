@@ -11,8 +11,10 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AceptarTerminosRequest } from '../model/models';
 import { AuthorizedContextResponse } from '../model/models';
 import { EffectivePermissionsResponse } from '../model/models';
+import { MisTerminosResponse } from '../model/models';
 import { MyPlatformRoleResponse } from '../model/models';
 import { MyProfileResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -21,10 +23,22 @@ import { ProblemDetail } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
+export interface AceptarMisTerminosRequestParams {
+    aceptarTerminosRequest: AceptarTerminosRequest;
+}
+
 
 export interface MiCuentaServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Aceptar la version vigente de los terminos
+     * Deja constancia de que la cuenta acepto la version vigente y destraba la API. Idempotente: aceptar una version ya aceptada responde igual.
+     * @endpoint post /api/v1/me/terminos
+* @param requestParameters
+     */
+    aceptarMisTerminos(requestParameters: AceptarMisTerminosRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
     /**
      * Perfil de la cuenta autenticada
@@ -32,6 +46,13 @@ export interface MiCuentaServiceInterface {
      * @endpoint get /api/v1/me
 */
     getMe(extraHttpRequestParams?: any): Observable<MyProfileResponse>;
+
+    /**
+     * Terminos vigentes para la cuenta autenticada
+     * Version vigente, enlace al texto y si la cuenta la tiene pendiente. Responde aunque haya terminos pendientes: es lo que la pantalla de aceptacion lee.
+     * @endpoint get /api/v1/me/terminos
+*/
+    getMisTerminos(extraHttpRequestParams?: any): Observable<MisTerminosResponse>;
 
     /**
      * Permisos efectivos en el contexto activo
