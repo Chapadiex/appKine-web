@@ -188,7 +188,7 @@ const PANTALLAS: readonly Pantalla[] = [
     nombre: 'catalogo de financiadores del centro',
     ruta: '/contratacion/financiadores/catalogo',
     apiDp43: {},
-    listo: texto('Ya agregado'),
+    listo: texto('En el centro'),
   },
   {
     nombre: 'atender sin turno',

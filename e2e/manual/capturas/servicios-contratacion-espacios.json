@@ -232,7 +232,7 @@
     "pasos": [
       {
         "accion": "esperar",
-        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico"
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]"
       }
     ],
     "recorte": "section[aria-label='Financiadores del catálogo']",
@@ -242,7 +242,7 @@
         "numero": 2
       },
       {
-        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico",
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]",
         "numero": 3
       }
     ]

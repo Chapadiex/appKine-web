@@ -307,3 +307,78 @@
 .consulta__respuesta > .resultado {
   margin-top: 0;
 }
+
+/*
+ * Catalogo de financiadores: casilla para marcar varios, fila que abre el panel con los planes y
+ * la barra que aparece mientras haya algo marcado.
+ */
+.celda-marca {
+  width: 2.75rem;
+  text-align: center;
+}
+
+.celda-marca input[type='checkbox'] {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+}
+
+.fila--clicable {
+  cursor: pointer;
+}
+
+.boton-enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.boton-enlace:hover {
+  color: var(--color-enlace);
+  text-decoration: underline;
+}
+
+.boton-enlace:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.barra-seleccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  margin-block: var(--esp-4);
+  padding: var(--esp-4) var(--esp-6);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-seleccion);
+  color: var(--color-texto);
+}
+
+.barra-seleccion__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+}
+
+.lista-planes {
+  display: grid;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  list-style: none;
+}
+
+.lista-planes > li {
+  display: grid;
+  gap: var(--esp-2);
+  padding: var(--esp-4) 0;
+  border-block-end: 1px solid var(--color-borde);
+}

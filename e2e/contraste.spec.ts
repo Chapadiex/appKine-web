@@ -432,7 +432,9 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/contratacion/financiadores/catalogo');
-      await expect(page.getByText('El catálogo cambio después de agregarlo')).toBeVisible();
+      await expect(
+        page.locator('.marca-estado', { hasText: 'En el centro' }).first(),
+      ).toBeVisible();
 
       await auditarContraste(page, 'catalogo de financiadores del centro');
     });
