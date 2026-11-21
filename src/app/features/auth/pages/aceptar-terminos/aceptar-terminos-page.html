@@ -1,0 +1,90 @@
+<!-- Aceptar la versión vigente de los términos (19/11/2026). -->
+<section class="acceso-tarjeta" aria-labelledby="titulo-terminos">
+  <span class="acceso-icono acceso-icono--neutro" aria-hidden="true">
+    <app-icono nombre="documento" />
+  </span>
+  <h1 id="titulo-terminos">Actualizamos los términos y condiciones</h1>
+
+  @let actual = lectura();
+  @switch (actual.tipo) {
+    @case ('cargando') {
+      <p class="acceso-texto" role="status">Leyendo los términos vigentes&hellip;</p>
+    }
+    @case ('error') {
+      <app-alerta tipo="error" titulo="No pudimos leer los términos">
+        <p>Sin los términos vigentes no podemos seguir. Probá de nuevo en un momento.</p>
+      </app-alerta>
+      <div class="terminos-acciones">
+        <button type="button" class="boton boton--bloque" (click)="cargar()">Reintentar</button>
+        <button
+          type="button"
+          class="boton boton--secundario boton--bloque"
+          (click)="cerrarSesion()"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    }
+    @case ('listo') {
+      <p class="acceso-texto">
+        Para seguir usando AKINE tenés que leer y aceptar la versión
+        <strong>{{ actual.terminos.versionVigente }}</strong>.
+      </p>
+
+      @if (actual.terminos.url; as enlace) {
+        <p class="acceso-texto">
+          <a [href]="enlace" target="_blank" rel="noopener noreferrer"
+            >Leer los términos y condiciones<span class="visualmente-oculto">
+              (se abren en otra pestaña)</span
+            ></a
+          >
+        </p>
+      }
+
+      @if (errorAlAceptar(); as mensaje) {
+        <app-alerta tipo="error" titulo="No se guardó la aceptación">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <form class="terminos-formulario" (submit)="$event.preventDefault(); aceptar()" novalidate>
+        <div class="campo">
+          <label class="terminos__casilla" for="aceptar-terminos">
+            <input
+              type="checkbox"
+              id="aceptar-terminos"
+              [checked]="aceptados()"
+              (change)="alternar($event)"
+              [attr.aria-invalid]="faltaMarcar()"
+              [attr.aria-describedby]="faltaMarcar() ? 'aceptar-terminos-error' : null"
+            />
+            Leí y acepto los términos y condiciones
+          </label>
+          @if (faltaMarcar()) {
+            <p class="campo__error" id="aceptar-terminos-error">
+              <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span>Marcá la
+              casilla para aceptar los términos.
+            </p>
+          }
+        </div>
+
+        <div class="terminos-acciones">
+          <button type="submit" class="boton boton--bloque" [disabled]="enviando()">
+            @if (enviando()) {
+              Guardando&hellip;
+            } @else {
+              Aceptar y seguir
+            }
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario boton--bloque"
+            (click)="cerrarSesion()"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

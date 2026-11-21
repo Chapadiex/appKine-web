@@ -11,6 +11,7 @@ import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { PlanesDelFinanciadorPage } from './pages/planes-del-financiador/planes-del-financiador-page';
 import { SessionService } from '../../core/services/session.service';
+import { TERMINOS_AL_DIA } from '../../core/testing/terminos-al-dia';
 import { RUTA_SIN_PERMISO } from '../../core/models/rutas';
 import { PERMISO_CONVENIO_READ, PERMISO_CONVENIO_MANAGE } from '../../core/models/permisos';
 import { routes as rutasDeLaApp } from '../../app.routes';
@@ -39,6 +40,7 @@ describe('Rutas de /contratacion', () => {
       providers: [
         provideRouter(rutasDeLaApp),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        TERMINOS_AL_DIA,
         {
           provide: PermissionsStore,
           useValue: {

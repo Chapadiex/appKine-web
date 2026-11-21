@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { TerminosVigentes } from '../../models/terminos-vigentes';
-import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { TerminosVigentes } from '../../../core/models/terminos-vigentes';
+import { Alerta } from '../alerta/alerta';
 
 /**
  * Casilla "Acepto los términos y condiciones" de un alta (DP-45): registro e invitacion con
@@ -24,7 +24,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
       }
       @case ('error') {
         <app-alerta tipo="error" titulo="No pudimos leer los términos">
-          <p>Sin los términos y condiciones vigentes no se puede crear la cuenta.</p>
+          <p>Sin los términos y condiciones vigentes no se puede {{ accion() }}.</p>
           <p class="alerta__acciones">
             <button type="button" class="boton boton--secundario" (click)="t.cargar()">
               Reintentar
@@ -46,7 +46,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
               />
               Acepto los términos y condiciones
             </label>
-            <p class="ayuda" [id]="idCasilla() + '-ayuda'">
+            <p class="ayuda ayuda--fija" [id]="idCasilla() + '-ayuda'">
               @if (url(); as enlace) {
                 <a [href]="enlace" target="_blank" rel="noopener noreferrer"
                   >Leer los términos y condiciones<span class="visualmente-oculto">
@@ -59,7 +59,7 @@ import { Alerta } from '../../../../shared/components/alerta/alerta';
             </p>
             @if (mostrarError()) {
               <p class="campo__error" [id]="idCasilla() + '-error'">
-                Para crear la cuenta tenés que aceptar los términos y condiciones.
+                Para {{ accion() }} tenés que aceptar los términos y condiciones.
               </p>
             }
           </div>
@@ -92,6 +92,9 @@ export class TerminosDelAlta {
 
   /** Pintar el error "tenés que aceptar": lo decide el formulario al enviar. */
   readonly mostrarError = input(false);
+
+  /** Qué se está haciendo, para los mensajes: "crear la cuenta", "pedir la prueba". */
+  readonly accion = input('crear la cuenta');
 
   protected readonly idCasilla = computed(() => `${this.prefijo()}-terminos`);
 

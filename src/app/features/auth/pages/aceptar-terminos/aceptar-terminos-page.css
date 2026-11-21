@@ -1,0 +1,27 @@
+.terminos-formulario {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+/* Misma casilla que la del alta (shared/components/terminos-del-alta), un punto más grande:
+   acá es la única decisión de la pantalla. */
+.campo .terminos__casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 1.5rem;
+  font-size: var(--tipo-sm);
+  cursor: pointer;
+}
+
+.terminos__casilla input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.terminos-acciones {
+  display: grid;
+  gap: var(--esp-2);
+}
