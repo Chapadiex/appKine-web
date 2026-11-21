@@ -273,10 +273,10 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
     ).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
     const cierre = respuestaDe(page, 'POST', /\/conciliacion$/);
-    await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
+    await page.getByRole('button', { name: 'Marcar como pagada' }).click();
     const conciliado = await cierre;
     expect(conciliado.status(), JSON.stringify(await conciliado.json())).toBeLessThan(300);
-    await expect(dato(page, 'Estado')).toHaveText('Conciliada');
+    await expect(dato(page, 'Estado')).toHaveText('Pagada');
 
     // La aceptada se salda; la debitada sigue debiendose entera y vuelve a la bandeja.
     const pagada = await api.exigir<Obligacion>(
@@ -370,11 +370,11 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
         .getByText('Pago registrado', { exact: true }),
     ).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
-    await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
+    await page.getByRole('button', { name: 'Marcar como pagada' }).click();
     await expect(
       page.getByText(/las debitadas en parte, por lo presentado menos lo/),
     ).toBeVisible();
-    await expect(dato(page, 'Estado')).toHaveText('Conciliada');
+    await expect(dato(page, 'Estado')).toHaveText('Pagada');
     await expect(filaDelLote(page, parcial)).toContainText('Aceptada en parte');
     await expect(filaDelLote(page, parcial)).toContainText(
       'Se cobro lo presentado menos lo debitado',

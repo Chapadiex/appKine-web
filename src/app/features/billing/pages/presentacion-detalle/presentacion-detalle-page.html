@@ -52,8 +52,8 @@
       <p>
         Las prestaciones que este lote le reclama al financiador. En borrador se revisan, se agregan
         o se quitan; las observadas se corrigen en su origen o se quitan del lote, y vuelven a la
-        bandeja. Presentado, se registran la factura, los débitos y los pagos hasta que el saldo
-        llega a cero.
+        bandeja. Presentado, se registran los débitos, los pagos y, si querés, la factura, hasta que
+        el saldo llega a cero y el lote queda pagado.
       </p>
     </app-ayuda>
     <div cabeceraAcciones>
@@ -484,7 +484,7 @@
     <div class="grilla-de-tarjetas">
       @if (admiteFactura()) {
         <section class="tarjeta" aria-labelledby="titulo-factura">
-          <h2 id="titulo-factura">Factura del lote</h2>
+          <h2 id="titulo-factura">Factura del lote (opcional)</h2>
           <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
             @if (falloEn('factura'); as fallo) {
               <ng-container
@@ -600,18 +600,21 @@
 
       <section class="tarjeta" aria-labelledby="titulo-cierre">
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-cierre">Cerrar el lote</h2>
-          <app-ayuda titulo="Cerrar el lote">
+          <h2 id="titulo-cierre">Marcar como pagada</h2>
+          <app-ayuda titulo="Marcar como pagada">
             <p>
-              Se cierra cuando el saldo llega a cero: todo lo presentado quedó explicado por débitos
-              o pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
+              Se marca como pagada cuando el saldo llega a cero: todo lo presentado quedó explicado
+              por débitos o pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
             </p>
           </app-ayuda>
         </div>
         @if (falloEn('conciliar'); as fallo) {
           <ng-container
             [ngTemplateOutlet]="alertaDeOperacion"
-            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar el lote' }"
+            [ngTemplateOutletContext]="{
+              $implicit: fallo,
+              titulo: 'No pudimos marcar el lote como pagado',
+            }"
           />
         }
         <div class="acciones">
@@ -621,7 +624,7 @@
             [disabled]="operando() !== null"
             (click)="conciliar()"
           >
-            Cerrar (conciliar) el lote
+            Marcar como pagada
           </button>
         </div>
       </section>

@@ -459,7 +459,7 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado',
+      'Lote pagado',
       'Cada prestación aceptada salda su deuda por lo presentado; las debitadas en parte, por lo ' +
         'presentado menos lo debitado, que queda pendiente para otro lote.',
     );

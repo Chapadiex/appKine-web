@@ -251,7 +251,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
 
     // Cerrar con saldo pendiente lo rechaza el servidor: falta explicar 9.600.
     const rechazo = respuestaDe(page, 'POST', /\/conciliacion$/);
-    await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
+    await page.getByRole('button', { name: 'Marcar como pagada' }).click();
     const sinConciliar = await rechazo;
     expect(sinConciliar.status()).toBe(409);
     expect((await problemaDe(sinConciliar)).type).toBe(uriDeProblema('presentacion-no-concilia'));
@@ -265,7 +265,7 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
         .getByRole('region', { name: 'Notificaciones', exact: true })
         .getByText('Factura registrada', { exact: true }),
     ).toBeVisible();
-    await expect(dato(page, 'Estado')).toHaveText('Facturada');
+    await expect(dato(page, 'Estado')).toHaveText('Presentada con factura');
 
     // Transferencia: un pago en efectivo entraria a la caja, que la opera `flujo-caja.spec.ts`.
     await page.locator('#pago-importe').fill(String(FINANCIADOR));
@@ -280,13 +280,13 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     await expect(page.getByRole('heading', { name: 'Pagos registrados' })).toBeVisible();
     await expect(dato(page, 'Saldo')).toContainText('0,00');
 
-    await page.getByRole('button', { name: 'Cerrar (conciliar) el lote' }).click();
+    await page.getByRole('button', { name: 'Marcar como pagada' }).click();
     await expect(
       page
         .getByRole('region', { name: 'Notificaciones', exact: true })
-        .getByText('Lote cerrado', { exact: true }),
+        .getByText('Lote pagado', { exact: true }),
     ).toBeVisible();
-    await expect(dato(page, 'Estado')).toHaveText('Conciliada');
+    await expect(dato(page, 'Estado')).toHaveText('Pagada');
 
     // Recien al conciliar se salda la deuda del financiador; el coseguro sigue siendo del paciente.
     const saldada = await api.exigir<Obligacion>(

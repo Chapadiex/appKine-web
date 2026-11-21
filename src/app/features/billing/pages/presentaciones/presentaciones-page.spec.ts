@@ -108,10 +108,22 @@ describe('PresentacionesPage', () => {
     httpMock
       .expectOne(`${BASE}/financiadores/10/cuenta-corriente`)
       .flush({ financiadorNombre: 'OSDE Sintetica', lotes: 3, saldo: 5000.5 });
+    // El aviso de cierre de mes: lo que todavia no entro en ningun lote de ese financiador.
+    const pendientes = httpMock.expectOne(
+      (p) => p.url === `${BASE}/prestaciones-elegibles` && p.params.get('financiadorId') === '10',
+    );
+    expect(pendientes.request.params.get('limite')).toBe('200');
+    pendientes.flush([
+      { id: 1, saldo: 7000 },
+      { id: 2, saldo: 7000 },
+    ]);
     await estabilizar(fixture);
 
     expect(contenido(fixture)).toContain('Cuenta corriente de OSDE Sintetica');
     expect(contenido(fixture)).toContain('5.000,50');
+    expect(contenido(fixture)).toContain('Pendientes de presentar');
+    expect(contenido(fixture)).toContain('2 prestaciones');
+    expect(contenido(fixture)).toContain('14.000,00');
   });
 
   it('sin lotes con los filtros lo dice y ofrece limpiarlos', async () => {

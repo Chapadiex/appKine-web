@@ -244,13 +244,13 @@ describe('PresentacionDetallePage', () => {
     httpMock.expectOne(DETALLE).flush({ ...PRESENTADA, estado: 'FACTURADA' });
     httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
     await estabilizar(fixture);
-    expect(contenido(fixture)).toContain('Facturada');
+    expect(contenido(fixture)).toContain('Presentada con factura');
   });
 
   it('cerrar con saldo pendiente muestra el residual que informa el servidor', async () => {
     const fixture = await montarPresentada();
 
-    apretar(fixture, 'Cerrar (conciliar) el lote');
+    apretar(fixture, 'Marcar como pagada');
     httpMock.expectOne(`${DETALLE}/conciliacion`).flush(
       {
         type: 'https://akine.app/problems/presentacion-no-concilia',
@@ -265,7 +265,7 @@ describe('PresentacionDetallePage', () => {
     const alerta = (fixture.nativeElement as HTMLElement).querySelector(
       '[aria-labelledby="titulo-cierre"] app-alerta',
     );
-    expect(alerta?.textContent).toContain('No pudimos cerrar el lote');
+    expect(alerta?.textContent).toContain('No pudimos marcar el lote como pagado');
     expect(alerta?.textContent).toContain('Quedan 12000.00 sin explicar.');
   });
 
@@ -522,14 +522,14 @@ describe('PresentacionDetallePage', () => {
   it('conciliar avisa que lo debitado en parte queda pendiente', async () => {
     const fixture = await montarPresentada();
 
-    apretar(fixture, 'Cerrar (conciliar) el lote');
+    apretar(fixture, 'Marcar como pagada');
     httpMock.expectOne(`${DETALLE}/conciliacion`).flush({});
     httpMock.expectOne(DETALLE).flush({ ...PRESENTADA, estado: 'CONCILIADA' });
     httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
     await estabilizar(fixture);
 
     const [aviso] = TestBed.inject(AvisosStore).avisos();
-    expect(aviso?.titulo).toBe('Lote cerrado');
+    expect(aviso?.titulo).toBe('Lote pagado');
     expect(aviso?.descripcion).toContain('las debitadas en parte, por lo presentado menos lo');
   });
 
