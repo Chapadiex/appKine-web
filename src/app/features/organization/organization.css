@@ -237,6 +237,45 @@
   font-weight: var(--peso-normal);
 }
 
+/* Terminos de la cuenta (21/11/2026): titulo con su estado y datos en filas rotulo/valor. */
+.terminos-cuenta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-5);
+}
+
+.terminos-cuenta__cabecera > h2 {
+  margin: 0;
+}
+
+.terminos-cuenta__datos {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0;
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.terminos-cuenta__datos dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.terminos-cuenta__datos dd {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.terminos-cuenta__acciones {
+  margin-top: var(--esp-6);
+}
+
 .limites-lista {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
