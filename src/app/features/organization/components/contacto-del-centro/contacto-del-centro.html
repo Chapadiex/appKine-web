@@ -1,22 +1,22 @@
 @if (marca(); as datos) {
-  <h3 class="contacto__titulo" id="titulo-contacto">Datos de contacto</h3>
+  <div class="contacto__cabecera">
+    <h3 class="contacto__titulo" id="titulo-contacto">Datos de contacto</h3>
+    <button
+      *akinePermiso="permisoEditar"
+      type="button"
+      class="boton boton--secundario"
+      aria-label="Editar datos de contacto"
+      (click)="abrir()"
+    >
+      Editar
+    </button>
+  </div>
   <dl class="detalle detalle--ficha" aria-labelledby="titulo-contacto">
     @for (fila of filas; track fila.campo) {
       <dt>{{ fila.rotulo }}</dt>
       <dd>{{ datos[fila.campo] || '-' }}</dd>
     }
   </dl>
-
-  <p class="acciones acciones--ficha">
-    <button
-      *akinePermiso="permisoEditar"
-      type="button"
-      class="boton boton--secundario"
-      (click)="abrir()"
-    >
-      Editar datos de contacto
-    </button>
-  </p>
 }
 
 @if (editando()) {

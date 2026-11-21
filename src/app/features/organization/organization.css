@@ -643,6 +643,20 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* Subtitulo con su accion de editar arriba a la derecha. */
+.contacto__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+  margin: var(--esp-7) 0 var(--esp-4);
+}
+
+.contacto__cabecera > .contacto__titulo {
+  margin: 0;
+}
+
 /*
   Auditoria: el criterio de busqueda como control segmentado. Son radios de verdad (teclado y
   lector de pantalla los tratan como tales); el aspecto es el de tres botones pegados, con el
