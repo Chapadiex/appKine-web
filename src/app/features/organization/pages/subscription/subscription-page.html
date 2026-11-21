@@ -11,7 +11,13 @@
 <!-- Estado y limites lado a lado en escritorio (refactor UX/UI del 28/10/2026). -->
 <div class="ficha-en-columnas">
   <section class="tarjeta" aria-labelledby="titulo-suscripcion">
-    <h2 id="titulo-suscripcion">Estado y plan</h2>
+    <!-- Titulo con el estado a la derecha y la linea debajo, como en las demas tarjetas. -->
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-suscripcion">Estado y plan</h2>
+      @if (marcaDeEstado(); as marca) {
+        <span [class]="'marca-estado marca-estado--' + marca.tono">{{ marca.texto }}</span>
+      }
+    </div>
 
     <div aria-live="polite">
       @switch (estado().tipo) {
@@ -29,32 +35,14 @@
 
         @case ('listo') {
           @switch (estadoSuscripcion()) {
-            @case ('ACTIVA') {
-              <div class="banner banner--activa">
-                <h3>Suscripción activa</h3>
-                <p>El centro opera con normalidad.</p>
-              </div>
-            }
-
             @case ('PRUEBA') {
+              <!-- Activa o en prueba vigente: lo dice la marca del titulo; aviso solo si hay problema. -->
               @if (contratacion.pruebaVencida()) {
                 <div class="banner banner--suspendida" role="alert">
                   <h3>La prueba gratis terminó</h3>
                   <p>
                     El centro queda en <strong>solo lectura</strong>: podés consultar y exportar
                     todo, pero no cargar nada nuevo hasta elegir un plan. Nada se borró.
-                  </p>
-                </div>
-              } @else {
-                <div class="banner banner--activa">
-                  <h3>Prueba gratis</h3>
-                  <p>
-                    El centro opera con normalidad
-                    @if (contratacion.diasDePrueba(); as dias) {
-                      : {{ dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días' }} de prueba.
-                    } @else {
-                      : la prueba termina hoy.
-                    }
                   </p>
                 </div>
               }
@@ -83,61 +71,29 @@
             }
           }
 
-          <div class="plan-actual">
-            <span class="plan-actual__dato">
-              <span class="plan-actual__etiqueta">Plan actual</span>
-              <span class="plan-actual__nombre">{{ suscripcion()?.planName }}</span>
-            </span>
-            <span
-              class="marca-estado"
-              [class.marca-estado--activa]="
-                estadoSuscripcion() === 'ACTIVA' ||
-                (estadoSuscripcion() === 'PRUEBA' && !contratacion.pruebaVencida())
-              "
-              [class.marca-estado--suspendida]="
-                estadoSuscripcion() === 'SUSPENDIDA' ||
-                (estadoSuscripcion() === 'PRUEBA' && contratacion.pruebaVencida())
-              "
-              [class.marca-estado--revocada]="estadoSuscripcion() === 'CANCELADA'"
-              >{{
-                estadoSuscripcion() === 'ACTIVA'
-                  ? 'Activa'
-                  : estadoSuscripcion() === 'PRUEBA'
-                    ? contratacion.pruebaVencida()
-                      ? 'Prueba vencida'
-                      : 'En prueba'
-                    : estadoSuscripcion() === 'SUSPENDIDA'
-                      ? 'Suspendida'
-                      : estadoSuscripcion() === 'CANCELADA'
-                        ? 'Cancelada'
-                        : suscripcion()?.status
-              }}</span
-            >
-          </div>
+          <!-- Plan y vigencia en filas rotulo/valor, como Terminos y condiciones (21/11/2026). -->
+          <dl class="datos-en-filas" aria-label="Plan y vigencia">
+            <dt>Plan actual</dt>
+            <dd>{{ suscripcion()?.planName }}</dd>
 
-          <!-- Vigencia: inicio y fin bien a la vista (21/11/2026). -->
-          <dl class="vigencia" aria-label="Vigencia de la suscripción">
-            <div class="vigencia__dato">
-              <dt>Inicio</dt>
-              <dd>{{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}</dd>
-            </div>
-            <div class="vigencia__dato">
-              <dt>Finaliza</dt>
-              @if (estadoSuscripcion() === 'PRUEBA' && contratacion.contratacion()?.pruebaHasta) {
-                <dd>
-                  {{ contratacion.contratacion()?.pruebaHasta | date: 'dd/MM/yyyy' }}
-                  @if (contratacion.diasDePrueba(); as dias) {
-                    <span class="vigencia__resto">
-                      ({{ dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días' }})
-                    </span>
-                  }
-                </dd>
-              } @else if (estadoSuscripcion() === 'CANCELADA') {
-                <dd>Terminada</dd>
-              } @else {
-                <dd>Sin fecha de fin</dd>
-              }
-            </div>
+            <dt>Inicio</dt>
+            <dd>{{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}</dd>
+
+            <dt>Finaliza</dt>
+            @if (estadoSuscripcion() === 'PRUEBA' && contratacion.contratacion()?.pruebaHasta) {
+              <dd>
+                {{ contratacion.contratacion()?.pruebaHasta | date: 'dd/MM/yyyy' }}
+                @if (contratacion.diasDePrueba(); as dias) {
+                  <span class="vigencia__resto">
+                    ({{ dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días' }})
+                  </span>
+                }
+              </dd>
+            } @else if (estadoSuscripcion() === 'CANCELADA') {
+              <dd>Terminada</dd>
+            } @else {
+              <dd>Sin fecha de fin</dd>
+            }
           </dl>
         }
 
@@ -164,16 +120,22 @@
   <!-- Que incluye el plan, de un vistazo: lo que tiene y lo que no (21/11/2026). -->
   @if (incluye().length > 0) {
     <section class="tarjeta" aria-labelledby="titulo-incluye">
-      <h2 id="titulo-incluye">Qué incluye tu plan {{ suscripcion()?.planName }}</h2>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-incluye">Qué incluye tu plan {{ suscripcion()?.planName }}</h2>
+      </div>
+      <!-- Cada item con su icono: en color si esta incluido, en gris y con su rotulo si no. -->
       <ul class="plan-incluye">
         @for (item of incluye(); track item.texto) {
           <li class="plan-incluye__item" [class.plan-incluye__item--no]="!item.incluido">
             <span class="plan-incluye__marca" aria-hidden="true">
-              <app-icono [nombre]="item.incluido ? 'tilde' : 'menos'" />
+              <app-icono [nombre]="item.icono" />
             </span>
-            {{ item.texto }}
-            @if (!item.incluido) {
-              <span class="visualmente-oculto">(no incluido)</span>
+            <span class="plan-incluye__texto">{{ item.texto }}</span>
+            @if (item.incluido) {
+              <app-icono class="plan-incluye__tilde" nombre="tilde" aria-hidden="true" />
+              <span class="visualmente-oculto">(incluido)</span>
+            } @else {
+              <span class="plan-incluye__no">No incluido</span>
             }
           </li>
         }
@@ -183,7 +145,9 @@
 
   @if (estado().tipo === 'listo') {
     <section class="tarjeta" aria-labelledby="titulo-limites">
-      <h2 id="titulo-limites">Límites del plan</h2>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-limites">Límites del plan</h2>
+      </div>
 
       @if (limites().length === 0) {
         <p class="estado estado--vacio">Este plan no declara límites.</p>
@@ -225,7 +189,7 @@
   @if (terminos(); as t) {
     <section class="tarjeta terminos-cuenta" aria-labelledby="titulo-terminos">
       <!-- Titulo con el estado a la derecha; los datos en filas rotulo/valor (21/11/2026). -->
-      <div class="terminos-cuenta__cabecera">
+      <div class="tarjeta__cabecera">
         <h2 id="titulo-terminos">Términos y condiciones</h2>
         @if (t.pendiente) {
           <span class="marca-estado marca-estado--suspendida">Pendientes</span>
@@ -234,7 +198,7 @@
         }
       </div>
 
-      <dl class="terminos-cuenta__datos">
+      <dl class="datos-en-filas">
         @if (t.aceptadaEn && !t.pendiente) {
           <dt>Aceptados el</dt>
           <dd>{{ t.aceptadaEn | date: 'dd/MM/yyyy, HH:mm' }}</dd>

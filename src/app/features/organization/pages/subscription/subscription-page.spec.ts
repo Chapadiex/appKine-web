@@ -77,7 +77,7 @@ describe('SubscriptionPage', () => {
     seleccionar();
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
-    expect(texto(fixture)).toContain('Suscripción activa');
+    expect(texto(fixture)).toContain('Activa');
     expect(texto(fixture)).toContain('Basico');
     // Los codigos tecnicos no se muestran crudos.
     expect(texto(fixture)).toContain('Sedes habilitadas');
@@ -185,7 +185,7 @@ describe('SubscriptionPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texto(fixture)).toContain('Suscripción activa');
+    expect(texto(fixture)).toContain('Activa');
   });
 
   it('un 403 de administracion explica el permiso, no habla de sesión', async () => {

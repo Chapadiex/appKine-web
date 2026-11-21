@@ -17,7 +17,7 @@ import { PlanesService } from '../../../../api/generated/api/planes.service';
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
@@ -31,6 +31,7 @@ import { PermissionsStore } from '../../../../core/services/permissions.store';
 interface ItemDelPlan {
   readonly texto: string;
   readonly incluido: boolean;
+  readonly icono: NombreDeIcono;
 }
 
 /**
@@ -147,31 +148,42 @@ export class SubscriptionPage {
     const items: ItemDelPlan[] = [];
     const sedes = tope('MAX_CONSULTORIOS', 'sede', 'sedes');
     if (sedes) {
-      items.push({ texto: sedes, incluido: true });
+      items.push({ texto: sedes, incluido: true, icono: 'sede' });
     }
     const miembros = tope('MAX_MIEMBROS_ACTIVOS', 'miembro activo', 'miembros activos');
     if (miembros) {
-      items.push({ texto: miembros, incluido: true });
+      items.push({ texto: miembros, incluido: true, icono: 'perfil' });
     }
     if (contratacion) {
       items.push(
         {
           texto: 'Kinesiología y rehabilitación',
           incluido: servicios.includes('KINESIOLOGIA'),
+          icono: 'pacientes',
         },
-        { texto: 'Actividades y clases', incluido: servicios.includes('ACTIVIDADES') },
+        {
+          texto: 'Actividades y clases',
+          incluido: servicios.includes('ACTIVIDADES'),
+          icono: 'actividades',
+        },
         {
           texto: 'Inteligencia artificial',
           incluido: ((contratacion.adicionales ?? []) as readonly string[]).includes('IA'),
+          icono: 'capas',
         },
       );
     }
     if (plan) {
       items.push(
-        { texto: 'Reportes avanzados', incluido: funciones.includes('REPORTES_AVANZADOS') },
+        {
+          texto: 'Reportes avanzados',
+          incluido: funciones.includes('REPORTES_AVANZADOS'),
+          icono: 'economia',
+        },
         {
           texto: 'Avisos a pacientes',
           incluido: funciones.includes('NOTIFICACIONES_PACIENTE'),
+          icono: 'correo',
         },
       );
     }
@@ -197,6 +209,26 @@ export class SubscriptionPage {
   protected readonly estadoSuscripcion = computed<SubscriptionResponseStatusEnum | null>(
     () => this.suscripcion()?.status ?? null,
   );
+
+  /** La marca de estado que va junto al titulo de "Estado y plan" (21/11/2026). */
+  protected readonly marcaDeEstado = computed<{ texto: string; tono: string } | null>(() => {
+    const estado = this.estadoSuscripcion();
+    const vencida = this.contratacion.pruebaVencida();
+    switch (estado) {
+      case 'ACTIVA':
+        return { texto: 'Activa', tono: 'activa' };
+      case 'PRUEBA':
+        return vencida
+          ? { texto: 'Prueba vencida', tono: 'suspendida' }
+          : { texto: 'En prueba', tono: 'activa' };
+      case 'SUSPENDIDA':
+        return { texto: 'Suspendida', tono: 'suspendida' };
+      case 'CANCELADA':
+        return { texto: 'Cancelada', tono: 'revocada' };
+      default:
+        return null;
+    }
+  });
 
   constructor() {
     effect(() => {
