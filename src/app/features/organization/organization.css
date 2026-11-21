@@ -690,9 +690,62 @@ form fieldset.auditoria-criterio.auditoria-criterio {
   align-items: center;
   gap: var(--esp-3) var(--esp-6);
   min-width: 0;
-  margin: 0 0 var(--esp-6);
+  margin: 0;
   padding: 0;
   border: 0;
+}
+
+/* Auditoria compacta: titulo a la izquierda y criterio a la derecha, en una linea. */
+.auditoria-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4) var(--esp-6);
+  margin-bottom: var(--esp-5);
+}
+
+.auditoria-cabecera > h2 {
+  margin: 0;
+}
+
+/* Campos del criterio, refinar y Buscar en una sola fila, alineados por la base. */
+.auditoria-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-5);
+}
+
+form .auditoria-barra > .grilla-campos {
+  /* La grilla global es contenedor inline-size: dentro de un flex mediria cero de ancho. */
+  container-type: normal;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+}
+
+form .auditoria-barra > .grilla-campos > .campo {
+  width: 12rem;
+  margin: 0;
+}
+
+form .auditoria-barra > .grilla-campos > .grilla-campos__fila {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.auditoria-barra > app-filtros {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.auditoria-inicial {
+  margin: 0;
+  text-align: center;
 }
 
 .auditoria-criterio__rotulo {
