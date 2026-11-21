@@ -341,3 +341,20 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Ocupa el alto que le da su contenedor y reparte los días en él (configuración de la sede). */
+:host(.horario-llena-alto) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+:host(.horario-llena-alto) .semana__dias {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+:host(.horario-llena-alto) .semana__dia {
+  flex: 1;
+}

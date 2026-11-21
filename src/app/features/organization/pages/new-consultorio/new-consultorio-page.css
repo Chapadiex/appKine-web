@@ -114,7 +114,11 @@
   display: flex;
   flex-direction: column;
   /* El alto de la pantalla menos la cabecera y el stepper, con tope: cada paso ocupa lo mismo. */
-  min-height: min(37.5rem, calc(100dvh - 13rem));
+  /*
+    La tarjeta llega siempre al pie de la pantalla (20/11/2026): así Anterior y Continuar quedan
+    en el mismo lugar en los cuatro pasos. Si un paso no entra, los botones se pegan al pie.
+  */
+  min-height: max(30rem, calc(100dvh - 17.5rem));
   padding: var(--esp-6) var(--esp-8) var(--esp-8);
 }
 
@@ -290,8 +294,16 @@
 
 /* Paso 2: el horario se lleva el ancho; el box, una columna al costado. */
 .asistente__grilla--horario {
+  flex: 1;
   grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
   gap: var(--esp-7);
+  /* El bloque del horario ocupa todo el alto del paso: los días se reparten hacia abajo. */
+  align-items: stretch;
+  margin-bottom: var(--esp-6);
+}
+
+.asistente__grilla--horario > .asistente__columna {
+  align-self: start;
 }
 
 @media (max-width: 64rem) {
@@ -480,6 +492,8 @@
 /* El horario ubica sus modelos arriba a la derecha del bloque (horario-modelos-arriba). */
 .bloque--horario {
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* El título del bloque flota (por el legend de los fieldsets): el horario va debajo, no al lado. */
