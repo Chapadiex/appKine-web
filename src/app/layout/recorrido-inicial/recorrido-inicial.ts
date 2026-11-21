@@ -3,10 +3,13 @@ import {
   Component,
   DOCUMENT,
   ElementRef,
+  Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
@@ -208,6 +211,7 @@ export class RecorridoInicial {
   private readonly documento = inject(DOCUMENT);
   private readonly primerosPasos = inject(PrimerosPasosStore);
   private readonly tarjeta = viewChild<ElementRef<HTMLElement>>('tarjeta');
+  private readonly injector = inject(Injector);
 
   protected readonly pasos = signal<readonly PasoDelRecorrido[]>([]);
   protected readonly indice = signal(0);
@@ -238,13 +242,26 @@ export class RecorridoInicial {
   });
 
   constructor() {
-    afterNextRender(() => {
-      this.pasos.set(this.armarPasos());
-      this.entrar();
-      // Se dispara antes de llegar a la Agenda: se vuelve a medir cuando la pantalla ya se dibujó.
-      setTimeout(() => this.medir(), 600);
-      this.tarjeta()?.nativeElement.querySelector<HTMLElement>('.boton:last-child')?.focus();
+    // Cada vez que se pide (al terminar la configuración o desde "Ver el recorrido"), se arma con
+    // el menú de ese momento y arranca del primer paso.
+    effect(() => {
+      if (!this.visible()) {
+        return;
+      }
+      untracked(() => setTimeout(() => this.iniciar()));
     });
+  }
+
+  private iniciar(): void {
+    this.indice.set(0);
+    this.pasos.set(this.armarPasos());
+    this.entrar();
+    // Puede pedirse justo antes de cambiar de pantalla: se vuelve a medir cuando ya se dibujó.
+    setTimeout(() => this.medir(), 600);
+    afterNextRender(
+      () => this.tarjeta()?.nativeElement.querySelector<HTMLElement>('.boton:last-child')?.focus(),
+      { injector: this.injector },
+    );
   }
 
   /** Los grandes títulos del menú que esta persona ve, en orden, más la sede y el perfil al final. */
