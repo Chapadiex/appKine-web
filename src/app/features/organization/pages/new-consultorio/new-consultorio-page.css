@@ -364,10 +364,9 @@
   izquierda; a la derecha una columna con el horario arriba y la dirección con su mapa abajo.
 */
 .confirmacion {
+  /* Dos columnas iguales (21/11/2026): cuatro tarjetas en 2x2, entra sin empujar los botones. */
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-  grid-template-rows: repeat(4, auto);
-  grid-auto-flow: row dense;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--esp-5) var(--esp-6);
   margin: 0;
 }
@@ -382,14 +381,20 @@
   background: var(--color-superficie-secundaria);
 }
 
-.confirmacion__fila--horario {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+.confirmacion__fila.confirmacion__fila--direccion dd {
+  /* El texto a la izquierda y el mapa chico a la derecha, en la misma tarjeta. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+  column-gap: var(--esp-5);
 }
 
-.confirmacion__fila--direccion {
+.confirmacion__fila--direccion dd > app-mapa-de-ubicacion {
   grid-column: 2;
-  grid-row: 3 / span 2;
+  grid-row: 1 / span 4;
+}
+
+.confirmacion__fila--direccion ::ng-deep .mapa-de-ubicacion__marco {
+  height: 7.5rem;
 }
 
 .confirmacion__fila dt {
@@ -437,8 +442,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .confirmacion__fila--direccion,
-  .confirmacion__fila--horario {
+  .confirmacion__fila.confirmacion__fila--direccion dd {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .confirmacion__fila--direccion dd > app-mapa-de-ubicacion {
     grid-column: auto;
     grid-row: auto;
   }
