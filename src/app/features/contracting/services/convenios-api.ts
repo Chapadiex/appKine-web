@@ -186,8 +186,8 @@ export class ConveniosApi {
   /**
    * Define el arancel de una practica bajo un convenio.
    *
-   * <p><b>Los tres importes tienen que cuadrar</b>: `importeFinanciador + coseguro =
-   * importeTotal`, exactamente. No hay porcentaje de cobertura a proposito (§37).
+   * <p>Lleva sólo lo que paga la obra social (contrato 0.185.0): el coseguro lo calcula el backend
+   * al cerrar cada sesión, precio de la actividad menos este importe.
    *
    * <p><b>La moneda no viaja en el cuerpo</b>: la hereda del convenio. Y la vigencia del arancel
    * tiene que estar <b>contenida</b> en la del convenio, porque fuera de ella nunca podria

@@ -52,7 +52,7 @@ const GIMNASIO = {
   estado: 'ACTIVO',
   admiteObraSocial: false,
 };
-
+/** Vigente hoy. Total y coseguro son historicos (contrato 0.185.0): la pantalla muestra solo B. */
 /** Vigente hoy. Los tres importes cuadran: 9000 + 3000 = 12000. */
 const VIGENTE = {
   id: 900,
@@ -137,14 +137,14 @@ describe('ArancelesDelConvenioPage', () => {
     const filas = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
     expect(filas.length).toBe(2);
 
+    // Contrato 0.185.0: la grilla muestra solo lo que paga la obra social.
     const vigente = filas[0] as HTMLElement;
-    expect(vigente.textContent).toContain('ARS 12000.00');
     expect(vigente.textContent).toContain('ARS 9000.00');
-    expect(vigente.textContent).toContain('ARS 3000.00');
+    expect(vigente.textContent).not.toContain('ARS 12000.00');
 
     // Los dos aranceles son de la MISMA practica y conviven. Es lo que hace que una prestacion de
     // 2025 se pueda explicar con el precio de 2025.
-    expect((filas[1] as HTMLElement).textContent).toContain('ARS 9000.00');
+    expect((filas[1] as HTMLElement).textContent).toContain('ARS 7000.00');
     expect((filas[1] as HTMLElement).className).toContain('fila--atenuada');
   });
 
@@ -156,41 +156,30 @@ describe('ArancelesDelConvenioPage', () => {
     // precio anterior. No falla nada: la historia simplemente deja de existir.
     expect(texto).toContain('Subir un precio no es editar el arancel');
     expect(texto).toContain('cerrale la vigencia al arancel actual y cargá otro');
-    // Y la regla economica, que no tiene porcentaje a proposito.
-    expect(texto).toContain('financiador + coseguro = total');
+    // Y como sale el coseguro, que ya no se carga.
+    expect(texto).toContain('precio de la actividad menos lo que paga la obra social');
   });
 
-  it('el alta frena si los tres importes no cuadran, y dice de cuanto es la diferencia', async () => {
+  it('el alta manda solo lo que paga la obra social: el coseguro lo calcula el backend', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un arancel');
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelector('#alta-arancel-total')).toBeNull();
+    expect(raiz.querySelector('#alta-arancel-coseguro')).toBeNull();
     elegir(fixture, '#alta-arancel-practica', '55');
-    escribir(fixture, '#alta-arancel-total', '12000');
     escribir(fixture, '#alta-arancel-financiador', '9000');
-    escribir(fixture, '#alta-arancel-coseguro', '2500');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
-    enviar(fixture, '.panel-lateral form');
-
-    // Ni una peticion: el backend lo rechazaria igual —hay un CHECK en la base— pero su 400 no
-    // puede decir cual de los tres numeros esta mal.
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
-    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('tienen que cuadrar');
-    expect(texto).toContain('difiere del total en 500');
-
-    escribir(fixture, '#alta-arancel-coseguro', '3000');
     enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
     );
-    const cuerpo = alta.request.body as Record<string, unknown>;
-    expect(cuerpo['practicaId']).toBe(55);
-    expect(cuerpo['importeTotal']).toBe(12000);
-    expect(cuerpo['importeFinanciador']).toBe(9000);
-    expect(cuerpo['coseguro']).toBe(3000);
-    // La moneda NO viaja: la hereda del convenio.
-    expect(cuerpo['moneda']).toBeUndefined();
+    expect(alta.request.body).toEqual({
+      practicaId: 55,
+      importeFinanciador: 9000,
+      vigenciaDesde: '2026-07-01',
+    });
 
     alta.flush({ ...VIGENTE, id: 902 });
     httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
@@ -198,21 +187,19 @@ describe('ArancelesDelConvenioPage', () => {
     fixture.detectChanges();
   });
 
-  it('un coseguro en cero es valido: cobertura total no es un dato faltante', async () => {
+  it('lo que paga la obra social en cero es valido: el paciente paga el precio entero', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un arancel');
     elegir(fixture, '#alta-arancel-practica', '55');
-    escribir(fixture, '#alta-arancel-total', '9000');
-    escribir(fixture, '#alta-arancel-financiador', '9000');
-    escribir(fixture, '#alta-arancel-coseguro', '0');
+    escribir(fixture, '#alta-arancel-financiador', '0');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
     enviar(fixture, '.panel-lateral form');
 
     const alta = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) => peticion.method === 'POST' && peticion.url === ARANCELES,
     );
-    expect((alta.request.body as Record<string, unknown>)['coseguro']).toBe(0);
+    expect((alta.request.body as Record<string, unknown>)['importeFinanciador']).toBe(0);
 
     alta.flush({ ...VIGENTE, id: 903 });
     httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
@@ -220,29 +207,20 @@ describe('ArancelesDelConvenioPage', () => {
     fixture.detectChanges();
   });
 
-  it('la edicion manda los TRES importes aunque se toque uno solo', async () => {
+  it('la edicion manda solo el importe que cambio', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    // Se corrige el reparto sin mover el total: la terna sigue cuadrando.
     escribir(fixture, '#editar-arancel-financiador', '8000');
-    escribir(fixture, '#editar-arancel-coseguro', '4000');
     enviar(fixture, '.panel-lateral form');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'PUT' && peticion.url === `${ARANCELES}/900`,
     );
-    // El total viaja aunque no cambio: el backend valida la terna completa, y mandar solo las
-    // partes lo obligaria a componerla con un valor que no esta en el cuerpo.
-    expect(edicion.request.body).toEqual({
-      expectedVersion: 1,
-      importeTotal: 12000,
-      importeFinanciador: 8000,
-      coseguro: 4000,
-    });
+    expect(edicion.request.body).toEqual({ expectedVersion: 1, importeFinanciador: 8000 });
 
-    edicion.flush({ ...VIGENTE, importeFinanciador: 8000, coseguro: 4000, version: 2 });
+    edicion.flush({ ...VIGENTE, importeFinanciador: 8000, version: 2 });
     httpMock.expectOne(esListado()).flush([VIGENTE, ANTERIOR]);
     await fixture.whenStable();
     fixture.detectChanges();
@@ -254,41 +232,24 @@ describe('ArancelesDelConvenioPage', () => {
   });
 
   /**
-   * El unico campo numerico del repositorio cuyo vaciado NO terminaba en un 400.
-   *
-   * <p>Un `<input type="number">` vaciado entrega `null`, no `''`. La guarda vieja
-   * (`valores.campo !== ''`) lo dejaba pasar, `Number(null)` daba `0`, la terna `0 = 0 + 0`
-   * cuadraba y el contrato declara `minimum: 0.00`: el backend aceptaba y el arancel del convenio
-   * quedaba en cero pesos <b>con cartel de exito</b>. El formulario de alta nunca tuvo el hueco
-   * porque sus tres importes llevan `Validators.required`; el de edicion no lleva ninguno.
+   * Un input numerico vaciado entrega `null`, no `''`. Sin la guarda, `Number(null)` daba `0`, el
+   * contrato declara `minimum: 0.00` y el arancel quedaba en cero pesos con cartel de exito. El
+   * alta no tiene el hueco porque su importe lleva `Validators.required`.
    */
-  it('vaciar un importe en la edicion no guarda un cero: no manda nada y lo dice', async () => {
+  it('vaciar el importe en la edicion no guarda un cero: no manda nada y lo dice', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-arancel-total', '');
+    escribir(fixture, '#editar-arancel-financiador', '');
     enviar(fixture, '.panel-lateral form');
 
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Los tres importes tienen que tener un valor',
+      'Lo que paga la obra social tiene que tener un valor',
     );
   });
 
-  it('vaciar el coseguro en la edicion tampoco guarda un cero', async () => {
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-arancel-coseguro', '');
-    enviar(fixture, '.panel-lateral form');
-
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Los tres importes tienen que tener un valor',
-    );
-  });
-
-  it('el alta sin práctica ni importes no manda nada', async () => {
+  it('el alta sin práctica ni importe no manda nada', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Cargar un arancel');
@@ -297,7 +258,7 @@ describe('ArancelesDelConvenioPage', () => {
     httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'POST');
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Elegí a qué práctica');
-    expect(texto).toContain('El importe total es obligatorio');
+    expect(texto).toContain('Es obligatorio, y puede ser cero');
   });
 
   it('el alta con fin de vigencia lo manda, y el fin es inclusivo', async () => {
@@ -305,9 +266,7 @@ describe('ArancelesDelConvenioPage', () => {
 
     abrir(fixture, 'Cargar un arancel');
     elegir(fixture, '#alta-arancel-practica', '55');
-    escribir(fixture, '#alta-arancel-total', '15000');
     escribir(fixture, '#alta-arancel-financiador', '10000');
-    escribir(fixture, '#alta-arancel-coseguro', '5000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
     escribir(fixture, '#alta-arancel-hasta', '2026-12-31');
     enviar(fixture, '.panel-lateral form');
@@ -317,9 +276,7 @@ describe('ArancelesDelConvenioPage', () => {
     );
     expect(alta.request.body).toEqual({
       practicaId: 55,
-      importeTotal: 15000,
       importeFinanciador: 10000,
-      coseguro: 5000,
       vigenciaDesde: '2026-07-01',
       vigenciaHasta: '2026-12-31',
     });
@@ -332,19 +289,6 @@ describe('ArancelesDelConvenioPage', () => {
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.titulo).toBe('Arancel cargado');
     expect(aviso?.descripcion).toContain('la hereda');
-  });
-
-  it('la edicion frena si la terna deja de cuadrar', async () => {
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    // Se sube el total sin repartir la diferencia: el descuido con el que se rompe la invariante
-    // economica sin que nadie lo note.
-    escribir(fixture, '#editar-arancel-total', '15000');
-    enviar(fixture, '.panel-lateral form');
-
-    httpMock.expectNone((peticion: HttpRequest<unknown>) => peticion.method === 'PUT');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('difiere del total en');
   });
 
   it('la edicion que solo mueve la vigencia no toca los importes', async () => {
@@ -494,9 +438,7 @@ describe('ArancelesDelConvenioPage', () => {
     ]);
 
     elegir(fixture, '#alta-arancel-oferta', '31');
-    escribir(fixture, '#alta-arancel-total', '12000');
     escribir(fixture, '#alta-arancel-financiador', '9000');
-    escribir(fixture, '#alta-arancel-coseguro', '3000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
     enviar(fixture, '.panel-lateral form');
 
@@ -524,9 +466,7 @@ describe('ArancelesDelConvenioPage', () => {
     abrir(fixture, 'Cargar un arancel');
     elegir(fixture, '#alta-arancel-practica', '55');
     elegir(fixture, '#alta-arancel-oferta', '31');
-    escribir(fixture, '#alta-arancel-total', '12000');
     escribir(fixture, '#alta-arancel-financiador', '9000');
-    escribir(fixture, '#alta-arancel-coseguro', '3000');
     escribir(fixture, '#alta-arancel-desde', '2026-07-01');
     enviar(fixture, '.panel-lateral form');
 

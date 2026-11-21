@@ -178,25 +178,36 @@
           </h2>
 
           <p class="resultado__importe">
-            {{ importeEnPalabras(respuesta.importeTotal, respuesta.moneda, '-') }}
+            {{
+              importeEnPalabras(
+                respuesta.importeTotal ?? respuesta.importeFinanciador,
+                respuesta.moneda,
+                '-'
+              )
+            }}
           </p>
 
           <!--
-          Las dos partes se muestran SIEMPRE. El total no es lo que el mostrador necesita: lo que
-          necesita es el coseguro, que es lo que le cobra al paciente.
+          Lo que el mostrador necesita es el coseguro, que es lo que le cobra al paciente. Sale del
+          precio de la actividad menos lo que paga la obra social (contrato 0.185.0): sin actividad
+          elegida no se puede calcular, y se dice en vez de mostrar un cero que no es.
         -->
           <ul class="resultado__partes">
             <li>
-              <span>Pone el financiador:</span>
+              <span>Paga la obra social:</span>
               <b class="importe">{{
                 importeEnPalabras(respuesta.importeFinanciador, respuesta.moneda, '-')
               }}</b>
             </li>
             <li>
               <span>Paga el paciente:</span>
-              <b class="importe">{{
-                importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-')
-              }}</b>
+              @if (respuesta.coseguro !== undefined && respuesta.coseguro !== null) {
+                <b class="importe">{{
+                  importeEnPalabras(respuesta.coseguro, respuesta.moneda, '-')
+                }}</b>
+              } @else {
+                <span>elegí la actividad para calcularlo con su precio.</span>
+              }
             </li>
           </ul>
 

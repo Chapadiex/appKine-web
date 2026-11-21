@@ -14,17 +14,19 @@
  */
 export interface CreateArancelRequest { 
     /**
-     * La parte que paga el paciente. Cero es valido y significa cobertura total
+     * OBSOLETO desde 0.185.0: se ignora. Ver importeTotal
+     * @deprecated
      */
-    coseguro: number;
+    coseguro?: number;
     /**
-     * La parte que paga el financiador. Junto con el coseguro tiene que sumar EXACTAMENTE el importe total, o la peticion se rechaza con 400
+     * Lo que paga el financiador por la practica (B). El paciente paga la diferencia con el precio de la oferta, nunca menos de cero
      */
     importeFinanciador: number;
     /**
-     * Lo que vale la practica bajo este convenio. Cero es valido y significa una practica sin cargo
+     * OBSOLETO desde 0.185.0: se ignora. El coseguro se calcula al cerrar la sesion como precio de la oferta menos lo que paga el financiador
+     * @deprecated
      */
-    importeTotal: number;
+    importeTotal?: number;
     /**
      * Opcional (RF-M16-008). Sin oferta, el arancel es el GENERAL de la practica. Con oferta, es el arancel de la practica cuando se presta dentro de esa oferta, y al resolver con esa oferta manda sobre el general. La oferta tiene que ser de la misma sede, admitir obra social y declarar la practica (A-9)
      */

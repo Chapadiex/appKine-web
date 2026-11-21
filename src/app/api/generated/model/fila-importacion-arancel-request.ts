@@ -18,15 +18,17 @@ export interface FilaImportacionArancelRequest {
      */
     codigoPractica?: string;
     /**
-     * La parte del paciente
+     * OBSOLETO desde 0.185.0: se ignora
+     * @deprecated
      */
     coseguro?: number;
     /**
-     * La parte del financiador. Con el coseguro tiene que sumar EXACTAMENTE el importe total
+     * Lo que paga el financiador por la practica (B). Hasta 2 decimales
      */
     importeFinanciador?: number;
     /**
-     * Lo que vale la practica bajo el convenio. Hasta 2 decimales
+     * OBSOLETO desde 0.185.0: se ignora
+     * @deprecated
      */
     importeTotal?: number;
     /**

@@ -6,8 +6,6 @@ import {
   etiquetaDeTipo,
   explicarSinArancel,
   importeEnPalabras,
-  importesCuadran,
-  ternaEnPalabras,
 } from './etiquetas-de-contracting';
 
 /**
@@ -60,26 +58,6 @@ describe('importes', () => {
     // cero. Mostrar "ARS 0.00" le diria al mostrador que el paciente no paga nada.
     expect(importeEnPalabras(null, 'ARS')).toBe('Sin declarar');
     expect(importeEnPalabras(0, 'ARS')).toBe('ARS 0.00');
-  });
-
-  it('la terna se redacta como una suma y nombra a quien paga cada parte', () => {
-    expect(
-      ternaEnPalabras({ importeTotal: 12000, importeFinanciador: 9000, coseguro: 3000 }, 'ARS'),
-    ).toBe('ARS 12000.00 = ARS 9000.00 (financiador) + ARS 3000.00 (paciente)');
-  });
-
-  it('la terna cuadra por centavos enteros, no por flotantes crudos', () => {
-    // En JavaScript `1000.10 + 2000.20 !== 3000.30`. Comparando los flotantes, la pantalla
-    // rechazaria un arancel que el backend —que usa BigDecimal— acepta sin chistar.
-    expect(importesCuadran(3000.3, 1000.1, 2000.2)).toBe(true);
-    expect(importesCuadran(12000, 9000, 3000)).toBe(true);
-    // Un centavo de diferencia SI tiene que fallar: es la invariante economica, no un redondeo.
-    expect(importesCuadran(12000, 9000, 3000.01)).toBe(false);
-    expect(importesCuadran(Number.NaN, 9000, 3000)).toBe(false);
-  });
-
-  it('un coseguro de cero es valido: cobertura total no es dato faltante', () => {
-    expect(importesCuadran(9000, 9000, 0)).toBe(true);
   });
 });
 

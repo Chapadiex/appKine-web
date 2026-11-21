@@ -115,7 +115,7 @@ describe('ArancelEfectivoPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('ARS 12000.00');
     // Las dos partes van siempre: lo que el mostrador necesita no es el total, es el coseguro.
-    expect(texto).toContain('Pone el financiador');
+    expect(texto).toContain('Paga la obra social');
     expect(texto).toContain('ARS 9000.00');
     expect(texto).toContain('Paga el paciente');
     expect(texto).toContain('ARS 3000.00');

@@ -150,54 +150,6 @@ export function importeEnPalabras(
 }
 
 /**
- * Los tres importes del arancel, ya redactados.
- *
- * <p><b>Son tres y no dos, y no hay porcentaje de cobertura.</b> §37 y el registro de cierre de
- * 03.05 lo fundamentan: un porcentaje obliga a multiplicar y redondear, y el redondeo de un
- * arancel es la diferencia de un centavo que aparece seis meses despues en una presentacion
- * rechazada. Con los tres explicitos no hay nada que redondear.
- *
- * <p>La moneda no viaja en el cuerpo del arancel: la <b>hereda del convenio</b>. Por eso entra
- * por parametro y no se lee de la fila.
- */
-export function ternaEnPalabras(
-  arancel: {
-    readonly importeTotal?: number;
-    readonly importeFinanciador?: number;
-    readonly coseguro?: number;
-  },
-  moneda: string | undefined,
-): string {
-  const total = importeEnPalabras(arancel.importeTotal, moneda, '-');
-  const financiador = importeEnPalabras(arancel.importeFinanciador, moneda, '-');
-  const coseguro = importeEnPalabras(arancel.coseguro, moneda, '-');
-  return `${total} = ${financiador} (financiador) + ${coseguro} (paciente)`;
-}
-
-/**
- * `true` si los tres importes cuadran: financiador + coseguro = total.
- *
- * <p><b>La autoridad es el backend</b>, que lo hace cumplir con `ck_arancel_partes_suman_total`
- * desde la base. Esto se calcula igual para poder decirlo <b>antes</b> de mandar, con el campo
- * senalado, en vez de gastar un `400` para comunicar algo que ya se sabia.
- *
- * <p>Se comparan <b>centavos enteros</b> y no los flotantes crudos: en JavaScript
- * `0.1 + 0.2 !== 0.3`, y un arancel legitimo de `1000.10 + 2000.20` quedaria rechazado por la
- * pantalla mientras el backend —que usa `BigDecimal`— lo acepta. El redondeo a centavos es la
- * unidad en la que el contrato declara los importes (`DECIMAL(12,2)`).
- */
-export function importesCuadran(total: number, financiador: number, coseguro: number): boolean {
-  if (![total, financiador, coseguro].every((valor) => Number.isFinite(valor))) {
-    return false;
-  }
-  return enCentavos(financiador) + enCentavos(coseguro) === enCentavos(total);
-}
-
-function enCentavos(importe: number): number {
-  return Math.round(importe * 100);
-}
-
-/**
  * Que decir cuando la resolucion NO encontro arancel.
  *
  * <h2>Esto no es un error, y la pantalla no puede tratarlo como uno</h2>

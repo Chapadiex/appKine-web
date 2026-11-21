@@ -64,9 +64,8 @@
     período solapado, cerrale primero la vigencia al que ya está.
   </p>
   <p>
-    Los importes son <b>tres y tienen que cuadrar</b>: financiador + coseguro = total, exacto. No
-    hay porcentaje de cobertura a proposito — un porcentaje obliga a redondear, y el redondeo de un
-    arancel es la diferencia de un centavo que reaparece en una presentación rechazada.
+    Cada arancel guarda <b>lo que paga la obra social</b>. El coseguro no se carga: al cerrar la
+    sesión es el precio de la actividad menos lo que paga la obra social, y nunca baja de cero.
   </p>
 </ng-template>
 
@@ -208,27 +207,21 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Aranceles del convenio">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Aranceles del convenio, con su práctica, los tres importes, la ventana de vigencia,
-                la situación y las acciones.
+                Aranceles del convenio, con su práctica, la ventana de vigencia, lo que paga la obra
+                social, la situación y las acciones.
               </caption>
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="practica">Práctica</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="vigencia">Vigencia</th>
-                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="total">
-                    Total
-                  </th>
                   <th
                     scope="col"
-                    class="importe tabla__col--secundaria"
+                    class="importe"
                     appOrdenable
                     [tabla]="tabla"
                     columna="financiador"
                   >
-                    Financiador
-                  </th>
-                  <th scope="col" class="importe" appOrdenable [tabla]="tabla" columna="coseguro">
-                    Coseguro
+                    Paga la obra social
                   </th>
                   <th scope="col">Situación</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
@@ -249,13 +242,7 @@
                     </th>
                     <td>{{ ventanaEnPalabras(arancel) }}</td>
                     <td class="importe">
-                      {{ importeEnPalabras(arancel.importeTotal, moneda(), '-') }}
-                    </td>
-                    <td class="importe tabla__col--secundaria">
                       {{ importeEnPalabras(arancel.importeFinanciador, moneda(), '-') }}
-                    </td>
-                    <td class="importe">
-                      {{ importeEnPalabras(arancel.coseguro, moneda(), '-') }}
                     </td>
                     <td>
                       <span
@@ -397,46 +384,18 @@
       </div>
 
       <div class="campo">
-        <label for="alta-arancel-total">Importe total</label>
-        <input
-          id="alta-arancel-total"
-          type="number"
-          min="0"
-          step="0.01"
-          formControlName="importeTotal"
-          [attr.aria-invalid]="mostrarErrorAlta('importeTotal') || errorImportes() ? 'true' : null"
-          [attr.aria-describedby]="
-            mostrarErrorAlta('importeTotal')
-              ? 'alta-arancel-total-error'
-              : errorImportes()
-                ? 'alta-arancel-importes-error'
-                : null
-          "
-        />
-        @if (mostrarErrorAlta('importeTotal')) {
-          <p class="campo__error" id="alta-arancel-total-error" role="alert">
-            El importe total es obligatorio.
-          </p>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="alta-arancel-financiador">Pone el financiador</label>
+        <label for="alta-arancel-financiador">Paga la obra social</label>
         <input
           id="alta-arancel-financiador"
           type="number"
           min="0"
           step="0.01"
           formControlName="importeFinanciador"
-          [attr.aria-invalid]="
-            mostrarErrorAlta('importeFinanciador') || errorImportes() ? 'true' : null
-          "
+          [attr.aria-invalid]="mostrarErrorAlta('importeFinanciador') ? 'true' : null"
           [attr.aria-describedby]="
             mostrarErrorAlta('importeFinanciador')
-              ? 'alta-arancel-financiador-error'
-              : errorImportes()
-                ? 'alta-arancel-importes-error'
-                : null
+              ? 'alta-arancel-financiador-error alta-arancel-importes-ayuda'
+              : 'alta-arancel-importes-ayuda'
           "
         />
         @if (mostrarErrorAlta('importeFinanciador')) {
@@ -445,37 +404,9 @@
           </p>
         }
       </div>
-
-      <div class="campo">
-        <label for="alta-arancel-coseguro">Coseguro del paciente</label>
-        <input
-          id="alta-arancel-coseguro"
-          type="number"
-          min="0"
-          step="0.01"
-          formControlName="coseguro"
-          [attr.aria-invalid]="mostrarErrorAlta('coseguro') || errorImportes() ? 'true' : null"
-          [attr.aria-describedby]="
-            mostrarErrorAlta('coseguro')
-              ? 'alta-arancel-coseguro-error alta-arancel-importes-ayuda'
-              : errorImportes()
-                ? 'alta-arancel-importes-error alta-arancel-importes-ayuda'
-                : 'alta-arancel-importes-ayuda'
-          "
-        />
-        @if (mostrarErrorAlta('coseguro')) {
-          <p class="campo__error" id="alta-arancel-coseguro-error" role="alert">
-            Es obligatorio, y puede ser cero.
-          </p>
-        }
-      </div>
-      <!-- La terna que no cuadra es un dato a corregir de los tres importes: va debajo de ellos. -->
-      @if (errorImportes(); as mensaje) {
-        <p class="campo__error" id="alta-arancel-importes-error" role="alert">{{ mensaje }}</p>
-      }
       <p class="ayuda ayuda--fija" id="alta-arancel-importes-ayuda">
-        Tienen que cuadrar: <b>financiador + coseguro = total</b>, exacto. Coseguro en cero es
-        cobertura total.
+        El paciente paga la diferencia con el precio de la actividad (coseguro), y nunca menos de
+        cero. Se calcula sola al cerrar cada sesión.
         @if (moneda(); as unidad) {
           En <b>{{ unidad }}</b>, la moneda del convenio.
         } @else {
@@ -567,25 +498,11 @@
 
         <p class="ayuda">
           <b>Esto es para corregir una carga, no para subir el precio.</b> Para actualizarlo,
-          cerrale la vigencia a este y cargá otro. Los tres importes viajan juntos aunque toques uno
-          solo.
+          cerrale la vigencia a este y cargá otro.
         </p>
 
         <div class="campo">
-          <label for="editar-arancel-total">Importe total</label>
-          <input
-            id="editar-arancel-total"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="importeTotal"
-            [attr.aria-invalid]="errorImportes() ? 'true' : null"
-            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-          />
-        </div>
-
-        <div class="campo">
-          <label for="editar-arancel-financiador">Pone el financiador</label>
+          <label for="editar-arancel-financiador">Paga la obra social</label>
           <input
             id="editar-arancel-financiador"
             type="number"
@@ -597,18 +514,6 @@
           />
         </div>
 
-        <div class="campo">
-          <label for="editar-arancel-coseguro">Coseguro del paciente</label>
-          <input
-            id="editar-arancel-coseguro"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="coseguro"
-            [attr.aria-invalid]="errorImportes() ? 'true' : null"
-            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-          />
-        </div>
         @if (errorImportes(); as mensaje) {
           <p class="campo__error" id="editar-arancel-importes-error" role="alert">{{ mensaje }}</p>
         }

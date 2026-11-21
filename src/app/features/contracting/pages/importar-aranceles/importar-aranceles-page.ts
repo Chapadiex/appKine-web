@@ -167,7 +167,7 @@ export class ImportarArancelesPage {
       columnas: {
         fila: (fila) => fila.fila,
         practica: (fila) => this.practicaEnPalabras(fila),
-        total: (fila) => this.filaEnviada(fila.fila)?.importeTotal,
+        financiador: (fila) => this.filaEnviada(fila.fila)?.importeFinanciador,
         vigencia: (fila) => this.filaEnviada(fila.fila)?.vigenciaDesde,
         resultado: (fila) => esAlta(fila),
       },
