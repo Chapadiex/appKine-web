@@ -37,6 +37,22 @@
   text-decoration: none;
 }
 
+/*
+  El icono de la pantalla, en la misma fila que la marca y al medio de la tarjeta (21/11/2026),
+  como la invitacion. Sale del flujo: la marca mide 2 rem y el icono 2,75, asi que sube 0,375 rem
+  para que los dos queden centrados en la fila.
+*/
+.acceso-tarjeta:has(> .acceso-marca + .acceso-icono) {
+  position: relative;
+}
+
+.acceso-marca + .acceso-icono {
+  position: absolute;
+  top: calc(var(--esp-8) - 0.375rem);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .acceso-marca__logo {
   display: inline-flex;
   align-items: center;
