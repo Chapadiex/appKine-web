@@ -52,10 +52,6 @@ import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { Icono } from '../../../../shared/components/icono/icono';
-import {
-  FiltroRapido,
-  FiltrosRapidos,
-} from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import {
   CamposDeSort,
@@ -137,7 +133,6 @@ type FiltroHistoria = 'TODOS' | 'CON_HISTORIA' | 'SIN_HISTORIA';
     ColumnaOrdenable,
     Filtros,
     Icono,
-    FiltrosRapidos,
     ReactiveFormsModule,
     PermisoDirective,
     ConfirmacionConMotivo,
@@ -237,17 +232,10 @@ export class PadronDePersonasPage {
   protected readonly filtroTipo = signal<TipoDePersona>('TODAS');
   protected readonly tiposDePersona = TIPOS_DE_PERSONA;
 
-  /** Con o sin historia clinica (13/11/2026): filtro a la vista, con su conteo. */
+  /** Con historia clinica (21/11/2026): un interruptor a la vista, con su conteo. */
   protected readonly filtroHistoria = signal<FiltroHistoria>('TODOS');
   private readonly conteoHistoria = signal<{ con: number; sin: number } | null>(null);
-  protected readonly opcionesDeHistoria = computed<readonly FiltroRapido[]>(() => {
-    const conteo = this.conteoHistoria();
-    return [
-      { valor: 'TODOS', etiqueta: 'Todas', cantidad: conteo ? conteo.con + conteo.sin : 0 },
-      { valor: 'CON_HISTORIA', etiqueta: 'Con historia clínica', cantidad: conteo?.con ?? 0 },
-      { valor: 'SIN_HISTORIA', etiqueta: 'Sin historia clínica', cantidad: conteo?.sin ?? 0 },
-    ];
-  });
+  protected readonly cantidadConHistoria = computed(() => this.conteoHistoria()?.con ?? null);
 
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
   protected readonly filtrosAvanzadosActivos = computed(
