@@ -779,6 +779,8 @@
   justify-content: space-between;
   gap: var(--esp-3) var(--esp-5);
   margin: var(--esp-7) 0 var(--esp-4);
+  padding-bottom: var(--esp-3);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
 }
 
 .contacto__cabecera > .contacto__titulo {
@@ -946,4 +948,11 @@ form .auditoria-barra > .grilla-campos > .grilla-campos__fila {
     min-width: 0;
     width: 100%;
   }
+}
+
+/* Iconos en los rotulos de los paneles de datos fiscales y de contacto (21/11/2026). */
+.campo > label > app-icono {
+  margin-right: var(--esp-2);
+  color: var(--color-acento);
+  vertical-align: -0.2em;
 }

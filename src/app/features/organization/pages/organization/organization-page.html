@@ -11,7 +11,29 @@
 <!-- Ficha y accesos lado a lado en escritorio (refactor UX/UI del 28/10/2026). -->
 <div class="ficha-en-columnas">
   <section class="tarjeta" aria-labelledby="titulo-organizacion">
-    <h2 id="titulo-organizacion">Datos del centro</h2>
+    <!-- Titulo con el estado operativo a la derecha y la linea debajo (21/11/2026). -->
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-organizacion">Datos del centro</h2>
+      @if (estado().tipo === 'listo') {
+        @switch (organizacion()?.operationalStatus) {
+          @case ('ACTIVA') {
+            <span class="marca-estado marca-estado--activa">Activa</span>
+          }
+          @case ('SUSPENDIDA') {
+            <span class="marca-estado marca-estado--suspendida">Suspendida</span>
+          }
+          @case ('CANCELADA') {
+            <span class="marca-estado marca-estado--revocada">Cancelada</span>
+          }
+          @case ('BAJA') {
+            <span class="marca-estado marca-estado--revocada">Dada de baja</span>
+          }
+          @default {
+            <span class="marca-estado">{{ organizacion()?.operationalStatus }}</span>
+          }
+        }
+      }
+    </div>
 
     <div aria-live="polite">
       @switch (estado().tipo) {
@@ -32,27 +54,6 @@
           <dl class="detalle detalle--ficha">
             <dt>Nombre</dt>
             <dd>{{ organizacion()?.name }}</dd>
-
-            <dt>Estado operativo</dt>
-            <dd>
-              @switch (organizacion()?.operationalStatus) {
-                @case ('ACTIVA') {
-                  <span class="marca-estado marca-estado--activa">Activa</span>
-                }
-                @case ('SUSPENDIDA') {
-                  <span class="marca-estado marca-estado--suspendida">Suspendida</span>
-                }
-                @case ('CANCELADA') {
-                  <span class="marca-estado marca-estado--revocada">Cancelada</span>
-                }
-                @case ('BAJA') {
-                  <span class="marca-estado marca-estado--revocada">Dada de baja</span>
-                }
-                @default {
-                  {{ organizacion()?.operationalStatus }}
-                }
-              }
-            </dd>
 
             <dt>Zona horaria</dt>
             <dd>{{ organizacion()?.timezone }}</dd>
@@ -127,7 +128,9 @@
       El nombre accesible del boton suma el titulo: "Gestionar" solo no dice que se gestiona.
     -->
     <section class="tarjeta" aria-labelledby="titulo-accesos-organizacion">
-      <h2 id="titulo-accesos-organizacion">Configuración</h2>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-accesos-organizacion">Configuración</h2>
+      </div>
 
       <ul class="configuracion">
         @for (acceso of accesos; track acceso.ruta) {
@@ -169,7 +172,7 @@
       </p>
 
       <div class="campo campo--12">
-        <label for="fiscal-legalName">Razón social</label>
+        <label for="fiscal-legalName"><app-icono nombre="edificio" />Razón social</label>
         <input
           id="fiscal-legalName"
           type="text"
@@ -179,7 +182,9 @@
       </div>
 
       <div class="campo campo--6">
-        <label for="fiscal-taxId">CUIT o identificación fiscal</label>
+        <label for="fiscal-taxId"
+          ><app-icono nombre="documento" />CUIT o identificación fiscal</label
+        >
         <input
           id="fiscal-taxId"
           type="text"
@@ -199,7 +204,7 @@
       </div>
 
       <div class="campo campo--12">
-        <label for="fiscal-addressLine">Domicilio fiscal</label>
+        <label for="fiscal-addressLine"><app-icono nombre="sede" />Domicilio fiscal</label>
         <input
           id="fiscal-addressLine"
           type="text"
