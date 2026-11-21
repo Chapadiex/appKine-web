@@ -24,6 +24,31 @@
   background: var(--color-superficie);
 }
 
+/* Marca AKINE adentro de la tarjeta, arriba a la izquierda (21/11/2026), igual que el ingreso. */
+.acceso-marca {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: 1.125rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.acceso-marca__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: 1.0625rem;
+}
+
 .acceso-tarjeta--ancha {
   width: min(30rem, calc(100vw - 2rem));
 }
