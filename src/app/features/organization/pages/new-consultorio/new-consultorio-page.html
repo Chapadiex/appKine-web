@@ -102,6 +102,9 @@
             }
             @case (4) {
               {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
+              <app-ayuda titulo="Sobre este paso">
+                <p>Todo se puede cambiar después desde la ficha de la sede.</p>
+              </app-ayuda>
             }
           }
         }
@@ -559,8 +562,7 @@
           }
 
           @case (4) {
-            <!-- Todo lo que se va a crear, en una lista con su "Cambiar" al lado. -->
-            <p class="asistente__nota">Todo se puede cambiar después desde la ficha de la sede.</p>
+            <!-- Todo lo que se va a crear, en tarjetas con su "Cambiar": en columnas, entra sin scroll. -->
 
             <dl class="confirmacion">
               <div class="confirmacion__fila">
@@ -584,7 +586,7 @@
                 </button>
               </div>
 
-              <div class="confirmacion__fila">
+              <div class="confirmacion__fila confirmacion__fila--direccion">
                 <dt><app-icono nombre="sede" />Dirección</dt>
                 <dd>
                   @if (resumen().direccion === '') {
@@ -648,7 +650,7 @@
               </div>
 
               @if (!editando() || configuracionInicial()) {
-                <div class="confirmacion__fila">
+                <div class="confirmacion__fila confirmacion__fila--horario">
                   <dt><app-icono nombre="horarios" />Horario</dt>
                   <dd>
                     @if (resumen().horario.length === 0) {

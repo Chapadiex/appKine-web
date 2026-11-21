@@ -359,28 +359,61 @@
 }
 
 /* Paso 3: una fila por cosa que se crea, con su "Cambiar" a la derecha. */
+/*
+  Confirmación en tarjetas y tres columnas (20/11/2026): sede, visibilidad y datos fiscales a la
+  izquierda, el horario en el medio y la dirección con su mapa a la derecha. Entra sin scroll.
+*/
 .confirmacion {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+  gap: var(--esp-5) var(--esp-6);
   margin: 0;
 }
 
 .confirmacion__fila {
   display: grid;
-  grid-template-columns: 10rem minmax(0, 1fr) auto;
-  gap: var(--esp-3) var(--esp-6);
-  align-items: start;
-  padding: var(--esp-6) 0;
-  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--esp-3) var(--esp-5);
+  align-content: start;
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.confirmacion__fila--horario {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+}
+
+.confirmacion__fila--direccion {
+  grid-column: 3;
+  grid-row: 1 / span 4;
 }
 
 .confirmacion__fila dt {
-  color: var(--color-texto-suave);
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-texto);
   font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.confirmacion__fila dt app-icono {
+  color: var(--color-acento);
+}
+
+.confirmacion__fila > .boton-texto {
+  justify-self: end;
 }
 
 .confirmacion__fila dd {
   display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
   flex-direction: column;
-  gap: var(--esp-4);
+  gap: var(--esp-2);
   margin: 0;
 }
 
@@ -398,13 +431,15 @@
   list-style: none;
 }
 
-@media (max-width: 40rem) {
-  .confirmacion__fila {
-    grid-template-columns: minmax(0, 1fr) auto;
+@media (max-width: 56rem) {
+  .confirmacion {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .confirmacion__fila dd {
-    grid-column: 1 / -1;
+  .confirmacion__fila--direccion,
+  .confirmacion__fila--horario {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 
