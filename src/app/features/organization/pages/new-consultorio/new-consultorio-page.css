@@ -367,6 +367,8 @@
   /* Dos columnas iguales (21/11/2026): cuatro tarjetas en 2x2, entra sin empujar los botones. */
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Filas del mismo alto: las cuatro tarjetas quedan parejas, 50 y 50. */
+  grid-auto-rows: 1fr;
   gap: var(--esp-5) var(--esp-6);
   margin: 0;
 }
