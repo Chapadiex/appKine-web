@@ -73,6 +73,15 @@ export class PanelDeAyuda {
   private readonly lupa = viewChild<ElementRef<HTMLDialogElement>>('lupa');
 
   protected readonly trazoManual = trazoDelManual('manual');
+
+  /** Panel agrandado a toda la pantalla para leer cómodo (21/11/2026). */
+  protected readonly agrandado = signal(false);
+  protected readonly trazoAgrandar = 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7';
+  protected readonly trazoAchicar = 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7';
+
+  protected alternarTamano(): void {
+    this.agrandado.update((valor) => !valor);
+  }
   protected readonly trazoRelacionadas = trazoDelManual('relacionadas');
 
   protected readonly vista = signal<Vista>('ficha');

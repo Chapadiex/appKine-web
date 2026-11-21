@@ -54,25 +54,80 @@
   background: var(--color-hover);
 }
 
+/* Agrandar va pegado a cerrar, a la derecha del titulo. */
+.ayuda__agrandar {
+  margin-inline-start: auto;
+}
+
+/*
+  Agrandada (21/11/2026): ocupa toda la pantalla y el texto queda en una columna legible y
+  centrada, con las capturas mas grandes.
+*/
+.ayuda--grande {
+  width: 100vw;
+  z-index: 49;
+}
+
+.ayuda--grande .ayuda__cuerpo,
+.ayuda--grande .ayuda__buscador,
+.ayuda--grande .ayuda__pie {
+  box-sizing: border-box;
+  width: min(100% - 2 * var(--esp-6), 56rem);
+  margin-inline: auto;
+}
+
+.ayuda--grande .ayuda__cuerpo {
+  font-size: var(--tipo-md);
+}
+
+/* Buscador sutil: pastilla con fondo suave, sin borde duro; el foco se marca en la pastilla. */
 .ayuda__buscador {
   display: flex;
   align-items: center;
-  gap: var(--esp-4);
+  gap: var(--esp-3);
   margin: var(--esp-5) var(--esp-6) 0;
   padding: 0 var(--esp-5);
-  border: 1px solid var(--color-borde-control);
-  border-radius: var(--radio-md);
+  border: 1px solid transparent;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie-sutil);
   color: var(--color-texto-suave);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.ayuda__buscador:hover {
+  border-color: var(--color-borde-sutil);
+}
+
+.ayuda__buscador:focus-within {
+  border-color: var(--color-foco);
+  background: var(--color-superficie);
+  box-shadow: 0 0 0 1px var(--color-foco);
 }
 
 .ayuda__buscador input {
   flex: 1;
   min-width: 0;
-  padding: var(--esp-4) 0;
+  min-height: 2.5rem;
+  padding: var(--esp-3) 0;
   border: 0;
   background: none;
   font: inherit;
+  font-size: var(--tipo-sm);
   color: var(--color-texto);
+}
+
+.ayuda__buscador input:focus,
+.ayuda__buscador input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ayuda__buscador {
+    transition: none;
+  }
 }
 
 .ayuda__cuerpo {

@@ -1,10 +1,20 @@
 @if (manual.abierto()) {
-  <aside class="ayuda" aria-labelledby="ayuda-titulo">
+  <aside class="ayuda" [class.ayuda--grande]="agrandado()" aria-labelledby="ayuda-titulo">
     <div class="ayuda__cabecera">
       <h2 id="ayuda-titulo" class="ayuda__titulo" tabindex="-1" #tituloDelPanel>
         <app-icono [trazo]="trazoManual" />
         Ayuda
       </h2>
+      <button
+        type="button"
+        class="ayuda__cerrar ayuda__agrandar"
+        [attr.aria-pressed]="agrandado()"
+        [title]="agrandado() ? 'Achicar la ayuda' : 'Agrandar la ayuda a toda la pantalla'"
+        (click)="alternarTamano()"
+      >
+        <app-icono [trazo]="agrandado() ? trazoAchicar : trazoAgrandar" />
+        <span class="visualmente-oculto">Agrandar la ayuda</span>
+      </button>
       <button type="button" class="ayuda__cerrar" (click)="cerrar()">
         <app-icono nombre="cerrar" />
         <span class="visualmente-oculto">Cerrar la ayuda</span>
