@@ -237,25 +237,6 @@
   font-weight: var(--peso-normal);
 }
 
-/*
-  Cabecera de tarjeta (21/11/2026): titulo a la izquierda, marca de estado a la derecha y una
-  linea debajo. La usan todas las tarjetas de Suscripcion.
-*/
-.tarjeta__cabecera {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-3);
-  margin-bottom: var(--esp-5);
-  padding-bottom: var(--esp-4);
-  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
-}
-
-.tarjeta__cabecera > h2 {
-  margin: 0;
-}
-
 /* Datos en filas rotulo/valor: plan y vigencia, terminos aceptados. */
 .datos-en-filas {
   display: grid;

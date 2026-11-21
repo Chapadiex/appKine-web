@@ -562,6 +562,32 @@ h3 {
   font-weight: var(--peso-semi);
 }
 
+/*
+  Linea bajo el titulo de toda tarjeta (21/11/2026): separa el titulo del contenido. Vale para el
+  titulo suelto, el titulo con su "?" y la cabecera con titulo y estado a la derecha.
+*/
+.tarjeta > h2:first-child,
+.tarjeta > .titulo-con-ayuda:first-child,
+.tarjeta > .tarjeta__cabecera:first-child {
+  margin-bottom: var(--esp-5);
+  padding-bottom: var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+/* Cabecera de tarjeta: titulo a la izquierda y marca de estado o accion a la derecha. */
+.tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+}
+
+.tarjeta__cabecera > h2,
+.tarjeta > .titulo-con-ayuda:first-child > h2 {
+  margin: 0;
+}
+
 /* Titulo de un panel desplegado dentro de una fila o de una tarjeta. */
 .panel__titulo {
   margin: 0 0 var(--esp-5);
