@@ -12,6 +12,7 @@ import { SubscriptionResponseStatusEnum } from '../../../../api/generated/model/
 import { SubscriptionTransitionResponse } from '../../../../api/generated/model/subscription-transition-response';
 import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
+import { TerminosPendientesStore } from '../../../../core/services/terminos-pendientes.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -83,6 +84,13 @@ export class SubscriptionPage {
   protected readonly contratacion = inject(ContratacionStore);
   private readonly tenantContext = inject(TenantContextStore);
 
+  /**
+   * Terminos y condiciones de la cuenta (21/11/2026): version aceptada, cuando y enlace para
+   * releerlos. Si la lectura falla, la tarjeta no se muestra.
+   */
+  private readonly terminosStore = inject(TerminosPendientesStore);
+  protected readonly terminos = this.terminosStore.terminos;
+
   protected readonly estado = signal<EstadoSuscripcion>({ tipo: 'cargando' });
 
   /** Suscripcion cargada, o `null` en cualquier otro estado (ADR-0005: sin `$any`). */
@@ -123,6 +131,9 @@ export class SubscriptionPage {
       this.tenantContext.contextEpoch();
       untracked(() => this.cargar());
     });
+    if (this.terminosStore.terminos() === null) {
+      this.terminosStore.cargar().subscribe({ error: () => undefined });
+    }
   }
 
   protected cargar(): void {

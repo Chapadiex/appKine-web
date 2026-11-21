@@ -200,4 +200,44 @@
       }
     </section>
   }
+
+  <!-- Terminos y condiciones de la cuenta: aceptados, cuando, y para releerlos (21/11/2026). -->
+  @if (terminos(); as t) {
+    <section class="tarjeta" aria-labelledby="titulo-terminos">
+      <h2 id="titulo-terminos">Términos y condiciones</h2>
+      @if (t.pendiente) {
+        <p class="marca-estado marca-estado--suspendida">Pendientes de aceptar</p>
+      } @else if (t.aceptadaEn) {
+        <dl class="vigencia" aria-label="Aceptación de los términos">
+          <div class="vigencia__dato">
+            <dt>Estado</dt>
+            <dd>
+              <span class="marca-estado marca-estado--activa">✓ Aceptados</span>
+            </dd>
+          </div>
+          <div class="vigencia__dato">
+            <dt>Fecha</dt>
+            <dd>{{ t.aceptadaEn | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        </dl>
+      } @else {
+        <p class="estado estado--vacio">No hace falta aceptarlos en este despliegue.</p>
+      }
+      @if (t.versionVigente) {
+        <p class="ayuda">Versión vigente: {{ t.versionVigente }}</p>
+      }
+      <p class="acciones">
+        @if (t.url) {
+          <a class="boton boton--secundario" [href]="t.url" target="_blank" rel="noopener"
+            >Ver los términos</a
+          >
+        } @else {
+          <a class="boton boton--secundario" routerLink="/terminos">Ver los términos</a>
+        }
+        @if (t.pendiente) {
+          <a class="boton" routerLink="/auth/aceptar-terminos">Aceptarlos</a>
+        }
+      </p>
+    </section>
+  }
 </div>
