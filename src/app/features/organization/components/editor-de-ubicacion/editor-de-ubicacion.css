@@ -12,7 +12,8 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--esp-7);
-  align-items: start;
+  /* Las dos columnas al mismo alto: las tarjetas terminan parejas abajo (20/11/2026). */
+  align-items: stretch;
 }
 
 .ubicacion__columna {
@@ -148,4 +149,9 @@
    con el margen de cada fila. */
 .ubicacion__direccion .grilla-12 > .campo {
   margin-bottom: var(--esp-4);
+}
+
+/* La última tarjeta de cada columna crece hasta el fondo: la dirección y el mapa terminan parejos. */
+.ubicacion__columna > .bloque:last-of-type {
+  flex: 1;
 }
