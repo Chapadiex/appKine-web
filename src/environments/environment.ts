@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Configuracion de entorno para desarrollo local.
  *
  * `apiBaseUrl` vacio es deliberado: las peticiones salen como rutas relativas (`/api/...`)
@@ -12,5 +12,5 @@ export const environment = {
   production: false,
   apiBaseUrl: '',
   /** Version del contrato OpenAPI desde la que se genero `src/app/api/generated`. */
-  contractVersion: '0.180.0',
+  contractVersion: '0.182.0',
 } as const;

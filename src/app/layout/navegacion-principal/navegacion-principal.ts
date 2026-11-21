@@ -32,6 +32,7 @@ import {
   Seccion,
   seccionDe,
 } from './secciones';
+import { ManualStore } from '../../core/services/manual.store';
 import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 
@@ -65,6 +66,7 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
 })
 export class NavegacionPrincipal {
   private readonly session = inject(SessionService);
+  private readonly manual = inject(ManualStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly funcionesIa = inject(FuncionesIaStore);
@@ -222,6 +224,12 @@ export class NavegacionPrincipal {
 
   protected navegar(): void {
     this.cerrar.emit();
+  }
+
+  /** Abre el manual en la ficha de la pantalla actual; en tablet cierra antes el menú. */
+  protected abrirAyuda(): void {
+    this.cerrar.emit();
+    this.manual.abrir();
   }
 
   private visible(seccion: Seccion): boolean {

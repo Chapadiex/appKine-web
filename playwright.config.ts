@@ -74,7 +74,13 @@ export default defineConfig({
       // La auditoria de contraste tiene sus propios dos proyectos, uno por tema. Sin esto
       // correria una tercera vez con el `colorScheme` que traiga el sistema del runner, que es
       // justamente el dato que no se puede dejar al azar.
-      testIgnore: [/contraste(-no-textual)?\.spec\.ts/, /agenda[-.]/, /flujo-/, /movil\.spec\.ts/],
+      testIgnore: [
+        /contraste(-no-textual)?\.spec\.ts/,
+        /agenda[-.]/,
+        /flujo-/,
+        /movil\.spec\.ts/,
+        /manual\/capturar\.spec\.ts/,
+      ],
       // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
       // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
       // —como en el CI— la espera sola se come los 30 s por defecto. Se alarga el plazo; el
@@ -155,6 +161,22 @@ export default defineConfig({
         viewport: { width: 375, height: 812 },
         isMobile: true,
         hasTouch: true,
+        deviceScaleFactor: 2,
+      },
+    },
+    // Capturas marcadas del manual (`npm run manual:capturas` / `manual:verificar`), sobre el centro
+    // de `agenda-setup`. En claro y a 1280x800 con escala 2, para que el texto se lea en el panel.
+    {
+      name: 'manual',
+      testMatch: /manual\/capturar\.spec\.ts/,
+      dependencies: ['agenda-setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        // El Chrome instalado: las capturas se generan a mano y no dependen del navegador de Playwright.
+        channel: 'chrome',
+        timezoneId: ZONA_DE_LA_SEDE,
+        colorScheme: 'light',
+        viewport: { width: 1280, height: 800 },
         deviceScaleFactor: 2,
       },
     },

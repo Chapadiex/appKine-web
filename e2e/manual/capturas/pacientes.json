@@ -1,0 +1,346 @@
+[
+  {
+    "ficha": "padron",
+    "nombre": "buscar-persona",
+    "ruta": "/pacientes",
+    "preparacion": "Escribir en el buscador el apellido de una persona sembrada y apretar Enter, para que la tabla muestre al menos una fila.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#padron-busqueda",
+        "texto": ":personaApellido"
+      },
+      {
+        "accion": "tecla",
+        "selector": "#padron-busqueda",
+        "tecla": "Enter"
+      },
+      {
+        "accion": "esperar",
+        "selector": "table.tabla--padron tbody tr"
+      }
+    ],
+    "recorte": "section[aria-label=\"Padrón de personas\"]",
+    "marcas": [
+      {
+        "selector": "#padron-busqueda",
+        "numero": 2
+      },
+      {
+        "selector": "table.tabla--padron",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "padron",
+    "nombre": "dar-de-alta",
+    "ruta": "/pacientes",
+    "preparacion": "Con un usuario con paciente:manage, tocar 'Dar de alta una persona' para abrir el panel 'Nueva persona'.",
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": "#alta-persona-apellido",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-persona-tipo-documento",
+        "numero": 3
+      },
+      {
+        "selector": ".panel-lateral form.formulario-persona button[type=submit]",
+        "numero": 4
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Dar de alta una persona\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "ficha-de-la-persona",
+    "nombre": "pestanas",
+    "cuenta": "profesional",
+    "ruta": "/pacientes/:personaId",
+    "preparacion": "Usar una persona con perfil de paciente y un usuario con paciente:read y hc:read, para que se vean todas las pestañas.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "app-cabecera-de-ficha nav"
+      }
+    ],
+    "recorte": "app-cabecera-de-ficha",
+    "marcas": [
+      {
+        "selector": "app-cabecera-de-ficha nav",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "ficha-de-la-persona",
+    "nombre": "dar-de-baja",
+    "ruta": "/pacientes/:personaId",
+    "preparacion": "Persona activa con perfil de paciente y usuario con paciente:manage. Tocar el botón 'Más acciones de …' de la cabecera para desplegar el menú (es un popover: confirmar que queda dentro del recorte).",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "app-cabecera-de-ficha >> role=button[name=/^Más acciones de/]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Dar de baja la ficha\"]"
+      }
+    ],
+    "recorte": "app-cabecera-de-ficha",
+    "marcas": [
+      {
+        "selector": "app-cabecera-de-ficha >> role=button[name=/^Más acciones de/]",
+        "numero": 1
+      },
+      {
+        "selector": "role=button[name=\"Dar de baja el perfil de paciente\"]",
+        "numero": 2
+      },
+      {
+        "selector": "role=button[name=\"Dar de baja la ficha\"]",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "historias-clinicas",
+    "nombre": "buscar-paciente",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica",
+    "preparacion": "Con un usuario con hc:read y al menos un paciente sembrado; sin texto en el buscador.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": ".hc-tarjeta"
+      }
+    ],
+    "recorte": "#contenido",
+    "marcas": [
+      {
+        "selector": "#hc-busqueda",
+        "numero": 2
+      },
+      {
+        "selector": ".hc-tarjeta >> nth=0 >> .hc-tarjeta__acciones a.boton:not(.boton--secundario)",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "historias-clinicas",
+    "nombre": "motivo-de-acceso",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaSinRelacionId",
+    "preparacion": "Entrar con un profesional que no tenga relación asistencial con ese paciente en la sede (sin turnos ni sesiones con él), para que aparezca el pedido de motivo.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "#motivo-acceso"
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-justificacion\"]",
+    "marcas": [
+      {
+        "selector": "#motivo-acceso",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "caso-clinico",
+    "nombre": "abrir-caso",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaId",
+    "preparacion": "Paciente con historia clínica. Si aparece el pedido de motivo, declararlo. En la tarjeta 'Casos clínicos', tocar 'Abrir un caso' para abrir el panel lateral.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#motivo-acceso",
+        "texto": "Atención programada del paciente",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Abrir un caso\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#caso-oferta"
+      }
+    ],
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": "#caso-oferta",
+        "numero": 3
+      },
+      {
+        "selector": "#caso-diagnostico",
+        "numero": 3
+      },
+      {
+        "selector": ".panel-lateral form button[type=submit]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "caso-clinico",
+    "nombre": "equipo-tratante",
+    "cuenta": "profesional",
+    "ruta": "/historia-clinica/personas/:personaId/casos/:casoId",
+    "preparacion": "Caso ACTIVO con al menos un profesional habilitado para su actividad que no esté en el equipo. Elegirlo en 'Sumar un profesional' para que se habilite 'Sumar'.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#motivo-acceso",
+        "texto": "Atención programada del paciente",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "section[aria-labelledby=\"titulo-justificacion\"] button[type=submit]",
+        "opcional": true
+      },
+      {
+        "accion": "seleccionar",
+        "selector": "#equipo-nuevo",
+        "indice": 1
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-equipo\"]",
+    "marcas": [
+      {
+        "selector": "#equipo-nuevo",
+        "numero": 1
+      },
+      {
+        "selector": "#equipo-rol",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-labelledby=\"titulo-equipo\"] .campo--accion button",
+        "numero": 3
+      },
+      {
+        "selector": "section[aria-labelledby=\"titulo-equipo\"] .acciones button",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "atencion",
+    "nombre": "iniciar-atencion",
+    "cuenta": "profesional",
+    "ruta": "/agenda/recepcion",
+    "preparacion": "Usuario PROFESIONAL (sesion:register) con un turno de hoy con el paciente llegado. Abrir el detalle de ese turno en la recepción del día.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": ".tabla-scroll[aria-label='Listado de turnos'] tr:has-text(\":personaLlegadaApellido\") .acciones-de-fila__boton",
+        "opcional": true
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=/Ver el turno de.+:personaLlegadaApellido/]"
+      },
+      {
+        "accion": "esperar",
+        "selector": ".panel-lateral >> role=button[name=\"Iniciar atención\"]"
+      }
+    ],
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": ".panel-lateral >> role=button[name=\"Iniciar atención\"]",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "atencion",
+    "nombre": "evaluacion",
+    "cuenta": "profesional",
+    "ruta": "/atencion/turnos/:turnoEnCursoId",
+    "preparacion": "Turno de un paciente sin casos activos (la atención arranca sola) y atención en curso; pestaña 'Evaluación' activa.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#pestana-evaluacion",
+        "opcional": true
+      },
+      {
+        "accion": "esperar",
+        "selector": "#panel-evaluacion app-escala"
+      }
+    ],
+    "recorte": "#panel-evaluacion",
+    "marcas": [
+      {
+        "selector": "#panel-evaluacion app-escala",
+        "numero": 1
+      },
+      {
+        "selector": "#panel-evaluacion fieldset:has(legend:text-is(\"Evolución\"))",
+        "numero": 2
+      },
+      {
+        "selector": "#panel-evaluacion .pie-tarjeta button",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "atencion",
+    "nombre": "cerrar-atencion",
+    "cuenta": "profesional",
+    "ruta": "/atencion/turnos/:turnoEnCursoId",
+    "preparacion": "Atención en curso. Tocar la pestaña 'Cierre' (#pestana-cierre) y elegir 'Vino a la sesión' para que aparezca la nota de cierre.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#pestana-cierre"
+      },
+      {
+        "accion": "click",
+        "selector": "#panel-cierre label:has-text(\"Vino a la sesión\")"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#cierre-nota"
+      }
+    ],
+    "recorte": "#panel-cierre",
+    "marcas": [
+      {
+        "selector": "#panel-cierre app-segmentado",
+        "numero": 2
+      },
+      {
+        "selector": "#cierre-nota",
+        "numero": 3
+      },
+      {
+        "selector": "#panel-cierre .pie-tarjeta button",
+        "numero": 4
+      }
+    ]
+  }
+]

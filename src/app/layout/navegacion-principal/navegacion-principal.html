@@ -108,5 +108,16 @@
         Plataforma
       </a>
     }
+
+    <!-- Manual de usuario de la pantalla actual (F1). Fijo al pie, fuera de los grupos. -->
+    <button
+      type="button"
+      class="nav__enlace nav__enlace--grupo nav__ayuda"
+      aria-keyshortcuts="F1"
+      (click)="abrirAyuda()"
+    >
+      <app-icono class="nav__icono" nombre="ayuda" />
+      Ayuda
+    </button>
   </nav>
 }
