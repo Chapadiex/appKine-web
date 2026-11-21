@@ -161,6 +161,26 @@
     </div>
   </section>
 
+  <!-- Que incluye el plan, de un vistazo: lo que tiene y lo que no (21/11/2026). -->
+  @if (incluye().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-incluye">
+      <h2 id="titulo-incluye">Qué incluye tu plan {{ suscripcion()?.planName }}</h2>
+      <ul class="plan-incluye">
+        @for (item of incluye(); track item.texto) {
+          <li class="plan-incluye__item" [class.plan-incluye__item--no]="!item.incluido">
+            <span class="plan-incluye__marca" aria-hidden="true">
+              <app-icono [nombre]="item.incluido ? 'tilde' : 'menos'" />
+            </span>
+            {{ item.texto }}
+            @if (!item.incluido) {
+              <span class="visualmente-oculto">(no incluido)</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   @if (estado().tipo === 'listo') {
     <section class="tarjeta" aria-labelledby="titulo-limites">
       <h2 id="titulo-limites">Límites del plan</h2>

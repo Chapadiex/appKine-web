@@ -237,6 +237,40 @@
   font-weight: var(--peso-normal);
 }
 
+/* Que incluye el plan (21/11/2026): lista en dos columnas con tilde o guion. */
+.plan-incluye {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plan-incluye__item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+.plan-incluye__marca {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--color-exito-fondo);
+  color: var(--color-exito);
+}
+.plan-incluye__item--no {
+  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+.plan-incluye__item--no .plan-incluye__marca {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+}
 /* Terminos de la cuenta (21/11/2026): titulo con su estado y datos en filas rotulo/valor. */
 .terminos-cuenta__cabecera {
   display: flex;

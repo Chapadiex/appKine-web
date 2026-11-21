@@ -13,7 +13,11 @@ import { SubscriptionTransitionResponse } from '../../../../api/generated/model/
 import { SuscripcionesService } from '../../../../api/generated/api/suscripciones.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TerminosPendientesStore } from '../../../../core/services/terminos-pendientes.store';
+import { PlanesService } from '../../../../api/generated/api/planes.service';
+import { PlanResponse } from '../../../../api/generated/model/plan-response';
+
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
@@ -22,6 +26,12 @@ import {
   pestanasDeOrganizacion,
 } from '../../../../core/models/pestanas-de-organizacion';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+
+/** Una linea de "Que incluye tu plan": esta o no esta (21/11/2026). */
+interface ItemDelPlan {
+  readonly texto: string;
+  readonly incluido: boolean;
+}
 
 /**
  * Suscripcion lista para pintar: la respuesta del backend mas el motivo de la suspension.
@@ -70,7 +80,7 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, DatePipe, RouterLink, Alerta],
+  imports: [CabeceraDePagina, Pestanas, Ayuda, DatePipe, RouterLink, Alerta, Icono],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })
@@ -89,6 +99,7 @@ export class SubscriptionPage {
    * releerlos. Si la lectura falla, la tarjeta no se muestra.
    */
   private readonly terminosStore = inject(TerminosPendientesStore);
+  private readonly planes = inject(PlanesService);
   protected readonly terminos = this.terminosStore.terminos;
 
   protected readonly estado = signal<EstadoSuscripcion>({ tipo: 'cargando' });
@@ -103,6 +114,68 @@ export class SubscriptionPage {
   protected readonly motivo = computed(() => {
     const estado = this.estado();
     return estado.tipo === 'listo' ? estado.datos.motivo : null;
+  });
+
+  /** Catalogo de planes (21/11/2026): de ahi salen las funciones del plan actual. */
+  private readonly catalogo = signal<readonly PlanResponse[]>([]);
+
+  /**
+   * Que incluye el plan del centro, para leerlo de un vistazo: servicios y adicional de IA de la
+   * contratacion, funciones del catalogo y topes de la suscripcion. Cada item dice si esta o no.
+   */
+  protected readonly incluye = computed<readonly ItemDelPlan[]>(() => {
+    const suscripcion = this.suscripcion();
+    if (suscripcion === null) {
+      return [];
+    }
+    const contratacion = this.contratacion.contratacion();
+    const servicios = (contratacion?.servicios ?? []) as readonly string[];
+    const plan = this.catalogo().find((p) => p.code === suscripcion.planCode);
+    const funciones = (plan?.features ?? []) as readonly string[];
+    const tope = (codigo: string, singular: string, plural: string): string => {
+      const limite = suscripcion.limits?.find((l) => l.code === codigo);
+      if (!limite) {
+        return '';
+      }
+      if (limite.limitValue === undefined) {
+        return `${plural[0].toUpperCase()}${plural.slice(1)} sin límite`;
+      }
+      return limite.limitValue === 1
+        ? `Hasta 1 ${singular}`
+        : `Hasta ${limite.limitValue} ${plural}`;
+    };
+    const items: ItemDelPlan[] = [];
+    const sedes = tope('MAX_CONSULTORIOS', 'sede', 'sedes');
+    if (sedes) {
+      items.push({ texto: sedes, incluido: true });
+    }
+    const miembros = tope('MAX_MIEMBROS_ACTIVOS', 'miembro activo', 'miembros activos');
+    if (miembros) {
+      items.push({ texto: miembros, incluido: true });
+    }
+    if (contratacion) {
+      items.push(
+        {
+          texto: 'Kinesiología y rehabilitación',
+          incluido: servicios.includes('KINESIOLOGIA'),
+        },
+        { texto: 'Actividades y clases', incluido: servicios.includes('ACTIVIDADES') },
+        {
+          texto: 'Inteligencia artificial',
+          incluido: ((contratacion.adicionales ?? []) as readonly string[]).includes('IA'),
+        },
+      );
+    }
+    if (plan) {
+      items.push(
+        { texto: 'Reportes avanzados', incluido: funciones.includes('REPORTES_AVANZADOS') },
+        {
+          texto: 'Avisos a pacientes',
+          incluido: funciones.includes('NOTIFICACIONES_PACIENTE'),
+        },
+      );
+    }
+    return items;
   });
 
   /** Limites del plan con su consumo. Lista vacia mientras no haya suscripcion cargada. */
@@ -130,6 +203,11 @@ export class SubscriptionPage {
       // Igual que la pantalla de organizacion: el epoch invalida lo que hay en pantalla.
       this.tenantContext.contextEpoch();
       untracked(() => this.cargar());
+    });
+    // Si el catalogo no se puede leer, la lista muestra lo que sale de la contratacion.
+    this.planes.listPlans().subscribe({
+      next: (planes) => this.catalogo.set(planes),
+      error: () => undefined,
     });
     if (this.terminosStore.terminos() === null) {
       this.terminosStore.cargar().subscribe({ error: () => undefined });
