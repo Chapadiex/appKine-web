@@ -209,10 +209,32 @@
   font-weight: var(--peso-semi);
 }
 
-.plan-actual__alta {
-  margin-left: auto;
+/* Vigencia de la suscripcion: dos datos grandes, inicio y fin. */
+.vigencia {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-4);
+  margin: var(--esp-5) 0 0;
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.vigencia__dato dt {
   color: var(--color-texto-suave);
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-sm);
+}
+
+.vigencia__dato dd {
+  margin: var(--esp-1) 0 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+.vigencia__resto {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
 }
 
 .limites-lista {

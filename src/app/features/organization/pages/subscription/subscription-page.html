@@ -113,10 +113,32 @@
                         : suscripcion()?.status
               }}</span
             >
-            <span class="plan-actual__alta">
-              Alta de la suscripción: {{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}
-            </span>
           </div>
+
+          <!-- Vigencia: inicio y fin bien a la vista (21/11/2026). -->
+          <dl class="vigencia" aria-label="Vigencia de la suscripción">
+            <div class="vigencia__dato">
+              <dt>Inicio</dt>
+              <dd>{{ suscripcion()?.startedAt | date: 'dd/MM/yyyy' }}</dd>
+            </div>
+            <div class="vigencia__dato">
+              <dt>Finaliza</dt>
+              @if (estadoSuscripcion() === 'PRUEBA' && contratacion.contratacion()?.pruebaHasta) {
+                <dd>
+                  {{ contratacion.contratacion()?.pruebaHasta | date: 'dd/MM/yyyy' }}
+                  @if (contratacion.diasDePrueba(); as dias) {
+                    <span class="vigencia__resto">
+                      ({{ dias === 1 ? 'queda 1 día' : 'quedan ' + dias + ' días' }})
+                    </span>
+                  }
+                </dd>
+              } @else if (estadoSuscripcion() === 'CANCELADA') {
+                <dd>Terminada</dd>
+              } @else {
+                <dd>Sin fecha de fin</dd>
+              }
+            </div>
+          </dl>
         }
 
         @case ('error') {
