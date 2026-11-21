@@ -407,6 +407,47 @@ describe('PresentacionDetallePage', () => {
     expect(contenido(fixture)).toContain('2.000,00');
   });
 
+  // ------------------- Obras sociales simples, paso 3: liquidacion legible -------------------
+
+  it('cada renglon dice quien fue, su afiliado y plan, la practica y la autorizacion', async () => {
+    const legible = {
+      ...ITEM,
+      pacienteNombre: 'Perez, Ana',
+      pacienteDocumento: 'DNI 30111222',
+      numeroAfiliado: 'AF-1',
+      planNombre: 'Plan 310',
+      practicaCodigo: 'KIN_SESION',
+      practicaNombre: 'Sesion de kinesiologia',
+      autorizacionNumero: 'AUT-9',
+    };
+    const fixture = crear();
+    httpMock.expectOne(DETALLE).flush({
+      ...PRESENTADA,
+      items: [legible, { ...legible, id: 503, fechaPrestacion: '2026-09-03' }],
+    });
+    httpMock.expectOne((p) => p.method === 'GET' && p.url === PAGOS).flush([]);
+    await estabilizar(fixture);
+
+    const tabla = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-label="Tabla de prestaciones del lote"]',
+    )!;
+    expect(tabla.textContent).toContain('Perez, Ana');
+    expect(tabla.textContent).toContain('DNI 30111222');
+    expect(tabla.textContent).toContain('Afiliado AF-1');
+    expect(tabla.textContent).toContain('Plan 310');
+    expect(tabla.textContent).toContain('Código KIN_SESION');
+    expect(tabla.textContent).toContain('Autorización AUT-9');
+    expect(tabla.textContent).not.toContain('Persona #128');
+
+    const resumen = (fixture.nativeElement as HTMLElement).querySelector(
+      '[aria-label="Resumen de la liquidación por paciente"]',
+    )!;
+    const filas = resumen.querySelectorAll('tbody tr');
+    expect(filas).toHaveLength(1);
+    expect(filas[0].textContent).toContain('Perez, Ana');
+    expect(filas[0].querySelectorAll('td')[0].textContent?.trim()).toBe('2');
+  });
+
   // ---------------------------- DP-37: debito parcial ---------------------------------
 
   it('los estados parciales se ven con su pastilla, su detalle y se pueden filtrar', async () => {
@@ -433,7 +474,9 @@ describe('PresentacionDetallePage', () => {
     expect(botones(fixture, 'Registrar débito')).toHaveLength(1);
 
     filtrar(fixture, 'DEBITADO_PARCIAL');
-    expect(anfitrion.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(
+      anfitrion.querySelectorAll('[aria-label="Tabla de prestaciones del lote"] tbody tr'),
+    ).toHaveLength(1);
     // El contador va en la barra de filtros, pegado a la tabla (UX-14).
     expect(anfitrion.querySelector('.filtros-barra__resultados')?.textContent?.trim()).toBe(
       '1 prestación',
@@ -445,7 +488,9 @@ describe('PresentacionDetallePage', () => {
     expect(anfitrion.querySelector('app-estado-vacio')?.textContent).toContain('Limpiar filtros');
 
     filtrar(fixture, '');
-    expect(anfitrion.querySelectorAll('.tabla tbody tr')).toHaveLength(2);
+    expect(
+      anfitrion.querySelectorAll('[aria-label="Tabla de prestaciones del lote"] tbody tr'),
+    ).toHaveLength(2);
   });
 
   it('un lote conciliado muestra lo aceptado en parte con lo que quedo pendiente', async () => {

@@ -12,7 +12,7 @@ import { DIAS_PANTALLAS_098, sembrarPrestacionFinanciada } from './support/sembr
  * cerrada por la profesional). El lote se arma y se confirma por la API —ese recorrido ya lo cubre
  * `flujo-presentaciones`— y lo que se prueba aca es el boton: que la descarga ocurra, con el nombre
  * que manda el servidor en `Content-Disposition`, y que el archivo traiga el lote y sus prestaciones
- * SIN el nombre del paciente (PHI minima, RNF-M21-001: cada fila lleva el `personaId`).
+ * con lo que la obra social pide para liquidar: paciente, documento, afiliado y un resumen por paciente.
  */
 
 const IMPORTES = { total: 12000, financiador: 9600, coseguro: 2400 };
@@ -112,18 +112,22 @@ test.describe('Exportar una presentacion a CSV contra el backend real', () => {
     expect(cabecera.get('Financiador')).toBe(sembrado.financiador.nombre);
     expect(cabecera.get('Estado')).toBe('PRESENTADA');
     expect(cabecera.get('Total presentado')).toBe('9600.00');
-    const columnas = filas.find((f) => f[0] === 'Item');
+    // Obras sociales simples, paso 3: cada renglon dice quien fue, para que la obra social liquide.
+    const columnas = filas.find((f) => f[0] === 'Paciente');
     expect(columnas, `el CSV trae la tabla de prestaciones:\n${csv}`).toBeDefined();
-    const items = filas.slice(filas.indexOf(columnas!) + 1).filter((f) => f.length > 1);
+    const inicio = filas.indexOf(columnas!) + 1;
+    const finDelDetalle = filas.findIndex((f) => f[0] === 'Resumen por paciente');
+    const items = filas.slice(inicio, finDelDetalle === -1 ? undefined : finDelDetalle);
     expect(items).toHaveLength(1);
     const item = Object.fromEntries(columnas!.map((c, i) => [c, items[0][i]]));
-    expect(item['Obligacion']).toBe(String(deuda!.id));
     expect(item['Sesion']).toBe(String(sembrado.sesionId));
-    expect(item['Persona']).toBe(String(sembrado.persona.id));
+    expect(item['Paciente']).toBe(`${sembrado.persona.apellido}, ${sembrado.persona.nombre}`);
     expect(item['Importe presentado']).toBe('9600.00');
 
-    // --- Y nada que identifique al paciente por nombre --------------------------------------
-    expect(csv).not.toContain(sembrado.persona.apellido);
-    expect(csv).not.toContain(sembrado.persona.nombre);
+    // --- Y al final, el resumen por paciente ------------------------------------------------
+    expect(finDelDetalle, `el CSV trae el resumen por paciente:\n${csv}`).toBeGreaterThan(0);
+    const resumen = filas[finDelDetalle + 2];
+    expect(resumen[0]).toBe(`${sembrado.persona.apellido}, ${sembrado.persona.nombre}`);
+    expect(resumen.at(-1)).toBe('9600.00');
   });
 });

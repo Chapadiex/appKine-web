@@ -95,7 +95,7 @@ test.describe('Debito, quitar y descartar en presentaciones contra el backend re
       vigenciaDesde: desde,
     });
 
-    // Tres pacientes, una sesion cada uno: las filas del lote se distinguen por "Persona #id".
+    // Tres pacientes, una sesion cada uno: las filas del lote se distinguen por apellido y nombre.
     const { slots } = await diaDeTrabajo(api, centro, oferta.id, 2);
     const deudas: Deuda[] = [];
     const nombres = ['Acepta', 'Debita', 'Parcial'];
@@ -448,7 +448,7 @@ function filaDelLote(page: Page, deuda: Deuda): Locator {
   return page
     .getByRole('region', { name: 'Tabla de prestaciones del lote' })
     .getByRole('row')
-    .filter({ hasText: `Persona #${deuda.persona.id}` });
+    .filter({ hasText: `${deuda.persona.apellido}, ${deuda.persona.nombre}` });
 }
 
 function filaElegible(page: Page, deuda: Deuda): Locator {

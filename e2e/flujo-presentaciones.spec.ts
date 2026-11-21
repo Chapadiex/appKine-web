@@ -231,7 +231,9 @@ test.describe('Presentaciones a financiadores contra el backend real', () => {
     ).toBeVisible();
     const items = page.getByRole('region', { name: 'Tabla de prestaciones del lote' });
     await expect(
-      items.getByRole('row').filter({ hasText: `Persona #${sembrado.persona.id}` }),
+      items
+        .getByRole('row')
+        .filter({ hasText: `${sembrado.persona.apellido}, ${sembrado.persona.nombre}` }),
     ).toContainText('9.600,00');
 
     await page.getByRole('button', { name: 'Volver a revisar' }).click();
@@ -407,7 +409,7 @@ test.describe('Reparos documentales de un lote contra el backend real (DP-37)', 
     const bandeja = page.getByRole('region', { name: 'Tabla de prestaciones elegibles' });
     const lote = page.getByRole('region', { name: 'Tabla de prestaciones del lote' });
     const filaDe = (persona: Persona): Locator =>
-      lote.getByRole('row').filter({ hasText: `Persona #${persona.id}` });
+      lote.getByRole('row').filter({ hasText: `${persona.apellido}, ${persona.nombre}` });
     for (const persona of [sinOrden, conAviso]) {
       // Incluir no evalua los requisitos: la revision muestra la lista entera.
       await bandeja
