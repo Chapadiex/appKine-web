@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
+import { PrimerosPasosStore } from '../../../core/guards/primeros-pasos.guard';
 import { FuncionesIaStore } from '../../../core/services/funciones-ia.store';
 import { ManualStore } from '../../../core/services/manual.store';
 import { PermissionsStore } from '../../../core/services/permissions.store';
@@ -232,6 +233,16 @@ describe('PanelDeAyuda', () => {
     expect(panel.indice()).toBeNull();
     panel.verIndice();
     expect(api.indice).toHaveBeenCalledTimes(2);
+  });
+
+  it('"Ver el recorrido" cierra la ayuda y muestra el recorrido', () => {
+    const { fixture, manual, boton } = crear();
+
+    boton('Ver el recorrido')!.click();
+    fixture.detectChanges();
+
+    expect(manual.abierto()).toBe(false);
+    expect(TestBed.inject(PrimerosPasosStore).recorrido()).toBe(true);
   });
 
   it('se cierra al cerrar la sesión', () => {

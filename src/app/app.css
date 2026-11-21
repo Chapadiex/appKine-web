@@ -207,21 +207,6 @@
   font-size: 1.0625rem;
 }
 
-.acceso__pie {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--esp-2) var(--esp-6);
-  margin-top: auto;
-  font-size: var(--tipo-2xs);
-}
-
-.acceso__pie a {
-  padding-block: var(--esp-2);
-  color: var(--color-texto-suave);
-  text-decoration: none;
-}
-
 /*
   Iniciar sesión en escritorio: la marca está dentro de la escena, así que se saca de arriba y el
   ingreso se centra en la altura. Debajo de 861 px la escena no se muestra y la marca vuelve.
@@ -235,15 +220,13 @@
   .contenido--ingreso > .acceso__marca {
     display: none;
   }
-
-  .contenido--ingreso > .acceso__pie {
-    margin-top: 0;
-  }
 }
 
 /* En acceso tampoco va la barra lateral, aunque haya contexto (cambiar de sede desde la app). */
 .shell--acceso {
   grid-template-columns: minmax(0, 1fr);
+  /* Siempre en claro (PreferenciasStore.forzarClaro) y con un fondo suave propio. */
+  background: var(--color-acceso-fondo);
 }
 
 /*

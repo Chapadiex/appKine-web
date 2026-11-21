@@ -94,4 +94,19 @@ describe('HorarioSemanal', () => {
       { diaSemana: 1, horaDesde: '14:00', horaHasta: '18:00' },
     ]);
   });
+
+  it('copiar el lunes lleva su horario a los días abiertos y avisa a cuántos', async () => {
+    const { fixture, raiz, pulsar, franjas } = await montar();
+    await pulsar('Lunes a viernes');
+    const desdeLunes = raiz.querySelector<HTMLSelectElement>('#prueba-desde-0')!;
+    desdeLunes.value = '10:00';
+    desdeLunes.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
+    await pulsar('Copiar el lunes a los días abiertos');
+
+    const valores = franjasDelFormulario(franjas);
+    expect(valores.map((franja) => franja.horaDesde)).toEqual(Array(5).fill('10:00'));
+    expect(raiz.querySelector('.semana__copiado')?.textContent).toContain('Copiado a 4 días');
+  });
 });

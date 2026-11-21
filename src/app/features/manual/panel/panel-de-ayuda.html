@@ -131,6 +131,9 @@
         <button type="button" class="boton boton--secundario boton--chico" (click)="verIndice()">
           Ver todo el manual
         </button>
+        <button type="button" class="boton boton--secundario boton--chico" (click)="verRecorrido()">
+          <app-icono nombre="info" />Ver el recorrido
+        </button>
         @if (puedePreguntar()) {
           <button type="button" class="boton boton--chico" (click)="preguntar()">
             Preguntale al asistente

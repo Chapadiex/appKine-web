@@ -95,6 +95,8 @@
   --color-superficie: #ffffff;
   /* Fondo de la pagina: el contenido se despega de el por tono. */
   --color-superficie-sutil: #f4f6f9;
+  /* Fondo de las pantallas de acceso (ingreso, invitacion): siempre en claro, un celeste suave. */
+  --color-acceso-fondo: #eaf2fb;
   /* Nivel 3 (herramientas): barra de filtros, panel avanzado, fila de baja, fila-panel. */
   --color-superficie-secundaria: #e9eff5;
   --color-superficie-atenuada: #e9eff5;

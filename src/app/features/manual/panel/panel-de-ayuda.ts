@@ -25,6 +25,7 @@ import {
 import { FichaDelManualResponse } from '../../../api/generated/model/ficha-del-manual-response';
 import { IndiceDelManualResponse } from '../../../api/generated/model/indice-del-manual-response';
 import { PasajeDelManualResponse } from '../../../api/generated/model/pasaje-del-manual-response';
+import { PrimerosPasosStore } from '../../../core/guards/primeros-pasos.guard';
 import { PERMISO_ASISTENTE_USE } from '../../../core/models/permisos';
 import { FuncionesIaStore } from '../../../core/services/funciones-ia.store';
 import { ManualStore } from '../../../core/services/manual.store';
@@ -65,6 +66,7 @@ export class PanelDeAyuda {
   private readonly preguntaAlAsistente = inject(PreguntaAlAsistenteStore);
   private readonly destruir = inject(DestroyRef);
   private readonly session = inject(SessionService);
+  private readonly primerosPasos = inject(PrimerosPasosStore);
   protected readonly manual = inject(ManualStore);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('tituloDelPanel');
@@ -216,6 +218,12 @@ export class PanelDeAyuda {
 
   protected cerrar(): void {
     this.manual.cerrar();
+  }
+
+  /** Cierra la ayuda y vuelve a mostrar el tour guiado del menú, como el menú del perfil. */
+  protected verRecorrido(): void {
+    this.cerrar();
+    this.primerosPasos.recorrido.set(true);
   }
 
   protected alEscape(evento: Event): void {

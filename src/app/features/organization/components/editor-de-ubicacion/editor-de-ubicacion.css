@@ -12,7 +12,8 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--esp-7);
-  align-items: start;
+  /* Las dos columnas al mismo alto: las tarjetas terminan parejas abajo (20/11/2026). */
+  align-items: stretch;
 }
 
 .ubicacion__columna {
@@ -117,10 +118,40 @@
   margin-top: var(--esp-5);
 }
 
+/* Los cuatro botones del punto, iguales y repartidos en la fila (20/11/2026). */
 .ubicacion__enlaces {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-3);
+  margin-top: var(--esp-2);
+}
+
+.ubicacion__enlaces > .boton {
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ubicacion__encabezado {
+  margin-bottom: var(--esp-5);
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  margin-top: var(--esp-2);
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-5);
+}
+
+.ubicacion__encabezado > * {
+  margin: 0;
+}
+
+/* Filas de la dirección más juntas: el paso entra en una pantalla de notebook. */
+/* Los campos son subgrid: el row-gap corre también entre etiqueta e input, por eso se separa
+   con el margen de cada fila. */
+.ubicacion__direccion .grilla-12 > .campo {
+  margin-bottom: var(--esp-4);
+}
+
+/* La última tarjeta de cada columna crece hasta el fondo: la dirección y el mapa terminan parejos. */
+.ubicacion__columna > .bloque:last-of-type {
+  flex: 1;
 }

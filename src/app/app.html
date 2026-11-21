@@ -89,11 +89,6 @@
       } @else {
         <router-outlet />
       }
-      @if (esAcceso()) {
-        <footer class="acceso__pie">
-          <a routerLink="/estado">Estado del sistema</a>
-        </footer>
-      }
     </main>
 
     <!-- Pie institucional del centro (logo y datos de contacto): llega con la barra lateral. -->
@@ -109,5 +104,7 @@
 <ng-container #flujoDeTurnos />
 <!-- Acceso flotante al asistente de datos: decide solo si se dibuja (sesión, sede y permiso). -->
 <ng-container #asistente />
+<!-- Recorrido corto por la app al terminar la configuración inicial: llega en su propio chunk. -->
+<ng-container #recorrido />
 <!-- Manual de usuario (panel lateral): llega en su chunk la primera vez que se abre. -->
 <ng-container #manual />

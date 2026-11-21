@@ -34,6 +34,7 @@ import { BarraSuperiorDiferida } from './layout/barra-superior/barra-superior-di
 import { CambioDeSede } from './layout/selector-de-sede/cambio-de-sede';
 import { PermissionsStore } from './core/services/permissions.store';
 import { PlatformRoleStore } from './core/services/platform-role.store';
+import { PrimerosPasosStore } from './core/guards/primeros-pasos.guard';
 import { PreferenciasStore } from './core/services/preferencias.store';
 import { ServicioNoDisponibleStore } from './core/services/servicio-no-disponible.store';
 import { SessionService } from './core/services/session.service';
@@ -85,12 +86,15 @@ export class App {
   private readonly anclaFlujo = viewChild.required('flujoDeTurnos', { read: ViewContainerRef });
   private readonly anclaPie = viewChild.required('pie', { read: ViewContainerRef });
   private readonly anclaAsistente = viewChild.required('asistente', { read: ViewContainerRef });
+  private readonly anclaRecorrido = viewChild.required('recorrido', { read: ViewContainerRef });
   private readonly anclaManual = viewChild.required('manual', { read: ViewContainerRef });
   private readonly manual = inject(ManualStore);
 
   constructor() {
-    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
-    inject(PreferenciasStore);
+    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla. Las
+    // pantallas de acceso van siempre en claro.
+    const preferencias = inject(PreferenciasStore);
+    effect(() => preferencias.forzarClaro(this.esAcceso()));
 
     // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
     // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
@@ -138,6 +142,24 @@ export class App {
         (m) => {
           if (!destruido) {
             this.anclaPie().createComponent(m.PieInstitucional);
+          }
+        },
+        () => undefined,
+      );
+    });
+
+    // El recorrido por la app, al terminar la configuración inicial: su chunk sólo cuando hace falta.
+    const primerosPasos = inject(PrimerosPasosStore);
+    let recorridoMontado = false;
+    effect(() => {
+      if (!primerosPasos.recorrido() || recorridoMontado) {
+        return;
+      }
+      recorridoMontado = true;
+      import('./layout/recorrido-inicial/recorrido-inicial').then(
+        (m) => {
+          if (!destruido) {
+            this.anclaRecorrido().createComponent(m.RecorridoInicial);
           }
         },
         () => undefined,
@@ -264,9 +286,12 @@ export class App {
 
   /**
    * Iniciar sesión (19/11/2026): la marca va dentro de su escena y el ingreso se centra en la
-   * altura, así entra entero. En pantallas angostas, sin escena, la marca vuelve arriba.
+   * altura, así entra entero. En pantallas angostas, sin escena, la marca vuelve arriba. La
+   * invitación hace lo mismo: su marca va arriba a la izquierda dentro de la tarjeta.
    */
-  protected readonly esIngreso = computed(() => /^\/auth\/ingresar(\?|$)/.test(this.url()));
+  protected readonly esIngreso = computed(() =>
+    /^\/auth\/(ingresar|invitacion)(\?|$)/.test(this.url()),
+  );
 
   /**
    * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):

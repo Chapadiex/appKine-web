@@ -19,6 +19,7 @@ import { TenantContextStore } from '../../../../core/services/tenant-context.sto
 import { ConsultoriosService } from '../../../../api/generated/api/consultorios.service';
 import { DireccionEncontradaResponse } from '../../../../api/generated/model/direccion-encontrada-response';
 import { MapaDeUbicacion } from '../../../../shared/components/mapa-de-ubicacion/mapa-de-ubicacion';
+import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import {
   coordenadasFormateadas,
   enlaceComoLlegar,
@@ -74,7 +75,7 @@ const TEXTOS_DE_ESTADO: Readonly<Record<EstadoDeUbicacion, string>> = {
 @Component({
   selector: 'app-editor-de-ubicacion',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MapaDeUbicacion],
+  imports: [Ayuda, ReactiveFormsModule, MapaDeUbicacion],
   templateUrl: './editor-de-ubicacion.html',
   styleUrl: './editor-de-ubicacion.css',
 })
@@ -123,6 +124,13 @@ export class EditorDeUbicacion {
   protected readonly esArgentina = computed(() => {
     this.cambios();
     return this.formulario().controls.pais.value.toUpperCase() === 'AR';
+  });
+
+  /** Provincia guardada que no está en la lista (texto libre de antes): se ofrece igual. */
+  protected readonly provinciaFueraDeLista = computed(() => {
+    this.cambios();
+    const valor = (this.formulario().controls.provincia.value ?? '').trim();
+    return valor !== '' && !this.provinciasArgentinas.includes(valor) ? valor : null;
   });
 
   protected readonly enlaceVer = computed(() => {

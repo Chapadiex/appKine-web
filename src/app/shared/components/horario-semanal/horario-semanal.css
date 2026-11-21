@@ -47,6 +47,19 @@
   font-weight: var(--peso-medio);
 }
 
+.semana__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+}
+
+.semana__copiado {
+  color: var(--color-exito-texto);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+}
+
 .semana__resumen {
   margin: 0;
   padding: var(--esp-2) var(--esp-5);
@@ -286,8 +299,62 @@
   padding-top: var(--esp-3);
 }
 
+/*
+  Modelos chicos arriba a la derecha del bloque que contiene al horario (20/11/2026): el bloque
+  tiene que ser position: relative. Debajo de 60rem vuelven a su lugar.
+*/
+@media (min-width: 60rem) {
+  :host(.horario-modelos-arriba) .semana__modelos {
+    position: absolute;
+    top: var(--esp-6);
+    right: var(--esp-6);
+    gap: var(--esp-2);
+  }
+
+  /* El rótulo sobra arriba a la derecha: el "?" del bloque ya explica los modelos. */
+  :host(.horario-modelos-arriba) .semana__rotulo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  /* Un poco más de aire entre días: el paso igual entra en la pantalla. */
+  :host(.horario-modelos-arriba) .semana__dia {
+    padding: var(--esp-3) 0;
+  }
+
+  :host(.horario-modelos-arriba) .semana__cabecera {
+    margin-bottom: var(--esp-4);
+  }
+
+  :host(.horario-modelos-arriba) .semana__modelo {
+    min-height: 1.75rem;
+    padding: 0 var(--esp-4);
+    font-size: var(--tipo-xs);
+  }
+}
+
 @media (max-width: 40rem) {
   :host(.horario-compacto) .semana__dia {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Ocupa el alto que le da su contenedor y reparte los días en él (configuración de la sede). */
+:host(.horario-llena-alto) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+:host(.horario-llena-alto) .semana__dias {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+:host(.horario-llena-alto) .semana__dia {
+  flex: 1;
 }

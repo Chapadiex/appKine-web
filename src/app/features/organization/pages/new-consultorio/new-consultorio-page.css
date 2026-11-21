@@ -110,11 +110,26 @@
 }
 
 .asistente__contenido {
-  padding: var(--esp-7) var(--esp-8) var(--esp-8);
+  /* Todos los pasos con el mismo alto: los botones no saltan de lugar entre uno y otro. */
+  display: flex;
+  flex-direction: column;
+  /* El alto de la pantalla menos la cabecera y el stepper, con tope: cada paso ocupa lo mismo. */
+  /*
+    La tarjeta llega siempre al pie de la pantalla (20/11/2026): así Anterior y Continuar quedan
+    en el mismo lugar en los cuatro pasos. Si un paso no entra, los botones se pegan al pie.
+  */
+  min-height: max(30rem, calc(100dvh - 17.5rem));
+  padding: var(--esp-6) var(--esp-8) var(--esp-8);
+}
+
+.asistente__contenido > form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .asistente__encabezado {
-  margin: 0 0 var(--esp-7);
+  margin: 0 0 var(--esp-5);
   font-size: var(--tipo-lg);
   font-weight: var(--peso-fuerte);
 }
@@ -129,7 +144,9 @@
 }
 
 .asistente__nota {
-  margin: calc(-1 * var(--esp-5)) 0 var(--esp-7);
+  /* Una sola línea en escritorio: sin la medida de lectura global, que la partía en dos. */
+  max-width: none;
+  margin: calc(-1 * var(--esp-5)) 0 var(--esp-6);
   color: var(--color-texto-suave);
 }
 
@@ -277,8 +294,16 @@
 
 /* Paso 2: el horario se lleva el ancho; el box, una columna al costado. */
 .asistente__grilla--horario {
+  flex: 1;
   grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
   gap: var(--esp-7);
+  /* El bloque del horario ocupa todo el alto del paso: los días se reparten hacia abajo. */
+  align-items: stretch;
+  margin-bottom: var(--esp-6);
+}
+
+.asistente__grilla--horario > .asistente__columna {
+  align-self: start;
 }
 
 @media (max-width: 64rem) {
@@ -334,28 +359,62 @@
 }
 
 /* Paso 3: una fila por cosa que se crea, con su "Cambiar" a la derecha. */
+/*
+  Confirmación en tarjetas (20/11/2026): sede, visibilidad y datos fiscales en el 75 % de la
+  izquierda; a la derecha una columna con el horario arriba y la dirección con su mapa abajo.
+*/
 .confirmacion {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: row dense;
+  gap: var(--esp-5) var(--esp-6);
   margin: 0;
 }
 
 .confirmacion__fila {
   display: grid;
-  grid-template-columns: 10rem minmax(0, 1fr) auto;
-  gap: var(--esp-3) var(--esp-6);
-  align-items: start;
-  padding: var(--esp-6) 0;
-  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--esp-3) var(--esp-5);
+  align-content: start;
+  padding: var(--esp-5) var(--esp-6);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.confirmacion__fila--horario {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.confirmacion__fila--direccion {
+  grid-column: 2;
+  grid-row: 3 / span 2;
 }
 
 .confirmacion__fila dt {
-  color: var(--color-texto-suave);
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  color: var(--color-texto);
   font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.confirmacion__fila dt app-icono {
+  color: var(--color-acento);
+}
+
+.confirmacion__fila > .boton-texto {
+  justify-self: end;
 }
 
 .confirmacion__fila dd {
   display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
   flex-direction: column;
-  gap: var(--esp-4);
+  gap: var(--esp-2);
   margin: 0;
 }
 
@@ -373,20 +432,27 @@
   list-style: none;
 }
 
-@media (max-width: 40rem) {
-  .confirmacion__fila {
-    grid-template-columns: minmax(0, 1fr) auto;
+@media (max-width: 56rem) {
+  .confirmacion {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .confirmacion__fila dd {
-    grid-column: 1 / -1;
+  .confirmacion__fila--direccion,
+  .confirmacion__fila--horario {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 
 .asistente__acciones {
-  margin-top: var(--esp-8);
-  padding-top: var(--esp-6);
+  /* Pegados al pie de la pantalla cuando el paso no entra: Continuar siempre a la vista. */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
+  padding-block: var(--esp-5);
   border-top: var(--borde-fino) solid var(--color-borde-sutil);
+  background: var(--color-superficie);
 }
 
 @media (max-width: 40rem) {
@@ -446,4 +512,28 @@
 .asistente__icono {
   flex: none;
   color: var(--color-acento);
+}
+
+/* Iconos de las etiquetas del resumen. */
+.resumen__lista dt {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.resumen__lista dt app-icono {
+  color: var(--color-acento);
+}
+
+/* El horario ubica sus modelos arriba a la derecha del bloque (horario-modelos-arriba). */
+.bloque--horario {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* El título del bloque flota (por el legend de los fieldsets): el horario va debajo, no al lado. */
+.bloque--horario app-horario-semanal {
+  clear: both;
+  padding-top: var(--esp-4);
 }
