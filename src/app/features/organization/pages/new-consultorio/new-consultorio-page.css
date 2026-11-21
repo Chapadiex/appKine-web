@@ -360,12 +360,13 @@
 
 /* Paso 3: una fila por cosa que se crea, con su "Cambiar" a la derecha. */
 /*
-  Confirmación en tarjetas y tres columnas (20/11/2026): sede, visibilidad y datos fiscales a la
-  izquierda, el horario en el medio y la dirección con su mapa a la derecha. Entra sin scroll.
+  Confirmación en tarjetas (20/11/2026): sede, visibilidad y datos fiscales en el 75 % de la
+  izquierda; a la derecha una columna con el horario arriba y la dirección con su mapa abajo.
 */
 .confirmacion {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  grid-template-rows: repeat(4, auto);
   grid-auto-flow: row dense;
   gap: var(--esp-5) var(--esp-6);
   margin: 0;
@@ -383,12 +384,12 @@
 
 .confirmacion__fila--horario {
   grid-column: 2;
-  grid-row: 1 / span 4;
+  grid-row: 1 / span 2;
 }
 
 .confirmacion__fila--direccion {
-  grid-column: 3;
-  grid-row: 1 / span 4;
+  grid-column: 2;
+  grid-row: 3 / span 2;
 }
 
 .confirmacion__fila dt {

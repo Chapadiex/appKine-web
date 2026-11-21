@@ -35,6 +35,9 @@ export class PrimerosPasosStore {
     return this.completos().has(orgId);
   }
 
+  /** El recorrido corto por la app, al terminar la configuración inicial (20/11/2026). */
+  readonly recorrido = signal(false);
+
   /** La bienvenida se muestra una vez por centro y por pestaña. */
   private readonly bienvenidas = signal<ReadonlySet<number>>(new Set());
 
