@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Configuracion de entorno para produccion.
  *
  * `apiBaseUrl` vacio, igual que en desarrollo: las peticiones son relativas. En la imagen
@@ -8,5 +8,5 @@
 export const environment = {
   production: true,
   apiBaseUrl: '',
-  contractVersion: '0.182.0',
+  contractVersion: '0.184.0',
 } as const;

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { sesionGuard } from '../../core/guards/auth.guard';
 import { landingGuard } from '../../core/guards/landing.guard';
 
 /**
@@ -71,5 +72,14 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/session-expired/session-expired-page').then((m) => m.SessionExpiredPage),
     title: 'AKINE - Sesión expirada',
+  },
+  // Términos pendientes (19/11/2026): con sesión, pero sin mirar los términos, que es
+  // justamente lo que esta pantalla resuelve.
+  {
+    path: 'aceptar-terminos',
+    canActivate: [sesionGuard],
+    loadComponent: () =>
+      import('./pages/aceptar-terminos/aceptar-terminos-page').then((m) => m.AceptarTerminosPage),
+    title: 'AKINE - Términos y condiciones',
   },
 ];

@@ -11,6 +11,7 @@ import { SinPermiso } from './shared/pages/sin-permiso/sin-permiso';
 import { RUTA_INICIO } from './layout/navegacion-principal/secciones';
 import { RUTA_SELECTOR_CONTEXTO, RUTA_SIN_PERMISO } from './core/models/rutas';
 import { SessionService } from './core/services/session.service';
+import { TERMINOS_AL_DIA } from './core/testing/terminos-al-dia';
 import { routes } from './app.routes';
 
 /**
@@ -36,6 +37,7 @@ describe('Rutas de la raiz de la app', () => {
       providers: [
         provideRouter(routes),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        TERMINOS_AL_DIA,
         { provide: PlatformRoleStore, useValue: { resolver: () => of(false) } },
       ],
     });

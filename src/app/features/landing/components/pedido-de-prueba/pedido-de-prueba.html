@@ -267,6 +267,15 @@
       />
     </div>
 
+    <div class="campo campo--12">
+      <app-terminos-del-alta
+        [terminos]="terminos"
+        prefijo="pedido"
+        accion="pedir la prueba"
+        [mostrarError]="faltanTerminos()"
+      />
+    </div>
+
     <p class="visualmente-oculto" aria-live="polite">{{ anuncio() }}</p>
 
     <div class="pedido__acciones">

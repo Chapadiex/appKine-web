@@ -230,11 +230,11 @@
 }
 
 /*
-  La barra lateral se crea con `createComponent` en un ancla: su host no lleva el atributo de
-  encapsulación de este layout, así que un selector descendiente común nunca la alcanza y, con
-  sesión abierta, ocupaba la única columna y empujaba la tarjeta de acceso fuera de la pantalla
-  (la invitación se veía en blanco). `::ng-deep` deja sin atributo sólo el tramo del host.
-*/
+ * `::ng-deep` porque la barra se monta con `createComponent` después de la primera pintura, y un
+ * componente creado así no lleva el atributo de encapsulamiento del shell: sin él, esta regla no
+ * alcanzaba y la barra aparecía en las pantallas de acceso con sesión abierta (19/11/2026, la de
+ * aceptar los términos).
+ */
 .shell--acceso ::ng-deep app-navegacion-principal {
   display: none;
 }

@@ -25,10 +25,16 @@ import {
   SolicitudDePruebaRequestSedesEnum,
 } from '../../../../api/generated/model/solicitud-de-prueba-request';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
+import {
+  MENSAJE_TERMINOS_CAMBIARON,
+  esRechazoDeTerminos,
+  leerTerminosVigentes,
+} from '../../../../core/models/terminos-vigentes';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { OpcionChip } from '../../../../shared/components/chips/chips';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
+import { TerminosDelAlta } from '../../../../shared/components/terminos-del-alta/terminos-del-alta';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
@@ -85,7 +91,7 @@ function algunServicio(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-pedido-de-prueba',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Alerta, Icono, Segmentado],
+  imports: [ReactiveFormsModule, Alerta, Icono, Segmentado, TerminosDelAlta],
   templateUrl: './pedido-de-prueba.html',
   styleUrl: './pedido-de-prueba.css',
 })
@@ -127,8 +133,16 @@ export class PedidoDePrueba {
   /** Mensajes del backend por campo (400), hasta que el visitante edite ese campo. */
   protected readonly erroresDelServidor = signal<Partial<Record<Campo, string>>>({});
 
+  /** Los términos vigentes: el pedido no sale sin aceptarlos (19/11/2026). */
+  protected readonly terminos = leerTerminosVigentes();
+  protected readonly faltanTerminos = computed(
+    () => this.terminos.faltaAceptar() && this.intentos() > 0,
+  );
+
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
-  protected readonly bloqueado = computed(() => this.enviando() || this.espera.activa());
+  protected readonly bloqueado = computed(
+    () => this.enviando() || this.espera.activa() || this.terminos.impidenElAlta(),
+  );
 
   /** Campos que el visitante editó y después dejó: recién ahí se marcan sus errores. */
   private readonly editadosYDejados = signal<ReadonlySet<Campo>>(new Set());
@@ -232,7 +246,7 @@ export class PedidoDePrueba {
   protected enviar(): void {
     this.intentos.update((n) => n + 1);
 
-    if (this.formulario.invalid) {
+    if (this.formulario.invalid || this.terminos.faltaAceptar()) {
       this.formulario.markAllAsTouched();
       // Tras un envío fallido el foco va al primer campo con error y el lector lo lee ahí: los
       // errores de este intento ya no se anuncian al salir de cada campo.
@@ -309,6 +323,7 @@ export class PedidoDePrueba {
       interesaIa: v.interesaIa,
       comentario: opcional(v.comentario),
       sitioWeb: v.sitioWeb,
+      ...this.terminos.campos(),
     };
   }
 
@@ -347,6 +362,13 @@ export class PedidoDePrueba {
       this.clave = null;
       this.firmaDeLaClave = null;
     }
+    if (esRechazoDeTerminos(error)) {
+      // La versión cambió después de leerla: se releen y se vuelve a pedir la casilla.
+      this.terminos.cargar();
+      this.estado.set({ tipo: 'error', titulo, mensaje: MENSAJE_TERMINOS_CAMBIARON });
+      this.enfocarCasillaDeTerminos();
+      return;
+    }
     if (error.status === 400) {
       const porCampo = this.marcarCampos(error.erroresPorCampo);
       this.estado.set({
@@ -384,11 +406,21 @@ export class PedidoDePrueba {
     return CAMPOS.find((c) => c === campo);
   }
 
+  private enfocarCasillaDeTerminos(): void {
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>('#pedido-terminos')?.focus(),
+      { injector: this.injector },
+    );
+  }
+
   private enfocarPrimerInvalido(): void {
     afterNextRender(
       () => {
         const campo = CAMPOS.find((c) => this.mostrarError(c));
         if (campo === undefined) {
+          if (this.terminos.faltaAceptar()) {
+            this.host.nativeElement.querySelector<HTMLElement>('#pedido-terminos')?.focus();
+          }
           return;
         }
         const destino =

@@ -14,6 +14,10 @@
  */
 export interface SolicitudDePruebaRequest { 
     /**
+     * Acepta los terminos y condiciones. Obligatorio en true: GET /api/v1/terms da la version vigente
+     */
+    aceptaTerminos?: boolean;
+    /**
      * Le interesa el servicio de actividades
      */
     actividades?: boolean;
@@ -61,6 +65,10 @@ export interface SolicitudDePruebaRequest {
      * Telefono, opcional
      */
     telefono?: string;
+    /**
+     * Version de los terminos que se acepto, la versionVigente de GET /api/v1/terms. Tiene que coincidir exacta
+     */
+    versionTerminos?: string;
 }
 export enum SolicitudDePruebaRequestSedesEnum {
     UNA = 'UNA',
