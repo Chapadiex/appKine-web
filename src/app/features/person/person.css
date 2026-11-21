@@ -195,13 +195,16 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   gap: var(--esp-6);
-  align-items: start;
+  /* Todas las tarjetas de una fila con el mismo alto (21/11/2026). */
+  align-items: stretch;
   margin-bottom: var(--esp-6);
 }
 
 .ficha-grilla > .tarjeta,
 .ficha-grilla__ancha ::ng-deep .tarjeta {
   margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .ficha-grilla__ancha {
@@ -213,7 +216,9 @@
 }
 
 .ficha-enlace {
-  margin: var(--esp-5) 0 0;
+  /* El enlace a la pantalla hermana queda abajo, parejo en toda la fila. */
+  margin: auto 0 0;
+  padding-top: var(--esp-5);
   font-weight: var(--peso-medio);
 }
 
