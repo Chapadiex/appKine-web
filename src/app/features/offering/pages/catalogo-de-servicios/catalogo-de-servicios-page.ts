@@ -31,6 +31,8 @@ import { FiltroEstado, OfferingApi } from '../../services/offering-api';
 import {
   MODALIDADES,
   NATURALEZAS,
+  categoriaDe,
+  categoriasDe,
   etiquetaDeModalidad,
   etiquetaDeNaturaleza,
 } from '../../models/etiquetas-de-offering';
@@ -211,9 +213,26 @@ export class CatalogoDeServiciosPage {
     tipo: 'cargando',
   });
 
-  protected readonly servicios = computed<readonly ServicioResponse[]>(() => {
+  /** Todo lo que devolvio el servidor, antes del filtro de categoria. */
+  private readonly todosLosServicios = computed<readonly ServicioResponse[]>(() => {
     const actual = this.estado();
     return actual.tipo === 'listo' ? actual.pagina : [];
+  });
+
+  protected readonly categoriaDe = categoriaDe;
+
+  /** Categorias presentes en lo leido, para el filtro del embudo. */
+  protected readonly categorias = computed(() => categoriasDe(this.todosLosServicios()));
+
+  /** '' = todas. Se filtra en el navegador: la lista llega entera y no hay parametro de API. */
+  protected readonly filtroCategoria = signal('');
+
+  protected readonly servicios = computed<readonly ServicioResponse[]>(() => {
+    const categoria = this.filtroCategoria();
+    const todos = this.todosLosServicios();
+    return categoria === ''
+      ? todos
+      : todos.filter((servicio) => categoriaDe(servicio) === categoria);
   });
 
   /** Orden y paginado de la lista completa (plan §3.4): el servidor no pagina servicios. */
@@ -221,6 +240,7 @@ export class CatalogoDeServiciosPage {
     columnas: {
       nombre: (servicio) => servicio.nombre,
       codigo: (servicio) => servicio.codigo,
+      categoria: (servicio) => categoriaDe(servicio),
       naturaleza: (servicio) => this.etiquetaDeNaturaleza(servicio.naturaleza),
       modalidad: (servicio) => this.etiquetaDeModalidad(servicio.modalidadDefault),
       origen: (servicio) => this.etiquetaDeAlcance(servicio),
@@ -237,8 +257,8 @@ export class CatalogoDeServiciosPage {
   protected readonly filtroEstado = signal<FiltroEstado>('ACTIVO');
 
   /** Cuantos filtros del embudo estan fuera de su valor por defecto: el boton los cuenta. */
-  protected readonly filtrosAvanzadosActivos = computed(() =>
-    Number(this.filtroEstado() !== 'ACTIVO'),
+  protected readonly filtrosAvanzadosActivos = computed(
+    () => Number(this.filtroEstado() !== 'ACTIVO') + Number(this.filtroCategoria() !== ''),
   );
 
   /** Hay busqueda o filtro: el vacio dice "no hay con estos filtros" y ofrece limpiarlos. */
@@ -399,11 +419,17 @@ export class CatalogoDeServiciosPage {
     this.cargar();
   }
 
-  /** Vuelve la busqueda y el filtro de estado a su valor inicial y relee. */
+  protected cambiarFiltroCategoria(valor: string): void {
+    this.cerrarPanel();
+    this.filtroCategoria.set(valor);
+  }
+
+  /** Vuelve la busqueda y los filtros a su valor inicial y relee. */
   protected limpiarFiltros(): void {
     this.cerrarPanel();
     this.busqueda.set('');
     this.filtroEstado.set('ACTIVO');
+    this.filtroCategoria.set('');
     this.cargar();
   }
 
