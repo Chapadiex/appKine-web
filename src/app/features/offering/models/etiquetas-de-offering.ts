@@ -130,3 +130,34 @@ export function servicioEnUnaLinea(servicio: ServicioResponse): string {
   const codigo = servicio.codigo ?? '';
   return codigo === '' ? (servicio.nombre ?? '') : `${servicio.nombre ?? ''} (${codigo})`;
 }
+
+/** Rotulo del grupo de los servicios sin categoria: los propios creados desde cero. */
+export const SIN_CATEGORIA = 'Otros servicios';
+
+/** La categoria del catalogo con la que se agrupa un servicio en los selectores. */
+export function categoriaDe(servicio: ServicioResponse): string {
+  const categoria = servicio.categoria?.trim() ?? '';
+  return categoria === '' ? SIN_CATEGORIA : categoria;
+}
+
+/** Categorias presentes, en orden alfabetico, con "Otros servicios" al final. */
+export function categoriasDe(servicios: readonly ServicioResponse[]): readonly string[] {
+  const nombres = [...new Set(servicios.map(categoriaDe))];
+  return nombres.sort((a, b) =>
+    a === SIN_CATEGORIA ? 1 : b === SIN_CATEGORIA ? -1 : a.localeCompare(b, 'es'),
+  );
+}
+
+/**
+ * Servicios agrupados por categoria para un `select` con `optgroup`: con el catalogo precargado
+ * (V38) son cientos, y una lista plana no se puede recorrer. Dentro de cada grupo se respeta el
+ * orden en que llegaron (el servidor ordena por nombre).
+ */
+export function serviciosPorCategoria(
+  servicios: readonly ServicioResponse[],
+): readonly { readonly categoria: string; readonly servicios: readonly ServicioResponse[] }[] {
+  return categoriasDe(servicios).map((categoria) => ({
+    categoria,
+    servicios: servicios.filter((servicio) => categoriaDe(servicio) === categoria),
+  }));
+}

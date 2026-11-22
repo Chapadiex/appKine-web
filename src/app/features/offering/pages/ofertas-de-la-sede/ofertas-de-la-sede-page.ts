@@ -43,6 +43,7 @@ import {
   precioEnPalabras,
   servicioEnUnaLinea,
   servicioInactivo,
+  serviciosPorCategoria,
 } from '../../models/etiquetas-de-offering';
 import {
   SituacionDeVigencia,
@@ -322,6 +323,11 @@ export class OfertasDeLaSedePage {
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
+  );
+
+  /** Los mismos, agrupados por categoria para el `optgroup` del selector. */
+  protected readonly serviciosOfertablesPorCategoria = computed(() =>
+    serviciosPorCategoria(this.serviciosOfertables()),
   );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */

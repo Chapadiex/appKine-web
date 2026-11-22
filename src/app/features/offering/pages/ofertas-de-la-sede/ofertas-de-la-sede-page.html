@@ -97,10 +97,14 @@
           [selected] y no solo el [value] del select: con ?servicio= el filtro ya esta puesto antes
           de que lleguen las opciones, y el value del select no se vuelve a aplicar.
         -->
-        @for (servicio of serviciosOfertables(); track servicio.id) {
-          <option [value]="servicio.id" [selected]="servicio.id === filtroServicio()">
-            {{ servicioEnUnaLinea(servicio) }}
-          </option>
+        @for (grupo of serviciosOfertablesPorCategoria(); track grupo.categoria) {
+          <optgroup [label]="grupo.categoria">
+            @for (servicio of grupo.servicios; track servicio.id) {
+              <option [value]="servicio.id" [selected]="servicio.id === filtroServicio()">
+                {{ servicioEnUnaLinea(servicio) }}
+              </option>
+            }
+          </optgroup>
         }
       </select>
     </div>
@@ -349,8 +353,12 @@
           aria-describedby="alta-oferta-servicio-ayuda"
         >
           <option value="">Elegí un servicio</option>
-          @for (servicio of serviciosOfertables(); track servicio.id) {
-            <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+          @for (grupo of serviciosOfertablesPorCategoria(); track grupo.categoria) {
+            <optgroup [label]="grupo.categoria">
+              @for (servicio of grupo.servicios; track servicio.id) {
+                <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+              }
+            </optgroup>
           }
         </select>
         @if (mostrarErrorAlta('servicioId')) {
