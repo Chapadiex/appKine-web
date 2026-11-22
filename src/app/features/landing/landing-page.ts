@@ -33,8 +33,12 @@ interface Servicio {
 
 interface Momento {
   readonly hora: string;
+  readonly icono: NombreDeIcono;
   readonly titulo: string;
   readonly texto: string;
+  /** Lo que se vería en pantalla en ese momento (dato inventado). */
+  readonly dato: string;
+  readonly ia?: boolean;
 }
 
 interface Rasgo {
@@ -143,33 +147,46 @@ export class LandingPage {
   protected readonly dia: readonly Momento[] = [
     {
       hora: '07:45',
+      icono: 'economia',
       titulo: 'Abre la caja',
       texto: 'Cada sede abre su caja, registra los movimientos y la cierra con arqueo.',
+      dato: 'Caja abierta · Sede Centro',
     },
     {
       hora: '08:00',
+      icono: 'calendario',
       titulo: 'La agenda del día',
       texto: 'Por profesional o por box, con turnos sueltos o en serie y el horario de cada sede.',
+      dato: '24 turnos · 3 profesionales',
     },
     {
       hora: '08:55',
+      icono: 'exito',
       titulo: 'Llega el primero',
       texto: 'Recepción marca llegada y espera, y avisa si a la cobertura le falta la orden.',
+      dato: 'Julián Ríos · En espera',
     },
     {
       hora: '10:30',
+      icono: 'operacion',
       titulo: 'Desde la tablet',
       texto: 'Pantallas al dedo para atender con la persona adelante, no con la vista en la PC.',
+      dato: 'Sesión 4 de 10 · Lucía Benítez',
     },
     {
       hora: '13:00',
+      icono: 'contratacion',
       titulo: 'Se cobra',
       texto: 'La deuda nace de la atención y el cobro la salda. Siempre sabés qué se debe.',
+      dato: 'Coseguro cobrado · Saldo 0',
     },
     {
       hora: '20:00',
-      titulo: 'Se mira el día',
-      texto: 'Turnos, asistencia, cobros y rentabilidad por servicio, en pantalla o en CSV.',
+      icono: 'chispa',
+      titulo: 'La IA te cuenta el día',
+      texto: 'Turnos, asistencia, cobros y rentabilidad. Y si algo no cierra, se lo preguntás.',
+      dato: '«Hoy hubo 2 ausentes y la caja cerró sin diferencias»',
+      ia: true,
     },
   ];
 

@@ -1,26 +1,48 @@
 <figure class="mapa">
   <div class="mapa__dibujo" aria-hidden="true">
     <div class="mapa__org">
-      <app-icono nombre="organizacion" />
-      <span><b>Centro Movimiento</b>Organización</span>
+      <span class="mapa__org-icono"><app-icono nombre="organizacion" /></span>
+      <span><b>Centro Movimiento</b>Una organización · 3 sedes</span>
     </div>
+
     <div class="mapa__sedes">
-      <div class="mapa__sede">
-        <b>Sede Centro</b><span>Lun a sáb · 7 a 21</span><span>4 boxes · 1 sala</span>
-      </div>
-      <div class="mapa__sede">
-        <b>Sede Norte</b><span>Lun a vie · 8 a 20</span><span>3 boxes</span>
-      </div>
-      <div class="mapa__sede">
-        <b>Sede Cerro</b><span>Lun a vie · 14 a 21</span><span>2 salas</span>
-      </div>
+      @for (sede of sedes; track sede.nombre) {
+        <div class="sede" [style.--color]="sede.color">
+          <div class="sede__cabecera">
+            <span class="sede__punto"></span>
+            <b>{{ sede.nombre }}</b>
+          </div>
+          <span class="sede__estado">Abierta</span>
+          <span class="sede__dato"><app-icono nombre="horarios" />{{ sede.horario }}</span>
+          <span class="sede__dato"><app-icono nombre="sede" />{{ sede.espacios }}</span>
+          <span class="sede__turnos"
+            ><b>{{ sede.turnos }}</b> turnos hoy</span
+          >
+        </div>
+      }
     </div>
+
+    <div class="total">
+      <div class="total__cabecera">
+        <b>Reporte del total</b>
+        <span>Ingresos del mes por sede</span>
+      </div>
+      @for (sede of sedes; track sede.nombre) {
+        <div class="total__fila" [style.--color]="sede.color">
+          <span class="total__nombre">{{ sede.nombre }}</span>
+          <span class="total__barra"><span [style.width.%]="sede.parte"></span></span>
+          <span class="total__parte">{{ sede.parte }} %</span>
+        </div>
+      }
+    </div>
+
     <div class="mapa__compartido">
-      <app-icono nombre="pacientes" /> Personas, equipo y reportes compartidos
+      <span class="avatares"> <span>MG</span><span>JR</span><span>SP</span><span>TV</span> </span>
+      Personas, equipo y reportes compartidos
     </div>
   </div>
   <figcaption class="visualmente-oculto">
-    Ejemplo: una organización con tres sedes, cada una con su horario y sus espacios, que comparten
-    personas, equipo y reportes.
+    Ejemplo: una organización con tres sedes, cada una con su horario, sus espacios y sus turnos del
+    día, un reporte que compara los ingresos de las tres, y las personas y el equipo compartidos.
   </figcaption>
 </figure>

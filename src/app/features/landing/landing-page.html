@@ -181,16 +181,20 @@
           Lo que tiene todo centro, de la apertura al cierre.
         </h2>
         <p class="seccion__bajada">
-          Elijas el servicio que elijas, la base del mostrador viene siempre.
+          Elijas el servicio que elijas, esto viene siempre. Así se ve un día con AKINE.
         </p>
       </div>
 
       <ol class="dia">
         @for (momento of dia; track momento.hora) {
-          <li class="momento">
-            <span class="momento__hora">{{ momento.hora }}</span>
+          <li class="momento" [class.momento--ia]="momento.ia">
+            <div class="momento__arriba">
+              <span class="momento__icono"><app-icono [nombre]="momento.icono" /></span>
+              <span class="momento__hora">{{ momento.hora }}</span>
+            </div>
             <h3 class="momento__titulo">{{ momento.titulo }}</h3>
             <p class="momento__texto">{{ momento.texto }}</p>
+            <span class="momento__dato" aria-hidden="true">{{ momento.dato }}</span>
           </li>
         }
       </ol>
@@ -198,10 +202,11 @@
       <ul class="rasgos">
         @for (rasgo of base; track rasgo.titulo) {
           <li class="rasgo">
-            <app-icono [nombre]="rasgo.icono" />
-            <span
-              ><b>{{ rasgo.titulo }}.</b> {{ rasgo.texto }}</span
-            >
+            <span class="rasgo__icono"><app-icono [nombre]="rasgo.icono" /></span>
+            <span>
+              <b class="rasgo__titulo">{{ rasgo.titulo }}</b>
+              <span class="rasgo__texto">{{ rasgo.texto }}</span>
+            </span>
           </li>
         }
       </ul>
@@ -218,12 +223,10 @@
         </p>
         <ul class="sedes__lista">
           @for (rasgo of sedes; track rasgo.titulo) {
-            <li>
+            <li class="sede-rasgo">
               <span class="sedes__icono"><app-icono [nombre]="rasgo.icono" /></span>
-              <span>
-                <b>{{ rasgo.titulo }}</b>
-                {{ rasgo.texto }}
-              </span>
+              <b>{{ rasgo.titulo }}</b>
+              <span>{{ rasgo.texto }}</span>
             </li>
           }
         </ul>
