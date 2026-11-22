@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
@@ -8,6 +9,9 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
 import { provideApi } from '../../../../api/generated/provide-api';
+import { PlanesService } from '../../../../api/generated/api/planes.service';
+import { TerminosPendientesStore } from '../../../../core/services/terminos-pendientes.store';
+import { EMPTY, of } from 'rxjs';
 
 const URL_SUSCRIPCION = '/api/v1/organizations/1/subscription';
 const URL_HISTORICO = '/api/v1/organizations/1/subscription/transitions?size=20';
@@ -47,6 +51,12 @@ describe('SubscriptionPage', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         provideApi(''),
+        // Catalogo y terminos (21/11/2026): sus lecturas no son de este spec.
+        { provide: PlanesService, useValue: { listPlans: () => of([]) } },
+        {
+          provide: TerminosPendientesStore,
+          useValue: { terminos: signal(null), cargar: () => EMPTY },
+        },
       ],
     }).compileComponents();
 

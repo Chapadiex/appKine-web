@@ -219,12 +219,12 @@
                 @if (persona.esPaciente) {
                   <span class="padron-tipo padron-tipo--paciente" title="Tiene perfil de paciente">
                     <app-icono nombre="pacientes" />
-                    Paciente
+                    Paciente<span class="visualmente-oculto">: tiene perfil de paciente</span>
                   </span>
                 } @else {
                   <span class="padron-tipo" title="Sin perfil de paciente vigente">
                     <app-icono nombre="perfil" />
-                    Persona
+                    Persona<span class="visualmente-oculto">: sin perfil de paciente</span>
                   </span>
                 }
               </td>
