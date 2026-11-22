@@ -126,6 +126,54 @@
   gap: clamp(2rem, 1rem + 4vw, 5rem);
 }
 
+/* Lo nuevo, arriba del título: la IA, con el violeta de todo lo que es IA. */
+.novedad-ia {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-block-end: var(--esp-8);
+  padding: var(--esp-2) var(--esp-5) var(--esp-2) var(--esp-2);
+  border: var(--borde-fino) solid var(--color-ia);
+  border-radius: 999px;
+  background: var(--color-superficie);
+  color: var(--color-ia-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+}
+
+.novedad-ia:hover {
+  background: var(--color-ia-fondo);
+}
+
+.novedad-ia__marca {
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: 999px;
+  background: var(--color-ia);
+  color: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  letter-spacing: 0.02em;
+}
+
+.novedad-ia__icono {
+  color: var(--color-ia);
+}
+
+.novedad-ia__flecha {
+  transition: transform 160ms ease;
+}
+
+.novedad-ia:hover .novedad-ia__flecha {
+  transform: translateX(2px);
+}
+
+@media (max-width: 30rem) {
+  .novedad-ia__flecha {
+    display: none;
+  }
+}
+
 .portada__titulo {
   margin: 0;
   color: var(--color-texto-fuerte);
