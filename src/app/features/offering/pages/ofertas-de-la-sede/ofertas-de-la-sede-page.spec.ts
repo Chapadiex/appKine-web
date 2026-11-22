@@ -751,14 +751,14 @@ describe('OfertasDeLaSedePage', () => {
 
     // La baja de un servicio global no cascadea: la fila tiene que decir "Masoterapia" y no
     // "Servicio #2", que es el id pelado justo en el caso que esta regla existe para sostener.
-    expect(anfitrion.textContent).toContain('Masoterapia (MASO)');
+    expect(anfitrion.textContent).toContain('Masoterapia');
 
     // Pero ofrecerlo en el alta seria empujar al usuario a un 409.
     abrir(fixture, 'Publicar un servicio en la sede');
     const opciones = [
       ...anfitrion.querySelectorAll<HTMLOptionElement>('#alta-oferta-servicio option'),
     ].map((opcion) => opcion.textContent?.trim());
-    expect(opciones).toEqual(['Elegí un servicio', 'Kinesiologia respiratoria (KRES)']);
+    expect(opciones).toEqual(['Elegí un servicio', 'Kinesiologia respiratoria']);
   });
 
   it('si el catalogo no carga la pantalla sigue en pie y lo dice en el selector', async () => {

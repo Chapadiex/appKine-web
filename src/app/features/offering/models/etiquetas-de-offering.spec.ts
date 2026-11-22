@@ -5,6 +5,7 @@ import {
 import {
   ServicioResponse,
   ServicioResponseEstadoEnum,
+  ServicioResponseNaturalezaEnum,
 } from '../../../api/generated/model/servicio-response';
 import {
   MODALIDADES,
@@ -15,6 +16,7 @@ import {
   precioEnPalabras,
   servicioEnUnaLinea,
   servicioInactivo,
+  serviciosPorNaturaleza,
 } from './etiquetas-de-offering';
 
 function oferta(campos: Partial<OfertaResponse> = {}): OfertaResponse {
@@ -113,10 +115,20 @@ describe('servicioInactivo', () => {
 });
 
 describe('servicioEnUnaLinea', () => {
-  it('el código acompania al nombre, que es lo que el equipo tiene memorizado', () => {
-    expect(servicioEnUnaLinea(servicio({ codigo: 'KRES' }))).toBe(
-      'Kinesiologia respiratoria (KRES)',
-    );
+  it('muestra solo el nombre: el código es interno', () => {
+    expect(servicioEnUnaLinea(servicio({ codigo: 'KRES' }))).toBe('Kinesiologia respiratoria');
+  });
+
+  it('agrupa por naturaleza, en orden y alfabético dentro del grupo', () => {
+    const grupos = serviciosPorNaturaleza([
+      servicio({ nombre: 'Sesión', naturaleza: ServicioResponseNaturalezaEnum.TERAPEUTICO }),
+      servicio({ nombre: 'Evaluación', naturaleza: ServicioResponseNaturalezaEnum.CLINICO }),
+      servicio({ nombre: 'Control', naturaleza: ServicioResponseNaturalezaEnum.TERAPEUTICO }),
+    ]);
+    expect(grupos.map((g) => [g.etiqueta, g.servicios.map((s) => s.nombre)])).toEqual([
+      ['Clínico', ['Evaluación']],
+      ['Terapéutico', ['Control', 'Sesión']],
+    ]);
   });
 
   it('sin código no deja un parentesis vacío colgando', () => {

@@ -355,8 +355,12 @@
           (change)="alElegirServicio($any($event.target).value)"
         >
           <option value="">Elegí un servicio</option>
-          @for (servicio of serviciosOfertables(); track servicio.id) {
-            <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+          @for (grupo of serviciosAgrupados(); track grupo.etiqueta) {
+            <optgroup [label]="grupo.etiqueta">
+              @for (servicio of grupo.servicios; track servicio.id) {
+                <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
+              }
+            </optgroup>
           }
         </select>
         @if (mostrarErrorAlta('servicioId')) {

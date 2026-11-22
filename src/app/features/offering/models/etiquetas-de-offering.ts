@@ -123,10 +123,30 @@ export function servicioInactivo(servicio: ServicioResponse): boolean {
 /**
  * Como se nombra un servicio en un selector: `Kinesiologia respiratoria (KRES)`.
  *
- * <p>El codigo va al lado del nombre y no en una columna aparte porque en un `select` no hay
- * columnas, y el codigo es lo que el equipo administrativo tiene memorizado.
+ * <p>Solo el nombre: el codigo es un dato interno que el usuario no necesita para elegir. Para
+ * orientarse, el alta agrupa los servicios por naturaleza ({@link serviciosPorNaturaleza}).
  */
 export function servicioEnUnaLinea(servicio: ServicioResponse): string {
-  const codigo = servicio.codigo ?? '';
-  return codigo === '' ? (servicio.nombre ?? '') : `${servicio.nombre ?? ''} (${codigo})`;
+  return servicio.nombre ?? servicio.codigo ?? '';
+}
+
+/**
+ * Los servicios agrupados por naturaleza (Clinico, Terapeutico, ...), en el orden de
+ * {@link NATURALEZAS} y alfabeticos dentro de cada grupo. Los grupos vacios no aparecen.
+ */
+export function serviciosPorNaturaleza(
+  servicios: readonly ServicioResponse[],
+): { readonly etiqueta: string; readonly servicios: readonly ServicioResponse[] }[] {
+  const porNombre = (a: ServicioResponse, b: ServicioResponse) =>
+    (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es');
+  const conocidas = NATURALEZAS.map((opcion) => ({
+    etiqueta: opcion.etiqueta,
+    servicios: servicios.filter((s) => s.naturaleza === opcion.valor).sort(porNombre),
+  }));
+  const otras = servicios
+    .filter((s) => !NATURALEZAS.some((opcion) => opcion.valor === s.naturaleza))
+    .sort(porNombre);
+  return [...conocidas, { etiqueta: 'Otros', servicios: otras }].filter(
+    (grupo) => grupo.servicios.length > 0,
+  );
 }

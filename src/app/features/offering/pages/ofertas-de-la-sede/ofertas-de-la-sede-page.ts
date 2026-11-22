@@ -43,6 +43,7 @@ import {
   precioEnPalabras,
   servicioEnUnaLinea,
   servicioInactivo,
+  serviciosPorNaturaleza,
 } from '../../models/etiquetas-de-offering';
 import {
   SituacionDeVigencia,
@@ -320,6 +321,11 @@ export class OfertasDeLaSedePage {
   private servicioPedidoAtendido = false;
 
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
+  /** Los ofertables agrupados por naturaleza, para el selector del alta. */
+  protected readonly serviciosAgrupados = computed(() =>
+    serviciosPorNaturaleza(this.serviciosOfertables()),
+  );
+
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
   );
