@@ -211,8 +211,9 @@
   width: 100%;
   margin-top: auto;
   border: 0;
-  border-top: var(--borde-fino) solid var(--color-borde);
-  border-radius: 0;
+  /* La linea de arriba es una sombra y no un borde: un borde claro en un boton se mide como
+     contorno de control (WCAG 1.4.11) y no llega a 3:1. */
+  box-shadow: 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
   background: var(--color-marca-fondo);
   font: inherit;
   text-align: start;

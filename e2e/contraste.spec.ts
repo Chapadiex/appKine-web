@@ -148,7 +148,8 @@ test.describe('Contraste de color', () => {
       await page.locator('form').getByLabel('Contraseña').fill('una-contrasena-larga-y-unica-2026');
       await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      const boton = page.getByRole('button', { name: 'Ingresar' });
+      // Mientras envia, el boton dice "Ingresando...": se busca el de envio del formulario.
+      const boton = page.locator('form button[type="submit"]');
       await expect(boton).toBeDisabled();
       await auditarContraste(page, 'login con el boton deshabilitado mientras envia', {
         queAxeNoMide: [
