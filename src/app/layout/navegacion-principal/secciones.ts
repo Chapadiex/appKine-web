@@ -239,12 +239,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
     icono: 'contratacion',
     secciones: [
       {
-        etiqueta: 'Convenios de la sede',
-        ruta: '/contratacion/convenios',
-        permisos: [PERMISO_CONVENIO_READ],
-        servicio: 'KINESIOLOGIA',
-      },
-      {
         etiqueta: 'Financiadores',
         ruta: '/contratacion/financiadores',
         permisos: [PERMISO_CONVENIO_READ],

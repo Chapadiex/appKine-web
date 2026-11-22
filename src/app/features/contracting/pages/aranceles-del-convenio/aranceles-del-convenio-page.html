@@ -1,5 +1,7 @@
 @if (convenio(); as ficha) {
-  <app-cabecera-de-pagina titulo="Aranceles de {{ ficha.nombre }}">
+  <app-cabecera-de-pagina
+    [titulo]="esDelPlan() ? 'Precios de ' + ficha.nombre : 'Aranceles de ' + ficha.nombre"
+  >
     @if (convenioInactivo()) {
       <span class="marca-estado marca-estado--revocada">Dado de baja</span>
     }
@@ -10,7 +12,12 @@
   </app-cabecera-de-pagina>
   <!-- Datos del convenio: se ven siempre. La explicacion va en el "?". -->
   <p class="descripcion">
-    Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
+    @if (esDelPlan()) {
+      Lo que paga la obra social por cada práctica, en <b>todas las sedes</b>. El paciente paga la
+      diferencia con el precio de la actividad.
+    } @else {
+      Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
+    }
   </p>
 } @else {
   <app-cabecera-de-pagina titulo="Aranceles del convenio #{{ convenioId }}">

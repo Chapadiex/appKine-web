@@ -46,6 +46,19 @@ import { FiltroEstado } from './contracting-api';
 export class ConveniosApi {
   private readonly api = inject(ConveniosYArancelesService);
 
+  /**
+   * El convenio del plan (contrato 0.187.0): sus aranceles son lo que paga la obra social por cada
+   * práctica, en todas las sedes. 404 si el plan todavía no tiene precios.
+   */
+  convenioDelPlan(financiadorId: number, planId: number): Observable<ConvenioResponse> {
+    return this.api.getConvenioDelPlan({ financiadorId, planId });
+  }
+
+  /** Devuelve el convenio del plan y lo crea si falta. Exige convenio:manage. */
+  asegurarConvenioDelPlan(financiadorId: number, planId: number): Observable<ConvenioResponse> {
+    return this.api.asegurarConvenioDelPlan({ financiadorId, planId });
+  }
+
   // El arancel por oferta (RF-M16-008) necesita saber que ofertas tiene la sede y que practicas
   // declara cada una. Se lee del servicio generado y no de `features/offering`: un feature no
   // importa de otro (AGENT.md 4.4).

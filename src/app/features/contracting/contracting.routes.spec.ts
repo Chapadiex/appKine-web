@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { Type } from '@angular/core';
 
 import { ArancelesDelConvenioPage } from './pages/aranceles-del-convenio/aranceles-del-convenio-page';
-import { ConveniosDeLaSedePage } from './pages/convenios-de-la-sede/convenios-de-la-sede-page';
 import { FinanciadoresPage } from './pages/financiadores/financiadores-page';
 import { ImportarArancelesPage } from './pages/importar-aranceles/importar-aranceles-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
@@ -54,19 +53,17 @@ describe('Rutas de /contratacion', () => {
     router = TestBed.inject(Router);
   });
 
-  it('/contratacion a secas cae en los convenios de la sede', async () => {
-    // Y no en el catalogo de financiadores: el convenio es lo que vence, se renueva y cambia de
-    // precio, y es la unica de las cinco que es de la SEDE, que es donde esta parado quien abre
-    // el menu principal.
-    expect(await componenteDe('/contratacion')).toBe(ConveniosDeLaSedePage);
+  it('/contratacion a secas cae en los financiadores', async () => {
+    // Desde el 22/11/2026 lo que paga la obra social se carga en el plan: no hay pantalla de
+    // convenios por sede.
+    expect(await componenteDe('/contratacion')).toBe(FinanciadoresPage);
   });
 
-  it('cada una de las cinco rutas resuelve a su pantalla', async () => {
+  it('cada una de las cuatro rutas resuelve a su pantalla', async () => {
     expect(await componenteDe('/contratacion/financiadores')).toBe(FinanciadoresPage);
     expect(await componenteDe('/contratacion/financiadores/10/planes')).toBe(
       PlanesDelFinanciadorPage,
     );
-    expect(await componenteDe('/contratacion/convenios')).toBe(ConveniosDeLaSedePage);
     expect(await componenteDe('/contratacion/convenios/7/aranceles')).toBe(
       ArancelesDelConvenioPage,
     );
@@ -75,12 +72,10 @@ describe('Rutas de /contratacion', () => {
     );
   });
 
-  it('ninguna de las cinco URLs cae en el comodin', async () => {
+  it('ninguna de las cuatro URLs cae en el comodin', async () => {
     const urls = [
-      '/contratacion',
       '/contratacion/financiadores',
       '/contratacion/financiadores/10/planes',
-      '/contratacion/convenios',
       '/contratacion/convenios/7/aranceles',
     ];
     for (const url of urls) {
@@ -88,12 +83,11 @@ describe('Rutas de /contratacion', () => {
     }
   });
 
-  it('sin convenio:read ninguna de las cinco pantallas abre, aunque tenga convenio:manage (DP-36)', async () => {
+  it('sin convenio:read ninguna de las cuatro pantallas abre, aunque tenga convenio:manage (DP-36)', async () => {
     concedidos = new Set([PERMISO_CONVENIO_MANAGE]);
     for (const url of [
       '/contratacion/financiadores',
       '/contratacion/financiadores/10/planes',
-      '/contratacion/convenios',
       '/contratacion/convenios/7/aranceles',
       '/contratacion/convenios/7/aranceles/importar',
     ]) {

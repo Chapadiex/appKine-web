@@ -124,8 +124,8 @@ export class ImportarArancelesPage {
   protected readonly rutaDeLaGrilla = `/contratacion/convenios/${this.convenioId}/aranceles`;
 
   protected readonly migas = computed(() => [
-    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
-    { etiqueta: 'Aranceles', ruta: this.rutaDeLaGrilla },
+    { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+    { etiqueta: 'Precios', ruta: this.rutaDeLaGrilla },
   ]);
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

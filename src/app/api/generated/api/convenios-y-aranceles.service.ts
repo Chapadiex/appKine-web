@@ -45,11 +45,13 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     ConveniosYArancelesServiceInterface,
+    AsegurarConvenioDelPlanRequestParams,
     CreateArancelRequestParams,
     CreateConvenioRequestParams,
     DeactivateArancelRequestParams,
     DeactivateConvenioRequestParams,
     GetConvenioRequestParams,
+    GetConvenioDelPlanRequestParams,
     ImportArancelesDeConvenioRequestParams,
     ListArancelesRequestParams,
     ListConveniosRequestParams,
@@ -67,6 +69,72 @@ export class ConveniosYArancelesService extends BaseService implements Convenios
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Preparar el plan para cargarle precios
+     * Devuelve el convenio del plan y lo crea si falta. Idempotente. Nace por prestacion, en la moneda del plan (pesos si no declara), con los requisitos del plan y sin fecha de fin: lo que tiene fechas es cada arancel. Exige convenio:manage sobre la sede del contexto.
+     * @endpoint post /api/v1/financiadores/{financiadorId}/planes/{planId}/convenio
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public asegurarConvenioDelPlan(requestParameters: AsegurarConvenioDelPlanRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ConvenioResponse>;
+    public asegurarConvenioDelPlan(requestParameters: AsegurarConvenioDelPlanRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ConvenioResponse>>;
+    public asegurarConvenioDelPlan(requestParameters: AsegurarConvenioDelPlanRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ConvenioResponse>>;
+    public asegurarConvenioDelPlan(requestParameters: AsegurarConvenioDelPlanRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const financiadorId = requestParameters?.financiadorId;
+        if (financiadorId === null || financiadorId === undefined) {
+            throw new Error('Required parameter financiadorId was null or undefined when calling asegurarConvenioDelPlan.');
+        }
+        const planId = requestParameters?.planId;
+        if (planId === null || planId === undefined) {
+            throw new Error('Required parameter planId was null or undefined when calling asegurarConvenioDelPlan.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/financiadores/${this.configuration.encodeParam({name: "financiadorId", value: financiadorId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/planes/${this.configuration.encodeParam({name: "planId", value: planId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/convenio`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ConvenioResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
@@ -456,6 +524,72 @@ export class ConveniosYArancelesService extends BaseService implements Convenios
             {
                 context: localVarHttpContext,
                 params: localVarQueryParameters.toHttpParams(),
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Ver el convenio del plan
+     * El convenio sin sede del plan, que vale para todas las sedes: sus aranceles son lo que paga la obra social por cada practica. 404 si el plan todavia no tiene precios cargados. Exige convenio:read.
+     * @endpoint get /api/v1/financiadores/{financiadorId}/planes/{planId}/convenio
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getConvenioDelPlan(requestParameters: GetConvenioDelPlanRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<ConvenioResponse>;
+    public getConvenioDelPlan(requestParameters: GetConvenioDelPlanRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<ConvenioResponse>>;
+    public getConvenioDelPlan(requestParameters: GetConvenioDelPlanRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<ConvenioResponse>>;
+    public getConvenioDelPlan(requestParameters: GetConvenioDelPlanRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const financiadorId = requestParameters?.financiadorId;
+        if (financiadorId === null || financiadorId === undefined) {
+            throw new Error('Required parameter financiadorId was null or undefined when calling getConvenioDelPlan.');
+        }
+        const planId = requestParameters?.planId;
+        if (planId === null || planId === undefined) {
+            throw new Error('Required parameter planId was null or undefined when calling getConvenioDelPlan.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/financiadores/${this.configuration.encodeParam({name: "financiadorId", value: financiadorId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/planes/${this.configuration.encodeParam({name: "planId", value: planId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/convenio`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<ConvenioResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,

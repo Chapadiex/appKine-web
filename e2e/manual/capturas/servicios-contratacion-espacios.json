@@ -129,41 +129,6 @@
   },
   {
     "ficha": "convenios",
-    "nombre": "firmar-convenio",
-    "ruta": "/contratacion/convenios",
-    "preparacion": "Con una cuenta con convenio:manage y al menos un financiador con plan activo, tocar 'Firmar un convenio' y esperar el panel 'Nuevo convenio de esta sede'.",
-    "recorte": "dialog.panel-lateral[open]",
-    "marcas": [
-      {
-        "selector": "#alta-convenio-financiador",
-        "numero": 2
-      },
-      {
-        "selector": "#alta-convenio-codigo",
-        "numero": 3
-      },
-      {
-        "selector": "#alta-convenio-modalidad",
-        "numero": 4
-      },
-      {
-        "selector": "#alta-convenio-desde",
-        "numero": 5
-      },
-      {
-        "selector": "dialog.panel-lateral[open] form button[type=submit]",
-        "numero": 6
-      }
-    ],
-    "pasos": [
-      {
-        "accion": "click",
-        "selector": "role=button[name=\"Firmar un convenio\"]"
-      }
-    ]
-  },
-  {
-    "ficha": "convenios",
     "nombre": "nuevo-arancel",
     "ruta": "/contratacion/convenios/:convenioId/aranceles",
     "preparacion": "Usar un convenio activo sembrado; tocar 'Cargar un arancel' y esperar el panel 'Nuevo arancel'.",

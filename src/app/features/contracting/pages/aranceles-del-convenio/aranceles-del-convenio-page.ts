@@ -127,10 +127,16 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ArancelesDelConvenioPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
-  private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
-    { etiqueta: 'Aranceles' },
-  ]);
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const financiadorId = this.convenio()?.financiadorId;
+    return [
+      { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+      ...(financiadorId === undefined
+        ? []
+        : [{ etiqueta: 'Planes', ruta: `/contratacion/financiadores/${financiadorId}/planes` }]),
+      { etiqueta: 'Precios' },
+    ];
+  });
 
   private readonly api = inject(ConveniosApi);
   private readonly avisos = inject(AvisosStore);
@@ -210,6 +216,15 @@ export class ArancelesDelConvenioPage {
 
   /** `true` cuando el convenio esta dado de baja: no admite aranceles nuevos. */
   protected readonly convenioInactivo = computed(() => this.convenio()?.estado === 'INACTIVO');
+
+  /**
+   * El convenio del plan (contrato 0.187.0) no es de ninguna sede: es lo que paga la obra social
+   * en todas. La pantalla lo titula como "precios" del plan, sin código ni ventana de vigencia.
+   */
+  protected readonly esDelPlan = computed(() => {
+    const ficha = this.convenio();
+    return ficha !== null && (ficha.consultorioId === undefined || ficha.consultorioId === null);
+  });
 
   /**
    * Practicas del catalogo clinico, para el selector del alta.
