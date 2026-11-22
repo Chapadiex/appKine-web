@@ -268,10 +268,15 @@
   gap: var(--esp-3);
   max-width: 17rem;
   padding: var(--esp-5) var(--esp-6);
-  border: var(--borde-fino) solid var(--color-ia);
+  overflow: hidden;
+  border: 2px solid transparent;
   border-radius: var(--radio-lg);
-  background: var(--color-superficie);
-  box-shadow: var(--sombra-flotante);
+  background:
+    linear-gradient(var(--color-superficie), var(--color-superficie)) padding-box,
+    linear-gradient(120deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta)) border-box;
+  box-shadow:
+    var(--sombra-flotante),
+    0 12px 36px var(--color-ia-brillo);
   font-size: var(--tipo-xs);
   line-height: 1.4;
 }
@@ -280,12 +285,12 @@
   display: inline-flex;
   align-items: center;
   gap: var(--esp-3);
-  color: var(--color-ia-texto);
-  font-weight: var(--peso-medio);
-}
-
-.sugerencia-ia__cabecera app-icono {
-  color: var(--color-ia);
+  justify-self: start;
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta));
+  color: var(--color-ia-vivo-texto);
+  font-weight: var(--peso-fuerte);
 }
 
 .sugerencia-ia__texto {

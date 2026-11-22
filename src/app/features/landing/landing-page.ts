@@ -15,11 +15,20 @@ import { SeccionIa } from './components/seccion-ia/seccion-ia';
 import { PieDeLanding } from './components/pie-de-landing/pie-de-landing';
 import { EleccionDelArmador } from './models/eleccion-del-armador';
 
+interface Beneficio {
+  readonly icono: NombreDeIcono;
+  readonly titulo: string;
+  readonly texto: string;
+}
+
 interface Servicio {
+  readonly clave: 'kine' | 'actividades';
+  readonly etiqueta: string;
   readonly titulo: string;
   readonly para: string;
   readonly icono: NombreDeIcono;
-  readonly beneficios: readonly string[];
+  readonly beneficios: readonly Beneficio[];
+  readonly ia: string;
 }
 
 interface Momento {
@@ -70,26 +79,64 @@ export class LandingPage {
 
   protected readonly servicios: readonly Servicio[] = [
     {
+      clave: 'kine',
+      etiqueta: 'Salud',
       titulo: 'Kinesiología y rehabilitación',
       para: 'Para el consultorio y el centro de rehabilitación.',
       icono: 'pacientes',
       beneficios: [
-        'Historia clínica por persona, con casos y plan de tratamiento.',
-        'Sesión de evaluación con examen, mediciones y escalas, pensada para la tablet.',
-        'Coberturas, convenios y aranceles; las autorizaciones se descuentan solas en cada sesión.',
-        'Presentaciones a obras sociales y prepagas, con débitos y reparos.',
+        {
+          icono: 'documento',
+          titulo: 'Historia clínica completa',
+          texto: 'Casos, plan de tratamiento y evolución de cada persona en un solo lugar.',
+        },
+        {
+          icono: 'operacion',
+          titulo: 'Evaluación en la tablet',
+          texto: 'Examen, mediciones y escalas sesión a sesión, sin papel.',
+        },
+        {
+          icono: 'contratacion',
+          titulo: 'Obras sociales sin planillas',
+          texto: 'Convenios y aranceles; las autorizaciones se descuentan solas.',
+        },
+        {
+          icono: 'economia',
+          titulo: 'Presentaciones listas',
+          texto: 'La liquidación de cada financiador, con débitos y reparos.',
+        },
       ],
+      ia: 'La IA sigue la evolución de cada caso y te avisa cuándo conviene revisar el plan.',
     },
     {
+      clave: 'actividades',
+      etiqueta: 'Movimiento',
       titulo: 'Actividades',
       para: 'Para el gimnasio y el estudio de yoga, pilates o danza.',
       icono: 'actividades',
       beneficios: [
-        'Clases semanales con cupo, inscripciones y lista de espera.',
-        'La asistencia de la clase entera en una sola pantalla.',
-        'Pases, abonos y packs de clases, con renovación y vencimiento.',
-        'Honorarios por clase para cada instructor.',
+        {
+          icono: 'calendario',
+          titulo: 'Clases semanales',
+          texto: 'Cupo, inscripciones y lista de espera que se corre sola.',
+        },
+        {
+          icono: 'exito',
+          titulo: 'Asistencia en un toque',
+          texto: 'La clase entera en una sola pantalla, desde la tablet.',
+        },
+        {
+          icono: 'capas',
+          titulo: 'Pases y abonos',
+          texto: 'Packs de clases con renovación y vencimiento automáticos.',
+        },
+        {
+          icono: 'economia',
+          titulo: 'Honorarios por clase',
+          texto: 'Lo que le corresponde a cada instructor, sin cuentas a mano.',
+        },
       ],
+      ia: 'Preguntale a la IA quién dejó de venir este mes y qué clases se llenan primero.',
     },
   ];
 

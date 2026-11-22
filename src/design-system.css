@@ -190,6 +190,11 @@
   --color-ia: #7c3aed;
   --color-ia-fondo: #ede9fe;
   --color-ia-texto: #4c1d95;
+  /* La IA en la landing: degradé violeta a fucsia, para que se note. */
+  --color-ia-vivo-desde: #7c3aed;
+  --color-ia-vivo-hasta: #db2777;
+  --color-ia-vivo-texto: #ffffff;
+  --color-ia-brillo: rgb(124 58 237 / 0.35);
   --color-servicio-kine: #0f766e;
   --color-servicio-kine-fondo: #ccfbf1;
   --color-servicio-kine-texto: #134e4a;
@@ -222,6 +227,14 @@
   --color-banda-texto: #f1f5f9;
   --color-banda-texto-suave: #bfcfe0;
   --color-banda-acento: #5eead4;
+  /* La IA sobre la banda oscura (igual en los dos temas): el mismo degradé de la portada para
+     los rellenos, con texto blanco, y su versión clara para las letras sobre el fondo oscuro. */
+  --color-banda-ia-desde: #7c3aed;
+  --color-banda-ia-hasta: #db2777;
+  --color-banda-ia-texto: #ffffff;
+  --color-banda-ia-letra-desde: #a78bfa;
+  --color-banda-ia-letra-hasta: #f472b6;
+  --color-banda-ia-brillo: rgb(139 92 246 / 0.45);
   /* Paleta propia de la landing: coral para actuar, menta para lo clínico y crema para la
      portada. Sólo la usa features/landing; la app sigue con el azul de acción. Medidos AA:
      blanco sobre coral 5,2:1, coral sobre su tinte 5,0:1, menta sobre su tinte 4,8:1. */
@@ -390,6 +403,10 @@
     --color-ia: #a78bfa;
     --color-ia-fondo: #3b2a6b;
     --color-ia-texto: #ddd6fe;
+    --color-ia-vivo-desde: #a78bfa;
+    --color-ia-vivo-hasta: #f472b6;
+    --color-ia-vivo-texto: #1a0b2e;
+    --color-ia-brillo: rgb(167 139 250 / 0.4);
     --color-servicio-kine: #5eead4;
     --color-servicio-kine-fondo: #134e4a;
     --color-servicio-kine-texto: #ccfbf1;
@@ -470,6 +487,10 @@
   --color-ia: #a78bfa;
   --color-ia-fondo: #3b2a6b;
   --color-ia-texto: #ddd6fe;
+  --color-ia-vivo-desde: #a78bfa;
+  --color-ia-vivo-hasta: #f472b6;
+  --color-ia-vivo-texto: #1a0b2e;
+  --color-ia-brillo: rgb(167 139 250 / 0.4);
   --color-servicio-kine: #5eead4;
   --color-servicio-kine-fondo: #134e4a;
   --color-servicio-kine-texto: #ccfbf1;
