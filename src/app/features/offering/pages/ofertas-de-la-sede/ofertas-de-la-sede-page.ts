@@ -359,6 +359,19 @@ export class OfertasDeLaSedePage {
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
 
+  /**
+   * La practica del catalogo clinico con el MISMO codigo que el servicio elegido (V35 los precarga
+   * asi), o `null`. Si existe, se le asocia sola a la actividad al darla de alta: la actividad
+   * queda lista para obra social sin pasar por "Practicas".
+   */
+  protected readonly practicaDelServicio = signal<{
+    readonly id: number;
+    readonly codigo: string;
+    readonly nombre: string;
+  } | null>(null);
+  /** Ultimo nombre que puso el autocompletado: si el usuario lo cambio, no se pisa. */
+  private nombreAutocompletado = '';
+
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     servicioId: ['', [Validators.required]],
     nombreComercial: ['', [textoRequerido]],
@@ -548,8 +561,55 @@ export class OfertasDeLaSedePage {
       vigenciaDesde: '',
       vigenciaHasta: '',
     });
+    this.practicaDelServicio.set(null);
+    this.nombreAutocompletado = '';
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-oferta-servicio'), { injector: this.injector });
+  }
+
+  /**
+   * Al elegir el servicio se completa lo que casi siempre es igual: el nombre (el del servicio,
+   * si el usuario no escribio otro), la duracion si esta vacia y la practica del mismo codigo,
+   * que ademas marca "Admite obra social". Todo queda editable.
+   */
+  protected alElegirServicio(valor: string): void {
+    const servicio = this.serviciosOfertables().find((s) => String(s.id) === valor);
+    this.practicaDelServicio.set(null);
+    if (servicio === undefined) {
+      return;
+    }
+    const controles = this.formularioAlta.controls;
+    const nombreActual = controles.nombreComercial.value.trim();
+    if (servicio.nombre && (nombreActual === '' || nombreActual === this.nombreAutocompletado)) {
+      controles.nombreComercial.setValue(servicio.nombre);
+      this.nombreAutocompletado = servicio.nombre;
+    }
+    if (controles.duracionMinutos.value === '') {
+      controles.duracionMinutos.setValue(String(DURACION_SUGERIDA));
+    }
+    const codigo = servicio.codigo;
+    if (!codigo) {
+      return;
+    }
+    this.api
+      .buscarPracticasDelCatalogo(codigo)
+      .pipe(catchError(() => of(null)))
+      .subscribe((pagina) => {
+        // El usuario pudo cambiar de servicio mientras tanto.
+        if (controles.servicioId.value !== valor) {
+          return;
+        }
+        const practica = (pagina?.content ?? []).find((p) => p.codigo === codigo);
+        if (practica?.id === undefined) {
+          return;
+        }
+        this.practicaDelServicio.set({
+          id: practica.id,
+          codigo,
+          nombre: practica.name ?? codigo,
+        });
+        controles.admiteObraSocial.setValue(true);
+      });
   }
 
   protected abrirPanel(oferta: OfertaResponse, tipo: TipoAccion): void {
@@ -652,6 +712,28 @@ export class OfertasDeLaSedePage {
    * dice al backend que tome el default del catalogo. Mandar `false` seria apagarlo, que es otra
    * cosa.
    */
+  /**
+   * Fija la practica del servicio en la actividad recien creada. Si falla, la actividad ya
+   * existe: se avisa que la practica se asocia a mano desde "Practicas", sin deshacer nada.
+   */
+  private asociarPractica(
+    consultorioId: number,
+    creada: OfertaResponse,
+    practica: { readonly id: number; readonly nombre: string } | null,
+  ): void {
+    if (practica === null || creada.id === undefined || creada.version === undefined) {
+      return;
+    }
+    this.api
+      .fijarPracticas(consultorioId, creada.id, [practica.id], practica.id, creada.version)
+      .subscribe({
+        error: () =>
+          this.avisos.error('No pudimos asociarle la práctica a la actividad', {
+            descripcion: `Asociá ${practica.nombre} desde el menú de la actividad → Prácticas.`,
+          }),
+      });
+  }
+
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null || this.enviando()) {
@@ -742,9 +824,11 @@ export class OfertasDeLaSedePage {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
 
+    const practica = this.practicaDelServicio();
     this.api.crearOferta(consultorioId, cuerpo).subscribe({
       next: (creada) => {
         this.cerrarPanel();
+        this.asociarPractica(consultorioId, creada, practica);
         // La aclaracion solo suma si la vigencia arranca mas adelante: es cuando la fila va a
         // figurar "activa pero todavía sin vigencia" y el operador podria creer que fallo.
         const arrancaDespues =
@@ -1079,6 +1163,9 @@ export class OfertasDeLaSedePage {
 }
 
 /** Texto comparable para la busqueda: minusculas y sin acentos. */
+/** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
+const DURACION_SUGERIDA = 45;
+
 function normalizar(texto: string): string {
   return texto
     .normalize('NFD')

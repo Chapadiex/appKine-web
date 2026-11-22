@@ -199,11 +199,47 @@ describe('OfertasDeLaSedePage', () => {
     );
   });
 
+  it('elegir el servicio completa nombre y duración, y le asocia la práctica del mismo código', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Publicar un servicio en la sede');
+    elegirServicio(fixture, httpMock, '1', [
+      { id: 55, codigo: 'KRES', name: 'Kinesiologia respiratoria' },
+    ]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-duracion')?.value).toBe('45');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-obra-social')?.checked).toBe(
+      true,
+    );
+    expect(anfitrion.textContent).toContain('Se le asocia sola la práctica');
+
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'POST' && p.url === OFERTAS)
+      .flush({ id: 30, nombreComercial: 'Kinesiologia respiratoria', version: 0 });
+    const practicas = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'PUT' && p.url === `${OFERTAS}/30/practicas`,
+    );
+    expect(practicas.request.body).toEqual({
+      practicaIds: [55],
+      practicaPrincipalId: 55,
+      expectedVersion: 0,
+    });
+    practicas.flush({ ofertaId: 30, practicas: [] });
+    httpMock.match((p) => p.method === 'GET').forEach((pedido) => pedido.flush([]));
+  });
+
   it('el alta OMITE lo que quedo en heredar: heredar no es apagar', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', '45');
     enviar(fixture, 'form[novalidate]');
@@ -256,7 +292,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(ayuda).toContain('asiste');
     expect(ayuda).toContain('la ausencia no genera deuda');
 
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Yoga por clase');
     escribir(fixture, '#alta-oferta-duracion', '60');
     elegir(fixture, '#alta-oferta-esquema', 'POR_CLASE');
@@ -612,7 +648,7 @@ describe('OfertasDeLaSedePage', () => {
 
     httpMock.expectNone(esAlta());
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Toda actividad cuelga de un servicio del catalogo');
+    expect(anfitrion.textContent).toContain('Toda actividad cuelga de un servicio del catálogo');
     expect(anfitrion.textContent).toContain('El nombre comercial es obligatorio');
   });
 
@@ -735,7 +771,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Servicio #1');
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    expect(anfitrion.textContent).toContain('No pudimos traer el catalogo de servicios');
+    expect(anfitrion.textContent).toContain('No pudimos traer el catálogo de servicios');
   });
 
   // -----------------------------------------------------------------------------------------
@@ -1038,7 +1074,7 @@ describe('OfertasDeLaSedePage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Pilates reformer');
     elegir(fixture, '#alta-oferta-modalidad', 'GRUPAL');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
@@ -1296,7 +1332,7 @@ describe('OfertasDeLaSedePage', () => {
     campos?: { readonly duracion?: string; readonly capacidad?: string },
   ) {
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', campos?.duracion ?? '45');
     escribir(fixture, '#alta-oferta-capacidad', campos?.capacidad ?? '1');
@@ -1409,5 +1445,22 @@ function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   }
   casilla.checked = true;
   casilla.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/**
+ * Elige el servicio del alta y contesta la busqueda de su practica (del mismo codigo) que la
+ * pantalla dispara al elegirlo, para que no quede un pedido abierto.
+ */
+function elegirServicio(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  httpMock: HttpTestingController,
+  valor: string,
+  practicas: readonly { id: number; codigo: string; name: string }[] = [],
+) {
+  elegir(fixture, '#alta-oferta-servicio', valor);
+  httpMock
+    .match((peticion) => peticion.url.endsWith('/catalogos/practicas'))
+    .forEach((pedido) => pedido.flush({ content: practicas }));
   fixture.detectChanges();
 }

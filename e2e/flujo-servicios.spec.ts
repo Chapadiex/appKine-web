@@ -64,9 +64,11 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await ingresar(page, centro);
       await navegar(page, '/servicios/ofertas');
       await page.getByRole('button', { name: 'Publicar un servicio en la sede' }).click();
-      await page.getByLabel('Servicio del catalogo').selectOption(String(servicioId));
+      await page.getByLabel('Servicio del catálogo').selectOption(String(servicioId));
       await page.getByLabel('Nombre comercial').fill(nombreDeLaOferta);
       await page.getByLabel('Duración (minutos)').fill('30');
+      // Profesional y box viven en "Más opciones", plegado.
+      await page.locator('summary', { hasText: 'Más opciones' }).click();
       await page.getByLabel('Requiere espacio o box').uncheck();
       const altaDeLaOferta = respuestaDe(page, 'POST', /\/consultorios\/\d+\/ofertas$/);
       await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
@@ -76,7 +78,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await expect(
         page
           .getByRole('region', { name: 'Notificaciones', exact: true })
-          .getByText('Oferta publicada'),
+          .getByText('Actividad publicada'),
       ).toBeVisible();
 
       await abrirFiltros(page);
