@@ -150,3 +150,49 @@ export function serviciosPorNaturaleza(
     (grupo) => grupo.servicios.length > 0,
   );
 }
+
+/**
+ * Los esquemas de cobro con nombre y explicacion en palabras (21/11/2026): el selector mostraba el
+ * valor del enum (`POR_PACK`) y nadie sabia que hacia cada uno. `''` es "sin esquema": cada
+ * atencion se cobra al cerrarla, como cualquier sesion.
+ */
+export const ESQUEMAS_DE_COBRO: readonly {
+  readonly valor: string;
+  readonly etiqueta: string;
+  readonly ayuda: string;
+}[] = [
+  {
+    valor: '',
+    etiqueta: 'Sin esquema especial',
+    ayuda: 'Cada atención se cobra al cerrarla, como cualquier sesión.',
+  },
+  {
+    valor: 'POR_SESION',
+    etiqueta: 'Por sesión',
+    ayuda: 'Cada sesión atendida genera su cobro.',
+  },
+  {
+    valor: 'POR_CLASE',
+    etiqueta: 'Por clase asistida',
+    ayuda:
+      'Genera una deuda por cada clase a la que la persona asiste (presente o con demora); la ' +
+      'ausencia no genera deuda.',
+  },
+  {
+    valor: 'POR_PACK',
+    etiqueta: 'Pack de sesiones',
+    ayuda:
+      'La persona compra un pack de varias sesiones y cada asistencia descuenta una. Los packs ' +
+      'se arman en Productos.',
+  },
+  {
+    valor: 'POR_ABONO',
+    etiqueta: 'Abono por período',
+    ayuda: 'La persona paga un abono con un tope de asistencias por período. Se arma en Productos.',
+  },
+];
+
+/** La explicacion del esquema elegido, para la linea de ayuda debajo del selector. */
+export function ayudaDeEsquema(valor: string): string {
+  return ESQUEMAS_DE_COBRO.find((esquema) => esquema.valor === valor)?.ayuda ?? '';
+}

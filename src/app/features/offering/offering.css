@@ -614,3 +614,34 @@ form > .acciones.formulario-servicio__descartar {
 .celda-icono--dada-de-baja {
   color: var(--color-peligro);
 }
+
+/*
+ * Alta de actividad en tres pasos (21/11/2026). Cada paso es una grilla de 12 que vive en el DOM y
+ * se esconde con `hidden`: `display: grid` le gana al `hidden` del navegador, hay que restituirlo.
+ */
+.paso-del-alta[hidden] {
+  display: none;
+}
+
+.alta-oferta__pasos {
+  display: block;
+  margin-bottom: var(--esp-6);
+}
+
+/* Rotulo que no es un `label` (el del segmentado, o el de arriba de un interruptor). */
+.campo__rotulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.rotulo-con-ayuda {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 1.25rem;
+}
+
+/* El interruptor queda a la altura de los controles de la fila, no de sus etiquetas. */
+.campo--interruptor .interruptor {
+  min-height: 2.75rem;
+}

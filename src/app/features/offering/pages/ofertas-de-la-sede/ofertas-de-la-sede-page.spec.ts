@@ -287,15 +287,15 @@ describe('OfertasDeLaSedePage', () => {
       (opcion) => (opcion as HTMLOptionElement).value,
     );
     expect(opciones).toContain('POR_CLASE');
-    const ayuda = host.querySelector('#alta-oferta-esquema-ayuda')?.textContent ?? '';
-    expect(ayuda).toContain('POR_CLASE');
-    expect(ayuda).toContain('asiste');
-    expect(ayuda).toContain('la ausencia no genera deuda');
 
     elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Yoga por clase');
     escribir(fixture, '#alta-oferta-duracion', '60');
     elegir(fixture, '#alta-oferta-esquema', 'POR_CLASE');
+    // La explicacion del esquema elegido, en palabras y no con el nombre del enum.
+    const ayuda = host.querySelector('#alta-oferta-esquema-ayuda')?.textContent ?? '';
+    expect(ayuda).toContain('asiste');
+    expect(ayuda).toContain('la ausencia no genera deuda');
     enviar(fixture, 'form[novalidate]');
 
     const alta = httpMock.expectOne(
@@ -659,7 +659,7 @@ describe('OfertasDeLaSedePage', () => {
 
     httpMock.expectNone(esAlta());
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'La duración es obligatoria y tiene que ser mayor a cero',
+      'Tiene que ser mayor a cero.',
     );
   });
 
@@ -1082,14 +1082,22 @@ describe('OfertasDeLaSedePage', () => {
     abrir(fixture, 'Publicar un servicio en la sede');
     elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Pilates reformer');
-    elegir(fixture, '#alta-oferta-modalidad', 'GRUPAL');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'necesita capacidad mayor a 1',
-    );
+    // El servicio es individual: la capacidad queda en 1 y bloqueada hasta elegir Grupal.
+    const capacidad = fixture.nativeElement.querySelector(
+      '#alta-oferta-capacidad',
+    ) as HTMLInputElement;
+    expect(capacidad.disabled).toBe(true);
+    (
+      fixture.nativeElement.querySelector(
+        '#alta-oferta-modalidad input[value="GRUPAL"]',
+      ) as HTMLInputElement
+    ).click();
+    fixture.detectChanges();
+    expect(capacidad.disabled).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Personas por turno');
     escribir(fixture, '#alta-oferta-duracion', '60');
     escribir(fixture, '#alta-oferta-capacidad', '6');
     escribir(fixture, '#alta-oferta-precio', '9000');
-    escribir(fixture, '#alta-oferta-moneda', 'usd');
     elegir(fixture, '#alta-oferta-esquema', 'POR_PACK');
     escribir(fixture, '#alta-oferta-descripcion', '  Con máquina  ');
     elegir(fixture, '#alta-oferta-caso', 'false');
@@ -1107,7 +1115,7 @@ describe('OfertasDeLaSedePage', () => {
       duracionMinutos: 60,
       capacidad: 6,
       precioBase: 9000,
-      moneda: 'USD',
+      moneda: 'ARS',
       esquemaCobro: 'POR_PACK',
       requiereCasoClinico: false,
       generaRegistroClinico: true,

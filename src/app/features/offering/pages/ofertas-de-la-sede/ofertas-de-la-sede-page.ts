@@ -41,7 +41,9 @@ import { UpdateOfertaRequest } from '../../../../api/generated/model/update-ofer
 import { FiltroEstado, OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import {
+  ESQUEMAS_DE_COBRO,
   MODALIDADES,
+  ayudaDeEsquema,
   etiquetaDeModalidad,
   etiquetaDeNaturaleza,
   modalidadConCapacidad,
@@ -57,6 +59,11 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import {
+  AsistenteDePasos,
+  PasoDeAsistente,
+} from '../../../../shared/components/asistente-de-pasos/asistente-de-pasos';
+import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
@@ -152,6 +159,8 @@ type Heredable = '' | 'true' | 'false';
     ColumnaOrdenable,
     Filtros,
     Icono,
+    AsistenteDePasos,
+    Segmentado,
     PieDeTabla,
     EstadoVacio,
     ReactiveFormsModule,
@@ -184,6 +193,14 @@ export class OfertasDeLaSedePage {
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly modalidades = MODALIDADES;
   protected readonly esquemasDeCobro = Object.values(EsquemaCobro);
+  protected readonly opcionesDeEsquema = ESQUEMAS_DE_COBRO;
+  protected readonly ayudaDeEsquema = ayudaDeEsquema;
+  protected readonly pasosDelAlta = PASOS_DEL_ALTA;
+  /** Individual o Grupal, cortos: la explicacion va en el "?" y no en cada opcion. */
+  protected readonly opcionesDeModalidad = MODALIDADES.map((opcion) => ({
+    valor: opcion.valor as string,
+    etiqueta: opcion.etiqueta,
+  }));
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
   protected readonly etiquetaDeNaturaleza = etiquetaDeNaturaleza;
   protected readonly modalidadConCapacidad = modalidadConCapacidad;
@@ -381,6 +398,15 @@ export class OfertasDeLaSedePage {
 
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
+
+  /** Paso del alta en curso (1 a 3). Los tres viven en el DOM; se ve uno solo. */
+  protected readonly pasoDelAlta = signal(1);
+
+  /** Modalidad por defecto del servicio elegido: lo que vale "heredar". */
+  private readonly modalidadDelServicio = signal('');
+
+  /** La modalidad que va a tener la actividad: la elegida, o la del servicio si se hereda. */
+  protected readonly modalidadEfectivaDelAlta = signal('');
 
   /**
    * La practica del catalogo clinico con el MISMO codigo que el servicio elegido (V35 los precarga
@@ -605,6 +631,9 @@ export class OfertasDeLaSedePage {
     });
     this.practicaDelServicio.set(null);
     this.nombreAutocompletado = '';
+    this.modalidadDelServicio.set('');
+    this.pasoDelAlta.set(1);
+    this.aplicarModalidadDelAlta();
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-oferta-servicio'), { injector: this.injector });
   }
@@ -628,15 +657,13 @@ export class OfertasDeLaSedePage {
     }
     // Una clase grupal arranca con cupo y una hora; una sesion individual, con 45 minutos.
     const grupal = servicio.modalidadDefault === 'GRUPAL';
-    this.altaEsGrupal.set(grupal && controles.modalidad.value === '');
+    this.modalidadDelServicio.set(servicio.modalidadDefault ?? '');
     if (controles.duracionMinutos.value === '') {
       controles.duracionMinutos.setValue(
         String(grupal ? DURACION_SUGERIDA_GRUPAL : DURACION_SUGERIDA),
       );
     }
-    if (grupal && controles.capacidad.value === '1') {
-      controles.capacidad.setValue(String(CAPACIDAD_SUGERIDA_GRUPAL));
-    }
+    this.aplicarModalidadDelAlta();
     const codigo = servicio.codigo;
     if (!codigo) {
       return;
@@ -751,8 +778,72 @@ export class OfertasDeLaSedePage {
    * mandar evita un `400` que el usuario no sabe interpretar. No valida: la autoridad sigue siendo
    * el servidor.
    */
-  protected marcarModalidadDelAlta(valor: string): void {
-    this.altaEsGrupal.set(valor === 'GRUPAL');
+  protected marcarModalidadDelAlta(valor: string | null): void {
+    // Elegir lo mismo que trae el servicio es heredar: no viaja, y si el catalogo cambia la sigue.
+    const elegida = valor ?? '';
+    this.formularioAlta.controls.modalidad.setValue(
+      elegida === this.modalidadDelServicio() ? '' : elegida,
+    );
+    this.aplicarModalidadDelAlta();
+  }
+
+  /**
+   * Capacidad segun la modalidad: en una grupal se habilita (y arranca con un cupo sugerido); en
+   * una individual queda fija en 1 y deshabilitada, que es lo que casi siempre corresponde.
+   */
+  private aplicarModalidadDelAlta(): void {
+    const controles = this.formularioAlta.controls;
+    const efectiva = controles.modalidad.value || this.modalidadDelServicio();
+    this.modalidadEfectivaDelAlta.set(efectiva);
+    const grupal = efectiva === 'GRUPAL';
+    this.altaEsGrupal.set(grupal);
+    if (grupal) {
+      if (controles.capacidad.value === '1' || controles.capacidad.value === '') {
+        controles.capacidad.setValue(String(CAPACIDAD_SUGERIDA_GRUPAL));
+      }
+      controles.capacidad.enable({ emitEvent: false });
+    } else {
+      controles.capacidad.setValue('1');
+      controles.capacidad.disable({ emitEvent: false });
+    }
+  }
+
+  /** Avanza al paso siguiente si lo esencial esta completo; si no, marca y enfoca lo que falta. */
+  protected siguientePasoDelAlta(): void {
+    if (this.pasoDelAlta() === 1 && !this.esencialCompleto()) {
+      return;
+    }
+    this.irAlPasoDelAlta(Math.min(this.pasoDelAlta() + 1, PASOS_DEL_ALTA.length));
+  }
+
+  protected irAlPasoDelAlta(numero: number): void {
+    this.pasoDelAlta.set(numero);
+    afterNextRender(() => this.enfocar(`#alta-oferta-paso-${numero} .asistente__encabezado`), {
+      injector: this.injector,
+    });
+  }
+
+  /** Lo del paso 1 que el servidor exige: servicio, nombre y duracion. */
+  private esencialCompleto(): boolean {
+    const controles = this.formularioAlta.controls;
+    const faltante = [
+      ['#alta-oferta-servicio', controles.servicioId],
+      ['#alta-oferta-nombre', controles.nombreComercial],
+      ['#alta-oferta-duracion', controles.duracionMinutos],
+    ].find(([, control]) => (control as { invalid: boolean }).invalid) as
+      [string, { markAsTouched(): void }] | undefined;
+    if (faltante === undefined && (numeroDeclarado(controles.duracionMinutos.value) ?? 0) > 0) {
+      return true;
+    }
+    this.intentos.update((valor) => valor + 1);
+    controles.servicioId.markAsTouched();
+    controles.nombreComercial.markAsTouched();
+    controles.duracionMinutos.markAsTouched();
+    if (faltante === undefined) {
+      controles.duracionMinutos.setErrors({ min: true });
+    }
+    this.enfocar(faltante?.[0] ?? '#alta-oferta-duracion');
+    return false;
   }
 
   /**
@@ -794,6 +885,7 @@ export class OfertasDeLaSedePage {
 
     if (this.formularioAlta.invalid) {
       this.formularioAlta.markAllAsTouched();
+      this.pasoDelAlta.set(1);
       this.enfocar(
         this.formularioAlta.controls.servicioId.invalid
           ? '#alta-oferta-servicio'
@@ -806,6 +898,7 @@ export class OfertasDeLaSedePage {
     const duracion = numeroDeclarado(valores.duracionMinutos) ?? 0;
     if (duracion <= 0) {
       this.formularioAlta.controls.duracionMinutos.setErrors({ min: true });
+      this.pasoDelAlta.set(1);
       this.enfocar('#alta-oferta-duracion');
       return;
     }
@@ -816,6 +909,7 @@ export class OfertasDeLaSedePage {
     const capacidad = numeroDeclarado(valores.capacidad) ?? 0;
     if (capacidad <= 0) {
       this.formularioAlta.controls.capacidad.setErrors({ min: true });
+      this.pasoDelAlta.set(2);
       this.enfocar('#alta-oferta-capacidad');
       return;
     }
@@ -1212,8 +1306,13 @@ export class OfertasDeLaSedePage {
   }
 }
 
-/** Texto comparable para la busqueda: minusculas y sin acentos. */
-/** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
+/** Los tres pasos del alta: lo esencial, como se atiende y como se cobra. */
+const PASOS_DEL_ALTA: readonly PasoDeAsistente[] = [
+  { numero: 1, titulo: 'Lo esencial', sub: 'Servicio, nombre y precio' },
+  { numero: 2, titulo: 'Cómo se atiende', sub: 'Modalidad, recursos y clínica' },
+  { numero: 3, titulo: 'Cobro y vigencia', sub: 'Esquema, descripción y fechas' },
+];
+
 /** Un icono por situacion de vigencia: la tabla muestra el icono y el texto va en el tooltip. */
 const ICONO_DEL_ESTADO: Record<ClaveDeVigencia, NombreDeIcono> = {
   vigente: 'exito',
@@ -1223,11 +1322,13 @@ const ICONO_DEL_ESTADO: Record<ClaveDeVigencia, NombreDeIcono> = {
   'dada-de-baja': 'error',
 };
 
+/** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
 const DURACION_SUGERIDA = 45;
 /** Para un servicio grupal (yoga, pilates...): una hora y un cupo razonable para empezar. */
 const DURACION_SUGERIDA_GRUPAL = 60;
 const CAPACIDAD_SUGERIDA_GRUPAL = 10;
 
+/** Texto comparable para la busqueda: minusculas y sin acentos. */
 function normalizar(texto: string): string {
   return texto
     .normalize('NFD')

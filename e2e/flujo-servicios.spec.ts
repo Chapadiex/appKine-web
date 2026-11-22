@@ -64,12 +64,16 @@ test.describe('Servicios y ofertas contra el backend real', () => {
       await ingresar(page, centro);
       await navegar(page, '/servicios/ofertas');
       await page.getByRole('button', { name: 'Publicar un servicio en la sede' }).click();
-      await page.getByLabel('Servicio del catálogo').selectOption(String(servicioId));
+      // El servicio se elige en un buscador: foco, y la opción por su id.
+      await page.getByLabel('Servicio del catálogo').click();
+      await page
+        .locator(`app-selector-con-buscador [role="option"][data-valor="${servicioId}"]`)
+        .click();
       await page.getByLabel('Nombre comercial').fill(nombreDeLaOferta);
       await page.getByLabel('Duración (minutos)').fill('30');
-      // Profesional y box viven en "Más opciones", plegado.
-      await page.locator('summary', { hasText: 'Más opciones' }).click();
-      await page.getByLabel('Requiere espacio o box').uncheck();
+      // Profesional y box viven en el paso 2, "Cómo se atiende".
+      await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+      await page.getByRole('switch', { name: 'Requiere espacio o box' }).uncheck();
       const altaDeLaOferta = respuestaDe(page, 'POST', /\/consultorios\/\d+\/ofertas$/);
       await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
       const oferta = await altaDeLaOferta;
