@@ -347,22 +347,15 @@
       </h3>
       <div class="campo campo--4">
         <label for="alta-oferta-servicio">Servicio del catálogo</label>
-        <select
-          id="alta-oferta-servicio"
+        <app-selector-con-buscador
+          idCampo="alta-oferta-servicio"
+          placeholder="Buscá o elegí un servicio (yoga, kinesiología…)"
           formControlName="servicioId"
-          [attr.aria-invalid]="mostrarErrorAlta('servicioId') ? 'true' : null"
-          aria-describedby="alta-oferta-servicio-ayuda"
-          (change)="alElegirServicio($any($event.target).value)"
-        >
-          <option value="">Elegí un servicio</option>
-          @for (grupo of serviciosAgrupados(); track grupo.etiqueta) {
-            <optgroup [label]="grupo.etiqueta">
-              @for (servicio of grupo.servicios; track servicio.id) {
-                <option [value]="servicio.id">{{ servicioEnUnaLinea(servicio) }}</option>
-              }
-            </optgroup>
-          }
-        </select>
+          [grupos]="serviciosAgrupados()"
+          [invalido]="mostrarErrorAlta('servicioId')"
+          describedby="alta-oferta-servicio-ayuda"
+          (elegido)="alElegirServicio($event)"
+        />
         @if (mostrarErrorAlta('servicioId')) {
           <p class="campo__error" role="alert">
             Toda actividad cuelga de un servicio del catálogo: elegí cuál.
@@ -370,8 +363,8 @@
         }
         <p class="ayuda ayuda--fija" id="alta-oferta-servicio-ayuda">
           @if (practicaDelServicio(); as practica) {
-            Se le asocia sola la práctica <b>{{ practica.nombre }}</b> ({{ practica.codigo }}), la
-            que se factura a la obra social.
+            Se le asocia sola la práctica <b>{{ practica.nombre }}</b>, la que se factura a la obra
+            social.
           } @else if (serviciosOfertables().length === 0) {
             <b>
               No pudimos traer el catálogo de servicios. Recargá la pantalla; si sigue vacío, revisá
@@ -417,23 +410,37 @@
 
       <div class="campo">
         <label for="alta-oferta-precio">Precio de la sesión</label>
-        <input
-          id="alta-oferta-precio"
-          type="number"
-          min="0"
-          formControlName="precioBase"
-          aria-describedby="alta-oferta-precio-ayuda"
-        />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            id="alta-oferta-precio"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="0"
+            formControlName="precioBase"
+            aria-describedby="alta-oferta-precio-ayuda"
+            (blur)="
+              formularioAlta.controls.precioBase.setValue(
+                reformatearImporte(formularioAlta.controls.precioBase.value)
+              )
+            "
+          />
+        </div>
         <p class="ayuda" id="alta-oferta-precio-ayuda">
-          Lo que cobrás en particular. Con obra social, el paciente paga la diferencia con lo que
-          paga la obra social.
+          Lo que cobrás en particular. Con obra social, el paciente paga la diferencia.
         </p>
       </div>
 
       <div class="campo campo--4">
-        <label class="opcion-casilla" for="alta-oferta-obra-social">
-          <input id="alta-oferta-obra-social" type="checkbox" formControlName="admiteObraSocial" />
-          Admite obra social
+        <label class="interruptor" for="alta-oferta-obra-social">
+          <input
+            id="alta-oferta-obra-social"
+            type="checkbox"
+            role="switch"
+            formControlName="admiteObraSocial"
+          />
+          <span class="interruptor__titulo">Admite obra social</span>
         </label>
       </div>
 
@@ -735,7 +742,21 @@
 
         <div class="campo">
           <label for="editar-oferta-precio">Precio base</label>
-          <input id="editar-oferta-precio" type="number" min="0" formControlName="precioBase" />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              id="editar-oferta-precio"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              formControlName="precioBase"
+              (blur)="
+                formularioEdicion.controls.precioBase.setValue(
+                  reformatearImporte(formularioEdicion.controls.precioBase.value)
+                )
+              "
+            />
+          </div>
         </div>
 
         <div class="campo campo--2">
@@ -784,13 +805,14 @@
         </div>
 
         <div class="campo">
-          <label class="opcion-casilla" for="editar-oferta-obra-social">
+          <label class="interruptor" for="editar-oferta-obra-social">
             <input
               id="editar-oferta-obra-social"
               type="checkbox"
+              role="switch"
               formControlName="admiteObraSocial"
             />
-            Admite obra social
+            <span class="interruptor__titulo">Admite obra social</span>
           </label>
         </div>
 

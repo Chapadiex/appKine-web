@@ -755,10 +755,12 @@ describe('OfertasDeLaSedePage', () => {
 
     // Pero ofrecerlo en el alta seria empujar al usuario a un 409.
     abrir(fixture, 'Publicar un servicio en la sede');
+    anfitrion.querySelector('#alta-oferta-servicio')?.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
     const opciones = [
-      ...anfitrion.querySelectorAll<HTMLOptionElement>('#alta-oferta-servicio option'),
+      ...anfitrion.querySelectorAll<HTMLElement>('app-selector-con-buscador [role="option"]'),
     ].map((opcion) => opcion.textContent?.trim());
-    expect(opciones).toEqual(['Elegí un servicio', 'Kinesiologia respiratoria']);
+    expect(opciones).toEqual(['Kinesiologia respiratoria']);
   });
 
   it('si el catalogo no carga la pantalla sigue en pie y lo dice en el selector', async () => {
@@ -989,7 +991,9 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('app-panel-lateral')).not.toBeNull();
-    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-servicio')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
 
     // Una sola vez: cerrar y volver a leer una lista vacía no reabre el alta.
     anfitrion.querySelector<HTMLButtonElement>('.panel-lateral__cerrar')?.click();
@@ -1041,7 +1045,9 @@ describe('OfertasDeLaSedePage', () => {
     const fixture = await montarConEntrada({ nuevaOferta: '1' }, [VIGENTE]);
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-servicio')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
   });
 
   it('?nuevaOferta= de un servicio que no se puede ofertar no abre nada', async () => {
@@ -1458,7 +1464,17 @@ function elegirServicio(
   valor: string,
   practicas: readonly { id: number; codigo: string; name: string }[] = [],
 ) {
-  elegir(fixture, '#alta-oferta-servicio', valor);
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement>('#alta-oferta-servicio');
+  campo?.dispatchEvent(new Event('focus'));
+  fixture.detectChanges();
+  const opcion = fixture.nativeElement.querySelector<HTMLElement>(
+    `app-selector-con-buscador [role="option"][data-valor="${valor}"]`,
+  );
+  if (opcion === null) {
+    throw new Error(`No existe la opcion de servicio ${valor}`);
+  }
+  opcion.click();
+  fixture.detectChanges();
   httpMock
     .match((peticion) => peticion.url.endsWith('/catalogos/practicas'))
     .forEach((pedido) => pedido.flush({ content: practicas }));

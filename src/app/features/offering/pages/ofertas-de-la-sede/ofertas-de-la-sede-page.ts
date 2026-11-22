@@ -32,6 +32,11 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { ServicioResponse } from '../../../../api/generated/model/servicio-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import {
+  formatearImporte,
+  leerImporte,
+  reformatearImporte,
+} from '../../../../shared/utils/importe-en-texto';
 import { UpdateOfertaRequest } from '../../../../api/generated/model/update-oferta-request';
 import { FiltroEstado, OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
@@ -56,6 +61,10 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import {
+  GrupoDeSelector,
+  SelectorConBuscador,
+} from '../../../../shared/components/selector-con-buscador/selector-con-buscador';
 import {
   FiltrosRapidos,
   FiltroRapido,
@@ -150,6 +159,7 @@ type Heredable = '' | 'true' | 'false';
     PermisoDirective,
     ConfirmacionConMotivo,
     PanelLateral,
+    SelectorConBuscador,
   ],
   templateUrl: './ofertas-de-la-sede-page.html',
   styleUrl: '../../offering.css',
@@ -180,6 +190,7 @@ export class OfertasDeLaSedePage {
   protected readonly precioEnPalabras = precioEnPalabras;
   protected readonly enPalabras = enPalabras;
   protected readonly servicioEnUnaLinea = servicioEnUnaLinea;
+  protected readonly reformatearImporte = reformatearImporte;
 
   /**
    * El dia de hoy, en hora local, fijado al montar.
@@ -320,12 +331,18 @@ export class OfertasDeLaSedePage {
   private servicioPedidoAplicado = false;
   private servicioPedidoAtendido = false;
 
-  /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
-  /** Los ofertables agrupados por naturaleza, para el selector del alta. */
-  protected readonly serviciosAgrupados = computed(() =>
-    serviciosPorNaturaleza(this.serviciosOfertables()),
+  /** Los ofertables agrupados por naturaleza, para el selector con buscador del alta. */
+  protected readonly serviciosAgrupados = computed<readonly GrupoDeSelector[]>(() =>
+    serviciosPorNaturaleza(this.serviciosOfertables()).map((grupo) => ({
+      etiqueta: grupo.etiqueta,
+      opciones: grupo.servicios.map((servicio) => ({
+        valor: String(servicio.id),
+        etiqueta: servicioEnUnaLinea(servicio),
+      })),
+    })),
   );
 
+  /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
   );
@@ -590,8 +607,16 @@ export class OfertasDeLaSedePage {
       controles.nombreComercial.setValue(servicio.nombre);
       this.nombreAutocompletado = servicio.nombre;
     }
+    // Una clase grupal arranca con cupo y una hora; una sesion individual, con 45 minutos.
+    const grupal = servicio.modalidadDefault === 'GRUPAL';
+    this.altaEsGrupal.set(grupal && controles.modalidad.value === '');
     if (controles.duracionMinutos.value === '') {
-      controles.duracionMinutos.setValue(String(DURACION_SUGERIDA));
+      controles.duracionMinutos.setValue(
+        String(grupal ? DURACION_SUGERIDA_GRUPAL : DURACION_SUGERIDA),
+      );
+    }
+    if (grupal && controles.capacidad.value === '1') {
+      controles.capacidad.setValue(String(CAPACIDAD_SUGERIDA_GRUPAL));
     }
     const codigo = servicio.codigo;
     if (!codigo) {
@@ -636,7 +661,7 @@ export class OfertasDeLaSedePage {
         modalidad: oferta.modalidad ?? '',
         duracionMinutos: comoTexto(oferta.duracionMinutos),
         capacidad: comoTexto(oferta.capacidad),
-        precioBase: comoTexto(oferta.precioBase),
+        precioBase: formatearImporte(oferta.precioBase),
         moneda: oferta.moneda ?? '',
         esquemaCobro: oferta.esquemaCobro ?? '',
         admiteObraSocial: oferta.admiteObraSocial ?? false,
@@ -807,7 +832,7 @@ export class OfertasDeLaSedePage {
 
     // Precio y moneda: los dos o ninguno. El backend tiene un check que lo exige, asi que
     // mandar uno solo seria un rechazo garantizado.
-    const precio = numeroDeclarado(valores.precioBase);
+    const precio = leerImporte(valores.precioBase);
     const moneda = valores.moneda.trim().toUpperCase();
     if (precio !== null && moneda !== '') {
       cuerpo.precioBase = precio;
@@ -1036,7 +1061,7 @@ export class OfertasDeLaSedePage {
       // Saca el precio Y la moneda: son un solo dato.
       cambios.limpiarPrecio = true;
     } else {
-      const precio = numeroDeclarado(valores.precioBase);
+      const precio = leerImporte(valores.precioBase);
       const moneda = valores.moneda.trim().toUpperCase();
       const cambioElPrecio = comoTexto(precio) !== comoTexto(original.precioBase);
       const cambioLaMoneda = moneda !== (original.moneda ?? '');
@@ -1171,6 +1196,9 @@ export class OfertasDeLaSedePage {
 /** Texto comparable para la busqueda: minusculas y sin acentos. */
 /** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
 const DURACION_SUGERIDA = 45;
+/** Para un servicio grupal (yoga, pilates...): una hora y un cupo razonable para empezar. */
+const DURACION_SUGERIDA_GRUPAL = 60;
+const CAPACIDAD_SUGERIDA_GRUPAL = 10;
 
 function normalizar(texto: string): string {
   return texto
