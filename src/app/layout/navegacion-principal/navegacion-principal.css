@@ -199,10 +199,14 @@
   margin-top: var(--esp-6);
 }
 
-/* «Ayuda» es un boton (abre un panel, no navega) con la cara de un enlace de grupo. */
+/*
+  «Ayuda» es un boton (abre un panel, no navega) con la cara de un enlace de grupo. Al pie de la
+  barra: `margin-top: auto` en la columna flex lo empuja abajo; si el menu no entra, queda despues
+  del ultimo grupo.
+*/
 .nav__ayuda {
   width: 100%;
-  margin-top: var(--esp-6);
+  margin-top: auto;
   border: 0;
   background: none;
   font: inherit;
