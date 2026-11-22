@@ -154,21 +154,21 @@ export interface MarcaDePlan {
 
 /**
  * Los tres escalones que se venden, con la sigla que se muestra en los listados (19/11/2026):
- * PB = Plan Básico, PI = Plan Intermedio, PP = Plan Plus.
+ * PB = Plan Base, PI = Plan Intermedio, PP = Plan Plus.
  */
 const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { nombre: string }>> = {
-  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
+  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Base' },
   CRECIMIENTO: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
   RED: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
   // Transicion: una base que todavia no corrio la migracion que borra los planes viejos los sigue
   // devolviendo. Se muestran como el plan al que pasan; borrar estas dos lineas despues.
-  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Básico' },
+  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Base' },
   PROFESIONAL: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
 };
 
 /** La leyenda de las siglas, en el orden de los escalones, para la ayuda del listado. */
 export const SIGLAS_DE_PLAN: readonly Pick<MarcaDePlan, 'sigla' | 'texto'>[] = [
-  { sigla: 'PB', texto: 'Plan Básico' },
+  { sigla: 'PB', texto: 'Plan Base' },
   { sigla: 'PI', texto: 'Plan Intermedio' },
   { sigla: 'PP', texto: 'Plan Plus' },
 ];

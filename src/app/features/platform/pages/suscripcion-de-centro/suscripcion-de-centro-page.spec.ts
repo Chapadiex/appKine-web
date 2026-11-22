@@ -15,7 +15,7 @@ const LECTURA = '/api/v1/platform/organizations/4/contratacion';
 
 const contratacion = (version: number, estado = 'ACTIVA', extra: Record<string, unknown> = {}) => ({
   planCode: 'BASE',
-  planNombre: 'Plan Básico',
+  planNombre: 'Plan Base',
   maxSedes: 1,
   servicios: ['KINESIOLOGIA'],
   adicionales: [],
@@ -31,7 +31,7 @@ const centro = (id: number, name: string, status = 'ACTIVA') => ({
   slug: name.toLowerCase().replace(/ /g, '-'),
   status,
   planCode: 'BASE',
-  planName: 'Plan Básico',
+  planName: 'Plan Base',
   createdAt: '2026-10-01T15:00:00Z',
 });
 
@@ -178,7 +178,7 @@ describe('SuscripcionDeCentroPage', () => {
     // Insignia del plan y la IA: sin IA, la celda solo lo dice al lector.
     expect(texto(fixture, 'tbody .marca-plan__sigla')).toBe('PB');
     expect(fixture.nativeElement.querySelector('tbody .marca-plan').dataset.globo).toBe(
-      'Plan Básico',
+      'Plan Base',
     );
     expect(fixture.nativeElement.querySelector('tbody .marca-plan--base')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('tbody .marca-ia')).toBeNull();
@@ -310,7 +310,7 @@ describe('SuscripcionDeCentroPage', () => {
     fixture.detectChanges();
     httpMock.expectOne(PLANES).flush([
       { code: 'RETIRADO', name: 'Retirado', ofrecido: false },
-      { code: 'BASE', name: 'Plan Básico', ofrecido: true },
+      { code: 'BASE', name: 'Plan Base', ofrecido: true },
       { code: 'CRECIMIENTO', name: 'Plan Intermedio', ofrecido: true },
     ]);
     const listado = httpMock.expectOne((r) => r.url === LISTADO);

@@ -40,7 +40,7 @@ export interface Recomendacion {
 export const PLANES: readonly Plan[] = [
   {
     codigo: 'base',
-    nombre: 'Plan Básico',
+    nombre: 'Plan Base',
     sedes: '1 sede',
     profesionales: 'Hasta 2 profesionales',
     paraQuien: 'Un consultorio o un estudio.',

@@ -21,7 +21,7 @@ const limite = (value: number | null) => [
 
 const CATALOGO = [
   { code: 'RETIRADO', name: 'Retirado', ofrecido: false, limits: limite(1) },
-  { code: 'BASE', name: 'Plan Básico', ofrecido: true, limits: limite(1) },
+  { code: 'BASE', name: 'Plan Base', ofrecido: true, limits: limite(1) },
   { code: 'CRECIMIENTO', name: 'Plan Intermedio', ofrecido: true, limits: limite(3) },
   { code: 'RED', name: 'Plan Plus', ofrecido: true, limits: limite(null) },
 ];
@@ -73,9 +73,9 @@ describe('AltaDeCentroPage', () => {
       ),
     );
     expect(planes).toEqual([
-      ['Plan Básico', 'Hasta 1 sede'],
-      ['Plan Intermedio', 'Hasta 3 sedes'],
-      ['Plan Plus', 'Sin tope de sedes'],
+      ['Plan Base', 'Hasta 1 sede · Sin tope de profesionales'],
+      ['Plan Intermedio', 'Hasta 3 sedes · Sin tope de profesionales'],
+      ['Plan Plus', 'Sin tope de sedes · Sin tope de profesionales'],
     ]);
 
     escribir(fixture, '#alta-nombre-centro', '  Centro Nuevo ');

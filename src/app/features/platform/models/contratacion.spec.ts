@@ -6,7 +6,7 @@ describe('marcaDePlan', () => {
   it('da la sigla y el color de cada escalón', () => {
     expect(marcaDePlan('BASE')).toEqual({
       sigla: 'PB',
-      texto: 'Plan Básico',
+      texto: 'Plan Base',
       clase: 'marca-plan--base',
     });
     expect(marcaDePlan('CRECIMIENTO').sigla).toBe('PI');

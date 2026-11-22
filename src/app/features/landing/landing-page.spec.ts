@@ -42,7 +42,7 @@ describe('LandingPage', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     const plan = (): string => raiz.querySelector('.resultado__nombre')?.textContent?.trim() ?? '';
 
-    expect(plan()).toBe('Plan Básico');
+    expect(plan()).toBe('Plan Base');
 
     const opcion = [...raiz.querySelectorAll<HTMLInputElement>('app-armador-de-plan input')].find(
       (input) => input.value === 'mas-de-tres',
