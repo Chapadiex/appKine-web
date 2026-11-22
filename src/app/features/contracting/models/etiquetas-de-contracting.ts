@@ -1,8 +1,4 @@
 import {
-  ArancelEfectivoResponse,
-  ArancelEfectivoResponseMotivoEnum,
-} from '../../../api/generated/model/arancel-efectivo-response';
-import {
   ConvenioResponse,
   ConvenioResponseModalidadEnum,
 } from '../../../api/generated/model/convenio-response';
@@ -27,7 +23,6 @@ import {
  */
 export type TipoDeFinanciador = NonNullable<FinanciadorResponse['tipo']>;
 export type ModalidadDeConvenio = NonNullable<ConvenioResponse['modalidad']>;
-export type MotivoSinArancel = NonNullable<ArancelEfectivoResponse['motivo']>;
 
 /** Una opcion de un `select`, con su explicacion para el texto de ayuda. */
 export interface OpcionEnumerada<T extends string> {
@@ -118,9 +113,7 @@ export function etiquetaDeModalidad(valor: string | undefined): string {
  * por que no se siembra: sembrarlo lo volveria borrable, renombrable y duplicable, y obligaria a
  * que alguna decision del sistema dependiera de un nombre.
  *
- * <p>El texto vive aca y no suelto en una plantilla porque lo usan <b>dos</b> pantallas —el
- * catalogo de financiadores y la consulta de arancel efectivo, que manda a cobrar como particular
- * cuando no hay convenio— y las dos tienen que decir lo mismo.
+ * <p>El texto vive aca y no suelto en una plantilla: es el que muestra el catalogo de financiadores.
  */
 export const NOTA_PARTICULAR =
   'La atención particular no es un financiador y no la vas a encontrar en esta lista: en AKINE ' +
@@ -147,54 +140,6 @@ export function importeEnPalabras(
     return ausente;
   }
   return `${moneda} ${importe.toFixed(2)}`;
-}
-
-/**
- * Que decir cuando la resolucion NO encontro arancel.
- *
- * <h2>Esto no es un error, y la pantalla no puede tratarlo como uno</h2>
- *
- * <p>`GET /aranceles/efectivo` responde <b>200</b> con `resuelto = false` y un motivo. El contrato
- * lo justifica: no encontrar convenio es el desenlace <b>más frecuente</b> —la mayoria de los
- * pacientes se atienden como particulares— y un 404 obligaria a la pantalla a tratar el caso
- * normal como una excepcion. Mostrar un cartel rojo, o peor, un vacio, seria exactamente eso.
- *
- * <p><b>Los dos motivos mandan a hacer cosas distintas y por eso hacen falta los dos:</b>
- * `SIN_CONVENIO_VIGENTE` manda a cobrar como particular (RN-M16-005), `SIN_ARANCEL_VIGENTE` dice
- * que el convenio existe y lo que falta es el precio de <b>esa</b> practica. Aplanarlos en un
- * "no hay arancel" deja al usuario sin saber si tiene que cobrar o cargar un dato.
- */
-export interface ExplicacionSinArancel {
-  readonly titulo: string;
-  readonly detalle: string;
-  /** Que hacer ahora. Es lo unico accionable de todo el bloque. */
-  readonly queHacer: string;
-}
-
-export function explicarSinArancel(motivo: string | undefined): ExplicacionSinArancel {
-  if (motivo === ArancelEfectivoResponseMotivoEnum.SIN_ARANCEL_VIGENTE) {
-    return {
-      titulo: 'Hay convenio, pero esa práctica no tiene precio cargado para esa fecha',
-      detalle:
-        'El convenio con ese financiador y ese plan se aplica en la fecha consultada, así que la ' +
-        'cobertura existe. Lo que falta es el arancel de esta práctica en particular: puede que ' +
-        'nunca se haya cargado, o que el que había tenga la vigencia terminada.',
-      queHacer:
-        'Carga el arancel de esa práctica en la grilla del convenio. Hasta que exista, esta ' +
-        'prestación no se puede liquidar contra el financiador.',
-    };
-  }
-
-  return {
-    titulo: 'No hay convenio vigente para ese financiador y ese plan en esa fecha',
-    detalle:
-      'Puede que nunca se haya firmado un convenio con ese plan en esta sede, que el que había ' +
-      'tenga la vigencia terminada, o que este dado de baja. Sin convenio aplicable no se asume ' +
-      'ninguna cobertura: es la regla, no una falla de la consulta.',
-    queHacer:
-      'La prestación se cobra como particular. Si el convenio debería existir, cargalo en esta ' +
-      'sede; si lo que venció es la vigencia, editá el convenio y estirale el fin.',
-  };
 }
 
 /**

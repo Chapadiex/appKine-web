@@ -178,7 +178,7 @@
         @if (aranceles().length === 0 && !hayFiltros()) {
           <app-estado-vacio
             titulo="Este convenio todavía no tiene aranceles"
-            texto="Un convenio sin aranceles no resuelve ningún precio: la consulta de arancel efectivo va a responder que hay convenio pero falta el precio de esa práctica. Cargá al menos una práctica para que empiece a servir."
+            texto="Un convenio sin aranceles no resuelve ningún precio: la obra social no paga nada hasta que la práctica tenga su importe. Cargá al menos una práctica para que empiece a servir."
           >
             @if (!convenioInactivo()) {
               <ng-container *akinePermiso="permisoManage">

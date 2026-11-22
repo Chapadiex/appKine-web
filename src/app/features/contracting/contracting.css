@@ -46,66 +46,6 @@
 }
 
 /*
- * El resultado de la consulta de arancel efectivo.
- *
- * Es un bloque y no una fila de tabla porque la respuesta es UNA, con su derivacion: que convenio
- * la produjo y con que dos vigencias. Sin la derivacion un importe inesperado no se puede
- * explicar, y una tabla de una fila esconderia justamente eso.
- */
-.resultado {
-  border: var(--borde-medio) solid var(--color-borde);
-  border-radius: var(--radio-md);
-  padding: var(--esp-5);
-}
-
-/*
- * El importe grande del resultado. No lleva color propio: lo unico que lo distingue es el tamano,
- * asi que sigue siendo legible sin percepcion de color.
- */
-.resultado__importe {
-  font-size: var(--tipo-xl);
-  font-weight: var(--peso-fuerte);
-  font-variant-numeric: tabular-nums;
-}
-
-/*
- * Las dos partes de la terna, debajo del total.
- *
- * Se muestran SIEMPRE y no detras de un "ver detalle": el total no es lo que el mostrador
- * necesita, es el coseguro —lo que le cobra al paciente—. Esconderlo obligaria a un click en la
- * pantalla que mas apuro tiene.
- */
-.resultado__partes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-3);
-  margin: var(--esp-5) 0 0;
-  padding: var(--esp-5) 0 0;
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-  list-style: none;
-}
-
-/* Cada parte en su renglon: el rotulo a la izquierda y el importe a la derecha, como en el lienzo. */
-.resultado__partes li {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--esp-5);
-}
-
-/*
- * La derivacion: convenio, codigo y las dos ventanas que intervinieron.
- *
- * Va debajo y atenuada, no arriba: quien consulta quiere el numero primero. Pero va en la misma
- * tarjeta y no detras de un enlace, porque el dia que el numero sorprenda, la explicacion tiene
- * que estar a la vista y no a un click.
- */
-.resultado__derivacion {
-  margin-top: var(--esp-5);
-  padding-top: var(--esp-4);
-  border-top: var(--borde-fino) solid var(--color-borde-sutil);
-}
-
-/*
  * La planilla de ejemplo y el area donde se pega la planilla de la importacion (AKINE-B-7).
  *
  * Monoespaciada para que las columnas separadas por `;` se lean alineadas y un separador de mas
@@ -286,26 +226,6 @@
 .importacion__formato .ejemplo-planilla {
   margin-bottom: 0;
   background: var(--color-superficie);
-}
-
-/*
- * Arancel efectivo: la consulta y la respuesta lado a lado en escritorio. La pregunta tiene su
- * ancho de formulario y el resultado ocupa el resto; debajo de 64rem van una sobre la otra.
- */
-.consulta {
-  display: grid;
-  gap: var(--esp-6);
-  align-items: start;
-}
-
-@media (min-width: 64rem) {
-  .consulta {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  }
-}
-
-.consulta__respuesta > .resultado {
-  margin-top: 0;
 }
 
 /*

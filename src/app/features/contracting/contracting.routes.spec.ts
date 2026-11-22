@@ -2,7 +2,6 @@ import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
 import { Type } from '@angular/core';
 
-import { ArancelEfectivoPage } from './pages/arancel-efectivo/arancel-efectivo-page';
 import { ArancelesDelConvenioPage } from './pages/aranceles-del-convenio/aranceles-del-convenio-page';
 import { ConveniosDeLaSedePage } from './pages/convenios-de-la-sede/convenios-de-la-sede-page';
 import { FinanciadoresPage } from './pages/financiadores/financiadores-page';
@@ -74,24 +73,22 @@ describe('Rutas de /contratacion', () => {
     expect(await componenteDe('/contratacion/convenios/7/aranceles/importar')).toBe(
       ImportarArancelesPage,
     );
-    expect(await componenteDe('/contratacion/arancel-efectivo')).toBe(ArancelEfectivoPage);
   });
 
-  it('ninguna de las seis URLs cae en el comodin', async () => {
+  it('ninguna de las cinco URLs cae en el comodin', async () => {
     const urls = [
       '/contratacion',
       '/contratacion/financiadores',
       '/contratacion/financiadores/10/planes',
       '/contratacion/convenios',
       '/contratacion/convenios/7/aranceles',
-      '/contratacion/arancel-efectivo',
     ];
     for (const url of urls) {
       expect(await componenteDe(url)).not.toBe(NotFound);
     }
   });
 
-  it('sin convenio:read ninguna de las seis pantallas abre, aunque tenga convenio:manage (DP-36)', async () => {
+  it('sin convenio:read ninguna de las cinco pantallas abre, aunque tenga convenio:manage (DP-36)', async () => {
     concedidos = new Set([PERMISO_CONVENIO_MANAGE]);
     for (const url of [
       '/contratacion/financiadores',
@@ -99,7 +96,6 @@ describe('Rutas de /contratacion', () => {
       '/contratacion/convenios',
       '/contratacion/convenios/7/aranceles',
       '/contratacion/convenios/7/aranceles/importar',
-      '/contratacion/arancel-efectivo',
     ]) {
       await router.navigateByUrl(url);
       expect(router.url).toBe(RUTA_SIN_PERMISO);

@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ArancelEfectivoResponse } from '../../../api/generated/model/arancel-efectivo-response';
 import { ArancelResponse } from '../../../api/generated/model/arancel-response';
 import { ConvenioResponse } from '../../../api/generated/model/convenio-response';
 import { ConveniosYArancelesService } from '../../../api/generated/api/convenios-y-aranceles.service';
@@ -245,48 +244,6 @@ export class ConveniosApi {
       convenioId,
       arancelId,
       deactivateContractingRequest: cuerpo,
-    });
-  }
-
-  /**
-   * Resuelve el arancel efectivo de una practica para una fecha (RF-M16-006 y RF-M16-010).
-   *
-   * <h2>Responde 200 aunque NO haya arancel, y eso cambia como se llama</h2>
-   *
-   * <p>Por eso este metodo <b>no</b> se llama `obtenerArancel`: no devuelve un precio, devuelve
-   * un <b>desenlace</b> —`resuelto: true` con la derivacion completa, o `resuelto: false` con el
-   * motivo—. No encontrar convenio es el caso <b>mas frecuente</b>, porque la mayoria de los
-   * pacientes se atienden como particulares, y un `404` obligaria a la pantalla a tratar el caso
-   * normal como una excepcion.
-   *
-   * <p>La pantalla no puede mostrar un cartel de error ni un vacio ante `resuelto: false`: tiene
-   * que explicar cual de los dos motivos fue, porque mandan a hacer cosas distintas.
-   *
-   * <p><b>`fecha` es el dia de la PRESTACION, no el de hoy.</b> Consultar una fecha pasada
-   * devuelve el arancel que regia entonces, que es lo que hace que una atencion retroactiva se
-   * cobre bien. Si se omite, el backend usa hoy.
-   *
-   * <p><b>`ofertaId` es opcional (B-3, RF-M16-008).</b> Con oferta, manda el arancel propio de esa
-   * oferta y, si no tiene, el general de la practica; la respuesta trae `ofertaId` solo cuando
-   * salio el propio. Sin oferta resuelve siempre el general, como antes de B-3.
-   */
-  resolverArancelEfectivo(
-    consultorioId: number,
-    clave: {
-      readonly financiadorId: number;
-      readonly planId: number;
-      readonly practicaId: number;
-      readonly fecha?: string;
-      readonly ofertaId?: number;
-    },
-  ): Observable<ArancelEfectivoResponse> {
-    return this.api.resolveArancelEfectivo({
-      consultorioId,
-      financiadorId: clave.financiadorId,
-      planId: clave.planId,
-      practicaId: clave.practicaId,
-      fecha: clave.fecha,
-      ofertaId: clave.ofertaId,
     });
   }
 

@@ -113,22 +113,5 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     await expect(aplica).toContainText(pesos(PROPIO.financiador));
     await expect(aplica).toContainText(pesos(PROPIO.coseguro));
     await expect(aplica).toContainText('Arancel propio de esta oferta en el convenio');
-
-    // --- 4. Consultar un arancel: con la oferta el propio, sin ella el general ---------------
-    await navegar(page, '/contratacion/arancel-efectivo');
-    await page.getByLabel('Financiador').selectOption({ value: String(financiador.id) });
-    await page.getByLabel('Plan').selectOption({ value: String(financiador.planId) });
-    await page.getByLabel('Práctica').selectOption({ value: String(practicaId) });
-    await page.getByLabel('Oferta (opcional)').selectOption({ label: oferta.nombre });
-    await page.getByRole('button', { name: 'Consultar' }).click();
-    const resultado = page.getByRole('region', { name: /, el / });
-    // Contratacion redacta "ARS 12000.00" (`etiquetas-de-contracting`), no el formato local de billing.
-    await expect(resultado).toContainText(`ARS ${PROPIO.coseguro.toFixed(2)}`);
-    await expect(resultado).toContainText(`Arancel propio de la oferta ${oferta.nombre}.`);
-
-    await page.getByLabel('Oferta (opcional)').selectOption({ value: '' });
-    await page.getByRole('button', { name: 'Consultar' }).click();
-    await expect(resultado).toContainText(`ARS ${GENERAL.financiador.toFixed(2)}`);
-    await expect(resultado).not.toContainText('Arancel propio');
   });
 });

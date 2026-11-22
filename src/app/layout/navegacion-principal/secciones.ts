@@ -250,12 +250,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_CONVENIO_READ],
         servicio: 'KINESIOLOGIA',
       },
-      {
-        etiqueta: 'Arancel efectivo',
-        ruta: '/contratacion/arancel-efectivo',
-        permisos: [PERMISO_CONVENIO_READ],
-        servicio: 'KINESIOLOGIA',
-      },
     ],
   },
   {

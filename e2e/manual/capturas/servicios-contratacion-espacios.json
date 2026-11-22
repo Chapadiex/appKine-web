@@ -279,52 +279,6 @@
     ]
   },
   {
-    "ficha": "arancel-efectivo",
-    "nombre": "consultar",
-    "ruta": "/contratacion/arancel-efectivo",
-    "preparacion": "Elegir el financiador y el plan sembrados para que el formulario muestre valores.",
-    "pasos": [
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-financiador",
-        "valor": ":financiadorId"
-      },
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-plan",
-        "valor": ":planId"
-      },
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-practica",
-        "valor": ":practicaId"
-      }
-    ],
-    "recorte": "section[aria-labelledby=titulo-consulta]",
-    "marcas": [
-      {
-        "selector": "#consulta-financiador",
-        "numero": 2
-      },
-      {
-        "selector": "#consulta-plan",
-        "numero": 3
-      },
-      {
-        "selector": "#consulta-practica",
-        "numero": 4
-      },
-      {
-        "selector": "#consulta-fecha",
-        "numero": 5
-      },
-      {
-        "selector": "section[aria-labelledby=titulo-consulta] button[type=submit]",
-        "numero": 6
-      }
-    ]
-  },
-  {
     "ficha": "espacios-y-boxes",
     "nombre": "nuevo-espacio",
     "ruta": "/espacios",

@@ -4,7 +4,6 @@ import {
   enUnaLinea,
   etiquetaDeModalidad,
   etiquetaDeTipo,
-  explicarSinArancel,
   importeEnPalabras,
 } from './etiquetas-de-contracting';
 
@@ -58,24 +57,5 @@ describe('importes', () => {
     // cero. Mostrar "ARS 0.00" le diria al mostrador que el paciente no paga nada.
     expect(importeEnPalabras(null, 'ARS')).toBe('Sin declarar');
     expect(importeEnPalabras(0, 'ARS')).toBe('ARS 0.00');
-  });
-});
-
-describe('explicarSinArancel', () => {
-  it('los dos motivos mandan a hacer cosas distintas', () => {
-    // Aplanarlos deja al usuario sin saber si tiene que cobrar particular o cargar un precio.
-    const sinConvenio = explicarSinArancel('SIN_CONVENIO_VIGENTE');
-    expect(sinConvenio.queHacer).toContain('se cobra como particular');
-
-    const sinArancel = explicarSinArancel('SIN_ARANCEL_VIGENTE');
-    expect(sinArancel.titulo).toContain('Hay convenio');
-    expect(sinArancel.queHacer).toContain('Carga el arancel');
-  });
-
-  it('un motivo desconocido o ausente cae en el mas seguro: cobrar particular', () => {
-    // RN-M16-005: sin convenio valido no se asume cobertura. Ante la duda, la salida cerrada es
-    // la que no le promete al paciente una cobertura que nadie verifico.
-    expect(explicarSinArancel(undefined).queHacer).toContain('particular');
-    expect(explicarSinArancel('ALGO_NUEVO').queHacer).toContain('particular');
   });
 });
