@@ -70,6 +70,26 @@ export function rotuloDeTope(maxSedes: number | null | undefined): string {
   return maxSedes === 1 ? 'Hasta 1 sede' : `Hasta ${maxSedes} sedes`;
 }
 
+/** "Hasta 2 profesionales", "Hasta 6 profesionales" o "Sin tope de profesionales". */
+export function topeDeProfesionales(plan: PlanResponse | undefined): string {
+  const limite = plan?.limits?.find((l) => l.code === 'MAX_PROFESIONALES');
+  return rotuloDeProfesionales(
+    limite === undefined || limite.unlimited ? null : (limite.value ?? null),
+  );
+}
+
+export function rotuloDeProfesionales(maxProfesionales: number | null | undefined): string {
+  if (maxProfesionales === null || maxProfesionales === undefined) {
+    return 'Sin tope de profesionales';
+  }
+  return maxProfesionales === 1 ? 'Hasta 1 profesional' : `Hasta ${maxProfesionales} profesionales`;
+}
+
+/** Sedes y profesionales del plan en una línea: "Hasta 1 sede · Hasta 2 profesionales". */
+export function topesDelPlan(plan: PlanResponse | undefined): string {
+  return `${topeDeSedes(plan)} · ${topeDeProfesionales(plan)}`;
+}
+
 const UN_DIA = 24 * 60 * 60 * 1000;
 
 /** Dias que le quedan a una prueba, redondeando para arriba; 0 o menos = vencida. */

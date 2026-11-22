@@ -40,7 +40,9 @@
       <h3 class="resultado__plan">
         Te corresponde el <span class="resultado__nombre">{{ r.plan.nombre }}</span>
       </h3>
-      <p class="resultado__para">{{ r.plan.sedes }}. {{ r.plan.paraQuien }}</p>
+      <p class="resultado__para">
+        {{ r.plan.sedes }}, {{ r.plan.profesionales.toLowerCase() }}. {{ r.plan.paraQuien }}
+      </p>
     </div>
 
     <div class="resultado__grupos">
@@ -69,7 +71,7 @@
           <span class="plan__marca"><app-icono nombre="tilde" />El tuyo</span>
         }
       </span>
-      <span class="plan__sedes">{{ plan.sedes }}</span>
+      <span class="plan__sedes">{{ plan.sedes }} · {{ plan.profesionales }}</span>
       <span class="plan__para">{{ plan.paraQuien }}</span>
     </li>
   }

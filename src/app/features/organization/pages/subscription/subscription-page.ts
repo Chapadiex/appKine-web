@@ -50,6 +50,7 @@ type EstadoSuscripcion =
 const NOMBRE_DEL_LIMITE: Readonly<Record<string, string>> = {
   [LimitUsageResponseCodeEnum.MAX_CONSULTORIOS]: 'Sedes habilitadas',
   [LimitUsageResponseCodeEnum.MAX_MIEMBROS_ACTIVOS]: 'Miembros activos',
+  [LimitUsageResponseCodeEnum.MAX_PROFESIONALES]: 'Profesionales',
 };
 
 /** Cuantos hechos del historico se miran buscando la suspension mas reciente. */

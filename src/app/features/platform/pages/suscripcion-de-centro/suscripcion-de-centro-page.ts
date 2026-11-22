@@ -50,7 +50,8 @@ import {
   rotuloDeTope,
   serviciosEnTexto,
   tieneIa,
-  topeDeSedes,
+  topesDelPlan,
+  rotuloDeProfesionales,
 } from '../../models/contratacion';
 import { RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -141,7 +142,8 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
   protected readonly servicios = SERVICIOS;
   protected readonly marcaDeSuscripcion = marcaDeSuscripcion;
-  protected readonly topeDeSedes = topeDeSedes;
+  protected readonly topesDelPlan = topesDelPlan;
+  protected readonly rotuloDeProfesionales = rotuloDeProfesionales;
   protected readonly tieneIa = tieneIa;
   protected readonly rotuloDeTope = rotuloDeTope;
   protected readonly marcasDeServicios = marcasDeServicios;

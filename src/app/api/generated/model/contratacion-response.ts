@@ -30,6 +30,10 @@ export interface ContratacionResponse {
      */
     estado?: ContratacionResponseEstadoEnum;
     /**
+     * Tope de profesionales del plan (cuentas con rol PROFESIONAL); ausente = sin tope
+     */
+    maxProfesionales?: number;
+    /**
      * Tope de sedes del plan; ausente = sin tope
      */
     maxSedes?: number;

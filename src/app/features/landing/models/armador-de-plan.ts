@@ -23,6 +23,7 @@ export interface Plan {
   readonly codigo: CodigoDePlan;
   readonly nombre: string;
   readonly sedes: string;
+  readonly profesionales: string;
   readonly paraQuien: string;
 }
 
@@ -41,18 +42,21 @@ export const PLANES: readonly Plan[] = [
     codigo: 'base',
     nombre: 'Plan Básico',
     sedes: '1 sede',
+    profesionales: 'Hasta 2 profesionales',
     paraQuien: 'Un consultorio o un estudio.',
   },
   {
     codigo: 'crecimiento',
     nombre: 'Plan Intermedio',
     sedes: 'De 1 a 3 sedes',
+    profesionales: 'Hasta 6 profesionales',
     paraQuien: 'El centro que abre su segunda o su tercera sede.',
   },
   {
     codigo: 'red',
     nombre: 'Plan Plus',
     sedes: 'Más de 3 sedes, a convenir',
+    profesionales: 'Profesionales sin tope',
     paraQuien: 'Cadenas y franquicias. Lo armamos con vos.',
   },
 ];
