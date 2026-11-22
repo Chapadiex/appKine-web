@@ -172,18 +172,33 @@
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Actividad</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="servicio">Servicio</th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="modalidad">Modalidad</th>
                   <th
                     scope="col"
-                    class="tabla__col--secundaria"
+                    class="tabla__col--icono"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="modalidad"
+                  >
+                    Modalidad
+                  </th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria tabla__col--numero"
                     appOrdenable
                     [tabla]="tabla"
                     columna="duracion"
                   >
                     Duración
                   </th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="precio">Precio</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--numero"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="precio"
+                  >
+                    Precio
+                  </th>
                   <th
                     scope="col"
                     class="tabla__col--secundaria"
@@ -193,7 +208,15 @@
                   >
                     Vigencia
                   </th>
-                  <th scope="col" appOrdenable [tabla]="tabla" columna="estado">Estado</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--icono"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="estado"
+                  >
+                    Estado
+                  </th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
@@ -201,63 +224,73 @@
                 @for (oferta of tabla.visibles(); track oferta.id) {
                   <!--
                     Una sola evaluacion por fila: `situacion()` construye un objeto, y llamarla
-                    tres veces desde la plantilla lo construiria tres veces en cada ciclo de
-                    deteccion de cambios.
+                    varias veces desde la plantilla lo construiria otras tantas en cada ciclo.
                   -->
                   @let situacionDeLaFila = situacion(oferta);
+                  @let servicioDeLaFila = nombreDelServicio(oferta);
+                  @let modalidadDeLaFila = modalidadConCapacidad(oferta);
+                  @let estadoDeLaFila = textoDelEstado(oferta, situacionDeLaFila);
 
                   <tr
                     [class.fila--revocada]="oferta.estado === 'INACTIVO'"
                     [class.fila--atenuada]="situacionDeLaFila.atenuada"
                     [class.fila--seleccionada]="ofertaEnPanel()?.id === oferta.id"
                   >
-                    <th scope="row">
-                      {{ oferta.nombreComercial }}
-                      @if (oferta.descripcion) {
-                        <p class="ayuda ayuda--fija">{{ oferta.descripcion }}</p>
+                    <!-- Actividad y servicio en una celda: el servicio sólo si dice algo más. -->
+                    <th scope="row" class="celda-actividad">
+                      <span class="celda-actividad__nombre">{{
+                        oferta.nombreComercial ?? servicioDeLaFila
+                      }}</span>
+                      @if (oferta.nombreComercial && oferta.nombreComercial !== servicioDeLaFila) {
+                        <span class="celda-actividad__servicio">{{ servicioDeLaFila }}</span>
                       }
                     </th>
-                    <td>{{ nombreDelServicio(oferta) }}</td>
-                    <td>{{ modalidadConCapacidad(oferta) }}</td>
-                    <td class="tabla__col--secundaria">{{ oferta.duracionMinutos }} min</td>
-                    <td>
-                      {{ precioEnPalabras(oferta) }}
+                    <td class="tabla__col--icono">
+                      <span
+                        class="celda-icono"
+                        [class.celda-icono--grupal]="oferta.modalidad === 'GRUPAL'"
+                        [title]="modalidadDeLaFila"
+                      >
+                        <app-icono
+                          [nombre]="oferta.modalidad === 'GRUPAL' ? 'pacientes' : 'perfil'"
+                        />
+                        <span class="visualmente-oculto">{{ modalidadDeLaFila }}</span>
+                      </span>
+                    </td>
+                    <td class="tabla__col--secundaria tabla__col--numero">
+                      {{ oferta.duracionMinutos }} min
+                    </td>
+                    <td class="tabla__col--numero">
+                      @if (oferta.precioBase === undefined || oferta.precioBase === null) {
+                        <span class="celda-vacia">Sin precio</span>
+                      } @else {
+                        <span class="celda-precio"
+                          >$ {{ formatearImporte(oferta.precioBase) }}</span
+                        >
+                      }
                       @if (oferta.exigePrepago) {
                         <!-- E-6: la recepcion avisa si falta el anticipo; nunca bloquea. -->
-                        <p class="ayuda">Exige prepago en recepción.</p>
+                        <span class="celda-segunda-linea">Exige prepago</span>
                       }
                     </td>
                     <td class="tabla__col--secundaria">
-                      Desde {{ enPalabras(oferta.vigenciaDesde ?? '') }}
-                      @if (oferta.vigenciaHasta) {
-                        <p class="ayuda ayuda--fija">
-                          Hasta {{ enPalabras(oferta.vigenciaHasta) }} (exclusivo).
-                        </p>
-                      } @else {
-                        <p class="ayuda">Sin fecha de fin.</p>
-                      }
+                      <span class="celda-fecha">{{ formatearFecha(oferta.vigenciaDesde) }}</span>
+                      <span class="celda-segunda-linea">
+                        @if (oferta.vigenciaHasta) {
+                          Hasta {{ formatearFecha(oferta.vigenciaHasta) }}
+                        } @else {
+                          Sin fecha de fin
+                        }
+                      </span>
                     </td>
-                    <td>
+                    <td class="tabla__col--icono">
                       <span
-                        class="marca-estado"
-                        [class.marca-estado--revocada]="situacionDeLaFila.resumen.startsWith('Dad')"
-                        [class.marca-estado--activa]="
-                          !situacionDeLaFila.atenuada &&
-                          !situacionDeLaFila.resumen.startsWith('Todav')
-                        "
-                        [class.marca-estado--info]="
-                          !situacionDeLaFila.resumen.startsWith('Dad') &&
-                          (situacionDeLaFila.atenuada ||
-                            situacionDeLaFila.resumen.startsWith('Todav'))
-                        "
-                        >{{ situacionDeLaFila.resumen }}</span
+                        class="celda-icono celda-icono--{{ situacionDeLaFila.clave }}"
+                        [title]="estadoDeLaFila"
                       >
-                      @if (situacionDeLaFila.explicacion; as explicacion) {
-                        <p class="ayuda ayuda--fija">{{ explicacion }}</p>
-                      }
-                      @if (oferta.estado === 'INACTIVO' && oferta.deactivationReason) {
-                        <p class="ayuda ayuda--fija">{{ oferta.deactivationReason }}</p>
-                      }
+                        <app-icono [nombre]="iconoDelEstado(situacionDeLaFila)" />
+                        <span class="visualmente-oculto">{{ estadoDeLaFila }}</span>
+                      </span>
                     </td>
                     <td class="tabla__acciones">
                       @if (oferta.estado === 'ACTIVO') {

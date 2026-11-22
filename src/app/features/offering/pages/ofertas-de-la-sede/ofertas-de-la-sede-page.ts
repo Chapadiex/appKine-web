@@ -45,14 +45,13 @@ import {
   etiquetaDeModalidad,
   etiquetaDeNaturaleza,
   modalidadConCapacidad,
-  precioEnPalabras,
   servicioEnUnaLinea,
   servicioInactivo,
   serviciosPorNaturaleza,
 } from '../../models/etiquetas-de-offering';
 import {
+  ClaveDeVigencia,
   SituacionDeVigencia,
-  enPalabras,
   situacionDeVigencia,
 } from '../../models/situacion-de-vigencia';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
@@ -70,7 +69,8 @@ import {
   FiltroRapido,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
+import { formatearFecha } from '../../../../shared/utils/instantes';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
@@ -187,10 +187,10 @@ export class OfertasDeLaSedePage {
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
   protected readonly etiquetaDeNaturaleza = etiquetaDeNaturaleza;
   protected readonly modalidadConCapacidad = modalidadConCapacidad;
-  protected readonly precioEnPalabras = precioEnPalabras;
-  protected readonly enPalabras = enPalabras;
   protected readonly servicioEnUnaLinea = servicioEnUnaLinea;
   protected readonly reformatearImporte = reformatearImporte;
+  protected readonly formatearImporte = formatearImporte;
+  protected readonly formatearFecha = formatearFecha;
 
   /**
    * El dia de hoy, en hora local, fijado al montar.
@@ -525,6 +525,25 @@ export class OfertasDeLaSedePage {
   /** Situacion de vigencia ya redactada, para la columna de estado. */
   protected situacion(oferta: OfertaResponse): SituacionDeVigencia {
     return situacionDeVigencia(oferta, this.hoy);
+  }
+
+  /** El icono de la columna de estado: verde vigente, reloj si arranca despues, alerta si quedo afuera. */
+  protected iconoDelEstado(situacion: SituacionDeVigencia): NombreDeIcono {
+    return ICONO_DEL_ESTADO[situacion.clave];
+  }
+
+  /**
+   * Lo que dice el icono de estado, para el tooltip y el lector de pantalla: el resumen, la
+   * explicacion si la hay y el motivo de la baja.
+   */
+  protected textoDelEstado(oferta: OfertaResponse, situacion: SituacionDeVigencia): string {
+    const partes: (string | null | undefined)[] = [situacion.resumen, situacion.explicacion];
+    if (oferta.estado === 'INACTIVO') {
+      partes.push(oferta.deactivationReason);
+    }
+    return partes
+      .filter((parte) => parte !== null && parte !== undefined && parte !== '')
+      .join('. ');
   }
 
   /** Nombre del servicio del que cuelga la oferta, si el catalogo ya cargo. */
@@ -1195,6 +1214,15 @@ export class OfertasDeLaSedePage {
 
 /** Texto comparable para la busqueda: minusculas y sin acentos. */
 /** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
+/** Un icono por situacion de vigencia: la tabla muestra el icono y el texto va en el tooltip. */
+const ICONO_DEL_ESTADO: Record<ClaveDeVigencia, NombreDeIcono> = {
+  vigente: 'exito',
+  'aun-no': 'horarios',
+  'ya-no': 'advertencia',
+  'fuera-de-ventana': 'advertencia',
+  'dada-de-baja': 'error',
+};
+
 const DURACION_SUGERIDA = 45;
 /** Para un servicio grupal (yoga, pilates...): una hora y un cupo razonable para empezar. */
 const DURACION_SUGERIDA_GRUPAL = 60;

@@ -935,7 +935,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Exige prepago en recepción.');
+    expect(texto).toContain('Exige prepago');
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.tipo).toBe('exito');
     expect(aviso?.titulo).toContain('exige prepago');
@@ -1226,15 +1226,16 @@ describe('OfertasDeLaSedePage', () => {
     await fixture.whenStable();
   });
 
-  it('la fila muestra la descripción y el fin de vigencia cuando los hay', async () => {
+  it('la fila muestra la vigencia en dos renglones y el precio con formato', async () => {
     const fixture = await montar({
-      ofertas: [{ ...VIGENTE, descripcion: 'Para adultos', vigenciaHasta: '2026-12-31' }],
+      ofertas: [{ ...VIGENTE, vigenciaHasta: '2026-12-31', precioBase: 12000 }],
     });
     const fila = (fixture.nativeElement as HTMLElement).querySelector('tbody tr');
 
-    expect(fila?.textContent).toContain('Para adultos');
-    expect(fila?.textContent).toContain('(exclusivo)');
+    expect(fila?.querySelector('.celda-fecha')?.textContent?.trim()).toBe('01/01/2026');
+    expect(fila?.textContent).toContain('Hasta 31/12/2026');
     expect(fila?.textContent).not.toContain('Sin fecha de fin');
+    expect(fila?.querySelector('.celda-precio')?.textContent?.trim()).toBe('$ 12.000,00');
   });
 
   /**
