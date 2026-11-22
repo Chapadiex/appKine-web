@@ -67,6 +67,22 @@
     </div>
 
     <div class="campo">
+      <label for="filtro-categoria-servicio">Categoría</label>
+      <select
+        id="filtro-categoria-servicio"
+        [value]="filtroCategoria()"
+        (change)="cambiarFiltroCategoria($any($event.target).value)"
+      >
+        <option value="">Todas</option>
+        @for (categoria of categorias(); track categoria) {
+          <option [value]="categoria" [selected]="categoria === filtroCategoria()">
+            {{ categoria }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="campo">
       <label for="filtro-estado-servicio">Mostrar</label>
       <select
         id="filtro-estado-servicio"
@@ -129,13 +145,22 @@
           <div class="tabla-scroll" tabindex="0" role="region" aria-label="Catálogo de servicios">
             <table class="tabla">
               <caption class="visualmente-oculto">
-                Servicios del catalogo, con su código, origen, naturaleza, modalidad por defecto,
-                valores clínicos por defecto, estado y acciones.
+                Servicios del catalogo, con su código, categoría, origen, naturaleza, modalidad por
+                defecto, valores clínicos por defecto, estado y acciones.
               </caption>
               <thead>
                 <tr>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Nombre</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="codigo">Código</th>
+                  <th
+                    scope="col"
+                    class="tabla__col--secundaria"
+                    appOrdenable
+                    [tabla]="tabla"
+                    columna="categoria"
+                  >
+                    Categoría
+                  </th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="origen">Origen</th>
                   <th
                     scope="col"
@@ -169,6 +194,7 @@
                       }
                     </th>
                     <td>{{ servicio.codigo }}</td>
+                    <td class="tabla__col--secundaria">{{ categoriaDe(servicio) }}</td>
                     <td>
                       <span class="etiqueta">{{ etiquetaDeAlcance(servicio) }}</span>
                     </td>

@@ -18,6 +18,10 @@ export interface ContratacionResponse {
      */
     adicionales?: Array<ContratacionResponseAdicionalesEnum>;
     /**
+     * El centro nacio del alta de la plataforma (en prueba gratis), no del autoregistro. Es el que recibe la guia de primeros pasos aunque despues contrate
+     */
+    altaPorPlataforma?: boolean;
+    /**
      * El centro lo dio de alta o lo ajusto la plataforma. Sin esto es un centro autoregistrado o anterior al 18/11/2026, y tiene los dos servicios y la IA
      */
     definidaPorPlataforma?: boolean;

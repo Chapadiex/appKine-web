@@ -39,5 +39,15 @@ export interface InvitacionPreviewResponse {
      */
     requiereRegistro?: boolean;
     roleCode?: string;
+    /**
+     * Servicios que contrato el centro (KINESIOLOGIA, ACTIVIDADES). La pantalla elige con esto su ilustracion
+     */
+    servicios?: Array<InvitacionPreviewResponseServiciosEnum>;
 }
+export enum InvitacionPreviewResponseServiciosEnum {
+    KINESIOLOGIA = 'KINESIOLOGIA',
+    ACTIVIDADES = 'ACTIVIDADES'
+};
+
+
 
