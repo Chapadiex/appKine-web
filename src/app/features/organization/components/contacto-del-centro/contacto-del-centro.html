@@ -1,22 +1,21 @@
 @if (marca(); as datos) {
-  <h3 class="contacto__titulo" id="titulo-contacto">Datos de contacto</h3>
-  <dl class="detalle detalle--ficha" aria-labelledby="titulo-contacto">
-    @for (fila of filas; track fila.campo) {
-      <dt>{{ fila.rotulo }}</dt>
-      <dd>{{ datos[fila.campo] || '-' }}</dd>
-    }
-  </dl>
-
-  <p class="acciones acciones--ficha">
+  <div class="contacto__cabecera">
+    <h3 class="contacto__titulo" id="titulo-contacto">Datos de contacto</h3>
     <button
       *akinePermiso="permisoEditar"
       type="button"
       class="boton boton--secundario"
       (click)="abrir()"
     >
-      Editar datos de contacto
+      Editar<span class="visualmente-oculto"> datos de contacto</span>
     </button>
-  </p>
+  </div>
+  <dl class="detalle detalle--ficha" aria-labelledby="titulo-contacto">
+    @for (fila of filas; track fila.campo) {
+      <dt>{{ fila.rotulo }}</dt>
+      <dd>{{ datos[fila.campo] || '-' }}</dd>
+    }
+  </dl>
 }
 
 @if (editando()) {
@@ -37,12 +36,12 @@
       </p>
 
       <div class="campo campo--6">
-        <label for="contacto-telefono">Teléfono</label>
+        <label for="contacto-telefono"><app-icono nombre="telefono" />Teléfono</label>
         <input id="contacto-telefono" type="tel" formControlName="telefono" maxlength="40" />
       </div>
 
       <div class="campo campo--6">
-        <label for="contacto-email">Email</label>
+        <label for="contacto-email"><app-icono nombre="correo" />Email</label>
         <input
           id="contacto-email"
           type="email"
@@ -59,7 +58,7 @@
       </div>
 
       <div class="campo campo--12">
-        <label for="contacto-sitio">Sitio web</label>
+        <label for="contacto-sitio"><app-icono nombre="plataforma" />Sitio web</label>
         <input
           id="contacto-sitio"
           type="url"
@@ -77,12 +76,12 @@
       </div>
 
       <div class="campo campo--12">
-        <label for="contacto-direccion">Dirección</label>
+        <label for="contacto-direccion"><app-icono nombre="sede" />Dirección</label>
         <input id="contacto-direccion" type="text" formControlName="direccion" maxlength="240" />
       </div>
 
       <div class="campo campo--12">
-        <label for="contacto-leyenda">Leyenda del pie</label>
+        <label for="contacto-leyenda"><app-icono nombre="documento" />Leyenda del pie</label>
         <input
           id="contacto-leyenda"
           type="text"

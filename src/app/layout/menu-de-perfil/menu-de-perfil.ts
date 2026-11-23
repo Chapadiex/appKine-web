@@ -11,6 +11,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Desplegable } from '../desplegable';
 import { Icono } from '../../shared/components/icono/icono';
 import { PerfilPropioStore } from '../../core/services/perfil-propio.store';
+import { PrimerosPasosStore } from '../../core/guards/primeros-pasos.guard';
 import { RUTA_LOGIN } from '../../core/models/rutas';
 import { RUTA_MI_PERFIL, RUTA_PREFERENCIAS } from '../../features/cuenta/models/rutas-de-cuenta';
 import { SessionService } from '../../core/services/session.service';
@@ -39,6 +40,7 @@ export class MenuDePerfil extends Desplegable {
   private readonly perfil = inject(PerfilPropioStore);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly primerosPasos = inject(PrimerosPasosStore);
 
   protected readonly rutaMiPerfil = RUTA_MI_PERFIL;
   protected readonly rutaPreferencias = RUTA_PREFERENCIAS;
@@ -60,6 +62,12 @@ export class MenuDePerfil extends Desplegable {
   }
 
   /** Cierra la sesion y vuelve al login. Un logout que falla en el servidor igual limpia el local. */
+  /** Vuelve a mostrar el tour guiado del menú, desde la pantalla en la que está. */
+  protected verRecorrido(): void {
+    this.cerrar();
+    this.primerosPasos.recorrido.set(true);
+  }
+
   protected cerrarSesion(): void {
     this.saliendo.set(true);
     this.session.logout().subscribe({

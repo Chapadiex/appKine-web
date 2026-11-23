@@ -94,6 +94,10 @@ export class LoginPage {
   protected readonly espera = crearEsperaPorLimite();
 
   protected readonly enviando = computed(() => this.estado().tipo === 'enviando');
+  /** Desde que se mandan los datos hasta que abre la pantalla siguiente: el botón gira. */
+  protected readonly entrando = computed(
+    () => this.estado().tipo === 'enviando' || this.estado().tipo === 'ok',
+  );
 
   protected readonly mensajeError = computed(() => {
     const estado = this.estado();

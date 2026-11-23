@@ -67,8 +67,9 @@ test.describe('Suscripcion contra el backend real', () => {
       // --- Recien dada de alta: plan basico, una sede en uso de una ---------------------------
       await ingresar(page, { emailAdmin: email } as Centro);
       await navegar(page, '/organizacion/suscripcion');
-      await expect(page.getByRole('heading', { name: 'Suscripción activa' })).toBeVisible();
-      const detalle = page.locator('.plan-actual');
+      // Desde el 21/11 el estado es una marca junto al titulo de la tarjeta, no un h3.
+      await expect(page.locator('.tarjeta__cabecera .marca-estado').first()).toHaveText('Activa');
+      const detalle = page.locator('.datos-en-filas').first();
       await expect(detalle).toContainText(inicial.planName);
       const sedes = page.getByRole('listitem').filter({ hasText: 'Sedes habilitadas' });
       // Uso y tope en un solo rotulo, "1 de 1", desde el rediseño de la suscripcion.
@@ -156,7 +157,9 @@ test.describe('Suscripcion contra el backend real', () => {
       await expect(banner).toContainText(`Motivo: ${motivo}`);
       await expect(banner).toContainText('solo lectura');
       await expect(detalle).toContainText(suspendida.planName);
-      await expect(detalle).toContainText('Suspendida');
+      await expect(page.locator('.tarjeta__cabecera .marca-estado').first()).toHaveText(
+        'Suspendida',
+      );
       await expect(sedes.locator('.limite__valor')).not.toHaveText('1 de 1');
 
       // Y es solo lectura de verdad: el alta de una sede se rechaza con el tipo declarado.

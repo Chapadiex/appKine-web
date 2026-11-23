@@ -44,7 +44,8 @@ interface Sugerencia {
     .medidor {
       display: flex;
       flex-direction: column;
-      gap: var(--esp-3);
+      gap: var(--esp-5);
+      margin-top: var(--esp-3);
       font-size: var(--tipo-sm);
     }
 
@@ -55,8 +56,8 @@ interface Sugerencia {
     }
 
     .medidor__tramo {
-      height: 4px;
-      border-radius: 2px;
+      height: 6px;
+      border-radius: 3px;
       background: var(--color-borde);
     }
 
@@ -77,18 +78,35 @@ interface Sugerencia {
       color: var(--color-texto-suave);
     }
 
+    /* Cada sugerencia es una pastilla: verde cuando se cumple, sin color mientras no. */
     .medidor__lista {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--esp-2) var(--esp-5);
+      justify-content: center;
+      gap: var(--esp-3);
       margin: 0;
       padding: 0;
       list-style: none;
-      color: var(--color-texto-suave);
     }
 
-    .medidor__item--cumplido {
+    .medidor__lista li {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--esp-2);
+      padding: var(--esp-1) var(--esp-4);
+      border: var(--borde-fino) solid var(--color-borde);
+      border-radius: 999px;
+      color: var(--color-texto-suave);
+      font-size: var(--tipo-xs);
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .medidor__lista li.medidor__item--cumplido {
+      border-color: var(--color-exito);
+      background: var(--color-exito-fondo);
       color: var(--color-exito-texto);
+      font-weight: var(--peso-medio);
     }
   `,
 })

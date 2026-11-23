@@ -50,34 +50,38 @@
       </app-alerta>
     }
 
-    @for (fila of filas(); track fila.funcion) {
-      <div class="interruptor ia__funcion" [class.ia__funcion--inactiva]="!fila.activa">
-        <input
-          [id]="'ia-' + fila.funcion"
-          type="checkbox"
-          role="switch"
-          [checked]="fila.centro"
-          [disabled]="!fila.despliegue || guardando() !== null"
-          [attr.aria-describedby]="'ia-' + fila.funcion + '-detalle'"
-          (change)="alternar(fila.funcion, $any($event.target))"
-        />
-        <span class="interruptor__textos">
-          <label class="interruptor__titulo" [for]="'ia-' + fila.funcion">{{ fila.titulo }}</label>
-          <span class="interruptor__ayuda" [id]="'ia-' + fila.funcion + '-detalle'">
-            {{ fila.uso }} <span class="ia__pantallas">{{ fila.pantallas }}</span>
-          </span>
-        </span>
-        <span class="ia__estado">
-          @if (guardando() === fila.funcion) {
-            <span class="estado estado--cargando">Guardando&hellip;</span>
-          } @else {
-            <span [class]="'marca-estado marca-estado--' + fila.estado.tono">
-              {{ fila.estado.texto }}
+    <div class="ia__funciones">
+      @for (fila of filas(); track fila.funcion) {
+        <div class="interruptor ia__funcion" [class.ia__funcion--inactiva]="!fila.activa">
+          <input
+            [id]="'ia-' + fila.funcion"
+            type="checkbox"
+            role="switch"
+            [checked]="fila.centro"
+            [disabled]="!fila.despliegue || guardando() !== null"
+            [attr.aria-describedby]="'ia-' + fila.funcion + '-detalle'"
+            (change)="alternar(fila.funcion, $any($event.target))"
+          />
+          <span class="interruptor__textos">
+            <label class="interruptor__titulo" [for]="'ia-' + fila.funcion">{{
+              fila.titulo
+            }}</label>
+            <span class="interruptor__ayuda" [id]="'ia-' + fila.funcion + '-detalle'">
+              {{ fila.uso }} <span class="ia__pantallas">{{ fila.pantallas }}</span>
             </span>
-          }
-        </span>
-      </div>
-    }
+          </span>
+          <span class="ia__estado">
+            @if (guardando() === fila.funcion) {
+              <span class="estado estado--cargando">Guardando&hellip;</span>
+            } @else {
+              <span [class]="'marca-estado marca-estado--' + fila.estado.tono">
+                {{ fila.estado.texto }}
+              </span>
+            }
+          </span>
+        </div>
+      }
+    </div>
   </section>
 }
 

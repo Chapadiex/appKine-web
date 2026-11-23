@@ -1,5 +1,10 @@
 <!-- Aceptar la versión vigente de los términos (19/11/2026). -->
 <section class="acceso-tarjeta" aria-labelledby="titulo-terminos">
+  <!-- La marca adentro de la tarjeta, arriba a la izquierda, como en el ingreso (21/11/2026). -->
+  <a class="acceso-marca" href="/">
+    <span class="acceso-marca__logo" aria-hidden="true">A</span>
+    <span>AKINE</span>
+  </a>
   <span class="acceso-icono acceso-icono--neutro" aria-hidden="true">
     <app-icono nombre="documento" />
   </span>
@@ -32,13 +37,30 @@
       </p>
 
       @if (actual.terminos.url; as enlace) {
-        <p class="acceso-texto">
-          <a [href]="enlace" target="_blank" rel="noopener noreferrer"
-            >Leer los términos y condiciones<span class="visualmente-oculto">
-              (se abren en otra pestaña)</span
-            ></a
-          >
-        </p>
+        <!-- Lectura como tarjeta destacada, con "Leído" al abrirla (21/11/2026). -->
+        <a
+          class="terminos__leer"
+          [class.terminos__leer--hecho]="leidos()"
+          [href]="enlace"
+          target="_blank"
+          rel="noopener noreferrer"
+          (click)="leidos.set(true)"
+        >
+          <span class="terminos__leer-icono" aria-hidden="true"
+            ><app-icono nombre="documento"
+          /></span>
+          <span class="terminos__leer-textos">
+            <span class="terminos__leer-titulo">Leer los términos y condiciones</span>
+            <span class="terminos__leer-sub"
+              >Versión {{ actual.terminos.versionVigente }} · se abren en otra pestaña</span
+            >
+          </span>
+          @if (leidos()) {
+            <span class="marca-estado marca-estado--activa terminos__leido">Leído</span>
+          } @else {
+            <app-icono class="terminos__leer-flecha" nombre="flecha-derecha" />
+          }
+        </a>
       }
 
       @if (errorAlAceptar(); as mensaje) {

@@ -81,6 +81,12 @@ const TRAZOS = {
   repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   microfono: rectangulo(9, 3, 6, 11, 3) + 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
   detener: rectangulo(6.5, 6.5, 11, 11, 2),
+  ojo:
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' + circulo(12, 12, 2.8),
+  'ojo-tachado':
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' +
+    circulo(12, 12, 2.8) +
+    'M4 4l16 16',
 } satisfies Record<string, string>;
 
 /** Los iconos que existen. Agregar uno es agregar su trazo en `TRAZOS`. */

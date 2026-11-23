@@ -1,3 +1,4 @@
+import { Icono } from '../../../../shared/components/icono/icono';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -29,7 +30,7 @@ type CampoDeContacto = 'telefono' | 'email' | 'sitioWeb' | 'direccion' | 'leyend
  */
 @Component({
   selector: 'app-contacto-del-centro',
-  imports: [ReactiveFormsModule, PanelLateral, Alerta, PermisoDirective],
+  imports: [ReactiveFormsModule, PanelLateral, Alerta, PermisoDirective, Icono],
   templateUrl: './contacto-del-centro.html',
   styleUrls: ['../../organization.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

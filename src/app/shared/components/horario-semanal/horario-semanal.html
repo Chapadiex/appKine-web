@@ -12,7 +12,23 @@
       </button>
     }
   </div>
-  <p class="semana__resumen" aria-live="polite">{{ resumen() }}</p>
+  <div class="semana__estado">
+    <p class="semana__resumen" aria-live="polite">{{ resumen() }}</p>
+    <!--
+      Arriba y no al pie (20/11/2026): al pie quedaba bajo la barra fija de los pasos con zoom, y
+      no se notaba que copiaba. Ahora avisa a cuántos días llevó el horario.
+    -->
+    @if (puedeCopiarLunes()) {
+      <button type="button" class="boton boton--secundario boton--chico" (click)="copiarLunes()">
+        Copiar el lunes a los días abiertos
+      </button>
+    }
+    @if (copiado(); as cantidad) {
+      <span class="semana__copiado" role="status">
+        Copiado a {{ cantidad === 1 ? '1 día' : cantidad + ' días' }}
+      </span>
+    }
+  </div>
 </div>
 
 <ul class="semana__dias">
@@ -105,11 +121,3 @@
     </li>
   }
 </ul>
-
-@if (puedeCopiarLunes()) {
-  <div class="semana__pie">
-    <button type="button" class="boton boton--secundario" (click)="copiarLunes()">
-      Copiar el horario del lunes a los demás días abiertos
-    </button>
-  </div>
-}

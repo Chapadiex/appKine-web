@@ -73,7 +73,7 @@ describe('MapaDeUbicacion', () => {
     fixture.detectChanges();
   }
 
-  it('sin coordenadas muestra el país y no pone ningún marcador', async () => {
+  it('sin coordenadas muestra la ciudad de Córdoba y no pone ningún marcador', async () => {
     await renderizar();
 
     expect(leaflet.modulo.map).toHaveBeenCalledTimes(1);
@@ -81,7 +81,7 @@ describe('MapaDeUbicacion', () => {
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       expect.objectContaining({ maxZoom: 19 }),
     );
-    expect(leaflet.mapa.setView).toHaveBeenCalledWith([-38.4, -63.6], 4);
+    expect(leaflet.mapa.setView).toHaveBeenCalledWith([-31.4167, -64.1833], 12);
     expect(leaflet.modulo.marker).not.toHaveBeenCalled();
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.mapa-de-ubicacion__aviso'),

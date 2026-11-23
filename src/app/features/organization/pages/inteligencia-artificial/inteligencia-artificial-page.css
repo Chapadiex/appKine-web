@@ -17,13 +17,30 @@
   font-weight: var(--peso-semi);
 }
 
-/* El estado va a la derecha; en pantalla angosta baja debajo del texto. */
-.ia__funcion {
-  flex-wrap: wrap;
+/* Cuatro funciones en dos columnas y dos filas; en pantalla angosta, una debajo de la otra. */
+.ia__funciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-4);
+}
+
+@media (max-width: 47.99rem) {
+  .ia__funciones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Cada funcion es una caja propia; el estado va arriba a la derecha. */
+.ia__funcion.interruptor {
+  gap: var(--esp-4);
+  padding: var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
 }
 
 .ia__funcion .interruptor__textos {
-  flex: 1 1 18rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .ia__funcion input:disabled {
