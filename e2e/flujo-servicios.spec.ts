@@ -71,9 +71,7 @@ test.describe('Servicios y ofertas contra el backend real', () => {
         .click();
       await page.getByLabel('Nombre comercial').fill(nombreDeLaOferta);
       await page.getByLabel('Duración (minutos)').fill('30');
-      // Profesional y box viven en el paso 2, "Cómo se atiende".
-      await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-      await page.getByRole('switch', { name: 'Requiere espacio o box' }).uncheck();
+      await page.getByRole('switch', { name: 'Espacio o box' }).uncheck();
       const altaDeLaOferta = respuestaDe(page, 'POST', /\/consultorios\/\d+\/ofertas$/);
       await page.getByRole('button', { name: 'Dar de alta', exact: true }).click();
       const oferta = await altaDeLaOferta;

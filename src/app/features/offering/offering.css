@@ -615,19 +615,6 @@ form > .acciones.formulario-servicio__descartar {
   color: var(--color-peligro);
 }
 
-/*
- * Alta de actividad en tres pasos (21/11/2026). Cada paso es una grilla de 12 que vive en el DOM y
- * se esconde con `hidden`: `display: grid` le gana al `hidden` del navegador, hay que restituirlo.
- */
-.paso-del-alta[hidden] {
-  display: none;
-}
-
-.alta-oferta__pasos {
-  display: block;
-  margin-bottom: var(--esp-6);
-}
-
 /* Rotulo que no es un `label` (el del segmentado, o el de arriba de un interruptor). */
 .campo__rotulo {
   font-size: var(--tipo-sm);
@@ -726,4 +713,11 @@ form > .acciones.formulario-servicio__descartar {
   flex-direction: row;
   align-items: center;
   gap: var(--esp-2);
+}
+
+/* Alta en un solo formulario: las tres partes se separan como secciones (23/11/2026). */
+form > .edicion-oferta + .edicion-oferta {
+  margin-top: var(--esp-5);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
 }

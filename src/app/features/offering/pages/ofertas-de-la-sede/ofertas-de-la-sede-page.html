@@ -388,26 +388,8 @@
         </app-alerta>
       }
 
-      <!--
-        El alta en tres pasos (21/11/2026): lo esencial primero (al elegir el servicio se completan
-        el nombre, la duracion y la practica del mismo codigo), despues como se atiende y al final
-        como se cobra. Los tres pasos viven en el DOM y se ve uno solo, asi el formulario es uno y
-        se puede dar de alta desde cualquiera: lo de los pasos 2 y 3 casi siempre queda como viene.
-      -->
-      <app-asistente-de-pasos
-        class="alta-oferta__pasos"
-        [pasos]="pasosDelAlta"
-        [actual]="pasoDelAlta()"
-        etiqueta="Pasos para publicar la actividad"
-        (volver)="irAlPasoDelAlta($event)"
-      />
-
-      <!-- Mismas secciones, filas e interruptores que la edición (23/11/2026). -->
-      <div
-        id="alta-oferta-paso-1"
-        class="grilla-12 paso-del-alta edicion-oferta"
-        [hidden]="pasoDelAlta() !== 1"
-      >
+      <!-- Un solo formulario, con las mismas secciones y filas que la edición (23/11/2026). -->
+      <div class="grilla-12 edicion-oferta">
         <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
           <app-icono nombre="actividades" />Actividad
           <app-ayuda titulo="Actividad"
@@ -538,11 +520,7 @@
         </div>
       </div>
 
-      <div
-        id="alta-oferta-paso-2"
-        class="grilla-12 paso-del-alta edicion-oferta"
-        [hidden]="pasoDelAlta() !== 2"
-      >
+      <div class="grilla-12 edicion-oferta">
         <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
           <app-icono nombre="pacientes" />Cómo se atiende
           <app-ayuda titulo="Cómo se atiende"
@@ -643,11 +621,7 @@
         </div>
       </div>
 
-      <div
-        id="alta-oferta-paso-3"
-        class="grilla-12 paso-del-alta edicion-oferta"
-        [hidden]="pasoDelAlta() !== 3"
-      >
+      <div class="grilla-12 edicion-oferta">
         <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
           <app-icono nombre="economia" />Cobro
           <app-ayuda titulo="Cobro"
@@ -706,31 +680,11 @@
         </div>
       </div>
 
-      <!-- Una sola primaria: "Dar de alta", desde cualquier paso. "Siguiente" es secundario. -->
+      <!-- Una sola primaria: "Dar de alta". -->
       <p class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
           {{ enviando() ? 'Guardando...' : 'Dar de alta' }}
         </button>
-        @if (pasoDelAlta() < pasosDelAlta.length) {
-          <button
-            type="button"
-            class="boton boton--secundario"
-            (click)="siguientePasoDelAlta()"
-            [disabled]="enviando()"
-          >
-            Siguiente
-          </button>
-        }
-        @if (pasoDelAlta() > 1) {
-          <button
-            type="button"
-            class="boton boton--secundario"
-            (click)="irAlPasoDelAlta(pasoDelAlta() - 1)"
-            [disabled]="enviando()"
-          >
-            Atrás
-          </button>
-        }
         <button
           type="button"
           class="boton boton--secundario"
