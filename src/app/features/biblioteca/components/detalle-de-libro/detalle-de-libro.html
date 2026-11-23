@@ -160,7 +160,11 @@
   }
 
   @if (editable()) {
-    <button type="button" class="boton boton--secundario boton--chico" (click)="abrirEdicion()">
+    <button
+      type="button"
+      class="boton boton--secundario boton--chico detalle__editar"
+      (click)="abrirEdicion()"
+    >
       Editar datos
     </button>
   }

@@ -89,3 +89,14 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Editar a la derecha, con el azul de acción como el botón que despliega la fila. */
+.detalle__editar {
+  justify-self: end;
+  border-color: var(--color-accion-fondo);
+  color: var(--color-accion-fondo);
+}
+
+.detalle__editar:hover {
+  background: color-mix(in srgb, var(--color-accion-fondo) 8%, var(--color-superficie));
+}
