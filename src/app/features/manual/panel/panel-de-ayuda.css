@@ -54,68 +54,179 @@
   background: var(--color-hover);
 }
 
-/* Agrandar va pegado a cerrar, a la derecha del titulo. */
+/*
+  Agrandar (23/11/2026): boton con borde, icono y texto, pegado a cerrar. Solo el icono gris pasaba
+  desapercibido.
+*/
 .ayuda__agrandar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
   margin-inline-start: auto;
+  min-height: 2.25rem;
+  padding: 0 var(--esp-4);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ayuda__agrandar:hover {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.ayuda__agrandar[aria-pressed='true'] {
+  border-color: var(--color-accion-fondo);
+  color: var(--color-accion-fondo);
 }
 
 /*
   Agrandada (21/11/2026): ocupa toda la pantalla y el texto queda en una columna legible y
-  centrada, con las capturas mas grandes.
+  centrada, con las capturas mas grandes. La columna se centra con el relleno del cuerpo y no con su
+  ancho (23/11/2026): asi la barra de desplazamiento queda contra el borde de la ventana y no
+  pegada al texto.
 */
 .ayuda--grande {
+  --ayuda-columna: 64rem;
+  --ayuda-margen: max(var(--esp-6), (100% - var(--ayuda-columna)) / 2);
   width: 100vw;
   z-index: 49;
 }
 
 .ayuda--grande .ayuda__cuerpo,
-.ayuda--grande .ayuda__buscador,
 .ayuda--grande .ayuda__pie {
-  box-sizing: border-box;
-  width: min(100% - 2 * var(--esp-6), 56rem);
-  margin-inline: auto;
+  padding-inline: var(--ayuda-margen);
+}
+
+.ayuda--grande .ayuda__buscador {
+  margin-inline: var(--ayuda-margen);
+}
+
+.ayuda--grande .ayuda__pie {
+  justify-content: center;
 }
 
 .ayuda--grande .ayuda__cuerpo {
   font-size: var(--tipo-md);
 }
 
-/* Buscador sutil: pastilla con fondo suave, sin borde duro; el foco se marca en la pastilla. */
+/* Ampliada: el indice va a la izquierda, fijo mientras se lee la ficha. */
+.ayuda--grande .ayuda__con-guia {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: var(--esp-8);
+  align-items: start;
+}
+
+.ayuda--grande .ayuda__guia {
+  position: sticky;
+  top: 0;
+}
+
+@media (max-width: 48rem) {
+  .ayuda--grande .ayuda__con-guia {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ayuda--grande .ayuda__guia {
+    position: static;
+  }
+}
+
+/* Buscador visible (23/11/2026): borde de control, fondo blanco y lupa en color de accion. */
 .ayuda__buscador {
   display: flex;
   align-items: center;
   gap: var(--esp-3);
   margin: var(--esp-5) var(--esp-6) 0;
   padding: 0 var(--esp-5);
-  border: 1px solid transparent;
+  border: 1px solid var(--color-borde-control);
   border-radius: var(--radio-pastilla);
-  background: var(--color-superficie-sutil);
-  color: var(--color-texto-suave);
+  background: var(--color-superficie);
+  color: var(--color-accion-fondo);
   transition:
     border-color 0.15s ease,
-    background-color 0.15s ease;
+    box-shadow 0.15s ease;
 }
 
 .ayuda__buscador:hover {
-  border-color: var(--color-borde-sutil);
+  border-color: var(--color-accion-fondo);
 }
 
 .ayuda__buscador:focus-within {
   border-color: var(--color-foco);
-  background: var(--color-superficie);
-  box-shadow: 0 0 0 1px var(--color-foco);
+  box-shadow: 0 0 0 2px var(--color-foco);
 }
 
 .ayuda__buscador input {
   flex: 1;
   min-width: 0;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: var(--esp-3) 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font: inherit;
+  font-size: var(--tipo-base);
+  color: var(--color-texto);
+}
+
+.ayuda__buscador input::placeholder {
+  color: var(--color-texto-suave);
+}
+
+/* Indice "En esta ficha": desplegable en el panel, abierto y al costado en la vista ampliada. */
+.ayuda__guia {
+  margin-bottom: var(--esp-5);
+  border: 1px solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.ayuda__guia summary {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  font-size: var(--tipo-sm);
+  font-weight: 600;
+  color: var(--color-texto-fuerte);
+  cursor: pointer;
+}
+
+.ayuda__guia-lista {
+  margin: 0;
+  padding: 0 var(--esp-4) var(--esp-3);
+  list-style: none;
+}
+
+.ayuda__guia-lista button {
+  width: 100%;
+  padding: var(--esp-2) 0;
   border: 0;
   background: none;
   font: inherit;
   font-size: var(--tipo-sm);
-  color: var(--color-texto);
+  text-align: start;
+  color: var(--color-enlace);
+  cursor: pointer;
+}
+
+.ayuda__guia-lista button:hover {
+  text-decoration: underline;
+}
+
+.ayuda__guia-tarea {
+  padding-inline-start: var(--esp-5);
+}
+
+.ayuda__guia-tarea button {
+  color: var(--color-texto-suave);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -130,12 +241,66 @@
   padding: var(--esp-5) var(--esp-6);
 }
 
+/*
+  Pie (23/11/2026): los accesos en una sola fila, con icono arriba y borde de control, para que no
+  pasen desapercibidos. El del asistente va en color de accion.
+*/
 .ayuda__pie {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-4);
-  padding: var(--esp-5) var(--esp-6);
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--esp-3);
+  padding: var(--esp-4) var(--esp-6);
   border-block-start: 1px solid var(--color-borde-sutil);
+  background: var(--color-superficie-sutil);
+}
+
+.ayuda--grande .ayuda__pie {
+  grid-auto-columns: minmax(0, 13rem);
+}
+
+.ayuda__acceso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  min-height: 4rem;
+  padding: var(--esp-3) var(--esp-2);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.ayuda__acceso app-icono {
+  color: var(--color-accion-fondo);
+}
+
+.ayuda__acceso:hover {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.ayuda__acceso--principal {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+.ayuda__acceso--principal app-icono {
+  color: inherit;
+}
+
+.ayuda__acceso--principal:hover {
+  border-color: var(--color-accion-fondo-hover);
+  background: var(--color-accion-fondo-hover);
 }
 
 .ayuda__grupo-de-ficha {
