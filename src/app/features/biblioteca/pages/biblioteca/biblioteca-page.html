@@ -1,4 +1,4 @@
-<app-cabecera-de-pagina titulo="Biblioteca">
+<app-cabecera-de-pagina titulo="Bibliografía de la IA">
   <app-ayuda titulo="Sobre la biblioteca">
     <p>
       Los libros PDF que cargás acá alimentan la sugerencia de tratamiento y la evaluación de
@@ -154,28 +154,57 @@
                   <th scope="col" appOrdenable [tabla]="orden" columna="titulo">Título</th>
                   <th scope="col" class="tabla__col--secundaria">Edición</th>
                   <th scope="col" class="tabla__col--secundaria">Área</th>
-                  <th scope="col" class="tabla__col--secundaria">Páginas</th>
+                  <th scope="col" class="tabla__col--secundaria biblioteca__numero">Páginas</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 @for (libro of libros(); track libro.id) {
-                  <tr>
+                  <tr [class.biblioteca__fila--abierta]="desplegado() === libro.id">
                     <td>
-                      <a class="biblioteca__titulo" [routerLink]="['/biblioteca', libro.id]">{{
-                        libro.titulo
-                      }}</a>
-                      @if (libro.autores) {
-                        <span class="biblioteca__autor">{{ libro.autores }}</span>
-                      }
-                      @if (rotuloDeReemplazo(libro); as rotulo) {
-                        <span class="biblioteca__reemplazo">{{ rotulo }}</span>
+                      <div class="biblioteca__libro">
+                        <app-icono class="biblioteca__libro-icono" [trazo]="trazoPdf" />
+                        <div>
+                          <button
+                            type="button"
+                            class="biblioteca__titulo"
+                            [attr.aria-expanded]="desplegado() === libro.id"
+                            [attr.aria-controls]="'libro-detalle-' + libro.id"
+                            (click)="alternarDetalle(libro.id)"
+                          >
+                            {{ libro.titulo }}
+                          </button>
+                          @if (libro.autores) {
+                            <span class="biblioteca__autor">{{ libro.autores }}</span>
+                          }
+                          @if (rotuloDeReemplazo(libro); as rotulo) {
+                            <span class="biblioteca__reemplazo">{{ rotulo }}</span>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="tabla__col--secundaria">
+                      @if (libro.edicion) {
+                        {{ libro.edicion }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
                       }
                     </td>
-                    <td class="tabla__col--secundaria">{{ libro.edicion || '-' }}</td>
-                    <td class="tabla__col--secundaria">{{ libro.area || '-' }}</td>
-                    <td class="tabla__col--secundaria">{{ libro.paginas ?? '-' }}</td>
+                    <td class="tabla__col--secundaria">
+                      @if (libro.area) {
+                        {{ libro.area }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria biblioteca__numero">
+                      @if (libro.paginas !== undefined && libro.paginas !== null) {
+                        {{ libro.paginas }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
+                      }
+                    </td>
                     <td>
                       <span [class]="claseDeEstado(libro.estado)">{{
                         estadoEnPalabras(libro.estado)
@@ -189,9 +218,20 @@
                     </td>
                     <td class="tabla__acciones">
                       <app-acciones-de-fila [de]="libro.titulo ?? 'el libro'">
-                        <a principal class="accion-texto" [routerLink]="['/biblioteca', libro.id]"
-                          >Ver detalle</a
+                        <button
+                          principal
+                          type="button"
+                          class="biblioteca__desplegar"
+                          [attr.aria-expanded]="desplegado() === libro.id"
+                          [attr.aria-controls]="'libro-detalle-' + libro.id"
+                          [title]="
+                            desplegado() === libro.id ? 'Ocultar los datos' : 'Ver los datos'
+                          "
+                          (click)="alternarDetalle(libro.id)"
                         >
+                          <app-icono nombre="flecha-abajo" />
+                          <span class="visualmente-oculto">Datos de {{ libro.titulo }}</span>
+                        </button>
                         @if (
                           libro.reemplazaLibroId === undefined && !tieneReemplazoEnCurso(libro)
                         ) {
@@ -241,6 +281,17 @@
                       </app-acciones-de-fila>
                     </td>
                   </tr>
+                  @if (desplegado() === libro.id) {
+                    <tr class="biblioteca__detalle" [id]="'libro-detalle-' + libro.id">
+                      <td colspan="6">
+                        <app-detalle-de-libro
+                          [libro]="libro"
+                          [reemplazo]="rotuloDeReemplazo(libro)"
+                          (guardado)="consultar()"
+                        />
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>

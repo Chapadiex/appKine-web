@@ -1,0 +1,171 @@
+@let l = libro();
+
+@if (editando()) {
+  @if (errorDeEdicion(); as fallo) {
+    <app-alerta
+      class="detalle__alerta"
+      [tipo]="fallo.causa === 'version-vieja' ? 'advertencia' : 'error'"
+      titulo="No pudimos guardar los cambios"
+    >
+      <p>{{ fallo.mensaje }}</p>
+    </app-alerta>
+  }
+  <form class="detalle__edicion" (submit)="$event.preventDefault(); guardar()" novalidate>
+    <div class="campo detalle__ancho">
+      <label [for]="'libro-titulo-' + l.id">Título</label>
+      <input
+        [id]="'libro-titulo-' + l.id"
+        name="titulo"
+        type="text"
+        required
+        autocomplete="off"
+        [attr.aria-invalid]="tituloVacio() ? 'true' : null"
+        [value]="titulo()"
+        (input)="titulo.set($any($event.target).value)"
+      />
+      @if (tituloVacio()) {
+        <p class="campo__error" role="alert">El título es obligatorio.</p>
+      }
+    </div>
+    <div class="campo">
+      <label [for]="'libro-autores-' + l.id">Autores</label>
+      <input
+        [id]="'libro-autores-' + l.id"
+        name="autores"
+        type="text"
+        autocomplete="off"
+        [value]="autores()"
+        (input)="autores.set($any($event.target).value)"
+      />
+    </div>
+    <div class="campo">
+      <label [for]="'libro-edicion-' + l.id">Edición</label>
+      <input
+        [id]="'libro-edicion-' + l.id"
+        name="edicion"
+        type="text"
+        autocomplete="off"
+        [value]="edicion()"
+        (input)="edicion.set($any($event.target).value)"
+      />
+    </div>
+    <div class="campo">
+      <label [for]="'libro-area-' + l.id">Área</label>
+      <input
+        [id]="'libro-area-' + l.id"
+        name="area"
+        type="text"
+        autocomplete="off"
+        [value]="area()"
+        (input)="area.set($any($event.target).value)"
+      />
+    </div>
+    <div class="detalle__ancho acciones-fila">
+      <button type="submit" class="boton boton--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario boton--chico"
+        [disabled]="guardando()"
+        (click)="cancelarEdicion()"
+      >
+        Cancelar
+      </button>
+    </div>
+  </form>
+} @else {
+  <dl class="detalle__datos">
+    <div>
+      <dt><app-icono nombre="perfil" />Autores</dt>
+      <dd>{{ l.autores || 'Sin cargar' }}</dd>
+    </div>
+    <div>
+      <dt><app-icono nombre="documento" />Edición</dt>
+      <dd>{{ l.edicion || 'Sin cargar' }}</dd>
+    </div>
+    <div>
+      <dt><app-icono nombre="capas" />Área</dt>
+      <dd>{{ l.area || 'Sin cargar' }}</dd>
+    </div>
+    <div>
+      <dt><app-icono [trazo]="trazoPdf" />Páginas</dt>
+      <dd>{{ l.paginas ?? 'Todavía no se contaron' }}</dd>
+    </div>
+    <div>
+      <dt><app-icono nombre="info" />Estado</dt>
+      <dd>
+        <span [class]="claseDeEstado(l.estado)">{{ estadoEnPalabras(l.estado) }}</span>
+        @if (l.estado === 'PROCESANDO' && l.progreso !== undefined) {
+          {{ l.progreso }} % procesado
+        }
+      </dd>
+    </div>
+    <div class="detalle__doble">
+      <dt><app-icono nombre="capas" />Indexado</dt>
+      <dd>
+        @if (detalle(); as d) {
+          @if (indexando() === null) {
+            {{ d.fragmentos ?? 0 }} pedazos, todos listos
+          } @else {
+            {{ d.fragmentosConVector ?? 0 }} de {{ d.fragmentos ?? 0 }} pedazos listos
+            <span class="detalle__suave">({{ indexando() }} %)</span>
+          }
+        } @else if (errorDeDetalle(); as error) {
+          <span class="detalle__suave">{{ error }}</span>
+        } @else {
+          <span class="detalle__suave">Cargando…</span>
+        }
+      </dd>
+    </div>
+    @if (l.estado === 'ERROR' && l.motivoError) {
+      <div class="detalle__ancho">
+        <dt><app-icono nombre="error" />Qué falló</dt>
+        <dd>{{ l.motivoError }}</dd>
+      </div>
+    }
+    @if (reemplazo(); as rotulo) {
+      <div class="detalle__ancho">
+        <dt><app-icono nombre="repetir" />Reemplazo</dt>
+        <dd>{{ rotulo }}</dd>
+      </div>
+    }
+  </dl>
+
+  @if (detalle()) {
+    <section class="detalle__sospechosos" aria-label="Pedazos sospechosos">
+      <h3 class="detalle__subtitulo">
+        <app-icono nombre="advertencia" />Pedazos sospechosos ({{ sospechosos().length }})
+        <app-ayuda titulo="Pedazos sospechosos">
+          <p>
+            El libro se parte en pedazos y la IA busca entre ellos. Los sospechosos quedan afuera de
+            la búsqueda porque parecen instrucciones dirigidas al sistema o texto corrupto. Conviene
+            revisar esas páginas del PDF.
+          </p>
+        </app-ayuda>
+      </h3>
+      @if (sospechosos().length === 0) {
+        <p class="detalle__suave">Ninguno: todos los pedazos entran en la búsqueda.</p>
+      } @else {
+        <ul>
+          @for (s of sospechosos(); track $index) {
+            <li>
+              <strong>Página {{ s.paginaDesde }}</strong>
+              <blockquote>{{ s.extracto }}</blockquote>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  @if (editable()) {
+    <button
+      type="button"
+      class="boton boton--secundario boton--chico detalle__editar"
+      (click)="abrirEdicion()"
+    >
+      Editar datos
+    </button>
+  }
+}

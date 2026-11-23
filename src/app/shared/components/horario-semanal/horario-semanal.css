@@ -130,6 +130,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .semana__corte,
   .semana__interruptor input,
   .semana__interruptor input::after {
     transition: none;
@@ -195,26 +196,51 @@
 /* Las acciones del dia van juntas: el corte y, con el dia ya partido, la tercera franja. */
 .semana__acciones {
   display: flex;
+  gap: var(--esp-2);
   flex-wrap: wrap;
   align-self: start;
   justify-content: flex-end;
   align-items: center;
 }
 
-.semana__corte,
+/*
+  Acciones del día como botones discretos (23/11/2026): pastilla con borde fino que toma el azul
+  de acción al pasar el mouse. Antes eran enlaces sueltos y no se entendía que fueran botones.
+*/
+.semana__corte {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+  font: inherit;
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.semana__corte:hover {
+  border-color: var(--color-accion-fondo);
+  background: color-mix(in srgb, var(--color-accion-fondo) 6%, var(--color-superficie));
+  color: var(--color-accion-fondo);
+}
+
 .semana__quitar {
   min-height: 2.5rem;
-  padding: 0 var(--esp-4);
   border: 0;
   background: transparent;
-  color: var(--color-enlace);
   font: inherit;
-  font-size: var(--tipo-sm);
   font-weight: var(--peso-medio);
   cursor: pointer;
 }
 
-.semana__corte:hover,
 .semana__quitar:hover {
   text-decoration: underline;
 }
@@ -257,7 +283,7 @@
  */
 :host(.horario-compacto) .semana__cabecera {
   align-items: center;
-  margin-bottom: var(--esp-3);
+  margin-bottom: var(--esp-5);
 }
 
 :host(.horario-compacto) .semana__rotulo {
@@ -272,7 +298,7 @@
 :host(.horario-compacto) .semana__dia {
   grid-template-columns: 9rem minmax(0, 1fr) auto;
   min-height: 0;
-  padding: var(--esp-2) 0;
+  padding: var(--esp-3) 0;
 }
 
 :host(.horario-compacto) .semana__franjas {
@@ -290,13 +316,12 @@
   align-self: center;
 }
 
-:host(.horario-compacto) .semana__corte,
 :host(.horario-compacto) .semana__quitar {
   min-height: 2.25rem;
 }
 
 :host(.horario-compacto) .semana__pie {
-  padding-top: var(--esp-3);
+  padding-top: var(--esp-5);
 }
 
 /*

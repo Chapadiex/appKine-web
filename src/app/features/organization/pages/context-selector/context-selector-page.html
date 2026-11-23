@@ -1,132 +1,127 @@
-<!-- Elegir donde trabajar (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
-<section class="acceso-tarjeta acceso-tarjeta--ancha" aria-labelledby="titulo-contextos">
-  <!-- La marca adentro de la tarjeta, arriba a la izquierda, como en el ingreso (21/11/2026). -->
-  <a class="acceso-marca" href="/">
-    <span class="acceso-marca__logo" aria-hidden="true">A</span>
-    <span>AKINE</span>
-  </a>
-  <h1 id="titulo-contextos">¿Dónde vas a trabajar hoy?</h1>
-  <p class="acceso-subtitulo">
-    Elegí el centro y la sede: define qué datos ves y sobre cuáles operás.
-  </p>
+<!--
+  Mientras busca o entra, solo un spinner (23/11/2026): la tarjeta aparece cuando hay algo que
+  decidir o que explicar (lista, vacio, error).
+-->
+@if (esperando(); as mensaje) {
+  <div class="esperando" role="status">
+    <span class="esperando__giro" aria-hidden="true"></span>
+    <p class="esperando__texto">{{ mensaje }}</p>
+  </div>
+} @else {
+  <!-- Elegir donde trabajar (diseño del canvas "AKINE · Pantallas", 22/10/2026). -->
+  <section class="acceso-tarjeta acceso-tarjeta--ancha" aria-labelledby="titulo-contextos">
+    <!-- La marca adentro de la tarjeta, arriba a la izquierda, como en el ingreso (21/11/2026). -->
+    <a class="acceso-marca" href="/">
+      <span class="acceso-marca__logo" aria-hidden="true">A</span>
+      <span>AKINE</span>
+    </a>
+    <h1 id="titulo-contextos">¿Dónde vas a trabajar hoy?</h1>
+    <p class="acceso-subtitulo">
+      Elegí el centro y la sede: define qué datos ves y sobre cuáles operás.
+    </p>
 
-  <!--
+    <!--
     Vive fuera del @switch porque tiene que sobrevivir al cambio de estado: se escribe cuando
     el canje falla con 404 y sigue en pantalla mientras la lista se recarga.
   -->
-  @if (aviso(); as texto) {
-    <app-alerta tipo="advertencia">
-      <p>{{ texto }}</p>
-    </app-alerta>
-  }
+    @if (aviso(); as texto) {
+      <app-alerta tipo="advertencia">
+        <p>{{ texto }}</p>
+      </app-alerta>
+    }
 
-  <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
-  <div aria-live="polite" class="contextos">
-    @switch (estado().tipo) {
-      @case ('cargando') {
-        <p class="acceso-texto">Buscando tus centros&hellip;</p>
-      }
+    <!-- aria-live: el cambio de estado se anuncia sin que el usuario tenga que buscarlo. -->
+    <div aria-live="polite" class="contextos">
+      @switch (estado().tipo) {
+        @case ('eligiendo') {
+          @for (centro of centros(); track centro.id) {
+            <div class="contexto-centro">
+              <div class="contexto-centro__cabecera">
+                <span class="contexto-centro__logo" aria-hidden="true">{{
+                  iniciales(centro.nombre)
+                }}</span>
+                <span class="contexto-centro__nombre">{{ centro.nombre }}</span>
+              </div>
+              <ul class="contexto-centro__sedes">
+                @for (contexto of centro.sedes; track $index) {
+                  <li>
+                    <!-- Un clic entra: el ultimo elegido va primero, con el foco y dicho en texto. -->
+                    <button
+                      type="button"
+                      class="opcion"
+                      [class.opcion--ultima]="contexto === preseleccionado()"
+                      (click)="seleccionar(contexto)"
+                    >
+                      <span class="opcion__textos">
+                        <span class="opcion__consultorio">{{
+                          contexto.consultorioName || 'Toda la organización'
+                        }}</span>
+                        <span class="visualmente-oculto">{{ contexto.organizationName }}</span>
+                      </span>
+                      @if (contexto === preseleccionado()) {
+                        <span class="opcion__ultima">El último que elegiste</span>
+                      }
+                      <span class="opcion__flecha" aria-hidden="true">›</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        }
 
-      @case ('entrando') {
-        <p class="acceso-aviso acceso-aviso--ok">
-          Entrando a {{ contextoEnCurso()?.organizationName }}&hellip;
-        </p>
-        <!--
-          Solo cuando la pantalla eligio sola. Decirselo a quien acaba de elegir entre varios
-          seria afirmarle en falso que su cuenta tiene un unico contexto.
-        -->
-        @if (entradaAutomatica()) {
-          <p class="ayuda">
-            Tenés un solo lugar de trabajo habilitado, así que no hace falta elegir.
-          </p>
+        @case ('vacio') {
+          @if (sinAcceso().length === 0) {
+            <p class="acceso-aviso acceso-aviso--aviso">
+              Tu cuenta todavía no tiene dónde trabajar.
+            </p>
+            <p class="acceso-texto">
+              No es un error: la cuenta existe. Pedile a quien administra un centro que te dé
+              acceso.
+            </p>
+          }
+        }
+
+        @case ('error') {
+          <app-alerta tipo="error" titulo="No pudimos continuar">
+            <p>{{ mensajeError() }}</p>
+            <p class="alerta__acciones">
+              <button type="button" class="boton boton--secundario" (click)="cargar()">
+                Reintentar
+              </button>
+            </p>
+          </app-alerta>
         }
       }
 
-      @case ('eligiendo') {
-        @for (centro of centros(); track centro.id) {
-          <div class="contexto-centro">
+      <!--
+        Centros cerrados por falta de pago (cobro mensual, contrato 0.191.0): se muestran para que
+        se entienda por que no aparecen entre los elegibles, pero no se pueden elegir.
+      -->
+      @if (estado().tipo === 'eligiendo' || estado().tipo === 'vacio') {
+        @for (centro of sinAcceso(); track centro.id) {
+          <div class="contexto-centro contexto-centro--cerrado" data-testid="centro-sin-acceso">
             <div class="contexto-centro__cabecera">
               <span class="contexto-centro__logo" aria-hidden="true">{{
                 iniciales(centro.nombre)
               }}</span>
               <span class="contexto-centro__nombre">{{ centro.nombre }}</span>
             </div>
-            <ul class="contexto-centro__sedes">
-              @for (contexto of centro.sedes; track $index) {
-                <li>
-                  <!-- Un clic entra: el ultimo elegido va primero, con el foco y dicho en texto. -->
-                  <button
-                    type="button"
-                    class="opcion"
-                    [class.opcion--ultima]="contexto === preseleccionado()"
-                    (click)="seleccionar(contexto)"
-                  >
-                    <span class="opcion__textos">
-                      <span class="opcion__consultorio">{{
-                        contexto.consultorioName || 'Toda la organización'
-                      }}</span>
-                      <span class="visualmente-oculto">{{ contexto.organizationName }}</span>
-                    </span>
-                    @if (contexto === preseleccionado()) {
-                      <span class="opcion__ultima">El último que elegiste</span>
-                    }
-                    <span class="opcion__flecha" aria-hidden="true">›</span>
-                  </button>
-                </li>
-              }
-            </ul>
+            <app-alerta tipo="advertencia">
+              <p>
+                <strong>{{ motivoSinAcceso }}.</strong>
+                El acceso vuelve cuando se registra el pago.
+              </p>
+            </app-alerta>
           </div>
         }
       }
+    </div>
 
-      @case ('vacio') {
-        @if (sinAcceso().length === 0) {
-          <p class="acceso-aviso acceso-aviso--aviso">Tu cuenta todavía no tiene dónde trabajar.</p>
-          <p class="acceso-texto">
-            No es un error: la cuenta existe. Pedile a quien administra un centro que te dé acceso.
-          </p>
-        }
-      }
-
-      @case ('error') {
-        <app-alerta tipo="error" titulo="No pudimos continuar">
-          <p>{{ mensajeError() }}</p>
-          <p class="alerta__acciones">
-            <button type="button" class="boton boton--secundario" (click)="cargar()">
-              Reintentar
-            </button>
-          </p>
-        </app-alerta>
-      }
-    }
-
-    <!--
-      Centros cerrados por falta de pago (cobro mensual, contrato 0.191.0): se muestran para que
-      se entienda por que no aparecen entre los elegibles, pero no se pueden elegir.
-    -->
-    @if (estado().tipo === 'eligiendo' || estado().tipo === 'vacio') {
-      @for (centro of sinAcceso(); track centro.id) {
-        <div class="contexto-centro contexto-centro--cerrado" data-testid="centro-sin-acceso">
-          <div class="contexto-centro__cabecera">
-            <span class="contexto-centro__logo" aria-hidden="true">{{
-              iniciales(centro.nombre)
-            }}</span>
-            <span class="contexto-centro__nombre">{{ centro.nombre }}</span>
-          </div>
-          <app-alerta tipo="advertencia">
-            <p>
-              <strong>{{ motivoSinAcceso }}.</strong>
-              El acceso vuelve cuando se registra el pago.
-            </p>
-          </app-alerta>
-        </div>
-      }
-    }
-  </div>
-
-  <div class="acceso-alternativas">
-    <button type="button" class="boton-texto" (click)="cerrarSesion()" [disabled]="saliendo()">
-      Cerrar sesión
-    </button>
-  </div>
-</section>
+    <div class="acceso-alternativas">
+      <button type="button" class="boton-texto" (click)="cerrarSesion()" [disabled]="saliendo()">
+        Cerrar sesión
+      </button>
+    </div>
+  </section>
+}

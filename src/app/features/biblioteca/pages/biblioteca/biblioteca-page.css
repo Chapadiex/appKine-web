@@ -35,3 +35,89 @@
   display: block;
   font-weight: var(--peso-semi);
 }
+
+/* Título con su ícono de libro y el autor debajo (23/11/2026). */
+.biblioteca__libro {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.biblioteca__libro-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio-md);
+  background: color-mix(in srgb, var(--color-accion-fondo) 12%, var(--color-superficie));
+  color: var(--color-accion-fondo);
+}
+
+.biblioteca__vacio {
+  color: var(--color-texto-suave);
+}
+
+.biblioteca__numero {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fila desplegable (23/11/2026): el título y la flecha abren los datos debajo, en la misma tabla. */
+button.biblioteca__titulo {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-enlace);
+  font: inherit;
+  font-weight: var(--peso-semi);
+  text-align: start;
+  cursor: pointer;
+}
+
+button.biblioteca__titulo:hover {
+  text-decoration: underline;
+}
+
+.biblioteca__desplegar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  cursor: pointer;
+}
+
+.biblioteca__desplegar app-icono {
+  transition: transform 0.2s ease;
+}
+
+.biblioteca__desplegar[aria-expanded='true'] {
+  border-color: var(--color-accion-fondo);
+  color: var(--color-accion-fondo);
+}
+
+.biblioteca__desplegar[aria-expanded='true'] app-icono {
+  transform: rotate(180deg);
+}
+
+.biblioteca__fila--abierta > * {
+  background: color-mix(in srgb, var(--color-accion-fondo) 5%, var(--color-superficie));
+  border-bottom-color: transparent;
+}
+
+.biblioteca__detalle > td {
+  padding: var(--esp-3) var(--esp-6) var(--esp-6);
+  background: color-mix(in srgb, var(--color-accion-fondo) 5%, var(--color-superficie));
+  box-shadow: inset 3px 0 0 var(--color-accion-fondo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .biblioteca__desplegar app-icono {
+    transition: none;
+  }
+}

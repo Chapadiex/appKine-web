@@ -535,9 +535,10 @@ const CONTEXTOS = [
     consultorioId: CONSULTORIO_ID,
     consultorioName: 'Sede Centro',
   },
+  // Otro centro (23/11/2026): con un solo centro el selector entra solo y no se dibuja.
   {
-    organizationId: ORGANIZATION_ID,
-    organizationName: 'Centro Kine Belgrano',
+    organizationId: 2,
+    organizationName: 'Centro Kine Norte',
     consultorioId: 4,
     consultorioName: 'Sede Norte',
   },

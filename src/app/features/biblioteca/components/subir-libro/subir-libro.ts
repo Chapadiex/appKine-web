@@ -18,6 +18,7 @@ import { LibroResponse } from '../../../../api/generated/model/libro-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { ErrorBiblioteca, traducirErrorBiblioteca } from '../../models/biblioteca-errors';
 import { BibliotecaApi } from '../../services/biblioteca-api';
 
@@ -32,11 +33,15 @@ import { BibliotecaApi } from '../../services/biblioteca-api';
 @Component({
   selector: 'app-subir-libro',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, Alerta, PanelLateral],
+  imports: [ReactiveFormsModule, RouterLink, Alerta, Icono, PanelLateral],
   templateUrl: './subir-libro.html',
   styleUrl: './subir-libro.css',
 })
 export class SubirLibro {
+  /** Hoja con la esquina doblada y renglones: un archivo, no una credencial. */
+  protected readonly trazoPdf =
+    'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4';
+
   private readonly api = inject(BibliotecaApi);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
@@ -63,6 +68,14 @@ export class SubirLibro {
   });
 
   protected readonly archivo = signal<File | null>(null);
+
+  /** Tamaño legible del PDF elegido: "2,4 MB". */
+  protected tamanio(bytes: number): string {
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1
+      ? `${mb.toLocaleString('es-AR', { maximumFractionDigits: 1 })} MB`
+      : `${Math.max(1, Math.round(bytes / 1024))} kB`;
+  }
   protected readonly intento = signal(false);
   protected readonly enviando = signal(false);
   /** 0 a 100; `null` cuando el navegador no informa el total. */

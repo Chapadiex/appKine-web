@@ -59,10 +59,6 @@ import {
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
-import {
-  AsistenteDePasos,
-  PasoDeAsistente,
-} from '../../../../shared/components/asistente-de-pasos/asistente-de-pasos';
 import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
@@ -159,7 +155,6 @@ type Heredable = '' | 'true' | 'false';
     ColumnaOrdenable,
     Filtros,
     Icono,
-    AsistenteDePasos,
     Segmentado,
     PieDeTabla,
     EstadoVacio,
@@ -195,7 +190,23 @@ export class OfertasDeLaSedePage {
   protected readonly esquemasDeCobro = Object.values(EsquemaCobro);
   protected readonly opcionesDeEsquema = ESQUEMAS_DE_COBRO;
   protected readonly ayudaDeEsquema = ayudaDeEsquema;
-  protected readonly pasosDelAlta = PASOS_DEL_ALTA;
+
+  /** Esquema de cobro en palabras y con su ícono, para la columna de la tabla (23/11/2026). */
+  protected esquemaDeLaFila(valor: string | undefined): {
+    etiqueta: string;
+    icono: NombreDeIcono;
+  } {
+    const etiqueta =
+      ESQUEMAS_DE_COBRO.find((esquema) => esquema.valor === (valor ?? ''))?.etiqueta ??
+      'Sin esquema especial';
+    const iconos: Record<string, NombreDeIcono> = {
+      POR_SESION: 'calendario',
+      POR_CLASE: 'actividades',
+      POR_PACK: 'capas',
+      POR_ABONO: 'repetir',
+    };
+    return { etiqueta, icono: iconos[valor ?? ''] ?? 'economia' };
+  }
   /** Individual o Grupal, cortos: la explicacion va en el "?" y no en cada opcion. */
   protected readonly opcionesDeModalidad = MODALIDADES.map((opcion) => ({
     valor: opcion.valor as string,
@@ -403,9 +414,6 @@ export class OfertasDeLaSedePage {
 
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
-
-  /** Paso del alta en curso (1 a 3). Los tres viven en el DOM; se ve uno solo. */
-  protected readonly pasoDelAlta = signal(1);
 
   /** Modalidad por defecto del servicio elegido: lo que vale "heredar". */
   private readonly modalidadDelServicio = signal('');
@@ -637,7 +645,6 @@ export class OfertasDeLaSedePage {
     this.practicaDelServicio.set(null);
     this.nombreAutocompletado = '';
     this.modalidadDelServicio.set('');
-    this.pasoDelAlta.set(1);
     this.aplicarModalidadDelAlta();
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-oferta-servicio'), { injector: this.injector });
@@ -713,7 +720,8 @@ export class OfertasDeLaSedePage {
         duracionMinutos: comoTexto(oferta.duracionMinutos),
         capacidad: comoTexto(oferta.capacidad),
         precioBase: formatearImporte(oferta.precioBase),
-        moneda: oferta.moneda ?? '',
+        // Sin campo de moneda en pantalla (23/11/2026): la que tenga la actividad, o pesos.
+        moneda: oferta.moneda || 'ARS',
         esquemaCobro: oferta.esquemaCobro ?? '',
         admiteObraSocial: oferta.admiteObraSocial ?? false,
         requiereCasoClinico: oferta.requiereCasoClinico ?? false,
@@ -724,8 +732,10 @@ export class OfertasDeLaSedePage {
         vigenciaHasta: oferta.vigenciaHasta ?? '',
         limpiarPrecio: false,
         limpiarEsquemaCobro: false,
-        limpiarVigenciaHasta: false,
+        // Sin fecha de fin el interruptor arranca prendido: muestra lo que ya es (23/11/2026).
+        limpiarVigenciaHasta: !oferta.vigenciaHasta,
       });
+      this.sincronizarLimpiar('vigencia');
       // El foco se va con el panel: sin esto, quien navega por teclado aprieta "Editar" y el
       // formulario aparece mas abajo mientras el foco sigue en el boton.
       afterNextRender(() => this.enfocar('#editar-oferta-nombre'), { injector: this.injector });
@@ -813,44 +823,6 @@ export class OfertasDeLaSedePage {
     }
   }
 
-  /** Avanza al paso siguiente si lo esencial esta completo; si no, marca y enfoca lo que falta. */
-  protected siguientePasoDelAlta(): void {
-    if (this.pasoDelAlta() === 1 && !this.esencialCompleto()) {
-      return;
-    }
-    this.irAlPasoDelAlta(Math.min(this.pasoDelAlta() + 1, PASOS_DEL_ALTA.length));
-  }
-
-  protected irAlPasoDelAlta(numero: number): void {
-    this.pasoDelAlta.set(numero);
-    afterNextRender(() => this.enfocar(`#alta-oferta-paso-${numero} .asistente__encabezado`), {
-      injector: this.injector,
-    });
-  }
-
-  /** Lo del paso 1 que el servidor exige: servicio, nombre y duracion. */
-  private esencialCompleto(): boolean {
-    const controles = this.formularioAlta.controls;
-    const faltante = [
-      ['#alta-oferta-servicio', controles.servicioId],
-      ['#alta-oferta-nombre', controles.nombreComercial],
-      ['#alta-oferta-duracion', controles.duracionMinutos],
-    ].find(([, control]) => (control as { invalid: boolean }).invalid) as
-      [string, { markAsTouched(): void }] | undefined;
-    if (faltante === undefined && (numeroDeclarado(controles.duracionMinutos.value) ?? 0) > 0) {
-      return true;
-    }
-    this.intentos.update((valor) => valor + 1);
-    controles.servicioId.markAsTouched();
-    controles.nombreComercial.markAsTouched();
-    controles.duracionMinutos.markAsTouched();
-    if (faltante === undefined) {
-      controles.duracionMinutos.setErrors({ min: true });
-    }
-    this.enfocar(faltante?.[0] ?? '#alta-oferta-duracion');
-    return false;
-  }
-
   /**
    * Da de alta una oferta en la sede activa.
    *
@@ -890,7 +862,6 @@ export class OfertasDeLaSedePage {
 
     if (this.formularioAlta.invalid) {
       this.formularioAlta.markAllAsTouched();
-      this.pasoDelAlta.set(1);
       this.enfocar(
         this.formularioAlta.controls.servicioId.invalid
           ? '#alta-oferta-servicio'
@@ -903,7 +874,6 @@ export class OfertasDeLaSedePage {
     const duracion = numeroDeclarado(valores.duracionMinutos) ?? 0;
     if (duracion <= 0) {
       this.formularioAlta.controls.duracionMinutos.setErrors({ min: true });
-      this.pasoDelAlta.set(1);
       this.enfocar('#alta-oferta-duracion');
       return;
     }
@@ -914,7 +884,6 @@ export class OfertasDeLaSedePage {
     const capacidad = numeroDeclarado(valores.capacidad) ?? 0;
     if (capacidad <= 0) {
       this.formularioAlta.controls.capacidad.setErrors({ min: true });
-      this.pasoDelAlta.set(2);
       this.enfocar('#alta-oferta-capacidad');
       return;
     }
@@ -1222,7 +1191,8 @@ export class OfertasDeLaSedePage {
     }
 
     if (valores.limpiarVigenciaHasta) {
-      cambios.limpiarVigenciaHasta = true;
+      // Solo viaja si había una fecha que sacar: prendido por defecto no es un cambio.
+      if (original.vigenciaHasta) cambios.limpiarVigenciaHasta = true;
     } else if (
       valores.vigenciaHasta !== '' &&
       valores.vigenciaHasta !== (original.vigenciaHasta ?? '')
@@ -1310,13 +1280,6 @@ export class OfertasDeLaSedePage {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
 }
-
-/** Los tres pasos del alta: lo esencial, como se atiende y como se cobra. */
-const PASOS_DEL_ALTA: readonly PasoDeAsistente[] = [
-  { numero: 1, titulo: 'Lo esencial', sub: 'Servicio, nombre y precio' },
-  { numero: 2, titulo: 'Cómo se atiende', sub: 'Modalidad, recursos y clínica' },
-  { numero: 3, titulo: 'Cobro y vigencia', sub: 'Esquema, descripción y fechas' },
-];
 
 /** Un icono por situacion de vigencia: la tabla muestra el icono y el texto va en el tooltip. */
 const ICONO_DEL_ESTADO: Record<ClaveDeVigencia, NombreDeIcono> = {

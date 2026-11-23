@@ -52,9 +52,11 @@ type EstadoContextos =
  * ese canje ocurre el token sigue con scope `pre_context`, ningun endpoint de negocio
  * responde y el `contextGuard` rebota cualquier navegacion al destino.
  *
- * <p><b>Con un solo contexto no se muestra el selector.</b> Elegir entre una sola opcion no
- * es una decision, es un clic de tramite; la mayoria de los centros tiene una sede y se
- * comeria esa friccion en cada login.
+ * <p><b>Se entra solo, sin tarjeta, cuando la eleccion es obvia</b> (23/11/2026): el ultimo
+ * contexto elegido (`lastSelected`), o la primera sede cuando todos los contextos son de un
+ * mismo centro. Mientras tanto la pantalla es un spinner. La sede se cambia despues desde el
+ * selector de la barra superior; la lista solo aparece con varios centros y ninguno elegido
+ * antes, o cuando la aplicacion trae al usuario con un motivo.
  *
  * <p><b>Invalidacion del estado de features (AGENT.md 6).</b> El canje exitoso termina en
  * `TenantContextStore.select`, que incrementa `contextEpoch`. Las pantallas de feature
@@ -67,7 +69,11 @@ type EstadoContextos =
   imports: [Alerta],
   selector: 'app-context-selector-page',
   templateUrl: './context-selector-page.html',
-  styleUrls: ['../../organization.css', '../../../../shared/styles/acceso.css'],
+  styleUrls: [
+    '../../organization.css',
+    '../../../../shared/styles/acceso.css',
+    './context-selector-page.css',
+  ],
 })
 export class ContextSelectorPage {
   private readonly session = inject(SessionService);
@@ -110,7 +116,8 @@ export class ContextSelectorPage {
    * El contexto que la cuenta eligio la ultima vez (`GET /me/contexts` → `lastSelected`, desde
    * `appKine-api` #133), o `null`. Se ofrece primero, marcado y con el foco: entrar al de siempre
    * es un Enter. No se entra solo: con varios contextos elegir sigue siendo del usuario, y el
-   * puntero puede ser de otra pestaña o de hace meses.
+   * puntero puede ser de otra pestaña o de hace meses. Sin motivo no se llega a mostrar: se entra
+   * directo a ese contexto (ver `eleccionObvia`).
    */
   protected readonly preseleccionado = computed(() => {
     const estado = this.estado();
@@ -163,16 +170,15 @@ export class ContextSelectorPage {
     });
   }
 
-  /** Contexto al que se esta entrando, o `null`. */
-  protected readonly contextoEnCurso = computed(() => {
+  /**
+   * Texto bajo el spinner mientras se busca o se entra, o `null` cuando hay que mostrar la
+   * tarjeta (lista, vacio o error).
+   */
+  protected readonly esperando = computed(() => {
     const estado = this.estado();
-    return estado.tipo === 'entrando' ? estado.contexto : null;
-  });
-
-  /** `true` solo cuando se entro sin preguntar porque habia un unico contexto. */
-  protected readonly entradaAutomatica = computed(() => {
-    const estado = this.estado();
-    return estado.tipo === 'entrando' && estado.automatico;
+    if (estado.tipo === 'cargando') return 'Buscando tus centros…';
+    if (estado.tipo === 'entrando') return `Entrando a ${estado.contexto.organizationName}…`;
+    return null;
   });
 
   /** Mensaje de error mostrable, o `null` si el estado no es de error. */
@@ -357,12 +363,29 @@ export class ContextSelectorPage {
     }
 
     // Con un centro cerrado tampoco se entra solo: esta pantalla es donde se entera del motivo.
-    if (utilizables.length === 1 && !this.hayMotivo() && cerrados.size === 0) {
-      this.seleccionar(utilizables[0], true);
+    const obvio =
+      this.hayMotivo() || cerrados.size > 0
+        ? null
+        : this.eleccionObvia(utilizables, preseleccionado);
+    if (obvio !== null) {
+      this.seleccionar(obvio, true);
       return;
     }
 
     this.estado.set({ tipo: 'eligiendo', contextos: utilizables, preseleccionado });
+  }
+
+  /**
+   * El contexto al que se entra sin preguntar, o `null` si elegir es del usuario: el ultimo que
+   * eligio, o la primera sede si todos son del mismo centro.
+   */
+  private eleccionObvia(
+    contextos: readonly TenantContext[],
+    preseleccionado: TenantContext | null,
+  ): TenantContext | null {
+    if (preseleccionado !== null) return preseleccionado;
+    const organizacion = contextos[0].organizationId;
+    return contextos.every((c) => c.organizationId === organizacion) ? contextos[0] : null;
   }
 
   private aEstadoDeError(error: Error): EstadoContextos {
