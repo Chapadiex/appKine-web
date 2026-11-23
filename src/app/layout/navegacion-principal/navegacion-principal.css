@@ -241,11 +241,16 @@
   cursor: pointer;
 }
 
+/* Iconos en el color de acción para que se distingan (23/11/2026). */
+.nav__ayuda app-icono {
+  color: var(--color-accion-fondo);
+}
+
 .nav__ayuda:hover {
   background: var(--color-hover);
 }
 
-/* Asistente oculto: el icono se atenúa y el texto pasa a "Mostrar asistente". */
+/* Asistente oculto: el icono se atenúa; el título dice que se puede volver a mostrar. */
 .nav__ayuda--apagado app-icono {
   opacity: 0.45;
 }
