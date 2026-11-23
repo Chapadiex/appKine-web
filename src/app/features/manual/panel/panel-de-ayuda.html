@@ -5,15 +5,16 @@
         <app-icono [trazo]="trazoManual" />
         Ayuda
       </h2>
+      <!-- Con texto y borde (23/11/2026): solo el icono pasaba desapercibido. -->
       <button
         type="button"
-        class="ayuda__cerrar ayuda__agrandar"
+        class="ayuda__agrandar"
         [attr.aria-pressed]="agrandado()"
-        [title]="agrandado() ? 'Achicar la ayuda' : 'Agrandar la ayuda a toda la pantalla'"
+        [title]="agrandado() ? 'Volver al panel' : 'Agrandar la ayuda a toda la pantalla'"
         (click)="alternarTamano()"
       >
         <app-icono [trazo]="agrandado() ? trazoAchicar : trazoAgrandar" />
-        <span class="visualmente-oculto">Agrandar la ayuda</span>
+        {{ agrandado() ? 'Achicar' : 'Agrandar' }}
       </button>
       <button type="button" class="ayuda__cerrar" (click)="cerrar()">
         <app-icono nombre="cerrar" />
@@ -36,7 +37,7 @@
         <input
           id="ayuda-buscar"
           type="search"
-          placeholder="Buscar en la ayuda"
+          placeholder="¿Qué querés hacer? Ej.: cobrar un turno"
           autocomplete="off"
           [value]="consulta()"
           (input)="escribir($any($event.target).value)"
@@ -107,11 +108,31 @@
                 Ayuda de esta pantalla
               </button>
             }
-            <article aria-labelledby="ayuda-ficha">
-              <p class="ayuda__grupo-de-ficha">{{ f.grupo }}</p>
-              <h3 id="ayuda-ficha" class="ayuda__ficha">{{ f.titulo }}</h3>
-              <app-markdown-seguro [markdown]="f.markdown" (ampliar)="ampliar($event)" />
-            </article>
+            <p class="ayuda__grupo-de-ficha">{{ f.grupo }}</p>
+            <h3 id="ayuda-ficha" class="ayuda__ficha">{{ f.titulo }}</h3>
+            <div class="ayuda__con-guia">
+              <!-- Índice de la ficha (23/11/2026): salta a cada sección y a cada tarea. -->
+              @if (secciones().length > 1) {
+                <details class="ayuda__guia" [open]="agrandado()">
+                  <summary>
+                    <app-icono [trazo]="trazoGuia" />
+                    En esta ficha
+                  </summary>
+                  <ul class="ayuda__guia-lista">
+                    @for (s of secciones(); track $index) {
+                      <li [class.ayuda__guia-tarea]="s.nivel === 3">
+                        <button type="button" (click)="irASeccion(s.titulo)">
+                          {{ s.titulo }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </details>
+              }
+              <article aria-labelledby="ayuda-ficha" #articulo>
+                <app-markdown-seguro [markdown]="f.markdown" (ampliar)="ampliar($event)" />
+              </article>
+            </div>
             @if (f.relacionadas.length > 0) {
               <section class="ayuda__relacionadas" aria-labelledby="ayuda-relacionadas">
                 <h3 id="ayuda-relacionadas" class="ayuda__subtitulo">
@@ -137,16 +158,24 @@
         }
       </div>
 
+      <!-- Una fila de accesos con icono arriba (23/11/2026): en fila de pastillas chicas no se veían. -->
       <div class="ayuda__pie">
-        <button type="button" class="boton boton--secundario boton--chico" (click)="verIndice()">
-          Ver todo el manual
+        <button type="button" class="ayuda__acceso" (click)="verIndice()">
+          <app-icono [trazo]="trazoManual" />
+          Manual completo
         </button>
-        <button type="button" class="boton boton--secundario boton--chico" (click)="verRecorrido()">
-          <app-icono nombre="info" />Ver el recorrido
+        <button type="button" class="ayuda__acceso" (click)="verRecorrido()">
+          <app-icono nombre="info" />
+          Guía rápida
         </button>
         @if (puedePreguntar()) {
-          <button type="button" class="boton boton--chico" (click)="preguntar()">
-            Preguntale al asistente
+          <button
+            type="button"
+            class="ayuda__acceso ayuda__acceso--principal"
+            (click)="preguntar()"
+          >
+            <app-icono nombre="chispa" />
+            Preguntar al asistente
           </button>
         }
       </div>

@@ -6,31 +6,338 @@
   --flotante-izquierda: calc(var(--ancho-barra-lateral) + var(--esp-4));
 }
 
+/*
+  Orbe del asistente (23/11/2026, diseño del usuario). Colores derivados de los tokens de acción
+  con color-mix: centro más oscuro, borde más claro. La etiqueta se despliega al pasar el mouse o con
+  el foco; se arrastra con el puntero.
+*/
 .disparador {
+  --orbe-claro: color-mix(in srgb, var(--color-accion-texto) 78%, var(--color-accion-fondo));
+  --orbe-brillo: color-mix(in srgb, var(--color-accion-texto) 90%, var(--color-accion-fondo));
+  --orbe-borde: color-mix(in srgb, var(--color-accion-fondo) 70%, black);
+  --orbe-listo: var(--color-acento);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0 0.6rem;
+  border: 2px solid var(--orbe-borde);
+  border-radius: 1.375rem;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-accion-fondo) 55%, black) 0%,
+    var(--color-accion-fondo) 52%,
+    color-mix(in srgb, var(--color-accion-fondo) 70%, white) 100%
+  );
+  color: var(--color-accion-texto);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  line-height: 1;
+  box-shadow: var(--sombra-flotante);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  animation: orbe-respira 3.6s ease-in-out infinite;
+  transition:
+    padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease;
+}
+
+/* Contenedor fijo del orbe y su ✕: se mueve entero al arrastrar. */
+.flotante {
   position: fixed;
   left: var(--flotante-izquierda);
   bottom: var(--esp-4);
   z-index: 45;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-2);
-  min-height: 2.75rem;
-  padding: 0 var(--esp-4);
-  border: var(--borde-fino) solid var(--color-accion-fondo);
-  border-radius: 999px;
-  background: var(--color-accion-fondo);
-  color: var(--color-accion-texto);
-  font: inherit;
-  font-weight: var(--peso-semi);
+}
+
+/* ✕ para ocultar: arriba a la derecha del orbe, visible al pasar el mouse o con el foco. */
+.flotante__ocultar {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: 1px solid var(--color-borde-control);
+  border-radius: 50%;
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font-size: 0.95rem;
+  line-height: 1;
   box-shadow: var(--sombra-flotante);
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
-.disparador:hover {
-  filter: brightness(1.08);
+
+.flotante:hover .flotante__ocultar,
+.flotante:focus-within .flotante__ocultar {
+  opacity: 1;
 }
-.disparador__icono {
-  width: 1.25rem;
-  height: 1.25rem;
+
+.flotante__ocultar:hover {
+  border-color: var(--color-accion-fondo);
+}
+
+/* En pantallas táctiles no hay hover: la ✕ queda siempre a la vista. */
+@media (hover: none) {
+  .flotante__ocultar {
+    opacity: 1;
+  }
+}
+
+/* Halo punteado alrededor. */
+.disparador::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1.5px dashed color-mix(in srgb, var(--orbe-borde) 45%, transparent);
+  border-radius: 1.7rem;
+  pointer-events: none;
+  animation: orbe-halo 4.5s ease-in-out infinite;
+}
+
+.disparador--arrastrando {
+  cursor: grabbing;
+  animation: none;
+}
+
+.disparador:not(.disparador--arrastrando):hover,
+.disparador:not(.disparador--arrastrando):focus-visible,
+.disparador[aria-expanded='true'] {
+  animation: none;
+  transform: none;
+  padding: 0 1.1rem 0 0.7rem;
+}
+
+.disparador:focus-visible {
+  outline: 2px solid var(--color-foco);
+  outline-offset: 6px;
+}
+
+/* Cerca del borde derecho la pastilla crece hacia la izquierda. */
+.disparador--derecha:not(.disparador--arrastrando):hover,
+.disparador--derecha:not(.disparador--arrastrando):focus-visible {
+  transform: translateX(-5.4rem);
+}
+
+.disparador__texto {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    max-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.24s ease,
+    margin-left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.disparador:not(.disparador--arrastrando):hover .disparador__texto,
+.disparador:not(.disparador--arrastrando):focus-visible .disparador__texto,
+.disparador[aria-expanded='true'] .disparador__texto {
+  max-width: 7rem;
+  margin-left: 0.55rem;
+  opacity: 1;
+  transform: none;
+}
+
+.orbe {
+  display: block;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  overflow: visible;
+}
+
+.orbe__desgastado {
+  fill: none;
+  stroke: var(--orbe-claro);
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-dasharray: 4 6 2 7 5 5;
+  opacity: 0.55;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orbe-gira 16s linear infinite;
+}
+
+.orbe__anillo {
+  fill: none;
+  stroke: var(--orbe-claro);
+  stroke-width: 2.1;
+  transition: opacity 0.25s ease;
+}
+
+.orbe__forma {
+  fill: none;
+  stroke: var(--orbe-brillo);
+  stroke-width: 1.85;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.orbe__centro {
+  fill: var(--orbe-claro);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orbe-centro 3.4s ease-in-out infinite;
+}
+
+/* Pensando: el anillo se vuelve una forma que ondula y la órbita gira más rápido. */
+.disparador--pensando {
+  background: var(--color-accion-fondo);
+  animation: orbe-ondula 2.4s ease-in-out infinite;
+}
+
+.disparador--pensando::before {
+  inset: -6px;
+  border-style: dotted;
+  border-color: color-mix(in srgb, var(--color-accion-fondo) 65%, transparent);
+  animation-duration: 2.6s;
+}
+
+.disparador--pensando .orbe__desgastado {
+  opacity: 0.85;
+  animation-duration: 4.5s;
+}
+
+.disparador--pensando .orbe__anillo {
+  opacity: 0;
+}
+
+.disparador--pensando .orbe__forma {
+  opacity: 1;
+}
+
+.disparador--pensando .orbe__centro {
+  animation-duration: 2.4s;
+}
+
+/* Respuesta sin leer: el borde late en el color de acento. */
+.disparador--listo {
+  animation: orbe-listo 2.2s ease-in-out infinite;
+}
+
+.disparador--listo::before {
+  inset: -6px;
+  border-width: 2px;
+  border-color: var(--orbe-listo);
+  opacity: 0.95;
+  animation: none;
+}
+
+@keyframes orbe-respira {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes orbe-ondula {
+  0%,
+  100% {
+    border-radius: 20px 24px 19px 25px;
+    transform: scale(0.98);
+  }
+  50% {
+    border-radius: 25px 19px 24px 20px;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes orbe-listo {
+  0%,
+  100% {
+    border-color: var(--orbe-borde);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--orbe-listo) 25%, transparent),
+      var(--sombra-flotante);
+  }
+  50% {
+    border-color: var(--orbe-listo);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--orbe-listo) 42%, transparent),
+      var(--sombra-flotante);
+  }
+}
+
+@keyframes orbe-centro {
+  0%,
+  100% {
+    transform: scale(0.84);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes orbe-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbe-halo {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.58;
+    transform: scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disparador,
+  .disparador::before,
+  .orbe__desgastado,
+  .orbe__centro {
+    animation: none;
+  }
+
+  /* El aviso de respuesta nueva se mantiene, sin latir. */
+  .disparador--listo {
+    border-color: var(--orbe-listo);
+  }
+}
+
+/* Panel que sigue al botón cuando lo movieron: arriba del botón, o debajo si quedó arriba. */
+.panel.panel--movido {
+  left: clamp(
+    var(--esp-4),
+    var(--boton-x),
+    100vw - min(26rem, 100vw - 2 * var(--esp-4)) - var(--esp-4)
+  );
+  bottom: calc(100dvh - var(--boton-y) + var(--esp-3));
+  width: min(26rem, 100vw - 2 * var(--esp-4));
+}
+
+.panel.panel--movido.panel--abajo {
+  top: calc(var(--boton-y) + 2.75rem + var(--esp-3));
+  bottom: auto;
+  height: min(36rem, calc(100dvh - var(--boton-y) - 2.75rem - 2 * var(--esp-3)));
+}
+
+.panel.panel--movido:not(.panel--abajo) {
+  height: min(36rem, calc(var(--boton-y) - 2 * var(--esp-3)));
 }
 
 .panel {
@@ -44,10 +351,15 @@
   width: min(26rem, calc(100vw - var(--flotante-izquierda) - var(--esp-4)));
   height: min(36rem, calc(100dvh - 7rem));
   padding: var(--esp-4);
-  border: 1px solid var(--color-borde-sutil);
-  border-radius: var(--radio-md);
-  background: var(--color-superficie);
-  box-shadow: var(--sombra-flotante);
+  padding-top: 0;
+  overflow: hidden;
+  border: 2px solid var(--color-accion-fondo);
+  border-radius: var(--radio-lg);
+  /* Fondo con un tinte del color de acción: el panel abierto no se confunde con la pantalla. */
+  background: color-mix(in srgb, var(--color-accion-fondo) 6%, var(--color-superficie));
+  box-shadow:
+    0 24px 56px rgb(0 0 0 / 0.28),
+    0 0 0 4px color-mix(in srgb, var(--color-accion-fondo) 18%, transparent);
   box-sizing: border-box;
 }
 .panel[hidden] {
@@ -59,9 +371,48 @@
   justify-content: space-between;
   gap: var(--esp-2);
 }
+/* Cabecera en el color de acción, de borde a borde. */
+.panel__cabecera {
+  margin-inline: calc(-1 * var(--esp-4));
+  padding: var(--esp-3) var(--esp-3) var(--esp-3) var(--esp-4);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
 .panel__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
   margin: 0;
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-base);
+  color: inherit;
+}
+.panel__marca {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: inherit;
+}
+.panel__nueva {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-height: 2rem;
+  padding: 0 var(--esp-3);
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  cursor: pointer;
+}
+.panel__nueva:focus-visible,
+.panel__cerrar:focus-visible {
+  outline: 2px solid var(--color-accion-texto);
+  outline-offset: 2px;
+}
+.panel__nueva:hover {
+  background: color-mix(in srgb, var(--color-accion-texto) 16%, transparent);
 }
 .panel__acciones {
   display: flex;
@@ -69,15 +420,20 @@
   gap: var(--esp-2);
 }
 .panel__cerrar {
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-  border: 1px solid var(--color-borde-control);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
   border-radius: var(--radio-md);
   background: transparent;
-  color: var(--color-texto);
+  color: inherit;
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+}
+.panel__cerrar:hover {
+  background: color-mix(in srgb, var(--color-accion-texto) 16%, transparent);
 }
 .panel__charla {
   flex: 1;

@@ -17,14 +17,12 @@ export const routes: Routes = [
     path: '',
     canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE), funcionIaGuard('BIBLIOTECA')],
     loadComponent: () => import('./pages/biblioteca/biblioteca-page').then((m) => m.BibliotecaPage),
-    title: 'AKINE - Biblioteca',
+    title: 'AKINE - Bibliografía de la IA',
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
+  // La pantalla de detalle se fue (23/11/2026): el libro se despliega en su fila de la lista.
   {
     path: ':libroId',
-    canActivate: [permissionGuard(PERMISO_BIBLIOTECA_MANAGE), funcionIaGuard('BIBLIOTECA')],
-    loadComponent: () =>
-      import('./pages/libro-detalle/libro-detalle-page').then((m) => m.LibroDetallePage),
-    title: 'AKINE - Biblioteca',
+    redirectTo: ({ params }) => `/biblioteca?libro=${params['libroId']}`,
   },
 ];

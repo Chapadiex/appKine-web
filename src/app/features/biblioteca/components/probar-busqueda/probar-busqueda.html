@@ -59,7 +59,7 @@
         @for (p of pasajes(); track $index) {
           <li class="pasaje" [class.pasaje--debajo]="!p.superaCorte">
             <div class="pasaje__cabecera">
-              <a [routerLink]="['/biblioteca', p.libroId]">{{ p.titulo }}</a>
+              <a routerLink="/biblioteca" [queryParams]="{ libro: p.libroId }">{{ p.titulo }}</a>
               <span>{{ rotuloDePaginas(p.paginaDesde, p.paginaHasta) }}</span>
               <span class="pasaje__puntaje">{{ p.puntaje?.toFixed(2) }}</span>
               @if (!p.superaCorte) {

@@ -38,6 +38,24 @@ export class PrimerosPasosStore {
   /** El recorrido corto por la app, al terminar la configuración inicial (20/11/2026). */
   readonly recorrido = signal(false);
 
+  /**
+   * Qué guía muestra el recorrido (23/11/2026): `'menu'` es la del primer ingreso; `null`, que la
+   * persona todavía no eligió y se le muestran las guías disponibles.
+   */
+  readonly guia = signal<string | null>(null);
+
+  /** "Guía rápida": abre el selector de guías. */
+  mostrarGuias(): void {
+    this.guia.set(null);
+    this.recorrido.set(true);
+  }
+
+  /** La guía del menú, al terminar la configuración inicial. */
+  mostrarRecorridoDelMenu(): void {
+    this.guia.set('menu');
+    this.recorrido.set(true);
+  }
+
   /** La bienvenida se muestra una vez por centro y por pestaña. */
   private readonly bienvenidas = signal<ReadonlySet<number>>(new Set());
 

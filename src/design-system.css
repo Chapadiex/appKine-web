@@ -1702,3 +1702,129 @@ p,
     display: none;
   }
 }
+
+/*
+ * Casillas e interruptores en toda la aplicacion (23/11/2026). Ninguna casilla queda con el
+ * dibujo del navegador: las casillas son un cuadrado con borde de control y tilde en el color de
+ * accion; con `role="switch"` son un interruptor (antes solo existia en offering y organization).
+ * Siguen siendo `input type="checkbox"`: teclado, formularios y lectores de pantalla no cambian.
+ */
+input[type='checkbox']:not([role='switch']) {
+  appearance: none;
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  box-shadow: none;
+  vertical-align: middle;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+input[type='checkbox']:not([role='switch'])::after {
+  content: '';
+  width: 0.32rem;
+  height: 0.6rem;
+  margin-top: -0.12rem;
+  border: solid var(--color-accion-texto);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 120ms ease;
+}
+
+input[type='checkbox']:not([role='switch']):hover:not(:disabled) {
+  border-color: var(--color-accion-fondo);
+}
+
+input[type='checkbox']:not([role='switch']):checked,
+input[type='checkbox']:not([role='switch']):indeterminate {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-accion-fondo);
+}
+
+input[type='checkbox']:not([role='switch']):checked::after {
+  transform: rotate(45deg) scale(1);
+}
+
+input[type='checkbox']:not([role='switch']):indeterminate::after {
+  width: 0.6rem;
+  height: 0;
+  margin: 0;
+  border-width: 0 0 2px;
+  transform: none;
+}
+
+input[type='checkbox'][role='switch'] {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 2.75rem;
+  height: 1.5rem;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-borde-control);
+  box-shadow: none;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+input[type='checkbox'][role='switch']::after {
+  content: '';
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--color-superficie);
+  transition: transform 120ms ease;
+}
+
+input[type='checkbox'][role='switch']:checked {
+  background: var(--color-acento);
+}
+
+input[type='checkbox'][role='switch']:checked::after {
+  transform: translateX(1.25rem);
+}
+
+input[type='checkbox']:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+input[type='checkbox']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Un interruptor fuera de offering/organization: misma fila que alla. */
+.interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type='checkbox'],
+  input[type='checkbox']::after {
+    transition: none;
+  }
+}

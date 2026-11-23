@@ -8,7 +8,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { Observable, catchError, of, tap } from 'rxjs';
 
 import { ListarLibrosRequestParams } from '../../../../api/generated/api/biblioteca.serviceInterface';
@@ -38,6 +39,7 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { SubirLibro } from '../../components/subir-libro/subir-libro';
+import { DetalleDeLibro } from '../../components/detalle-de-libro/detalle-de-libro';
 import { ErrorBiblioteca, traducirErrorBiblioteca } from '../../models/biblioteca-errors';
 import {
   ESTADOS_DE_LIBRO,
@@ -85,16 +87,21 @@ export type DialogoDeBiblioteca =
     PanelLateral,
     SubirLibro,
     ProbarBusqueda,
-    RouterLink,
+    DetalleDeLibro,
   ],
   templateUrl: './biblioteca-page.html',
   styleUrl: './biblioteca-page.css',
 })
 export class BibliotecaPage {
+  /** Hoja con la esquina doblada y renglones: un archivo, no una credencial. */
+  protected readonly trazoPdf =
+    'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4';
+
   private readonly api = inject(BibliotecaApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly ruta = inject(ActivatedRoute);
 
   protected readonly estadosDeLibro = ESTADOS_DE_LIBRO;
   protected readonly estadoEnPalabras = estadoDeLibroEnPalabras;
@@ -133,6 +140,14 @@ export class BibliotecaPage {
   /** Libro cuya eliminacion espera confirmacion. */
   protected readonly porEliminar = signal<LibroResponse | null>(null);
 
+  /** Libro desplegado debajo de su fila (23/11/2026), o `null`. Uno a la vez. */
+  protected readonly desplegado = signal<number | null>(null);
+
+  protected alternarDetalle(id: number | undefined): void {
+    if (id === undefined) return;
+    this.desplegado.update((actual) => (actual === id ? null : id));
+  }
+
   protected readonly deshabilitada = computed(() => this.estado().tipo === 'deshabilitada');
   protected readonly pagina = computed(() => {
     const actual = this.estado();
@@ -165,6 +180,17 @@ export class BibliotecaPage {
   private temporizadorDeBusqueda: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    // Un enlace a un libro (`?libro=ID`, también la URL vieja `/biblioteca/ID`) lo abre en su fila.
+    // Llega también desde los paneles de esta misma pantalla: se escucha, no sólo al entrar.
+    this.ruta.queryParamMap.pipe(takeUntilDestroyed()).subscribe((parametros) => {
+      const pedido = Number(parametros.get('libro'));
+      if (Number.isFinite(pedido) && pedido > 0) {
+        this.dialogo.set(null);
+        this.panelBusquedaAbierto.set(false);
+        this.desplegado.set(pedido);
+      }
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {

@@ -65,7 +65,7 @@ export class MenuDePerfil extends Desplegable {
   /** Vuelve a mostrar el tour guiado del menú, desde la pantalla en la que está. */
   protected verRecorrido(): void {
     this.cerrar();
-    this.primerosPasos.recorrido.set(true);
+    this.primerosPasos.mostrarGuias();
   }
 
   protected cerrarSesion(): void {

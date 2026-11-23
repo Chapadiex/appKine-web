@@ -66,7 +66,7 @@
 }
 
 .acceso-tarjeta--ancha {
-  width: min(30rem, calc(100vw - 2rem));
+  width: min(36rem, calc(100vw - 2rem));
 }
 
 .acceso-tarjeta h1 {

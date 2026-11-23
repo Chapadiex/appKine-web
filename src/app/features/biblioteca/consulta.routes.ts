@@ -15,6 +15,6 @@ export const routes: Routes = [
     path: '',
     canActivate: [permissionGuard(PERMISO_BIBLIOTECA_CONSULTAR), funcionIaGuard('BIBLIOTECA')],
     loadComponent: () => import('./pages/consulta/consulta-page').then((m) => m.ConsultaPage),
-    title: 'AKINE - Consultar biblioteca',
+    title: 'AKINE - Consultar bibliografía',
   },
 ];

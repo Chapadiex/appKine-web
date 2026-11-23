@@ -82,6 +82,33 @@ export class PanelDeAyuda {
   protected alternarTamano(): void {
     this.agrandado.update((valor) => !valor);
   }
+
+  protected readonly trazoGuia = trazoDelManual('tareas');
+  private readonly articulo = viewChild<ElementRef<HTMLElement>>('articulo');
+
+  /** Índice de la ficha: los títulos `##` y `###` de su markdown, en orden. */
+  protected readonly secciones = computed(() => {
+    const markdown = this.ficha()?.markdown ?? '';
+    const secciones: { nivel: 2 | 3; titulo: string }[] = [];
+    for (const linea of markdown.split('\n')) {
+      const titulo = /^(##|###)\s+(.+)$/.exec(linea.trim());
+      if (titulo) {
+        secciones.push({
+          nivel: titulo[1].length as 2 | 3,
+          titulo: titulo[2].replace(/[*_`]/g, '').trim(),
+        });
+      }
+    }
+    return secciones;
+  });
+
+  /** Lleva la ficha hasta el título con ese texto. */
+  protected irASeccion(titulo: string): void {
+    const destino = Array.from(
+      this.articulo()?.nativeElement.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6') ?? [],
+    ).find((h) => (h.textContent ?? '').replace(/\s+/g, ' ').trim() === titulo);
+    destino?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   protected readonly trazoRelacionadas = trazoDelManual('relacionadas');
 
   protected readonly vista = signal<Vista>('ficha');
@@ -232,7 +259,7 @@ export class PanelDeAyuda {
   /** Cierra la ayuda y vuelve a mostrar el tour guiado del menú, como el menú del perfil. */
   protected verRecorrido(): void {
     this.cerrar();
-    this.primerosPasos.recorrido.set(true);
+    this.primerosPasos.mostrarGuias();
   }
 
   protected alEscape(evento: Event): void {

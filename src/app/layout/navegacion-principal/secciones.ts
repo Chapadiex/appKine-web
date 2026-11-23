@@ -158,7 +158,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         servicio: 'KINESIOLOGIA',
       },
       {
-        etiqueta: 'Consultar biblioteca',
+        etiqueta: 'Consultar bibliografía',
         ruta: '/consulta',
         permisos: [PERMISO_BIBLIOTECA_CONSULTAR],
         funcionIa: 'BIBLIOTECA',
@@ -282,7 +282,7 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_COLABORADOR_READ],
       },
       {
-        etiqueta: 'Biblioteca',
+        etiqueta: 'Bibliografía de la IA',
         ruta: '/biblioteca',
         permisos: [PERMISO_BIBLIOTECA_MANAGE],
         funcionIa: 'BIBLIOTECA',
