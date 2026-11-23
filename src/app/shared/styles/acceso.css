@@ -175,13 +175,6 @@
   font-size: var(--tipo-xs);
 }
 
-.acceso-casilla input {
-  width: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-}
-
 /* Alternativas al pie de la tarjeta, separadas por una linea. */
 .acceso-alternativas {
   margin: 0;
