@@ -25,7 +25,7 @@ import {
   MarkdownSeguro,
 } from '../../../../shared/components/markdown-seguro/markdown-seguro';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/icono';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
@@ -223,6 +223,18 @@ export class CharlaDelAsistente {
     this.texto.set(texto);
   }
 
+  /** Qué dice y con qué ícono el botón que lleva a la pantalla del enlace. */
+  protected destinoDelEnlace(
+    enlace: string,
+    delManual: boolean,
+  ): { texto: string; icono: NombreDeIcono } {
+    if (delManual) {
+      return { texto: 'Ir a esa pantalla', icono: 'operacion' };
+    }
+    const seccion = enlace.split(/[/?#]/).find((parte) => parte !== '') ?? '';
+    return DESTINOS[seccion] ?? { texto: 'Abrir la pantalla', icono: 'operacion' };
+  }
+
   /** Una respuesta del manual de usuario: su texto es Markdown. */
   protected esDelManual(m: MensajeDelAsistente): boolean {
     return m.respuesta?.interpretacion.intencion === 'COMO_SE_HACE';
@@ -402,3 +414,16 @@ export class CharlaDelAsistente {
     this.anuncio.set('Error en la respuesta');
   }
 }
+
+/** Texto e ícono del botón según la primera parte de la ruta del enlace. */
+const DESTINOS: Record<string, { texto: string; icono: NombreDeIcono }> = {
+  pacientes: { texto: 'Abrir la ficha del paciente', icono: 'pacientes' },
+  personas: { texto: 'Abrir la ficha de la persona', icono: 'pacientes' },
+  agenda: { texto: 'Abrir la agenda', icono: 'calendario' },
+  recepcion: { texto: 'Abrir la recepción', icono: 'calendario' },
+  caja: { texto: 'Abrir la caja', icono: 'economia' },
+  cobros: { texto: 'Abrir los cobros', icono: 'economia' },
+  reportes: { texto: 'Abrir los reportes', icono: 'documento' },
+  clases: { texto: 'Abrir las clases', icono: 'actividades' },
+  servicios: { texto: 'Abrir los servicios', icono: 'servicios' },
+};

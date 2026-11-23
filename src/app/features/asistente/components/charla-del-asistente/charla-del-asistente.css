@@ -140,10 +140,54 @@
   margin: var(--esp-1) 0 0;
   color: var(--color-texto-suave);
 }
-.asistente__enlace {
-  display: inline-block;
-  margin-top: var(--esp-2);
+/* Adónde seguir: chips con el destino, separados del texto por una línea fina (23/11/2026). */
+.asistente__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  margin-top: var(--esp-3);
+  padding-top: var(--esp-3);
+  border-top: 1px solid color-mix(in srgb, var(--color-borde) 70%, transparent);
+}
+
+.asistente__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: 2rem;
+  padding: var(--esp-1) var(--esp-3);
+  border: 1px solid color-mix(in srgb, var(--color-accion-fondo) 35%, transparent);
+  border-radius: var(--radio-pastilla);
+  background: color-mix(in srgb, var(--color-accion-fondo) 8%, var(--color-superficie));
+  color: var(--color-accion-fondo);
+  font: inherit;
   font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.asistente__chip:hover {
+  background: color-mix(in srgb, var(--color-accion-fondo) 16%, var(--color-superficie));
+}
+
+.asistente__chip:focus-visible {
+  outline: 2px solid var(--color-foco);
+  outline-offset: 2px;
+}
+
+.asistente__chip-flecha {
+  transition: transform 0.15s ease;
+}
+
+.asistente__chip:hover .asistente__chip-flecha {
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asistente__chip-flecha {
+    transition: none;
+  }
 }
 /* Caja de pregunta: un recuadro a todo el ancho; el foco marca el recuadro entero. */
 .asistente__caja {

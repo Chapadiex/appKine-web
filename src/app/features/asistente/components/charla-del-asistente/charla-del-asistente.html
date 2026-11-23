@@ -95,15 +95,22 @@
                 <pre class="asistente__consulta"><code>{{ r.consulta }}</code></pre>
               </details>
             }
-            @if (fichaDelManual(r); as ficha) {
-              <button type="button" class="asistente__enlace boton-texto" (click)="verFicha(ficha)">
-                Ver la ficha completa
-              </button>
-            }
-            @if (r.enlace) {
-              <a class="asistente__enlace" [routerLink]="r.enlace">{{
-                esDelManual(m) ? 'Ir a la pantalla' : 'Ver el detalle'
-              }}</a>
+            <!-- Adónde seguir (23/11/2026): chips que dicen el destino, en vez de "Ver el detalle". -->
+            @if (fichaDelManual(r) || r.enlace) {
+              <div class="asistente__acciones">
+                @if (fichaDelManual(r); as ficha) {
+                  <button type="button" class="asistente__chip" (click)="verFicha(ficha)">
+                    <app-icono nombre="documento" />Leer la ficha completa
+                  </button>
+                }
+                @if (r.enlace; as enlace) {
+                  @let destino = destinoDelEnlace(enlace, esDelManual(m));
+                  <a class="asistente__chip" [routerLink]="enlace">
+                    <app-icono [nombre]="destino.icono" />{{ destino.texto }}
+                    <app-icono nombre="flecha-derecha" class="asistente__chip-flecha" />
+                  </a>
+                }
+              </div>
             }
           }
         </div>
