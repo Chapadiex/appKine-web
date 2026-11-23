@@ -172,12 +172,15 @@ if (matchers.length < PROYECTOS.length || !alcanzado) {
 // alcanza nunca, asi que no hay indicador que mostrar. La otra es el select de una pastilla de
 // filtro de la agenda: el anillo lo dibuja la pastilla entera con `:focus-within`, y el del select
 // quedaria doble adentro. Lo mismo el campo de app-numero-con-pasos (modo tactil): el anillo lo
-// dibuja el control entero, con sus botones - y +, por :focus-within.
+// dibuja el control entero, con sus botones - y +, por :focus-within. Y la caja de pregunta del
+// asistente y el buscador del panel de ayuda (23/11/2026): el recuadro entero lleva el anillo.
 
 const OUTLINE_PERMITIDO = new Set([
   'src/app/app.css::.contenido:focus',
   'src/app/features/scheduling/pages/agenda/agenda-page.css::.pastilla-filtro select:focus-visible',
   'src/app/shared/components/numero-con-pasos/numero-con-pasos.css::.numero-con-pasos__campo:focus-visible',
+  'src/app/features/asistente/components/charla-del-asistente/charla-del-asistente.css::.asistente__caja textarea',
+  'src/app/features/manual/panel/panel-de-ayuda.css::.ayuda__buscador input',
 ]);
 
 function hojas(directorio) {
