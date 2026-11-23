@@ -130,6 +130,7 @@
         class="nav__ayuda"
         aria-keyshortcuts="F1"
         title="Manual de esta pantalla (F1)"
+        [attr.aria-expanded]="manual.abierto()"
         (click)="abrirAyuda()"
       >
         <app-icono nombre="ayuda" />

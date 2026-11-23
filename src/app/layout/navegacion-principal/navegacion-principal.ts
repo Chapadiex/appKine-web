@@ -70,7 +70,7 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
 })
 export class NavegacionPrincipal {
   private readonly session = inject(SessionService);
-  private readonly manual = inject(ManualStore);
+  protected readonly manual = inject(ManualStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly funcionesIa = inject(FuncionesIaStore);
@@ -244,10 +244,10 @@ export class NavegacionPrincipal {
     this.cerrar.emit();
   }
 
-  /** Abre el manual en la ficha de la pantalla actual; en tablet cierra antes el menú. */
+  /** Abre el manual en la ficha de la pantalla actual, o lo cierra si ya está abierto; en tablet cierra antes el menú. */
   protected abrirAyuda(): void {
     this.cerrar.emit();
-    this.manual.abrir();
+    this.manual.alternar();
   }
 
   /** Vuelve a mostrar el recorrido guiado del menú. */
