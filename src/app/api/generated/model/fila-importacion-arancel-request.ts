@@ -18,7 +18,7 @@ export interface FilaImportacionArancelRequest {
      */
     codigoPractica?: string;
     /**
-     * OBSOLETO desde 0.185.0: se ignora
+     * OBSOLETO desde 0.189.0: se ignora
      * @deprecated
      */
     coseguro?: number;
@@ -27,7 +27,7 @@ export interface FilaImportacionArancelRequest {
      */
     importeFinanciador?: number;
     /**
-     * OBSOLETO desde 0.185.0: se ignora
+     * OBSOLETO desde 0.189.0: se ignora
      * @deprecated
      */
     importeTotal?: number;

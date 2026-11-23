@@ -18,7 +18,7 @@ export interface ArancelResponse {
      */
     convenioId?: number;
     /**
-     * OBSOLETO desde 0.185.0: historico; nulo en los nuevos. El coseguro es precio de la oferta menos importeFinanciador
+     * OBSOLETO desde 0.189.0: historico; nulo en los nuevos. El coseguro es precio de la oferta menos importeFinanciador
      * @deprecated
      */
     coseguro?: number | null;
@@ -43,7 +43,7 @@ export interface ArancelResponse {
      */
     importeFinanciador?: number;
     /**
-     * OBSOLETO desde 0.185.0: historico de aranceles anteriores; nulo en los nuevos
+     * OBSOLETO desde 0.189.0: historico de aranceles anteriores; nulo en los nuevos
      * @deprecated
      */
     importeTotal?: number | null;

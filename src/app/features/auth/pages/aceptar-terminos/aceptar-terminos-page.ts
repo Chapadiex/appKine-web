@@ -41,6 +41,8 @@ export class AceptarTerminosPage implements OnInit {
 
   protected readonly lectura = signal<Lectura>({ tipo: 'cargando' });
   protected readonly aceptados = signal(false);
+  /** Abrió los términos en esta pantalla (21/11/2026): la tarjeta de lectura muestra "Leído". */
+  protected readonly leidos = signal(false);
   protected readonly enviando = signal(false);
   protected readonly faltaMarcar = signal(false);
   protected readonly errorAlAceptar = signal<string | null>(null);

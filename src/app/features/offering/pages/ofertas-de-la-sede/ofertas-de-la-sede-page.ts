@@ -49,7 +49,7 @@ import {
   modalidadConCapacidad,
   servicioEnUnaLinea,
   servicioInactivo,
-  serviciosPorNaturaleza,
+  serviciosPorCategoria,
 } from '../../models/etiquetas-de-offering';
 import {
   ClaveDeVigencia,
@@ -348,10 +348,10 @@ export class OfertasDeLaSedePage {
   private servicioPedidoAplicado = false;
   private servicioPedidoAtendido = false;
 
-  /** Los ofertables agrupados por naturaleza, para el selector con buscador del alta. */
+  /** Los ofertables agrupados por categoria (V38), para el selector con buscador del alta. */
   protected readonly serviciosAgrupados = computed<readonly GrupoDeSelector[]>(() =>
-    serviciosPorNaturaleza(this.serviciosOfertables()).map((grupo) => ({
-      etiqueta: grupo.etiqueta,
+    serviciosPorCategoria(this.serviciosOfertables()).map((grupo) => ({
+      etiqueta: grupo.categoria,
       opciones: grupo.servicios.map((servicio) => ({
         valor: String(servicio.id),
         etiqueta: servicioEnUnaLinea(servicio),
@@ -362,6 +362,11 @@ export class OfertasDeLaSedePage {
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
+  );
+
+  /** Los mismos, agrupados por categoria para el `optgroup` del filtro. */
+  protected readonly serviciosOfertablesPorCategoria = computed(() =>
+    serviciosPorCategoria(this.serviciosOfertables()),
   );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */

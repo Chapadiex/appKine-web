@@ -73,7 +73,7 @@ describe('AuditPage', () => {
       .find((boton) => boton.textContent?.includes('Limpiar filtros'))!
       .click();
     fixture.detectChanges();
-    expect(texto(fixture)).toContain('Elegí un filtro y presiona Buscar.');
+    expect(texto(fixture)).toContain('Elegí un filtro y presioná Buscar.');
     expect(host.querySelector<HTMLInputElement>('#auditoria-filtro-entidad')!.checked).toBe(true);
   });
 
@@ -426,7 +426,7 @@ describe('AuditPage', () => {
     fixture.detectChanges();
 
     expect(texto(fixture)).not.toContain('MEMBERSHIP_REVOKED');
-    expect(texto(fixture)).toContain('Elegí un filtro y presiona Buscar.');
+    expect(texto(fixture)).toContain('Elegí un filtro y presioná Buscar.');
   });
 
   it(

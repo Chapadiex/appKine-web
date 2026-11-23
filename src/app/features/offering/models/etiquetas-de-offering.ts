@@ -124,31 +124,10 @@ export function servicioInactivo(servicio: ServicioResponse): boolean {
  * Como se nombra un servicio en un selector: `Kinesiologia respiratoria (KRES)`.
  *
  * <p>Solo el nombre: el codigo es un dato interno que el usuario no necesita para elegir. Para
- * orientarse, el alta agrupa los servicios por naturaleza ({@link serviciosPorNaturaleza}).
+ * orientarse, el alta agrupa los servicios por categoria ({@link serviciosPorCategoria}).
  */
 export function servicioEnUnaLinea(servicio: ServicioResponse): string {
   return servicio.nombre ?? servicio.codigo ?? '';
-}
-
-/**
- * Los servicios agrupados por naturaleza (Clinico, Terapeutico, ...), en el orden de
- * {@link NATURALEZAS} y alfabeticos dentro de cada grupo. Los grupos vacios no aparecen.
- */
-export function serviciosPorNaturaleza(
-  servicios: readonly ServicioResponse[],
-): { readonly etiqueta: string; readonly servicios: readonly ServicioResponse[] }[] {
-  const porNombre = (a: ServicioResponse, b: ServicioResponse) =>
-    (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es');
-  const conocidas = NATURALEZAS.map((opcion) => ({
-    etiqueta: opcion.etiqueta,
-    servicios: servicios.filter((s) => s.naturaleza === opcion.valor).sort(porNombre),
-  }));
-  const otras = servicios
-    .filter((s) => !NATURALEZAS.some((opcion) => opcion.valor === s.naturaleza))
-    .sort(porNombre);
-  return [...conocidas, { etiqueta: 'Otros', servicios: otras }].filter(
-    (grupo) => grupo.servicios.length > 0,
-  );
 }
 
 /**
@@ -195,4 +174,35 @@ export const ESQUEMAS_DE_COBRO: readonly {
 /** La explicacion del esquema elegido, para la linea de ayuda debajo del selector. */
 export function ayudaDeEsquema(valor: string): string {
   return ESQUEMAS_DE_COBRO.find((esquema) => esquema.valor === valor)?.ayuda ?? '';
+}
+
+/** Rotulo del grupo de los servicios sin categoria: los propios creados desde cero. */
+export const SIN_CATEGORIA = 'Otros servicios';
+
+/** La categoria del catalogo con la que se agrupa un servicio en los selectores. */
+export function categoriaDe(servicio: ServicioResponse): string {
+  const categoria = servicio.categoria?.trim() ?? '';
+  return categoria === '' ? SIN_CATEGORIA : categoria;
+}
+
+/** Categorias presentes, en orden alfabetico, con "Otros servicios" al final. */
+export function categoriasDe(servicios: readonly ServicioResponse[]): readonly string[] {
+  const nombres = [...new Set(servicios.map(categoriaDe))];
+  return nombres.sort((a, b) =>
+    a === SIN_CATEGORIA ? 1 : b === SIN_CATEGORIA ? -1 : a.localeCompare(b, 'es'),
+  );
+}
+
+/**
+ * Servicios agrupados por categoria para un `select` con `optgroup`: con el catalogo precargado
+ * (V38) son cientos, y una lista plana no se puede recorrer. Dentro de cada grupo se respeta el
+ * orden en que llegaron (el servidor ordena por nombre).
+ */
+export function serviciosPorCategoria(
+  servicios: readonly ServicioResponse[],
+): readonly { readonly categoria: string; readonly servicios: readonly ServicioResponse[] }[] {
+  return categoriasDe(servicios).map((categoria) => ({
+    categoria,
+    servicios: servicios.filter((servicio) => categoriaDe(servicio) === categoria),
+  }));
 }

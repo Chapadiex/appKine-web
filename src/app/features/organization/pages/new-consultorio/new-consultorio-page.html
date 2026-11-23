@@ -64,34 +64,52 @@
     }
   </ol>
 
+  @if (mostrarBienvenida()) {
+    <app-bienvenida-inicial [nombreCentro]="nombreDelCentro()" (empezar)="cerrarBienvenida()" />
+  }
   <div class="asistente__contenido">
-    <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
-      @if (hecho()) {
-        {{ editando() ? 'Cambios guardados' : 'Sede creada' }}
-      } @else {
-        <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
-        @switch (paso()) {
-          @case (1) {
-            Datos de la sede
-          }
-          @case (2) {
-            ¿Dónde está {{ resumen().nombre }}?
-          }
-          @case (3) {
-            {{
-              configuracionInicial()
-                ? 'Horario de atención'
-                : editando()
-                  ? 'Datos fiscales'
-                  : 'Configuración inicial'
-            }}
-          }
-          @case (4) {
-            {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
+    <!-- En el paso 2 el título va dentro de la columna de la dirección: así el mapa sube. -->
+    @if (hecho() || paso() !== 2) {
+      <h2 id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
+        @if (hecho()) {
+          {{ editando() ? 'Cambios guardados' : 'Sede creada' }}
+        } @else {
+          <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
+          @switch (paso()) {
+            @case (1) {
+              Datos de la sede
+              @if (!configuracionInicial()) {
+                <app-ayuda titulo="Sobre este paso">
+                  <p>Con el nombre alcanza. Lo demás ya viene con un valor razonable.</p>
+                </app-ayuda>
+              }
+            }
+            @case (3) {
+              {{
+                configuracionInicial()
+                  ? '¿Cuándo atiende ' + resumen().nombre + '?'
+                  : editando()
+                    ? 'Datos fiscales'
+                    : 'Configuración inicial'
+              }}
+              <app-ayuda titulo="Sobre este paso">
+                @if (editando() && !configuracionInicial()) {
+                  <p>El horario se cambia en el calendario de la sede y los boxes en Espacios.</p>
+                } @else {
+                  <p>Todo es opcional: podés seguir sin cargar nada y completarlo después.</p>
+                }
+              </app-ayuda>
+            }
+            @case (4) {
+              {{ editando() ? 'Revisá y guardá' : 'Revisá y creá' }} {{ resumen().nombre }}
+              <app-ayuda titulo="Sobre este paso">
+                <p>Todo se puede cambiar después desde la ficha de la sede.</p>
+              </app-ayuda>
+            }
           }
         }
-      }
-    </h2>
+      </h2>
+    }
 
     @if (!hecho()) {
       <form
@@ -123,14 +141,12 @@
 
         @switch (paso()) {
           @case (1) {
-            <p class="asistente__nota">
-              @if (configuracionInicial()) {
-                Tu centro ya tiene su primera sede. Revisá sus datos y cargá cuándo atiende: con el
-                horario, la agenda empieza a ofrecer turnos.
-              } @else {
-                Con el nombre alcanza. Lo demás ya viene con un valor razonable.
-              }
-            </p>
+            @if (configuracionInicial()) {
+              <p class="asistente__nota">
+                Revisá los datos de tu primera sede y cargá cuándo atiende: con el horario, la
+                agenda empieza a ofrecer turnos.
+              </p>
+            }
 
             <div class="asistente__grilla asistente__grilla--datos">
               <!-- Identificacion, agenda y contacto: la columna ancha. -->
@@ -327,33 +343,35 @@
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
-              @if (configuracionInicial()) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  (click)="postergarConfiguracionInicial()"
-                >
-                  Ahora no
-                </button>
-              } @else {
+              <!-- La configuración inicial es obligatoria (20/11/2026): no se puede salir sin el horario. -->
+              @if (!configuracionInicial()) {
                 <a class="boton boton--secundario" routerLink="/organizacion/sedes">Cancelar</a>
               }
             </div>
           }
 
           @case (2) {
-            <p class="asistente__nota">
-              Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les da el
-              "Cómo llegar". Si el buscador no la encuentra, arrastrá el marcador o escribí las
-              coordenadas; también podés dejarla pendiente y ubicarla después.
-            </p>
-
             <app-editor-de-ubicacion
               idBase="sede-ubicacion"
               [formulario]="ubicacion"
               [mostrarErrores]="intentos() > 0"
               [nombreDeSede]="formulario.controls.name.value"
-            />
+            >
+              <h2 arriba id="titulo-alta-sede" class="asistente__encabezado" tabindex="-1">
+                <span class="asistente__numero">Paso {{ paso() }} de {{ ultimoPaso }}</span>
+                ¿Dónde está {{ resumen().nombre }}?
+                <app-ayuda titulo="Sobre la ubicación">
+                  <p>
+                    Toda opcional. La dirección se muestra a los pacientes y el punto en el mapa les
+                    da el "Cómo llegar".
+                  </p>
+                  <p>
+                    Si el buscador no la encuentra, arrastrá el marcador o escribí las coordenadas;
+                    también podés dejarla pendiente y ubicarla después.
+                  </p>
+                </app-ayuda>
+              </h2>
+            </app-editor-de-ubicacion>
 
             <div class="acciones asistente__acciones">
               <button type="submit" class="boton">Continuar &rarr;</button>
@@ -364,26 +382,18 @@
           }
 
           @case (3) {
-            <!-- Instruccion de un paso: va a la vista. -->
-            <p class="asistente__nota">
-              @if (editando() && !configuracionInicial()) {
-                El horario se cambia en el calendario de la sede y los boxes en Espacios.
-              } @else {
-                Todo es opcional: podés seguir sin cargar nada y completarlo después.
-              }
-            </p>
-
             <div class="asistente__grilla asistente__grilla--horario">
               @if (!editando() || configuracionInicial()) {
-                <section class="bloque" aria-labelledby="titulo-horario-general">
+                <section class="bloque bloque--horario" aria-labelledby="titulo-horario-general">
                   <h3 class="bloque__titulo" id="titulo-horario-general" tabindex="-1">
-                    Horario de atención
+                    Días y horarios
+                    <app-ayuda titulo="Sobre el horario">
+                      <p><b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.</p>
+                      <p>Elegí un modelo para empezar y ajustá cada día con su interruptor.</p>
+                    </app-ayuda>
                   </h3>
-                  <!-- Consecuencia que cambia lo que se carga: queda a la vista. -->
-                  <p class="bloque__ayuda">
-                    <b>Limita la agenda</b>: ningún turno se ofrece fuera de este horario.
-                  </p>
                   <app-horario-semanal
+                    class="horario-compacto horario-modelos-arriba horario-llena-alto"
                     idBase="sede-horario"
                     [franjas]="horario"
                     [mostrarErrores]="intentos() > 0"
@@ -552,12 +562,11 @@
           }
 
           @case (4) {
-            <!-- Todo lo que se va a crear, en una lista con su "Cambiar" al lado. -->
-            <p class="asistente__nota">Todo se puede cambiar después desde la ficha de la sede.</p>
+            <!-- Todo lo que se va a crear, en tarjetas con su "Cambiar": en columnas, entra sin scroll. -->
 
             <dl class="confirmacion">
               <div class="confirmacion__fila">
-                <dt>Sede</dt>
+                <dt><app-icono nombre="edificio" />Sede</dt>
                 <dd>
                   <span class="confirmacion__principal">
                     {{ resumen().nombre }}
@@ -577,8 +586,8 @@
                 </button>
               </div>
 
-              <div class="confirmacion__fila">
-                <dt>Dirección</dt>
+              <div class="confirmacion__fila confirmacion__fila--direccion">
+                <dt><app-icono nombre="sede" />Dirección</dt>
                 <dd>
                   @if (resumen().direccion === '') {
                     <span class="confirmacion__secundario">Sin dirección por ahora</span>
@@ -618,7 +627,7 @@
               </div>
 
               <div class="confirmacion__fila">
-                <dt>Visibilidad</dt>
+                <dt><app-icono nombre="ojo" />Visibilidad</dt>
                 <dd>
                   <span>
                     @if (resumen().agendaHabilitada) {
@@ -641,8 +650,8 @@
               </div>
 
               @if (!editando() || configuracionInicial()) {
-                <div class="confirmacion__fila">
-                  <dt>Horario</dt>
+                <div class="confirmacion__fila confirmacion__fila--horario">
+                  <dt><app-icono nombre="horarios" />Horario</dt>
                   <dd>
                     @if (resumen().horario.length === 0) {
                       <span class="confirmacion__secundario">
@@ -665,7 +674,7 @@
 
               @if (!editando()) {
                 <div class="confirmacion__fila">
-                  <dt>Primer box</dt>
+                  <dt><app-icono nombre="capas" />Primer box</dt>
                   <dd>
                     @if (resumen().box; as box) {
                       {{ box }}
@@ -680,7 +689,7 @@
               }
 
               <div class="confirmacion__fila">
-                <dt>Datos fiscales</dt>
+                <dt><app-icono nombre="documento" />Datos fiscales</dt>
                 <dd>
                   <span class="confirmacion__secundario">
                     @if (resumen().fiscalesPropios) {

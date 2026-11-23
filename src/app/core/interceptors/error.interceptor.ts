@@ -335,7 +335,10 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
         // Si hay una navegación en curso (al recargar, la primera), el destino es ésa: router.url
         // todavía dice "/" y se perdería a dónde iba.
         const destino = router.currentNavigation()?.extractedUrl.toString() ?? router.url;
-        if (!destino.startsWith(RUTA_ACEPTAR_TERMINOS)) {
+        // Leer los términos o la privacidad no es usar AKINE: esas páginas no se interrumpen,
+        // si no "Leer los términos" volvía a la pantalla de aceptarlos (21/11/2026).
+        const esPaginaLegal = /^\/(terminos|privacidad)(?:[?#]|$)/.test(destino);
+        if (!destino.startsWith(RUTA_ACEPTAR_TERMINOS) && !esPaginaLegal) {
           router
             .navigate([RUTA_ACEPTAR_TERMINOS], { queryParams: { [PARAM_VOLVER_A]: destino } })
             .catch(() => undefined);

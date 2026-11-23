@@ -73,14 +73,23 @@
       </p>
     </div>
 
-    <!-- Con o sin historia clinica, a la vista y con su conteo (13/11/2026). -->
-    <app-filtros-rapidos
+    <!-- Con historia clinica como un solo interruptor: prendido, solo las que tienen HC (21/11/2026). -->
+    <label
       filtro-frecuente
-      etiqueta="Filtrar por historia clínica"
-      [opciones]="opcionesDeHistoria()"
-      [valor]="filtroHistoria()"
-      (valorChange)="elegirHistoria($event)"
-    />
+      class="padron-check-hc"
+      title="Prendido: solo las personas con historia clínica (HC). Apagado: todas."
+    >
+      <input
+        type="checkbox"
+        role="switch"
+        [checked]="filtroHistoria() === 'CON_HISTORIA'"
+        (change)="elegirHistoria($any($event.target).checked ? 'CON_HISTORIA' : 'TODOS')"
+      />
+      <span>Con HC<span class="visualmente-oculto"> (historia clínica)</span></span>
+      @if (cantidadConHistoria() !== null) {
+        <span class="padron-check-hc__cantidad">{{ cantidadConHistoria() }}</span>
+      }
+    </label>
 
     <div class="campo">
       <label for="padron-filtro-estado">Estado de la ficha</label>
@@ -158,9 +167,9 @@
           <tr>
             <th scope="col" appOrdenable [tabla]="orden" columna="apellido">Persona</th>
             <th scope="col" class="tabla__col--secundaria">Contacto</th>
-            <th scope="col" class="padron-col-si-no">Paciente</th>
-            <th scope="col">Historia clínica</th>
-            <th scope="col">Estado</th>
+            <th scope="col" class="padron-col-centro">Tipo</th>
+            <th scope="col" class="padron-col-centro">Historia clínica</th>
+            <th scope="col" class="padron-col-centro">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
@@ -205,24 +214,21 @@
                   <span class="padron-persona__vacio">Sin contacto cargado</span>
                 }
               </td>
-              <!-- Texto plano: el padrón es casi todo pacientes, la pastilla repetida era ruido. -->
-              <td class="padron-col-si-no">
+              <!-- Tipo de persona con icono propio (21/11/2026). -->
+              <td class="padron-col-centro">
                 @if (persona.esPaciente) {
-                  <span class="padron-si-no padron-si-no--si" title="Tiene perfil de paciente">
-                    <app-icono nombre="tilde" />
-                    <span class="visualmente-oculto">Tiene perfil de paciente</span>
+                  <span class="padron-tipo padron-tipo--paciente" title="Tiene perfil de paciente">
+                    <app-icono nombre="pacientes" />
+                    Paciente<span class="visualmente-oculto">: tiene perfil de paciente</span>
                   </span>
                 } @else {
-                  <span
-                    class="padron-si-no padron-si-no--no"
-                    title="Sin perfil de paciente vigente"
-                  >
-                    <app-icono nombre="menos" />
-                    <span class="visualmente-oculto">Sin perfil de paciente</span>
+                  <span class="padron-tipo" title="Sin perfil de paciente vigente">
+                    <app-icono nombre="perfil" />
+                    Persona<span class="visualmente-oculto">: sin perfil de paciente</span>
                   </span>
                 }
               </td>
-              <td>
+              <td class="padron-col-centro">
                 @if (persona.tieneHistoriaClinica) {
                   @if (puedeVerHistoria()) {
                     <a
@@ -283,7 +289,7 @@
                   <span class="padron-persona__vacio">Sin historia</span>
                 }
               </td>
-              <td>
+              <td class="padron-col-centro">
                 <span
                   class="marca-estado"
                   [class.marca-estado--activa]="persona.estado === 'ACTIVO'"
@@ -566,9 +572,7 @@
         </app-alerta>
       }
 
-      <h3 class="formulario__seccion">
-        <app-icono nombre="telefono" />Contacto <span class="campo__opcional">(opcional)</span>
-      </h3>
+      <h3 class="formulario__seccion">Contacto <span class="campo__opcional">(opcional)</span></h3>
 
       <div class="campo campo--3">
         <label for="alta-persona-telefono"><app-icono nombre="telefono" />Teléfono</label>

@@ -36,19 +36,30 @@ export class PreferenciasStore {
     this.temaElegido.set(tema);
     this.aplicarTema(tema);
     try {
-      if (tema === 'sistema') {
-        this.almacen()?.removeItem(CLAVE_TEMA);
-      } else {
-        this.almacen()?.setItem(CLAVE_TEMA, tema);
-      }
+      // Se guarda tambien "sistema": sin nada guardado el tema es el claro (20/11/2026).
+      this.almacen()?.setItem(CLAVE_TEMA, tema);
     } catch {
       // Sin almacenamiento la preferencia vale para esta pestana: no es un error para el usuario.
     }
   }
 
+  /**
+   * Las pantallas de acceso (ingreso, invitación, elegir dónde trabajar) van siempre en claro
+   * (19/11/2026): es la primera impresión y las ilustraciones vienen sobre blanco. No toca la
+   * preferencia guardada; al salir vuelve la elegida.
+   */
+  forzarClaro(activo: boolean): void {
+    this.claroForzado = activo;
+    this.aplicarTema(this.temaElegido());
+  }
+
+  private claroForzado = false;
+
   private aplicarTema(tema: Tema): void {
     const raiz = this.documento.documentElement;
-    if (tema === 'sistema') {
+    if (this.claroForzado) {
+      raiz.setAttribute('data-tema', 'claro');
+    } else if (tema === 'sistema') {
       raiz.removeAttribute('data-tema');
     } else {
       raiz.setAttribute('data-tema', tema);
@@ -58,9 +69,10 @@ export class PreferenciasStore {
   private leerTema(): Tema {
     try {
       const guardado = this.almacen()?.getItem(CLAVE_TEMA);
-      return guardado === 'claro' || guardado === 'oscuro' ? guardado : 'sistema';
+      // Sin eleccion guardada, claro para todas las cuentas (20/11/2026); quien quiera lo cambia.
+      return guardado === 'oscuro' || guardado === 'sistema' ? guardado : 'claro';
     } catch {
-      return 'sistema';
+      return 'claro';
     }
   }
 

@@ -18,6 +18,10 @@ export interface ServicioResponse {
      */
     alcance?: ServicioResponseAlcanceEnum;
     /**
+     * Categoria del catalogo con la que se agrupa el servicio en los selectores. Solo ordena: no decide ningun comportamiento. Null en los servicios propios creados desde cero
+     */
+    categoria?: string | null;
+    /**
      * Clave estable con la que las ofertas lo referencian. No cambia nunca: renombrar es cambiar nombre, no codigo
      */
     codigo?: string;

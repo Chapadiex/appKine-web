@@ -14,7 +14,7 @@
  */
 export interface CreateArancelRequest { 
     /**
-     * OBSOLETO desde 0.185.0: se ignora. Ver importeTotal
+     * OBSOLETO desde 0.189.0: se ignora. Ver importeTotal
      * @deprecated
      */
     coseguro?: number;
@@ -23,7 +23,7 @@ export interface CreateArancelRequest {
      */
     importeFinanciador: number;
     /**
-     * OBSOLETO desde 0.185.0: se ignora. El coseguro se calcula al cerrar la sesion como precio de la oferta menos lo que paga el financiador
+     * OBSOLETO desde 0.189.0: se ignora. El coseguro se calcula al cerrar la sesion como precio de la oferta menos lo que paga el financiador
      * @deprecated
      */
     importeTotal?: number;

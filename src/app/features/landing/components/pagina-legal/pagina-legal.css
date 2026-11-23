@@ -35,7 +35,7 @@
 }
 
 .legal__cuerpo {
-  max-width: 52rem;
+  max-width: 68rem;
   padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem) clamp(3rem, 2rem + 4vw, 6rem);
 }
 
