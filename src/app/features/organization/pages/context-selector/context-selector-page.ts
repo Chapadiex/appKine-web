@@ -14,6 +14,7 @@ import { SessionService } from '../../../../core/services/session.service';
 import { TenantContext } from '../../../../core/services/tenant-context.store';
 import { RUTA_LOGIN } from '../../../../core/models/rutas';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { MOTIVO_SIN_ACCESO } from '../../../../core/models/situacion-de-cobro';
 
 /** Destino cuando nadie pidio volver a ningun lado. */
 const DESTINO_POR_DEFECTO = '/organizacion';
@@ -139,6 +140,10 @@ export class ContextSelectorPage {
   });
 
   protected readonly saliendo = signal(false);
+
+  /** Centros cerrados por falta de pago (`sinAcceso`): se muestran con el motivo, sin elegirse. */
+  protected readonly sinAcceso = signal<readonly { id: number; nombre: string }[]>([]);
+  protected readonly motivoSinAcceso = MOTIVO_SIN_ACCESO;
 
   /** Dos letras para el cuadrado del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {
@@ -324,7 +329,17 @@ export class ContextSelectorPage {
     // invalido que fallaria recien en la pantalla siguiente.
     let preseleccionado: TenantContext | null = null;
     const utilizables: TenantContext[] = [];
+    // Cobro mensual (contrato 0.191.0): un centro cerrado por falta de pago llega marcado
+    // `sinAcceso` para explicar el motivo. No se puede elegir —el canje lo rechazaria—, asi que va
+    // aparte, una vez por centro aunque tenga varias sedes.
+    const cerrados = new Map<number, string>();
     for (const elemento of respuesta) {
+      if (elemento.sinAcceso === true) {
+        if (elemento.organizationId !== undefined) {
+          cerrados.set(elemento.organizationId, elemento.organizationName ?? 'Centro');
+        }
+        continue;
+      }
       const contexto = this.aContexto(elemento);
       if (contexto === null) continue;
       if (elemento.lastSelected === true && preseleccionado === null) {
@@ -334,13 +349,15 @@ export class ContextSelectorPage {
       }
     }
     if (preseleccionado !== null) utilizables.unshift(preseleccionado);
+    this.sinAcceso.set([...cerrados.entries()].map(([id, nombre]) => ({ id, nombre })));
 
     if (utilizables.length === 0) {
       this.estado.set({ tipo: 'vacio' });
       return;
     }
 
-    if (utilizables.length === 1 && !this.hayMotivo()) {
+    // Con un centro cerrado tampoco se entra solo: esta pantalla es donde se entera del motivo.
+    if (utilizables.length === 1 && !this.hayMotivo() && cerrados.size === 0) {
       this.seleccionar(utilizables[0], true);
       return;
     }

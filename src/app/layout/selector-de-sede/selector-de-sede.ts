@@ -67,7 +67,13 @@ export class SelectorDeSede extends Desplegable {
   private readonly sedes = computed(() =>
     this.session
       .contextos()
-      .filter((sede) => sede.organizationId !== undefined && sede.consultorioId !== undefined),
+      // Un centro cerrado por falta de pago (`sinAcceso`) no se puede elegir: el canje lo rechaza.
+      .filter(
+        (sede) =>
+          sede.organizationId !== undefined &&
+          sede.consultorioId !== undefined &&
+          sede.sinAcceso !== true,
+      ),
   );
 
   protected readonly cambiable = computed(() => this.sedes().length > 1);

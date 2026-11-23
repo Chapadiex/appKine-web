@@ -8,6 +8,17 @@ import { TenantContextStore } from './tenant-context.store';
 /** Servicio que un centro contrata (contrato 0.178.0). */
 export type ServicioContratable = 'KINESIOLOGIA' | 'ACTIVIDADES';
 
+/** Lo que la franja del shell necesita para avisar del cobro mensual. */
+export interface AvisoDeCobro {
+  readonly situacion: 'POR_VENCER' | 'EN_GRACIA' | 'SOLO_LECTURA';
+  /** Instante hasta el que esta pagado. */
+  readonly venceEl: string;
+  /** Instante en que se cierra el acceso si no paga. */
+  readonly cierreEl: string | null;
+  readonly diasParaVencer: number;
+  readonly diasParaCierre: number | null;
+}
+
 /** Milisegundos de un dia, para contar los que le quedan a la prueba. */
 const UN_DIA = 86_400_000;
 
@@ -45,6 +56,33 @@ export class ContratacionStore {
   readonly pruebaVencida = computed(
     () => this.actual()?.estado === 'PRUEBA' && this.actual()?.soloLectura === true,
   );
+
+  /**
+   * El aviso del cobro mensual que el centro tiene que ver (contrato 0.191.0): por vencer (15 dias
+   * o menos), vencida en gracia o en solo lectura por falta de pago. `null` si esta al dia, sin
+   * control de cobro o todavia no se leyo. `SIN_ACCESO` no llega aca: ese centro no entra.
+   */
+  readonly avisoDeCobro = computed<AvisoDeCobro | null>(() => {
+    const c = this.actual();
+    const situacion = c?.situacionDeCobro;
+    if (
+      (situacion !== 'POR_VENCER' && situacion !== 'EN_GRACIA' && situacion !== 'SOLO_LECTURA') ||
+      !c?.pagadoHasta
+    ) {
+      return null;
+    }
+    const venceEn = Date.parse(c.pagadoHasta);
+    const cierreEn = c.cierreEl ? Date.parse(c.cierreEl) : Number.NaN;
+    return {
+      situacion,
+      venceEl: c.pagadoHasta,
+      cierreEl: c.cierreEl ?? null,
+      diasParaVencer: Math.max(0, Math.ceil((venceEn - Date.now()) / UN_DIA)),
+      diasParaCierre: Number.isNaN(cierreEn)
+        ? null
+        : Math.max(0, Math.ceil((cierreEn - Date.now()) / UN_DIA)),
+    };
+  });
 
   constructor() {
     effect(() => {

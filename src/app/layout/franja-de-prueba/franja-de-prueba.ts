@@ -2,11 +2,16 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ContratacionStore } from '../../core/services/contratacion.store';
 import { Icono } from '../../shared/components/icono/icono';
+import { formatearFecha } from '../../shared/utils/instantes';
 
 /**
  * Franja del shell con el estado de la prueba gratis (18/11/2026): cuantos dias quedan, o que
  * termino y el centro quedo en solo lectura. No se cierra: es el estado del centro, no un aviso.
  * Fuera de prueba no ocupa lugar.
+ *
+ * <p>Desde el cobro mensual (contrato 0.191.0) avisa tambien el vencimiento del periodo pagado:
+ * por vencer (15 dias o menos), vencido en gracia (3 dias, sigue operando) y en solo lectura hasta
+ * el cierre. Es el cartel en la aplicacion que acompaña a los correos de vencimiento.
  */
 @Component({
   selector: 'app-franja-de-prueba',
@@ -39,6 +44,43 @@ import { Icono } from '../../shared/components/icono/icono';
           <a class="franja__enlace" [href]="contacto">Elegí tu plan</a>
         </span>
       </p>
+    } @else if (contratacion.avisoDeCobro(); as cobro) {
+      @switch (cobro.situacion) {
+        @case ('POR_VENCER') {
+          <p class="franja" role="status" data-testid="franja-cobro">
+            <app-icono class="franja__icono" nombre="info" />
+            <span>
+              <strong>Tu suscripción vence el {{ fecha(cobro.venceEl) }}</strong>
+              ({{ enDias(cobro.diasParaVencer) }}). Si no se renueva, el centro queda en sólo
+              lectura y después se cierra.
+              <a class="franja__enlace" [href]="pago">Avisanos tu pago</a>
+            </span>
+          </p>
+        }
+        @case ('EN_GRACIA') {
+          <p class="franja franja--vencida" role="status" data-testid="franja-cobro">
+            <app-icono class="franja__icono" nombre="advertencia" />
+            <span>
+              <strong>Tu suscripción venció el {{ fecha(cobro.venceEl) }}.</strong>
+              Seguís operando unos días más; después el centro queda en sólo lectura.
+              <a class="franja__enlace" [href]="pago">Avisanos tu pago</a>
+            </span>
+          </p>
+        }
+        @case ('SOLO_LECTURA') {
+          <p class="franja franja--vencida" role="status" data-testid="franja-cobro">
+            <app-icono class="franja__icono" nombre="advertencia" />
+            <span>
+              <strong>Suscripción vencida: el centro está en sólo lectura.</strong>
+              Podés ver y exportar todo, pero no cargar nada nuevo.
+              @if (cobro.cierreEl) {
+                El acceso se cierra el {{ fecha(cobro.cierreEl) }}.
+              }
+              <a class="franja__enlace" [href]="pago">Avisanos tu pago</a>
+            </span>
+          </p>
+        }
+      }
     }
   `,
   styles: `
@@ -76,4 +118,17 @@ export class FranjaDePrueba {
 
   /** Mientras no haya cobro online, contratar es escribirle a la plataforma. */
   protected readonly contacto = 'mailto:hola@akine.app?subject=Quiero%20contratar%20AKINE';
+
+  /** Mientras no haya cobro online, renovar es avisarle el pago a la plataforma. */
+  protected readonly pago =
+    'mailto:hola@akine.app?subject=Pago%20de%20la%20suscripci%C3%B3n%20AKINE';
+
+  protected fecha(instante: string): string {
+    return formatearFecha(instante);
+  }
+
+  protected enDias(dias: number): string {
+    if (dias === 0) return 'hoy';
+    return dias === 1 ? 'mañana' : `en ${dias} días`;
+  }
 }

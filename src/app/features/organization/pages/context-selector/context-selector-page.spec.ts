@@ -239,6 +239,30 @@ describe('ContextSelectorPage', () => {
     expect(texto(fixture)).toContain('Tu cuenta todavía no tiene dónde trabajar');
   });
 
+  it('un centro cerrado por falta de pago se explica, no se elige y no hace entrar solo al otro', async () => {
+    const fixture = await pintar([
+      CONTEXTO_BELGRANO,
+      { ...CONTEXTO_CABALLITO, sinAcceso: true },
+      { ...CONTEXTO_CABALLITO, consultorioId: 8, consultorioName: 'Sede Sur', sinAcceso: true },
+    ]);
+
+    // Belgrano es el unico elegible, pero no se entra solo: la pantalla explica el cierre.
+    httpMock.expectNone(URL_CANJE);
+    expect(fixture.nativeElement.querySelectorAll('.opcion').length).toBe(1);
+    const cerrados = fixture.nativeElement.querySelectorAll('[data-testid="centro-sin-acceso"]');
+    expect(cerrados.length).toBe(1);
+    expect(cerrados[0].textContent).toContain('Centro Kinesico Caballito');
+    expect(cerrados[0].textContent).toContain('Sin acceso: suscripción cerrada por falta de pago');
+  });
+
+  it('si el único centro está cerrado por falta de pago no dice que la cuenta no tiene dónde', async () => {
+    const fixture = await pintar([{ ...CONTEXTO_BELGRANO, sinAcceso: true }]);
+
+    httpMock.expectNone(URL_CANJE);
+    expect(texto(fixture)).not.toContain('Tu cuenta todavía no tiene dónde trabajar');
+    expect(texto(fixture)).toContain('Sin acceso: suscripción cerrada por falta de pago');
+  });
+
   it('descarta los contextos sin consultorio: el canje exige los dos ids', async () => {
     const fixture = await pintar([{ organizationId: 3, organizationName: 'Centro Sin Sede' }]);
 

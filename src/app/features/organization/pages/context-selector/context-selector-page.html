@@ -80,10 +80,12 @@
       }
 
       @case ('vacio') {
-        <p class="acceso-aviso acceso-aviso--aviso">Tu cuenta todavía no tiene dónde trabajar.</p>
-        <p class="acceso-texto">
-          No es un error: la cuenta existe. Pedile a quien administra un centro que te dé acceso.
-        </p>
+        @if (sinAcceso().length === 0) {
+          <p class="acceso-aviso acceso-aviso--aviso">Tu cuenta todavía no tiene dónde trabajar.</p>
+          <p class="acceso-texto">
+            No es un error: la cuenta existe. Pedile a quien administra un centro que te dé acceso.
+          </p>
+        }
       }
 
       @case ('error') {
@@ -95,6 +97,29 @@
             </button>
           </p>
         </app-alerta>
+      }
+    }
+
+    <!--
+      Centros cerrados por falta de pago (cobro mensual, contrato 0.191.0): se muestran para que
+      se entienda por que no aparecen entre los elegibles, pero no se pueden elegir.
+    -->
+    @if (estado().tipo === 'eligiendo' || estado().tipo === 'vacio') {
+      @for (centro of sinAcceso(); track centro.id) {
+        <div class="contexto-centro contexto-centro--cerrado" data-testid="centro-sin-acceso">
+          <div class="contexto-centro__cabecera">
+            <span class="contexto-centro__logo" aria-hidden="true">{{
+              iniciales(centro.nombre)
+            }}</span>
+            <span class="contexto-centro__nombre">{{ centro.nombre }}</span>
+          </div>
+          <app-alerta tipo="advertencia">
+            <p>
+              <strong>{{ motivoSinAcceso }}.</strong>
+              El acceso vuelve cuando se registra el pago.
+            </p>
+          </app-alerta>
+        </div>
       }
     }
   </div>

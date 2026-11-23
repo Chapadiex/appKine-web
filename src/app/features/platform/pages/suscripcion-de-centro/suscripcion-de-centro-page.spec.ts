@@ -12,6 +12,7 @@ import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe
 const PLANES = '/api/v1/plans';
 const LISTADO = '/api/v1/platform/organizations';
 const LECTURA = '/api/v1/platform/organizations/4/contratacion';
+const COBROS = '/api/v1/platform/organizations/4/cobros';
 
 const contratacion = (version: number, estado = 'ACTIVA', extra: Record<string, unknown> = {}) => ({
   planCode: 'BASE',
@@ -66,7 +67,15 @@ describe('SuscripcionDeCentroPage', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  // Cada lectura del panel pide tambien el historial de cobros: los tests que no lo miran lo
+  // responden vacio aca, antes de verificar que no quede nada pendiente.
+  afterEach(() => {
+    httpMock
+      .match((r) => r.url === COBROS && r.method === 'GET')
+      .filter((r) => !r.cancelled)
+      .forEach((r) => r.flush([]));
+    httpMock.verify();
+  });
 
   it('lee la contratación de plataforma y la cambia con esa versión, solo con planes ofrecidos', async () => {
     const fixture = await buscar();
@@ -82,7 +91,7 @@ describe('SuscripcionDeCentroPage', () => {
 
     elegir(fixture, '#suscripcion-plan-nuevo', 'CRECIMIENTO');
     marcarServicio(fixture, 1);
-    enviar(fixture, 1);
+    enviar(fixture, 2);
     const cambio = httpMock.expectOne(LECTURA);
     expect(cambio.request.method).toBe('PUT');
     expect(cambio.request.body).toEqual({
@@ -146,7 +155,7 @@ describe('SuscripcionDeCentroPage', () => {
     await estabilizar(fixture);
 
     elegir(fixture, '#suscripcion-plan-nuevo', 'CRECIMIENTO');
-    enviar(fixture, 1);
+    enviar(fixture, 2);
     httpMock
       .expectOne((r) => r.url === LECTURA && r.method === 'PUT')
       .flush(
@@ -167,6 +176,59 @@ describe('SuscripcionDeCentroPage', () => {
     await estabilizar(fixture);
     expect(texto(fixture)).toContain('la contratación solo se cambia con la suscripción activa');
     expect(fixture.nativeElement.querySelector('#suscripcion-plan-nuevo')).toBeNull();
+    // Tampoco se cobra: primero se reactiva.
+    expect(fixture.nativeElement.querySelector('[data-testid="registrar-cobro"]')).toBeNull();
+  });
+
+  it('registra un cobro con los meses y la nota, y relee la situación y el historial', async () => {
+    const fixture = await buscar();
+    httpMock
+      .expectOne(LECTURA)
+      .flush(contratacion(7, 'ACTIVA', { situacionDeCobro: 'SIN_CONTROL' }));
+    httpMock.expectOne(COBROS).flush([]);
+    await estabilizar(fixture);
+    expect(texto(fixture, '[data-testid="cobro-situacion"]')).toBe('Sin control de cobro');
+    expect(texto(fixture, '[data-testid="cobro-mensual"]')).toContain('Sin cobros registrados');
+
+    elegir(fixture, '#cobro-meses', '3');
+    const nota = fixture.nativeElement.querySelector('#cobro-nota') as HTMLInputElement;
+    nota.value = '  Transferencia  ';
+    nota.dispatchEvent(new Event('input'));
+    enviar(fixture, 1);
+    const cobro = httpMock.expectOne((r) => r.url === COBROS && r.method === 'POST');
+    expect(cobro.request.body).toEqual({ meses: 3, nota: 'Transferencia' });
+    cobro.flush({
+      id: 1,
+      meses: 3,
+      nota: 'Transferencia',
+      periodoDesde: '2026-11-23T12:00:00Z',
+      periodoHasta: '2027-02-23T12:00:00Z',
+      registradoEn: '2026-11-23T12:00:00Z',
+    });
+
+    httpMock.expectOne(LECTURA).flush(
+      contratacion(8, 'ACTIVA', {
+        situacionDeCobro: 'AL_DIA',
+        pagadoHasta: '2027-02-23T12:00:00Z',
+      }),
+    );
+    httpMock.expectOne(COBROS).flush([
+      {
+        id: 1,
+        meses: 3,
+        nota: 'Transferencia',
+        periodoDesde: '2026-11-23T12:00:00Z',
+        periodoHasta: '2027-02-23T12:00:00Z',
+        registradoEn: '2026-11-23T12:00:00Z',
+      },
+    ]);
+    httpMock.expectOne((r) => r.url === LISTADO).flush(pagina([KINESIO_NORTE]));
+    await estabilizar(fixture);
+
+    expect(TestBed.inject(AvisosStore).avisos()[0]?.titulo).toBe('Cobro registrado');
+    expect(texto(fixture, '[data-testid="cobro-situacion"]')).toBe('Al día');
+    expect(texto(fixture, '[data-testid="cobro-historial"]')).toContain('3 meses · del 23/11/2026');
+    expect(texto(fixture, '[data-testid="cobro-historial"]')).toContain('Transferencia');
   });
 
   it('lista los centros al entrar y los elige por nombre, no por número', async () => {
@@ -370,7 +432,10 @@ describe('SuscripcionDeCentroPage', () => {
     fixture.detectChanges();
   }
 
-  /** Envia el formulario numero `indice` de la pantalla (0: buscar centros, 1: la contratacion). */
+  /**
+   * Envia el formulario numero `indice` de la pantalla (0: buscar centros, 1: el cobro mensual,
+   * 2: la contratacion).
+   */
   function enviar(fixture: ComponentFixture<SuscripcionDeCentroPage>, indice: number): void {
     const formularios = fixture.nativeElement.querySelectorAll('form');
     (formularios[indice] as HTMLFormElement).dispatchEvent(new Event('submit'));
