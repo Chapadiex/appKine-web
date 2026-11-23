@@ -19,6 +19,63 @@
       Código {{ ficha.codigo }} · moneda <b>{{ ficha.moneda }}</b> · {{ ventanaEnPalabras(ficha) }}.
     }
   </p>
+
+  <!-- Tope de sesiones por mes: pasado el tope, el cierre cobra la sesión como particular. -->
+  <div class="tope-del-plan">
+    @if (editandoTope()) {
+      <label for="tope-sesiones">Sesiones por mes que cubre el plan</label>
+      <input
+        id="tope-sesiones"
+        type="number"
+        min="1"
+        inputmode="numeric"
+        placeholder="Sin tope"
+        [value]="topeTipeado()"
+        (input)="topeTipeado.set($any($event.target).value)"
+        (keydown.enter)="guardarTope()"
+        aria-describedby="tope-sesiones-ayuda"
+      />
+      <button
+        type="button"
+        class="boton boton--chico"
+        [disabled]="guardandoTope()"
+        (click)="guardarTope()"
+      >
+        {{ guardandoTope() ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario boton--chico"
+        [disabled]="guardandoTope()"
+        (click)="editandoTope.set(false)"
+      >
+        Cancelar
+      </button>
+      <p class="ayuda ayuda--fija" id="tope-sesiones-ayuda">
+        Por paciente. Vacío: el plan cubre todas. Pasado el tope, la sesión se cobra como
+        particular.
+      </p>
+    } @else {
+      <p class="tope-del-plan__texto">
+        @if (ficha.limiteSesionesMensual) {
+          Cubre hasta <b>{{ ficha.limiteSesionesMensual }} sesiones por mes</b> por paciente; las
+          siguientes se cobran como particular.
+        } @else {
+          Sin tope de sesiones por mes.
+        }
+      </p>
+      @if (!convenioInactivo()) {
+        <button
+          *akinePermiso="permisoManage"
+          type="button"
+          class="boton boton--secundario boton--chico"
+          (click)="empezarAEditarTope()"
+        >
+          {{ ficha.limiteSesionesMensual ? 'Cambiar tope' : 'Poner un tope' }}
+        </button>
+      }
+    }
+  </div>
 } @else {
   <app-cabecera-de-pagina titulo="Aranceles del convenio #{{ convenioId }}">
     <app-ayuda titulo="Sobre esta pantalla">

@@ -214,6 +214,11 @@ export class ArancelesDelConvenioPage {
   /** Moneda heredada del convenio, o `undefined` si todavia no se pudo leer. */
   protected readonly moneda = computed(() => this.convenio()?.moneda);
 
+  /** Tope de sesiones por mes: si se esta editando, lo tipeado y si se esta guardando. */
+  protected readonly editandoTope = signal(false);
+  protected readonly topeTipeado = signal('');
+  protected readonly guardandoTope = signal(false);
+
   /** `true` cuando el convenio esta dado de baja: no admite aranceles nuevos. */
   protected readonly convenioInactivo = computed(() => this.convenio()?.estado === 'INACTIVO');
 
@@ -721,6 +726,60 @@ export class ArancelesDelConvenioPage {
    * <p>Un fallo aca <b>si</b> se nota, y por eso la plantilla lo dice: sin moneda los importes se
    * muestran sin unidad. Se prefiere una grilla con la aclaracion antes que una pantalla caida.
    */
+  protected empezarAEditarTope(): void {
+    const tope = this.convenio()?.limiteSesionesMensual;
+    this.topeTipeado.set(tope === undefined || tope === null ? '' : String(tope));
+    this.editandoTope.set(true);
+  }
+
+  /**
+   * Guarda el tope de sesiones por mes del convenio. Vacío lo quita. Pasado el tope en el mes, el
+   * cierre de la sesión la cobra como particular (contrato 0.187.0).
+   */
+  protected guardarTope(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const convenio = this.convenio();
+    if (consultorioId === null || convenio === null || this.guardandoTope()) {
+      return;
+    }
+    const texto = this.topeTipeado().trim();
+    const tope = texto === '' ? null : Number(texto);
+    if (tope !== null && (!Number.isInteger(tope) || tope < 1)) {
+      this.avisos.error('El tope tiene que ser un número entero mayor que cero', {
+        descripcion: 'Dejalo vacío para que el plan cubra sin límite.',
+      });
+      return;
+    }
+    this.guardandoTope.set(true);
+    this.api
+      .editarConvenio(consultorioId, this.convenioId, {
+        expectedVersion: convenio.version ?? 0,
+        ...(tope === null
+          ? { limpiarLimiteSesionesMensual: true }
+          : { limiteSesionesMensual: tope }),
+      })
+      .subscribe({
+        next: (actualizado) => {
+          this.guardandoTope.set(false);
+          this.editandoTope.set(false);
+          this.convenio.set(actualizado);
+          this.avisos.exito(tope === null ? 'Tope quitado' : 'Tope guardado', {
+            descripcion:
+              tope === null
+                ? 'El plan cubre todas las sesiones del mes.'
+                : `Desde la sesión ${tope + 1} del mes, se cobra como particular.`,
+          });
+        },
+        error: () => {
+          this.guardandoTope.set(false);
+          this.avisos.error('No pudimos guardar el tope', {
+            descripcion: 'Puede que otra persona lo haya cambiado. Recargá y probá de nuevo.',
+          });
+          this.cargarConvenio();
+        },
+      });
+  }
+
   private cargarConvenio(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null) {

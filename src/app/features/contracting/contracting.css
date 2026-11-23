@@ -302,3 +302,30 @@
   padding: var(--esp-4) 0;
   border-block-end: 1px solid var(--color-borde);
 }
+
+/* Tope de sesiones por mes del plan, debajo de la descripción de los precios. */
+.tope-del-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+  margin: 0 0 var(--esp-6);
+}
+
+.tope-del-plan__texto {
+  margin: 0;
+}
+
+.tope-del-plan label {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.tope-del-plan input {
+  width: 8rem;
+}
+
+.tope-del-plan .ayuda {
+  flex-basis: 100%;
+  margin: 0;
+}
