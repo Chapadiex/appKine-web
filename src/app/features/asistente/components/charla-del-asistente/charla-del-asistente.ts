@@ -144,7 +144,8 @@ export class CharlaDelAsistente {
   protected readonly deshabilitado = signal(false);
   protected readonly anuncio = signal('');
 
-  protected readonly enCurso = computed(() => this.mensajes().at(-1)?.estado === 'esperando');
+  /** `true` mientras se espera la respuesta; el botón flotante lo muestra como «pensando». */
+  readonly enCurso = computed(() => this.mensajes().at(-1)?.estado === 'esperando');
   protected readonly puedeEnviar = computed(
     () => !this.deshabilitado() && !this.enCurso() && this.texto().trim().length > 0,
   );

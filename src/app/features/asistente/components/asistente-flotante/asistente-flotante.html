@@ -3,6 +3,10 @@
   <section
     id="asistente-flotante-panel"
     class="panel"
+    [class.panel--movido]="posicion() !== null"
+    [class.panel--abajo]="panelAbajo()"
+    [style.--boton-x.px]="posicion()?.left"
+    [style.--boton-y.px]="posicion()?.top"
     aria-labelledby="asistente-flotante-titulo"
     [hidden]="!abierto()"
   >
@@ -21,23 +25,39 @@
     <app-charla-del-asistente class="panel__charla" [compacta]="true" />
   </section>
 
+  <!--
+    Orbe (23/11/2026, diseño del usuario): en reposo respira, pensando el anillo se vuelve una
+    forma que ondula, y con una respuesta sin leer el borde late. Se arrastra a cualquier lugar;
+    un clic sin arrastre abre o cierra.
+  -->
   <button
     #disparador
     type="button"
     class="disparador"
+    [class.disparador--pensando]="estado() === 'pensando'"
+    [class.disparador--listo]="estado() === 'listo'"
+    [class.disparador--arrastrando]="arrastrando()"
+    [class.disparador--derecha]="cercaDelBordeDerecho()"
+    [style.left.px]="posicion()?.left"
+    [style.top.px]="posicion()?.top"
+    [style.bottom]="posicion() ? 'auto' : null"
     aria-controls="asistente-flotante-panel"
     [attr.aria-expanded]="abierto()"
-    (click)="alternar()"
+    (pointerdown)="empezarArrastre($event)"
+    (pointermove)="arrastrar($event)"
+    (pointerup)="soltar($event)"
+    (pointercancel)="soltar($event)"
+    (click)="alClic()"
   >
-    <svg class="disparador__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M4 5h16v10H9l-5 4z"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linejoin="round"
-      />
+    <svg class="orbe" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle class="orbe__desgastado" cx="12" cy="12" r="10.6" />
+      <circle class="orbe__anillo" cx="12" cy="12" r="7.8" />
+      <path #formaInterna class="orbe__forma" d="" />
+      <circle class="orbe__centro" cx="12" cy="12" r="3.4" />
     </svg>
     <span class="disparador__texto">{{ abierto() ? 'Cerrar' : 'Asistente' }}</span>
+    @if (estado() === 'listo') {
+      <span class="visualmente-oculto">: tenés una respuesta nueva</span>
+    }
   </button>
 }
