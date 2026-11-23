@@ -116,46 +116,6 @@ button.biblioteca__titulo:hover {
   box-shadow: inset 3px 0 0 var(--color-accion-fondo);
 }
 
-.biblioteca__datos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: var(--esp-5) var(--esp-6);
-  margin: 0;
-}
-
-.biblioteca__datos dt {
-  display: flex;
-  align-items: center;
-  gap: var(--esp-2);
-  margin-bottom: var(--esp-1);
-  font-size: var(--tipo-xs);
-  font-weight: var(--peso-semi);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--color-texto-suave);
-}
-
-.biblioteca__datos dt app-icono {
-  color: var(--color-accion-fondo);
-}
-
-.biblioteca__datos dd {
-  margin: 0;
-  color: var(--color-texto-fuerte);
-}
-
-.biblioteca__dato-ancho {
-  grid-column: 1 / -1;
-}
-
-.biblioteca__pedazos {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-2);
-  margin-top: var(--esp-5);
-  font-size: var(--tipo-sm);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .biblioteca__desplegar app-icono {
     transition: none;

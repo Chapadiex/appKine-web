@@ -8,7 +8,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { Observable, catchError, of, tap } from 'rxjs';
 
 import { ListarLibrosRequestParams } from '../../../../api/generated/api/biblioteca.serviceInterface';
@@ -38,6 +39,7 @@ import {
   ordenDeServidor,
 } from '../../../../shared/components/tabla/orden-de-servidor';
 import { SubirLibro } from '../../components/subir-libro/subir-libro';
+import { DetalleDeLibro } from '../../components/detalle-de-libro/detalle-de-libro';
 import { ErrorBiblioteca, traducirErrorBiblioteca } from '../../models/biblioteca-errors';
 import {
   ESTADOS_DE_LIBRO,
@@ -85,7 +87,7 @@ export type DialogoDeBiblioteca =
     PanelLateral,
     SubirLibro,
     ProbarBusqueda,
-    RouterLink,
+    DetalleDeLibro,
   ],
   templateUrl: './biblioteca-page.html',
   styleUrl: './biblioteca-page.css',
@@ -99,6 +101,7 @@ export class BibliotecaPage {
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly ruta = inject(ActivatedRoute);
 
   protected readonly estadosDeLibro = ESTADOS_DE_LIBRO;
   protected readonly estadoEnPalabras = estadoDeLibroEnPalabras;
@@ -177,6 +180,17 @@ export class BibliotecaPage {
   private temporizadorDeBusqueda: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    // Un enlace a un libro (`?libro=ID`, también la URL vieja `/biblioteca/ID`) lo abre en su fila.
+    // Llega también desde los paneles de esta misma pantalla: se escucha, no sólo al entrar.
+    this.ruta.queryParamMap.pipe(takeUntilDestroyed()).subscribe((parametros) => {
+      const pedido = Number(parametros.get('libro'));
+      if (Number.isFinite(pedido) && pedido > 0) {
+        this.dialogo.set(null);
+        this.panelBusquedaAbierto.set(false);
+        this.desplegado.set(pedido);
+      }
+    });
+
     effect(() => {
       this.tenantContext.contextEpoch();
       untracked(() => {

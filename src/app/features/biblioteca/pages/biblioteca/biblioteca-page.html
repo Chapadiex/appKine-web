@@ -284,51 +284,11 @@
                   @if (desplegado() === libro.id) {
                     <tr class="biblioteca__detalle" [id]="'libro-detalle-' + libro.id">
                       <td colspan="6">
-                        <dl class="biblioteca__datos">
-                          <div>
-                            <dt><app-icono nombre="perfil" />Autores</dt>
-                            <dd>{{ libro.autores || 'Sin cargar' }}</dd>
-                          </div>
-                          <div>
-                            <dt><app-icono nombre="documento" />Edición</dt>
-                            <dd>{{ libro.edicion || 'Sin cargar' }}</dd>
-                          </div>
-                          <div>
-                            <dt><app-icono nombre="capas" />Área</dt>
-                            <dd>{{ libro.area || 'Sin cargar' }}</dd>
-                          </div>
-                          <div>
-                            <dt><app-icono [trazo]="trazoPdf" />Páginas</dt>
-                            <dd>{{ libro.paginas ?? 'Todavía no se contaron' }}</dd>
-                          </div>
-                          <div>
-                            <dt><app-icono nombre="info" />Estado</dt>
-                            <dd>
-                              <span [class]="claseDeEstado(libro.estado)">{{
-                                estadoEnPalabras(libro.estado)
-                              }}</span>
-                              @if (libro.estado === 'PROCESANDO' && libro.progreso !== undefined) {
-                                {{ libro.progreso }} % procesado
-                              }
-                            </dd>
-                          </div>
-                          @if (libro.estado === 'ERROR' && libro.motivoError) {
-                            <div class="biblioteca__dato-ancho">
-                              <dt><app-icono nombre="error" />Qué falló</dt>
-                              <dd>{{ libro.motivoError }}</dd>
-                            </div>
-                          }
-                          @if (rotuloDeReemplazo(libro); as rotulo) {
-                            <div class="biblioteca__dato-ancho">
-                              <dt><app-icono nombre="repetir" />Reemplazo</dt>
-                              <dd>{{ rotulo }}</dd>
-                            </div>
-                          }
-                        </dl>
-                        <a class="biblioteca__pedazos" [routerLink]="['/biblioteca', libro.id]">
-                          Ver los pedazos del libro y cómo se buscan
-                          <app-icono nombre="flecha-derecha" />
-                        </a>
+                        <app-detalle-de-libro
+                          [libro]="libro"
+                          [reemplazo]="rotuloDeReemplazo(libro)"
+                          (guardado)="consultar()"
+                        />
                       </td>
                     </tr>
                   }

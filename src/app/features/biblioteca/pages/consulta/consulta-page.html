@@ -54,7 +54,9 @@
                 @for (f of m.fuentes; track $index) {
                   <li>
                     @if (puedeAbrirLibros()) {
-                      <a [routerLink]="['/biblioteca', f.libroId]">{{ f.titulo }}</a>
+                      <a routerLink="/biblioteca" [queryParams]="{ libro: f.libroId }">{{
+                        f.titulo
+                      }}</a>
                     } @else {
                       <strong>{{ f.titulo }}</strong>
                     }

@@ -5,7 +5,7 @@
         <p>{{ problema.mensaje }}</p>
         @if (problema.causa === 'duplicado' && problema.libroId !== undefined) {
           <p>
-            <a [routerLink]="['/biblioteca', problema.libroId]">Ver el libro</a>
+            <a routerLink="/biblioteca" [queryParams]="{ libro: problema.libroId }">Ver el libro</a>
           </p>
         }
       </app-alerta>
