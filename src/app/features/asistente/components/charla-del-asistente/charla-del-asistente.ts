@@ -31,14 +31,19 @@ import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
 import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
+import { TarjetaDeAccion } from '../tarjeta-de-accion/tarjeta-de-accion';
 
 let siguienteId = 0;
-const MAX_PREGUNTA = 300;
+/** Una consulta entra en 300; una atención dictada con su nota necesita más. */
+const MAX_PREGUNTA = 600;
 /** El servidor usa los últimos tres: mandar más es ruido. */
 const MAX_TURNOS = 3;
 const MAX_FILAS_VISIBLES = 10;
 const AVISO_FIJO =
   'Responde con los datos de la sede activa y con tus permisos. Sólo consulta: no modifica nada.';
+/** Desde que el servidor propone una acción: ya no es sólo consulta, pero nada se graba sin confirmar. */
+const AVISO_CON_ACCIONES =
+  'Responde con los datos de la sede activa y con tus permisos. Antes de grabar algo te muestra qué entendió y esperás vos para confirmar.';
 
 /** Lo que se puede preguntar, como punto de partida. */
 export const SUGERENCIAS: readonly string[] = [
@@ -117,7 +122,7 @@ export interface MensajeDelAsistente {
 @Component({
   selector: 'app-charla-del-asistente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Dictado, EstadoVacio, Icono, MarkdownSeguro, RouterLink],
+  imports: [Dictado, EstadoVacio, Icono, MarkdownSeguro, RouterLink, TarjetaDeAccion],
   host: { class: 'charla', '[class.charla--compacta]': 'compacta()' },
   templateUrl: './charla-del-asistente.html',
   styleUrl: './charla-del-asistente.css',
@@ -135,7 +140,12 @@ export class CharlaDelAsistente {
   /** Único por instancia: la pantalla y el panel flotante pueden convivir en el DOM. */
   protected readonly idPregunta = `asistente-pregunta-${++siguienteId}`;
 
-  protected readonly aviso = AVISO_FIJO;
+  /** Hubo al menos una propuesta en esta charla: el aviso deja de decir "sólo consulta". */
+  private readonly huboAcciones = signal(false);
+  protected readonly aviso = computed(() =>
+    this.huboAcciones() ? AVISO_CON_ACCIONES : AVISO_FIJO,
+  );
+  protected readonly sede = this.tenantContext.consultorioId;
   protected readonly maxPregunta = MAX_PREGUNTA;
   protected readonly sugerencias = SUGERENCIAS;
   protected readonly maxFilas = MAX_FILAS_VISIBLES;
@@ -281,6 +291,9 @@ export class CharlaDelAsistente {
             respuesta.filas.length > 0 && respuesta.interpretacion.intencion !== 'COMO_SE_HACE'
               ? this.armarTabla(respuesta)
               : undefined;
+          if (respuesta.accion) {
+            this.huboAcciones.set(true);
+          }
           this.cambiarUltimo((m) => ({
             ...m,
             estado: 'listo',

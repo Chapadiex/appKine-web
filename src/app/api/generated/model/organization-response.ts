@@ -58,7 +58,8 @@ export enum OrganizationResponseOperationalStatusEnum {
     ACTIVA = 'ACTIVA',
     SUSPENDIDA = 'SUSPENDIDA',
     CANCELADA = 'CANCELADA',
-    BAJA = 'BAJA'
+    BAJA = 'BAJA',
+    SIN_ACCESO = 'SIN_ACCESO'
 };
 
 

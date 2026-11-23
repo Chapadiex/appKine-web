@@ -289,3 +289,12 @@
   flex-direction: column;
   align-items: stretch;
 }
+/* El dictado envuelve el textarea en un span: sin esto el campo queda del ancho de sus 20 columnas. */
+:host ::ng-deep .asistente__caja > .dictado {
+  width: 100%;
+}
+/* Una tarjeta de accion necesita lugar para sus campos: la burbuja que la lleva ocupa el ancho. */
+.asistente__burbuja:has(app-tarjeta-de-accion) {
+  width: min(46rem, 100%);
+  max-width: 100%;
+}

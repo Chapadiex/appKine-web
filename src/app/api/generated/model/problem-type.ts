@@ -490,6 +490,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_ASISTENTE_DESHABILITADO = 'https://akine.app/problems/asistente-deshabilitado',
 
+    HTTPS___AKINE_APP_PROBLEMS_ACCIONES_DESHABILITADAS = 'https://akine.app/problems/acciones-deshabilitadas',
+
+    HTTPS___AKINE_APP_PROBLEMS_ACCION_NO_VIGENTE = 'https://akine.app/problems/accion-no-vigente',
+
     HTTPS___AKINE_APP_PROBLEMS_DICTADO_DESHABILITADO = 'https://akine.app/problems/dictado-deshabilitado',
 
     HTTPS___AKINE_APP_PROBLEMS_DICTADO_NO_DISPONIBLE = 'https://akine.app/problems/dictado-no-disponible',
