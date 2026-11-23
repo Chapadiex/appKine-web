@@ -17,59 +17,84 @@
       </p>
     }
 
-    <div class="campo campo--12">
-      <label for="subir-libro-archivo">Archivo PDF</label>
-      <input
-        #selector
-        id="subir-libro-archivo"
-        type="file"
-        accept="application/pdf,.pdf"
-        [disabled]="enviando()"
-        [attr.aria-invalid]="intento() && archivo() === null"
-        [attr.aria-describedby]="
-          intento() && archivo() === null ? 'subir-libro-archivo-error' : null
-        "
-        (change)="elegirArchivo(selector)"
-      />
+    <!-- Zona para elegir o soltar el PDF (23/11/2026): el input cubre la zona, así el clic y el
+         arrastre funcionan igual. -->
+    <div class="campo">
+      <span class="campo__rotulo" id="subir-libro-archivo-rotulo">Archivo PDF</span>
+      <div
+        class="subir-libro__zona"
+        [class.subir-libro__zona--elegido]="archivo() !== null"
+        [class.subir-libro__zona--error]="intento() && archivo() === null"
+      >
+        <app-icono class="subir-libro__zona-icono" nombre="documento" />
+        @if (archivo(); as elegido) {
+          <span class="subir-libro__zona-titulo">{{ elegido.name }}</span>
+          <span class="subir-libro__zona-ayuda"
+            >{{ tamanio(elegido.size) }} · Hacé clic para cambiarlo</span
+          >
+        } @else {
+          <span class="subir-libro__zona-titulo">Elegí el PDF o arrastralo acá</span>
+          <span class="subir-libro__zona-ayuda">Un solo archivo PDF</span>
+        }
+        <input
+          #selector
+          id="subir-libro-archivo"
+          class="subir-libro__zona-input"
+          type="file"
+          accept="application/pdf,.pdf"
+          aria-labelledby="subir-libro-archivo-rotulo"
+          [disabled]="enviando()"
+          [attr.aria-invalid]="intento() && archivo() === null"
+          [attr.aria-describedby]="
+            intento() && archivo() === null ? 'subir-libro-archivo-error' : null
+          "
+          (change)="elegirArchivo(selector)"
+        />
+      </div>
       @if (intento() && archivo() === null) {
         <p id="subir-libro-archivo-error" class="campo__error">Elegí el PDF que querés subir.</p>
       }
     </div>
 
     @if (!esReemplazo()) {
-      <div class="campo campo--12">
-        <label for="subir-libro-titulo">Título</label>
-        <input
-          id="subir-libro-titulo"
-          type="text"
-          maxlength="300"
-          formControlName="titulo"
-          [attr.aria-invalid]="faltaTitulo()"
-          [attr.aria-describedby]="faltaTitulo() ? 'subir-libro-titulo-error' : null"
-        />
-        @if (faltaTitulo()) {
-          <p id="subir-libro-titulo-error" class="campo__error">Ingresá el título del libro.</p>
-        }
-      </div>
-      <div class="campo campo--12">
-        <label for="subir-libro-autores"
-          >Autores <span class="campo__opcional">(opcional)</span></label
-        >
-        <input id="subir-libro-autores" type="text" maxlength="500" formControlName="autores" />
-      </div>
-      <div class="campo campo--6">
-        <label for="subir-libro-edicion"
-          >Edición <span class="campo__opcional">(opcional)</span></label
-        >
-        <input id="subir-libro-edicion" type="text" maxlength="100" formControlName="edicion" />
-      </div>
-      <div class="campo campo--6">
-        <label for="subir-libro-area">Área <span class="campo__opcional">(opcional)</span></label>
-        <input id="subir-libro-area" type="text" maxlength="100" formControlName="area" />
+      <div class="subir-libro__datos">
+        <div class="campo subir-libro__ancho">
+          <label for="subir-libro-titulo">Título</label>
+          <input
+            id="subir-libro-titulo"
+            type="text"
+            maxlength="300"
+            formControlName="titulo"
+            [attr.aria-invalid]="faltaTitulo()"
+            [attr.aria-describedby]="faltaTitulo() ? 'subir-libro-titulo-error' : null"
+          />
+          @if (faltaTitulo()) {
+            <p id="subir-libro-titulo-error" class="campo__error">Ingresá el título del libro.</p>
+          }
+        </div>
+        <div class="campo subir-libro__ancho">
+          <label for="subir-libro-autores"
+            >Autores <span class="campo__opcional">(opcional)</span></label
+          >
+          <input id="subir-libro-autores" type="text" maxlength="500" formControlName="autores" />
+        </div>
+        <div class="campo">
+          <label for="subir-libro-edicion"
+            >Edición <span class="campo__opcional">(opcional)</span></label
+          >
+          <input id="subir-libro-edicion" type="text" maxlength="100" formControlName="edicion" />
+        </div>
+        <div class="campo">
+          <label for="subir-libro-area">Área <span class="campo__opcional">(opcional)</span></label>
+          <input id="subir-libro-area" type="text" maxlength="100" formControlName="area" />
+        </div>
       </div>
     }
 
-    <div class="campo campo--12">
+    <div
+      class="campo subir-libro__declaracion"
+      [class.subir-libro__declaracion--error]="faltaDeclaracion()"
+    >
       <label class="subir-libro__casilla" for="subir-libro-declaracion">
         <input
           id="subir-libro-declaracion"

@@ -23,3 +23,121 @@
   width: 100%;
   accent-color: var(--color-acento);
 }
+
+/* Zona de arrastrar y soltar (23/11/2026): reemplaza al selector de archivo del navegador. */
+.subir-libro__zona {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-2);
+  padding: var(--esp-7) var(--esp-5);
+  border: 2px dashed var(--color-borde-control);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-sutil);
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.subir-libro__zona:hover,
+.subir-libro__zona:focus-within,
+.subir-libro__zona:has(.subir-libro__zona-input:active) {
+  border-color: var(--color-accion-fondo);
+  background: color-mix(in srgb, var(--color-accion-fondo) 6%, var(--color-superficie));
+}
+
+.subir-libro__zona:focus-within {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.subir-libro__zona--elegido {
+  border-style: solid;
+  border-color: var(--color-accion-fondo);
+  background: color-mix(in srgb, var(--color-accion-fondo) 6%, var(--color-superficie));
+}
+
+.subir-libro__zona--error {
+  border-color: var(--color-peligro);
+}
+
+.subir-libro__zona-icono {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-accion-fondo) 14%, var(--color-superficie));
+  color: var(--color-accion-fondo);
+}
+
+.subir-libro__zona-titulo {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+  overflow-wrap: anywhere;
+}
+
+.subir-libro__zona-ayuda {
+  font-size: var(--tipo-sm);
+  color: var(--color-texto-suave);
+}
+
+/* El input invisible cubre la zona: recibe el clic y el archivo que se suelta. */
+.campo .subir-libro__zona-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.subir-libro__zona-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Datos del libro en dos columnas; título y autores a todo el ancho. */
+.subir-libro__datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--esp-5);
+}
+
+.subir-libro__ancho {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 30rem) {
+  .subir-libro__datos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Declaración en un recuadro, para que no pase como letra chica. */
+.subir-libro__declaracion {
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+}
+
+.subir-libro__declaracion--error {
+  border-color: var(--color-peligro);
+}
+
+.subir-libro__casilla {
+  align-items: center;
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subir-libro__zona {
+    transition: none;
+  }
+}

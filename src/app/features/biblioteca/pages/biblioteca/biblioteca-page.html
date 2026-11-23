@@ -154,7 +154,7 @@
                   <th scope="col" appOrdenable [tabla]="orden" columna="titulo">Título</th>
                   <th scope="col" class="tabla__col--secundaria">Edición</th>
                   <th scope="col" class="tabla__col--secundaria">Área</th>
-                  <th scope="col" class="tabla__col--secundaria">Páginas</th>
+                  <th scope="col" class="tabla__col--secundaria biblioteca__numero">Páginas</th>
                   <th scope="col" appOrdenable [tabla]="orden" columna="estado">Estado</th>
                   <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
                 </tr>
@@ -163,19 +163,42 @@
                 @for (libro of libros(); track libro.id) {
                   <tr>
                     <td>
-                      <a class="biblioteca__titulo" [routerLink]="['/biblioteca', libro.id]">{{
-                        libro.titulo
-                      }}</a>
-                      @if (libro.autores) {
-                        <span class="biblioteca__autor">{{ libro.autores }}</span>
-                      }
-                      @if (rotuloDeReemplazo(libro); as rotulo) {
-                        <span class="biblioteca__reemplazo">{{ rotulo }}</span>
+                      <div class="biblioteca__libro">
+                        <app-icono class="biblioteca__libro-icono" nombre="documento" />
+                        <div>
+                          <a class="biblioteca__titulo" [routerLink]="['/biblioteca', libro.id]">{{
+                            libro.titulo
+                          }}</a>
+                          @if (libro.autores) {
+                            <span class="biblioteca__autor">{{ libro.autores }}</span>
+                          }
+                          @if (rotuloDeReemplazo(libro); as rotulo) {
+                            <span class="biblioteca__reemplazo">{{ rotulo }}</span>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="tabla__col--secundaria">
+                      @if (libro.edicion) {
+                        {{ libro.edicion }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
                       }
                     </td>
-                    <td class="tabla__col--secundaria">{{ libro.edicion || '-' }}</td>
-                    <td class="tabla__col--secundaria">{{ libro.area || '-' }}</td>
-                    <td class="tabla__col--secundaria">{{ libro.paginas ?? '-' }}</td>
+                    <td class="tabla__col--secundaria">
+                      @if (libro.area) {
+                        {{ libro.area }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
+                      }
+                    </td>
+                    <td class="tabla__col--secundaria biblioteca__numero">
+                      @if (libro.paginas !== undefined && libro.paginas !== null) {
+                        {{ libro.paginas }}
+                      } @else {
+                        <span class="biblioteca__vacio" aria-label="Sin dato">—</span>
+                      }
+                    </td>
                     <td>
                       <span [class]="claseDeEstado(libro.estado)">{{
                         estadoEnPalabras(libro.estado)

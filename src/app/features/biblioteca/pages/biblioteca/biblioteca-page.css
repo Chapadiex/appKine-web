@@ -35,3 +35,30 @@
   display: block;
   font-weight: var(--peso-semi);
 }
+
+/* Título con su ícono de libro y el autor debajo (23/11/2026). */
+.biblioteca__libro {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+}
+
+.biblioteca__libro-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio-md);
+  background: color-mix(in srgb, var(--color-accion-fondo) 12%, var(--color-superficie));
+  color: var(--color-accion-fondo);
+}
+
+.biblioteca__vacio {
+  color: var(--color-texto-suave);
+}
+
+.biblioteca__numero {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
