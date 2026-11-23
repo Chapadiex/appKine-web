@@ -57,3 +57,6 @@ logs/
 # Estado del modo live (servidor, sesiones, anotaciones); su config.json sí se versiona.
 .impeccable/live/*
 !.impeccable/live/config.json
+
+# Avance de la siembra del Centro Demo (npm run demo:sembrar)
+/e2e/demo/.estado/

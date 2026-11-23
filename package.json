@@ -18,6 +18,7 @@
     "e2e:ui": "playwright test --ui",
     "manual:capturas": "playwright test --project=manual --workers=1",
     "manual:verificar": "node scripts/verificar-manual.mjs --en-vivo",
+    "demo:sembrar": "playwright test --project=demo --workers=1",
     "a11y:contraste": "playwright test --project=contraste-claro --project=contraste-oscuro",
     "a11y:movil": "playwright test --project=movil",
     "format": "prettier --write \"src/**/*.{ts,html,css,json}\" \"e2e/**/*.ts\"",
