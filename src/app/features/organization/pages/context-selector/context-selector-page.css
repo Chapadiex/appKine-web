@@ -1,0 +1,34 @@
+/* Spinner mientras se buscan los contextos o se entra a uno (23/11/2026). */
+.esperando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-8);
+}
+
+.esperando__giro {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--color-borde);
+  border-top-color: var(--color-acento);
+  border-radius: 50%;
+  animation: esperando-gira 0.8s linear infinite;
+}
+
+.esperando__texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+@keyframes esperando-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esperando__giro {
+    animation-duration: 2.4s;
+  }
+}

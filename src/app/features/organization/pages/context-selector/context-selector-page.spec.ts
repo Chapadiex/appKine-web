@@ -133,15 +133,33 @@ describe('ContextSelectorPage', () => {
     httpMock.expectNone(URL_CANJE);
   });
 
-  it('con un solo contexto si dice que no hacia falta elegir', async () => {
+  it('mientras entra solo muestra un spinner, sin tarjeta', async () => {
     vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
     const fixture = await pintar([CONTEXTO_BELGRANO]);
 
-    expect(texto(fixture)).toContain('Centro Kinesico Belgrano');
-    expect(texto(fixture)).toContain('Tenés un solo lugar de trabajo habilitado');
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.acceso-tarjeta')).toBeNull();
+    expect(el.querySelector('[role="status"]')?.textContent).toContain(
+      'Entrando a Centro Kinesico Belgrano',
+    );
 
     httpMock.expectOne(URL_CANJE).flush(tokenDeContexto(1, 1));
+  });
+
+  it('con varias sedes del mismo centro y ninguna elegida antes entra a la primera', async () => {
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = await pintar([
+      CONTEXTO_BELGRANO,
+      { ...CONTEXTO_BELGRANO, consultorioId: 2, consultorioName: 'Sede Sur' },
+    ]);
+
+    expect(fixture.nativeElement.querySelectorAll('.opcion').length).toBe(0);
+    expect(httpMock.expectOne(URL_CANJE).request.body).toEqual({
+      organizationId: 1,
+      consultorioId: 1,
+    });
   });
 
   it('con varios contextos los lista por nombre y no selecciona nada solo', async () => {
@@ -154,7 +172,25 @@ describe('ContextSelectorPage', () => {
     expect(tenantContext.context()).toBeNull();
   });
 
-  it('con varios contextos ofrece primero el último elegido, con el foco, sin entrar solo', async () => {
+  it('con varios contextos entra solo al último elegido: la sede se cambia desde la barra', async () => {
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = await pintar([
+      CONTEXTO_BELGRANO,
+      { ...CONTEXTO_CABALLITO, lastSelected: true },
+    ]);
+
+    expect(fixture.nativeElement.querySelectorAll('.opcion').length).toBe(0);
+    expect(httpMock.expectOne(URL_CANJE).request.body).toEqual({
+      organizationId: 2,
+      consultorioId: 7,
+    });
+  });
+
+  it('con un motivo ofrece primero el último elegido, con el foco, sin entrar solo', async () => {
+    TestBed.resetTestingModule();
+    await montar({ motivo: 'sede-inactiva' });
+
     const fixture = await pintar([
       CONTEXTO_BELGRANO,
       { ...CONTEXTO_CABALLITO, lastSelected: true },
