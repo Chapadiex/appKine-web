@@ -43,7 +43,7 @@
   padding: var(--esp-3) var(--esp-4);
   border: 1px solid var(--color-borde-sutil);
   border-radius: var(--radio-md);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie);
   color: var(--color-texto);
   font: inherit;
   font-size: var(--tipo-sm);
@@ -85,7 +85,8 @@
   padding: var(--esp-3) var(--esp-4);
   border: 0;
   border-radius: var(--radio-lg) var(--radio-lg) var(--radio-lg) var(--radio-sm);
-  background: var(--color-superficie-sutil);
+  background: var(--color-superficie);
+  box-shadow: 0 0 0 1px var(--color-borde-sutil);
   color: var(--color-texto);
   font-size: var(--tipo-sm);
   line-height: 1.5;
@@ -180,6 +181,7 @@
   resize: none;
 }
 .asistente__pie {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -187,6 +189,7 @@
 }
 /* Enviar: botón redondo en color de acción, apagado hasta que hay texto. */
 .asistente__enviar {
+  margin-inline-start: auto;
   display: grid;
   place-items: center;
   width: 2.25rem;

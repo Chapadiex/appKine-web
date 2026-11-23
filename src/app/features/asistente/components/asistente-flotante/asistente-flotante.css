@@ -351,13 +351,15 @@
   width: min(26rem, calc(100vw - var(--flotante-izquierda) - var(--esp-4)));
   height: min(36rem, calc(100dvh - 7rem));
   padding: var(--esp-4);
-  border: 1px solid var(--color-borde-control);
-  border-top: 3px solid var(--color-accion-fondo);
+  padding-top: 0;
+  overflow: hidden;
+  border: 2px solid var(--color-accion-fondo);
   border-radius: var(--radio-lg);
-  background: var(--color-superficie);
+  /* Fondo con un tinte del color de acción: el panel abierto no se confunde con la pantalla. */
+  background: color-mix(in srgb, var(--color-accion-fondo) 6%, var(--color-superficie));
   box-shadow:
-    0 18px 40px rgb(0 0 0 / 0.18),
-    var(--sombra-flotante);
+    0 24px 56px rgb(0 0 0 / 0.28),
+    0 0 0 4px color-mix(in srgb, var(--color-accion-fondo) 18%, transparent);
   box-sizing: border-box;
 }
 .panel[hidden] {
@@ -369,9 +371,12 @@
   justify-content: space-between;
   gap: var(--esp-2);
 }
+/* Cabecera en el color de acción, de borde a borde. */
 .panel__cabecera {
-  padding-bottom: var(--esp-3);
-  border-bottom: 1px solid var(--color-borde-sutil);
+  margin-inline: calc(-1 * var(--esp-4));
+  padding: var(--esp-3) var(--esp-3) var(--esp-3) var(--esp-4);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
 }
 .panel__titulo {
   display: flex;
@@ -379,12 +384,12 @@
   gap: var(--esp-2);
   margin: 0;
   font-size: var(--tipo-base);
-  color: var(--color-texto-fuerte);
+  color: inherit;
 }
 .panel__marca {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--color-accion-fondo);
+  color: inherit;
 }
 .panel__nueva {
   display: inline-flex;
@@ -395,14 +400,19 @@
   border: 0;
   border-radius: var(--radio-md);
   background: none;
-  color: var(--color-accion-fondo);
+  color: inherit;
   font: inherit;
   font-size: var(--tipo-sm);
   font-weight: var(--peso-semi);
   cursor: pointer;
 }
+.panel__nueva:focus-visible,
+.panel__cerrar:focus-visible {
+  outline: 2px solid var(--color-accion-texto);
+  outline-offset: 2px;
+}
 .panel__nueva:hover {
-  background: var(--color-hover);
+  background: color-mix(in srgb, var(--color-accion-texto) 16%, transparent);
 }
 .panel__acciones {
   display: flex;
@@ -417,14 +427,13 @@
   border: 0;
   border-radius: var(--radio-md);
   background: transparent;
-  color: var(--color-texto-suave);
+  color: inherit;
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
 }
 .panel__cerrar:hover {
-  background: var(--color-hover);
-  color: var(--color-texto-fuerte);
+  background: color-mix(in srgb, var(--color-accion-texto) 16%, transparent);
 }
 .panel__charla {
   flex: 1;
