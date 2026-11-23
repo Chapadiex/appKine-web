@@ -11,6 +11,7 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { CobroDeSuscripcionResponse } from '../model/models';
 import { CuentasDePlataformaResponse } from '../model/models';
 import { GrantPlatformRoleRequest } from '../model/models';
 import { GrantSupportAccessRequest } from '../model/models';
@@ -19,6 +20,7 @@ import { PlatformOrganizationPageResponse } from '../model/models';
 import { PlatformRoleResponse } from '../model/models';
 import { PlatformSubscriptionResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
+import { RegistrarCobroRequest } from '../model/models';
 import { SupportAccessResponse } from '../model/models';
 
 
@@ -38,6 +40,10 @@ export interface GrantSupportAccessRequestParams {
     grantSupportAccessRequest: GrantSupportAccessRequest;
 }
 
+export interface ListCobrosDeSuscripcionRequestParams {
+    orgId: number;
+}
+
 export interface ListPlatformOrganizationsRequestParams {
     q?: string;
     status?: 'PRUEBA' | 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
@@ -48,6 +54,11 @@ export interface ListPlatformOrganizationsRequestParams {
 
 export interface ListSupportAccessRequestParams {
     orgId: number;
+}
+
+export interface RegistrarCobroDeSuscripcionRequestParams {
+    orgId: number;
+    registrarCobroRequest: RegistrarCobroRequest;
 }
 
 export interface RevokePlatformRoleRequestParams {
@@ -103,6 +114,14 @@ export interface PlataformaServiceInterface {
     grantSupportAccess(requestParameters: GrantSupportAccessRequestParams, extraHttpRequestParams?: any): Observable<SupportAccessResponse>;
 
     /**
+     * Historial de cobros de la suscripcion de un centro
+     * Todos los cobros registrados al centro, el mas nuevo primero. El vencimiento vigente es el periodoHasta del primero, y tambien viaja como pagadoHasta en el listado de centros y en la contratacion. Reservado a la administracion de plataforma.
+     * @endpoint get /api/v1/platform/organizations/{orgId}/cobros
+* @param requestParameters
+     */
+    listCobrosDeSuscripcion(requestParameters: ListCobrosDeSuscripcionRequestParams, extraHttpRequestParams?: any): Observable<Array<CobroDeSuscripcionResponse>>;
+
+    /**
      * Listado de centros, para la administracion de plataforma
      * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error. DP-45: sort ordena por nombre, slug o creadaEn; sin el, por nombre.
      * @endpoint get /api/v1/platform/organizations
@@ -124,6 +143,14 @@ export interface PlataformaServiceInterface {
 * @param requestParameters
      */
     listSupportAccess(requestParameters: ListSupportAccessRequestParams, extraHttpRequestParams?: any): Observable<Array<SupportAccessResponse>>;
+
+    /**
+     * Registrar un cobro de la suscripcion de un centro
+     * Extiende el periodo pagado del centro en la cantidad de meses (1 a 12). El periodo arranca en el vencimiento anterior si todavia no llego (pagar antes conserva el ciclo) o ahora si ya paso o es el primer cobro, y suma meses calendario en la zona del centro. El centro vuelve a operar normalmente en el acto.  Sobre una suscripcion en PRUEBA, el cobro la pasa a ACTIVA. Sobre una SUSPENDIDA o CANCELADA guardada responde 409 subscription-suspended: primero se reactiva por la transicion de siempre. Reservado a la administracion de plataforma.
+     * @endpoint post /api/v1/platform/organizations/{orgId}/cobros
+* @param requestParameters
+     */
+    registrarCobroDeSuscripcion(requestParameters: RegistrarCobroDeSuscripcionRequestParams, extraHttpRequestParams?: any): Observable<CobroDeSuscripcionResponse>;
 
     /**
      * Revocar un rol de plataforma

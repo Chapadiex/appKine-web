@@ -199,11 +199,87 @@ describe('OfertasDeLaSedePage', () => {
     );
   });
 
+  it('elegir el servicio completa nombre y duración, y le asocia la práctica del mismo código', async () => {
+    const fixture = await montar();
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    abrir(fixture, 'Publicar un servicio en la sede');
+    elegirServicio(fixture, httpMock, '1', [
+      { id: 55, codigo: 'KRES', name: 'Kinesiologia respiratoria' },
+    ]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-duracion')?.value).toBe('45');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-obra-social')?.checked).toBe(
+      true,
+    );
+    expect(anfitrion.textContent).toContain('Se le asocia sola la práctica');
+
+    enviar(fixture, 'form[novalidate]');
+    httpMock
+      .expectOne((p: HttpRequest<unknown>) => p.method === 'POST' && p.url === OFERTAS)
+      .flush({ id: 30, nombreComercial: 'Kinesiologia respiratoria', version: 0 });
+    const practicas = httpMock.expectOne(
+      (p: HttpRequest<unknown>) => p.method === 'PUT' && p.url === `${OFERTAS}/30/practicas`,
+    );
+    expect(practicas.request.body).toEqual({
+      practicaIds: [55],
+      practicaPrincipalId: 55,
+      expectedVersion: 0,
+    });
+    practicas.flush({ ofertaId: 30, practicas: [] });
+    httpMock.match((p) => p.method === 'GET').forEach((pedido) => pedido.flush([]));
+  });
+
+  it('un servicio grupal sugiere una hora y habilita el cupo; "Siguiente" exige lo esencial', async () => {
+    const YOGA = {
+      ...SERVICIO,
+      id: 2,
+      codigo: undefined,
+      nombre: 'Yoga',
+      modalidadDefault: 'GRUPAL',
+    };
+    const fixture = await montar({ catalogo: [SERVICIO, YOGA] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const capacidad = () => anfitrion.querySelector<HTMLInputElement>('#alta-oferta-capacidad');
+
+    abrir(fixture, 'Publicar un servicio en la sede');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-1')?.hasAttribute('hidden')).toBe(false);
+
+    elegirServicio(fixture, httpMock, '2');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe('Yoga');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-duracion')?.value).toBe('60');
+    expect(capacidad()?.disabled).toBe(false);
+    expect(Number(capacidad()?.value)).toBeGreaterThan(1);
+
+    escribir(fixture, '#alta-oferta-duracion', '0');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-1')?.hasAttribute('hidden')).toBe(false);
+
+    escribir(fixture, '#alta-oferta-duracion', '50');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-2')?.hasAttribute('hidden')).toBe(false);
+
+    // Volver a uno individual fija el cupo en 1 y respeta el nombre escrito a mano.
+    escribir(fixture, '#alta-oferta-nombre', 'Yoga para adultos');
+    elegirServicio(fixture, httpMock, '1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
+      'Yoga para adultos',
+    );
+    expect(capacidad()?.value).toBe('1');
+    expect(capacidad()?.disabled).toBe(true);
+  });
+
   it('el alta OMITE lo que quedo en heredar: heredar no es apagar', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', '45');
     enviar(fixture, 'form[novalidate]');
@@ -251,15 +327,15 @@ describe('OfertasDeLaSedePage', () => {
       (opcion) => (opcion as HTMLOptionElement).value,
     );
     expect(opciones).toContain('POR_CLASE');
-    const ayuda = host.querySelector('#alta-oferta-esquema-ayuda')?.textContent ?? '';
-    expect(ayuda).toContain('POR_CLASE');
-    expect(ayuda).toContain('asiste');
-    expect(ayuda).toContain('la ausencia no genera deuda');
 
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Yoga por clase');
     escribir(fixture, '#alta-oferta-duracion', '60');
     elegir(fixture, '#alta-oferta-esquema', 'POR_CLASE');
+    // La explicacion del esquema elegido, en palabras y no con el nombre del enum.
+    const ayuda = host.querySelector('#alta-oferta-esquema-ayuda')?.textContent ?? '';
+    expect(ayuda).toContain('asiste');
+    expect(ayuda).toContain('la ausencia no genera deuda');
     enviar(fixture, 'form[novalidate]');
 
     const alta = httpMock.expectOne(
@@ -612,7 +688,7 @@ describe('OfertasDeLaSedePage', () => {
 
     httpMock.expectNone(esAlta());
     const anfitrion = fixture.nativeElement as HTMLElement;
-    expect(anfitrion.textContent).toContain('Toda actividad cuelga de un servicio del catalogo');
+    expect(anfitrion.textContent).toContain('Toda actividad cuelga de un servicio del catálogo');
     expect(anfitrion.textContent).toContain('El nombre comercial es obligatorio');
   });
 
@@ -623,7 +699,7 @@ describe('OfertasDeLaSedePage', () => {
 
     httpMock.expectNone(esAlta());
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'La duración es obligatoria y tiene que ser mayor a cero',
+      'Tiene que ser mayor a cero.',
     );
   });
 
@@ -715,14 +791,16 @@ describe('OfertasDeLaSedePage', () => {
 
     // La baja de un servicio global no cascadea: la fila tiene que decir "Masoterapia" y no
     // "Servicio #2", que es el id pelado justo en el caso que esta regla existe para sostener.
-    expect(anfitrion.textContent).toContain('Masoterapia (MASO)');
+    expect(anfitrion.textContent).toContain('Masoterapia');
 
     // Pero ofrecerlo en el alta seria empujar al usuario a un 409.
     abrir(fixture, 'Publicar un servicio en la sede');
+    anfitrion.querySelector('#alta-oferta-servicio')?.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
     const opciones = [
-      ...anfitrion.querySelectorAll<HTMLOptionElement>('#alta-oferta-servicio option'),
+      ...anfitrion.querySelectorAll<HTMLElement>('app-selector-con-buscador [role="option"]'),
     ].map((opcion) => opcion.textContent?.trim());
-    expect(opciones).toEqual(['Elegí un servicio', 'Kinesiologia respiratoria (KRES)']);
+    expect(opciones).toEqual(['Kinesiologia respiratoria']);
   });
 
   it('si el catalogo no carga la pantalla sigue en pie y lo dice en el selector', async () => {
@@ -735,7 +813,7 @@ describe('OfertasDeLaSedePage', () => {
     expect(anfitrion.textContent).toContain('Servicio #1');
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    expect(anfitrion.textContent).toContain('No pudimos traer el catalogo de servicios');
+    expect(anfitrion.textContent).toContain('No pudimos traer el catálogo de servicios');
   });
 
   // -----------------------------------------------------------------------------------------
@@ -897,7 +975,7 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Exige prepago en recepción.');
+    expect(texto).toContain('Exige prepago');
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.tipo).toBe('exito');
     expect(aviso?.titulo).toContain('exige prepago');
@@ -953,7 +1031,9 @@ describe('OfertasDeLaSedePage', () => {
     const anfitrion = fixture.nativeElement as HTMLElement;
 
     expect(anfitrion.querySelector('app-panel-lateral')).not.toBeNull();
-    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-servicio')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
 
     // Una sola vez: cerrar y volver a leer una lista vacía no reabre el alta.
     anfitrion.querySelector<HTMLButtonElement>('.panel-lateral__cerrar')?.click();
@@ -1005,7 +1085,9 @@ describe('OfertasDeLaSedePage', () => {
     const fixture = await montarConEntrada({ nuevaOferta: '1' }, [VIGENTE]);
     const anfitrion = fixture.nativeElement as HTMLElement;
 
-    expect(anfitrion.querySelector<HTMLSelectElement>('#alta-oferta-servicio')?.value).toBe('1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-servicio')?.value).toBe(
+      'Kinesiologia respiratoria',
+    );
   });
 
   it('?nuevaOferta= de un servicio que no se puede ofertar no abre nada', async () => {
@@ -1038,16 +1120,24 @@ describe('OfertasDeLaSedePage', () => {
     const fixture = await montar();
 
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Pilates reformer');
-    elegir(fixture, '#alta-oferta-modalidad', 'GRUPAL');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'necesita capacidad mayor a 1',
-    );
+    // El servicio es individual: la capacidad queda en 1 y bloqueada hasta elegir Grupal.
+    const capacidad = fixture.nativeElement.querySelector(
+      '#alta-oferta-capacidad',
+    ) as HTMLInputElement;
+    expect(capacidad.disabled).toBe(true);
+    (
+      fixture.nativeElement.querySelector(
+        '#alta-oferta-modalidad input[value="GRUPAL"]',
+      ) as HTMLInputElement
+    ).click();
+    fixture.detectChanges();
+    expect(capacidad.disabled).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Personas por turno');
     escribir(fixture, '#alta-oferta-duracion', '60');
     escribir(fixture, '#alta-oferta-capacidad', '6');
     escribir(fixture, '#alta-oferta-precio', '9000');
-    escribir(fixture, '#alta-oferta-moneda', 'usd');
     elegir(fixture, '#alta-oferta-esquema', 'POR_PACK');
     escribir(fixture, '#alta-oferta-descripcion', '  Con máquina  ');
     elegir(fixture, '#alta-oferta-caso', 'false');
@@ -1065,7 +1155,7 @@ describe('OfertasDeLaSedePage', () => {
       duracionMinutos: 60,
       capacidad: 6,
       precioBase: 9000,
-      moneda: 'USD',
+      moneda: 'ARS',
       esquemaCobro: 'POR_PACK',
       requiereCasoClinico: false,
       generaRegistroClinico: true,
@@ -1184,15 +1274,16 @@ describe('OfertasDeLaSedePage', () => {
     await fixture.whenStable();
   });
 
-  it('la fila muestra la descripción y el fin de vigencia cuando los hay', async () => {
+  it('la fila muestra la vigencia en dos renglones y el precio con formato', async () => {
     const fixture = await montar({
-      ofertas: [{ ...VIGENTE, descripcion: 'Para adultos', vigenciaHasta: '2026-12-31' }],
+      ofertas: [{ ...VIGENTE, vigenciaHasta: '2026-12-31', precioBase: 12000 }],
     });
     const fila = (fixture.nativeElement as HTMLElement).querySelector('tbody tr');
 
-    expect(fila?.textContent).toContain('Para adultos');
-    expect(fila?.textContent).toContain('(exclusivo)');
+    expect(fila?.querySelector('.celda-fecha')?.textContent?.trim()).toBe('01/01/2026');
+    expect(fila?.textContent).toContain('Hasta 31/12/2026');
     expect(fila?.textContent).not.toContain('Sin fecha de fin');
+    expect(fila?.querySelector('.celda-precio')?.textContent?.trim()).toBe('$ 12.000,00');
   });
 
   /**
@@ -1296,7 +1387,7 @@ describe('OfertasDeLaSedePage', () => {
     campos?: { readonly duracion?: string; readonly capacidad?: string },
   ) {
     abrir(fixture, 'Publicar un servicio en la sede');
-    elegir(fixture, '#alta-oferta-servicio', '1');
+    elegirServicio(fixture, httpMock, '1');
     escribir(fixture, '#alta-oferta-nombre', 'Kinesio respiratoria');
     escribir(fixture, '#alta-oferta-duracion', campos?.duracion ?? '45');
     escribir(fixture, '#alta-oferta-capacidad', campos?.capacidad ?? '1');
@@ -1409,5 +1500,32 @@ function marcar(fixture: { nativeElement: HTMLElement; detectChanges(): void }, 
   }
   casilla.checked = true;
   casilla.dispatchEvent(new Event('change'));
+  fixture.detectChanges();
+}
+
+/**
+ * Elige el servicio del alta y contesta la busqueda de su practica (del mismo codigo) que la
+ * pantalla dispara al elegirlo, para que no quede un pedido abierto.
+ */
+function elegirServicio(
+  fixture: { nativeElement: HTMLElement; detectChanges(): void },
+  httpMock: HttpTestingController,
+  valor: string,
+  practicas: readonly { id: number; codigo: string; name: string }[] = [],
+) {
+  const campo = fixture.nativeElement.querySelector<HTMLInputElement>('#alta-oferta-servicio');
+  campo?.dispatchEvent(new Event('focus'));
+  fixture.detectChanges();
+  const opcion = fixture.nativeElement.querySelector<HTMLElement>(
+    `app-selector-con-buscador [role="option"][data-valor="${valor}"]`,
+  );
+  if (opcion === null) {
+    throw new Error(`No existe la opcion de servicio ${valor}`);
+  }
+  opcion.click();
+  fixture.detectChanges();
+  httpMock
+    .match((peticion) => peticion.url.endsWith('/catalogos/practicas'))
+    .forEach((pedido) => pedido.flush({ content: practicas }));
   fixture.detectChanges();
 }

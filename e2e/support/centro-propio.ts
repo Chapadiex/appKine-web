@@ -9,7 +9,7 @@ import { ApiAkine, Centro, altaDeCentro, comoProfesional } from './sembrado';
  * <p><b>Por que no el centro compartido de `agenda-setup`.</b> Estos specs abren y cierran la caja,
  * arman y anulan lotes, otorgan y quitan permisos: estado de la SEDE, no de un turno. Sobre el
  * centro compartido le cambiarian el estado a los `flujo-*` que corren al lado (la caja es una por
- * sede), y sumar miembros a un centro BASICO lo lleva al tope del plan: `plan-limit-exceeded` ya
+ * sede), y sumar miembros a un centro BASE lo lleva al tope del plan: `plan-limit-exceeded` ya
  * rompio el CI asi. Un centro propio son dos altas mas contra el cupo de `esperarCupoDeRegistro`.
  *
  * <p>Viven en el proyecto `chromium` (no se llaman `flujo-*`) para no depender del sembrado de

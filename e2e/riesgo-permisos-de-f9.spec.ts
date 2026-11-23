@@ -28,7 +28,7 @@ import { colaboradoraActiva, ingresarAlCentro } from './support/sembrado-pantall
  * </ol>
  *
  * <p>Centro propio (`support/centro-propio.ts`): suma una administrativa, y sobre el centro
- * compartido eso acerca al tope de miembros del plan BASICO.
+ * compartido eso acerca al tope de miembros del plan BASE.
  */
 test.describe.configure({ mode: 'default' });
 

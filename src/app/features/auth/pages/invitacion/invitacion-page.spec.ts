@@ -109,7 +109,47 @@ describe('InvitacionPage', () => {
     expect(anfitrion.textContent).toContain('Sede Centro');
     // Y explica por que no va a recibir un correo de activacion, que es lo que esperaria
     // cualquiera que se haya registrado antes en AKINE.
-    expect(anfitrion.textContent).toContain('correo de activación');
+    expect(anfitrion.textContent).toContain('No vas a recibir otro correo');
+    // El codigo del rol no se muestra: es un dato interno, no algo que el invitado entienda.
+    expect(anfitrion.textContent).not.toContain('PROFESIONAL');
+    expect(anfitrion.textContent).toContain('te invitó a sumarte a su equipo');
+  });
+
+  it('a quien va a administrar el centro le da la bienvenida, no lo invita a colaborar', async () => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({
+      ...SIN_CUENTA,
+      roleCode: 'ORG_ADMIN',
+      consultorioNombre: undefined,
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('h1')?.textContent).toContain('Te damos la bienvenida');
+    expect(anfitrion.querySelector('.invitacion__centro-nombre')?.textContent).toContain(
+      'Centro Belgrano',
+    );
+    expect(anfitrion.textContent).not.toContain('colabor');
+    expect(anfitrion.textContent).not.toContain('ORG_ADMIN');
+    expect(anfitrion.textContent).not.toContain('Sede');
+    // Al duenio no lo invito nadie: ni "avisale a quien te invito" ni "Rechazar".
+    expect(anfitrion.textContent).not.toContain('quien te invitó');
+    expect(anfitrion.textContent).not.toContain('Rechazar');
+    expect(anfitrion.querySelector('button[type="submit"]')?.textContent).toContain(
+      'Crear mi cuenta',
+    );
+  });
+
+  it.each([
+    [['KINESIOLOGIA'], 'acceso/kinesiologia.jpg'],
+    [['ACTIVIDADES'], 'acceso/actividades.jpg'],
+    [['ACTIVIDADES', 'KINESIOLOGIA'], 'acceso/kine-y-actividades.jpg'],
+    [[], 'acceso/kinesiologia.jpg'],
+  ])('con los servicios %j muestra %s', async (servicios, imagen) => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({ ...SIN_CUENTA, servicios });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+
+    expect(anfitrion.querySelector('.invitacion__imagen')?.getAttribute('src')).toBe(imagen);
   });
 
   it('a quien ya tiene cuenta no le pide nada: pedirle contraseña seria cambiarsela', async () => {
@@ -160,6 +200,26 @@ describe('InvitacionPage', () => {
       perfil: { ...perfil, matricula: 'MP 5000' },
     });
     peticion.flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: false });
+  });
+
+  it('al dueño que acepta le dice que su cuenta está lista, con el tilde centrado', async () => {
+    TestBed.resetTestingModule();
+    const fixture = await montarLista({
+      ...SIN_CUENTA,
+      roleCode: 'ORG_ADMIN',
+      requiereRegistro: false,
+    });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    aceptar(fixture);
+    httpMock
+      .expectOne(ACCEPT)
+      .flush({ cuentaId: 1, membershipId: 2, organizationId: 3, cuentaCreada: false });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(anfitrion.querySelector('h1')?.textContent).toContain('Tu cuenta está lista');
+    expect(anfitrion.querySelector('.invitacion__cabecera .acceso-icono--exito')).not.toBeNull();
+    expect(anfitrion.querySelector('.invitacion__marca')).not.toBeNull();
   });
 
   it('el alta exige nombre, contraseña y los términos vigentes antes de mandar nada', async () => {

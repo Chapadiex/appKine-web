@@ -45,9 +45,12 @@
   align-items: center;
   gap: var(--esp-2);
   white-space: nowrap;
-  padding: var(--esp-1) var(--esp-4);
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 1.75rem;
+  padding: 0 var(--esp-3);
   border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-pastilla);
+  border-radius: var(--radio-md);
   font-size: var(--tipo-xs);
   font-weight: var(--peso-semi);
 }
@@ -76,7 +79,214 @@
 }
 
 .marca-ia {
-  color: var(--color-acento);
-  border-color: var(--color-acento);
+  background: var(--color-ia-fondo);
+  color: var(--color-ia-texto);
+  border-color: var(--color-ia);
   font-weight: var(--peso-fuerte);
+}
+
+/*
+ * Globo propio en vez del `title` nativo: sale al instante, con la tipografia de la app, sobre la
+ * insignia y con su flecha. Tambien con el foco del teclado. Los colores son los del texto y la
+ * superficie invertidos, asi que se da vuelta solo en el tema oscuro.
+ */
+.marca-plan[data-globo],
+.marca-ia[data-globo] {
+  position: relative;
+  cursor: default;
+}
+
+[data-globo]::after,
+[data-globo]::before {
+  position: absolute;
+  left: 50%;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+[data-globo]::after {
+  content: attr(data-globo);
+  bottom: calc(100% + var(--esp-3));
+  transform: translateX(-50%);
+  padding: var(--esp-2) var(--esp-4);
+  border-radius: var(--radio-sm);
+  background: var(--color-texto);
+  color: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgb(16 38 63 / 0.18);
+}
+
+[data-globo]::before {
+  content: '';
+  bottom: calc(100% + var(--esp-3) - 4px);
+  width: 8px;
+  height: 8px;
+  background: var(--color-texto);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+[data-globo]:hover::after,
+[data-globo]:hover::before,
+[data-globo]:focus-visible::after,
+[data-globo]:focus-visible::before {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-globo]::after,
+  [data-globo]::before {
+    transition: none;
+  }
+}
+
+/*
+ * Panel de contratacion (19/11/2026). Lo vigente: el estado arriba y los datos contratados como
+ * fichas sobre una superficie sutil, para que se lea como "lo que hay" y no como un formulario.
+ */
+.vigente {
+  margin-bottom: var(--esp-7);
+  padding: var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-lg);
+  background: var(--color-superficie-sutil);
+}
+
+.vigente__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-5);
+}
+
+.vigente__nota {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.vigente__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--esp-5) var(--esp-6);
+  margin: var(--esp-6) 0 0;
+  padding-top: var(--esp-6);
+  border-top: var(--borde-fino) solid var(--color-borde);
+}
+
+.vigente__dato dt {
+  margin-bottom: var(--esp-1);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.vigente__dato dd {
+  margin: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+  overflow-wrap: anywhere;
+}
+
+.titulo-de-cambio {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-5);
+}
+
+.titulo-de-cambio h3 {
+  margin: 0;
+}
+
+/* Servicios y adicionales: cada opcion es una ficha entera clickeable, marcada con el acento. */
+.opciones {
+  min-width: 0;
+  margin: 0 0 var(--esp-6);
+  padding: 0;
+  border: 0;
+}
+
+.opciones legend {
+  margin-bottom: var(--esp-3);
+  padding: 0;
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.opciones__regla {
+  margin-left: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-normal);
+}
+
+.opciones__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--esp-4);
+}
+
+.opcion-ficha {
+  min-height: 2.75rem;
+  margin-bottom: 0;
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.opcion-ficha:hover {
+  background: var(--color-hover);
+}
+
+.opcion-ficha:has(input:checked) {
+  border-color: var(--color-acento);
+  background: var(--color-acento-claro);
+  box-shadow: inset 0 0 0 var(--borde-fino) var(--color-acento);
+}
+
+/* El motivo de la principal apagada: al borde izquierdo del pie (que va invertido). */
+.pie-motivo {
+  margin: 0 auto 0 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+/* Servicios contratados del centro: un icono por servicio, con su color y el nombre en el globo. */
+/* Ancho de dos iconos y centrado: un servicio solo queda al medio de la columna. */
+.marcas-servicio {
+  display: inline-flex;
+  justify-content: center;
+  gap: var(--esp-2);
+  min-width: calc(2 * 1.75rem + var(--esp-2));
+}
+
+.marca-servicio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  font-size: var(--tipo-base);
+  cursor: default;
+}
+
+.marca-servicio--pacientes {
+  background: var(--color-servicio-kine-fondo);
+  color: var(--color-servicio-kine-texto);
+  border-color: var(--color-servicio-kine);
+}
+
+.marca-servicio--actividades {
+  background: var(--color-servicio-actividad-fondo);
+  color: var(--color-servicio-actividad-texto);
+  border-color: var(--color-servicio-actividad);
 }

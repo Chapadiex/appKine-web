@@ -1,0 +1,393 @@
+[
+  {
+    "ficha": "catalogo-de-servicios",
+    "nombre": "nuevo-servicio",
+    "ruta": "/servicios/catalogo",
+    "preparacion": "Con una cuenta ORG_ADMIN (catalogo:manage), tocar el botón 'Nuevo servicio' de la cabecera y esperar el panel lateral.",
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#alta-servicio-codigo",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-servicio-nombre",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-servicio-naturaleza",
+        "numero": 4
+      },
+      {
+        "selector": "#alta-servicio-modalidad",
+        "numero": 5
+      },
+      {
+        "selector": "form.formulario-servicio button[type=submit]",
+        "numero": 6
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Nuevo servicio\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "actividades-de-la-sede",
+    "nombre": "nueva-actividad",
+    "ruta": "/servicios/ofertas",
+    "preparacion": "Con una cuenta con consultorio:manage, tocar 'Publicar un servicio en la sede' y esperar el panel 'Nueva actividad de esta sede'.",
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#alta-oferta-servicio",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-oferta-nombre",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-oferta-duracion",
+        "numero": 4
+      },
+      {
+        "selector": "#alta-oferta-precio",
+        "numero": 5
+      },
+      {
+        "selector": "dialog.panel-lateral[open] form button[type=submit]",
+        "numero": 6
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Publicar un servicio en la sede\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "actividades-de-la-sede",
+    "nombre": "practicas",
+    "ruta": "/servicios/ofertas/:ofertaId/practicas",
+    "preparacion": "Usar una actividad sembrada que ya tenga al menos una práctica declarada.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby=declaradas-titulo] legend"
+      }
+    ],
+    "recorte": "main",
+    "marcas": [
+      {
+        "selector": "#buscar-practica",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-labelledby=declaradas-titulo] legend",
+        "numero": 3
+      },
+      {
+        "selector": "section[aria-labelledby=declaradas-titulo] .acciones button.boton",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "catalogo-clinico",
+    "nombre": "nueva-practica",
+    "ruta": "/catalogo/practicas",
+    "preparacion": "Con una cuenta con catalogo:manage, tocar 'Dar de alta una práctica de este centro' y esperar el panel lateral.",
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#alta-catalogo-codigo",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-catalogo-name",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-catalogo-especialidad",
+        "numero": 4
+      },
+      {
+        "selector": "dialog.panel-lateral[open] form button[type=submit]",
+        "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Dar de alta una práctica de este centro\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "convenios",
+    "nombre": "nuevo-arancel",
+    "ruta": "/contratacion/convenios/:convenioId/aranceles",
+    "preparacion": "Usar un convenio activo sembrado; tocar 'Cargar un arancel' y esperar el panel 'Nuevo arancel'.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Cargar un arancel\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#alta-arancel-practica"
+      }
+    ],
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#alta-arancel-practica",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-arancel-financiador",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-arancel-desde",
+        "numero": 4
+      },
+      {
+        "selector": "app-panel-lateral form button[type=submit]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "convenios",
+    "nombre": "importar-planilla",
+    "ruta": "/contratacion/convenios/:convenioId/aranceles/importar",
+    "preparacion": "Usar un convenio activo sembrado; quedarse en el paso 1 y tocar 'Empezar desde el ejemplo' para que el cuadro tenga filas.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Empezar desde el ejemplo\"]"
+      }
+    ],
+    "recorte": "section[aria-labelledby=titulo-paso]",
+    "marcas": [
+      {
+        "selector": "#importacion-archivo",
+        "numero": 2
+      },
+      {
+        "selector": "#importacion-texto",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-labelledby=titulo-paso] .asistente__acciones button.boton",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "financiadores",
+    "nombre": "agregar-desde-catalogo",
+    "ruta": "/contratacion/financiadores/catalogo",
+    "preparacion": "Con una cuenta con convenio:manage y una entrada del catálogo sin adoptar en la primera fila.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]"
+      }
+    ],
+    "recorte": "section[aria-label='Financiadores del catálogo']",
+    "marcas": [
+      {
+        "selector": "#catalogo-busqueda",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "financiadores",
+    "nombre": "nuevo-financiador",
+    "ruta": "/contratacion/financiadores",
+    "preparacion": "Con una cuenta con convenio:manage, tocar 'Dar de alta un financiador' y esperar el panel 'Nuevo financiador'.",
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#alta-financiador-codigo",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-financiador-nombre",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-financiador-tipo",
+        "numero": 4
+      },
+      {
+        "selector": "dialog.panel-lateral[open] form button[type=submit]",
+        "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Dar de alta un financiador\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "espacios-y-boxes",
+    "nombre": "nuevo-espacio",
+    "ruta": "/espacios",
+    "preparacion": "Con una cuenta con consultorio:manage, tocar 'Dar de alta un espacio' y esperar el panel 'Nuevo espacio'.",
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "#espacio-name",
+        "numero": 2
+      },
+      {
+        "selector": "#espacio-tipo",
+        "numero": 3
+      },
+      {
+        "selector": "#espacio-capacidad",
+        "numero": 4
+      },
+      {
+        "selector": "app-alta-de-espacio button[type=submit]",
+        "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Dar de alta un espacio\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "espacios-habilitados",
+    "nombre": "consultar-periodo",
+    "ruta": "/espacios/disponibilidad",
+    "recorte": "form.barra-consulta",
+    "marcas": [
+      {
+        "selector": "#ventana-desde",
+        "numero": 2
+      },
+      {
+        "selector": "#ventana-hasta",
+        "numero": 3
+      },
+      {
+        "selector": "form.barra-consulta button[type=submit]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "horarios-de-profesionales",
+    "nombre": "agregar-horario",
+    "ruta": "/horarios",
+    "preparacion": "Elegir un profesional sembrado en 'Elegí un profesional' y tocar 'Agregar horario'; esperar el panel lateral.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#selector-profesional",
+        "valor": ":profesionalId"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Agregar horario\"]"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#alta-bloque-desde"
+      }
+    ],
+    "recorte": "dialog.panel-lateral[open]",
+    "marcas": [
+      {
+        "selector": "div[aria-label='Selección rápida de días']",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-bloque-desde",
+        "numero": 3
+      },
+      {
+        "selector": "div[aria-label='Inicio de la vigencia']",
+        "numero": 4
+      },
+      {
+        "selector": "form.formulario-horario button[type=submit]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "calendario-de-la-sede",
+    "nombre": "horario-general",
+    "ruta": "/horarios/calendario/horario",
+    "preparacion": "Con una cuenta que pueda gestionar el calendario, sobre una sede con horario general sembrado.",
+    "recorte": "section[aria-labelledby=titulo-horario-general]",
+    "marcas": [
+      {
+        "selector": "div[aria-label='Modelos de horario']",
+        "numero": 2
+      },
+      {
+        "selector": "button.calendario-sede__guardar",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "calendario-de-la-sede",
+    "nombre": "cargar-cierre",
+    "ruta": "/horarios/calendario/cierres",
+    "preparacion": "Tocar 'Consultar' con el período por defecto y después 'Cargar un cierre o una apertura'; esperar el formulario.",
+    "recorte": "#form-alta-excepcion",
+    "marcas": [
+      {
+        "selector": "#alta-excepcion-tipo",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-excepcion-motivo",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-excepcion-alcance",
+        "numero": 4
+      },
+      {
+        "selector": "#alta-excepcion-desde",
+        "numero": 5
+      },
+      {
+        "selector": "#form-alta-excepcion button[type=submit]",
+        "numero": 6
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Consultar\"]"
+      },
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Cargar un cierre o una apertura\"]"
+      }
+    ]
+  }
+]

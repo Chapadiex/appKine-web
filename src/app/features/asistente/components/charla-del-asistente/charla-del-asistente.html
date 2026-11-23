@@ -27,6 +27,13 @@
         >
           @if (m.estado === 'esperando') {
             <p class="asistente__texto asistente__texto--espera">Consultando…</p>
+          } @else if (!escribiendo($index) && esDelManual(m)) {
+            <!-- Respuesta del manual: el pasaje viene en Markdown y se dibuja sin innerHTML. -->
+            <app-markdown-seguro
+              class="asistente__texto"
+              [markdown]="m.texto"
+              (ampliar)="verCaptura($event)"
+            />
           } @else {
             <p class="asistente__texto">{{ textoVisible(m, $index) }}</p>
           }
@@ -86,8 +93,15 @@
                 <pre class="asistente__consulta"><code>{{ r.consulta }}</code></pre>
               </details>
             }
+            @if (fichaDelManual(r); as ficha) {
+              <button type="button" class="asistente__enlace boton-texto" (click)="verFicha(ficha)">
+                Ver la ficha completa
+              </button>
+            }
             @if (r.enlace) {
-              <a class="asistente__enlace" [routerLink]="r.enlace">Ver el detalle</a>
+              <a class="asistente__enlace" [routerLink]="r.enlace">{{
+                esDelManual(m) ? 'Ir a la pantalla' : 'Ver el detalle'
+              }}</a>
             }
             @if (r.accion; as accion) {
               @if (sede(); as sedeActiva) {

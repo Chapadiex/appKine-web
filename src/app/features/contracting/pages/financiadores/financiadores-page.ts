@@ -1,8 +1,3 @@
-import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
-import {
-  ETIQUETA_PESTANAS_DE_CONTRATACION,
-  PESTANAS_DE_CONTRATACION,
-} from '../../models/pestanas-de-contratacion';
 import {
   Component,
   ElementRef,
@@ -108,7 +103,6 @@ type TipoAccion = 'editar' | 'baja';
   selector: 'app-financiadores-page',
   imports: [
     CabeceraDePagina,
-    Pestanas,
     Alerta,
     ColumnaOrdenable,
     PieDeTabla,
@@ -128,8 +122,6 @@ type TipoAccion = 'editar' | 'baja';
   styleUrl: '../../contracting.css',
 })
 export class FinanciadoresPage {
-  protected readonly pestanas = PESTANAS_DE_CONTRATACION;
-  protected readonly etiquetaDePestanas = ETIQUETA_PESTANAS_DE_CONTRATACION;
   private readonly api = inject(ContractingApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);
@@ -481,8 +473,8 @@ export class FinanciadoresPage {
         this.cerrarPanel();
         this.avisos.exito('Financiador dado de alta', {
           descripcion:
-            `${cuerpo.nombre}. Todavía no tiene planes: para firmar un convenio hace falta al ` +
-            'menos uno, porque el convenio se firma contra un plan.',
+            `${cuerpo.nombre}. Todavía no tiene planes: cargale uno y, en el plan, sus precios ` +
+            '(lo que paga la obra social por práctica).',
         });
         this.cargar();
       },

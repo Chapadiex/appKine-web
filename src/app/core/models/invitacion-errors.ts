@@ -34,7 +34,7 @@ export type CausaInvitacion =
   | 'ya-resuelta'
   /** 409 colaborador-ya-vinculado: esa persona ya trabaja en la organizacion. */
   | 'ya-vinculado'
-  /** 409 plan-limit-exceeded: el tenant llego al tope de miembros de su plan. */
+  /** 409 plan-limit-exceeded: el tenant llego al tope de profesionales de su plan. */
   | 'tope-de-plan'
   /** 409 subscription-suspended: lo emite el filtro, antes del controller. */
   | 'suscripcion-suspendida'
@@ -110,9 +110,9 @@ const MENSAJE_YA_VINCULADO =
  * gente que nunca responde. La contracara es esta.
  */
 const MENSAJE_TOPE_DE_PLAN =
-  'La organización llego al tope de miembros de su plan. Emitir invitaciones no consume lugares ' +
-  '—los consume aceptarlas—, así que puede haber mas invitaciones pendientes que lugares libres. ' +
-  'Hay que liberar un lugar o cambiar de plan.';
+  'La organización llegó al tope de profesionales de su plan. Emitir invitaciones no consume ' +
+  'lugares —los consume aceptarlas—, así que puede haber más invitaciones pendientes que lugares ' +
+  'libres. Hay que liberar un lugar o cambiar de plan.';
 
 const MENSAJE_SUSCRIPCION_SUSPENDIDA =
   'La suscripción de la organización esta suspendida, así que no se pueden registrar cambios. Se ' +

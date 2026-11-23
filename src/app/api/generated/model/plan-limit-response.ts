@@ -28,7 +28,8 @@ export interface PlanLimitResponse {
 }
 export enum PlanLimitResponseCodeEnum {
     MAX_CONSULTORIOS = 'MAX_CONSULTORIOS',
-    MAX_MIEMBROS_ACTIVOS = 'MAX_MIEMBROS_ACTIVOS'
+    MAX_MIEMBROS_ACTIVOS = 'MAX_MIEMBROS_ACTIVOS',
+    MAX_PROFESIONALES = 'MAX_PROFESIONALES'
 };
 
 

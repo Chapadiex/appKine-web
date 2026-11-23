@@ -192,6 +192,11 @@ Nunca editar el cliente generado a mano. Nunca asumir commit atómico con el bac
   revisión de diez puntos de esa sección **en ejecución**, en claro y en oscuro, a 1440 y a 375 px,
   sin desborde horizontal. Una pantalla con problemas evidentes de jerarquía, contraste, distribución
   o temas no está terminada.
+- **Manual de usuario (20/11/2026):** si cambiás una pantalla que tiene ficha en
+  `appKine-api/src/main/resources/manual/`, revisá su texto y corré `npm run manual:verificar`
+  (cruza fichas, capturas e íconos y, con la pila levantada, que cada elemento marcado siga
+  existiendo). Si cambió lo marcado, regenerá sus capturas con `MANUAL_FICHA=<id> npm run
+  manual:capturas`. Una pantalla nueva del menú lleva su ficha.
 - Datos sintéticos únicamente. Jamás datos reales de pacientes.
 - Sin secretos en el bundle.
 - `main` siempre desplegable. Trabajo incompleto detrás de feature flag.

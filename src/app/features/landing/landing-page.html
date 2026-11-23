@@ -6,13 +6,14 @@
         <span class="logo__nombre" aria-hidden="true">AKINE</span>
       </a>
       <nav class="cabecera__nav" aria-label="Secciones de la página">
+        <a class="cabecera__ia" href="#ia"><app-icono nombre="chispa" />IA</a>
         <a href="#servicios">Servicios</a>
-        <a href="#planes">Planes</a>
+        <a href="#prueba">Planes</a>
         <a href="#preguntas">Preguntas</a>
       </nav>
       <div class="cabecera__acciones">
         <a class="boton-texto cabecera__ingresar" [routerLink]="rutaLogin">Ingresar</a>
-        <a class="boton" href="#prueba">Probalo gratis</a>
+        <a class="boton" [routerLink]="rutaPrueba">Probalo gratis</a>
       </div>
     </div>
   </header>
@@ -26,6 +27,12 @@
     </div>
     <div class="portada__fila envoltura">
       <div class="portada__texto">
+        <a class="novedad-ia" href="#ia">
+          <span class="novedad-ia__marca">Nuevo</span>
+          <app-icono nombre="chispa" />
+          Tu centro ahora piensa con IA
+          <app-icono class="novedad-ia__flecha" nombre="flecha-derecha" />
+        </a>
         <h1 class="portada__titulo" id="portada-titulo">
           El día entero de tu centro,
           <span class="resaltado"
@@ -38,26 +45,38 @@
             >
               <path d="M3 13c38-7 77-10 116-9 33 1 66 4 98 8" /></svg
           ></span>
+          <span class="portada__con-ia"
+            ><app-icono class="portada__con-ia-icono" nombre="chispa" /><span
+              class="portada__con-ia-texto"
+              >Con una IA que piensa con vos.</span
+            ></span
+          >
         </h1>
         <p class="portada__bajada">
           Turnos, recepción, historia clínica, obras sociales, clases y caja en una sola aplicación,
-          para centros de kinesiología, rehabilitación y actividades.
+          para centros de kinesiología, rehabilitación y actividades. Preguntale a tu centro lo que
+          quieras: la IA lee tu agenda, tus pacientes y tu caja, y te avisa qué conviene mirar antes
+          de que se te pase.
         </p>
         <div class="portada__acciones">
-          <a class="boton boton--grande" href="#prueba">Probalo gratis 30 días</a>
-          <a class="boton boton--secundario boton--grande" href="#planes">
-            Ver planes <app-icono nombre="flecha-derecha" />
+          <a class="boton boton--grande" [routerLink]="rutaPrueba">Probalo gratis 30 días</a>
+          <a class="boton boton--secundario boton--grande" href="#ia">
+            Conocé la IA <app-icono nombre="chispa" />
           </a>
         </div>
         <ul class="portada__datos">
           <li><app-icono nombre="sede" />Una sede o una red</li>
           <li><app-icono nombre="operacion" />En la PC y en la tablet</li>
           <li><app-icono nombre="preferencias" />Con tu logo y tus colores</li>
+          <li><app-icono nombre="candado" />IA privada: tus datos no salen del centro</li>
         </ul>
       </div>
       <app-agenda-de-muestra class="portada__muestra" />
     </div>
   </section>
+
+  <!-- La IA, característica principal: justo después de la portada. -->
+  <app-seccion-ia />
 
   <!-- Los dos servicios: dos bloques de color desparejos, unidos por el "+". -->
   <section class="seccion" id="servicios" aria-labelledby="servicios-titulo">
@@ -71,19 +90,85 @@
       </div>
 
       <div class="servicios">
-        @for (servicio of servicios; track servicio.titulo) {
-          <article class="servicio" [class.servicio--coral]="$index === 1">
-            <span class="servicio__icono"><app-icono [nombre]="servicio.icono" /></span>
-            <h3 class="servicio__titulo">{{ servicio.titulo }}</h3>
-            <p class="servicio__para">{{ servicio.para }}</p>
+        @for (servicio of servicios; track servicio.clave) {
+          <article class="servicio servicio--{{ servicio.clave }}">
+            <header class="servicio__cabecera">
+              <span class="servicio__icono"><app-icono [nombre]="servicio.icono" /></span>
+              <div>
+                <span class="servicio__etiqueta">{{ servicio.etiqueta }}</span>
+                <h3 class="servicio__titulo">{{ servicio.titulo }}</h3>
+                <p class="servicio__para">{{ servicio.para }}</p>
+              </div>
+            </header>
+
+            <!-- Una pantalla en miniatura de lo que se hace con este servicio (datos inventados). -->
+            @if (servicio.clave === 'kine') {
+              <div class="vista" aria-hidden="true">
+                <div class="vista__fila">
+                  <b>Lucía Benítez</b>
+                  <span class="vista__pastilla">Sesión 4 de 10</span>
+                </div>
+                <span class="vista__rotulo">Dolor (EVA)</span>
+                <div class="eva">
+                  <span class="eva__punto eva__punto--antes">7</span>
+                  <span class="eva__barra"></span>
+                  <span class="eva__punto eva__punto--ahora">3</span>
+                </div>
+                <div class="vista__fila vista__fila--datos">
+                  <span>Flexión dorsal <b>15° → 30°</b></span>
+                  <span class="vista__ok"><app-icono nombre="exito" />Autorización: quedan 6</span>
+                </div>
+              </div>
+            } @else {
+              <div class="vista" aria-hidden="true">
+                <div class="vista__fila">
+                  <b>Pilates reformer · 18:00</b>
+                  <span class="vista__pastilla">8 de 10</span>
+                </div>
+                <span class="cupo"><span class="cupo__lleno"></span></span>
+                <div class="alumnos">
+                  @for (inicial of ['MG', 'JR', 'AF', 'CN', 'RM']; track inicial) {
+                    <span class="alumno" [class.alumno--falta]="inicial === 'CN'">{{
+                      inicial
+                    }}</span>
+                  }
+                  <span class="alumnos__mas">+3</span>
+                </div>
+                <div class="vista__fila vista__fila--datos">
+                  <span>Asistencia <b>7 presentes</b></span>
+                  <span class="vista__ok"><app-icono nombre="capas" />Pase de Marta: quedan 3</span>
+                </div>
+              </div>
+            }
+
             <ul class="servicio__lista">
-              @for (beneficio of servicio.beneficios; track beneficio) {
-                <li><app-icono nombre="tilde" />{{ beneficio }}</li>
+              @for (beneficio of servicio.beneficios; track beneficio.titulo) {
+                <li class="beneficio">
+                  <span class="beneficio__icono"><app-icono [nombre]="beneficio.icono" /></span>
+                  <span>
+                    <b class="beneficio__titulo">{{ beneficio.titulo }}</b>
+                    <span class="beneficio__texto">{{ beneficio.texto }}</span>
+                  </span>
+                </li>
               }
             </ul>
+
+            <p class="servicio__ia"><app-icono nombre="chispa" />{{ servicio.ia }}</p>
           </article>
+          @if ($first) {
+            <!-- Entre los dos: la misma persona, una sola ficha. -->
+            <div class="puente" aria-hidden="true">
+              <span class="puente__mas"><app-icono nombre="agregar" /></span>
+              <div class="ficha">
+                <span class="ficha__avatar">MG</span>
+                <b class="ficha__nombre">Marta Gómez</b>
+                <span class="ficha__cita ficha__cita--kine">09:00 · Kinesiología</span>
+                <span class="ficha__cita ficha__cita--actividades">18:00 · Pilates</span>
+                <span class="ficha__nota">Una sola ficha</span>
+              </div>
+            </div>
+          }
         }
-        <span class="servicios__union" aria-hidden="true"><app-icono nombre="agregar" /></span>
       </div>
     </div>
   </section>
@@ -96,16 +181,20 @@
           Lo que tiene todo centro, de la apertura al cierre.
         </h2>
         <p class="seccion__bajada">
-          Elijas el servicio que elijas, la base del mostrador viene siempre.
+          Elijas el servicio que elijas, esto viene siempre. Así se ve un día con AKINE.
         </p>
       </div>
 
       <ol class="dia">
         @for (momento of dia; track momento.hora) {
-          <li class="momento">
-            <span class="momento__hora">{{ momento.hora }}</span>
+          <li class="momento" [class.momento--ia]="momento.ia">
+            <div class="momento__arriba">
+              <span class="momento__icono"><app-icono [nombre]="momento.icono" /></span>
+              <span class="momento__hora">{{ momento.hora }}</span>
+            </div>
             <h3 class="momento__titulo">{{ momento.titulo }}</h3>
             <p class="momento__texto">{{ momento.texto }}</p>
+            <span class="momento__dato" aria-hidden="true">{{ momento.dato }}</span>
           </li>
         }
       </ol>
@@ -113,10 +202,11 @@
       <ul class="rasgos">
         @for (rasgo of base; track rasgo.titulo) {
           <li class="rasgo">
-            <app-icono [nombre]="rasgo.icono" />
-            <span
-              ><b>{{ rasgo.titulo }}.</b> {{ rasgo.texto }}</span
-            >
+            <span class="rasgo__icono"><app-icono [nombre]="rasgo.icono" /></span>
+            <span>
+              <b class="rasgo__titulo">{{ rasgo.titulo }}</b>
+              <span class="rasgo__texto">{{ rasgo.texto }}</span>
+            </span>
           </li>
         }
       </ul>
@@ -133,12 +223,10 @@
         </p>
         <ul class="sedes__lista">
           @for (rasgo of sedes; track rasgo.titulo) {
-            <li>
+            <li class="sede-rasgo">
               <span class="sedes__icono"><app-icono [nombre]="rasgo.icono" /></span>
-              <span>
-                <b>{{ rasgo.titulo }}</b>
-                {{ rasgo.texto }}
-              </span>
+              <b>{{ rasgo.titulo }}</b>
+              <span>{{ rasgo.texto }}</span>
             </li>
           }
         </ul>
@@ -148,53 +236,66 @@
     </div>
   </section>
 
-  <!-- El adicional de IA. -->
-  <app-seccion-ia />
-
-  <!-- Planes con el armador. Sin precios: todavía no están definidos. -->
-  <section class="seccion" id="planes" aria-labelledby="planes-titulo">
-    <div class="envoltura">
-      <div class="seccion__encabezado">
-        <h2 class="seccion__titulo" id="planes-titulo">Armá tu plan.</h2>
+  <!-- La marca propia: la app con la cara de cada centro. -->
+  <section class="seccion marca" id="marca" aria-labelledby="marca-titulo">
+    <div class="envoltura marca__fila">
+      <div>
+        <h2 class="seccion__titulo" id="marca-titulo">Con la cara de tu centro.</h2>
         <p class="seccion__bajada">
-          El plan lo define la cantidad de sedes. Los servicios y la IA se suman a cualquiera.
+          AKINE se viste con tu marca: tu logo y tus colores en cada pantalla, para tu equipo y para
+          la tablet que ve el paciente.
         </p>
+        <ul class="marca__lista">
+          <li>
+            <span class="marca__icono"><app-icono nombre="preferencias" /></span
+            ><span
+              ><b>Color principal y acento</b>Los botones, la barra y los destacados con los colores
+              del centro.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="capas" /></span
+            ><span
+              ><b>Seis zonas a elección</b>Barra lateral, cabecera, fondo, tarjetas, pie y botón
+              secundario.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="organizacion" /></span
+            ><span
+              ><b>Tu logo, en claro y en oscuro</b>Uno para cada tema, para que siempre se lea
+              bien.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="telefono" /></span
+            ><span
+              ><b>Tus datos de contacto</b>Dirección, teléfono y redes al pie de cada
+              pantalla.</span
+            >
+          </li>
+        </ul>
       </div>
-      <app-armador-de-plan />
+      <app-muestra-de-marca />
     </div>
   </section>
 
-  <!-- Pedido de la prueba gratis. -->
-  <section class="seccion seccion--coral" id="prueba" aria-labelledby="prueba-titulo">
+  <!-- Un solo bloque: se arma el plan acá y el botón lleva a /prueba, donde se piden los datos. -->
+  <section class="seccion llamado" id="prueba" aria-labelledby="prueba-titulo">
     <div class="formas" aria-hidden="true">
       <span class="forma forma--menta"></span>
       <span class="forma forma--sol"></span>
     </div>
-    <div class="envoltura prueba">
-      <div>
-        <h2 class="seccion__titulo" id="prueba-titulo">Probalo gratis 30 días.</h2>
-        <p class="seccion__bajada">
-          Arranca con todo prendido: los dos servicios, la IA y hasta tres sedes.
+    <div class="envoltura">
+      <div class="seccion__encabezado">
+        <span class="llamado__sello"><app-icono nombre="chispa" />Con la IA incluida</span>
+        <h2 class="llamado__titulo" id="prueba-titulo">Armá tu plan y probalo gratis 30 días.</h2>
+        <p class="llamado__bajada">
+          El plan lo define la cantidad de sedes; los servicios y la IA se suman a cualquiera. La
+          prueba arranca con todo prendido, sin tarjeta y sin instalar nada.
         </p>
-        <ol class="pasos">
-          <li>
-            <span
-              ><b>Nos pedís la prueba</b> Con el nombre de tu centro y cómo te contactamos.</span
-            >
-          </li>
-          <li>
-            <span><b>Armamos tu organización</b> Te llega una invitación por correo.</span>
-          </li>
-          <li>
-            <span><b>Ponés tu contraseña</b> Cargás tu primera sede y empezás a dar turnos.</span>
-          </li>
-        </ol>
       </div>
-
-      <!-- El pedido de prueba (AKINE-landing-y-ofertas.md §5): formulario público, sin sesión. -->
-      <div class="prueba__panel">
-        <app-pedido-de-prueba />
-      </div>
+      <app-armador-de-plan />
     </div>
   </section>
 

@@ -31,6 +31,20 @@
   <section aria-labelledby="titulo-cuenta-financiador">
     <h2 id="titulo-cuenta-financiador">Cuenta corriente de {{ resumen.financiadorNombre }}</h2>
     <dl class="cifras">
+      @if (pendientes(); as sinPresentar) {
+        <div>
+          <dt>Pendientes de presentar</dt>
+          <dd>
+            {{ sinPresentar.cantidad }}{{ sinPresentar.hayMas ? ' o más' : '' }}
+            {{ sinPresentar.cantidad === 1 ? 'prestación' : 'prestaciones' }}
+            @if (sinPresentar.cantidad > 0) {
+              <span class="celda-secundaria importe">{{
+                importeDeCuenta(sinPresentar.importe)
+              }}</span>
+            }
+          </dd>
+        </div>
+      }
       <div>
         <dt>Lotes presentados</dt>
         <dd>{{ resumen.lotes }}</dd>

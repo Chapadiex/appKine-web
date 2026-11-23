@@ -200,6 +200,31 @@
 }
 
 /*
+  «Ayuda», fija abajo a la izquierda (21/11/2026). El contenedor lleva el fondo y la línea de
+  arriba, `margin-top: auto` lo baja al pie y `sticky` lo deja a la vista aunque la barra se
+  desplace. El botón queda como un enlace de grupo común, sin borde ni fondo propios: así el
+  contraste de su texto y de su contorno se mide igual que el de los demás enlaces.
+*/
+.nav__pie {
+  position: sticky;
+  bottom: calc(-1 * var(--esp-6));
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: var(--esp-2);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-marca-fondo);
+}
+
+.nav__ayuda {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+/*
   Tablet y menor: la barra sale de pantalla y vuelve como panel. Cerrada queda ADEMAS
   `visibility: hidden`: un `translateX` solo la saca de la vista y el Tab seguiria recorriendola.
 */

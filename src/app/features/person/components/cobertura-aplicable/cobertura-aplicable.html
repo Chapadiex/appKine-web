@@ -68,9 +68,8 @@
                 }
                 @if (aplicable.arancel; as arancel) {
                   <p>
-                    {{ nombreDePractica(aplicable.practicaId) }}: total
-                    {{ importe(arancel.importeTotal) }} · financiador
-                    {{ importe(arancel.importeFinanciador) }} · coseguro
+                    {{ nombreDePractica(aplicable.practicaId) }}: paga la obra social
+                    {{ importe(arancel.importeFinanciador) }} · paga el paciente
                     {{ importe(arancel.coseguro) }}.
                   </p>
                   <p class="ayuda ayuda--fija">
@@ -92,7 +91,7 @@
                       <li>
                         {{ nombreDePractica(practica.practicaId) }}:
                         @if (practica.arancel; as arancel) {
-                          total {{ importe(arancel.importeTotal) }}
+                          paga la obra social {{ importe(arancel.importeFinanciador) }}
                         } @else {
                           {{ motivoDeNoAplicable(practica.motivo) }}
                         }

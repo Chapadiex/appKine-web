@@ -11,8 +11,10 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AceptarTerminosRequest } from '../model/models';
 import { AuthorizedContextResponse } from '../model/models';
 import { EffectivePermissionsResponse } from '../model/models';
+import { MisTerminosResponse } from '../model/models';
 import { MyPlatformRoleResponse } from '../model/models';
 import { MyProfileResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
@@ -21,10 +23,22 @@ import { ProblemDetail } from '../model/models';
 import { Configuration }                                     from '../configuration';
 
 
+export interface AceptarMisTerminosRequestParams {
+    aceptarTerminosRequest: AceptarTerminosRequest;
+}
+
 
 export interface MiCuentaServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Aceptar la version vigente de los terminos
+     * Deja constancia de que la cuenta acepto la version vigente y destraba la API. Idempotente: aceptar una version ya aceptada responde igual.
+     * @endpoint post /api/v1/me/terminos
+* @param requestParameters
+     */
+    aceptarMisTerminos(requestParameters: AceptarMisTerminosRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
     /**
      * Perfil de la cuenta autenticada
@@ -32,6 +46,13 @@ export interface MiCuentaServiceInterface {
      * @endpoint get /api/v1/me
 */
     getMe(extraHttpRequestParams?: any): Observable<MyProfileResponse>;
+
+    /**
+     * Terminos vigentes para la cuenta autenticada
+     * Version vigente, enlace al texto y si la cuenta la tiene pendiente. Responde aunque haya terminos pendientes: es lo que la pantalla de aceptacion lee.
+     * @endpoint get /api/v1/me/terminos
+*/
+    getMisTerminos(extraHttpRequestParams?: any): Observable<MisTerminosResponse>;
 
     /**
      * Permisos efectivos en el contexto activo
@@ -49,7 +70,7 @@ export interface MiCuentaServiceInterface {
 
     /**
      * Contextos de trabajo habilitados
-     * Devuelve los pares Organizacion + Consultorio en los que la cuenta tiene una membership vigente y cuya organizacion admite operar. Es lo que alimenta la pantalla de seleccion de contexto.  Cada elemento trae los nombres junto a los ids porque este listado es exactamente lo que el usuario ve para elegir: resolverlos con llamadas adicionales exigiria pedir datos de organizaciones antes de tener contexto en ninguna.  No requiere contexto de tenant: es el endpoint con el que se averigua que contextos hay. Devuelve una lista vacia —no un error— cuando la cuenta todavia no tiene ninguno; el frontend distingue \&#39;no elegiste\&#39; de \&#39;no tenes donde\&#39;.  lastSelected marca el ultimo contexto elegido, revalidado: si dejo de estar habilitado no lo trae ninguno.  Este endpoint no cambia el contexto activo. Seleccionarlo renueva el token, y eso lo publica el modulo de identidad en 01.02 como POST /api/v1/auth/context.
+     * Devuelve los pares Organizacion + Consultorio en los que la cuenta tiene una membership vigente y cuya organizacion admite operar. Es lo que alimenta la pantalla de seleccion de contexto.  Cada elemento trae los nombres junto a los ids porque este listado es exactamente lo que el usuario ve para elegir: resolverlos con llamadas adicionales exigiria pedir datos de organizaciones antes de tener contexto en ninguna.  No requiere contexto de tenant: es el endpoint con el que se averigua que contextos hay. Devuelve una lista vacia —no un error— cuando la cuenta todavia no tiene ninguno; el frontend distingue \&#39;no elegiste\&#39; de \&#39;no tenes donde\&#39;.  lastSelected marca el ultimo contexto elegido, revalidado: si dejo de estar habilitado no lo trae ninguno.  Al final van, con sinAcceso&#x3D;true, los contextos de los centros cerrados por falta de pago: no se pueden elegir (seleccionarlos responde 404) y estan para que la pantalla muestre el motivo en vez de hacer desaparecer el centro.  Este endpoint no cambia el contexto activo. Seleccionarlo renueva el token, y eso lo publica el modulo de identidad en 01.02 como POST /api/v1/auth/context.
      * @endpoint get /api/v1/me/contexts
 */
     listMyContexts(extraHttpRequestParams?: any): Observable<Array<AuthorizedContextResponse>>;

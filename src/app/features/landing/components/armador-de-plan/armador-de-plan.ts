@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { OpcionChip } from '../../../../shared/components/chips/chips';
 import { Icono } from '../../../../shared/components/icono/icono';
@@ -11,6 +12,7 @@ import {
   recomendarPlan,
 } from '../../models/armador-de-plan';
 import { EleccionDelArmador } from '../../models/eleccion-del-armador';
+import { RUTA_PRUEBA } from '../../models/rutas-de-landing';
 
 /**
  * Armador de la sección de planes: tres preguntas y el plan que corresponde con lo que incluye.
@@ -20,7 +22,7 @@ import { EleccionDelArmador } from '../../models/eleccion-del-armador';
 @Component({
   selector: 'app-armador-de-plan',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Segmentado, Icono],
+  imports: [Segmentado, Icono, RouterLink],
   templateUrl: './armador-de-plan.html',
   styleUrl: './armador-de-plan.css',
 })
@@ -44,6 +46,14 @@ export class ArmadorDePlan {
   protected readonly eleccion = inject(EleccionDelArmador);
 
   protected readonly planes = PLANES;
+  protected readonly rutaPrueba = RUTA_PRUEBA;
+
+  /** Lo elegido viaja a /prueba en la dirección: el pedido no lo vuelve a preguntar. */
+  protected readonly eleccionEnLaDireccion = computed(() => ({
+    sedes: this.eleccion.sedes(),
+    servicios: this.eleccion.servicios(),
+    ia: this.eleccion.ia(),
+  }));
 
   protected readonly recomendacion = computed(() =>
     recomendarPlan({

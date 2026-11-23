@@ -12,7 +12,7 @@ import { FilaImportacionArancelResponse } from '../../../api/generated/model/fil
  *
  * <p>Solo el <b>formato</b>: que cada fila tenga practica, que los importes sean numeros con hasta
  * dos decimales, que las fechas existan, y el tope de {@link MAXIMO_DE_FILAS} filas. Las
- * <b>reglas</b> —que la terna cuadre, que la vigencia caiga dentro del convenio, que no se pise con
+ * <b>reglas</b> —que la vigencia caiga dentro del convenio, que no se pise con
  * lo vigente— las decide la vista previa del backend fila por fila. Repetirlas aca seria una
  * segunda copia de la regla que se despega de la primera el dia que cambie, y el preview ya las
  * reporta con su `problemType`.
@@ -52,6 +52,8 @@ const ALIAS: Readonly<Record<string, Columna>> = {
   total: 'importeTotal',
   importefinanciador: 'importeFinanciador',
   financiador: 'importeFinanciador',
+  obrasocial: 'importeFinanciador',
+  pagalaobrasocial: 'importeFinanciador',
   coseguro: 'coseguro',
   vigenciadesde: 'vigenciaDesde',
   desde: 'vigenciaDesde',
@@ -59,12 +61,12 @@ const ALIAS: Readonly<Record<string, Columna>> = {
   hasta: 'vigenciaHasta',
 };
 
-const OBLIGATORIAS: readonly Columna[] = [
-  'importeTotal',
-  'importeFinanciador',
-  'coseguro',
-  'vigenciaDesde',
-];
+/**
+ * Desde el contrato 0.185.0 el arancel guarda solo lo que paga la obra social. Las columnas
+ * `importeTotal` y `coseguro` se siguen aceptando, para no romper planillas viejas, pero se
+ * ignoran: el coseguro lo calcula el backend al cerrar cada sesion.
+ */
+const OBLIGATORIAS: readonly Columna[] = ['importeFinanciador', 'vigenciaDesde'];
 
 const NOMBRE_DE_COLUMNA: Readonly<Record<Columna, string>> = {
   codigoPractica: 'codigoPractica',
@@ -79,13 +81,13 @@ const NOMBRE_DE_COLUMNA: Readonly<Record<Columna, string>> = {
 
 /** Encabezado de ejemplo que la pantalla muestra y que el parser acepta tal cual. */
 export const ENCABEZADO_DE_EJEMPLO =
-  'codigoPractica;importeTotal;importeFinanciador;coseguro;vigenciaDesde;vigenciaHasta';
+  'codigoPractica;importeFinanciador;vigenciaDesde;vigenciaHasta';
 
 /** Planilla de ejemplo, con datos sinteticos. */
 export const PLANILLA_DE_EJEMPLO = [
   ENCABEZADO_DE_EJEMPLO,
-  'KIN-01;12000;9000;3000;2027-01-01;2027-12-31',
-  'KIN-02;8500,50;8500,50;0;2027-01-01;',
+  'KIN-01;9000;2027-01-01;2027-12-31',
+  'KIN-02;8500,50;2027-01-01;',
 ].join('\n');
 
 /**
@@ -332,8 +334,10 @@ function leerFila(
         break;
       }
       case 'importeTotal':
-      case 'importeFinanciador':
-      case 'coseguro': {
+      case 'coseguro':
+        // Columnas viejas: se aceptan y se ignoran (ver OBLIGATORIAS).
+        break;
+      case 'importeFinanciador': {
         const importe = importeValido(valor, admiteComaDecimal);
         if (typeof importe === 'string') {
           problemas.push(`${NOMBRE_DE_COLUMNA[columna]}: ${importe}`);

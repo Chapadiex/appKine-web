@@ -43,10 +43,11 @@ import {
   SERVICIOS,
   etiquetaDeSedes,
   marcaDePedido,
+  nombreVisibleDePlan,
   planesOfrecidos,
   serviciosEnTexto,
   serviciosDelPedido,
-  topeDeSedes,
+  topesDelPlan,
 } from '../../models/contratacion';
 import {
   RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
@@ -178,8 +179,8 @@ export class AltaDeCentroPage implements OnInit {
   protected readonly opcionesDePlan = computed<OpcionEnTarjeta[]>(() =>
     this.planes().map((plan) => ({
       valor: plan.code ?? '',
-      etiqueta: plan.name ?? plan.code ?? '',
-      descripcion: topeDeSedes(plan),
+      etiqueta: nombreVisibleDePlan(plan.code, plan.name),
+      descripcion: topesDelPlan(plan),
     })),
   );
   protected readonly pedido = signal<Pedido>({ tipo: 'ninguno' });

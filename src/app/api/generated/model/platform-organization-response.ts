@@ -14,6 +14,10 @@
  */
 export interface PlatformOrganizationResponse { 
     /**
+     * Instante en que se cierra el acceso si no paga: pagadoHasta + 18 dias. Ausente sin control de cobro
+     */
+    cierreEl?: string;
+    /**
      * Instante de alta de la organizacion
      */
     createdAt?: string;
@@ -30,6 +34,10 @@ export interface PlatformOrganizationResponse {
      */
     name?: string;
     /**
+     * Hasta cuando esta pagada la suscripcion, instante UTC. Ausente = sin control de cobro (el centro opera como siempre)
+     */
+    pagadoHasta?: string;
+    /**
      * Codigo del plan contratado
      */
     planCode?: string;
@@ -42,6 +50,14 @@ export interface PlatformOrganizationResponse {
      */
     pruebaHasta?: string;
     /**
+     * Servicios contratados, en orden fijo
+     */
+    servicios?: Array<PlatformOrganizationResponseServiciosEnum>;
+    /**
+     * Donde esta el centro respecto de su periodo pagado: SIN_CONTROL (sin pagadoHasta), AL_DIA, POR_VENCER (15 dias o menos), EN_GRACIA (vencido hace menos de 3 dias, sigue operando), SOLO_LECTURA (de 3 a 18 dias vencido) o SIN_ACCESO (desde los 18 dias)
+     */
+    situacionDeCobro?: PlatformOrganizationResponseSituacionDeCobroEnum;
+    /**
      * Identificador legible y unico del centro
      */
     slug?: string;
@@ -50,6 +66,18 @@ export interface PlatformOrganizationResponse {
      */
     status?: PlatformOrganizationResponseStatusEnum;
 }
+export enum PlatformOrganizationResponseServiciosEnum {
+    KINESIOLOGIA = 'KINESIOLOGIA',
+    ACTIVIDADES = 'ACTIVIDADES'
+};
+export enum PlatformOrganizationResponseSituacionDeCobroEnum {
+    SIN_CONTROL = 'SIN_CONTROL',
+    AL_DIA = 'AL_DIA',
+    POR_VENCER = 'POR_VENCER',
+    EN_GRACIA = 'EN_GRACIA',
+    SOLO_LECTURA = 'SOLO_LECTURA',
+    SIN_ACCESO = 'SIN_ACCESO'
+};
 export enum PlatformOrganizationResponseStatusEnum {
     PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',

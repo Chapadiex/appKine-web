@@ -7,6 +7,7 @@ import { VigenciasPage } from './pages/vigencias/vigencias-page';
 import { NotFound } from '../../shared/pages/not-found/not-found';
 import { PermissionsStore } from '../../core/services/permissions.store';
 import { SessionService } from '../../core/services/session.service';
+import { TERMINOS_AL_DIA } from '../../core/testing/terminos-al-dia';
 import { RUTA_SIN_PERMISO } from '../../core/models/rutas';
 import { PERMISO_CATALOGO_READ, PERMISO_CATALOGO_MANAGE } from '../../core/models/permisos';
 import { routes as rutasDeLaApp } from '../../app.routes';
@@ -44,6 +45,7 @@ describe('Rutas de /catalogo', () => {
       providers: [
         provideRouter(rutasDeLaApp),
         { provide: SessionService, useValue: { estado: () => 'activa', restaurando: () => false } },
+        TERMINOS_AL_DIA,
         {
           provide: PermissionsStore,
           useValue: {

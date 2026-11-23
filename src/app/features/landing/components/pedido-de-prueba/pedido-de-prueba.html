@@ -166,67 +166,70 @@
       }
     </div>
 
-    <fieldset
-      class="pedido__grupo"
-      formGroupName="servicios"
-      [attr.aria-invalid]="mostrarError('servicios')"
-      [attr.aria-describedby]="mostrarError('servicios') ? 'pedido-servicios-error' : null"
-    >
-      <legend>
-        ¿Qué servicios te interesan? <span class="pedido__requerido" aria-hidden="true">*</span>
-      </legend>
-      <div class="pedido__opciones">
-        <label class="pedido__casilla">
-          <input
-            id="pedido-kinesiologia"
-            name="kinesiologia"
-            type="checkbox"
-            formControlName="kinesiologia"
-          />
-          Kinesiología y rehabilitación
-        </label>
-        <label class="pedido__casilla">
-          <input
-            id="pedido-actividades"
-            name="actividades"
-            type="checkbox"
-            formControlName="actividades"
-          />
-          Actividades
-        </label>
+    <!-- Si el plan ya se armó en la landing, no se vuelve a preguntar: viaja precargado. -->
+    @if (!planElegido()) {
+      <fieldset
+        class="pedido__grupo"
+        formGroupName="servicios"
+        [attr.aria-invalid]="mostrarError('servicios')"
+        [attr.aria-describedby]="mostrarError('servicios') ? 'pedido-servicios-error' : null"
+      >
+        <legend>
+          ¿Qué servicios te interesan? <span class="pedido__requerido" aria-hidden="true">*</span>
+        </legend>
+        <div class="pedido__opciones">
+          <label class="pedido__casilla">
+            <input
+              id="pedido-kinesiologia"
+              name="kinesiologia"
+              type="checkbox"
+              formControlName="kinesiologia"
+            />
+            Kinesiología y rehabilitación
+          </label>
+          <label class="pedido__casilla">
+            <input
+              id="pedido-actividades"
+              name="actividades"
+              type="checkbox"
+              formControlName="actividades"
+            />
+            Actividades
+          </label>
+        </div>
+        @if (mostrarError('servicios')) {
+          <p class="campo__error pedido__error" id="pedido-servicios-error">
+            <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+            >{{ errorDelServidor('servicios') ?? 'Elegí al menos uno.' }}
+          </p>
+        }
+      </fieldset>
+
+      <div class="pedido__grupo" id="pedido-sedes">
+        <span class="pedido__pregunta" aria-hidden="true">¿Cuántas sedes tiene?</span>
+        <app-segmentado
+          etiqueta="¿Cuántas sedes tiene?"
+          formControlName="sedes"
+          [opciones]="opcionesDeSedes"
+        />
+        @if (mostrarError('sedes')) {
+          <p class="campo__error pedido__error" id="pedido-sedes-error">
+            <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
+            >{{ errorDelServidor('sedes') ?? 'Elegí cuántas sedes.' }}
+          </p>
+        }
       </div>
-      @if (mostrarError('servicios')) {
-        <p class="campo__error pedido__error" id="pedido-servicios-error">
-          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
-          >{{ errorDelServidor('servicios') ?? 'Elegí al menos uno.' }}
-        </p>
-      }
-    </fieldset>
 
-    <div class="pedido__grupo" id="pedido-sedes">
-      <span class="pedido__pregunta" aria-hidden="true">¿Cuántas sedes tiene?</span>
-      <app-segmentado
-        etiqueta="¿Cuántas sedes tiene?"
-        formControlName="sedes"
-        [opciones]="opcionesDeSedes"
-      />
-      @if (mostrarError('sedes')) {
-        <p class="campo__error pedido__error" id="pedido-sedes-error">
-          <app-icono nombre="error" /><span class="visualmente-oculto">Error: </span
-          >{{ errorDelServidor('sedes') ?? 'Elegí cuántas sedes.' }}
-        </p>
-      }
-    </div>
-
-    <label class="pedido__casilla pedido__ia">
-      <input
-        id="pedido-interesaIa"
-        name="interesaIa"
-        type="checkbox"
-        formControlName="interesaIa"
-      />
-      Me interesa sumar la inteligencia artificial
-    </label>
+      <label class="pedido__casilla pedido__ia">
+        <input
+          id="pedido-interesaIa"
+          name="interesaIa"
+          type="checkbox"
+          formControlName="interesaIa"
+        />
+        Me interesa sumar la inteligencia artificial
+      </label>
+    }
 
     <div class="campo campo--12">
       <label for="pedido-comentario">Algo más que quieras contarnos (opcional)</label>
@@ -264,6 +267,15 @@
         formControlName="sitioWeb"
         tabindex="-1"
         autocomplete="off"
+      />
+    </div>
+
+    <div class="campo campo--12">
+      <app-terminos-del-alta
+        [terminos]="terminos"
+        prefijo="pedido"
+        accion="pedir la prueba"
+        [mostrarError]="faltanTerminos()"
       />
     </div>
 

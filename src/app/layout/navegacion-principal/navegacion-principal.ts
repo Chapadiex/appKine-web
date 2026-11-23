@@ -18,6 +18,7 @@ import { ContratacionStore } from '../../core/services/contratacion.store';
 import { ContadoresDePlataformaStore } from '../../core/services/contadores-de-plataforma.store';
 import { MarcaStore } from '../../core/services/marca.store';
 import { PermissionsStore } from '../../core/services/permissions.store';
+import { RUTA_SELECTOR_CONTEXTO } from '../../core/models/rutas';
 import { PlatformRoleStore } from '../../core/services/platform-role.store';
 import {
   RUTA_INICIO_DE_PLATAFORMA,
@@ -32,6 +33,7 @@ import {
   Seccion,
   seccionDe,
 } from './secciones';
+import { ManualStore } from '../../core/services/manual.store';
 import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 
@@ -65,6 +67,7 @@ import { TenantContextStore } from '../../core/services/tenant-context.store';
 })
 export class NavegacionPrincipal {
   private readonly session = inject(SessionService);
+  private readonly manual = inject(ManualStore);
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly funcionesIa = inject(FuncionesIaStore);
@@ -104,10 +107,22 @@ export class NavegacionPrincipal {
    */
   protected readonly modoPlataforma = computed(
     () =>
-      !this.hayContexto() &&
+      (!this.hayContexto() || this.enRutaDePlataforma()) &&
       this.session.estado() !== 'anonimo' &&
       this.rolDePlataforma.esAdminDePlataforma(),
   );
+
+  /**
+   * Con centro elegido, la consola igual muestra solo sus grupos (19/11/2026): mezclados con
+   * Atencion, Servicios o Configuracion del centro parecian accesos de la plataforma. Para entrar
+   * a un centro queda un enlace al pie, que lleva al selector.
+   */
+  private readonly enRutaDePlataforma = computed(
+    () => this.url().split(/[?#]/)[0]?.startsWith('/plataforma') === true,
+  );
+  protected readonly volverAlCentro = computed(() => this.modoPlataforma() && this.hayContexto());
+  /** Al selector y no al inicio: quien sale de la consola elige a que centro entra. */
+  protected readonly rutaDelCentro = RUTA_SELECTOR_CONTEXTO;
 
   protected readonly mostrarBarra = computed(
     () => !this.session.restaurando() && (this.hayContexto() || this.modoPlataforma()),
@@ -175,7 +190,7 @@ export class NavegacionPrincipal {
       if (!this.modoPlataforma()) {
         return;
       }
-      const enPlataforma = this.url().split(/[?#]/)[0]?.startsWith('/plataforma') === true;
+      const enPlataforma = this.enRutaDePlataforma();
       untracked(() =>
         enPlataforma ? this.contadores.refrescar() : this.contadores.asegurarCargados(),
       );
@@ -222,6 +237,12 @@ export class NavegacionPrincipal {
 
   protected navegar(): void {
     this.cerrar.emit();
+  }
+
+  /** Abre el manual en la ficha de la pantalla actual; en tablet cierra antes el menú. */
+  protected abrirAyuda(): void {
+    this.cerrar.emit();
+    this.manual.abrir();
   }
 
   private visible(seccion: Seccion): boolean {

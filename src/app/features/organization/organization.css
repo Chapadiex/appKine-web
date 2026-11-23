@@ -209,10 +209,119 @@
   font-weight: var(--peso-semi);
 }
 
-.plan-actual__alta {
-  margin-left: auto;
+/* Vigencia de la suscripcion: dos datos grandes, inicio y fin. */
+.vigencia {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-4);
+  margin: var(--esp-5) 0 0;
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.vigencia__dato dt {
   color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.vigencia__dato dd {
+  margin: var(--esp-1) 0 0;
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+}
+
+.vigencia__resto {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-normal);
+}
+
+/* Datos en filas rotulo/valor: plan y vigencia, terminos aceptados. */
+.datos-en-filas {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--esp-3) var(--esp-6);
+  margin: var(--esp-5) 0 0;
+}
+
+.datos-en-filas:first-child,
+.tarjeta__cabecera + .datos-en-filas {
+  margin-top: 0;
+}
+
+.datos-en-filas dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.datos-en-filas dd {
+  margin: 0;
+  color: var(--color-texto-fuerte);
   font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
+}
+
+.terminos-cuenta__acciones {
+  margin-top: var(--esp-6);
+}
+
+/*
+  Que incluye el plan: cada item con su icono, en color si esta incluido y en gris con el rotulo
+  "No incluido" si no (el color no es la unica senal, WCAG 1.4.1).
+*/
+.plan-incluye {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-incluye__item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.plan-incluye__marca {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-exito-fondo);
+  color: var(--color-exito);
+}
+
+.plan-incluye__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-incluye__tilde {
+  flex: none;
+  color: var(--color-exito);
+}
+
+.plan-incluye__no {
+  flex: none;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.plan-incluye__item--no {
+  color: var(--color-texto-suave);
+  font-weight: var(--peso-normal);
+}
+
+.plan-incluye__item--no .plan-incluye__marca {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
 }
 
 .limites-lista {
@@ -643,6 +752,22 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* Subtitulo con su accion de editar arriba a la derecha. */
+.contacto__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3) var(--esp-5);
+  margin: var(--esp-7) 0 var(--esp-4);
+  padding-bottom: var(--esp-3);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.contacto__cabecera > .contacto__titulo {
+  margin: 0;
+}
+
 /*
   Auditoria: el criterio de busqueda como control segmentado. Son radios de verdad (teclado y
   lector de pantalla los tratan como tales); el aspecto es el de tres botones pegados, con el
@@ -654,9 +779,62 @@ form fieldset.auditoria-criterio.auditoria-criterio {
   align-items: center;
   gap: var(--esp-3) var(--esp-6);
   min-width: 0;
-  margin: 0 0 var(--esp-6);
+  margin: 0;
   padding: 0;
   border: 0;
+}
+
+/* Auditoria compacta: titulo a la izquierda y criterio a la derecha, en una linea. */
+.auditoria-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4) var(--esp-6);
+  margin-bottom: var(--esp-5);
+}
+
+.auditoria-cabecera > h2 {
+  margin: 0;
+}
+
+/* Campos del criterio, refinar y Buscar en una sola fila, alineados por la base. */
+.auditoria-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-4);
+  margin-bottom: var(--esp-5);
+}
+
+form .auditoria-barra > .grilla-campos {
+  /* La grilla global es contenedor inline-size: dentro de un flex mediria cero de ancho. */
+  container-type: normal;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--esp-2) var(--esp-4);
+  margin: 0;
+}
+
+form .auditoria-barra > .grilla-campos > .campo {
+  width: 12rem;
+  margin: 0;
+}
+
+form .auditoria-barra > .grilla-campos > .grilla-campos__fila {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.auditoria-barra > app-filtros {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.auditoria-inicial {
+  margin: 0;
+  text-align: center;
 }
 
 .auditoria-criterio__rotulo {
@@ -751,4 +929,11 @@ form fieldset.auditoria-criterio.auditoria-criterio {
     min-width: 0;
     width: 100%;
   }
+}
+
+/* Iconos en los rotulos de los paneles de datos fiscales y de contacto (21/11/2026). */
+.campo > label > app-icono {
+  margin-right: var(--esp-2);
+  color: var(--color-acento);
+  vertical-align: -0.2em;
 }

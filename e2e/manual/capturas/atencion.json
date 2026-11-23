@@ -1,0 +1,332 @@
+[
+  {
+    "ficha": "agenda",
+    "nombre": "barra-de-la-agenda",
+    "ruta": "/agenda",
+    "preparacion": "abrir el panel de filtros tocando el botón Filtros de la barra",
+    "recorte": "app-filtros.agenda-barra",
+    "marcas": [
+      {
+        "selector": ".agenda-barra [role=group][aria-label='Período']",
+        "numero": 1
+      },
+      {
+        "selector": ".agenda-barra app-navegador-de-fecha",
+        "numero": 2
+      },
+      {
+        "selector": ".agenda-barra .filtros-barra__boton",
+        "numero": 3
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=/Filtros/]"
+      }
+    ]
+  },
+  {
+    "ficha": "agenda",
+    "nombre": "nuevo-turno",
+    "ruta": "/agenda",
+    "preparacion": "tocar Nuevo turno en la cabecera, elegir el paciente de ejemplo en el buscador y elegir una prestación para que se listen los horarios disponibles",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Nuevo turno\"]"
+      },
+      {
+        "accion": "escribir",
+        "selector": ".panel-lateral >> role=combobox[name=\"Paciente\"]",
+        "texto": ":personaApellido"
+      },
+      {
+        "accion": "click",
+        "selector": "role=option[name=/^:personaApellido, Lucía/]"
+      },
+      {
+        "accion": "seleccionar",
+        "selector": "#flujo-oferta",
+        "valor": ":ofertaId"
+      },
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby='flujo-horarios-titulo'] .flujo__otras-salidas"
+      }
+    ],
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": ".panel-lateral .flujo__persona-elegida",
+        "numero": 2
+      },
+      {
+        "selector": "#flujo-oferta",
+        "numero": 3
+      },
+      {
+        "selector": "section[aria-labelledby='flujo-horarios-titulo']",
+        "numero": 4
+      },
+      {
+        "selector": ".panel-lateral .acciones--pie >> role=button[name='Confirmar turno']",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "agenda",
+    "nombre": "detalle-de-turno",
+    "ruta": "/agenda",
+    "preparacion": "tocar un turno en estado Reservado de la grilla del día para abrir su panel",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "button:has(.turno__persona:has-text(\":personaApellido\")) >> nth=-1"
+      },
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby='flujo-gestion-titulo']"
+      }
+    ],
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby='flujo-seguimiento-titulo']",
+        "numero": 2
+      },
+      {
+        "selector": "section[aria-labelledby='flujo-gestion-titulo']",
+        "numero": 3
+      },
+      {
+        "selector": ".flujo__seccion--peligro .boton--peligro",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "buscar-disponibilidad",
+    "nombre": "buscar-y-reservar",
+    "ruta": "/agenda/disponibilidad",
+    "preparacion": "elegir una prestación de ejemplo en el selector Prestación y esperar que se muestren los días",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#agenda-oferta",
+        "valor": ":ofertaId"
+      },
+      {
+        "accion": "esperar",
+        "selector": ".slot.slot--libre"
+      }
+    ],
+    "recorte": "main",
+    "marcas": [
+      {
+        "selector": "#agenda-oferta",
+        "numero": 1
+      },
+      {
+        "selector": "#agenda-desde",
+        "numero": 2
+      },
+      {
+        "selector": ".slot.slot--libre >> nth=0",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "recepcion-del-dia",
+    "nombre": "acciones-de-la-fila",
+    "ruta": "/agenda/recepcion",
+    "preparacion": "tener en el día un turno Reservado sin llegada registrada (siembra de ejemplo)",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": ".tabla-scroll[aria-label='Listado de turnos'] tbody tr"
+      }
+    ],
+    "recorte": ".tabla-scroll[aria-label='Listado de turnos']",
+    "marcas": [
+      {
+        "selector": ".tabla-scroll[aria-label='Listado de turnos'] tbody tr >> nth=0 >> .tabla__acciones .boton--chico >> nth=0",
+        "numero": 2
+      },
+      {
+        "selector": ".tabla-scroll[aria-label='Listado de turnos'] tbody tr >> nth=0 >> .acciones-de-fila__boton",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "recepcion-del-dia",
+    "nombre": "barra-de-la-recepcion",
+    "ruta": "/agenda/recepcion",
+    "recorte": "app-filtros",
+    "marcas": [
+      {
+        "selector": "#recepcion-busqueda",
+        "numero": 1
+      },
+      {
+        "selector": "app-filtros-rapidos",
+        "numero": 2
+      },
+      {
+        "selector": "button.recepcion__actualizar",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "series-de-turnos",
+    "nombre": "bandeja",
+    "ruta": "/agenda/series",
+    "preparacion": "tener al menos una serie vigente en la sede (siembra de ejemplo)",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "section.tarjeta[aria-label='Series de turnos'] tbody tr"
+      }
+    ],
+    "recorte": "section.tarjeta[aria-label='Series de turnos']",
+    "marcas": [
+      {
+        "selector": "section.tarjeta[aria-label='Series de turnos'] tbody tr >> nth=0 >> .tabla__acciones .boton",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "series-de-turnos",
+    "nombre": "turnos-de-la-serie",
+    "ruta": "/agenda/series",
+    "preparacion": "tocar Ver serie en la primera fila de una serie vigente con turnos pendientes",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "section.tarjeta[aria-label='Series de turnos'] tbody tr >> nth=0 >> .tabla__acciones .boton"
+      },
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby='titulo-turnos-serie'] .acciones-de-fila__boton"
+      }
+    ],
+    "recorte": "section[aria-labelledby='titulo-turnos-serie']",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby='titulo-turnos-serie'] .acciones-de-fila__boton >> nth=0",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "lista-de-espera",
+    "nombre": "agregar",
+    "ruta": "/agenda/lista-de-espera",
+    "preparacion": "tocar Agregar a la lista en la cabecera y elegir el paciente de ejemplo en el buscador",
+    "recorte": ".panel-lateral",
+    "marcas": [
+      {
+        "selector": "#espera-oferta",
+        "numero": 2
+      },
+      {
+        "selector": "#espera-desde",
+        "numero": 3
+      },
+      {
+        "selector": "#espera-prioridad",
+        "numero": 4
+      },
+      {
+        "selector": ".panel-lateral .acciones--pie .boton:not(.boton--secundario)",
+        "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Agregar a la lista\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "atender-sin-turno",
+    "nombre": "iniciar",
+    "cuenta": "profesional",
+    "ruta": "/atencion/sin-turno",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "#sin-turno-persona"
+      }
+    ],
+    "recorte": "main",
+    "marcas": [
+      {
+        "selector": "#sin-turno-persona",
+        "numero": 1
+      },
+      {
+        "selector": "#sin-turno-oferta",
+        "numero": 2
+      },
+      {
+        "selector": "#sin-turno-motivo",
+        "numero": 4
+      },
+      {
+        "selector": ".pie-tarjeta .boton:not(.boton--secundario)",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "consultar-biblioteca",
+    "nombre": "preguntar",
+    "ruta": "/consulta",
+    "preparacion": "escribir una pregunta de ejemplo en el campo para que el botón Enviar quede habilitado",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#consulta-pregunta",
+        "texto": "¿Qué ejercicios se indican en una lumbalgia mecánica?"
+      }
+    ],
+    "recorte": "section.consulta",
+    "marcas": [
+      {
+        "selector": "#consulta-pregunta",
+        "numero": 1
+      },
+      {
+        "selector": ".consulta__pie button[type=submit]",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "asistente-de-datos",
+    "nombre": "preguntar",
+    "ruta": "/asistente",
+    "recorte": "section.asistente",
+    "marcas": [
+      {
+        "selector": ".asistente__sugerencias",
+        "numero": 1
+      },
+      {
+        "selector": ".asistente__caja textarea",
+        "numero": 2
+      },
+      {
+        "selector": ".asistente__caja button[type=submit]",
+        "numero": 3
+      }
+    ]
+  }
+]

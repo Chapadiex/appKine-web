@@ -32,35 +32,52 @@ import { PermisoDirective } from '../../../../shared/directives/permiso.directiv
 import { ServicioResponse } from '../../../../api/generated/model/servicio-response';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { numeroDeclarado } from '../../../../shared/utils/numero-declarado';
+import {
+  formatearImporte,
+  leerImporte,
+  reformatearImporte,
+} from '../../../../shared/utils/importe-en-texto';
 import { UpdateOfertaRequest } from '../../../../api/generated/model/update-oferta-request';
 import { FiltroEstado, OfferingApi } from '../../services/offering-api';
 import { CausaOffering, hayQueRecargar, traducirErrorOffering } from '../../models/offering-errors';
 import {
+  ESQUEMAS_DE_COBRO,
   MODALIDADES,
+  ayudaDeEsquema,
   etiquetaDeModalidad,
   etiquetaDeNaturaleza,
   modalidadConCapacidad,
-  precioEnPalabras,
   servicioEnUnaLinea,
   servicioInactivo,
+  serviciosPorCategoria,
 } from '../../models/etiquetas-de-offering';
 import {
+  ClaveDeVigencia,
   SituacionDeVigencia,
-  enPalabras,
   situacionDeVigencia,
 } from '../../models/situacion-de-vigencia';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
+import {
+  AsistenteDePasos,
+  PasoDeAsistente,
+} from '../../../../shared/components/asistente-de-pasos/asistente-de-pasos';
+import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+import {
+  GrupoDeSelector,
+  SelectorConBuscador,
+} from '../../../../shared/components/selector-con-buscador/selector-con-buscador';
 import {
   FiltrosRapidos,
   FiltroRapido,
 } from '../../../../shared/components/filtros-rapidos/filtros-rapidos';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
+import { formatearFecha } from '../../../../shared/utils/instantes';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
@@ -142,6 +159,8 @@ type Heredable = '' | 'true' | 'false';
     ColumnaOrdenable,
     Filtros,
     Icono,
+    AsistenteDePasos,
+    Segmentado,
     PieDeTabla,
     EstadoVacio,
     ReactiveFormsModule,
@@ -149,6 +168,7 @@ type Heredable = '' | 'true' | 'false';
     PermisoDirective,
     ConfirmacionConMotivo,
     PanelLateral,
+    SelectorConBuscador,
   ],
   templateUrl: './ofertas-de-la-sede-page.html',
   styleUrl: '../../offering.css',
@@ -173,12 +193,21 @@ export class OfertasDeLaSedePage {
   protected readonly permisoManage = PERMISO_CONSULTORIO_MANAGE;
   protected readonly modalidades = MODALIDADES;
   protected readonly esquemasDeCobro = Object.values(EsquemaCobro);
+  protected readonly opcionesDeEsquema = ESQUEMAS_DE_COBRO;
+  protected readonly ayudaDeEsquema = ayudaDeEsquema;
+  protected readonly pasosDelAlta = PASOS_DEL_ALTA;
+  /** Individual o Grupal, cortos: la explicacion va en el "?" y no en cada opcion. */
+  protected readonly opcionesDeModalidad = MODALIDADES.map((opcion) => ({
+    valor: opcion.valor as string,
+    etiqueta: opcion.etiqueta,
+  }));
   protected readonly etiquetaDeModalidad = etiquetaDeModalidad;
   protected readonly etiquetaDeNaturaleza = etiquetaDeNaturaleza;
   protected readonly modalidadConCapacidad = modalidadConCapacidad;
-  protected readonly precioEnPalabras = precioEnPalabras;
-  protected readonly enPalabras = enPalabras;
   protected readonly servicioEnUnaLinea = servicioEnUnaLinea;
+  protected readonly reformatearImporte = reformatearImporte;
+  protected readonly formatearImporte = formatearImporte;
+  protected readonly formatearFecha = formatearFecha;
 
   /**
    * El dia de hoy, en hora local, fijado al montar.
@@ -319,9 +348,25 @@ export class OfertasDeLaSedePage {
   private servicioPedidoAplicado = false;
   private servicioPedidoAtendido = false;
 
+  /** Los ofertables agrupados por categoria (V38), para el selector con buscador del alta. */
+  protected readonly serviciosAgrupados = computed<readonly GrupoDeSelector[]>(() =>
+    serviciosPorCategoria(this.serviciosOfertables()).map((grupo) => ({
+      etiqueta: grupo.categoria,
+      opciones: grupo.servicios.map((servicio) => ({
+        valor: String(servicio.id),
+        etiqueta: servicioEnUnaLinea(servicio),
+      })),
+    })),
+  );
+
   /** Los que hoy admiten una oferta nueva. Es lo unico que va en los dos selectores. */
   protected readonly serviciosOfertables = computed(() =>
     this.servicios().filter((servicio) => !servicioInactivo(servicio)),
+  );
+
+  /** Los mismos, agrupados por categoria para el `optgroup` del filtro. */
+  protected readonly serviciosOfertablesPorCategoria = computed(() =>
+    serviciosPorCategoria(this.serviciosOfertables()),
   );
 
   /** Fila y operacion abiertas, o `null`. Solo una a la vez. */
@@ -358,6 +403,28 @@ export class OfertasDeLaSedePage {
 
   /** `true` si el alta eligio modalidad grupal. Ver {@link marcarModalidadDelAlta}. */
   protected readonly altaEsGrupal = signal(false);
+
+  /** Paso del alta en curso (1 a 3). Los tres viven en el DOM; se ve uno solo. */
+  protected readonly pasoDelAlta = signal(1);
+
+  /** Modalidad por defecto del servicio elegido: lo que vale "heredar". */
+  private readonly modalidadDelServicio = signal('');
+
+  /** La modalidad que va a tener la actividad: la elegida, o la del servicio si se hereda. */
+  protected readonly modalidadEfectivaDelAlta = signal('');
+
+  /**
+   * La practica del catalogo clinico con el MISMO codigo que el servicio elegido (V35 los precarga
+   * asi), o `null`. Si existe, se le asocia sola a la actividad al darla de alta: la actividad
+   * queda lista para obra social sin pasar por "Practicas".
+   */
+  protected readonly practicaDelServicio = signal<{
+    readonly id: number;
+    readonly codigo: string;
+    readonly nombre: string;
+  } | null>(null);
+  /** Ultimo nombre que puso el autocompletado: si el usuario lo cambio, no se pisa. */
+  private nombreAutocompletado = '';
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     servicioId: ['', [Validators.required]],
@@ -491,6 +558,25 @@ export class OfertasDeLaSedePage {
     return situacionDeVigencia(oferta, this.hoy);
   }
 
+  /** El icono de la columna de estado: verde vigente, reloj si arranca despues, alerta si quedo afuera. */
+  protected iconoDelEstado(situacion: SituacionDeVigencia): NombreDeIcono {
+    return ICONO_DEL_ESTADO[situacion.clave];
+  }
+
+  /**
+   * Lo que dice el icono de estado, para el tooltip y el lector de pantalla: el resumen, la
+   * explicacion si la hay y el motivo de la baja.
+   */
+  protected textoDelEstado(oferta: OfertaResponse, situacion: SituacionDeVigencia): string {
+    const partes: (string | null | undefined)[] = [situacion.resumen, situacion.explicacion];
+    if (oferta.estado === 'INACTIVO') {
+      partes.push(oferta.deactivationReason);
+    }
+    return partes
+      .filter((parte) => parte !== null && parte !== undefined && parte !== '')
+      .join('. ');
+  }
+
   /** Nombre del servicio del que cuelga la oferta, si el catalogo ya cargo. */
   protected nombreDelServicio(oferta: OfertaResponse): string {
     const servicio = this.servicios().find((candidato) => candidato.id === oferta.servicioId);
@@ -548,8 +634,64 @@ export class OfertasDeLaSedePage {
       vigenciaDesde: '',
       vigenciaHasta: '',
     });
+    this.practicaDelServicio.set(null);
+    this.nombreAutocompletado = '';
+    this.modalidadDelServicio.set('');
+    this.pasoDelAlta.set(1);
+    this.aplicarModalidadDelAlta();
     this.altaAbierta.set(true);
     afterNextRender(() => this.enfocar('#alta-oferta-servicio'), { injector: this.injector });
+  }
+
+  /**
+   * Al elegir el servicio se completa lo que casi siempre es igual: el nombre (el del servicio,
+   * si el usuario no escribio otro), la duracion si esta vacia y la practica del mismo codigo,
+   * que ademas marca "Admite obra social". Todo queda editable.
+   */
+  protected alElegirServicio(valor: string): void {
+    const servicio = this.serviciosOfertables().find((s) => String(s.id) === valor);
+    this.practicaDelServicio.set(null);
+    if (servicio === undefined) {
+      return;
+    }
+    const controles = this.formularioAlta.controls;
+    const nombreActual = controles.nombreComercial.value.trim();
+    if (servicio.nombre && (nombreActual === '' || nombreActual === this.nombreAutocompletado)) {
+      controles.nombreComercial.setValue(servicio.nombre);
+      this.nombreAutocompletado = servicio.nombre;
+    }
+    // Una clase grupal arranca con cupo y una hora; una sesion individual, con 45 minutos.
+    const grupal = servicio.modalidadDefault === 'GRUPAL';
+    this.modalidadDelServicio.set(servicio.modalidadDefault ?? '');
+    if (controles.duracionMinutos.value === '') {
+      controles.duracionMinutos.setValue(
+        String(grupal ? DURACION_SUGERIDA_GRUPAL : DURACION_SUGERIDA),
+      );
+    }
+    this.aplicarModalidadDelAlta();
+    const codigo = servicio.codigo;
+    if (!codigo) {
+      return;
+    }
+    this.api
+      .buscarPracticasDelCatalogo(codigo)
+      .pipe(catchError(() => of(null)))
+      .subscribe((pagina) => {
+        // El usuario pudo cambiar de servicio mientras tanto.
+        if (controles.servicioId.value !== valor) {
+          return;
+        }
+        const practica = (pagina?.content ?? []).find((p) => p.codigo === codigo);
+        if (practica?.id === undefined) {
+          return;
+        }
+        this.practicaDelServicio.set({
+          id: practica.id,
+          codigo,
+          nombre: practica.name ?? codigo,
+        });
+        controles.admiteObraSocial.setValue(true);
+      });
   }
 
   protected abrirPanel(oferta: OfertaResponse, tipo: TipoAccion): void {
@@ -570,7 +712,7 @@ export class OfertasDeLaSedePage {
         modalidad: oferta.modalidad ?? '',
         duracionMinutos: comoTexto(oferta.duracionMinutos),
         capacidad: comoTexto(oferta.capacidad),
-        precioBase: comoTexto(oferta.precioBase),
+        precioBase: formatearImporte(oferta.precioBase),
         moneda: oferta.moneda ?? '',
         esquemaCobro: oferta.esquemaCobro ?? '',
         admiteObraSocial: oferta.admiteObraSocial ?? false,
@@ -641,8 +783,72 @@ export class OfertasDeLaSedePage {
    * mandar evita un `400` que el usuario no sabe interpretar. No valida: la autoridad sigue siendo
    * el servidor.
    */
-  protected marcarModalidadDelAlta(valor: string): void {
-    this.altaEsGrupal.set(valor === 'GRUPAL');
+  protected marcarModalidadDelAlta(valor: string | null): void {
+    // Elegir lo mismo que trae el servicio es heredar: no viaja, y si el catalogo cambia la sigue.
+    const elegida = valor ?? '';
+    this.formularioAlta.controls.modalidad.setValue(
+      elegida === this.modalidadDelServicio() ? '' : elegida,
+    );
+    this.aplicarModalidadDelAlta();
+  }
+
+  /**
+   * Capacidad segun la modalidad: en una grupal se habilita (y arranca con un cupo sugerido); en
+   * una individual queda fija en 1 y deshabilitada, que es lo que casi siempre corresponde.
+   */
+  private aplicarModalidadDelAlta(): void {
+    const controles = this.formularioAlta.controls;
+    const efectiva = controles.modalidad.value || this.modalidadDelServicio();
+    this.modalidadEfectivaDelAlta.set(efectiva);
+    const grupal = efectiva === 'GRUPAL';
+    this.altaEsGrupal.set(grupal);
+    if (grupal) {
+      if (controles.capacidad.value === '1' || controles.capacidad.value === '') {
+        controles.capacidad.setValue(String(CAPACIDAD_SUGERIDA_GRUPAL));
+      }
+      controles.capacidad.enable({ emitEvent: false });
+    } else {
+      controles.capacidad.setValue('1');
+      controles.capacidad.disable({ emitEvent: false });
+    }
+  }
+
+  /** Avanza al paso siguiente si lo esencial esta completo; si no, marca y enfoca lo que falta. */
+  protected siguientePasoDelAlta(): void {
+    if (this.pasoDelAlta() === 1 && !this.esencialCompleto()) {
+      return;
+    }
+    this.irAlPasoDelAlta(Math.min(this.pasoDelAlta() + 1, PASOS_DEL_ALTA.length));
+  }
+
+  protected irAlPasoDelAlta(numero: number): void {
+    this.pasoDelAlta.set(numero);
+    afterNextRender(() => this.enfocar(`#alta-oferta-paso-${numero} .asistente__encabezado`), {
+      injector: this.injector,
+    });
+  }
+
+  /** Lo del paso 1 que el servidor exige: servicio, nombre y duracion. */
+  private esencialCompleto(): boolean {
+    const controles = this.formularioAlta.controls;
+    const faltante = [
+      ['#alta-oferta-servicio', controles.servicioId],
+      ['#alta-oferta-nombre', controles.nombreComercial],
+      ['#alta-oferta-duracion', controles.duracionMinutos],
+    ].find(([, control]) => (control as { invalid: boolean }).invalid) as
+      [string, { markAsTouched(): void }] | undefined;
+    if (faltante === undefined && (numeroDeclarado(controles.duracionMinutos.value) ?? 0) > 0) {
+      return true;
+    }
+    this.intentos.update((valor) => valor + 1);
+    controles.servicioId.markAsTouched();
+    controles.nombreComercial.markAsTouched();
+    controles.duracionMinutos.markAsTouched();
+    if (faltante === undefined) {
+      controles.duracionMinutos.setErrors({ min: true });
+    }
+    this.enfocar(faltante?.[0] ?? '#alta-oferta-duracion');
+    return false;
   }
 
   /**
@@ -652,6 +858,28 @@ export class OfertasDeLaSedePage {
    * dice al backend que tome el default del catalogo. Mandar `false` seria apagarlo, que es otra
    * cosa.
    */
+  /**
+   * Fija la practica del servicio en la actividad recien creada. Si falla, la actividad ya
+   * existe: se avisa que la practica se asocia a mano desde "Practicas", sin deshacer nada.
+   */
+  private asociarPractica(
+    consultorioId: number,
+    creada: OfertaResponse,
+    practica: { readonly id: number; readonly nombre: string } | null,
+  ): void {
+    if (practica === null || creada.id === undefined || creada.version === undefined) {
+      return;
+    }
+    this.api
+      .fijarPracticas(consultorioId, creada.id, [practica.id], practica.id, creada.version)
+      .subscribe({
+        error: () =>
+          this.avisos.error('No pudimos asociarle la práctica a la actividad', {
+            descripcion: `Asociá ${practica.nombre} desde el menú de la actividad → Prácticas.`,
+          }),
+      });
+  }
+
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null || this.enviando()) {
@@ -662,6 +890,7 @@ export class OfertasDeLaSedePage {
 
     if (this.formularioAlta.invalid) {
       this.formularioAlta.markAllAsTouched();
+      this.pasoDelAlta.set(1);
       this.enfocar(
         this.formularioAlta.controls.servicioId.invalid
           ? '#alta-oferta-servicio'
@@ -674,6 +903,7 @@ export class OfertasDeLaSedePage {
     const duracion = numeroDeclarado(valores.duracionMinutos) ?? 0;
     if (duracion <= 0) {
       this.formularioAlta.controls.duracionMinutos.setErrors({ min: true });
+      this.pasoDelAlta.set(1);
       this.enfocar('#alta-oferta-duracion');
       return;
     }
@@ -684,6 +914,7 @@ export class OfertasDeLaSedePage {
     const capacidad = numeroDeclarado(valores.capacidad) ?? 0;
     if (capacidad <= 0) {
       this.formularioAlta.controls.capacidad.setErrors({ min: true });
+      this.pasoDelAlta.set(2);
       this.enfocar('#alta-oferta-capacidad');
       return;
     }
@@ -719,7 +950,7 @@ export class OfertasDeLaSedePage {
 
     // Precio y moneda: los dos o ninguno. El backend tiene un check que lo exige, asi que
     // mandar uno solo seria un rechazo garantizado.
-    const precio = numeroDeclarado(valores.precioBase);
+    const precio = leerImporte(valores.precioBase);
     const moneda = valores.moneda.trim().toUpperCase();
     if (precio !== null && moneda !== '') {
       cuerpo.precioBase = precio;
@@ -742,9 +973,11 @@ export class OfertasDeLaSedePage {
     this.errorAccion.set(null);
     this.causaAccion.set(null);
 
+    const practica = this.practicaDelServicio();
     this.api.crearOferta(consultorioId, cuerpo).subscribe({
       next: (creada) => {
         this.cerrarPanel();
+        this.asociarPractica(consultorioId, creada, practica);
         // La aclaracion solo suma si la vigencia arranca mas adelante: es cuando la fila va a
         // figurar "activa pero todavía sin vigencia" y el operador podria creer que fallo.
         const arrancaDespues =
@@ -946,7 +1179,7 @@ export class OfertasDeLaSedePage {
       // Saca el precio Y la moneda: son un solo dato.
       cambios.limpiarPrecio = true;
     } else {
-      const precio = numeroDeclarado(valores.precioBase);
+      const precio = leerImporte(valores.precioBase);
       const moneda = valores.moneda.trim().toUpperCase();
       const cambioElPrecio = comoTexto(precio) !== comoTexto(original.precioBase);
       const cambioLaMoneda = moneda !== (original.moneda ?? '');
@@ -1077,6 +1310,28 @@ export class OfertasDeLaSedePage {
     this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus();
   }
 }
+
+/** Los tres pasos del alta: lo esencial, como se atiende y como se cobra. */
+const PASOS_DEL_ALTA: readonly PasoDeAsistente[] = [
+  { numero: 1, titulo: 'Lo esencial', sub: 'Servicio, nombre y precio' },
+  { numero: 2, titulo: 'Cómo se atiende', sub: 'Modalidad, recursos y clínica' },
+  { numero: 3, titulo: 'Cobro y vigencia', sub: 'Esquema, descripción y fechas' },
+];
+
+/** Un icono por situacion de vigencia: la tabla muestra el icono y el texto va en el tooltip. */
+const ICONO_DEL_ESTADO: Record<ClaveDeVigencia, NombreDeIcono> = {
+  vigente: 'exito',
+  'aun-no': 'horarios',
+  'ya-no': 'advertencia',
+  'fuera-de-ventana': 'advertencia',
+  'dada-de-baja': 'error',
+};
+
+/** Duracion que se propone al elegir un servicio si el campo esta vacio: la sesion mas comun. */
+const DURACION_SUGERIDA = 45;
+/** Para un servicio grupal (yoga, pilates...): una hora y un cupo razonable para empezar. */
+const DURACION_SUGERIDA_GRUPAL = 60;
+const CAPACIDAD_SUGERIDA_GRUPAL = 10;
 
 /** Texto comparable para la busqueda: minusculas y sin acentos. */
 function normalizar(texto: string): string {

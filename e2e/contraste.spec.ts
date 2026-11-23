@@ -148,7 +148,8 @@ test.describe('Contraste de color', () => {
       await page.locator('form').getByLabel('Contraseña').fill('una-contrasena-larga-y-unica-2026');
       await page.getByRole('button', { name: 'Ingresar' }).click();
 
-      const boton = page.getByRole('button', { name: 'Ingresar' });
+      // Mientras envia, el boton dice "Ingresando...": se busca el de envio del formulario.
+      const boton = page.locator('form button[type="submit"]');
       await expect(boton).toBeDisabled();
       await auditarContraste(page, 'login con el boton deshabilitado mientras envia', {
         queAxeNoMide: [
@@ -432,7 +433,9 @@ test.describe('Contraste de color', () => {
       await instalarApiDeContraste(page);
       await instalarApiDp43(page);
       await page.goto('/contratacion/financiadores/catalogo');
-      await expect(page.getByText('El catálogo cambio después de agregarlo')).toBeVisible();
+      await expect(
+        page.locator('.marca-estado', { hasText: 'En el centro' }).first(),
+      ).toBeVisible();
 
       await auditarContraste(page, 'catalogo de financiadores del centro');
     });

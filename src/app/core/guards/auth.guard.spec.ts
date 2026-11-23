@@ -8,7 +8,11 @@ import {
   provideRouter,
 } from '@angular/router';
 
-import { Observable, isObservable } from 'rxjs';
+import { signal } from '@angular/core';
+import { Observable, isObservable, of } from 'rxjs';
+
+import type { MisTerminosResponse } from '../../api/generated/model/mis-terminos-response';
+import { TerminosPendientesStore } from '../services/terminos-pendientes.store';
 
 import { authGuard } from './auth.guard';
 import { contextGuard } from './context.guard';
@@ -28,6 +32,8 @@ import { provideApi } from '../../api/generated/provide-api';
 describe('guards de sesión', () => {
   let session: SessionService;
   let httpMock: HttpTestingController;
+  // Términos ya leídos y aceptados: el guard decide en el acto, como en la app.
+  const terminos = signal<MisTerminosResponse | null>({ pendiente: false });
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -36,6 +42,7 @@ describe('guards de sesión', () => {
         provideHttpClientTesting(),
         provideApi(''),
         provideRouter([]),
+        { provide: TerminosPendientesStore, useValue: { terminos, pendiente: () => of(false) } },
       ],
     });
 
@@ -66,6 +73,19 @@ describe('guards de sesión', () => {
       autenticar('context');
 
       expect(correr(authGuard, '/organizacion')).toBe(true);
+    });
+
+    it('con los términos vigentes sin aceptar manda a aceptarlos, recordando a dónde iba', () => {
+      autenticar('context');
+      terminos.set({ pendiente: true, versionVigente: '2026-11-19' });
+
+      const resultado = correr(authGuard, '/organizacion');
+
+      expect(resultado).toBeInstanceOf(UrlTree);
+      const url = (resultado as UrlTree).toString();
+      expect(url).toContain('/auth/aceptar-terminos');
+      expect(url).toContain('volverA=%2Forganizacion');
+      terminos.set({ pendiente: false });
     });
   });
 

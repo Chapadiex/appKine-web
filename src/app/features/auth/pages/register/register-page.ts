@@ -9,12 +9,12 @@ import { RegistroYActivacionService } from '../../../../api/generated/api/regist
 import { crearEsperaPorLimite } from '../../../../shared/utils/espera-por-limite';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
 import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
-import { TerminosDelAlta } from '../../components/terminos-del-alta/terminos-del-alta';
+import { TerminosDelAlta } from '../../../../shared/components/terminos-del-alta/terminos-del-alta';
 import {
   MENSAJE_TERMINOS_CAMBIARON,
   esRechazoDeTerminos,
   leerTerminosVigentes,
-} from '../../models/terminos-vigentes';
+} from '../../../../core/models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Icono } from '../../../../shared/components/icono/icono';

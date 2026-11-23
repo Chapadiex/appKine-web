@@ -445,3 +445,203 @@ form > .acciones.formulario-servicio__descartar {
   flex: none;
   color: var(--color-acento);
 }
+
+/* Importe con el signo pesos adelante y el numero alineado a la derecha, como se lee la plata. */
+.campo-importe {
+  position: relative;
+}
+
+.campo-importe__signo {
+  position: absolute;
+  top: 50%;
+  left: var(--esp-5);
+  color: var(--color-texto-suave);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.campo-importe input {
+  width: 100%;
+  padding-left: calc(var(--esp-5) + 1.25rem);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/*
+ * Interruptor (switch): el mismo de Organización → Inteligencia artificial (organization.css),
+ * para que se vea igual en toda la app. Pista gris, perilla blanca y color de acento al prenderse.
+ */
+.interruptor {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+  padding: var(--esp-4) 0;
+  cursor: pointer;
+}
+
+.interruptor input[type='checkbox'] {
+  appearance: none;
+  /* Las reglas globales dan a todo input un alto minimo tactil y relleno: aca no van. */
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  box-shadow: none;
+  position: relative;
+  flex: none;
+  width: 2.75rem;
+  height: 1.5rem;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radio-pastilla);
+  background: var(--color-borde-control);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.interruptor input[type='checkbox']::after {
+  content: '';
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.1875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--color-superficie);
+  transition: transform 120ms ease;
+}
+
+.interruptor input[type='checkbox']:checked {
+  background: var(--color-acento);
+}
+
+.interruptor input[type='checkbox']:checked::after {
+  transform: translateX(1.25rem);
+}
+
+.interruptor input[type='checkbox']:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.interruptor__titulo {
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interruptor input[type='checkbox'],
+  .interruptor input[type='checkbox']::after {
+    transition: none;
+  }
+}
+
+/*
+ * Tabla de actividades de la sede (21/11/2026): actividad y servicio en una celda, modalidad y
+ * estado como icono con tooltip, importes y duraciones alineados a la derecha, vigencia en dos
+ * renglones.
+ */
+.tabla th.tabla__col--numero,
+.tabla td.tabla__col--numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tabla th.tabla__col--icono,
+.tabla td.tabla__col--icono {
+  text-align: center;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.celda-actividad {
+  min-width: 14rem;
+}
+
+.celda-actividad__nombre {
+  display: block;
+  font-weight: var(--peso-medio);
+}
+
+.celda-actividad__servicio,
+.celda-segunda-linea {
+  display: block;
+  font-size: var(--tipo-2xs);
+  font-weight: normal;
+  color: var(--color-texto-suave);
+}
+
+.celda-precio {
+  font-weight: var(--peso-medio);
+}
+
+.celda-vacia {
+  color: var(--color-texto-suave);
+}
+
+.celda-fecha {
+  display: block;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.celda-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--color-texto-suave);
+  cursor: help;
+}
+
+.celda-icono--grupal {
+  color: var(--color-acento);
+}
+
+.celda-icono--vigente {
+  color: var(--color-exito);
+}
+
+.celda-icono--aun-no {
+  color: var(--color-acento);
+}
+
+.celda-icono--ya-no,
+.celda-icono--fuera-de-ventana {
+  color: var(--color-aviso);
+}
+
+.celda-icono--dada-de-baja {
+  color: var(--color-peligro);
+}
+
+/*
+ * Alta de actividad en tres pasos (21/11/2026). Cada paso es una grilla de 12 que vive en el DOM y
+ * se esconde con `hidden`: `display: grid` le gana al `hidden` del navegador, hay que restituirlo.
+ */
+.paso-del-alta[hidden] {
+  display: none;
+}
+
+.alta-oferta__pasos {
+  display: block;
+  margin-bottom: var(--esp-6);
+}
+
+/* Rotulo que no es un `label` (el del segmentado, o el de arriba de un interruptor). */
+.campo__rotulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.rotulo-con-ayuda {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 1.25rem;
+}
+
+/* El interruptor queda a la altura de los controles de la fila, no de sus etiquetas. */
+.campo--interruptor .interruptor {
+  min-height: 2.75rem;
+}

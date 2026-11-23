@@ -1,0 +1,359 @@
+[
+  {
+    "ficha": "clases",
+    "nombre": "programar-clase",
+    "ruta": "/clases/nueva",
+    "preparacion": "Sede con al menos una actividad grupal publicada. Elegir la primera actividad en #clase-oferta para que aparezca el campo Box.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#clase-oferta",
+        "valor": ":ofertaGrupalId"
+      },
+      {
+        "accion": "esperar",
+        "selector": "#clase-capacidad"
+      }
+    ],
+    "recorte": "form.tarjeta:has(#clase-oferta)",
+    "marcas": [
+      {
+        "selector": "#clase-oferta",
+        "numero": 2
+      },
+      {
+        "selector": "#clase-inicio",
+        "numero": 4
+      },
+      {
+        "selector": "#clase-capacidad",
+        "numero": 5
+      },
+      {
+        "selector": "form.tarjeta:has(#clase-oferta) button[type=submit]",
+        "numero": 6
+      }
+    ]
+  },
+  {
+    "ficha": "clases",
+    "nombre": "inscribir",
+    "ruta": "/clases/:claseId",
+    "preparacion": "Clase en estado PROGRAMADA con lugar. Escribir un apellido de ejemplo en #inscribir-persona y tocar la primera persona de .lista-personas para que aparezcan la casilla y el botón Inscribir.",
+    "pasos": [
+      {
+        "accion": "escribir",
+        "selector": "#inscribir-persona",
+        "texto": ":personaApellido"
+      },
+      {
+        "accion": "click",
+        "selector": ".lista-personas button >> nth=0"
+      },
+      {
+        "accion": "esperar",
+        "selector": "section[aria-labelledby=\"titulo-inscribir\"] .acciones button"
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-inscribir\"]",
+    "marcas": [
+      {
+        "selector": "section[aria-labelledby=\"titulo-inscribir\"] input[type=checkbox]",
+        "numero": 4
+      },
+      {
+        "selector": "section[aria-labelledby=\"titulo-inscribir\"] .acciones button",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "asistencia",
+    "nombre": "iniciar-clase",
+    "ruta": "/asistencia/:claseHoyId",
+    "preparacion": "Clase de hoy en estado PROGRAMADA con inscriptos.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Iniciar clase\"]"
+      }
+    ],
+    "recorte": "section.banda-asistencia",
+    "marcas": [
+      {
+        "selector": "role=button[name=\"Iniciar clase\"]",
+        "numero": 2
+      }
+    ]
+  },
+  {
+    "ficha": "asistencia",
+    "nombre": "tomar-lista",
+    "ruta": "/asistencia/:claseEnCursoId",
+    "preparacion": "Clase en estado EN_CURSO con al menos dos inscriptos con lugar y ninguno marcado. Marcar Presente en la primera fila para que aparezca Guardar asistencia habilitado.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "fieldset.marcas >> nth=0 >> label.opcion-radio--presente"
+      },
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=/^Guardar asistencia/]"
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-participantes\"]",
+    "marcas": [
+      {
+        "selector": "role=button[name=\"Marcar presentes a los sin marcar\"]",
+        "numero": 2
+      },
+      {
+        "selector": "fieldset.marcas >> nth=0",
+        "numero": 3
+      },
+      {
+        "selector": "role=button[name=/^Guardar asistencia/]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "productos-de-pack",
+    "nombre": "nuevo-producto",
+    "ruta": "/productos",
+    "preparacion": "Sede con una actividad activa que cobra POR_PACK. Tocar #boton-nuevo-producto para abrir el panel lateral.",
+    "recorte": "app-panel-lateral form",
+    "marcas": [
+      {
+        "selector": "#producto-tipo",
+        "numero": 2
+      },
+      {
+        "selector": "#producto-oferta",
+        "numero": 3
+      },
+      {
+        "selector": "#producto-precio",
+        "numero": 5
+      },
+      {
+        "selector": "app-panel-lateral form button[type=submit]",
+        "numero": 7
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "#boton-nuevo-producto"
+      }
+    ]
+  },
+  {
+    "ficha": "productos-de-pack",
+    "nombre": "vender-pase",
+    "ruta": "/pacientes/:personaId/pases",
+    "preparacion": "Persona de ejemplo; la sede tiene al menos un producto de pack vigente. Elegir el primer producto en #vender-producto.",
+    "pasos": [
+      {
+        "accion": "seleccionar",
+        "selector": "#vender-producto",
+        "indice": 1
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-vender\"]",
+    "marcas": [
+      {
+        "selector": "#vender-producto",
+        "numero": 2
+      },
+      {
+        "selector": "role=button[name=\"Vender pase\"]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "egresos",
+    "nombre": "cargar-egreso",
+    "ruta": "/egresos",
+    "preparacion": "Tocar role=button[name=\"Registrar egreso\"] para abrir el panel lateral Cargar un egreso.",
+    "recorte": "app-panel-lateral form",
+    "marcas": [
+      {
+        "selector": "app-panel-lateral fieldset:has(legend:text-is(\"Beneficiario\"))",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-concepto",
+        "numero": 3
+      },
+      {
+        "selector": "#alta-importe",
+        "numero": 4
+      },
+      {
+        "selector": "#alta-comprobante-tipo",
+        "numero": 5
+      },
+      {
+        "selector": "role=button[name=\"Cargar el borrador\"]",
+        "numero": 6
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Registrar egreso\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "egresos",
+    "nombre": "registrar-pago",
+    "ruta": "/egresos/:egresoId",
+    "preparacion": "Egreso en estado CONFIRMADO con saldo pendiente.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "#pago-importe"
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-pago\"]",
+    "marcas": [
+      {
+        "selector": "#pago-importe",
+        "numero": 2
+      },
+      {
+        "selector": "#pago-medio",
+        "numero": 3
+      },
+      {
+        "selector": "section[aria-labelledby=\"titulo-pago\"] button[type=submit]",
+        "numero": 5
+      }
+    ]
+  },
+  {
+    "ficha": "honorarios",
+    "nombre": "calcular",
+    "ruta": "/egresos/honorarios",
+    "recorte": "section[aria-labelledby=\"titulo-pedido\"]",
+    "marcas": [
+      {
+        "selector": "#honorarios-colaborador",
+        "numero": 1
+      },
+      {
+        "selector": "#honorarios-desde",
+        "numero": 2
+      },
+      {
+        "selector": "#honorarios-oferta",
+        "numero": 3
+      },
+      {
+        "selector": "role=button[name=\"Calcular el borrador\"]",
+        "numero": 4
+      }
+    ]
+  },
+  {
+    "ficha": "presentaciones",
+    "nombre": "abrir-lote",
+    "ruta": "/presentaciones",
+    "preparacion": "Cuenta con cobro:register y convenio:read. Tocar role=button[name=\"Nuevo lote\"] para abrir el panel Abrir un borrador.",
+    "recorte": "app-panel-lateral form",
+    "marcas": [
+      {
+        "selector": "#alta-financiador",
+        "numero": 2
+      },
+      {
+        "selector": "#alta-desde",
+        "numero": 3
+      },
+      {
+        "selector": "role=button[name=\"Abrir el borrador\"]",
+        "numero": 5
+      }
+    ],
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "role=button[name=\"Nuevo lote\"]"
+      }
+    ]
+  },
+  {
+    "ficha": "presentaciones",
+    "nombre": "revision",
+    "ruta": "/presentaciones/:presentacionId",
+    "preparacion": "Lote en estado BORRADOR con al menos una prestación agregada y sin observaciones.",
+    "pasos": [
+      {
+        "accion": "esperar",
+        "selector": "role=button[name=\"Confirmar y presentar\"]"
+      }
+    ],
+    "recorte": "section[aria-labelledby=\"titulo-revision\"]",
+    "marcas": [
+      {
+        "selector": "role=button[name=\"Confirmar y presentar\"]",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "reportes",
+    "nombre": "generar",
+    "ruta": "/reportes",
+    "recorte": "section[aria-labelledby=\"titulo-filtros-reporte\"]",
+    "marcas": [
+      {
+        "selector": "#reporte-codigo",
+        "numero": 1
+      },
+      {
+        "selector": "#reporte-desde",
+        "numero": 2
+      },
+      {
+        "selector": "role=button[name=\"Generar reporte\"]",
+        "numero": 3
+      }
+    ]
+  },
+  {
+    "ficha": "cuenta-corriente",
+    "nombre": "registrar-cobro",
+    "ruta": "/pacientes/:personaId/cuenta-corriente/cobrar",
+    "preparacion": "Persona de ejemplo con al menos una deuda pendiente. Marcar la primera deuda para que aparezca su importe a imputar.",
+    "pasos": [
+      {
+        "accion": "click",
+        "selector": "[id^=\"deuda-\"] >> nth=0"
+      },
+      {
+        "accion": "escribir",
+        "selector": "#importe-medio-0",
+        "texto": "12000"
+      }
+    ],
+    "recorte": "section.cobro-formulario",
+    "marcas": [
+      {
+        "selector": "[id^=\"deuda-\"] >> nth=0",
+        "numero": 2
+      },
+      {
+        "selector": "#medio-0",
+        "numero": 3
+      },
+      {
+        "selector": "#importe-medio-0",
+        "numero": 4
+      }
+    ]
+  }
+]

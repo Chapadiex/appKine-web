@@ -81,6 +81,16 @@ const TRAZOS = {
   repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   microfono: rectangulo(9, 3, 6, 11, 3) + 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
   detener: rectangulo(6.5, 6.5, 11, 11, 2),
+  /** La inteligencia artificial: una chispa grande y una chica. */
+  chispa:
+    'M10 3l1.9 5.1L17 10l-5.1 1.9L10 17l-1.9-5.1L3 10l5.1-1.9z' +
+    'M18 14l.8 2.2 2.2.8-2.2.8L18 20l-.8-2.2-2.2-.8 2.2-.8z',
+  ojo:
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' + circulo(12, 12, 2.8),
+  'ojo-tachado':
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' +
+    circulo(12, 12, 2.8) +
+    'M4 4l16 16',
 } satisfies Record<string, string>;
 
 /** Los iconos que existen. Agregar uno es agregar su trazo en `TRAZOS`. */
@@ -103,7 +113,7 @@ export type NombreDeIcono = keyof typeof TRAZOS;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path [attr.d]="trazo()" />
+      <path [attr.d]="dibujo()" />
     </svg>
   `,
   styles: `
@@ -126,7 +136,20 @@ export type NombreDeIcono = keyof typeof TRAZOS;
   `,
 })
 export class Icono {
-  readonly nombre = input.required<NombreDeIcono>();
+  readonly nombre = input<NombreDeIcono>();
+  /**
+   * Un trazo propio en vez de uno de `TRAZOS`: lo usan las features diferidas (el manual) para no
+   * sumar dibujos al bundle inicial.
+   */
+  readonly trazo = input<string | undefined>(undefined);
 
-  protected readonly trazo = computed(() => TRAZOS[this.nombre()]);
+  protected readonly dibujo = computed(() => {
+    const nombre = this.nombre();
+    return this.trazo() ?? (nombre ? TRAZOS[nombre] : '');
+  });
+}
+
+/** `true` si el nombre es uno de los íconos de la aplicación. */
+export function esNombreDeIcono(nombre: string): nombre is NombreDeIcono {
+  return Object.hasOwn(TRAZOS, nombre);
 }

@@ -6,6 +6,12 @@
       se cambia la contratación y se pasa una prueba a contrato. No hace falta un acceso de soporte.
       Solo lo ve el equipo de AKINE.
     </p>
+    <p>
+      Siglas de la columna Plan:
+      @for (s of siglasDePlan; track s.sigla) {
+        <strong>{{ s.sigla }}</strong> = {{ s.texto }}{{ $last ? '.' : ', ' }}
+      }
+    </p>
   </app-ayuda>
 
   <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
@@ -92,8 +98,8 @@
         <div class="tabla-scroll" tabindex="0" role="region" aria-label="Centros encontrados">
           <table class="tabla">
             <caption class="visualmente-oculto">
-              Centros de la plataforma, con su slug, el plan, si tienen IA, el estado de la
-              suscripción y la fecha de alta.
+              Centros de la plataforma, con su slug, el plan, los servicios, si tienen IA, el estado
+              de la suscripción y la fecha de alta.
             </caption>
             <thead>
               <tr>
@@ -108,6 +114,7 @@
                   Slug
                 </th>
                 <th scope="col">Plan</th>
+                <th scope="col">Servicios</th>
                 <th scope="col">IA</th>
                 <th scope="col">Suscripción</th>
                 <th scope="col">Plazo de la prueba</th>
@@ -133,16 +140,43 @@
                   <td class="tabla__col--secundaria">{{ c.slug }}</td>
                   <td>
                     @let plan = planDeFila(c);
-                    <span class="marca-plan" [class]="'marca-plan ' + plan.clase">
+                    <!-- Solo la sigla a la vista; el nombre va en el globo y para el lector. -->
+                    <span
+                      class="marca-plan"
+                      [class]="'marca-plan ' + plan.clase"
+                      [attr.data-globo]="plan.sigla ? plan.texto : null"
+                      [attr.tabindex]="plan.sigla ? 0 : null"
+                    >
                       @if (plan.sigla) {
                         <span class="marca-plan__sigla" aria-hidden="true">{{ plan.sigla }}</span>
+                        <span class="visualmente-oculto">{{ plan.texto }}</span>
+                      } @else {
+                        {{ plan.texto }}
                       }
-                      {{ plan.texto }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="marcas-servicio">
+                      @for (s of marcasDeServicios(c.servicios); track s.valor) {
+                        <span
+                          class="marca-servicio"
+                          [class]="'marca-servicio marca-servicio--' + s.icono"
+                          [attr.data-globo]="s.texto"
+                          tabindex="0"
+                        >
+                          <app-icono [nombre]="s.icono" />
+                          <span class="visualmente-oculto">{{ s.texto }}</span>
+                        </span>
+                      } @empty {
+                        <span class="visualmente-oculto">Sin servicios</span>
+                      }
                     </span>
                   </td>
                   <td>
                     @if (c.ia) {
-                      <span class="marca-ia">IA</span>
+                      <span class="marca-ia" data-globo="Adicional de IA contratado" tabindex="0"
+                        >IA</span
+                      >
                     } @else {
                       <span class="visualmente-oculto">Sin IA</span>
                     }
@@ -208,43 +242,63 @@
     }
 
     @if (contratacion(); as c) {
-      <dl class="detalle">
-        <dt>Estado</dt>
-        <dd>
+      <!--
+        Lo vigente, de un vistazo (19/11/2026): el estado arriba y los tres datos contratados como
+        fichas. La version dejo de ser una fila: es un dato del envio y vive en la ayuda de abajo.
+      -->
+      <section class="vigente" aria-label="Contratación vigente">
+        <div class="vigente__estado">
           <span
             data-testid="suscripcion-estado"
             [class]="'marca-estado ' + marcaDeSuscripcion(c.estado, pruebaVencida()).clase"
             >{{ marcaDeSuscripcion(c.estado, pruebaVencida()).texto }}</span
           >
-        </dd>
-        @if (enPrueba()) {
-          <dt>Prueba</dt>
-          <dd data-testid="suscripcion-prueba">
-            @if (pruebaVencida()) {
-              Venció el {{ fechaDeFin(c.pruebaHasta) }}: el centro está en solo lectura.
-            } @else if (dias() === 1) {
-              Queda 1 día (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
-            } @else {
-              Quedan {{ dias() }} días (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
-            }
-          </dd>
-        } @else if (c.soloLectura) {
-          <dt>Uso</dt>
-          <dd>Solo lectura: el centro ve sus datos pero no carga nada nuevo.</dd>
-        }
-        <dt>Plan</dt>
-        <dd data-testid="suscripcion-plan">
-          {{ c.planNombre ?? nombreDePlan(c.planCode) }} · {{ rotuloDeTope(c.maxSedes) }}
-        </dd>
-        <dt>Servicios</dt>
-        <dd>{{ serviciosEnTexto(c.servicios) }}</dd>
-        <dt>Adicional de IA</dt>
-        <dd>{{ tieneIa(c.adicionales) ? 'Contratado' : 'No' }}</dd>
-        <dt>Versión</dt>
-        <dd data-testid="suscripcion-version">{{ c.version }}</dd>
-      </dl>
+          @if (enPrueba()) {
+            <p class="vigente__nota" data-testid="suscripcion-prueba">
+              @if (pruebaVencida()) {
+                Venció el {{ fechaDeFin(c.pruebaHasta) }}: el centro está en solo lectura.
+              } @else if (dias() === 1) {
+                Queda 1 día (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
+              } @else {
+                Quedan {{ dias() }} días (hasta el {{ fechaDeFin(c.pruebaHasta) }}).
+              }
+            </p>
+          } @else if (c.soloLectura) {
+            <p class="vigente__nota">
+              Solo lectura: el centro ve sus datos pero no carga nada nuevo.
+            </p>
+          }
+        </div>
+        <dl class="vigente__datos">
+          <div class="vigente__dato">
+            <dt>Plan</dt>
+            <dd data-testid="suscripcion-plan">
+              {{ nombreVisibleDePlan(c.planCode, c.planNombre ?? nombreDePlan(c.planCode)) }} ·
+              {{ rotuloDeTope(c.maxSedes) }} · {{ rotuloDeProfesionales(c.maxProfesionales) }}
+            </dd>
+          </div>
+          <div class="vigente__dato">
+            <dt>Servicios</dt>
+            <dd>{{ serviciosEnTexto(c.servicios) }}</dd>
+          </div>
+          <div class="vigente__dato">
+            <dt>Adicional de IA</dt>
+            <dd>{{ tieneIa(c.adicionales) ? 'Contratado' : 'No' }}</dd>
+          </div>
+        </dl>
+      </section>
 
-      <h3>Cambiar la contratación</h3>
+      <div class="titulo-de-cambio">
+        <h3>Cambiar la contratación</h3>
+        <app-ayuda titulo="Cómo se guarda">
+          <p>
+            Se manda con la versión
+            <span data-testid="suscripcion-version">{{ c.version }}</span>. Si otro cambio llega
+            antes, no se aplica nada y la contratación se vuelve a leer.
+          </p>
+          <p>Bajar de plan no borra nada: solo se rechazan las sedes nuevas que superen el tope.</p>
+        </app-ayuda>
+      </div>
       @if (!editable()) {
         <p class="estado estado--vacio">
           La suscripción está {{ marcaDeSuscripcion(c.estado).texto.toLowerCase() }}: la
@@ -266,41 +320,45 @@
             <label for="suscripcion-plan-nuevo">Plan</label>
             <select
               id="suscripcion-plan-nuevo"
-              aria-describedby="suscripcion-plan-ayuda"
+              [attr.aria-describedby]="planNoOfrecido() ? 'suscripcion-plan-ayuda' : null"
               [value]="planElegido()"
               (change)="planElegido.set($any($event.target).value)"
             >
               @if (planNoOfrecido()) {
                 <option [value]="c.planCode" disabled [selected]="planElegido() === c.planCode">
-                  {{ c.planNombre ?? c.planCode }} (ya no se ofrece)
+                  {{ nombreVisibleDePlan(c.planCode, c.planNombre) }} (ya no se ofrece)
                 </option>
               }
               @for (plan of planes(); track plan.code) {
                 <option [value]="plan.code" [selected]="plan.code === planElegido()">
-                  {{ plan.name ?? plan.code }} · {{ topeDeSedes(plan) }}
+                  {{ nombreVisibleDePlan(plan.code, plan.name) }} · {{ topesDelPlan(plan) }}
                 </option>
               }
             </select>
-            <p id="suscripcion-plan-ayuda" class="ayuda">
-              Bajar de plan no borra nada: solo se rechazan las sedes nuevas que superen el tope.
-            </p>
+            @if (planNoOfrecido()) {
+              <p id="suscripcion-plan-ayuda" class="ayuda">
+                El plan actual ya no se ofrece: para guardar hay que elegir uno vigente.
+              </p>
+            }
           </div>
 
           <fieldset
-            class="grupo"
+            class="opciones"
             [attr.aria-describedby]="sinServicios() ? 'suscripcion-servicios-error' : null"
           >
-            <legend>Servicios (al menos uno)</legend>
-            @for (servicio of servicios; track servicio.valor) {
-              <label class="opcion-radio">
-                <input
-                  type="checkbox"
-                  [checked]="servicioElegido(servicio.valor)"
-                  (change)="alternarServicio(servicio.valor, $any($event.target).checked)"
-                />
-                {{ servicio.etiqueta }}
-              </label>
-            }
+            <legend>Servicios <span class="opciones__regla">al menos uno</span></legend>
+            <div class="opciones__lista">
+              @for (servicio of servicios; track servicio.valor) {
+                <label class="opcion-radio opcion-ficha">
+                  <input
+                    type="checkbox"
+                    [checked]="servicioElegido(servicio.valor)"
+                    (change)="alternarServicio(servicio.valor, $any($event.target).checked)"
+                  />
+                  {{ servicio.etiqueta }}
+                </label>
+              }
+            </div>
             @if (sinServicios()) {
               <p class="campo__error" id="suscripcion-servicios-error">
                 Elegí al menos un servicio.
@@ -308,19 +366,19 @@
             }
           </fieldset>
 
-          <label class="opcion-radio">
-            <input
-              type="checkbox"
-              [checked]="iaElegida()"
-              (change)="iaElegida.set($any($event.target).checked)"
-            />
-            Adicional de IA
-          </label>
-
-          <p class="ayuda">
-            Se manda con la versión {{ c.version }}. Si otro cambio llega antes, no se aplica nada y
-            la contratación se vuelve a leer.
-          </p>
+          <fieldset class="opciones">
+            <legend>Adicionales</legend>
+            <div class="opciones__lista">
+              <label class="opcion-radio opcion-ficha">
+                <input
+                  type="checkbox"
+                  [checked]="iaElegida()"
+                  (change)="iaElegida.set($any($event.target).checked)"
+                />
+                Adicional de IA
+              </label>
+            </div>
+          </fieldset>
 
           <!-- En un formulario el pie se invierte: la principal va primera y queda en el borde. -->
           <div class="acciones">
@@ -361,6 +419,16 @@
             <button type="button" class="boton boton--secundario" (click)="cerrarSuscripcion()">
               Cerrar
             </button>
+            <!-- Por que la principal esta apagada: un boton gris sin motivo no dice nada. -->
+            @if (!enviando()) {
+              @if (!planElegidoOfrecido()) {
+                <p class="pie-motivo">Elegí un plan vigente.</p>
+              } @else if (sinServicios()) {
+                <p class="pie-motivo">Falta un servicio.</p>
+              } @else if (sinCambios()) {
+                <p class="pie-motivo">Sin cambios para guardar.</p>
+              }
+            }
           </div>
         </form>
       }

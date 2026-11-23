@@ -258,9 +258,57 @@
   color: var(--color-texto-suave);
 }
 
+/* La IA: arriba a la izquierda, del lado opuesto a la llegada, con el violeta de lo que es IA. */
+.sugerencia-ia {
+  position: absolute;
+  inset-inline-start: calc(-1 * var(--esp-8));
+  inset-block-start: 60%;
+  z-index: 1;
+  display: grid;
+  gap: var(--esp-3);
+  max-width: 17rem;
+  padding: var(--esp-5) var(--esp-6);
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: var(--radio-lg);
+  background:
+    linear-gradient(var(--color-superficie), var(--color-superficie)) padding-box,
+    linear-gradient(120deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta)) border-box;
+  box-shadow:
+    var(--sombra-flotante),
+    0 12px 36px var(--color-ia-brillo);
+  font-size: var(--tipo-xs);
+  line-height: 1.4;
+}
+
+.sugerencia-ia__cabecera {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  justify-self: start;
+  padding: var(--esp-1) var(--esp-4);
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta));
+  color: var(--color-ia-vivo-texto);
+  font-weight: var(--peso-fuerte);
+}
+
+.sugerencia-ia__texto {
+  color: var(--color-texto-suave);
+}
+
+.sugerencia-ia b {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
 @media (max-width: 64rem) {
   .llegada {
     inset-inline-end: var(--esp-4);
+  }
+
+  .sugerencia-ia {
+    inset-inline-start: var(--esp-4);
   }
 }
 
@@ -295,6 +343,10 @@
     inset-inline: var(--esp-4);
     max-width: none;
   }
+
+  .sugerencia-ia {
+    display: none;
+  }
 }
 
 /* El único momento animado de la página: el día se carga, después llega alguien. */
@@ -311,6 +363,10 @@
 
   .llegada {
     animation: llegar 700ms cubic-bezier(0.16, 1, 0.3, 1) 1100ms both;
+  }
+
+  .sugerencia-ia {
+    animation: llegar 700ms cubic-bezier(0.16, 1, 0.3, 1) 1700ms both;
   }
 }
 

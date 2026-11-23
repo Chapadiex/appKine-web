@@ -1,0 +1,117 @@
+.terminos-formulario {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+/*
+  Leer los términos (21/11/2026): una tarjeta-enlace destacada, con ícono, versión y flecha. Al
+  abrirla queda marcada como "Leído".
+*/
+.terminos__leer {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-fuerte);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.terminos__leer:hover {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.terminos__leer--hecho {
+  border-color: var(--color-exito);
+}
+
+.terminos__leer-icono {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-accion-fondo);
+}
+
+.terminos__leer-textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.terminos__leer-titulo {
+  font-weight: var(--peso-fuerte);
+}
+
+.terminos__leer-sub {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.terminos__leer-flecha {
+  flex: none;
+  color: var(--color-texto-suave);
+}
+
+.terminos__leido {
+  flex: none;
+}
+
+/*
+  "Leí y acepto": la única decisión de la pantalla, así que va grande y en su propia caja, que se
+  marca cuando la casilla está tildada.
+*/
+.campo .terminos__casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: 3.25rem;
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.campo .terminos__casilla:has(input:checked) {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-hover);
+}
+
+.terminos__casilla input {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--color-accion-fondo);
+  cursor: pointer;
+}
+
+.terminos-acciones {
+  display: grid;
+  gap: var(--esp-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminos__leer,
+  .campo .terminos__casilla {
+    transition: none;
+  }
+}

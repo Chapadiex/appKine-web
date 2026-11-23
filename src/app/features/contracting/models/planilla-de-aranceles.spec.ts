@@ -5,7 +5,8 @@ import {
   parsearPlanilla,
 } from './planilla-de-aranceles';
 
-const CABECERA =
+const CABECERA = 'codigoPractica;importeFinanciador;vigenciaDesde;vigenciaHasta';
+const CABECERA_VIEJA =
   'codigoPractica;importeTotal;importeFinanciador;coseguro;vigenciaDesde;vigenciaHasta';
 
 /**
@@ -24,28 +25,20 @@ describe('parsearPlanilla', () => {
     expect(filas).toEqual([
       {
         codigoPractica: 'KIN-01',
-        importeTotal: 12000,
         importeFinanciador: 9000,
-        coseguro: 3000,
         vigenciaDesde: '2027-01-01',
         vigenciaHasta: '2027-12-31',
       },
-      {
-        codigoPractica: 'KIN-02',
-        importeTotal: 8500.5,
-        importeFinanciador: 8500.5,
-        coseguro: 0,
-        vigenciaDesde: '2027-01-01',
-      },
+      { codigoPractica: 'KIN-02', importeFinanciador: 8500.5, vigenciaDesde: '2027-01-01' },
     ]);
   });
 
   it('acepta coma como separador, alias cortos, ids, comillas, DD/MM/AAAA y lineas de comentario', () => {
     const texto = [
       '# nomenclador 2027',
-      'practica,oferta,total,financiador,coseguro,desde,hasta',
+      'practica,oferta,financiador,desde,hasta',
       '',
-      '55,31,"1000.10",900.10,100,1/2/2027,31/12/2027',
+      '55,31,"900.10",1/2/2027,31/12/2027',
     ].join('\r\n');
 
     const { filas, errores, lineas } = parsearPlanilla(texto);
@@ -55,23 +48,32 @@ describe('parsearPlanilla', () => {
     expect(filas[0]).toEqual({
       practicaId: 55,
       ofertaId: 31,
-      importeTotal: 1000.1,
       importeFinanciador: 900.1,
-      coseguro: 100,
       vigenciaDesde: '2027-02-01',
       vigenciaHasta: '2027-12-31',
     });
   });
 
+  it('las columnas viejas total y coseguro se aceptan y se ignoran (contrato 0.185.0)', () => {
+    const { filas, errores } = parsearPlanilla(
+      [CABECERA_VIEJA, 'KIN-01;12000;9000;3000;2027-01-01;'].join('\n'),
+    );
+
+    expect(errores).toEqual([]);
+    expect(filas).toEqual([
+      { codigoPractica: 'KIN-01', importeFinanciador: 9000, vigenciaDesde: '2027-01-01' },
+    ]);
+  });
+
   it('cada error de formato sale con su linea y la fila no entra al lote', () => {
     const texto = [
       CABECERA,
-      'KIN-01;1000.005;1000;0;2027-01-01;',
-      ';1000;1000;0;2027-01-01;',
-      'KIN-03;-5;0;0;2027-02-30;',
-      'KIN-04;1.000,50;0;0;2027-01-01;',
-      'KIN-05;100;100;0;2027-01-01;;extra',
-      'KIN-06;100;100;0;2027-01-01;',
+      'KIN-01;1000.005;2027-01-01;',
+      ';1000;2027-01-01;',
+      'KIN-03;-5;2027-02-30;',
+      'KIN-04;1.000,50;2027-01-01;',
+      'KIN-05;100;2027-01-01;;extra',
+      'KIN-06;100;2027-01-01;',
     ].join('\n');
 
     const { filas, errores } = parsearPlanilla(texto);
@@ -83,7 +85,7 @@ describe('parsearPlanilla', () => {
     expect(errores[2].mensaje).toContain('no es un importe válido');
     expect(errores[2].mensaje).toContain('no es una fecha válida');
     expect(errores[3].mensaje).toContain('no es un importe válido');
-    expect(errores[4].mensaje).toContain('7 columnas');
+    expect(errores[4].mensaje).toContain('5 columnas');
   });
 
   it('el encabezado se valida: columna desconocida, repetida, obligatoria o sin práctica', () => {
@@ -101,7 +103,7 @@ describe('parsearPlanilla', () => {
 
     const muchas = [
       CABECERA,
-      ...Array.from({ length: MAXIMO_DE_FILAS + 1 }, (_, i) => `K${i};1;1;0;2027-01-01;`),
+      ...Array.from({ length: MAXIMO_DE_FILAS + 1 }, (_, i) => `K${i};1;2027-01-01;`),
     ];
     const resultado = parsearPlanilla(muchas.join('\n'));
     expect(resultado.filas).toEqual([]);

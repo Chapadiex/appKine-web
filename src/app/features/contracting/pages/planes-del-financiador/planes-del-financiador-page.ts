@@ -9,7 +9,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
+import { ConveniosApi } from '../../services/convenios-api';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, of } from 'rxjs';
 
@@ -129,12 +131,62 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class PlanesDelFinanciadorPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
+  /**
+   * Abre los precios del plan: lo que paga la obra social por cada práctica, en todas las sedes.
+   *
+   * <p>Primero busca el convenio del plan; si todavía no existe, lo prepara (exige convenio:manage).
+   * Sin ese permiso y sin precios cargados, avisa en vez de abrir una grilla vacía que no se puede
+   * llenar.
+   */
+  protected abrirPrecios(plan: PlanCoberturaResponse): void {
+    const planId = plan.id;
+    if (planId === undefined || this.abriendoPrecios() !== null) {
+      return;
+    }
+    this.abriendoPrecios.set(planId);
+    const abrir = (convenioId: number | undefined) => {
+      this.abriendoPrecios.set(null);
+      if (convenioId !== undefined) {
+        this.router
+          .navigate(['/contratacion/convenios', convenioId, 'aranceles'])
+          .catch(() => undefined);
+      }
+    };
+    const fallar = (error: unknown) => {
+      this.abriendoPrecios.set(null);
+      if (error instanceof AkineHttpError && error.status === 403) {
+        this.avisos.info('Este plan todavía no tiene precios cargados', {
+          descripcion: 'Los carga quien administra las obras sociales del centro.',
+        });
+        return;
+      }
+      this.avisos.error('No pudimos abrir los precios del plan', {
+        descripcion: 'Probá de nuevo en un momento.',
+      });
+    };
+    this.convenios.convenioDelPlan(this.financiadorId, planId).subscribe({
+      next: (convenio) => abrir(convenio.id),
+      error: (error: unknown) => {
+        if (error instanceof AkineHttpError && error.status === 404) {
+          this.convenios.asegurarConvenioDelPlan(this.financiadorId, planId).subscribe({
+            next: (convenio) => abrir(convenio.id),
+            error: fallar,
+          });
+          return;
+        }
+        fallar(error);
+      },
+    });
+  }
+
   private readonly migasDeLaBarra = publicarMigas(() => [
     { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
     { etiqueta: 'Planes' },
   ]);
 
   private readonly api = inject(ContractingApi);
+  private readonly convenios = inject(ConveniosApi);
+  private readonly router = inject(Router);
   private readonly avisos = inject(AvisosStore);
   private readonly diaDeLaSede = inject(DiaDeLaSede);
   private readonly ruta = inject(ActivatedRoute);
@@ -149,6 +201,9 @@ export class PlanesDelFinanciadorPage {
   protected readonly ventanaEnPalabras = ventanaEnPalabras;
 
   protected readonly financiadorId = Number(this.ruta.snapshot.paramMap.get('financiadorId'));
+
+  /** Plan cuyos precios se están abriendo, para deshabilitar su botón mientras tanto. */
+  protected readonly abriendoPrecios = signal<number | null>(null);
 
   /**
    * Fecha contra la que el backend calcula `vigente`.

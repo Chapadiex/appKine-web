@@ -27,6 +27,10 @@ export const TEXTO_TIPO: Readonly<Record<TipoNotificacion, string>> = {
   [TipoNotificacion.PEDIDO_DE_PRUEBA_RECIBIDO]: 'Pedido de prueba gratis recibido',
   [TipoNotificacion.PRUEBA_POR_VENCER]: 'Prueba gratis por vencer',
   [TipoNotificacion.PRUEBA_VENCIDA]: 'Prueba gratis vencida',
+  [TipoNotificacion.SUSCRIPCION_POR_VENCER]: 'Suscripción por vencer',
+  [TipoNotificacion.SUSCRIPCION_VENCIDA]: 'Suscripción vencida',
+  [TipoNotificacion.SUSCRIPCION_SUSPENDIDA]: 'Suscripción en solo lectura',
+  [TipoNotificacion.SUSCRIPCION_CERRADA]: 'Acceso cerrado por falta de pago',
 };
 
 export const TEXTO_ESTADO: Readonly<Record<EstadoNotificacion, string>> = {

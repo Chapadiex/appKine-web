@@ -1,10 +1,15 @@
 import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import { SessionService } from '../../../../core/services/session.service';
 import { catchError, of } from 'rxjs';
 
 import { AcceptInvitacionRequest } from '../../../../api/generated/model/accept-invitacion-request';
-import { InvitacionPreviewResponse } from '../../../../api/generated/model/invitacion-preview-response';
+import {
+  InvitacionPreviewResponse,
+  InvitacionPreviewResponseServiciosEnum,
+} from '../../../../api/generated/model/invitacion-preview-response';
 import { InvitacionesRecibidasService } from '../../../../api/generated/api/invitaciones-recibidas.service';
 import {
   CausaInvitacion,
@@ -12,15 +17,16 @@ import {
 } from '../../../../core/models/invitacion-errors';
 import { MedidorDeContrasena } from '../../components/medidor-de-contrasena/medidor-de-contrasena';
 import { RegistroYActivacionService } from '../../../../api/generated/api/registro-y-activacion.service';
-import { TerminosDelAlta } from '../../components/terminos-del-alta/terminos-del-alta';
+import { TerminosDelAlta } from '../../../../shared/components/terminos-del-alta/terminos-del-alta';
 import {
   MENSAJE_TERMINOS_CAMBIARON,
   TerminosVigentes,
   esRechazoDeTerminos,
-} from '../../models/terminos-vigentes';
+} from '../../../../core/models/terminos-vigentes';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { textoRequerido } from '../../../../shared/validators/texto-requerido';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 /** En cual de los cinco estados esta la pantalla. */
 type Estado =
@@ -28,7 +34,7 @@ type Estado =
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'error'; readonly mensaje: string; readonly causa: CausaInvitacion }
   | { readonly tipo: 'listo'; readonly invitacion: InvitacionPreviewResponse }
-  | { readonly tipo: 'aceptada'; readonly cuentaCreada: boolean }
+  | { readonly tipo: 'aceptada'; readonly cuentaCreada: boolean; readonly administra: boolean }
   | { readonly tipo: 'rechazada' };
 
 /**
@@ -67,7 +73,7 @@ type Estado =
  */
 @Component({
   selector: 'app-invitacion-page',
-  imports: [Alerta, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
+  imports: [Alerta, Icono, MedidorDeContrasena, ReactiveFormsModule, RouterLink, TerminosDelAlta],
   templateUrl: './invitacion-page.html',
   styleUrls: ['../../auth.css', '../../../../shared/styles/acceso.css'],
 })
@@ -76,9 +82,13 @@ export class InvitacionPage {
   private readonly route = inject(ActivatedRoute);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly router = inject(Router);
+  private readonly session = inject(SessionService);
 
   protected readonly estado = signal<Estado>({ tipo: 'cargando' });
   protected readonly enviando = signal(false);
+  /** Ver u ocultar la contraseña mientras se escribe. Sólo cambia el tipo del input. */
+  protected readonly verPassword = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly intentos = signal(0);
 
@@ -116,6 +126,28 @@ export class InvitacionPage {
   protected readonly vencida = computed(() => {
     const actual = this.estado();
     return actual.tipo === 'error' && actual.causa === 'vencida';
+  });
+
+  /**
+   * `true` si entra a administrar el centro: el dueño que dio de alta la plataforma u otro
+   * administrador. A esa persona se le da la bienvenida, no se la invita "a colaborar".
+   */
+  protected readonly administra = computed(() => this.invitacion()?.roleCode === 'ORG_ADMIN');
+
+  /**
+   * La ilustración según lo que contrató el centro (19/11/2026): una persona sola para
+   * kinesiología o para actividades, y una escena con las dos cosas si contrató las dos.
+   */
+  protected readonly escena = computed(() => {
+    const servicios = this.invitacion()?.servicios ?? [];
+    const kine = servicios.includes(InvitacionPreviewResponseServiciosEnum.KINESIOLOGIA);
+    const actividades = servicios.includes(InvitacionPreviewResponseServiciosEnum.ACTIVIDADES);
+    if (kine && actividades) {
+      return { imagen: 'acceso/kine-y-actividades.jpg', ancho: 900, alto: 604, horizontal: true };
+    }
+    return actividades
+      ? { imagen: 'acceso/actividades.jpg', ancho: 360, alto: 795, horizontal: false }
+      : { imagen: 'acceso/kinesiologia.jpg', ancho: 360, alto: 795, horizontal: false };
   });
 
   /** `true` cuando hay que pedir nombre y contrasena. Lo decide el backend, no la pantalla. */
@@ -296,7 +328,11 @@ export class InvitacionPage {
     this.invitaciones.acceptInvitacion({ acceptInvitacionRequest: cuerpo }).subscribe({
       next: (respuesta) => {
         this.enviando.set(false);
-        this.estado.set({ tipo: 'aceptada', cuentaCreada: respuesta.cuentaCreada === true });
+        this.estado.set({
+          tipo: 'aceptada',
+          cuentaCreada: respuesta.cuentaCreada === true,
+          administra: this.administra(),
+        });
       },
       error: (error: unknown) => {
         this.enviando.set(false);
@@ -337,6 +373,28 @@ export class InvitacionPage {
         this.errorAccion.set(traducido.mensaje);
       },
     });
+  }
+
+  /**
+   * Va al ingreso. Si en este navegador quedó abierta la sesión de otra cuenta (quien dio de alta
+   * el centro, por ejemplo), la cierra antes: si no, el ingreso la ve activa y lleva a esa cuenta
+   * en vez de dejar entrar a la que se acaba de crear.
+   */
+  protected irAlIngreso(): void {
+    const ir = (): void => {
+      this.router.navigateByUrl('/auth/ingresar').catch(() => undefined);
+    };
+    if (this.session.estado() === 'anonimo') {
+      ir();
+      return;
+    }
+    this.session.logout().subscribe({ complete: ir });
+  }
+
+  /** `true` si quien acaba de aceptar entra a administrar el centro (el dueño). */
+  protected aceptoAdministrar(): boolean {
+    const actual = this.estado();
+    return actual.tipo === 'aceptada' && actual.administra;
   }
 
   /** `true` si la aceptacion creo la cuenta en este acto. Cambia el texto del cierre. */

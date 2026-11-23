@@ -38,9 +38,18 @@
   <div class="resultado">
     <div class="resultado__cabecera" aria-live="polite" aria-atomic="true">
       <h3 class="resultado__plan">
-        Te corresponde <span class="resultado__nombre">{{ r.plan.nombre }}</span>
+        Te corresponde el <span class="resultado__nombre">{{ r.plan.nombre }}</span>
       </h3>
-      <p class="resultado__para">{{ r.plan.sedes }}. {{ r.plan.paraQuien }}</p>
+      <div class="topes">
+        @for (tope of r.plan.topes; track tope.que; let i = $index) {
+          <span class="tope">
+            <app-icono class="tope__icono" [nombre]="i === 0 ? 'sede' : 'pacientes'" />
+            <b class="tope__cifra">{{ tope.cifra }}</b>
+            <span class="tope__que">{{ tope.que }}</span>
+          </span>
+        }
+      </div>
+      <p class="resultado__para">{{ r.plan.paraQuien }}</p>
     </div>
 
     <div class="resultado__grupos">
@@ -56,7 +65,13 @@
       }
     </div>
 
-    <a class="boton resultado__accion" href="#prueba">Probalo gratis 30 días</a>
+    <a
+      class="boton resultado__accion"
+      [routerLink]="rutaPrueba"
+      [queryParams]="eleccionEnLaDireccion()"
+    >
+      Probalo gratis 30 días <app-icono nombre="flecha-derecha" />
+    </a>
   </div>
 </div>
 
@@ -69,7 +84,13 @@
           <span class="plan__marca"><app-icono nombre="tilde" />El tuyo</span>
         }
       </span>
-      <span class="plan__sedes">{{ plan.sedes }}</span>
+      <span class="plan__topes">
+        @for (tope of plan.topes; track tope.que) {
+          <span class="plan__tope"
+            ><b>{{ tope.cifra }}</b> {{ tope.que }}</span
+          >
+        }
+      </span>
       <span class="plan__para">{{ plan.paraQuien }}</span>
     </li>
   }

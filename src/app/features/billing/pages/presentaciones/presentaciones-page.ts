@@ -41,6 +41,9 @@ import {
 } from '../../models/pestanas-de-economia';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 
+/** Tope de la bandeja de elegibles en el contrato: el aviso de pendientes lee hasta aca. */
+const TOPE_DE_PENDIENTES = 200;
+
 type EstadoListado =
   | { readonly tipo: 'cargando' }
   | { readonly tipo: 'listo'; readonly lotes: readonly Presentacion[] }
@@ -123,6 +126,15 @@ export class PresentacionesPage {
   /** El catalogo de financiadores respondio 403: falta `convenio:read` (DP-36). */
   protected readonly financiadoresSinPermiso = signal(false);
   protected readonly cuenta = signal<CuentaCorrienteDeFinanciador | null>(null);
+  /**
+   * Lo que todavia no entro en ningun lote de ese financiador: el aviso de cierre de mes ("tenes N
+   * sesiones sin liquidar"). Se lee hasta el tope del contrato; si lo alcanza, se dice "o mas".
+   */
+  protected readonly pendientes = signal<{
+    readonly cantidad: number;
+    readonly importe: number;
+    readonly hayMas: boolean;
+  } | null>(null);
   protected readonly creando = signal(false);
   protected readonly errorAlta = signal<ErrorPresentacion | null>(null);
   protected readonly altaIntentada = signal(false);
@@ -193,12 +205,25 @@ export class PresentacionesPage {
       });
 
     this.cuenta.set(null);
+    this.pendientes.set(null);
     if (financiadorId !== null) {
       this.api.cuentaCorriente(consultorioId, financiadorId).subscribe({
         next: (cuenta) => this.cuenta.set(cuenta),
         // La cuenta corriente es un resumen accesorio: si falla, la bandeja sigue en pie.
         error: () => this.cuenta.set(null),
       });
+      this.api
+        .elegibles(consultorioId, financiadorId, undefined, undefined, TOPE_DE_PENDIENTES)
+        .subscribe({
+          next: (lista) =>
+            this.pendientes.set({
+              cantidad: lista.length,
+              importe: lista.reduce((suma, obligacion) => suma + (obligacion.saldo ?? 0), 0),
+              hayMas: lista.length >= TOPE_DE_PENDIENTES,
+            }),
+          // Igual que la cuenta corriente: accesorio.
+          error: () => this.pendientes.set(null),
+        });
     }
   }
 
