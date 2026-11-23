@@ -6,6 +6,7 @@ import { ContratacionService } from '../../../../api/generated/api/contratacion.
 import { PlanesService } from '../../../../api/generated/api/planes.service';
 import { PlataformaService } from '../../../../api/generated/api/plataforma.service';
 import { ListPlatformOrganizationsRequestParams } from '../../../../api/generated/api/plataforma.serviceInterface';
+import { CobroDeSuscripcionResponse } from '../../../../api/generated/model/cobro-de-suscripcion-response';
 import { ContratacionResponse } from '../../../../api/generated/model/contratacion-response';
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 import { PlatformOrganizationResponse } from '../../../../api/generated/model/platform-organization-response';
@@ -42,6 +43,7 @@ import {
   SIGLAS_DE_PLAN,
   diasRestantes,
   marcaDePlan,
+  marcaDeCobro,
   marcaDeSuscripcion,
   marcasDeServicios,
   nombreVisibleDePlan,
@@ -185,6 +187,18 @@ export class SuscripcionDeCentroPage implements OnInit {
   /** Rechazo del ultimo cambio: va arriba del formulario, dentro del panel (UX-12). */
   protected readonly errorCambio = signal<string | null>(null);
 
+  // Cobro mensual (contrato 0.191.0): historial del centro elegido y el registro de un pago.
+  protected readonly marcaDeCobro = marcaDeCobro;
+  protected readonly opcionesDeMeses = Array.from({ length: 12 }, (_, i) => i + 1);
+  /** Historial de cobros, el mas nuevo primero; `null` mientras se lee o si fallo. */
+  protected readonly cobros = signal<readonly CobroDeSuscripcionResponse[] | null>(null);
+  protected readonly errorDeHistorial = signal(false);
+  protected readonly mesesACobrar = signal(1);
+  protected readonly notaDeCobro = signal('');
+  protected readonly registrandoCobro = signal(false);
+  protected readonly errorDeCobro = signal<string | null>(null);
+  private pedidoDeCobros: Subscription | null = null;
+
   /** El filtro de la ultima busqueda enviada: paginar no toma lo que se esta escribiendo. */
   private filtroAplicado: Pick<ListPlatformOrganizationsRequestParams, 'q' | 'status'> = {};
   private pedidoDeListado: Subscription | null = null;
@@ -302,15 +316,18 @@ export class SuscripcionDeCentroPage implements OnInit {
     if (centro.id === undefined) return;
     this.centro.set(centro);
     this.errorCambio.set(null);
+    this.limpiarCobro();
     this.leer();
   }
 
   /** Cierra el panel: descarta la lectura en vuelo y el resultado. */
   protected cerrarSuscripcion(): void {
     this.pedido?.unsubscribe();
+    this.pedidoDeCobros?.unsubscribe();
     this.centro.set(null);
     this.estado.set({ tipo: 'inicial' });
     this.errorCambio.set(null);
+    this.limpiarCobro();
   }
 
   protected esElegido(centro: PlatformOrganizationResponse): boolean {
@@ -326,12 +343,30 @@ export class SuscripcionDeCentroPage implements OnInit {
     );
   }
 
-  /** Cuánto le queda a una prueba gratis; fuera de prueba, una raya. */
+  /**
+   * El plazo que corre para el centro: el de la prueba gratis o, fuera de prueba, el del periodo
+   * pagado (cobro mensual). Sin control de cobro, una raya.
+   */
   protected plazoDeFila(centro: PlatformOrganizationResponse): string {
-    const dias = centro.status === 'PRUEBA' ? diasRestantes(centro.pruebaHasta) : null;
-    if (dias === null) return '—';
-    if (dias <= 0) return 'Vencida';
-    return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
+    if (centro.status === 'PRUEBA') {
+      const dias = diasRestantes(centro.pruebaHasta);
+      if (dias === null) return '—';
+      if (dias <= 0) return 'Prueba vencida';
+      return dias === 1 ? 'Prueba: termina mañana' : `Prueba: quedan ${dias} días`;
+    }
+    switch (centro.situacionDeCobro) {
+      case 'AL_DIA':
+        return `Pagado hasta el ${this.fechaDeFin(centro.pagadoHasta)}`;
+      case 'POR_VENCER': {
+        const dias = Math.max(0, diasRestantes(centro.pagadoHasta) ?? 0);
+        return dias <= 1 ? 'Vence mañana' : `Vence en ${dias} días`;
+      }
+      case 'SIN_CONTROL':
+      case undefined:
+        return '—';
+      default:
+        return marcaDeCobro(centro.situacionDeCobro).texto;
+    }
   }
 
   /** Insignia del plan de la fila: PB, PI o PP, con el nombre en el globo. */
@@ -414,6 +449,67 @@ export class SuscripcionDeCentroPage implements OnInit {
       });
   }
 
+  /**
+   * Registra el pago de `mesesACobrar` meses. No lleva clave de idempotencia: el boton se apaga
+   * mientras viaja, y despues se relee la contratacion para mostrar el nuevo `pagadoHasta`.
+   */
+  protected registrarCobro(): void {
+    const orgId = this.centro()?.id;
+    const meses = this.mesesACobrar();
+    if (orgId === undefined || this.registrandoCobro() || meses < 1 || meses > 12) return;
+    const nota = this.notaDeCobro().trim();
+    this.registrandoCobro.set(true);
+    this.errorDeCobro.set(null);
+    const nombre = this.centro()?.name ?? 'El centro';
+    this.plataforma
+      .registrarCobroDeSuscripcion({
+        orgId,
+        registrarCobroRequest: { meses, ...(nota === '' ? {} : { nota }) },
+      })
+      .subscribe({
+        next: (cobro) => {
+          this.registrandoCobro.set(false);
+          this.avisos.exito('Cobro registrado', {
+            descripcion: `${nombre} queda pagado hasta el ${this.fechaDeFin(cobro.periodoHasta)}.`,
+          });
+          this.limpiarCobro();
+          this.leer();
+          this.listar(this.paginaDeCentros()?.pagina ?? 0);
+        },
+        error: (error: unknown) => {
+          this.registrandoCobro.set(false);
+          const traducido = traducirErrorSuscripcion(error);
+          this.errorDeCobro.set(
+            traducido.causa === 'suspendida'
+              ? 'La suscripción está suspendida o cancelada: reactivala antes de registrar el cobro.'
+              : traducido.mensaje,
+          );
+        },
+      });
+  }
+
+  /** "3 meses · del 01/11/2026 al 01/02/2027". */
+  protected periodoDeCobro(cobro: CobroDeSuscripcionResponse): string {
+    const meses = cobro.meses === 1 ? '1 mes' : `${cobro.meses ?? '?'} meses`;
+    return `${meses} · del ${this.fechaDeFin(cobro.periodoDesde)} al ${this.fechaDeFin(cobro.periodoHasta)}`;
+  }
+
+  private leerCobros(orgId: number): void {
+    this.cobros.set(null);
+    this.errorDeHistorial.set(false);
+    this.pedidoDeCobros?.unsubscribe();
+    this.pedidoDeCobros = this.plataforma.listCobrosDeSuscripcion({ orgId }).subscribe({
+      next: (cobros) => this.cobros.set(cobros),
+      error: () => this.errorDeHistorial.set(true),
+    });
+  }
+
+  private limpiarCobro(): void {
+    this.mesesACobrar.set(1);
+    this.notaDeCobro.set('');
+    this.errorDeCobro.set(null);
+  }
+
   protected nombreDePlan(codigo: string | undefined): string {
     if (!codigo) return 'sin plan';
     return this.planes().find((p) => p.code === codigo)?.name ?? codigo;
@@ -449,6 +545,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     const orgId = this.centro()?.id;
     if (orgId === undefined) return;
     this.estado.set({ tipo: 'cargando' });
+    this.leerCobros(orgId);
     this.pedido?.unsubscribe();
     this.pedido = this.contratacionDeCentro
       .getContratacionDeCentroEnPlataforma({ orgId })

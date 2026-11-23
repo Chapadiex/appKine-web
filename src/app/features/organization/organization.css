@@ -59,6 +59,12 @@
   font-weight: var(--peso-medio);
 }
 
+/* Centro cerrado por falta de pago: inicial en gris, sin sedes para elegir. */
+.contexto-centro--cerrado .contexto-centro__logo {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto-suave);
+}
+
 .contexto-centro__sedes {
   display: grid;
   gap: var(--esp-3);

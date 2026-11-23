@@ -99,7 +99,7 @@
           <table class="tabla">
             <caption class="visualmente-oculto">
               Centros de la plataforma, con su slug, el plan, los servicios, si tienen IA, el estado
-              de la suscripción y la fecha de alta.
+              de la suscripción, el plazo de la prueba o del período pagado y la fecha de alta.
             </caption>
             <thead>
               <tr>
@@ -117,7 +117,7 @@
                 <th scope="col">Servicios</th>
                 <th scope="col">IA</th>
                 <th scope="col">Suscripción</th>
-                <th scope="col">Plazo de la prueba</th>
+                <th scope="col">Plazo</th>
                 <th
                   scope="col"
                   class="tabla__col--secundaria"
@@ -286,6 +286,122 @@
             <dd>{{ tieneIa(c.adicionales) ? 'Contratado' : 'No' }}</dd>
           </div>
         </dl>
+      </section>
+
+      <!--
+        Cobro mensual (contrato 0.191.0): donde esta el centro respecto de su periodo pagado, el
+        registro de un pago y el historial. El pago habilita el acceso en el acto.
+      -->
+      <section class="cobro" aria-labelledby="cobro-titulo" data-testid="cobro-mensual">
+        <div class="titulo-de-cambio">
+          <h3 id="cobro-titulo">Cobro mensual</h3>
+          <app-ayuda titulo="Cómo se cuenta el período">
+            <p>
+              Si el centro paga antes de vencer, el período nuevo arranca al final del anterior; si
+              paga tarde, arranca hoy. En prueba, el primer cobro la pasa a contrato.
+            </p>
+            <p>
+              Vencido, el centro sigue operando 3 días; después queda en sólo lectura y a los 18
+              días se cierra el acceso.
+            </p>
+          </app-ayuda>
+        </div>
+        <div class="cobro__situacion">
+          <span
+            data-testid="cobro-situacion"
+            [class]="'marca-estado ' + marcaDeCobro(c.situacionDeCobro).clase"
+            >{{ marcaDeCobro(c.situacionDeCobro).texto }}</span
+          >
+          @if (c.pagadoHasta) {
+            <p class="vigente__nota">
+              Pagado hasta el {{ fechaDeFin(c.pagadoHasta) }}.
+              @if (c.cierreEl && c.situacionDeCobro !== 'AL_DIA') {
+                Sin pago, el acceso se cierra el {{ fechaDeFin(c.cierreEl) }}.
+              }
+            </p>
+          } @else {
+            <p class="vigente__nota">Todavía no tiene cobros registrados.</p>
+          }
+        </div>
+
+        @if (editable()) {
+          <form class="cobro__form" (submit)="$event.preventDefault(); registrarCobro()">
+            @if (errorDeCobro(); as mensaje) {
+              <app-alerta tipo="error" titulo="No pudimos registrar el cobro">
+                <p>{{ mensaje }}</p>
+              </app-alerta>
+            }
+            <div class="campo">
+              <label for="cobro-meses">Meses que paga</label>
+              <select
+                id="cobro-meses"
+                [value]="mesesACobrar()"
+                (change)="mesesACobrar.set(+$any($event.target).value)"
+              >
+                @for (n of opcionesDeMeses; track n) {
+                  <option [value]="n" [selected]="n === mesesACobrar()">
+                    {{ n === 1 ? '1 mes' : n + ' meses' }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="campo campo--ancho">
+              <label for="cobro-nota">Nota <span class="opciones__regla">opcional</span></label>
+              <input
+                id="cobro-nota"
+                type="text"
+                maxlength="200"
+                placeholder="Medio de pago, comprobante"
+                [value]="notaDeCobro()"
+                (input)="notaDeCobro.set($any($event.target).value)"
+              />
+            </div>
+            <div>
+              <button
+                type="submit"
+                class="boton boton--secundario"
+                data-testid="registrar-cobro"
+                [disabled]="registrandoCobro()"
+              >
+                @if (registrandoCobro()) {
+                  Registrando…
+                } @else {
+                  Registrar cobro
+                }
+              </button>
+            </div>
+          </form>
+        } @else {
+          <p class="estado estado--vacio">
+            Con la suscripción {{ marcaDeSuscripcion(c.estado).texto.toLowerCase() }} no se
+            registran cobros: primero hay que reactivarla.
+          </p>
+        }
+
+        <h4 class="cobro__subtitulo">Historial</h4>
+        @if (errorDeHistorial()) {
+          <p class="estado estado--vacio">No pudimos leer el historial de cobros.</p>
+        } @else if (cobros(); as lista) {
+          @if (lista.length === 0) {
+            <p class="estado estado--vacio">Sin cobros registrados.</p>
+          } @else {
+            <ul class="cobro__historial" data-testid="cobro-historial">
+              @for (cobro of lista; track cobro.id) {
+                <li>
+                  <span class="cobro__periodo">{{ periodoDeCobro(cobro) }}</span>
+                  <span class="cobro__detalle">
+                    Registrado el {{ fechaDeFin(cobro.registradoEn) }}
+                    @if (cobro.nota) {
+                      · {{ cobro.nota }}
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        } @else {
+          <p class="estado estado--cargando" role="status">Leyendo el historial…</p>
+        }
       </section>
 
       <div class="titulo-de-cambio">

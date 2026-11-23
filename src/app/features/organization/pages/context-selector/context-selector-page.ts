@@ -147,6 +147,10 @@ export class ContextSelectorPage {
 
   protected readonly saliendo = signal(false);
 
+  /** Centros cerrados por falta de pago (`sinAcceso`): se muestran con el motivo, sin elegirse. */
+  protected readonly sinAcceso = signal<readonly { id: number; nombre: string }[]>([]);
+  protected readonly motivoSinAcceso = 'Sin acceso: suscripción cerrada por falta de pago';
+
   /** Dos letras para el cuadrado del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {
     return nombre
@@ -330,7 +334,17 @@ export class ContextSelectorPage {
     // invalido que fallaria recien en la pantalla siguiente.
     let preseleccionado: TenantContext | null = null;
     const utilizables: TenantContext[] = [];
+    // Cobro mensual (contrato 0.191.0): un centro cerrado por falta de pago llega marcado
+    // `sinAcceso` para explicar el motivo. No se puede elegir —el canje lo rechazaria—, asi que va
+    // aparte, una vez por centro aunque tenga varias sedes.
+    const cerrados = new Map<number, string>();
     for (const elemento of respuesta) {
+      if (elemento.sinAcceso === true) {
+        if (elemento.organizationId !== undefined) {
+          cerrados.set(elemento.organizationId, elemento.organizationName ?? 'Centro');
+        }
+        continue;
+      }
       const contexto = this.aContexto(elemento);
       if (contexto === null) continue;
       if (elemento.lastSelected === true && preseleccionado === null) {
@@ -340,13 +354,18 @@ export class ContextSelectorPage {
       }
     }
     if (preseleccionado !== null) utilizables.unshift(preseleccionado);
+    this.sinAcceso.set([...cerrados.entries()].map(([id, nombre]) => ({ id, nombre })));
 
     if (utilizables.length === 0) {
       this.estado.set({ tipo: 'vacio' });
       return;
     }
 
-    const obvio = this.hayMotivo() ? null : this.eleccionObvia(utilizables, preseleccionado);
+    // Con un centro cerrado tampoco se entra solo: esta pantalla es donde se entera del motivo.
+    const obvio =
+      this.hayMotivo() || cerrados.size > 0
+        ? null
+        : this.eleccionObvia(utilizables, preseleccionado);
     if (obvio !== null) {
       this.seleccionar(obvio, true);
       return;

@@ -290,3 +290,63 @@
   color: var(--color-servicio-actividad-texto);
   border-color: var(--color-servicio-actividad);
 }
+
+/*
+ * Cobro mensual (contrato 0.191.0): situacion, registro de un pago e historial, entre lo vigente y
+ * el cambio de contratacion. Separado por un borde: es otra operacion con su propio boton.
+ */
+.cobro {
+  margin-bottom: var(--esp-7);
+  padding-bottom: var(--esp-7);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+}
+
+.cobro__situacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-5);
+  margin-bottom: var(--esp-5);
+}
+
+.cobro__form {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+.cobro__form .campo {
+  margin: 0;
+}
+
+.cobro__subtitulo {
+  margin: var(--esp-6) 0 var(--esp-3);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-suave);
+}
+
+.cobro__historial {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cobro__historial li {
+  display: grid;
+  gap: var(--esp-1);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+}
+
+.cobro__periodo {
+  font-weight: var(--peso-semi);
+}
+
+.cobro__detalle {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+  overflow-wrap: anywhere;
+}

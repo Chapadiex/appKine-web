@@ -215,3 +215,24 @@ const MARCAS_DE_SERVICIO: readonly MarcaDeServicio[] = [
 export function marcasDeServicios(servicios: readonly string[] | undefined): MarcaDeServicio[] {
   return MARCAS_DE_SERVICIO.filter((marca) => (servicios ?? []).includes(marca.valor));
 }
+
+/**
+ * Rotulo de la situacion de cobro de un centro (cobro mensual, contrato 0.191.0). La calcula el
+ * servidor al leer; la consola solo la rotula.
+ */
+export function marcaDeCobro(situacion: string | undefined): MarcaDeEstado {
+  switch (situacion) {
+    case 'AL_DIA':
+      return { clase: 'marca-estado--activa', texto: 'Al día' };
+    case 'POR_VENCER':
+      return { clase: 'marca-estado--info', texto: 'Por vencer' };
+    case 'EN_GRACIA':
+      return { clase: 'marca-estado--suspendida', texto: 'Vencida, en gracia' };
+    case 'SOLO_LECTURA':
+      return { clase: 'marca-estado--suspendida', texto: 'Solo lectura por falta de pago' };
+    case 'SIN_ACCESO':
+      return { clase: 'marca-estado--revocada', texto: 'Sin acceso por falta de pago' };
+    default:
+      return { clase: 'marca-estado--neutra', texto: 'Sin control de cobro' };
+  }
+}
