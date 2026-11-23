@@ -72,7 +72,10 @@ export function marcas(organizationId: number): Marcas {
         `select '${t}' as t, coalesce(max(id), 0) as m from "${t}" where organization_id = ${organizationId}`,
     )
     .join(' union all ');
-  const salida = psql(`select json_object_agg(t, m) from (${consulta}) x;`);
+  // `__inicio`: cuándo empezó el paso, para reconocer las filas viejas que el paso editó.
+  const salida = psql(
+    `select json_object_agg(t, m) from (${consulta} union all select '__inicio', (extract(epoch from now()) * 1000)::bigint) x;`,
+  );
   return JSON.parse(salida) as Marcas;
 }
 
@@ -135,9 +138,9 @@ begin
       where table_schema = 'public' and table_name = t and is_generated = 'NEVER'
         and data_type in ('date', 'timestamp with time zone');
       execute format('update %I set %s where organization_id = %s and id <= %s '
-                     || 'and (updated_at at time zone %L)::date = %L::date',
+                     || 'and updated_at >= to_timestamp(%s / 1000.0)',
                      t, sets, ${c.organizationId}, coalesce((wm ->> t)::bigint, 0),
-                     '${c.timezone}', '${c.hoy}');
+                     (wm ->> '__inicio')::bigint);
     end if;
   end loop;
 end $$;`);

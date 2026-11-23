@@ -28,6 +28,13 @@ import {
   RESPUESTAS,
   azar,
 } from './datos-demo';
+import {
+  EstadoClases,
+  configurarClases,
+  dictarClases,
+  prepararClases,
+  presenteDeClases,
+} from './clases-demo';
 
 /**
  * Centro Demo con meses de historia: pacientes, coberturas, turnos atendidos, ausentes y
@@ -128,6 +135,48 @@ interface Estado {
   presentaciones?: Presentado[];
   ausentesPendientes?: number[];
   presente?: boolean;
+  clases?: EstadoClases;
+  ultimoPasoClases?: number;
+  presenteClases?: boolean;
+}
+
+/**
+ * Con la clase ya corrida al día objetivo: se dicta (inicio, asistencia, cierre) y lo que eso creó
+ * se corre al mismo día. El consumo del pase se valida contra el día de la clase.
+ */
+async function dictarYCorrer(
+  admin: ApiAkine,
+  e: Estado,
+  sede: string,
+  objetivo: string,
+  hoy: string,
+  r: () => number,
+): Promise<void> {
+  if (!e.clases?.pendientes?.length) {
+    return;
+  }
+  const m = marcas(e.organizationId!);
+  await dictarClases(admin, e.clases, sede, r);
+  const dias = diasEntre(objetivo, hoy);
+  correr({
+    organizationId: e.organizationId!,
+    marcas: m,
+    hoy,
+    diasDeHoy: dias,
+    diasDeLoAgendado: dias,
+    timezone: e.timezone!,
+  });
+}
+
+/** Medio de pago al azar; el efectivo sólo si hay caja abierta. */
+function medioDeCobro(r: () => number, conCaja: boolean): () => string {
+  return () => {
+    const x = r();
+    if (conCaja && x < 0.35) {
+      return 'EFECTIVO';
+    }
+    return x < 0.75 ? 'TRANSFERENCIA' : 'TARJETA_DEBITO';
+  };
 }
 
 function leerEstado(): Estado {
@@ -201,6 +250,22 @@ test('sembrar el Centro Demo', async () => {
     log('centro configurado y corrido al inicio de la historia');
   }
 
+  // --- Clases grupales y pases: ofertas, productos y alumnos -------------------------------------
+  if (e.clases === undefined) {
+    const m = marcas(org);
+    e.clases = await configurarClases(admin, sede, hoy, r);
+    correr({
+      organizationId: org,
+      marcas: m,
+      hoy,
+      diasDeHoy: DIAS + 10,
+      diasDeLoAgendado: DIAS + 10,
+      timezone: tz,
+    });
+    guardar(e);
+    log('clases grupales, productos y alumnos configurados');
+  }
+
   const profesionales: ApiAkine[] = [];
   for (const p of e.profesionales!) {
     profesionales.push(await ApiAkine.como(p.email, { organizationId: org }));
@@ -223,6 +288,16 @@ test('sembrar el Centro Demo', async () => {
     const resumen = await simularDia(admin, profesionales, e, sede, paso, objetivo, dia, rp);
     await gastosDelDia(admin, e, sede, objetivo, paso, rp);
     await liquidaciones(admin, e, sede, objetivo, paso, hoy);
+    const clases = await prepararClases(
+      admin,
+      e.clases,
+      sede,
+      objetivo,
+      dia,
+      tz,
+      medioDeCobro(rp, true),
+      rp,
+    );
     await cerrarCaja(admin, sede, rp);
 
     correr({
@@ -234,18 +309,58 @@ test('sembrar el Centro Demo', async () => {
       timezone: tz,
     });
     ajustarHoras(org, m, objetivo, tz);
+    await dictarYCorrer(admin, e, sede, objetivo, hoy, rp);
     e.ultimoPaso = paso;
+    e.ultimoPasoClases = paso;
     e.enCurso = undefined;
     guardar(e);
-    log(`${objetivo} (${paso + 1}/${e.dias.length}): ${resumen}`);
+    log(`${objetivo} (${paso + 1}/${e.dias.length}): ${resumen}; ${clases}`);
   }
   await marcarAusentes(admin, sede, e);
+
+  // --- Clases de un centro que se sembró antes de que existieran --------------------------------
+  for (let paso = (e.ultimoPasoClases ?? -1) + 1; paso < e.dias.length; paso++) {
+    const objetivo = e.dias[paso];
+    const m = marcas(org);
+    const dia = await diaDeLosTurnos(admin, sede, e.ofertas![0], objetivo, hoy);
+    const rp = azar(paso * 104729 + 7);
+    // Sin caja abierta: las jornadas de esos días ya están cerradas.
+    const clases = await prepararClases(
+      admin,
+      e.clases,
+      sede,
+      objetivo,
+      dia,
+      tz,
+      medioDeCobro(rp, false),
+      rp,
+    );
+    correr({
+      organizationId: org,
+      marcas: m,
+      hoy,
+      diasDeHoy: diasEntre(objetivo, hoy),
+      diasDeLoAgendado: diasEntre(objetivo, dia),
+      timezone: tz,
+    });
+    await dictarYCorrer(admin, e, sede, objetivo, hoy, rp);
+    e.ultimoPasoClases = paso;
+    guardar(e);
+    log(`clases ${objetivo} (${paso + 1}/${e.dias.length}): ${clases}`);
+  }
 
   // --- Hoy y lo que viene -----------------------------------------------------------------------
   if (!e.presente) {
     await sembrarElPresente(admin, e, sede, hoy, r);
     e.presente = true;
     guardar(e);
+  }
+  if (!e.presenteClases) {
+    await asegurarCajaAbierta(admin, sede, 25000);
+    const n = await presenteDeClases(admin, e.clases, sede, hoy, tz, medioDeCobro(r, true), r);
+    e.presenteClases = true;
+    guardar(e);
+    log(`presente: ${n} clases programadas de hoy a 3 semanas`);
   }
   aplanarModificaciones(org);
 
