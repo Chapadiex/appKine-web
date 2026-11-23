@@ -645,3 +645,29 @@ form > .acciones.formulario-servicio__descartar {
 .campo--interruptor .interruptor {
   min-height: 2.75rem;
 }
+
+/* Edicion de una actividad con la grilla del alta (23/11/2026). */
+.edicion-oferta__seccion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-top: var(--esp-5);
+  padding-top: var(--esp-5);
+  border-top: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+.edicion-oferta__seccion:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.edicion-oferta__limpiar .interruptor {
+  padding: 0;
+}
+
+.edicion-oferta__nota {
+  margin-inline-start: var(--esp-2);
+  font-weight: normal;
+  color: var(--color-texto-suave);
+}

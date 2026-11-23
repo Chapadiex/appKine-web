@@ -692,7 +692,6 @@
   @if (panel()?.tipo === 'editar') {
     <app-panel-lateral
       [titulo]="'Editar ' + oferta.nombreComercial"
-      subtitulo="Se manda solo lo que cambies"
       ancho="amplio"
       (cerrar)="cerrarPanel()"
     >
@@ -710,237 +709,259 @@
           </app-alerta>
         }
 
-        <p class="ayuda ayuda--fija">
-          Para <b>sacarle</b> un valor usá la casilla debajo de ese campo: un campo vacío significa
-          "no lo toques".
-        </p>
-
-        <h3 class="formulario__seccion seccion-con-icono">
-          <app-icono nombre="actividades" />Actividad
-        </h3>
-        <div class="campo campo--4">
-          <label for="editar-oferta-nombre">Nombre comercial</label>
-          <input
-            id="editar-oferta-nombre"
-            type="text"
-            formControlName="nombreComercial"
-            autocomplete="off"
-            [attr.aria-invalid]="mostrarErrorEdicion('nombreComercial') ? 'true' : null"
-          />
-          @if (mostrarErrorEdicion('nombreComercial')) {
-            <p class="campo__error" role="alert">El nombre comercial es obligatorio.</p>
-          }
-        </div>
-
-        <div class="campo">
-          <label for="editar-oferta-modalidad">Modalidad</label>
-          <select
-            id="editar-oferta-modalidad"
-            formControlName="modalidad"
-            aria-describedby="editar-oferta-modalidad-ayuda"
-          >
-            <!--
-              El panel se abre con `oferta.modalidad ?? ''`. Sin una opcion con ese valor, una
-              oferta sin modalidad dejaba el selector mostrando INDIVIDUAL mientras el control valia
-              '': el usuario leia una modalidad que no era la que se iba a guardar. Va deshabilitada
-              porque "sin definir" no es algo que se pueda elegir.
-            -->
-            <option value="" disabled>Sin definir</option>
-            @for (opcion of modalidades; track opcion.valor) {
-              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-            }
-          </select>
-          <p class="ayuda" id="editar-oferta-modalidad-ayuda">
-            Acá no hay "heredar": la herencia del servicio ocurre una sola vez, en el alta.
-          </p>
-        </div>
-
-        <div class="campo campo--ancho">
-          <label for="editar-oferta-descripcion">Descripción</label>
-          <input
-            id="editar-oferta-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-        </div>
-
-        <h3 class="formulario__seccion seccion-con-icono">
-          <app-icono nombre="horarios" />Duración y cupo
-        </h3>
-        <div class="campo">
-          <label for="editar-oferta-duracion">Duración (minutos)</label>
-          <input
-            id="editar-oferta-duracion"
-            type="number"
-            min="1"
-            formControlName="duracionMinutos"
-          />
-        </div>
-
-        <div class="campo">
-          <label for="editar-oferta-capacidad">Capacidad</label>
-          <input id="editar-oferta-capacidad" type="number" min="1" formControlName="capacidad" />
-        </div>
-
-        <h3 class="formulario__seccion seccion-con-icono"><app-icono nombre="economia" />Cobro</h3>
-
-        <div class="campo">
-          <label for="editar-oferta-precio">Precio base</label>
-          <div class="campo-importe">
-            <span class="campo-importe__signo" aria-hidden="true">$</span>
+        <!-- Misma grilla, secciones e interruptores que el alta (23/11/2026). -->
+        <div class="grilla-12 edicion-oferta">
+          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+            <app-icono nombre="actividades" />Actividad
+            <app-ayuda titulo="Cómo se guarda la edición">
+              <p>Se manda solo lo que cambies: un campo vacío significa "no lo toques".</p>
+              <p>Para <b>sacarle</b> un valor usá la casilla que está debajo de ese campo.</p>
+            </app-ayuda>
+          </h3>
+          <div class="campo campo--4">
+            <label for="editar-oferta-nombre">Nombre comercial</label>
             <input
-              id="editar-oferta-precio"
+              id="editar-oferta-nombre"
               type="text"
-              inputmode="decimal"
+              formControlName="nombreComercial"
               autocomplete="off"
-              formControlName="precioBase"
-              (blur)="
-                formularioEdicion.controls.precioBase.setValue(
-                  reformatearImporte(formularioEdicion.controls.precioBase.value)
-                )
-              "
+              [attr.aria-invalid]="mostrarErrorEdicion('nombreComercial') ? 'true' : null"
+            />
+            @if (mostrarErrorEdicion('nombreComercial')) {
+              <p class="campo__error" role="alert">El nombre comercial es obligatorio.</p>
+            }
+          </div>
+
+          <div class="campo campo--2">
+            <div class="rotulo-con-ayuda">
+              <label for="editar-oferta-modalidad">Modalidad</label>
+              <app-ayuda titulo="Modalidad">
+                <p><b>Individual:</b> una persona por turno.</p>
+                <p><b>Grupal:</b> varias personas en el mismo turno, hasta la capacidad.</p>
+                <p>
+                  Acá no hay "heredar": la herencia del servicio ocurre una sola vez, en el alta.
+                </p>
+              </app-ayuda>
+            </div>
+            <select id="editar-oferta-modalidad" formControlName="modalidad">
+              <!--
+                El panel se abre con `oferta.modalidad ?? ''`. Sin una opcion con ese valor, una
+                oferta sin modalidad dejaba el selector mostrando INDIVIDUAL mientras el control
+                valia '': va deshabilitada porque "sin definir" no se puede elegir.
+              -->
+              <option value="" disabled>Sin definir</option>
+              @for (opcion of modalidades; track opcion.valor) {
+                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="editar-oferta-descripcion">Descripción</label>
+            <input
+              id="editar-oferta-descripcion"
+              type="text"
+              formControlName="descripcion"
+              autocomplete="off"
             />
           </div>
-        </div>
 
-        <div class="campo campo--2">
-          <label for="editar-oferta-moneda">Moneda</label>
-          <input
-            id="editar-oferta-moneda"
-            type="text"
-            maxlength="3"
-            formControlName="moneda"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="campo campo--ancho limpiar">
-          <label class="opcion-casilla" for="editar-oferta-limpiar-precio">
+          <div class="campo campo--3">
+            <label for="editar-oferta-duracion">Duración (minutos)</label>
             <input
-              id="editar-oferta-limpiar-precio"
-              type="checkbox"
-              formControlName="limpiarPrecio"
-              (change)="sincronizarLimpiar('precio')"
-              aria-describedby="editar-oferta-limpiar-precio-ayuda"
+              id="editar-oferta-duracion"
+              type="number"
+              min="1"
+              formControlName="duracionMinutos"
             />
-            Dejar esta actividad sin precio
-          </label>
-          <p class="ayuda" id="editar-oferta-limpiar-precio-ayuda">
-            Saca precio y moneda juntos, porque son un solo dato.
-          </p>
-        </div>
+          </div>
 
-        <div class="campo">
-          <label for="editar-oferta-esquema">Esquema de cobro</label>
-          <select
-            id="editar-oferta-esquema"
-            formControlName="esquemaCobro"
-            aria-describedby="editar-oferta-esquema-ayuda"
-          >
-            <option value="">Sin cambios</option>
-            @for (esquema of esquemasDeCobro; track esquema) {
-              <option [value]="esquema">{{ esquema }}</option>
-            }
-          </select>
-          <p class="ayuda" id="editar-oferta-esquema-ayuda">
-            POR_CLASE devenga una deuda con cada asistencia a una clase; la ausencia no genera
-            deuda.
-          </p>
-        </div>
+          <div class="campo campo--3">
+            <label for="editar-oferta-capacidad">Capacidad</label>
+            <input id="editar-oferta-capacidad" type="number" min="1" formControlName="capacidad" />
+          </div>
 
-        <div class="campo">
-          <label class="interruptor" for="editar-oferta-obra-social">
+          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+            <app-icono nombre="economia" />Cobro
+          </h3>
+
+          <div class="campo campo--3">
+            <label for="editar-oferta-precio">Precio de la sesión</label>
+            <div class="campo-importe">
+              <span class="campo-importe__signo" aria-hidden="true">$</span>
+              <input
+                id="editar-oferta-precio"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                formControlName="precioBase"
+                (blur)="
+                  formularioEdicion.controls.precioBase.setValue(
+                    reformatearImporte(formularioEdicion.controls.precioBase.value)
+                  )
+                "
+              />
+            </div>
+          </div>
+
+          <div class="campo campo--1">
+            <label for="editar-oferta-moneda">Moneda</label>
             <input
-              id="editar-oferta-obra-social"
-              type="checkbox"
-              role="switch"
-              formControlName="admiteObraSocial"
+              id="editar-oferta-moneda"
+              type="text"
+              maxlength="3"
+              formControlName="moneda"
+              autocomplete="off"
             />
-            <span class="interruptor__titulo">Admite obra social</span>
-          </label>
-        </div>
+          </div>
 
-        <div class="campo campo--ancho limpiar">
-          <label class="opcion-casilla" for="editar-oferta-limpiar-esquema">
-            <input
-              id="editar-oferta-limpiar-esquema"
-              type="checkbox"
-              formControlName="limpiarEsquemaCobro"
-              (change)="sincronizarLimpiar('esquema')"
-            />
-            Dejar esta actividad sin esquema de cobro
-          </label>
-        </div>
+          <div class="campo campo--2 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Obra social</span>
+            <label class="interruptor" for="editar-oferta-obra-social">
+              <input
+                id="editar-oferta-obra-social"
+                type="checkbox"
+                role="switch"
+                formControlName="admiteObraSocial"
+              />
+              <span class="interruptor__titulo">Admite obra social</span>
+            </label>
+          </div>
 
-        <h3 class="formulario__seccion seccion-con-icono">
-          <app-icono nombre="pacientes" />Atención
-        </h3>
+          <div class="campo campo--ancho edicion-oferta__limpiar">
+            <label class="interruptor" for="editar-oferta-limpiar-precio">
+              <input
+                id="editar-oferta-limpiar-precio"
+                type="checkbox"
+                role="switch"
+                formControlName="limpiarPrecio"
+                (change)="sincronizarLimpiar('precio')"
+              />
+              <span class="interruptor__titulo"
+                >Dejar esta actividad sin precio
+                <span class="edicion-oferta__nota">(saca precio y moneda juntos)</span></span
+              >
+            </label>
+          </div>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-oferta-caso">
-            <input id="editar-oferta-caso" type="checkbox" formControlName="requiereCasoClinico" />
-            Requiere caso clínico
-          </label>
-        </div>
+          <div class="campo campo--3">
+            <div class="rotulo-con-ayuda">
+              <label for="editar-oferta-esquema">Esquema de cobro</label>
+              <app-ayuda titulo="Esquemas de cobro">
+                @for (esquema of opcionesDeEsquema; track esquema.valor) {
+                  <p>
+                    <b>{{ esquema.etiqueta }}:</b> {{ esquema.ayuda }}
+                  </p>
+                }
+              </app-ayuda>
+            </div>
+            <select id="editar-oferta-esquema" formControlName="esquemaCobro">
+              <option value="">Sin cambios</option>
+              @for (esquema of opcionesDeEsquema; track esquema.valor) {
+                <option [value]="esquema.valor">{{ esquema.etiqueta }}</option>
+              }
+            </select>
+          </div>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-oferta-registro">
-            <input
-              id="editar-oferta-registro"
-              type="checkbox"
-              formControlName="generaRegistroClinico"
-            />
-            Genera registro clínico
-          </label>
-        </div>
+          <div class="campo campo--3 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Sin esquema</span>
+            <label class="interruptor" for="editar-oferta-limpiar-esquema">
+              <input
+                id="editar-oferta-limpiar-esquema"
+                type="checkbox"
+                role="switch"
+                formControlName="limpiarEsquemaCobro"
+                (change)="sincronizarLimpiar('esquema')"
+              />
+              <span class="interruptor__titulo">Dejarla sin esquema de cobro</span>
+            </label>
+          </div>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-oferta-profesional">
-            <input
-              id="editar-oferta-profesional"
-              type="checkbox"
-              formControlName="requiereProfesional"
-            />
-            Requiere profesional asignado
-          </label>
-        </div>
+          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+            <app-icono nombre="pacientes" />Cómo se atiende
+          </h3>
 
-        <div class="campo">
-          <label class="opcion-casilla" for="editar-oferta-espacio">
-            <input id="editar-oferta-espacio" type="checkbox" formControlName="requiereEspacio" />
-            Requiere espacio o box
-          </label>
-        </div>
+          <div class="campo campo--3 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Profesional</span>
+            <label class="interruptor" for="editar-oferta-profesional">
+              <input
+                id="editar-oferta-profesional"
+                type="checkbox"
+                role="switch"
+                formControlName="requiereProfesional"
+              />
+              <span class="interruptor__titulo">Requiere profesional asignado</span>
+            </label>
+          </div>
 
-        <h3 class="formulario__seccion seccion-con-icono">
-          <app-icono nombre="calendario" />Vigencia
-        </h3>
+          <div class="campo campo--3 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Box</span>
+            <label class="interruptor" for="editar-oferta-espacio">
+              <input
+                id="editar-oferta-espacio"
+                type="checkbox"
+                role="switch"
+                formControlName="requiereEspacio"
+              />
+              <span class="interruptor__titulo">Requiere espacio o box</span>
+            </label>
+          </div>
 
-        <div class="campo">
-          <label for="editar-oferta-desde">Vigente desde</label>
-          <input id="editar-oferta-desde" type="date" formControlName="vigenciaDesde" />
-        </div>
+          <div class="campo campo--3 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Caso clínico</span>
+            <label class="interruptor" for="editar-oferta-caso">
+              <input
+                id="editar-oferta-caso"
+                type="checkbox"
+                role="switch"
+                formControlName="requiereCasoClinico"
+              />
+              <span class="interruptor__titulo">Requiere caso clínico</span>
+            </label>
+          </div>
 
-        <div class="campo">
-          <label for="editar-oferta-hasta">Vigente hasta</label>
-          <input id="editar-oferta-hasta" type="date" formControlName="vigenciaHasta" />
-        </div>
+          <div class="campo campo--3 campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Historia clínica</span>
+            <label class="interruptor" for="editar-oferta-registro">
+              <input
+                id="editar-oferta-registro"
+                type="checkbox"
+                role="switch"
+                formControlName="generaRegistroClinico"
+              />
+              <span class="interruptor__titulo">Genera registro clínico</span>
+            </label>
+          </div>
 
-        <div class="campo campo--ancho limpiar">
-          <label class="opcion-casilla" for="editar-oferta-limpiar-vigencia">
-            <input
-              id="editar-oferta-limpiar-vigencia"
-              type="checkbox"
-              formControlName="limpiarVigenciaHasta"
-              (change)="sincronizarLimpiar('vigencia')"
-              aria-describedby="editar-oferta-limpiar-vigencia-ayuda"
-            />
-            Que esta actividad no venza nunca
-          </label>
-          <p class="ayuda" id="editar-oferta-limpiar-vigencia-ayuda">
-            Le saca la fecha de fin. Borrar el campo de arriba no lo hace.
-          </p>
+          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+            <app-icono nombre="calendario" />Vigencia
+          </h3>
+
+          <div class="campo campo--3">
+            <label for="editar-oferta-desde">Vigente desde</label>
+            <input id="editar-oferta-desde" type="date" formControlName="vigenciaDesde" />
+          </div>
+
+          <div class="campo campo--3">
+            <label for="editar-oferta-hasta">Vigente hasta</label>
+            <input id="editar-oferta-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
+
+          <div class="campo campo--ancho edicion-oferta__limpiar">
+            <label class="interruptor" for="editar-oferta-limpiar-vigencia">
+              <input
+                id="editar-oferta-limpiar-vigencia"
+                type="checkbox"
+                role="switch"
+                formControlName="limpiarVigenciaHasta"
+                (change)="sincronizarLimpiar('vigencia')"
+              />
+              <span class="interruptor__titulo"
+                >Que esta actividad no venza nunca
+                <span class="edicion-oferta__nota">(le saca la fecha de fin)</span></span
+              >
+            </label>
+          </div>
         </div>
 
         <p class="acciones">
