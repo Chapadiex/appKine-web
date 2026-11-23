@@ -89,7 +89,7 @@ export class LibroDetallePage {
 
   constructor() {
     publicarMigas(() => [
-      { etiqueta: 'Biblioteca', ruta: ['/biblioteca'] },
+      { etiqueta: 'Bibliografía de la IA', ruta: ['/biblioteca'] },
       { etiqueta: this.libro()?.titulo ?? 'Libro' },
     ]);
 

@@ -137,6 +137,14 @@ export class BibliotecaPage {
   /** Libro cuya eliminacion espera confirmacion. */
   protected readonly porEliminar = signal<LibroResponse | null>(null);
 
+  /** Libro desplegado debajo de su fila (23/11/2026), o `null`. Uno a la vez. */
+  protected readonly desplegado = signal<number | null>(null);
+
+  protected alternarDetalle(id: number | undefined): void {
+    if (id === undefined) return;
+    this.desplegado.update((actual) => (actual === id ? null : id));
+  }
+
   protected readonly deshabilitada = computed(() => this.estado().tipo === 'deshabilitada');
   protected readonly pagina = computed(() => {
     const actual = this.estado();

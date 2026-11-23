@@ -58,7 +58,7 @@ const DESCRIPCIONES: Readonly<Record<FuncionIa, DescripcionDeFuncion>> = {
   BIBLIOTECA: {
     titulo: 'Biblioteca del centro',
     uso: 'Libros del centro con búsqueda y consulta con el modelo.',
-    pantallas: 'Configuración → Biblioteca y Atención → Consultar biblioteca.',
+    pantallas: 'Configuración → Bibliografía de la IA y Atención → Consultar bibliografía.',
   },
 };
 
