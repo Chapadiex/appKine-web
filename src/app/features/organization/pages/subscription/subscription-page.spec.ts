@@ -40,6 +40,9 @@ const SUSCRIPCION_ACTIVA = {
  * blanco.
  */
 describe('SubscriptionPage', () => {
+  // Stubs mutables: cada test elige el catalogo y los terminos antes de crear la pantalla.
+  const planes: { listPlans: () => unknown } = { listPlans: () => of([]) };
+  const terminos = signal<object | null>(null);
   let httpMock: HttpTestingController;
   let tenantContext: TenantContextStore;
 
@@ -52,14 +55,16 @@ describe('SubscriptionPage', () => {
         provideRouter([]),
         provideApi(''),
         // Catalogo y terminos (21/11/2026): sus lecturas no son de este spec.
-        { provide: PlanesService, useValue: { listPlans: () => of([]) } },
+        { provide: PlanesService, useValue: planes },
         {
           provide: TerminosPendientesStore,
-          useValue: { terminos: signal(null), cargar: () => EMPTY },
+          useValue: { terminos, cargar: () => EMPTY },
         },
       ],
     }).compileComponents();
 
+    planes.listPlans = () => of([]);
+    terminos.set(null);
     httpMock = TestBed.inject(HttpTestingController);
     tenantContext = TestBed.inject(TenantContextStore);
   });
@@ -306,6 +311,43 @@ describe('SubscriptionPage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  it('muestra que incluye el plan y los terminos aceptados', async () => {
+    planes.listPlans = () => of([{ code: 'BASICO', features: ['REPORTES_AVANZADOS'] }]);
+    terminos.set({
+      pendiente: false,
+      aceptadaEn: '2026-11-21T10:00:00Z',
+      versionVigente: '2026-11-19',
+      url: null,
+    });
+    seleccionar();
+    const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
+
+    expect(texto(fixture)).toContain('Hasta 3 sedes');
+    expect(texto(fixture)).toContain('Miembros activos sin límite');
+    expect(texto(fixture)).toContain('Reportes avanzados');
+    expect(texto(fixture)).toContain('No incluido');
+    expect(texto(fixture)).toContain('Aceptados el');
+    expect(texto(fixture)).toContain('2026-11-19');
+  });
+
+  it('con los terminos pendientes ofrece aceptarlos', async () => {
+    terminos.set({
+      pendiente: true,
+      aceptadaEn: null,
+      versionVigente: '2026-11-19',
+      url: 'https://ejemplo.test/terminos',
+    });
+    seleccionar();
+    const fixture = await cargarCon({
+      ...SUSCRIPCION_ACTIVA,
+      limits: [{ code: 'MAX_CONSULTORIOS', currentUsage: 1, limitValue: 1, exceeded: false }],
+    });
+
+    expect(texto(fixture)).toContain('Pendientes');
+    expect(texto(fixture)).toContain('Aceptarlos');
+    expect(texto(fixture)).toContain('Hasta 1 sede');
+  });
 
   function seleccionar(): void {
     tenantContext.select({ organizationId: 1, organizationName: 'Centro Kinesico Belgrano' });

@@ -200,23 +200,24 @@
 }
 
 /*
-  «Ayuda» es un boton (abre un panel, no navega) con la cara de un enlace de grupo. Fijo abajo a
-  la izquierda (21/11/2026): `margin-top: auto` lo baja al pie y `sticky` lo deja a la vista
-  aunque la barra se desplace.
+  «Ayuda», fija abajo a la izquierda (21/11/2026). El contenedor lleva el fondo y la línea de
+  arriba, `margin-top: auto` lo baja al pie y `sticky` lo deja a la vista aunque la barra se
+  desplace. El botón queda como un enlace de grupo común, sin borde ni fondo propios: así el
+  contraste de su texto y de su contorno se mide igual que el de los demás enlaces.
 */
-.nav__ayuda {
+.nav__pie {
   position: sticky;
   bottom: calc(-1 * var(--esp-6));
   flex-shrink: 0;
-  width: 100%;
   margin-top: auto;
+  padding-top: var(--esp-2);
+  border-top: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-marca-fondo);
+}
+
+.nav__ayuda {
+  width: 100%;
   border: 0;
-  /* La linea de arriba es una sombra y no un borde: un borde claro en un boton se mide como
-     contorno de control (WCAG 1.4.11) y no llega a 3:1. */
-  box-shadow: 0 calc(-1 * var(--borde-fino)) 0 var(--color-borde);
-  /* Sin fondo propio: un relleno igual al de la barra se mide como contorno de 1:1. El fondo que
-     tapa el menu al desplazarse lo pone el ::before, detras del boton. */
-  isolation: isolate;
   background: none;
   font: inherit;
   text-align: start;
@@ -256,12 +257,4 @@
   .nav__flecha {
     transition: none;
   }
-}
-
-.nav__ayuda::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--color-marca-fondo);
 }
