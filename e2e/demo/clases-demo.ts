@@ -68,8 +68,8 @@ export interface Alumno {
   funcional: boolean;
   yoga: boolean;
   creditos: number;
-  /** Meses `YYYY-MM` con abono de Funcional vendido. */
-  abonos: string[];
+  /** Último día cubierto por su abono de Funcional, en fechas del centro. */
+  abonoHasta?: string;
 }
 
 export interface EstadoClases {
@@ -173,7 +173,6 @@ export async function configurarClases(
       funcional: x >= 0.4 && x < 0.85,
       yoga: x >= 0.75 || r() < 0.25,
       creditos: 0,
-      abonos: [],
     });
   }
   return { ofertas, packId: pack.id, abonoId: abono.id, alumnos };
@@ -229,7 +228,6 @@ export async function prepararClases(
   r: Azar,
 ): Promise<string> {
   const ds = new Date(`${objetivo}T12:00:00Z`).getUTCDay() || 7;
-  const mes = objetivo.slice(0, 7);
   const clases = clasesDelDia(c, ds);
   let vendidos = 0;
   c.pendientes = [];
@@ -255,16 +253,11 @@ export async function prepararClases(
         a.creditos += PACK.creditos;
         vendidos++;
       }
-      if (clase.clave === 'funcional' && !a.abonos.includes(mes)) {
-        await vender(
-          admin,
-          sede,
-          a.id,
-          { productoId: c.abonoId, periodoDesde: `${mes}-01`, periodoHasta: finDeMes(mes) },
-          ABONO.precio,
-          medio(),
-        );
-        a.abonos.push(mes);
+      // El abono cubre 30 días desde la clase. Se vende con el día futuro de la clase, que se
+      // corre con ella: la API no vende períodos que ya terminaron.
+      if (clase.clave === 'funcional' && (a.abonoHasta === undefined || a.abonoHasta < objetivo)) {
+        await venderAbono(admin, c, sede, a.id, dia, medio());
+        a.abonoHasta = sumar(objetivo, 29);
         vendidos++;
       }
       await admin.exigir('POST', `${sede}/clases/${creada.id}/inscripciones`, {
@@ -358,21 +351,13 @@ export async function presenteDeClases(
         if (r() < 0.15) {
           continue;
         }
-        const mes = dia.slice(0, 7);
         if (clase.clave === 'pilates' && a.creditos <= 0) {
           await vender(admin, sede, a.id, { productoId: c.packId }, PACK.precio, medio());
           a.creditos += PACK.creditos;
         }
-        if (clase.clave === 'funcional' && !a.abonos.includes(mes)) {
-          await vender(
-            admin,
-            sede,
-            a.id,
-            { productoId: c.abonoId, periodoDesde: `${mes}-01`, periodoHasta: finDeMes(mes) },
-            ABONO.precio,
-            medio(),
-          );
-          a.abonos.push(mes);
+        if (clase.clave === 'funcional' && (a.abonoHasta === undefined || a.abonoHasta < dia)) {
+          await venderAbono(admin, c, sede, a.id, dia, medio());
+          a.abonoHasta = sumar(dia, 29);
         }
         await admin.exigir('POST', `${sede}/clases/${id}/inscripciones`, {
           personaId: a.id,
@@ -416,6 +401,24 @@ async function vender(
   }
 }
 
+function venderAbono(
+  admin: ApiAkine,
+  c: EstadoClases,
+  sede: string,
+  personaId: number,
+  desde: string,
+  medio: string,
+): Promise<void> {
+  return vender(
+    admin,
+    sede,
+    personaId,
+    { productoId: c.abonoId, periodoDesde: desde, periodoHasta: sumar(desde, 29) },
+    ABONO.precio,
+    medio,
+  );
+}
+
 async function cobrarDeudas(
   admin: ApiAkine,
   sede: string,
@@ -440,11 +443,6 @@ async function cobrarDeudas(
     imputaciones: deudas.map((o) => ({ obligacionId: o.id, importe: Number(o.saldo) })),
     idempotencyKey: randomUUID(),
   });
-}
-
-function finDeMes(mes: string): string {
-  const [a, m] = mes.split('-').map(Number);
-  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
 }
 
 function sumar(fecha: string, dias: number): string {

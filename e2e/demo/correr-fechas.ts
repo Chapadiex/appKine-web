@@ -91,59 +91,59 @@ export interface Corrimiento {
   readonly timezone: string;
 }
 
+let columnas: Map<string, { nombre: string; esFecha: boolean }[]> | null = null;
+
+/** Columnas temporales (no generadas) de cada tabla de la organización, leídas una sola vez. */
+function columnasTemporales(): Map<string, { nombre: string; esFecha: boolean }[]> {
+  if (columnas === null) {
+    columnas = new Map();
+    const filas = psql(`
+      select table_name, column_name, data_type from information_schema.columns
+      where table_schema = 'public' and is_generated = 'NEVER'
+        and data_type in ('date', 'timestamp with time zone')
+        and table_name in (${TABLAS_DE_LA_ORGANIZACION});`);
+    for (const fila of filas.split('\n').filter(Boolean)) {
+      const [tabla, nombre, tipo] = fila.split('|');
+      columnas.set(tabla, [...(columnas.get(tabla) ?? []), { nombre, esFecha: tipo === 'date' }]);
+    }
+  }
+  return columnas;
+}
+
 /** Corre al día objetivo las filas que creó el paso (ver la cabecera). */
 export function correr(c: Corrimiento): void {
-  const marcasJson = JSON.stringify(c.marcas).replace(/'/g, "''");
-  psql(`
-set session_replication_role = replica;
-do $$
-declare
-  t text; sets text;
-  wm jsonb := '${marcasJson}'::jsonb;
-begin
-  for t in ${TABLAS_DE_LA_ORGANIZACION} loop
-    select string_agg(
-      case when data_type = 'date' then format(
-        '%1$I = case when %1$I is null or %1$I < %2$L::date then %1$I when %1$I = %2$L::date then %1$I - %3$s else %1$I - %4$s end',
-        column_name, '${c.hoy}', ${c.diasDeHoy}, ${c.diasDeLoAgendado})
-      else format(
-        '%1$I = case when %1$I is null or (%1$I at time zone %5$L)::date < %2$L::date then %1$I '
-        || 'when (%1$I at time zone %5$L)::date = %2$L::date then %1$I - make_interval(days => %3$s) '
-        || 'else %1$I - make_interval(days => %4$s) end',
-        column_name, '${c.hoy}', ${c.diasDeHoy}, ${c.diasDeLoAgendado}, '${c.timezone}')
-      end, ', ')
-    into sets
-    from information_schema.columns
-    where table_schema = 'public' and table_name = t and is_generated = 'NEVER'
-      and data_type in ('date', 'timestamp with time zone');
-    if sets is null then continue; end if;
-    execute format('update %I set %s where organization_id = %s and id > %s',
-                   t, sets, ${c.organizationId}, coalesce((wm ->> t)::bigint, 0));
-
-    -- Filas de pasos anteriores que este paso editó (un lote que se concilia, una deuda que se
-    -- cobra): sólo lo que quedó con fecha de hoy va al día objetivo; lo demás ya es historia.
-    if exists (select 1 from information_schema.columns where table_schema = 'public'
-               and table_name = t and column_name = 'updated_at') then
-      select string_agg(
-        case when data_type = 'date' then format(
-          '%1$I = case when %1$I = %2$L::date then %1$I - %3$s else %1$I end',
-          column_name, '${c.hoy}', ${c.diasDeHoy})
-        else format(
-          '%1$I = case when (%1$I at time zone %4$L)::date = %2$L::date '
-          || 'then %1$I - make_interval(days => %3$s) else %1$I end',
-          column_name, '${c.hoy}', ${c.diasDeHoy}, '${c.timezone}')
-        end, ', ')
-      into sets
-      from information_schema.columns
-      where table_schema = 'public' and table_name = t and is_generated = 'NEVER'
-        and data_type in ('date', 'timestamp with time zone');
-      execute format('update %I set %s where organization_id = %s and id <= %s '
-                     || 'and updated_at >= to_timestamp(%s / 1000.0)',
-                     t, sets, ${c.organizationId}, coalesce((wm ->> t)::bigint, 0),
-                     (wm ->> '__inicio')::bigint);
-    end if;
-  end loop;
-end $$;`);
+  const hoy = `'${c.hoy}'::date`;
+  const local = (col: string) => `("${col}" at time zone '${c.timezone}')::date`;
+  const inicio = c.marcas['__inicio'];
+  const sentencias: string[] = ['set session_replication_role = replica;'];
+  for (const [tabla, cols] of columnasTemporales()) {
+    const marca = c.marcas[tabla] ?? 0;
+    const nuevas = cols
+      .map(({ nombre, esFecha }) =>
+        esFecha
+          ? `"${nombre}" = case when "${nombre}" is null or "${nombre}" < ${hoy} then "${nombre}" when "${nombre}" = ${hoy} then "${nombre}" - ${c.diasDeHoy} else "${nombre}" - ${c.diasDeLoAgendado} end`
+          : `"${nombre}" = case when "${nombre}" is null or ${local(nombre)} < ${hoy} then "${nombre}" when ${local(nombre)} = ${hoy} then "${nombre}" - interval '${c.diasDeHoy} days' else "${nombre}" - interval '${c.diasDeLoAgendado} days' end`,
+      )
+      .join(', ');
+    sentencias.push(
+      `update "${tabla}" set ${nuevas} where organization_id = ${c.organizationId} and id > ${marca};`,
+    );
+    // Filas de pasos anteriores que este paso editó (un lote que se concilia, una deuda que se
+    // cobra): sólo lo que quedó con fecha de hoy va al día objetivo; lo demás ya es historia.
+    if (inicio !== undefined && cols.some((x) => x.nombre === 'updated_at')) {
+      const viejas = cols
+        .map(({ nombre, esFecha }) =>
+          esFecha
+            ? `"${nombre}" = case when "${nombre}" = ${hoy} then "${nombre}" - ${c.diasDeHoy} else "${nombre}" end`
+            : `"${nombre}" = case when ${local(nombre)} = ${hoy} then "${nombre}" - interval '${c.diasDeHoy} days' else "${nombre}" end`,
+        )
+        .join(', ');
+      sentencias.push(
+        `update "${tabla}" set ${viejas} where organization_id = ${c.organizationId} and id <= ${marca} and updated_at >= to_timestamp(${inicio} / 1000.0);`,
+      );
+    }
+  }
+  psql(sentencias.join('\n'));
 }
 
 /**
