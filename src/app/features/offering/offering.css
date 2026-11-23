@@ -671,3 +671,59 @@ form > .acciones.formulario-servicio__descartar {
   font-weight: normal;
   color: var(--color-texto-suave);
 }
+
+/* Filas de la edición: todo en una sola línea mientras entra (23/11/2026). */
+.edicion-oferta__fila {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0 var(--esp-5);
+  align-items: end;
+}
+
+.edicion-oferta__fila--interruptores {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  align-items: center;
+}
+
+.edicion-oferta__fila .campo--interruptor .interruptor {
+  padding-block: var(--esp-2);
+}
+
+/* Los cuatro interruptores de atención siempre en una fila; se apilan solo en el teléfono. */
+.edicion-oferta__fila--interruptores {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 var(--esp-4);
+}
+
+.edicion-oferta__fila--interruptores .interruptor {
+  gap: var(--esp-3);
+}
+
+@media (max-width: 40rem) {
+  .edicion-oferta__fila--interruptores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Columna "Cobro" del listado: esquema con su ícono y, debajo, si admite obra social. */
+.celda-cobro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.celda-cobro app-icono {
+  color: var(--color-accion-fondo);
+}
+
+.celda-cobro--os app-icono {
+  color: var(--color-exito);
+}
+
+/* Interruptor con su "?" al lado, en la misma línea. */
+.edicion-oferta .campo:has(> .interruptor + app-ayuda) {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--esp-2);
+}

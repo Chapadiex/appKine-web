@@ -203,6 +203,7 @@
                   >
                     Precio
                   </th>
+                  <th scope="col" class="tabla__col--secundaria">Cobro</th>
                   <th
                     scope="col"
                     class="tabla__col--secundaria"
@@ -275,6 +276,19 @@
                       @if (oferta.exigePrepago) {
                         <!-- E-6: la recepcion avisa si falta el anticipo; nunca bloquea. -->
                         <span class="celda-segunda-linea">Exige prepago</span>
+                      }
+                    </td>
+                    <!-- Esquema de cobro y obra social, con íconos (23/11/2026). -->
+                    @let esquemaDeLaFilaActual = esquemaDeLaFila(oferta.esquemaCobro);
+                    <td class="tabla__col--secundaria">
+                      <span class="celda-cobro">
+                        <app-icono [nombre]="esquemaDeLaFilaActual.icono" />
+                        {{ esquemaDeLaFilaActual.etiqueta }}
+                      </span>
+                      @if (oferta.admiteObraSocial) {
+                        <span class="celda-segunda-linea celda-cobro celda-cobro--os">
+                          <app-icono nombre="tilde" />Admite obra social
+                        </span>
                       }
                     </td>
                     <td class="tabla__col--secundaria">
@@ -713,10 +727,39 @@
         <div class="grilla-12 edicion-oferta">
           <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
             <app-icono nombre="actividades" />Actividad
-            <app-ayuda titulo="Cómo se guarda la edición">
-              <p>Se manda solo lo que cambies: un campo vacío significa "no lo toques".</p>
-              <p>Para <b>sacarle</b> un valor usá la casilla que está debajo de ese campo.</p>
-            </app-ayuda>
+            <app-ayuda titulo="Actividad"
+              ><p>
+                <b>Qué es esta sección:</b> los datos de la actividad tal como la ofrece esta sede:
+                cómo se llama, cómo se atiende, cuánto dura y cuánto cuesta.
+              </p>
+              <p>
+                Se guarda solo lo que cambies: un campo vacío significa "no lo toques". Para
+                <b>sacarle</b> un valor usá el interruptor que está junto a ese campo.
+              </p>
+              <p>
+                <b>Modalidad:</b> individual es una persona por turno; grupal, varias en el mismo
+                turno hasta la capacidad.
+              </p>
+              <p>
+                <b>Duración:</b> cuánto dura cada turno o clase; la agenda arma los horarios con
+                ella.
+              </p>
+              <p>
+                <b>Capacidad:</b> cuántas personas entran en un turno. Cuando se llena, no admite
+                más reservas.
+              </p>
+              <p>
+                <b>Precio de la sesión:</b> lo que paga un particular. Con obra social, el paciente
+                paga solo la diferencia con lo que cubre su plan (el coseguro).
+              </p>
+              <p>
+                <b>Admite obra social:</b> al reservar se elige la cobertura del paciente; apagado,
+                se atiende siempre como particular.
+              </p>
+              <p>
+                <b>Dejar sin precio:</b> a un particular no se le cobra nada hasta que cargues uno.
+              </p></app-ayuda
+            >
           </h3>
           <div class="campo campo--4">
             <label for="editar-oferta-nombre">Nombre comercial</label>
@@ -733,16 +776,7 @@
           </div>
 
           <div class="campo campo--2">
-            <div class="rotulo-con-ayuda">
-              <label for="editar-oferta-modalidad">Modalidad</label>
-              <app-ayuda titulo="Modalidad">
-                <p><b>Individual:</b> una persona por turno.</p>
-                <p><b>Grupal:</b> varias personas en el mismo turno, hasta la capacidad.</p>
-                <p>
-                  Acá no hay "heredar": la herencia del servicio ocurre una sola vez, en el alta.
-                </p>
-              </app-ayuda>
-            </div>
+            <label for="editar-oferta-modalidad">Modalidad</label>
             <select id="editar-oferta-modalidad" formControlName="modalidad">
               <!--
                 El panel se abre con `oferta.modalidad ?? ''`. Sin una opcion con ese valor, una
@@ -766,66 +800,59 @@
             />
           </div>
 
-          <div class="campo campo--3">
-            <label for="editar-oferta-duracion">Duración (minutos)</label>
-            <input
-              id="editar-oferta-duracion"
-              type="number"
-              min="1"
-              formControlName="duracionMinutos"
-            />
-          </div>
-
-          <div class="campo campo--3">
-            <label for="editar-oferta-capacidad">Capacidad</label>
-            <input id="editar-oferta-capacidad" type="number" min="1" formControlName="capacidad" />
-          </div>
-
-          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
-            <app-icono nombre="economia" />Cobro
-          </h3>
-
-          <div class="campo campo--3">
-            <label for="editar-oferta-precio">Precio de la sesión</label>
-            <div class="campo-importe">
-              <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <!-- Duración, cupo, precio y obra social en una fila (23/11/2026); sin campo de moneda. -->
+          <div class="edicion-oferta__fila">
+            <div class="campo">
+              <label for="editar-oferta-duracion">Duración (minutos)</label>
               <input
-                id="editar-oferta-precio"
-                type="text"
-                inputmode="decimal"
-                autocomplete="off"
-                formControlName="precioBase"
-                (blur)="
-                  formularioEdicion.controls.precioBase.setValue(
-                    reformatearImporte(formularioEdicion.controls.precioBase.value)
-                  )
-                "
+                id="editar-oferta-duracion"
+                type="number"
+                min="1"
+                formControlName="duracionMinutos"
               />
             </div>
-          </div>
 
-          <div class="campo campo--1">
-            <label for="editar-oferta-moneda">Moneda</label>
-            <input
-              id="editar-oferta-moneda"
-              type="text"
-              maxlength="3"
-              formControlName="moneda"
-              autocomplete="off"
-            />
-          </div>
-
-          <div class="campo campo--2 campo--interruptor">
-            <span class="campo__rotulo" aria-hidden="true">Obra social</span>
-            <label class="interruptor" for="editar-oferta-obra-social">
+            <div class="campo">
+              <label for="editar-oferta-capacidad">Capacidad</label>
               <input
-                id="editar-oferta-obra-social"
-                type="checkbox"
-                role="switch"
-                formControlName="admiteObraSocial"
+                id="editar-oferta-capacidad"
+                type="number"
+                min="1"
+                formControlName="capacidad"
               />
-              <span class="interruptor__titulo">Admite obra social</span>
-            </label>
+            </div>
+
+            <div class="campo">
+              <label for="editar-oferta-precio">Precio de la sesión</label>
+              <div class="campo-importe">
+                <span class="campo-importe__signo" aria-hidden="true">$</span>
+                <input
+                  id="editar-oferta-precio"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  formControlName="precioBase"
+                  (blur)="
+                    formularioEdicion.controls.precioBase.setValue(
+                      reformatearImporte(formularioEdicion.controls.precioBase.value)
+                    )
+                  "
+                />
+              </div>
+            </div>
+
+            <div class="campo campo--interruptor">
+              <span class="campo__rotulo" aria-hidden="true">Obra social</span>
+              <label class="interruptor" for="editar-oferta-obra-social">
+                <input
+                  id="editar-oferta-obra-social"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="admiteObraSocial"
+                />
+                <span class="interruptor__titulo">Admite obra social</span>
+              </label>
+            </div>
           </div>
 
           <div class="campo campo--ancho edicion-oferta__limpiar">
@@ -839,22 +866,35 @@
               />
               <span class="interruptor__titulo"
                 >Dejar esta actividad sin precio
-                <span class="edicion-oferta__nota">(saca precio y moneda juntos)</span></span
+                <span class="edicion-oferta__nota">(le saca el precio)</span></span
               >
             </label>
           </div>
 
+          <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+            <app-icono nombre="economia" />Cobro
+            <app-ayuda titulo="Cobro"
+              ><p>
+                <b>Qué es esta sección:</b> cómo se le cobra al paciente. Define cuándo nace la
+                deuda: en cada sesión, en cada clase, al vender un pack o con una cuota por período.
+              </p>
+              <p><b>Por sesión:</b> cada atención se cobra suelta.</p>
+              <p>
+                <b>Por clase asistida:</b> se genera la deuda con cada asistencia a una clase; la
+                ausencia no genera deuda.
+              </p>
+              <p><b>Pack de sesiones:</b> se vende un paquete de sesiones por adelantado.</p>
+              <p>
+                <b>Abono por período:</b> una cuota que cubre el período, venga las veces que venga.
+              </p>
+              <p>
+                <b>Sin esquema:</b> la actividad queda sin esquema especial y se cobra por sesión.
+              </p></app-ayuda
+            >
+          </h3>
+
           <div class="campo campo--3">
-            <div class="rotulo-con-ayuda">
-              <label for="editar-oferta-esquema">Esquema de cobro</label>
-              <app-ayuda titulo="Esquemas de cobro">
-                @for (esquema of opcionesDeEsquema; track esquema.valor) {
-                  <p>
-                    <b>{{ esquema.etiqueta }}:</b> {{ esquema.ayuda }}
-                  </p>
-                }
-              </app-ayuda>
-            </div>
+            <label for="editar-oferta-esquema">Esquema de cobro</label>
             <select id="editar-oferta-esquema" formControlName="esquemaCobro">
               <option value="">Sin cambios</option>
               @for (esquema of opcionesDeEsquema; track esquema.valor) {
@@ -879,88 +919,114 @@
 
           <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
             <app-icono nombre="pacientes" />Cómo se atiende
+            <app-ayuda titulo="Cómo se atiende"
+              ><p>
+                <b>Qué es esta sección:</b> qué hace falta para dar un turno y qué queda registrado
+                después: quién atiende, dónde y si deja huella en lo clínico.
+              </p>
+              <p><b>Profesional asignado:</b> cada turno necesita alguien que atienda.</p>
+              <p>
+                <b>Espacio o box:</b> cada turno ocupa un box, y no se dan dos turnos en el mismo
+                box a la misma hora.
+              </p>
+              <p>
+                <b>Caso clínico:</b> cada atención cuelga de un caso del paciente (por ejemplo, una
+                lesión en tratamiento).
+              </p>
+              <p>
+                <b>Registro clínico:</b> al cerrar la atención se escribe en la historia clínica.
+              </p></app-ayuda
+            >
           </h3>
 
-          <div class="campo campo--3 campo--interruptor">
-            <span class="campo__rotulo" aria-hidden="true">Profesional</span>
-            <label class="interruptor" for="editar-oferta-profesional">
-              <input
-                id="editar-oferta-profesional"
-                type="checkbox"
-                role="switch"
-                formControlName="requiereProfesional"
-              />
-              <span class="interruptor__titulo">Requiere profesional asignado</span>
-            </label>
-          </div>
+          <div class="edicion-oferta__fila edicion-oferta__fila--interruptores">
+            <div class="campo campo--interruptor">
+              <label class="interruptor" for="editar-oferta-profesional">
+                <input
+                  id="editar-oferta-profesional"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="requiereProfesional"
+                />
+                <span class="interruptor__titulo">Profesional asignado</span>
+              </label>
+            </div>
 
-          <div class="campo campo--3 campo--interruptor">
-            <span class="campo__rotulo" aria-hidden="true">Box</span>
-            <label class="interruptor" for="editar-oferta-espacio">
-              <input
-                id="editar-oferta-espacio"
-                type="checkbox"
-                role="switch"
-                formControlName="requiereEspacio"
-              />
-              <span class="interruptor__titulo">Requiere espacio o box</span>
-            </label>
-          </div>
+            <div class="campo campo--interruptor">
+              <label class="interruptor" for="editar-oferta-espacio">
+                <input
+                  id="editar-oferta-espacio"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="requiereEspacio"
+                />
+                <span class="interruptor__titulo">Espacio o box</span>
+              </label>
+            </div>
 
-          <div class="campo campo--3 campo--interruptor">
-            <span class="campo__rotulo" aria-hidden="true">Caso clínico</span>
-            <label class="interruptor" for="editar-oferta-caso">
-              <input
-                id="editar-oferta-caso"
-                type="checkbox"
-                role="switch"
-                formControlName="requiereCasoClinico"
-              />
-              <span class="interruptor__titulo">Requiere caso clínico</span>
-            </label>
-          </div>
+            <div class="campo campo--interruptor">
+              <label class="interruptor" for="editar-oferta-caso">
+                <input
+                  id="editar-oferta-caso"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="requiereCasoClinico"
+                />
+                <span class="interruptor__titulo">Caso clínico</span>
+              </label>
+            </div>
 
-          <div class="campo campo--3 campo--interruptor">
-            <span class="campo__rotulo" aria-hidden="true">Historia clínica</span>
-            <label class="interruptor" for="editar-oferta-registro">
-              <input
-                id="editar-oferta-registro"
-                type="checkbox"
-                role="switch"
-                formControlName="generaRegistroClinico"
-              />
-              <span class="interruptor__titulo">Genera registro clínico</span>
-            </label>
+            <div class="campo campo--interruptor">
+              <label class="interruptor" for="editar-oferta-registro">
+                <input
+                  id="editar-oferta-registro"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="generaRegistroClinico"
+                />
+                <span class="interruptor__titulo">Registro clínico</span>
+              </label>
+            </div>
           </div>
 
           <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
             <app-icono nombre="calendario" />Vigencia
+            <app-ayuda titulo="Vigencia"
+              ><p>
+                <b>Qué es esta sección:</b> entre qué fechas la actividad está disponible para
+                reservar.
+              </p>
+              <p>
+                <b>Desde</b> y <b>hasta</b> marcan entre qué días se puede reservar. Los turnos ya
+                dados no se tocan.
+              </p>
+              <p><b>Que no venza nunca:</b> la actividad no tiene fecha de fin.</p></app-ayuda
+            >
           </h3>
 
-          <div class="campo campo--3">
-            <label for="editar-oferta-desde">Vigente desde</label>
-            <input id="editar-oferta-desde" type="date" formControlName="vigenciaDesde" />
-          </div>
+          <div class="edicion-oferta__fila">
+            <div class="campo">
+              <label for="editar-oferta-desde">Vigente desde</label>
+              <input id="editar-oferta-desde" type="date" formControlName="vigenciaDesde" />
+            </div>
 
-          <div class="campo campo--3">
-            <label for="editar-oferta-hasta">Vigente hasta</label>
-            <input id="editar-oferta-hasta" type="date" formControlName="vigenciaHasta" />
-          </div>
+            <div class="campo">
+              <label for="editar-oferta-hasta">Vigente hasta</label>
+              <input id="editar-oferta-hasta" type="date" formControlName="vigenciaHasta" />
+            </div>
 
-          <div class="campo campo--ancho edicion-oferta__limpiar">
-            <label class="interruptor" for="editar-oferta-limpiar-vigencia">
-              <input
-                id="editar-oferta-limpiar-vigencia"
-                type="checkbox"
-                role="switch"
-                formControlName="limpiarVigenciaHasta"
-                (change)="sincronizarLimpiar('vigencia')"
-              />
-              <span class="interruptor__titulo"
-                >Que esta actividad no venza nunca
-                <span class="edicion-oferta__nota">(le saca la fecha de fin)</span></span
-              >
-            </label>
+            <div class="campo campo--interruptor edicion-oferta__limpiar">
+              <label class="interruptor" for="editar-oferta-limpiar-vigencia">
+                <input
+                  id="editar-oferta-limpiar-vigencia"
+                  type="checkbox"
+                  role="switch"
+                  formControlName="limpiarVigenciaHasta"
+                  (change)="sincronizarLimpiar('vigencia')"
+                />
+                <span class="interruptor__titulo">Que esta actividad no venza nunca</span>
+              </label>
+            </div>
           </div>
         </div>
 

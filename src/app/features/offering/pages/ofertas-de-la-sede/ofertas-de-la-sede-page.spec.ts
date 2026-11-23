@@ -350,7 +350,8 @@ describe('OfertasDeLaSedePage', () => {
   });
 
   it('la casilla es la unica forma de sacar el fin de vigencia, y además vacía el campo', async () => {
-    const fixture = await montar();
+    const conFin = { ...VIGENTE, vigenciaHasta: '2026-12-31' };
+    const fixture = await montar({ ofertas: [conFin, AUN_NO] });
 
     abrir(fixture, 'Editar');
     marcar(fixture, '#editar-oferta-limpiar-vigencia');
@@ -371,10 +372,21 @@ describe('OfertasDeLaSedePage', () => {
     );
     expect(edicion.request.body).toEqual({ expectedVersion: 4, limpiarVigenciaHasta: true });
 
-    edicion.flush({ ...VIGENTE, version: 5 });
+    edicion.flush({ ...conFin, version: 5 });
     httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
     await fixture.whenStable();
     fixture.detectChanges();
+  });
+
+  it('sin fecha de fin el interruptor arranca prendido y no manda nada', async () => {
+    const fixture = await montar();
+
+    abrir(fixture, 'Editar');
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    expect(
+      anfitrion.querySelector<HTMLInputElement>('#editar-oferta-limpiar-vigencia')?.checked,
+    ).toBe(true);
+    expect(anfitrion.querySelector<HTMLInputElement>('#editar-oferta-hasta')?.disabled).toBe(true);
   });
 
   it('el 409 conflict no pisa nada: relee, deja el panel abierto y explica', async () => {
@@ -831,7 +843,6 @@ describe('OfertasDeLaSedePage', () => {
 
     // Saca precio Y moneda: el contrato los trata como un solo dato.
     expect(anfitrion.querySelector<HTMLInputElement>('#editar-oferta-precio')?.disabled).toBe(true);
-    expect(anfitrion.querySelector<HTMLInputElement>('#editar-oferta-moneda')?.disabled).toBe(true);
 
     cambiarCasilla(fixture, '#editar-oferta-limpiar-precio', false);
     expect(anfitrion.querySelector<HTMLInputElement>('#editar-oferta-precio')?.disabled).toBe(
@@ -855,48 +866,24 @@ describe('OfertasDeLaSedePage', () => {
     fixture.detectChanges();
   });
 
-  it('un precio nuevo sin moneda no viaja: uno solo es un rechazo garantizado', async () => {
+  it('un precio nuevo viaja con la moneda de la actividad: no hay campo de moneda', async () => {
     const fixture = await montar();
 
     abrir(fixture, 'Editar');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('#editar-oferta-moneda'),
+    ).toBeNull();
     escribir(fixture, '#editar-oferta-precio', '20000');
-    escribir(fixture, '#editar-oferta-moneda', '');
     enviar(fixture, 'form[novalidate]');
 
     const edicion = httpMock.expectOne(
       (peticion: HttpRequest<unknown>) =>
         peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
     );
+    // El backend exige los dos juntos: va la que ya tenía la actividad, o pesos.
     const cuerpo = edicion.request.body as Record<string, unknown>;
-    // El backend tiene un check que exige los dos. Mandar el precio solo devuelve un 400 que
-    // habla de una restriccion de la base, no de lo que el usuario hizo.
-    expect(cuerpo['precioBase']).toBeUndefined();
-    expect(cuerpo['moneda']).toBeUndefined();
-
-    edicion.flush({ ...VIGENTE, version: 5 });
-    httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
-    await fixture.whenStable();
-    fixture.detectChanges();
-  });
-
-  it('cambiar precio y moneda los manda juntos, con la moneda en mayusculas', async () => {
-    const fixture = await montar();
-
-    abrir(fixture, 'Editar');
-    escribir(fixture, '#editar-oferta-precio', '20000');
-    escribir(fixture, '#editar-oferta-moneda', 'usd');
-    enviar(fixture, 'form[novalidate]');
-
-    const edicion = httpMock.expectOne(
-      (peticion: HttpRequest<unknown>) =>
-        peticion.method === 'PUT' && peticion.url === `${OFERTAS}/10`,
-    );
-    // Sin normalizar, `usd` y `USD` serian dos monedas distintas para el backend.
-    expect(edicion.request.body).toEqual({
-      expectedVersion: 4,
-      precioBase: 20000,
-      moneda: 'USD',
-    });
+    expect(cuerpo['precioBase']).toBe(20000);
+    expect(cuerpo['moneda']).toBe(VIGENTE.moneda ?? 'ARS');
 
     edicion.flush({ ...VIGENTE, version: 5 });
     httpMock.expectOne(esListado()).flush([VIGENTE, AUN_NO]);
@@ -1190,6 +1177,8 @@ describe('OfertasDeLaSedePage', () => {
     cambiarCasilla(fixture, '#editar-oferta-profesional', false);
     cambiarCasilla(fixture, '#editar-oferta-espacio', false);
     escribir(fixture, '#editar-oferta-desde', '2026-02-01');
+    // Sin fecha de fin, "no vence nunca" arranca prendido: se apaga para poder cargar una.
+    cambiarCasilla(fixture, '#editar-oferta-limpiar-vigencia', false);
     escribir(fixture, '#editar-oferta-hasta', '2026-12-31');
     enviar(fixture, 'form[novalidate]');
 

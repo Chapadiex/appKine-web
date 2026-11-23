@@ -195,6 +195,23 @@ export class OfertasDeLaSedePage {
   protected readonly esquemasDeCobro = Object.values(EsquemaCobro);
   protected readonly opcionesDeEsquema = ESQUEMAS_DE_COBRO;
   protected readonly ayudaDeEsquema = ayudaDeEsquema;
+
+  /** Esquema de cobro en palabras y con su ícono, para la columna de la tabla (23/11/2026). */
+  protected esquemaDeLaFila(valor: string | undefined): {
+    etiqueta: string;
+    icono: NombreDeIcono;
+  } {
+    const etiqueta =
+      ESQUEMAS_DE_COBRO.find((esquema) => esquema.valor === (valor ?? ''))?.etiqueta ??
+      'Sin esquema especial';
+    const iconos: Record<string, NombreDeIcono> = {
+      POR_SESION: 'calendario',
+      POR_CLASE: 'actividades',
+      POR_PACK: 'capas',
+      POR_ABONO: 'repetir',
+    };
+    return { etiqueta, icono: iconos[valor ?? ''] ?? 'economia' };
+  }
   protected readonly pasosDelAlta = PASOS_DEL_ALTA;
   /** Individual o Grupal, cortos: la explicacion va en el "?" y no en cada opcion. */
   protected readonly opcionesDeModalidad = MODALIDADES.map((opcion) => ({
@@ -713,7 +730,8 @@ export class OfertasDeLaSedePage {
         duracionMinutos: comoTexto(oferta.duracionMinutos),
         capacidad: comoTexto(oferta.capacidad),
         precioBase: formatearImporte(oferta.precioBase),
-        moneda: oferta.moneda ?? '',
+        // Sin campo de moneda en pantalla (23/11/2026): la que tenga la actividad, o pesos.
+        moneda: oferta.moneda || 'ARS',
         esquemaCobro: oferta.esquemaCobro ?? '',
         admiteObraSocial: oferta.admiteObraSocial ?? false,
         requiereCasoClinico: oferta.requiereCasoClinico ?? false,
@@ -724,8 +742,10 @@ export class OfertasDeLaSedePage {
         vigenciaHasta: oferta.vigenciaHasta ?? '',
         limpiarPrecio: false,
         limpiarEsquemaCobro: false,
-        limpiarVigenciaHasta: false,
+        // Sin fecha de fin el interruptor arranca prendido: muestra lo que ya es (23/11/2026).
+        limpiarVigenciaHasta: !oferta.vigenciaHasta,
       });
+      this.sincronizarLimpiar('vigencia');
       // El foco se va con el panel: sin esto, quien navega por teclado aprieta "Editar" y el
       // formulario aparece mas abajo mientras el foco sigue en el boton.
       afterNextRender(() => this.enfocar('#editar-oferta-nombre'), { injector: this.injector });
@@ -1222,7 +1242,8 @@ export class OfertasDeLaSedePage {
     }
 
     if (valores.limpiarVigenciaHasta) {
-      cambios.limpiarVigenciaHasta = true;
+      // Solo viaja si había una fecha que sacar: prendido por defecto no es un cambio.
+      if (original.vigenciaHasta) cambios.limpiarVigenciaHasta = true;
     } else if (
       valores.vigenciaHasta !== '' &&
       valores.vigenciaHasta !== (original.vigenciaHasta ?? '')
