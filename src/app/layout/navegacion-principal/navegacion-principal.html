@@ -13,7 +13,7 @@
     <!-- Solo la marca: la sede activa se dice una vez, en el selector de la barra superior. -->
     <!-- Con logo cargado, la marca es la del centro; sin logo, la de AKINE. -->
     <a class="marca" [routerLink]="rutaInicio()" (click)="navegar()">
-      @if (logoDelCentro(); as url) {
+      @if (!modoPlataforma() && logoDelCentro(); as url) {
         <!-- El logo suele traer el nombre: repetirlo al lado seria decirlo dos veces. -->
         <img class="marca__imagen" [src]="url" [alt]="nombreDelCentro()" />
       } @else {
@@ -106,6 +106,18 @@
       >
         <app-icono class="nav__icono" nombre="plataforma" />
         Plataforma
+      </a>
+    }
+
+    <!-- En la consola con un centro elegido: la salida hacia el selector de centro. -->
+    @if (volverAlCentro()) {
+      <a
+        class="nav__enlace nav__enlace--grupo nav__plataforma"
+        [routerLink]="rutaDelCentro"
+        (click)="navegar()"
+      >
+        <app-icono class="nav__icono" nombre="flecha-derecha" />
+        Elegir centro
       </a>
     }
 

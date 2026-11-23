@@ -7,6 +7,7 @@ import {
   computed,
   effect,
   inject,
+  input,
   Injector,
   signal,
   untracked,
@@ -96,6 +97,9 @@ function algunServicio(grupo: AbstractControl): ValidationErrors | null {
   styleUrl: './pedido-de-prueba.css',
 })
 export class PedidoDePrueba {
+  /** El plan ya se eligió en el armador: servicios, sedes e IA viajan precargados y no se muestran. */
+  readonly planElegido = input(false);
+
   private readonly pedidos = inject(PedidosDePruebaService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);

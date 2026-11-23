@@ -62,6 +62,7 @@ type EstadoSuscripcion =
 const NOMBRE_DEL_LIMITE: Readonly<Record<string, string>> = {
   [LimitUsageResponseCodeEnum.MAX_CONSULTORIOS]: 'Sedes habilitadas',
   [LimitUsageResponseCodeEnum.MAX_MIEMBROS_ACTIVOS]: 'Miembros activos',
+  [LimitUsageResponseCodeEnum.MAX_PROFESIONALES]: 'Profesionales',
 };
 
 /** Cuantos hechos del historico se miran buscando la suspension mas reciente. */
@@ -150,9 +151,9 @@ export class SubscriptionPage {
     if (sedes) {
       items.push({ texto: sedes, incluido: true, icono: 'sede' });
     }
-    const miembros = tope('MAX_MIEMBROS_ACTIVOS', 'miembro activo', 'miembros activos');
-    if (miembros) {
-      items.push({ texto: miembros, incluido: true, icono: 'perfil' });
+    const profesionales = tope('MAX_PROFESIONALES', 'profesional', 'profesionales');
+    if (profesionales) {
+      items.push({ texto: profesionales, incluido: true, icono: 'perfil' });
     }
     if (contratacion) {
       items.push(

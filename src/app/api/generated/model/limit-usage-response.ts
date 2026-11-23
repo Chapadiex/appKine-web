@@ -32,7 +32,8 @@ export interface LimitUsageResponse {
 }
 export enum LimitUsageResponseCodeEnum {
     MAX_CONSULTORIOS = 'MAX_CONSULTORIOS',
-    MAX_MIEMBROS_ACTIVOS = 'MAX_MIEMBROS_ACTIVOS'
+    MAX_MIEMBROS_ACTIVOS = 'MAX_MIEMBROS_ACTIVOS',
+    MAX_PROFESIONALES = 'MAX_PROFESIONALES'
 };
 
 

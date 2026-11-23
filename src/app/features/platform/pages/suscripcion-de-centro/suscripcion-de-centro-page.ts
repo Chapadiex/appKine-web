@@ -39,14 +39,19 @@ import {
   Servicio,
   MarcaDeEstado,
   MarcaDePlan,
+  SIGLAS_DE_PLAN,
   diasRestantes,
   marcaDePlan,
   marcaDeSuscripcion,
+  marcasDeServicios,
+  nombreVisibleDePlan,
+  planEquivalente,
   planesOfrecidos,
   rotuloDeTope,
   serviciosEnTexto,
   tieneIa,
-  topeDeSedes,
+  topesDelPlan,
+  rotuloDeProfesionales,
 } from '../../models/contratacion';
 import { RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA } from '../../models/rutas-de-plataforma';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
@@ -137,9 +142,13 @@ export class SuscripcionDeCentroPage implements OnInit {
   protected readonly rutaAlta = RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA;
   protected readonly servicios = SERVICIOS;
   protected readonly marcaDeSuscripcion = marcaDeSuscripcion;
-  protected readonly topeDeSedes = topeDeSedes;
+  protected readonly topesDelPlan = topesDelPlan;
+  protected readonly rotuloDeProfesionales = rotuloDeProfesionales;
   protected readonly tieneIa = tieneIa;
   protected readonly rotuloDeTope = rotuloDeTope;
+  protected readonly marcasDeServicios = marcasDeServicios;
+  protected readonly nombreVisibleDePlan = nombreVisibleDePlan;
+  protected readonly siglasDePlan = SIGLAS_DE_PLAN;
   protected readonly serviciosEnTexto = serviciosEnTexto;
 
   protected readonly busqueda = signal('');
@@ -208,10 +217,12 @@ export class SuscripcionDeCentroPage implements OnInit {
     const dias = this.dias();
     return this.enPrueba() && dias !== null && dias <= 0;
   });
-  /** El plan vigente no se ofrece mas (BASICO, PROFESIONAL): hay que elegir uno ofrecido. */
+  /** El plan vigente no esta entre los ofrecidos del catalogo: hay que elegir uno ofrecido. */
   protected readonly planNoOfrecido = computed(() => {
     const actual = this.contratacion()?.planCode;
-    return actual !== undefined && !this.planes().some((p) => p.code === actual);
+    if (actual === undefined) return false;
+    const equivalente = planEquivalente(actual);
+    return !this.planes().some((p) => p.code === equivalente);
   });
   protected readonly planElegidoOfrecido = computed(() =>
     this.planes().some((p) => p.code === this.planElegido()),
@@ -224,7 +235,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     const leidos = [...(c.servicios ?? [])].sort().join();
     const elegidos = [...this.serviciosElegidos()].sort().join();
     return (
-      this.planElegido() === c.planCode &&
+      this.planElegido() === planEquivalente(c.planCode) &&
       leidos === elegidos &&
       this.iaElegida() === tieneIa(c.adicionales)
     );
@@ -323,7 +334,7 @@ export class SuscripcionDeCentroPage implements OnInit {
     return dias === 1 ? 'Termina mañana' : `Quedan ${dias} días`;
   }
 
-  /** Insignia del plan de la fila: "PB Base", "PC Crecimiento", "PR Red". */
+  /** Insignia del plan de la fila: PB, PI o PP, con el nombre en el globo. */
   protected planDeFila(centro: PlatformOrganizationResponse): MarcaDePlan {
     const delCatalogo = this.planes().find((p) => p.code === centro.planCode)?.name;
     return marcaDePlan(centro.planCode, centro.planName ?? delCatalogo);
@@ -386,7 +397,7 @@ export class SuscripcionDeCentroPage implements OnInit {
           this.avisos.exito(contratar ? 'Pasó a contrato' : 'Contratación guardada', {
             descripcion: contratar
               ? `${nombre} dejó la prueba: la suscripción está activa.`
-              : `${nombre}: plan ${actualizada.planNombre ?? actualizada.planCode}, ${serviciosEnTexto(
+              : `${nombre}: plan ${nombreVisibleDePlan(actualizada.planCode, actualizada.planNombre)}, ${serviciosEnTexto(
                   actualizada.servicios,
                 )}.`,
           });
@@ -453,7 +464,7 @@ export class SuscripcionDeCentroPage implements OnInit {
 
   private mostrar(contratacion: ContratacionResponse): void {
     this.estado.set({ tipo: 'listo', contratacion });
-    this.planElegido.set(contratacion.planCode ?? '');
+    this.planElegido.set(planEquivalente(contratacion.planCode));
     this.serviciosElegidos.set([...(contratacion.servicios ?? [])]);
     this.iaElegida.set(tieneIa(contratacion.adicionales));
   }

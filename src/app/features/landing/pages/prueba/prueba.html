@@ -1,0 +1,50 @@
+<div class="prueba-pagina">
+  <header class="cabecera">
+    <div class="cabecera__fila envoltura">
+      <a class="logo" routerLink="/" aria-label="AKINE, volver a la página principal">
+        <span class="logo__marca" aria-hidden="true">A</span>
+        <span class="logo__nombre" aria-hidden="true">AKINE</span>
+      </a>
+      <a class="cabecera__volver" routerLink="/">Volver a la página principal</a>
+    </div>
+  </header>
+
+  <main class="envoltura cuerpo">
+    <div class="encabezado">
+      <span class="sello"><app-icono nombre="chispa" />30 días gratis, con la IA incluida</span>
+      <h1 class="titulo">Ya casi: dejanos tus datos.</h1>
+      <p class="bajada">
+        Con esto armamos tu centro y te llega la invitación por correo para poner tu contraseña.
+      </p>
+    </div>
+
+    <div class="grilla">
+      @if (planElegido) {
+        <aside class="resumen" aria-labelledby="resumen-titulo">
+          <span class="resumen__rotulo" id="resumen-titulo">Tu plan</span>
+          <b class="resumen__nombre">{{ plan().nombre }}</b>
+          <div class="resumen__topes">
+            @for (tope of plan().topes; track tope.que) {
+              <span class="resumen__tope"
+                ><b>{{ tope.cifra }}</b> {{ tope.que }}</span
+              >
+            }
+          </div>
+          <ul class="resumen__lista">
+            <li><app-icono nombre="servicios" />{{ servicios() }}</li>
+            <li [class.resumen__ia]="conIa()">
+              <app-icono nombre="chispa" />{{ conIa() ? 'Con IA' : 'Sin IA por ahora' }}
+            </li>
+          </ul>
+          <a class="resumen__cambiar" routerLink="/" fragment="prueba">Cambiar el plan</a>
+        </aside>
+      }
+
+      <section class="panel" [class.panel--solo]="!planElegido" aria-label="Tus datos">
+        <app-pedido-de-prueba [planElegido]="planElegido" />
+      </section>
+    </div>
+  </main>
+
+  <app-pie-de-landing />
+</div>

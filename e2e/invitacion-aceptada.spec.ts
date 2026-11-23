@@ -16,7 +16,7 @@ import { deAUnLogin } from './support/sembrado';
  * backend REAL.
  *
  * <p>`flujo-invitaciones` abre el enlace y cancela la invitacion desde el centro; aceptar quedaba
- * afuera porque crea una cuenta y un miembro, y el centro compartido de `agenda-setup` es BASICO con
+ * afuera porque crea una cuenta y un miembro, y el centro compartido de `agenda-setup` es BASE con
  * tope de miembros. Aca el centro es propio (`support/centro-propio.ts`): administradora,
  * profesional y la invitada son tres de los cinco del plan.
  *

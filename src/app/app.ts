@@ -92,9 +92,9 @@ export class App {
 
   constructor() {
     // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla. Las
-    // pantallas de acceso van siempre en claro.
+    // pantallas de acceso y la landing pública van siempre en claro.
     const preferencias = inject(PreferenciasStore);
-    effect(() => preferencias.forzarClaro(this.esAcceso()));
+    effect(() => preferencias.forzarClaro(this.esAcceso() || this.esLanding()));
 
     // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
     // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
@@ -294,11 +294,12 @@ export class App {
   );
 
   /**
-   * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):
-   * sin barra superior ni lateral y a todo el ancho. Traen su propia cabecera y su pie.
+   * La landing pública (`/`, con o sin ancla), sus textos legales (`/terminos`, `/privacidad`) y el
+   * pedido de prueba (`/prueba`): sin barra superior ni lateral y a todo el ancho. Traen su propia
+   * cabecera y su pie.
    */
   protected readonly esLanding = computed(() =>
-    /^\/(terminos|privacidad)?(#|\?|$)/.test(this.url()),
+    /^\/(terminos|privacidad|prueba)?(#|\?|$)/.test(this.url()),
   );
 
   protected readonly ancho = toSignal(

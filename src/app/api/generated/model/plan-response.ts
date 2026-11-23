@@ -31,7 +31,7 @@ export interface PlanResponse {
      */
     name?: string;
     /**
-     * Si la plataforma lo ofrece hoy al dar de alta o cambiar la contratacion de un centro. Los planes anteriores al 18/11/2026 siguen vigentes para quien los tiene y no se ofrecen
+     * Si la plataforma lo ofrece hoy al dar de alta o cambiar la contratacion de un centro. Hoy los tres planes del catalogo (BASE, CRECIMIENTO y RED) se ofrecen; un plan que se retire queda en false y sigue vigente para quien lo tiene
      */
     ofrecido?: boolean;
 }

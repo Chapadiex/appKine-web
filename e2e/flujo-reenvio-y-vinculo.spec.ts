@@ -13,7 +13,7 @@ import { ApiAkine, Centro } from './support/sembrado';
  * alta self-service mas, dentro del cupo de `esperarCupoDeRegistro`.
  *
  * <p><b>El vinculo va a la organizacion propia y no al centro compartido:</b> el centro esta en el
- * plan BASICO (5 miembros activos) y otros specs ya le suman colaboradores; con la suite entera el
+ * plan BASE (5 miembros activos) y otros specs ya le suman colaboradores; con la suite entera el
  * alta respondia `plan-limit-exceeded` (primer CI de web #82). La profesional del centro solo
  * ingresa por la API eligiendo el contexto del centro, asi que un contexto mas no la cambia.
  */

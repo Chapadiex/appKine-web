@@ -1,42 +1,55 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
+import { Icono } from '../../../../shared/components/icono/icono';
+import { RUTA_PRUEBA } from '../../models/rutas-de-landing';
 
-interface FuncionDeIa {
-  readonly icono: NombreDeIcono;
-  readonly titulo: string;
-  readonly texto: string;
+interface BarraDeAusentes {
+  readonly dia: string;
+  readonly valor: number;
+  readonly destacada?: boolean;
 }
 
-/** El adicional de IA (§2.3 del plan de la landing): qué hace cada función y dónde corre. */
+/**
+ * La IA en la landing (§2.3 del plan): una característica principal, con una pantalla en
+ * miniatura por función. Todo es ilustración con datos inventados (`aria-hidden`); el texto de
+ * cada tarjeta es lo que se lee.
+ */
 @Component({
   selector: 'app-seccion-ia',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icono],
+  imports: [Icono, RouterLink],
   templateUrl: './seccion-ia.html',
   styleUrls: ['../../landing-comun.css', './seccion-ia.css'],
 })
 export class SeccionIa {
-  protected readonly funcionesIa: readonly FuncionDeIa[] = [
-    {
-      icono: 'buscar',
-      titulo: 'Asistente de datos',
-      texto: 'Preguntás en tus palabras y responde con los datos que tu rol puede ver.',
-    },
-    {
-      icono: 'microfono',
-      titulo: 'Dictado por voz',
-      texto: 'Hablás durante la evaluación y propone en qué campo va cada cosa. Vos elegís.',
-    },
-    {
-      icono: 'capas',
-      titulo: 'Evolución del caso',
-      texto: 'Alertas de dolor, adherencia y frecuencia sobre las sesiones cerradas.',
-    },
-    {
-      icono: 'documento',
-      titulo: 'Sugerencias y biblioteca',
-      texto: 'Propuestas con citas de los protocolos de tu centro. El profesional decide.',
-    },
+  protected readonly rutaPrueba = RUTA_PRUEBA;
+
+  protected readonly ausentes: readonly BarraDeAusentes[] = [
+    { dia: 'L', valor: 1 },
+    { dia: 'M', valor: 3, destacada: true },
+    { dia: 'X', valor: 0.5 },
+    { dia: 'J', valor: 1 },
+    { dia: 'V', valor: 0.5 },
+  ];
+
+  /** Dolor en seis sesiones, ya en coordenadas del dibujo. */
+  protected readonly evolucion = [
+    { x: 10, y: 22 },
+    { x: 54, y: 34 },
+    { x: 98, y: 50 },
+    { x: 142, y: 66 },
+    { x: 186, y: 70 },
+    { x: 230, y: 84 },
+  ];
+
+  protected readonly onda: readonly number[] = [
+    0.3, 0.6, 0.9, 0.5, 0.8, 1, 0.4, 0.7, 0.95, 0.5, 0.3, 0.75, 0.6, 0.9, 0.4, 0.65, 0.85, 0.35,
+  ];
+
+  protected readonly libros: readonly string[] = [
+    'Protocolo de LCA',
+    'Esguince de tobillo',
+    'Lumbalgia aguda',
   ];
 }

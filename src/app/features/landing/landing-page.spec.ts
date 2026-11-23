@@ -25,24 +25,25 @@ describe('LandingPage', () => {
     fixture.detectChanges();
     const raiz = fixture.nativeElement as HTMLElement;
 
-    for (const id of ['portada', 'servicios', 'sedes', 'ia', 'planes', 'prueba', 'preguntas']) {
+    for (const id of ['portada', 'servicios', 'sedes', 'ia', 'prueba', 'preguntas']) {
       expect(raiz.querySelector(`#${id}`), id).not.toBeNull();
     }
     expect(raiz.querySelector('h1')?.textContent).toContain('El día entero de tu centro');
-    expect(raiz.querySelector('a[href="#prueba"]')).not.toBeNull();
+    // El plan se arma acá y los datos se piden en /prueba.
+    expect(raiz.querySelector('#prueba a[href^="/prueba"]')).not.toBeNull();
+    expect(raiz.querySelector('app-pedido-de-prueba')).toBeNull();
     // Sin autoregistro: los centros los crea la plataforma.
     expect(raiz.textContent).not.toContain('Crear una cuenta');
-    expect(raiz.querySelector('#prueba form app-segmentado')).not.toBeNull();
     expect(raiz.querySelectorAll('#preguntas details').length).toBeGreaterThan(3);
   });
 
-  it('el armador recomienda el plan que corresponde y cambia al elegir otra opción', () => {
+  it('el armador recomienda el plan y lleva lo elegido a /prueba', () => {
     const fixture = TestBed.createComponent(LandingPage);
     fixture.detectChanges();
     const raiz = fixture.nativeElement as HTMLElement;
     const plan = (): string => raiz.querySelector('.resultado__nombre')?.textContent?.trim() ?? '';
 
-    expect(plan()).toBe('Base');
+    expect(plan()).toBe('Plan Base');
 
     const opcion = [...raiz.querySelectorAll<HTMLInputElement>('app-armador-de-plan input')].find(
       (input) => input.value === 'mas-de-tres',
@@ -50,11 +51,11 @@ describe('LandingPage', () => {
     opcion!.click();
     fixture.detectChanges();
 
-    expect(plan()).toBe('Red');
-    expect(raiz.querySelector('.plan--elegido')?.textContent).toContain('Red');
-    // El pedido de prueba se precarga con lo elegido en el armador.
-    const sedesDelPedido = raiz.querySelector<HTMLInputElement>('#pedido-sedes input:checked');
-    expect(sedesDelPedido?.value).toBe('MAS_DE_TRES');
+    expect(plan()).toBe('Plan Plus');
+    expect(raiz.querySelector('.plan--elegido')?.textContent).toContain('Plan Plus');
+    // Lo elegido viaja en la dirección: el pedido no lo vuelve a preguntar.
+    const enlace = raiz.querySelector<HTMLAnchorElement>('.resultado__accion');
+    expect(enlace?.getAttribute('href')).toContain('sedes=mas-de-tres');
   });
 });
 
@@ -66,7 +67,7 @@ describe('recomendarPlan', () => {
     expect(r.incluye.map((g) => g.titulo)).toEqual(['1 sede', 'Kinesiología y rehabilitación']);
   });
 
-  it('dos o tres sedes con los dos servicios e IA: Crecimiento con toda la IA', () => {
+  it('dos o tres sedes con los dos servicios e IA: Plan Intermedio con toda la IA', () => {
     const r = recomendarPlan({ sedes: 'hasta-tres', servicios: 'ambos', ia: 'si' });
 
     expect(r.plan.codigo).toBe('crecimiento');

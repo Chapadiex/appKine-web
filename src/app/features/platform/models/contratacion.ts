@@ -54,7 +54,7 @@ export const PLAN_SUGERIDO: Readonly<Record<Sedes, string>> = {
   MAS_DE_TRES: 'RED',
 };
 
-/** Solo los planes que se ofrecen: BASICO y PROFESIONAL siguen para quien los tiene, no se venden. */
+/** Solo los planes que el catalogo marca como ofrecidos. */
 export function planesOfrecidos(planes: readonly PlanResponse[]): PlanResponse[] {
   return planes.filter((plan) => plan.ofrecido === true);
 }
@@ -68,6 +68,26 @@ export function topeDeSedes(plan: PlanResponse | undefined): string {
 export function rotuloDeTope(maxSedes: number | null | undefined): string {
   if (maxSedes === null || maxSedes === undefined) return 'Sin tope de sedes';
   return maxSedes === 1 ? 'Hasta 1 sede' : `Hasta ${maxSedes} sedes`;
+}
+
+/** "Hasta 2 profesionales", "Hasta 6 profesionales" o "Sin tope de profesionales". */
+export function topeDeProfesionales(plan: PlanResponse | undefined): string {
+  const limite = plan?.limits?.find((l) => l.code === 'MAX_PROFESIONALES');
+  return rotuloDeProfesionales(
+    limite === undefined || limite.unlimited ? null : (limite.value ?? null),
+  );
+}
+
+export function rotuloDeProfesionales(maxProfesionales: number | null | undefined): string {
+  if (maxProfesionales === null || maxProfesionales === undefined) {
+    return 'Sin tope de profesionales';
+  }
+  return maxProfesionales === 1 ? 'Hasta 1 profesional' : `Hasta ${maxProfesionales} profesionales`;
+}
+
+/** Sedes y profesionales del plan en una línea: "Hasta 1 sede · Hasta 2 profesionales". */
+export function topesDelPlan(plan: PlanResponse | undefined): string {
+  return `${topeDeSedes(plan)} · ${topeDeProfesionales(plan)}`;
 }
 
 const UN_DIA = 24 * 60 * 60 * 1000;
@@ -132,23 +152,66 @@ export interface MarcaDePlan {
   readonly clase: string;
 }
 
-/** Los tres escalones que se venden; BASICO y PROFESIONAL son los nombres viejos del base e intermedio. */
+/**
+ * Los tres escalones que se venden, con la sigla que se muestra en los listados (19/11/2026):
+ * PB = Plan Base, PI = Plan Intermedio, PP = Plan Plus.
+ */
 const ESCALON_DE_PLAN: Readonly<Record<string, Omit<MarcaDePlan, 'texto'> & { nombre: string }>> = {
-  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Base' },
-  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Básico' },
-  CRECIMIENTO: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Crecimiento' },
-  PROFESIONAL: { sigla: 'PC', clase: 'marca-plan--crecimiento', nombre: 'Profesional' },
-  RED: { sigla: 'PR', clase: 'marca-plan--red', nombre: 'Red' },
+  BASE: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Base' },
+  CRECIMIENTO: { sigla: 'PI', clase: 'marca-plan--crecimiento', nombre: 'Plan Intermedio' },
+  RED: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
+  // Transicion: una base que todavia no corrio la migracion que borra los planes viejos los sigue
+  // devolviendo. Se muestran como el plan al que pasan; borrar estas dos lineas despues.
+  BASICO: { sigla: 'PB', clase: 'marca-plan--base', nombre: 'Plan Base' },
+  PROFESIONAL: { sigla: 'PP', clase: 'marca-plan--red', nombre: 'Plan Plus' },
 };
 
+/** La leyenda de las siglas, en el orden de los escalones, para la ayuda del listado. */
+export const SIGLAS_DE_PLAN: readonly Pick<MarcaDePlan, 'sigla' | 'texto'>[] = [
+  { sigla: 'PB', texto: 'Plan Base' },
+  { sigla: 'PI', texto: 'Plan Intermedio' },
+  { sigla: 'PP', texto: 'Plan Plus' },
+];
+
 /**
- * "PB Base", "PC Crecimiento", "PR Red". El nombre que manda el servidor gana sobre el de respaldo;
- * un plan desconocido va sin sigla y en neutro.
+ * Un escalón conocido lleva su sigla y su nombre fijo, para que la sigla signifique siempre lo
+ * mismo. Un plan desconocido va sin sigla, en neutro y con el nombre que manda el servidor.
  */
 export function marcaDePlan(code: string | undefined, name?: string): MarcaDePlan {
   const escalon = code === undefined ? undefined : ESCALON_DE_PLAN[code];
-  const texto = name?.trim() || escalon?.nombre || code || 'Sin plan';
   return escalon
-    ? { sigla: escalon.sigla, texto, clase: escalon.clase }
-    : { sigla: '', texto, clase: 'marca-plan--otro' };
+    ? { sigla: escalon.sigla, texto: escalon.nombre, clase: escalon.clase }
+    : { sigla: '', texto: name?.trim() || code || 'Sin plan', clase: 'marca-plan--otro' };
+}
+
+/** El nombre que se muestra de un plan: el fijo del escalon, o el del servidor si no se conoce. */
+export function nombreVisibleDePlan(code: string | undefined, name?: string): string {
+  return marcaDePlan(code, name).texto;
+}
+
+/**
+ * Transicion, junto con los alias de arriba: el plan vigente al que equivale uno viejo. El panel lo
+ * preselecciona, asi el centro se edita sin elegir plan a mano y al guardar queda en el vigente.
+ */
+const PLAN_EQUIVALENTE: Readonly<Record<string, string>> = { BASICO: 'BASE', PROFESIONAL: 'RED' };
+
+export function planEquivalente(code: string | undefined): string {
+  return code === undefined ? '' : (PLAN_EQUIVALENTE[code] ?? code);
+}
+
+/** Un servicio contratado como insignia del listado: icono y nombre corto (va en el globo). */
+export interface MarcaDeServicio {
+  readonly valor: Servicio;
+  readonly icono: 'pacientes' | 'actividades';
+  readonly texto: string;
+}
+
+const MARCAS_DE_SERVICIO: readonly MarcaDeServicio[] = [
+  { valor: 'KINESIOLOGIA', icono: 'pacientes', texto: ETIQUETA_CORTA.KINESIOLOGIA },
+  { valor: 'ACTIVIDADES', icono: 'actividades', texto: ETIQUETA_CORTA.ACTIVIDADES },
+];
+
+/** Los servicios contratados, siempre en el mismo orden: Kinesiologia y despues Actividades. */
+export function marcasDeServicios(servicios: readonly string[] | undefined): MarcaDeServicio[] {
+  return MARCAS_DE_SERVICIO.filter((marca) => (servicios ?? []).includes(marca.valor));
 }

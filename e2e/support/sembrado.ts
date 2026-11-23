@@ -497,7 +497,7 @@ export async function sembrarCentro(): Promise<Centro> {
  * de 00:00 a 23:45 los siete dias— y lo devuelve SIN escribirlo en el archivo compartido.
  *
  * <p>Es lo que usan los specs de `support/centro-propio.ts`: un spec que suma miembros, abre la caja
- * o arma lotes sobre el centro compartido le cambia el estado a los demas, y el plan BASICO tiene
+ * o arma lotes sobre el centro compartido le cambia el estado a los demas, y el plan BASE tiene
  * tope de miembros (`plan-limit-exceeded` ya rompio el CI asi).
  */
 export async function altaDeCentro(

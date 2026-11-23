@@ -42,6 +42,10 @@ export interface PlatformOrganizationResponse {
      */
     pruebaHasta?: string;
     /**
+     * Servicios contratados, en orden fijo
+     */
+    servicios?: Array<PlatformOrganizationResponseServiciosEnum>;
+    /**
      * Identificador legible y unico del centro
      */
     slug?: string;
@@ -50,6 +54,10 @@ export interface PlatformOrganizationResponse {
      */
     status?: PlatformOrganizationResponseStatusEnum;
 }
+export enum PlatformOrganizationResponseServiciosEnum {
+    KINESIOLOGIA = 'KINESIOLOGIA',
+    ACTIVIDADES = 'ACTIVIDADES'
+};
 export enum PlatformOrganizationResponseStatusEnum {
     PRUEBA = 'PRUEBA',
     ACTIVA = 'ACTIVA',

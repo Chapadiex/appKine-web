@@ -45,7 +45,7 @@ export class PreferenciasStore {
 
   /**
    * Las pantallas de acceso (ingreso, invitación, elegir dónde trabajar) van siempre en claro
-   * (19/11/2026): es la primera impresión y las ilustraciones vienen sobre blanco. No toca la
+   * y la landing pública (19 y 22/11/2026): es la primera impresión y las ilustraciones vienen sobre blanco. No toca la
    * preferencia guardada; al salir vuelve la elegida.
    */
   forzarClaro(activo: boolean): void {

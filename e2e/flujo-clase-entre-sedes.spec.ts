@@ -110,7 +110,7 @@ test.describe('Clases y turnos de la misma persona entre sedes', () => {
 
   test.beforeAll(async () => {
     test.setTimeout(300_000);
-    // Sin el admin de plataforma sembrado no hay segunda sede (plan BASICO): como `flujo-sedes`.
+    // Sin el admin de plataforma sembrado no hay segunda sede (plan BASE): como `flujo-sedes`.
     const motivo = await plataformaDisponible();
     test.skip(motivo !== null, motivo ?? '');
     centro = await altaDeCentro('entresedes', 'Entre Sedes');

@@ -1,47 +1,180 @@
 <section class="seccion ia" id="ia" aria-labelledby="ia-titulo">
-  <div class="formas" aria-hidden="true">
-    <span class="forma forma--menta"></span>
-    <span class="forma forma--coral"></span>
-  </div>
-  <div class="envoltura ia__fila">
-    <div>
-      <h2 class="seccion__titulo" id="ia-titulo">
-        Inteligencia artificial que no sale de tu centro.
+  <div class="ia__resplandor" aria-hidden="true"></div>
+  <div class="envoltura">
+    <div class="ia__encabezado">
+      <span class="ia__sello"><app-icono nombre="chispa" />Inteligencia artificial</span>
+      <h2 class="ia__titulo" id="ia-titulo">
+        Una IA que trabaja <span class="ia__degrade">con vos</span>, todo el día.
       </h2>
-      <p class="seccion__bajada">
-        Es un adicional que se suma a cualquier plan. El modelo corre dentro de la instalación de
-        AKINE: lo que se escribe en una historia clínica no viaja a servicios externos.
-      </p>
-      <dl class="ia__funciones">
-        @for (funcion of funcionesIa; track funcion.titulo) {
-          <div class="ia__funcion">
-            <dt><app-icono [nombre]="funcion.icono" />{{ funcion.titulo }}</dt>
-            <dd>{{ funcion.texto }}</dd>
-          </div>
-        }
-      </dl>
-      <p class="ia__nota">
-        Cada centro prende sólo lo que quiere. La evolución, las sugerencias y la biblioteca
-        necesitan el servicio de Kinesiología.
+      <p class="ia__bajada">
+        Pregunta, escucha, sigue a cada paciente y te avisa lo que se te puede pasar. Y lo hace
+        adentro de tu centro: lo que se escribe en una historia clínica no viaja a servicios
+        externos.
       </p>
     </div>
 
-    <figure class="charla">
-      <div class="charla__dibujo" aria-hidden="true">
-        <p class="charla__pregunta">¿Cuántos ausentes hubo esta semana en Sede Centro?</p>
-        <div class="charla__respuesta">
-          <p>
-            Hubo <b>6 ausentes</b> sobre 112 turnos. El martes concentró 3, todos a primera hora.
-          </p>
-          <span class="charla__fuente"
-            ><app-icono nombre="candado" />Turnos de Sede Centro, según tus permisos</span
+    <!-- Cada función con su pantalla en miniatura. Datos inventados. -->
+    <div class="bento">
+      <!-- Asistente de datos -->
+      <article class="tarjeta tarjeta--ancha">
+        <header class="tarjeta__cabecera">
+          <span class="tarjeta__icono"><app-icono nombre="buscar" /></span>
+          <div>
+            <h3 class="tarjeta__titulo">Asistente de datos</h3>
+            <p class="tarjeta__texto">
+              Preguntale a tu centro en tus palabras. Responde con números reales y sólo con lo que
+              tu rol puede ver.
+            </p>
+          </div>
+        </header>
+        <div class="asistente" aria-hidden="true">
+          <div class="asistente__charla">
+            <p class="burbuja burbuja--pregunta">¿Qué día de la semana tuvo más ausentes?</p>
+            <div class="burbuja burbuja--respuesta">
+              El <b>martes</b>: 3 de los 6 ausentes, todos antes de las 10.
+              <span class="burbuja__fuente"
+                ><app-icono nombre="candado" />Turnos de Sede Centro</span
+              >
+            </div>
+          </div>
+          <svg class="barras" viewBox="0 0 220 120" role="presentation">
+            @for (barra of ausentes; track barra.dia; let i = $index) {
+              <rect
+                class="barras__barra"
+                [class.barras__barra--destacada]="barra.destacada"
+                [attr.x]="12 + i * 42"
+                [attr.y]="100 - barra.valor * 26"
+                width="26"
+                [attr.height]="barra.valor * 26"
+                rx="6"
+              />
+              <text class="barras__dia" [attr.x]="25 + i * 42" y="116">{{ barra.dia }}</text>
+            }
+          </svg>
+        </div>
+      </article>
+
+      <!-- Evolución del caso -->
+      <article class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <span class="tarjeta__icono"><app-icono nombre="capas" /></span>
+          <div>
+            <h3 class="tarjeta__titulo">Evolución del caso</h3>
+            <p class="tarjeta__texto">Dolor, adherencia y frecuencia, sesión a sesión.</p>
+          </div>
+        </header>
+        <div class="evolucion" aria-hidden="true">
+          <svg viewBox="0 0 240 110" role="presentation">
+            <defs>
+              <linearGradient id="ia-area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" class="evolucion__area-desde" />
+                <stop offset="100%" class="evolucion__area-hasta" />
+              </linearGradient>
+            </defs>
+            <path
+              class="evolucion__area"
+              d="M10 22 L54 34 L98 50 L142 66 L186 70 L230 84 L230 104 L10 104 Z"
+            />
+            <path class="evolucion__linea" d="M10 22 L54 34 L98 50 L142 66 L186 70 L230 84" />
+            @for (punto of evolucion; track punto.x) {
+              <circle class="evolucion__punto" [attr.cx]="punto.x" [attr.cy]="punto.y" r="4" />
+            }
+          </svg>
+          <span class="aviso-ia"
+            ><app-icono nombre="chispa" />Dolor de 8 a 2 en 6 sesiones: ¿revisás el plan?</span
           >
         </div>
-      </div>
-      <figcaption class="visualmente-oculto">
-        Ejemplo con datos inventados: alguien pregunta cuántos ausentes hubo en la semana y el
-        asistente responde con los turnos de su sede.
-      </figcaption>
-    </figure>
+      </article>
+
+      <!-- Dictado por voz -->
+      <article class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <span class="tarjeta__icono"><app-icono nombre="microfono" /></span>
+          <div>
+            <h3 class="tarjeta__titulo">Dictado por voz</h3>
+            <p class="tarjeta__texto">
+              Hablás mientras evaluás; la IA reparte lo dicho. Vos elegís.
+            </p>
+          </div>
+        </header>
+        <div class="dictado" aria-hidden="true">
+          <div class="onda">
+            @for (alto of onda; track $index) {
+              <span class="onda__barra" [style.--alto]="alto" [style.--i]="$index"></span>
+            }
+          </div>
+          <div class="campos">
+            <span class="campo"><small>Dolor</small>6 de 10</span>
+            <span class="campo"><small>Flexión</small>20°</span>
+            <span class="campo"><small>Tolerancia</small>Buena</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Sugerencias con citas -->
+      <article class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <span class="tarjeta__icono"><app-icono nombre="documento" /></span>
+          <div>
+            <h3 class="tarjeta__titulo">Sugerencias con citas</h3>
+            <p class="tarjeta__texto">Propone y muestra de dónde lo saca. El profesional decide.</p>
+          </div>
+        </header>
+        <div class="sugerencia" aria-hidden="true">
+          <p class="sugerencia__texto">Progresar a ejercicios con carga parcial.</p>
+          <span class="sugerencia__cita">“Protocolo de esguince de tobillo”, fase 2</span>
+          <div class="sugerencia__acciones">
+            <span class="sugerencia__boton sugerencia__boton--si"
+              ><app-icono nombre="tilde" />Aceptar</span
+            >
+            <span class="sugerencia__boton">Descartar</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Biblioteca del centro -->
+      <article class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <span class="tarjeta__icono"><app-icono nombre="organizacion" /></span>
+          <div>
+            <h3 class="tarjeta__titulo">La biblioteca de tu centro</h3>
+            <p class="tarjeta__texto">
+              Subís tus protocolos y la IA los consulta para responderte.
+            </p>
+          </div>
+        </header>
+        <div class="biblioteca" aria-hidden="true">
+          @for (libro of libros; track libro) {
+            <span class="libro"
+              ><app-icono nombre="documento" />{{ libro
+              }}<app-icono class="libro__ok" nombre="exito"
+            /></span>
+          }
+        </div>
+      </article>
+
+      <!-- Privacidad -->
+      <article class="tarjeta tarjeta--privada">
+        <span class="privada__candado" aria-hidden="true"><app-icono nombre="candado" /></span>
+        <div>
+          <h3 class="tarjeta__titulo">Privada de verdad</h3>
+          <p class="tarjeta__texto">
+            El modelo corre dentro de la instalación de AKINE. Cada centro prende sólo lo que
+            quiere, y cada respuesta respeta los permisos de quien pregunta.
+          </p>
+        </div>
+        <span class="privada__dato"><b>0</b> datos clínicos a servicios externos</span>
+      </article>
+    </div>
+
+    <div class="ia__pie">
+      <a class="ia__accion" [routerLink]="rutaPrueba"
+        ><app-icono nombre="chispa" />Probá la IA gratis 30 días</a
+      >
+      <p class="ia__nota">
+        Es un adicional para cualquier plan. La evolución, las sugerencias y la biblioteca necesitan
+        el servicio de Kinesiología.
+      </p>
+    </div>
   </div>
 </section>

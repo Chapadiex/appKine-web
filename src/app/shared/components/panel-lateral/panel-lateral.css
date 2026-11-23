@@ -55,7 +55,7 @@
 
 .panel-lateral__titulo {
   margin: 0;
-  font-size: var(--tipo-base);
+  font-size: var(--tipo-xl);
   font-weight: var(--peso-fuerte);
   line-height: 1.3;
   overflow-wrap: anywhere;

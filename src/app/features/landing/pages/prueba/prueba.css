@@ -1,0 +1,197 @@
+:host {
+  display: block;
+  /* Las mismas medidas y la misma acción coral que la landing. */
+  --envoltura: 76rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --color-accion-fondo: var(--color-landing-accion);
+  --color-accion-fondo-hover: var(--color-landing-accion-hover);
+  --color-accion-texto: var(--color-landing-accion-texto);
+}
+
+.prueba-pagina {
+  color: var(--color-texto);
+  background: var(--color-landing-crema);
+  overflow-x: clip;
+}
+
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-block-end: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-landing-crema);
+}
+
+.cabecera__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-5) var(--esp-9);
+  min-height: 4rem;
+}
+
+.cabecera__volver {
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-underline-offset: 0.3em;
+}
+
+.cuerpo {
+  padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem) clamp(3rem, 2rem + 4vw, 6rem);
+}
+
+/* --- Encabezado ------------------------------------------------------------------------ */
+
+.encabezado {
+  max-width: 52rem;
+  margin-block-end: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+}
+
+.sello {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-2) var(--esp-6);
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta));
+  box-shadow: 0 10px 30px var(--color-ia-brillo);
+  color: var(--color-ia-vivo-texto);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-fuerte);
+}
+
+.titulo {
+  margin: var(--esp-8) 0 0;
+  color: var(--color-texto-fuerte);
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.75rem);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.bajada {
+  max-width: 42rem;
+  margin: var(--esp-7) 0 0;
+  color: var(--color-texto-suave);
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* --- Resumen del plan y datos --------------------------------------------------------- */
+
+.grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  align-items: start;
+  gap: clamp(1.5rem, 1rem + 2vw, 3rem);
+}
+
+.resumen {
+  position: sticky;
+  top: 5.5rem;
+  display: grid;
+  gap: var(--esp-5);
+  padding: clamp(1.5rem, 1rem + 1.5vw, 2.25rem);
+  border-radius: 28px;
+  background: var(--color-landing-menta);
+  box-shadow: var(--sombra-escaparate);
+  color: var(--color-landing-menta-texto);
+}
+
+.resumen__rotulo {
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.resumen__nombre {
+  font-size: clamp(1.75rem, 1.3rem + 1.5vw, 2.5rem);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.resumen__topes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.resumen__tope {
+  padding: var(--esp-3) var(--esp-5);
+  border-radius: 14px;
+  background: var(--color-landing-menta-texto);
+  color: var(--color-landing-menta);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.resumen__tope b {
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+}
+
+.resumen__lista {
+  display: grid;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: var(--peso-medio);
+}
+
+.resumen__lista li {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.resumen__ia {
+  justify-self: start;
+  padding: var(--esp-2) var(--esp-5);
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--color-ia-vivo-desde), var(--color-ia-vivo-hasta));
+  color: var(--color-ia-vivo-texto);
+}
+
+.resumen__cambiar {
+  justify-self: start;
+  color: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  text-underline-offset: 0.3em;
+}
+
+.panel {
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border-radius: 28px;
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-escaparate);
+}
+
+.panel--solo {
+  grid-column: 1 / -1;
+  max-width: 48rem;
+}
+
+@media (max-width: 56rem) {
+  .grilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resumen {
+    position: static;
+  }
+}
+
+@media (max-width: 40rem) {
+  .cabecera .logo__nombre {
+    display: none;
+  }
+}

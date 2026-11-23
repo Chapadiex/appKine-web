@@ -1,0 +1,40 @@
+<div class="muestra" [style.--marca]="paleta().principal" [style.--marca-acento]="paleta().acento">
+  <div class="paletas" role="radiogroup" aria-label="Probá un color para la muestra">
+    @for (p of paletas; track p.nombre; let i = $index) {
+      <button
+        type="button"
+        class="paleta"
+        role="radio"
+        [attr.aria-checked]="elegida() === i"
+        [style.--color]="p.principal"
+        (click)="elegida.set(i)"
+      >
+        <span class="paleta__punto"></span>{{ p.nombre }}
+      </button>
+    }
+  </div>
+
+  <!-- La app de ejemplo, con el color elegido. Datos inventados. -->
+  <div class="app" aria-hidden="true">
+    <div class="app__lateral">
+      <span class="app__logo"><span>CM</span>Centro Movimiento</span>
+      <span class="app__enlace app__enlace--activo"><app-icono nombre="calendario" />Agenda</span>
+      <span class="app__enlace"><app-icono nombre="pacientes" />Padrón</span>
+      <span class="app__enlace"><app-icono nombre="economia" />Caja</span>
+      <span class="app__enlace"><app-icono nombre="actividades" />Clases</span>
+    </div>
+    <div class="app__cuerpo">
+      <div class="app__cabecera">
+        <b>Agenda · Martes 18</b>
+        <span class="app__boton">Nuevo turno</span>
+      </div>
+      <div class="app__turno app__turno--marca">
+        <b>09:00 · Marta Gómez</b><span>Kinesiología · Confirmado</span>
+      </div>
+      <div class="app__turno"><b>10:30 · Julián Ríos</b><span>Kinesiología · Reservado</span></div>
+      <div class="app__turno app__turno--acento">
+        <b>18:00 · Pilates reformer</b><span>8 de 10 lugares</span>
+      </div>
+    </div>
+  </div>
+</div>
