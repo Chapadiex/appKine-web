@@ -18,6 +18,8 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'adjunto-ya-en-historia',
   'arancel-already-inactive',
   'arancel-inactivo',
+  'accion-no-vigente',
+  'acciones-deshabilitadas',
   'arancel-solapado',
   'archivo-no-aceptado',
   'asistente-deshabilitado',

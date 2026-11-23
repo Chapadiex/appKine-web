@@ -1,0 +1,334 @@
+<section class="accion" [attr.aria-labelledby]="id + '-titulo'">
+  <h3 class="accion__titulo" [id]="id + '-titulo'">{{ accion().titulo }}</h3>
+
+  @if (estado() === 'confirmada' && resultado(); as r) {
+    <p class="accion__estado accion__estado--ok" role="status">
+      <span aria-hidden="true">✓</span> {{ r.texto }}
+    </p>
+    @if (r.detalles.length > 0) {
+      <ul class="accion__lista-de-avisos">
+        @for (d of r.detalles; track $index) {
+          <li>{{ d }}</li>
+        }
+      </ul>
+    }
+    @if (r.enlace) {
+      <a class="accion__enlace" [routerLink]="r.enlace">Ver lo que se grabó</a>
+    }
+  } @else if (estado() === 'descartada') {
+    <p class="accion__estado" role="status">Descartada. No se grabó nada.</p>
+  } @else if (estado() === 'vencida') {
+    <p class="accion__estado" role="status">
+      La propuesta venció sin confirmarse. No se grabó nada: volvé a pedirlo.
+    </p>
+  } @else {
+    @for (a of accion().avisos; track $index) {
+      <p class="accion__aviso"><span aria-hidden="true">ⓘ</span> {{ a }}</p>
+    }
+    @for (b of accion().bloqueos; track $index) {
+      <p class="accion__bloqueo" role="alert" [id]="id + '-bloqueo-' + $index">
+        <span aria-hidden="true">⚠</span> {{ b }}
+      </p>
+    }
+
+    <fieldset class="accion__cuerpo" [disabled]="!editable()">
+      <legend class="visualmente-oculto">Lo que se va a grabar</legend>
+
+      @if (borrador().asistencia; as a) {
+        @if ((a.clases?.length ?? 0) > 1) {
+          <div class="campo">
+            <label [for]="id + '-clase'">Clase</label>
+            <select [id]="id + '-clase'" (change)="elegirClase($event)">
+              <option value="" [selected]="!a.claseId">Elegí la clase…</option>
+              @for (c of a.clases; track c.claseId) {
+                <option [value]="c.claseId" [selected]="c.claseId === a.claseId">
+                  {{ c.titulo }} · {{ hora(c.inicio) }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+        @if (clase(); as c) {
+          <p class="accion__dato">{{ c.titulo }} · {{ hora(c.inicio) }}</p>
+          <ul class="accion__filas">
+            @for (i of c.items; track i.inscripcionId) {
+              <li class="accion__fila">
+                <label class="accion__fila-nombre" [for]="id + '-i-' + i.inscripcionId">
+                  {{ i.nombre }}
+                  @if (i.yaRegistrado) {
+                    <span class="accion__nota">ya figuraba {{ i.yaRegistrado.toLowerCase() }}</span>
+                  }
+                </label>
+                <select
+                  [id]="id + '-i-' + i.inscripcionId"
+                  (change)="marcar(i.inscripcionId, $event)"
+                >
+                  <option value="" [selected]="!i.resultado">Sin marcar</option>
+                  <option value="PRESENTE" [selected]="i.resultado === 'PRESENTE'">Presente</option>
+                  <option value="AUSENTE" [selected]="i.resultado === 'AUSENTE'">Ausente</option>
+                </select>
+              </li>
+            } @empty {
+              <li class="accion__nota">La clase no tiene inscriptos.</li>
+            }
+          </ul>
+        }
+      }
+
+      @if (borrador().pago; as p) {
+        <p class="accion__dato">{{ p.nombre }}</p>
+        <div class="accion__grilla">
+          <div class="campo">
+            <label [for]="id + '-total'">Monto ({{ p.moneda }})</label>
+            <input
+              [id]="id + '-total'"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              [value]="p.total ?? ''"
+              (input)="cambiarTotal($event)"
+            />
+          </div>
+          <div class="campo">
+            <label [for]="id + '-medio'">Medio de pago</label>
+            <select [id]="id + '-medio'" (change)="cambiarMedio($event)">
+              <option value="" [selected]="!p.medio">Elegí…</option>
+              @for (m of medios; track m.valor) {
+                <option [value]="m.valor" [selected]="m.valor === p.medio">{{ m.etiqueta }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        @if ((p.imputaciones?.length ?? 0) > 0) {
+          <ul class="accion__filas">
+            @for (i of p.imputaciones; track i.obligacionId) {
+              <li class="accion__fila">
+                <label class="accion__fila-nombre" [for]="id + '-o-' + i.obligacionId">
+                  {{ i.concepto }}
+                  <span class="accion__nota">{{ i.fecha }} · debe $ {{ dinero(i.saldo) }}</span>
+                </label>
+                <input
+                  [id]="id + '-o-' + i.obligacionId"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.01"
+                  [value]="i.importe ?? 0"
+                  (input)="cambiarImputacion(i.obligacionId, $event)"
+                />
+              </li>
+            }
+          </ul>
+        }
+        @if (anticipo() > 0) {
+          <p class="accion__nota">Queda como saldo a favor: $ {{ dinero(anticipo()) }}</p>
+        }
+      }
+
+      @if (borrador().atencion; as a) {
+        <p class="accion__dato">{{ a.nombre }}</p>
+        @if ((a.turnos?.length ?? 0) > 0) {
+          <div class="campo">
+            <label [for]="id + '-turno'">Turno</label>
+            <select [id]="id + '-turno'" (change)="elegirEnAtencion('turnoId', $event)">
+              <option value="" [selected]="!a.turnoId">Elegí el turno…</option>
+              @for (o of a.turnos; track o.id) {
+                <option [value]="o.id" [selected]="o.id === a.turnoId">{{ o.etiqueta }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if ((a.ofertas?.length ?? 0) > 0) {
+          <div class="campo">
+            <label [for]="id + '-oferta'">Servicio (atención sin turno)</label>
+            <select [id]="id + '-oferta'" (change)="elegirEnAtencion('ofertaId', $event)">
+              <option value="" [selected]="!a.ofertaId">Elegí el servicio…</option>
+              @for (o of a.ofertas; track o.id) {
+                <option [value]="o.id" [selected]="o.id === a.ofertaId">{{ o.etiqueta }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if ((a.casos?.length ?? 0) > 0) {
+          <div class="campo">
+            <label [for]="id + '-caso'">Caso clínico</label>
+            <select [id]="id + '-caso'" (change)="elegirEnAtencion('casoId', $event)">
+              <option value="" [selected]="!a.casoId">Elegí el caso…</option>
+              @for (o of a.casos; track o.id) {
+                <option [value]="o.id" [selected]="o.id === a.casoId">{{ o.etiqueta }}</option>
+              }
+            </select>
+          </div>
+        }
+        <ul class="accion__filas" aria-label="Tratamientos">
+          @for (t of a.tratamientos; track $index) {
+            <li class="accion__fila">
+              @if (t.practicaId) {
+                <span class="accion__fila-nombre">{{ t.nombre }}</span>
+              } @else {
+                <span class="accion__fila-nombre">
+                  «{{ t.texto }}»
+                  <span class="accion__nota"
+                    >no reconocido: no se carga. Agregalo desde la atención.</span
+                  >
+                </span>
+              }
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                (click)="quitarTratamiento($index)"
+              >
+                Quitar<span class="visualmente-oculto"> {{ t.nombre ?? t.texto }}</span>
+              </button>
+            </li>
+          } @empty {
+            <li class="accion__nota">Sin tratamientos.</li>
+          }
+        </ul>
+        <div class="campo">
+          <label [for]="id + '-nota'">Nota de cierre</label>
+          <textarea
+            [id]="id + '-nota'"
+            appDictado
+            rows="3"
+            maxlength="2000"
+            [value]="a.nota ?? ''"
+            (input)="cambiarNota($event)"
+          ></textarea>
+        </div>
+        <label class="accion__casilla">
+          <input type="checkbox" [checked]="a.cerrar" (change)="cambiarCerrar($event)" />
+          Cerrar la atención al confirmar
+        </label>
+      }
+
+      @if (borrador().llegada; as l) {
+        <p class="accion__dato">{{ l.nombre }} · turno de las {{ hora(l.hora) }}</p>
+      }
+
+      @if (borrador().paciente; as p) {
+        <div class="accion__grilla">
+          @if (esAlta()) {
+            <div class="campo">
+              <label [for]="id + '-nombre'">Nombre</label>
+              <input
+                [id]="id + '-nombre'"
+                type="text"
+                maxlength="100"
+                [value]="p.datos?.nombre ?? ''"
+                (input)="cambiarDato('nombre', $event)"
+              />
+            </div>
+            <div class="campo">
+              <label [for]="id + '-apellido'">Apellido</label>
+              <input
+                [id]="id + '-apellido'"
+                type="text"
+                maxlength="100"
+                [value]="p.datos?.apellido ?? ''"
+                (input)="cambiarDato('apellido', $event)"
+              />
+            </div>
+          }
+          <div class="campo">
+            <label [for]="id + '-telefono'">Teléfono</label>
+            <input
+              [id]="id + '-telefono'"
+              type="tel"
+              maxlength="40"
+              [value]="p.datos?.telefono ?? ''"
+              (input)="cambiarDato('telefono', $event)"
+            />
+            @if (p.anterior?.telefono) {
+              <span class="accion__nota">Antes: {{ p.anterior?.telefono }}</span>
+            }
+          </div>
+          <div class="campo">
+            <label [for]="id + '-email'">Correo</label>
+            <input
+              [id]="id + '-email'"
+              type="email"
+              maxlength="254"
+              [value]="p.datos?.email ?? ''"
+              (input)="cambiarDato('email', $event)"
+            />
+            @if (p.anterior?.email) {
+              <span class="accion__nota">Antes: {{ p.anterior?.email }}</span>
+            }
+          </div>
+          <div class="campo">
+            <label [for]="id + '-documento'">Documento ({{ p.tipoDocumento }})</label>
+            <input
+              [id]="id + '-documento'"
+              type="text"
+              inputmode="numeric"
+              maxlength="20"
+              [value]="p.datos?.documento ?? ''"
+              (input)="cambiarDato('documento', $event)"
+            />
+            @if (p.anterior?.documento) {
+              <span class="accion__nota">Antes: {{ p.anterior?.documento }}</span>
+            }
+          </div>
+          <div class="campo">
+            <label [for]="id + '-nacimiento'">Fecha de nacimiento</label>
+            <input
+              [id]="id + '-nacimiento'"
+              type="date"
+              [value]="p.datos?.fechaNacimiento ?? ''"
+              (input)="cambiarDato('fechaNacimiento', $event)"
+            />
+            @if (p.anterior?.fechaNacimiento) {
+              <span class="accion__nota">Antes: {{ p.anterior?.fechaNacimiento }}</span>
+            }
+          </div>
+        </div>
+        @if ((p.posiblesDuplicados?.length ?? 0) > 0) {
+          <ul class="accion__lista-de-avisos" aria-label="Personas parecidas">
+            @for (d of p.posiblesDuplicados; track d.id) {
+              <li>
+                <a [routerLink]="['/pacientes', d.id]">{{ d.etiqueta }}</a>
+              </li>
+            }
+          </ul>
+          <label class="accion__casilla">
+            <input
+              type="checkbox"
+              [checked]="p.confirmaPosibleDuplicado"
+              (change)="confirmarDuplicado($event)"
+            />
+            Es otra persona: darla de alta igual
+          </label>
+        }
+      }
+    </fieldset>
+
+    @if (rechazo(); as motivo) {
+      <p class="accion__bloqueo" role="alert"><span aria-hidden="true">⚠</span> {{ motivo }}</p>
+    }
+
+    <div class="accion__pie">
+      @if (editable() && falta() && accion().bloqueos.length === 0) {
+        <span class="accion__nota" [id]="id + '-falta'">{{ falta() }}</span>
+      }
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="!editable()"
+        (click)="descartar()"
+      >
+        Descartar
+      </button>
+      <button
+        type="button"
+        class="boton"
+        [disabled]="!puedeConfirmar()"
+        [attr.aria-describedby]="descritoPor()"
+        (click)="confirmar()"
+      >
+        {{ estado() === 'enviando' ? 'Grabando…' : 'Confirmar' }}
+      </button>
+    </div>
+  }
+</section>

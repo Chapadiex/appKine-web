@@ -33,5 +33,9 @@ export interface AuthorizedContextResponse {
      * Nombre de la organizacion
      */
     organizationName?: string;
+    /**
+     * true si el centro esta cerrado por falta de pago (suscripcion sin acceso): el contexto se muestra para explicar el motivo pero no se puede elegir. Estos elementos van al final y nunca traen lastSelected en true
+     */
+    sinAcceso?: boolean;
 }
 

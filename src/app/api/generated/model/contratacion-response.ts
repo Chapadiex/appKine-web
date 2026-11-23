@@ -22,6 +22,10 @@ export interface ContratacionResponse {
      */
     altaPorPlataforma?: boolean;
     /**
+     * Instante en que se cierra el acceso si no paga: pagadoHasta + 18 dias. Ausente sin control de cobro
+     */
+    cierreEl?: string;
+    /**
      * El centro lo dio de alta o lo ajusto la plataforma. Sin esto es un centro autoregistrado o anterior al 18/11/2026, y tiene los dos servicios y la IA
      */
     definidaPorPlataforma?: boolean;
@@ -37,6 +41,10 @@ export interface ContratacionResponse {
      * Tope de sedes del plan; ausente = sin tope
      */
     maxSedes?: number;
+    /**
+     * Hasta cuando esta pagada la suscripcion, instante UTC. Ausente = sin control de cobro (el centro opera como siempre)
+     */
+    pagadoHasta?: string;
     /**
      * Codigo del plan
      */
@@ -54,7 +62,11 @@ export interface ContratacionResponse {
      */
     servicios?: Array<ContratacionResponseServiciosEnum>;
     /**
-     * El centro no puede cargar nada: suscripcion suspendida o prueba vencida. Las lecturas siguen
+     * Donde esta el centro respecto de su periodo pagado: SIN_CONTROL (sin pagadoHasta), AL_DIA, POR_VENCER (15 dias o menos), EN_GRACIA (vencido hace menos de 3 dias, sigue operando), SOLO_LECTURA (de 3 a 18 dias vencido) o SIN_ACCESO (desde los 18 dias)
+     */
+    situacionDeCobro?: ContratacionResponseSituacionDeCobroEnum;
+    /**
+     * El centro no puede cargar nada: suscripcion suspendida, prueba vencida o cobro vencido pasada la gracia (SOLO_LECTURA). Las lecturas siguen
      */
     soloLectura?: boolean;
     /**
@@ -74,6 +86,14 @@ export enum ContratacionResponseEstadoEnum {
 export enum ContratacionResponseServiciosEnum {
     KINESIOLOGIA = 'KINESIOLOGIA',
     ACTIVIDADES = 'ACTIVIDADES'
+};
+export enum ContratacionResponseSituacionDeCobroEnum {
+    SIN_CONTROL = 'SIN_CONTROL',
+    AL_DIA = 'AL_DIA',
+    POR_VENCER = 'POR_VENCER',
+    EN_GRACIA = 'EN_GRACIA',
+    SOLO_LECTURA = 'SOLO_LECTURA',
+    SIN_ACCESO = 'SIN_ACCESO'
 };
 
 

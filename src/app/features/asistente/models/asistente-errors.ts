@@ -5,7 +5,13 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * `problemType`, nunca el texto del backend.
  */
 export type CausaAsistente =
-  'deshabilitado' | 'no-disponible' | 'sin-permiso' | 'datos-invalidos' | 'red' | 'otro';
+  | 'deshabilitado'
+  | 'no-disponible'
+  | 'sin-permiso'
+  | 'datos-invalidos'
+  | 'no-vigente'
+  | 'red'
+  | 'otro';
 
 export interface ErrorAsistente {
   readonly mensaje: string;
@@ -35,6 +41,17 @@ export function traducirErrorAsistente(error: unknown): ErrorAsistente {
         mensaje:
           'El asistente no está disponible en este momento. Probá de nuevo en unos segundos.',
         causa: 'no-disponible',
+      };
+    case 'accion-no-vigente':
+    case 'not-found':
+      return {
+        mensaje: 'La propuesta ya no está vigente. Volvé a pedirlo.',
+        causa: 'no-vigente',
+      };
+    case 'acciones-deshabilitadas':
+      return {
+        mensaje: 'Las acciones del asistente no están habilitadas en este entorno.',
+        causa: 'deshabilitado',
       };
     case 'forbidden':
       return { mensaje: 'No tenés permiso para usar el asistente.', causa: 'sin-permiso' };

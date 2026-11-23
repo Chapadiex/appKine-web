@@ -1,0 +1,132 @@
+:host {
+  display: block;
+  margin-top: var(--esp-3);
+}
+.accion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  padding: var(--esp-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+}
+.accion__titulo {
+  margin: 0;
+  font-size: var(--tipo-md);
+  font-weight: 600;
+}
+.accion__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.accion__dato {
+  margin: 0;
+  font-weight: 600;
+}
+.accion__grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--esp-3);
+}
+.accion__filas,
+.accion__lista-de-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.accion__lista-de-avisos {
+  padding-left: var(--esp-4);
+  list-style: disc;
+  font-size: var(--tipo-sm);
+}
+.accion__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2);
+  padding-bottom: var(--esp-2);
+  border-bottom: 1px solid var(--color-borde-sutil);
+}
+.accion__fila-nombre {
+  display: flex;
+  flex: 1 1 10rem;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.accion__fila select,
+.accion__fila input {
+  flex: 0 0 9rem;
+  min-height: var(--alto-control, 2.5rem);
+  padding: 0 var(--esp-2);
+  border: 1px solid var(--color-borde-control);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+.accion__nota {
+  font-size: var(--tipo-sm);
+  font-weight: 400;
+  color: var(--color-texto-suave);
+}
+.accion__aviso,
+.accion__bloqueo,
+.accion__estado {
+  margin: 0;
+  padding: var(--esp-2) var(--esp-3);
+  border-radius: var(--radio-sm);
+  font-size: var(--tipo-sm);
+}
+.accion__aviso {
+  background: var(--color-superficie-sutil);
+  color: var(--color-texto);
+}
+.accion__bloqueo {
+  border: 1px solid var(--color-peligro);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+.accion__estado {
+  background: var(--color-superficie-sutil);
+}
+.accion__estado--ok {
+  border: 1px solid var(--color-exito, var(--color-borde));
+  background: var(--color-exito-fondo, var(--color-superficie-sutil));
+  color: var(--color-exito-texto, var(--color-texto));
+}
+.accion__casilla {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  min-height: var(--alto-control, 2.5rem);
+}
+.accion__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-2);
+}
+.accion__pie .accion__nota {
+  flex: 1 1 12rem;
+}
+.accion__enlace {
+  align-self: flex-start;
+}
+:host ::ng-deep .accion .dictado,
+.accion textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
