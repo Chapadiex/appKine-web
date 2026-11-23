@@ -180,6 +180,35 @@ describe('SuscripcionDeCentroPage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="registrar-cobro"]')).toBeNull();
   });
 
+  it('el plazo de cada fila es el de la prueba o el del período pagado', async () => {
+    const enDias = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString();
+    const fixture = await abrir([
+      { ...centro(1, 'A'), situacionDeCobro: 'AL_DIA', pagadoHasta: '2027-02-23T12:00:00Z' },
+      { ...centro(2, 'B'), situacionDeCobro: 'POR_VENCER', pagadoHasta: enDias(4.5) },
+      { ...centro(3, 'C'), situacionDeCobro: 'POR_VENCER', pagadoHasta: enDias(0.5) },
+      { ...centro(5, 'D'), situacionDeCobro: 'SOLO_LECTURA' },
+      { ...centro(6, 'E'), situacionDeCobro: 'SIN_CONTROL' },
+      { ...centro(7, 'F', 'PRUEBA'), pruebaHasta: enDias(6.5) },
+      { ...centro(8, 'G', 'PRUEBA'), pruebaHasta: enDias(0.5) },
+      { ...centro(9, 'H', 'PRUEBA'), pruebaHasta: enDias(-2) },
+      centro(10, 'I', 'PRUEBA'),
+    ]);
+    const plazos = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')].map(
+      (fila) => fila.querySelectorAll('td')[5]?.textContent?.trim(),
+    );
+    expect(plazos).toEqual([
+      'Pagado hasta el 23/02/2027',
+      'Vence en 5 días',
+      'Vence mañana',
+      'Solo lectura por falta de pago',
+      '—',
+      'Prueba: quedan 7 días',
+      'Prueba: termina mañana',
+      'Prueba vencida',
+      '—',
+    ]);
+  });
+
   it('registra un cobro con los meses y la nota, y relee la situación y el historial', async () => {
     const fixture = await buscar();
     httpMock
