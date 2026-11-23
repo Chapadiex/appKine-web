@@ -37,7 +37,7 @@
 }
 
 section {
-  max-width: 70ch;
+  max-width: none;
   scroll-margin-top: 5rem;
 }
 
@@ -68,9 +68,12 @@ li {
   font-size: var(--tipo-base);
   line-height: 1.65;
   text-wrap: pretty;
+  text-align: justify;
+  hyphens: auto;
 }
 
-p {
+section p {
+  max-width: none;
   margin: 0 0 var(--esp-5);
 }
 

@@ -107,8 +107,8 @@ export class CoberturaAplicable {
       : (practica.nombre ?? '');
   }
 
-  protected importe(valor: number | undefined): string {
-    return importeEnPalabras(valor, this.respuesta()?.moneda) || '-';
+  protected importe(valor: number | null | undefined): string {
+    return importeEnPalabras(valor ?? undefined, this.respuesta()?.moneda) || '-';
   }
 
   /** De donde sale el precio: el arancel propio de la oferta manda sobre el general. */

@@ -24,6 +24,47 @@
   background: var(--color-superficie);
 }
 
+/* Marca AKINE adentro de la tarjeta, arriba a la izquierda (21/11/2026), igual que el ingreso. */
+.acceso-marca {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: 1.125rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+/*
+  El icono de la pantalla, en la misma fila que la marca y al medio de la tarjeta (21/11/2026),
+  como la invitacion. Sale del flujo: la marca mide 2 rem y el icono 2,75, asi que sube 0,375 rem
+  para que los dos queden centrados en la fila.
+*/
+.acceso-tarjeta:has(> .acceso-marca + .acceso-icono) {
+  position: relative;
+}
+
+.acceso-marca + .acceso-icono {
+  position: absolute;
+  top: calc(var(--esp-8) - 0.375rem);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.acceso-marca__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-size: 1.0625rem;
+}
+
 .acceso-tarjeta--ancha {
   width: min(30rem, calc(100vw - 2rem));
 }
@@ -104,6 +145,17 @@
   font-size: var(--tipo-2xs);
   font-weight: var(--peso-medio);
   cursor: pointer;
+}
+
+/* Sólo el ojo: cuadrado, del tamaño del toque mínimo, con el ícono más grande. */
+.campo-con-accion__boton--icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  font-size: 1rem;
 }
 
 .campo-con-accion__boton:hover {
@@ -267,9 +319,187 @@
   font-size: var(--tipo-base);
 }
 
+/*
+  Invitacion lista para aceptar (19/11/2026): en dos columnas, a que entra a la izquierda y el
+  formulario a la derecha, para que entre entera en una pantalla de notebook sin desplazarse.
+  Debajo de 48rem vuelve a una sola columna.
+*/
+.invitacion--doble {
+  width: min(64rem, calc(100vw - 2rem));
+}
+
+.invitacion__presentacion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-5);
+}
+
+.invitacion__presentacion .acceso-texto,
+.invitacion__presentacion .ayuda {
+  margin: 0;
+}
+
+.invitacion__marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-4);
+  color: var(--color-texto);
+  font-size: 1.125rem;
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.invitacion__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radio-md);
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+}
+
+/* La escena viene sobre blanco: va en su propio panel, el mismo fondo que la del ingreso. */
+.invitacion__imagen {
+  display: block;
+  align-self: center;
+  width: 100%;
+  height: auto;
+  max-height: 26rem;
+  object-fit: contain;
+  border-radius: var(--radio-md);
+  background: var(--color-escena-fondo);
+}
+
+.invitacion__imagen--horizontal {
+  max-height: 12rem;
+}
+
+.invitacion--horizontal.invitacion--doble {
+  width: min(58rem, calc(100vw - 2rem));
+}
+
+/* Debajo de 861 px la marca vuelve arriba de la tarjeta (layout) y la escena no entra. */
+@media (max-width: 860px) {
+  .invitacion__marca,
+  .invitacion__imagen {
+    display: none;
+  }
+}
+
+/* El nombre del centro, lo primero que se lee después del título. */
+.invitacion__centro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin: 0;
+}
+
+.invitacion__centro-rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.invitacion__centro-nombre {
+  color: var(--color-acento);
+  font-size: var(--tipo-xl);
+  font-weight: var(--peso-fuerte);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.invitacion__correo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-5) var(--esp-6);
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-secundaria);
+}
+
+.invitacion__correo-rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.invitacion__correo-valor {
+  color: var(--color-texto);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-fuerte);
+  overflow-wrap: anywhere;
+}
+
+/* Marca a la izquierda y el ícono del resultado centrado en la misma fila. */
+.invitacion__cabecera {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.invitacion__cabecera > .acceso-icono {
+  grid-column: 2;
+}
+
+/* Aceptada: el tilde, el título y el texto centrados en la tarjeta. */
+.invitacion__listo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-6);
+  text-align: center;
+}
+
+.invitacion__listo .acceso-texto {
+  margin: 0;
+}
+
+.invitacion__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--esp-5);
+}
+
+@media (min-width: 48rem) {
+  .invitacion--doble {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 7fr);
+  }
+
+  /* Con la escena horizontal no hay columna de figura: dos columnas. */
+  .invitacion--horizontal.invitacion--doble {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: var(--esp-9);
+  }
+
+  .invitacion--doble .invitacion__alta:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
 /* Objetivo tactil de 24 px (WCAG 2.5.8) para los enlaces de la tarjeta. */
 .acceso-tarjeta a:not(.boton) {
   display: inline-flex;
   align-items: center;
   min-height: 1.5rem;
+}
+
+/* Ingresar: el botón gira mientras se verifica y se abre la pantalla siguiente. */
+.boton__giro {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: var(--esp-3);
+  vertical-align: -0.15em;
+  border: var(--borde-medio) solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: estado-girar 0.8s linear infinite;
 }

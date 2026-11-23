@@ -12,7 +12,8 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--esp-7);
-  align-items: start;
+  /* Las dos columnas al mismo alto: las tarjetas terminan parejas abajo (20/11/2026). */
+  align-items: stretch;
 }
 
 .ubicacion__columna {
@@ -71,7 +72,7 @@
 }
 
 .ubicacion__candidatos {
-  margin-top: var(--esp-5);
+  margin-top: var(--esp-4);
   padding: var(--esp-5) var(--esp-6);
   border: var(--borde-fino) solid var(--color-borde);
   border-radius: var(--radio-md);
@@ -114,13 +115,72 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: var(--esp-6);
-  margin-top: var(--esp-5);
+  margin-top: var(--esp-4);
 }
 
+/* Los cuatro botones del punto, iguales y repartidos en la fila (20/11/2026). */
 .ubicacion__enlaces {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp-3);
+  margin-top: var(--esp-2);
+}
+
+.ubicacion__enlaces > .boton {
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ubicacion__encabezado {
+  margin-bottom: var(--esp-5);
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-4);
-  margin-top: var(--esp-2);
+  align-items: baseline;
+  gap: var(--esp-2) var(--esp-5);
+}
+
+.ubicacion__encabezado > * {
+  margin: 0;
+}
+
+/* Filas de la dirección más juntas: el paso entra en una pantalla de notebook. */
+/* Los campos son subgrid: el row-gap corre también entre etiqueta e input, por eso se separa
+   con el margen de cada fila. */
+.ubicacion__direccion .grilla-12 > .campo {
+  margin-bottom: var(--esp-4);
+}
+
+/* La última tarjeta de cada columna crece hasta el fondo: la dirección y el mapa terminan parejos. */
+.ubicacion__columna > .bloque:last-of-type {
+  flex: 1;
+}
+
+/*
+  Dirección en tres filas (21/11/2026): calle, número y código postal; ciudad, provincia y país;
+  piso y referencias. Con cuatro filas el paso empujaba los botones fuera de la pantalla.
+*/
+.ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-2 {
+  grid-column: span 2;
+}
+
+.ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-4 {
+  grid-column: span 4;
+}
+
+.ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-6 {
+  grid-column: span 6;
+}
+
+@container (max-width: 34rem) {
+  .ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-2,
+  .ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-4,
+  .ubicacion__direccion .grilla-12 > .campo.ubicacion__ancho-6 {
+    grid-column: span 6;
+  }
+}
+
+/* El mapa del paso, un poco más bajo: entra entero con las coordenadas y los botones. */
+:host ::ng-deep .mapa-de-ubicacion:not(.mapa-de-ubicacion--compacto) .mapa-de-ubicacion__marco {
+  height: 13.5rem;
 }

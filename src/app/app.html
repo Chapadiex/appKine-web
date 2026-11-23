@@ -74,7 +74,8 @@
       [class.contenido--ingreso]="esIngreso()"
       [class.contenido--amplio]="ancho() === 'amplio'"
     >
-      @if (esAcceso()) {
+      <!-- Las demas pantallas de acceso llevan la marca adentro de su tarjeta (21/11/2026). -->
+      @if (esIngreso()) {
         <a class="acceso__marca" routerLink="/">
           <span class="acceso__logo" aria-hidden="true">A</span>
           <span>AKINE</span>
@@ -88,11 +89,6 @@
         <p class="estado estado--cargando" role="status">Cambiando a {{ destino }}&hellip;</p>
       } @else {
         <router-outlet />
-      }
-      @if (esAcceso()) {
-        <footer class="acceso__pie">
-          <a routerLink="/estado">Estado del sistema</a>
-        </footer>
       }
     </main>
 
@@ -109,5 +105,7 @@
 <ng-container #flujoDeTurnos />
 <!-- Acceso flotante al asistente de datos: decide solo si se dibuja (sesión, sede y permiso). -->
 <ng-container #asistente />
+<!-- Recorrido corto por la app al terminar la configuración inicial: llega en su propio chunk. -->
+<ng-container #recorrido />
 <!-- Manual de usuario (panel lateral): llega en su chunk la primera vez que se abre. -->
 <ng-container #manual />

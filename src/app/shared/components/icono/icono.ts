@@ -85,6 +85,12 @@ const TRAZOS = {
   chispa:
     'M10 3l1.9 5.1L17 10l-5.1 1.9L10 17l-1.9-5.1L3 10l5.1-1.9z' +
     'M18 14l.8 2.2 2.2.8-2.2.8L18 20l-.8-2.2-2.2-.8 2.2-.8z',
+  ojo:
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' + circulo(12, 12, 2.8),
+  'ojo-tachado':
+    'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z' +
+    circulo(12, 12, 2.8) +
+    'M4 4l16 16',
 } satisfies Record<string, string>;
 
 /** Los iconos que existen. Agregar uno es agregar su trazo en `TRAZOS`. */

@@ -14,7 +14,8 @@
  */
 export interface UpdateArancelRequest { 
     /**
-     * La parte que paga el paciente
+     * OBSOLETO desde 0.189.0: se ignora
+     * @deprecated
      */
     coseguro?: number;
     /**
@@ -22,11 +23,12 @@ export interface UpdateArancelRequest {
      */
     expectedVersion: number;
     /**
-     * La parte que paga el financiador
+     * Lo que paga el financiador por la practica (B)
      */
     importeFinanciador?: number;
     /**
-     * Lo que vale la practica bajo este convenio
+     * OBSOLETO desde 0.189.0: se ignora
+     * @deprecated
      */
     importeTotal?: number;
     /**

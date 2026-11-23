@@ -95,6 +95,8 @@
   --color-superficie: #ffffff;
   /* Fondo de la pagina: el contenido se despega de el por tono. */
   --color-superficie-sutil: #f4f6f9;
+  /* Fondo de las pantallas de acceso (ingreso, invitacion): siempre en claro, un celeste suave. */
+  --color-acceso-fondo: #eaf2fb;
   /* Nivel 3 (herramientas): barra de filtros, panel avanzado, fila de baja, fila-panel. */
   --color-superficie-secundaria: #e9eff5;
   --color-superficie-atenuada: #e9eff5;
@@ -607,6 +609,32 @@ h3 {
   margin: 0 0 var(--esp-6);
   font-size: var(--tipo-base);
   font-weight: var(--peso-semi);
+}
+
+/*
+  Linea bajo el titulo de toda tarjeta (21/11/2026): separa el titulo del contenido. Vale para el
+  titulo suelto, el titulo con su "?" y la cabecera con titulo y estado a la derecha.
+*/
+.tarjeta > h2:first-child,
+.tarjeta > .titulo-con-ayuda:first-child,
+.tarjeta > .tarjeta__cabecera:first-child {
+  margin-bottom: var(--esp-5);
+  padding-bottom: var(--esp-4);
+  border-bottom: var(--borde-fino) solid var(--color-borde-sutil);
+}
+
+/* Cabecera de tarjeta: titulo a la izquierda y marca de estado o accion a la derecha. */
+.tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3);
+}
+
+.tarjeta__cabecera > h2,
+.tarjeta > .titulo-con-ayuda:first-child > h2 {
+  margin: 0;
 }
 
 /* Titulo de un panel desplegado dentro de una fila o de una tarjeta. */

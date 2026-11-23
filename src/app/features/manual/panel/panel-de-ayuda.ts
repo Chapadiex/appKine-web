@@ -25,6 +25,7 @@ import {
 import { FichaDelManualResponse } from '../../../api/generated/model/ficha-del-manual-response';
 import { IndiceDelManualResponse } from '../../../api/generated/model/indice-del-manual-response';
 import { PasajeDelManualResponse } from '../../../api/generated/model/pasaje-del-manual-response';
+import { PrimerosPasosStore } from '../../../core/guards/primeros-pasos.guard';
 import { PERMISO_ASISTENTE_USE } from '../../../core/models/permisos';
 import { FuncionesIaStore } from '../../../core/services/funciones-ia.store';
 import { ManualStore } from '../../../core/services/manual.store';
@@ -65,12 +66,22 @@ export class PanelDeAyuda {
   private readonly preguntaAlAsistente = inject(PreguntaAlAsistenteStore);
   private readonly destruir = inject(DestroyRef);
   private readonly session = inject(SessionService);
+  private readonly primerosPasos = inject(PrimerosPasosStore);
   protected readonly manual = inject(ManualStore);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('tituloDelPanel');
   private readonly lupa = viewChild<ElementRef<HTMLDialogElement>>('lupa');
 
   protected readonly trazoManual = trazoDelManual('manual');
+
+  /** Panel agrandado a toda la pantalla para leer cómodo (21/11/2026). */
+  protected readonly agrandado = signal(false);
+  protected readonly trazoAgrandar = 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7';
+  protected readonly trazoAchicar = 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7';
+
+  protected alternarTamano(): void {
+    this.agrandado.update((valor) => !valor);
+  }
   protected readonly trazoRelacionadas = trazoDelManual('relacionadas');
 
   protected readonly vista = signal<Vista>('ficha');
@@ -216,6 +227,12 @@ export class PanelDeAyuda {
 
   protected cerrar(): void {
     this.manual.cerrar();
+  }
+
+  /** Cierra la ayuda y vuelve a mostrar el tour guiado del menú, como el menú del perfil. */
+  protected verRecorrido(): void {
+    this.cerrar();
+    this.primerosPasos.recorrido.set(true);
   }
 
   protected alEscape(evento: Event): void {

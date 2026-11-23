@@ -115,9 +115,9 @@ describe('PadronDePersonasPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
     expect(filas.length).toBe(3);
-    // La columna "Paciente" es un si/no con icono; el texto accesible dice cual de los dos.
-    expect((filas[0] as HTMLElement).textContent).toContain('Sin perfil de paciente');
-    expect((filas[1] as HTMLElement).textContent).toContain('Tiene perfil de paciente');
+    // La columna Tipo lleva icono y rotulo; el texto accesible dice si tiene perfil de paciente.
+    expect((filas[0] as HTMLElement).textContent).toContain('sin perfil de paciente');
+    expect((filas[1] as HTMLElement).textContent).toContain('tiene perfil de paciente');
 
     // "Pendiente" empujaria al operador a activarle un perfil clinico para "terminar" la ficha.
     expect(texto).not.toContain('Pendiente');

@@ -16,9 +16,12 @@ import {
 } from '@angular/core';
 import type * as Leaflet from 'leaflet';
 
-/** Donde se centra el mapa cuando todavía no hay coordenadas: la Argentina entera. */
-const CENTRO_SIN_UBICACION: [number, number] = [-38.4, -63.6];
-const ZOOM_SIN_UBICACION = 4;
+/**
+ * Donde se centra el mapa cuando todavía no hay coordenadas: la ciudad de Córdoba (20/11/2026),
+ * donde está la mayoría de los centros; antes era la Argentina entera y había que hacer zoom.
+ */
+const CENTRO_SIN_UBICACION: [number, number] = [-31.4167, -64.1833];
+const ZOOM_SIN_UBICACION = 12;
 
 const URL_TESELAS = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATRIBUCION =

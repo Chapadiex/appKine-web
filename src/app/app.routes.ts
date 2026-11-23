@@ -38,6 +38,37 @@ import {
 } from './features/activity/models/rutas-de-pases';
 
 /**
+ * Lo que no es del centro: no lleva la guía de primeros pasos.
+ * Landing y textos legales, estado, plataforma, ingreso, elegir contexto, la cuenta personal,
+ * el tránsito del cambio de sede, sin permiso y el 404.
+ */
+const SIN_PRIMEROS_PASOS: ReadonlySet<string> = new Set([
+  '',
+  'terminos',
+  'privacidad',
+  'estado',
+  SEGMENTO_PLATAFORMA,
+  'auth',
+  'seleccionar-contexto',
+  SEGMENTO_CUENTA,
+  SEGMENTO_DE_TRANSITO,
+  'sin-permiso',
+  '**',
+]);
+
+/**
+ * La guía de primeros pasos es obligatoria (20/11/2026): todas las pantallas del centro la llevan,
+ * después de sus propios guards, así un anónimo cae primero en el ingreso.
+ */
+function conPrimerosPasos(rutas: Routes): Routes {
+  return rutas.map((ruta) =>
+    SIN_PRIMEROS_PASOS.has(ruta.path ?? '')
+      ? ruta
+      : { ...ruta, canActivate: [...(ruta.canActivate ?? []), primerosPasosGuard] },
+  );
+}
+
+/**
  * Rutas raiz de AKINE (estructura fijada en AKINE-00.02).
  *
  * <p><b>Convencion para las features de M01-M29:</b> cada dominio tiene su propio archivo de
@@ -66,7 +97,7 @@ import {
  * <p>Los guards son UX: evitan una navegacion que va a fallar. La autoridad de permisos es
  * el backend, que rechaza igual si se llega por URL directa.
  */
-export const routes: Routes = [
+export const routes: Routes = conPrimerosPasos([
   // La raiz manda a la Agenda, que es la pantalla del dia.
   //
   // Hasta esta tarea `''` montaba el baseline tecnico —version del backend y del contrato—,
@@ -327,7 +358,7 @@ export const routes: Routes = [
   // con una sede sin horario. Al dueno se lo lleva a completarla; a nadie mas se lo desvia.
   {
     path: 'agenda',
-    canActivate: [authGuard, primerosPasosGuard],
+    canActivate: [authGuard],
     children: rutasScheduling,
   },
 
@@ -475,4 +506,4 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/pages/not-found/not-found').then((m) => m.NotFound),
     title: 'AKINE - Página no encontrada',
   },
-];
+]);

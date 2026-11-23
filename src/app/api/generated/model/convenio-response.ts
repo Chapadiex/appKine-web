@@ -18,9 +18,9 @@ export interface ConvenioResponse {
      */
     codigo?: string;
     /**
-     * Sede a la que pertenece. No cambia nunca
+     * Sede a la que pertenece. No cambia nunca. Nulo en el convenio del plan, que vale para todas las sedes (V43)
      */
-    consultorioId?: number;
+    consultorioId?: number | null;
     /**
      * Motivo declarado de la baja. Null mientras este vigente
      */

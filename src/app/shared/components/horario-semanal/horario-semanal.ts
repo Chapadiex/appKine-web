@@ -256,7 +256,15 @@ export class HorarioSemanal {
     }
     const abiertos = [...new Set(actuales.map((franja) => franja.diaSemana))];
     this.guardar(abiertos.flatMap((dia) => lunes.map((franja) => ({ ...franja, diaSemana: dia }))));
+    this.copiado.set(abiertos.length - 1);
+    clearTimeout(this.temporizadorCopiado);
+    this.temporizadorCopiado = setTimeout(() => this.copiado.set(null), 4000);
   }
+
+  private temporizadorCopiado: ReturnType<typeof setTimeout> | undefined;
+
+  /** A cuántos días se copió el lunes; el aviso se va solo a los cuatro segundos. */
+  protected readonly copiado = signal<number | null>(null);
 
   protected mensaje(indice: number): string | null {
     return mensajeDeFranja(
