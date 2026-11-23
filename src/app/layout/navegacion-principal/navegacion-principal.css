@@ -245,13 +245,9 @@
   background: var(--color-hover);
 }
 
-/* Asistente oculto: se atenúa y se tacha el icono con una línea, sin perder contraste del texto. */
+/* Asistente oculto: el icono se atenúa y el texto pasa a "Mostrar asistente". */
 .nav__ayuda--apagado app-icono {
   opacity: 0.45;
-}
-
-.nav__ayuda--apagado {
-  text-decoration: line-through;
 }
 
 /*

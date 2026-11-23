@@ -16,10 +16,7 @@
   --orbe-brillo: color-mix(in srgb, var(--color-accion-texto) 90%, var(--color-accion-fondo));
   --orbe-borde: color-mix(in srgb, var(--color-accion-fondo) 70%, black);
   --orbe-listo: var(--color-acento);
-  position: fixed;
-  left: var(--flotante-izquierda);
-  bottom: var(--esp-4);
-  z-index: 45;
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-width: 2.75rem;
@@ -47,6 +44,53 @@
     padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.28s ease;
+}
+
+/* Contenedor fijo del orbe y su ✕: se mueve entero al arrastrar. */
+.flotante {
+  position: fixed;
+  left: var(--flotante-izquierda);
+  bottom: var(--esp-4);
+  z-index: 45;
+}
+
+/* ✕ para ocultar: arriba a la derecha del orbe, visible al pasar el mouse o con el foco. */
+.flotante__ocultar {
+  position: absolute;
+  top: -0.6rem;
+  right: -0.6rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  border: 1px solid var(--color-borde-control);
+  border-radius: 50%;
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font-size: 0.95rem;
+  line-height: 1;
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.flotante:hover .flotante__ocultar,
+.flotante:focus-within .flotante__ocultar {
+  opacity: 1;
+}
+
+.flotante__ocultar:hover {
+  border-color: var(--color-accion-fondo);
+}
+
+/* En pantallas táctiles no hay hover: la ✕ queda siempre a la vista. */
+@media (hover: none) {
+  .flotante__ocultar {
+    opacity: 1;
+  }
 }
 
 /* Halo punteado alrededor. */

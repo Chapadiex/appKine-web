@@ -219,6 +219,12 @@ export class AsistenteFlotante {
     }
   }
 
+  /** Oculta el orbe (y la charla): vuelve desde «Asistente» al pie del menú. */
+  protected ocultar(): void {
+    this.abierto.set(false);
+    this.preferencias.mostrarAsistente(false);
+  }
+
   protected alClic(): void {
     if (this.ignorarClic) {
       this.ignorarClic = false;

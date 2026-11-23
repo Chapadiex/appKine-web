@@ -30,34 +30,48 @@
     forma que ondula, y con una respuesta sin leer el borde late. Se arrastra a cualquier lugar;
     un clic sin arrastre abre o cierra.
   -->
-  <button
-    #disparador
-    type="button"
-    class="disparador"
-    [class.disparador--pensando]="estado() === 'pensando'"
-    [class.disparador--listo]="estado() === 'listo'"
-    [class.disparador--arrastrando]="arrastrando()"
-    [class.disparador--derecha]="cercaDelBordeDerecho()"
+  <div
+    class="flotante"
     [style.left.px]="posicion()?.left"
     [style.top.px]="posicion()?.top"
     [style.bottom]="posicion() ? 'auto' : null"
-    aria-controls="asistente-flotante-panel"
-    [attr.aria-expanded]="abierto()"
-    (pointerdown)="empezarArrastre($event)"
-    (pointermove)="arrastrar($event)"
-    (pointerup)="soltar($event)"
-    (pointercancel)="soltar($event)"
-    (click)="alClic()"
   >
-    <svg class="orbe" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <circle class="orbe__desgastado" cx="12" cy="12" r="10.6" />
-      <circle class="orbe__anillo" cx="12" cy="12" r="7.8" />
-      <path #formaInterna class="orbe__forma" d="" />
-      <circle class="orbe__centro" cx="12" cy="12" r="3.4" />
-    </svg>
-    <span class="disparador__texto">{{ abierto() ? 'Cerrar' : 'Asistente' }}</span>
-    @if (estado() === 'listo') {
-      <span class="visualmente-oculto">: tenés una respuesta nueva</span>
-    }
-  </button>
+    <button
+      #disparador
+      type="button"
+      class="disparador"
+      [class.disparador--pensando]="estado() === 'pensando'"
+      [class.disparador--listo]="estado() === 'listo'"
+      [class.disparador--arrastrando]="arrastrando()"
+      [class.disparador--derecha]="cercaDelBordeDerecho()"
+      aria-controls="asistente-flotante-panel"
+      [attr.aria-expanded]="abierto()"
+      (pointerdown)="empezarArrastre($event)"
+      (pointermove)="arrastrar($event)"
+      (pointerup)="soltar($event)"
+      (pointercancel)="soltar($event)"
+      (click)="alClic()"
+    >
+      <svg class="orbe" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle class="orbe__desgastado" cx="12" cy="12" r="10.6" />
+        <circle class="orbe__anillo" cx="12" cy="12" r="7.8" />
+        <path #formaInterna class="orbe__forma" d="" />
+        <circle class="orbe__centro" cx="12" cy="12" r="3.4" />
+      </svg>
+      <span class="disparador__texto">{{ abierto() ? 'Cerrar' : 'Asistente' }}</span>
+      @if (estado() === 'listo') {
+        <span class="visualmente-oculto">: tenés una respuesta nueva</span>
+      }
+    </button>
+    <!-- Ocultar el orbe desde el orbe (23/11/2026); vuelve desde «Asistente» al pie del menú. -->
+    <button
+      type="button"
+      class="flotante__ocultar"
+      title="Ocultar el asistente (se vuelve a mostrar desde el pie del menú)"
+      (click)="ocultar()"
+    >
+      <span aria-hidden="true">×</span>
+      <span class="visualmente-oculto">Ocultar el asistente</span>
+    </button>
+  </div>
 }

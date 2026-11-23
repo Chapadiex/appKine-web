@@ -161,14 +161,14 @@ describe('PanelDeAyuda', () => {
 
   it('lista el manual por grupo y muestra el error si no se pudo traer', () => {
     const { fixture, el, boton } = crear();
-    boton('Ver todo el manual')!.click();
+    boton('Manual completo')!.click();
     fixture.detectChanges();
     expect(el.querySelector('.ayuda__grupo')?.textContent).toContain('Economía');
     TestBed.resetTestingModule();
 
     api.indice.mockReturnValue(throwError(() => new Error('red')));
     const conError = crear();
-    conError.boton('Ver todo el manual')!.click();
+    conError.boton('Manual completo')!.click();
     conError.fixture.detectChanges();
     expect(conError.el.textContent).toContain('No pudimos traer el manual');
   });
@@ -183,12 +183,12 @@ describe('PanelDeAyuda', () => {
 
   it('pasa la pregunta al asistente sólo si la persona puede usarlo', () => {
     const sinPermiso = crear();
-    expect(sinPermiso.boton('Preguntale al asistente')).toBeUndefined();
+    expect(sinPermiso.boton('Preguntar al asistente')).toBeUndefined();
     TestBed.resetTestingModule();
 
     puedePreguntar = true;
     const { boton } = crear();
-    boton('Preguntale al asistente')!.click();
+    boton('Preguntar al asistente')!.click();
     expect(TestBed.inject(PreguntaAlAsistenteStore).pendiente()?.texto).toBe(
       '¿Cómo uso Caja diaria?',
     );
