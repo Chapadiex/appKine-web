@@ -253,7 +253,7 @@ export class NavegacionPrincipal {
   /** Vuelve a mostrar el recorrido guiado del menú. */
   protected verGuiaRapida(): void {
     this.cerrar.emit();
-    this.primerosPasos.recorrido.set(true);
+    this.primerosPasos.mostrarGuias();
   }
 
   protected readonly asistenteDisponible = computed(

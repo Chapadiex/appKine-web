@@ -259,7 +259,7 @@ export class PanelDeAyuda {
   /** Cierra la ayuda y vuelve a mostrar el tour guiado del menú, como el menú del perfil. */
   protected verRecorrido(): void {
     this.cerrar();
-    this.primerosPasos.recorrido.set(true);
+    this.primerosPasos.mostrarGuias();
   }
 
   protected alEscape(evento: Event): void {

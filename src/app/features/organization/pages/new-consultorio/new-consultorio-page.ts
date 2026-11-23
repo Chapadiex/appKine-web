@@ -643,7 +643,7 @@ export class NewConsultorioPage {
       this.primerosPasos.marcarCompleto(orgId);
     }
     // El recorrido por la app es de navegación: arranca aunque el horario no se haya guardado.
-    this.primerosPasos.recorrido.set(true);
+    this.primerosPasos.mostrarRecorridoDelMenu();
     this.estado.set({ tipo: 'ok' });
     if (horarioOk) {
       this.avisos.exito('Tu centro está listo', { descripcion: nombre });
