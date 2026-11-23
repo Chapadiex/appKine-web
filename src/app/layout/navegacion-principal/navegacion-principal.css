@@ -215,13 +215,43 @@
   background: var(--color-marca-fondo);
 }
 
+/* Tres accesos en una fila, icono arriba y texto abajo (23/11/2026). */
+.nav__pie {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--esp-2);
+}
+
 .nav__ayuda {
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-1);
+  padding: var(--esp-3) var(--esp-1);
   border: 0;
+  border-radius: var(--radio-md);
   background: none;
+  color: inherit;
   font: inherit;
-  text-align: start;
+  font-size: var(--tipo-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
   cursor: pointer;
+}
+
+.nav__ayuda:hover {
+  background: var(--color-hover);
+}
+
+/* Asistente oculto: se atenúa y se tacha el icono con una línea, sin perder contraste del texto. */
+.nav__ayuda--apagado app-icono {
+  opacity: 0.45;
+}
+
+.nav__ayuda--apagado {
+  text-decoration: line-through;
 }
 
 /*

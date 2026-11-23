@@ -15,6 +15,7 @@ import { filter, map } from 'rxjs';
 import { PERMISO_ASISTENTE_USE } from '../../../../core/models/permisos';
 import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PreferenciasStore } from '../../../../core/services/preferencias.store';
 import { PreguntaAlAsistenteStore } from '../../../../core/services/pregunta-al-asistente.store';
 import { SessionService } from '../../../../core/services/session.service';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
@@ -41,6 +42,7 @@ export class AsistenteFlotante {
   private readonly session = inject(SessionService);
   private readonly tenant = inject(TenantContextStore);
   private readonly pedidos = inject(PreguntaAlAsistenteStore);
+  private readonly preferencias = inject(PreferenciasStore);
 
   protected readonly abierto = signal(false);
   private readonly disparador = viewChild<ElementRef<HTMLButtonElement>>('disparador');
@@ -54,7 +56,8 @@ export class AsistenteFlotante {
     { initialValue: this.router.url },
   );
 
-  protected readonly visible = computed(
+  /** Puede verse (sesión, sede, permiso, IA y pantalla), aunque la persona lo haya ocultado. */
+  private readonly disponible = computed(
     () =>
       this.session.estado() === 'activa' &&
       this.tenant.context() !== null &&
@@ -65,6 +68,11 @@ export class AsistenteFlotante {
       !/^\/(asistente|auth|seleccionar-contexto)(\/|\?|$)/.test(this.url()),
   );
 
+  /** Se ve si está disponible y no lo ocultaron desde el pie del menú (23/11/2026). */
+  protected readonly visible = computed(
+    () => this.disponible() && this.preferencias.asistenteVisible(),
+  );
+
   constructor() {
     // Una pregunta que llega de la ayuda: se abre la charla con el texto escrito, sin enviarlo.
     effect(() => {
@@ -72,11 +80,13 @@ export class AsistenteFlotante {
       if (pendiente === null) {
         return;
       }
-      if (!this.visible()) {
+      if (!this.disponible()) {
         // No se guarda para después: abriría la charla de sorpresa en otra pantalla.
         this.pedidos.atendida();
         return;
       }
+      // Pedirle algo es querer verlo: si estaba oculto, vuelve.
+      this.preferencias.mostrarAsistente(true);
       this.abierto.set(true);
       this.pedidos.atendida();
       queueMicrotask(() => this.charla()?.escribirPregunta(pendiente.texto));

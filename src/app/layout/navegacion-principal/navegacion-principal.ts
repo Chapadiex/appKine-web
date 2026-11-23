@@ -34,6 +34,9 @@ import {
   seccionDe,
 } from './secciones';
 import { ManualStore } from '../../core/services/manual.store';
+import { PreferenciasStore } from '../../core/services/preferencias.store';
+import { PrimerosPasosStore } from '../../core/guards/primeros-pasos.guard';
+import { PERMISO_ASISTENTE_USE } from '../../core/models/permisos';
 import { SessionService } from '../../core/services/session.service';
 import { TenantContextStore } from '../../core/services/tenant-context.store';
 
@@ -71,6 +74,8 @@ export class NavegacionPrincipal {
   private readonly tenant = inject(TenantContextStore);
   private readonly permisos = inject(PermissionsStore);
   private readonly funcionesIa = inject(FuncionesIaStore);
+  protected readonly preferencias = inject(PreferenciasStore);
+  private readonly primerosPasos = inject(PrimerosPasosStore);
   private readonly contratacion = inject(ContratacionStore);
   private readonly rolDePlataforma = inject(PlatformRoleStore);
   private readonly contadores = inject(ContadoresDePlataformaStore);
@@ -243,6 +248,21 @@ export class NavegacionPrincipal {
   protected abrirAyuda(): void {
     this.cerrar.emit();
     this.manual.abrir();
+  }
+
+  /** Vuelve a mostrar el recorrido guiado del menú. */
+  protected verGuiaRapida(): void {
+    this.cerrar.emit();
+    this.primerosPasos.recorrido.set(true);
+  }
+
+  protected readonly asistenteDisponible = computed(
+    () => this.permisos.tiene(PERMISO_ASISTENTE_USE) && this.funcionesIa.activa('ASISTENTE'),
+  );
+
+  /** Muestra u oculta el botón flotante del asistente; la elección queda en este navegador. */
+  protected alternarAsistente(): void {
+    this.preferencias.mostrarAsistente(!this.preferencias.asistenteVisible());
   }
 
   private visible(seccion: Seccion): boolean {

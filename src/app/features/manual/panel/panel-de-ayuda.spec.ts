@@ -235,10 +235,10 @@ describe('PanelDeAyuda', () => {
     expect(api.indice).toHaveBeenCalledTimes(2);
   });
 
-  it('"Ver el recorrido" cierra la ayuda y muestra el recorrido', () => {
+  it('"Guía rápida" cierra la ayuda y muestra el recorrido', () => {
     const { fixture, manual, boton } = crear();
 
-    boton('Ver el recorrido')!.click();
+    boton('Guía rápida')!.click();
     fixture.detectChanges();
 
     expect(manual.abierto()).toBe(false);

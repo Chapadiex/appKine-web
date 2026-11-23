@@ -123,16 +123,44 @@
 
     <!-- Manual de usuario de la pantalla actual (F1). Fijo al pie, fuera de los grupos: el
          contenedor lleva el fondo y la linea, y el boton queda como un enlace de grupo comun. -->
+    <!-- Tres accesos en una fila (23/11/2026): manual, guía rápida del menú y el asistente. -->
     <div class="nav__pie">
       <button
         type="button"
-        class="nav__enlace nav__enlace--grupo nav__ayuda"
+        class="nav__ayuda"
         aria-keyshortcuts="F1"
+        title="Manual de esta pantalla (F1)"
         (click)="abrirAyuda()"
       >
-        <app-icono class="nav__icono" nombre="ayuda" />
+        <app-icono nombre="ayuda" />
         Ayuda
       </button>
+      <button
+        type="button"
+        class="nav__ayuda"
+        title="Recorré el menú paso a paso"
+        (click)="verGuiaRapida()"
+      >
+        <app-icono nombre="info" />
+        Guía rápida
+      </button>
+      @if (asistenteDisponible()) {
+        <button
+          type="button"
+          class="nav__ayuda"
+          [class.nav__ayuda--apagado]="!preferencias.asistenteVisible()"
+          [attr.aria-pressed]="preferencias.asistenteVisible()"
+          [title]="
+            preferencias.asistenteVisible()
+              ? 'Ocultar el botón del asistente'
+              : 'Mostrar el botón del asistente'
+          "
+          (click)="alternarAsistente()"
+        >
+          <app-icono nombre="chispa" />
+          Asistente
+        </button>
+      }
     </div>
   </nav>
 }

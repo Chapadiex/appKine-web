@@ -5,6 +5,7 @@ import { Injectable, inject, signal } from '@angular/core';
 export type Tema = 'sistema' | 'claro' | 'oscuro';
 
 const CLAVE_TEMA = 'akine.preferencias.tema';
+const CLAVE_ASISTENTE = 'akine.preferencias.asistente';
 
 /**
  * Preferencias personales de quien usa este navegador (refactor de la cabecera global,
@@ -27,6 +28,31 @@ export class PreferenciasStore {
   private readonly temaElegido = signal<Tema>(this.leerTema());
 
   readonly tema = this.temaElegido.asReadonly();
+
+  /**
+   * Si el botón flotante del asistente se ve (23/11/2026). Se prende y apaga desde el pie del menú;
+   * por defecto se ve.
+   */
+  private readonly asistenteElegido = signal(this.leerAsistente());
+
+  readonly asistenteVisible = this.asistenteElegido.asReadonly();
+
+  mostrarAsistente(visible: boolean): void {
+    this.asistenteElegido.set(visible);
+    try {
+      this.almacen()?.setItem(CLAVE_ASISTENTE, visible ? 'visible' : 'oculto');
+    } catch {
+      // Sin almacenamiento vale para esta pestana.
+    }
+  }
+
+  private leerAsistente(): boolean {
+    try {
+      return this.almacen()?.getItem(CLAVE_ASISTENTE) !== 'oculto';
+    } catch {
+      return true;
+    }
+  }
 
   constructor() {
     this.aplicarTema(this.temaElegido());

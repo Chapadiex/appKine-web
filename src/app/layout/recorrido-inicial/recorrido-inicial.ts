@@ -242,7 +242,7 @@ export class RecorridoInicial {
   });
 
   constructor() {
-    // Cada vez que se pide (al terminar la configuración o desde "Ver el recorrido"), se arma con
+    // Cada vez que se pide (al terminar la configuración o desde "Guía rápida"), se arma con
     // el menú de ese momento y arranca del primer paso.
     effect(() => {
       if (!this.visible()) {
