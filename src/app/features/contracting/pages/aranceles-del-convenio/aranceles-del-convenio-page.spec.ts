@@ -547,6 +547,120 @@ describe('ArancelesDelConvenioPage', () => {
     TIMEOUT_AXE,
   );
 
+  describe('tope de sesiones por mes', () => {
+    const editarConvenio = () =>
+      httpMock.expectOne(
+        (peticion: HttpRequest<unknown>) =>
+          peticion.method === 'PUT' && peticion.url === `${rutaConvenios(SEDE)}/${CONVENIO}`,
+      );
+
+    async function abrirEdicion(convenio: Record<string, unknown> = EL_CONVENIO) {
+      const fixture = await montar(convenio);
+      const raiz = fixture.nativeElement as HTMLElement;
+      boton(raiz, convenio['limiteSesionesMensual'] ? 'Cambiar tope' : 'Poner un tope').click();
+      fixture.detectChanges();
+      const campo = raiz.querySelector('#tope-sesiones') as HTMLInputElement;
+      return { fixture, raiz, campo };
+    }
+
+    function tipear(fixture: ComponentFixture<unknown>, campo: HTMLInputElement, texto: string) {
+      campo.value = texto;
+      campo.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    }
+
+    it('sin tope lo dice, y guardar un número lo manda al convenio', async () => {
+      const { fixture, raiz, campo } = await abrirEdicion();
+      expect(campo.value).toBe('');
+      tipear(fixture, campo, '10');
+      boton(raiz, 'Guardar').click();
+
+      const peticion = editarConvenio();
+      expect(peticion.request.body).toEqual({ expectedVersion: 2, limiteSesionesMensual: 10 });
+      peticion.flush({ ...EL_CONVENIO, version: 3, limiteSesionesMensual: 10 });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(raiz.textContent).toContain('Cubre hasta 10 sesiones por mes');
+      expect(raiz.querySelector('#tope-sesiones')).toBeNull();
+    });
+
+    it('vaciar el campo quita el tope', async () => {
+      const { fixture, raiz, campo } = await abrirEdicion({
+        ...EL_CONVENIO,
+        limiteSesionesMensual: 8,
+      });
+      expect(campo.value).toBe('8');
+      tipear(fixture, campo, '  ');
+      boton(raiz, 'Guardar').click();
+
+      const peticion = editarConvenio();
+      expect(peticion.request.body).toEqual({
+        expectedVersion: 2,
+        limpiarLimiteSesionesMensual: true,
+      });
+      peticion.flush({ ...EL_CONVENIO, version: 3 });
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(raiz.textContent).toContain('Sin tope de sesiones por mes.');
+    });
+
+    it('un tope que no es entero positivo no se manda', async () => {
+      const { fixture, raiz, campo } = await abrirEdicion();
+      const avisos = TestBed.inject(AvisosStore);
+      const error = vi.spyOn(avisos, 'error');
+      tipear(fixture, campo, '2.5');
+      boton(raiz, 'Guardar').click();
+      tipear(fixture, campo, '0');
+      boton(raiz, 'Guardar').click();
+      expect(error).toHaveBeenCalledTimes(2);
+      httpMock.expectNone((peticion) => peticion.method === 'PUT');
+    });
+
+    it('si falla el guardado avisa y relee el convenio', async () => {
+      const { fixture, raiz, campo } = await abrirEdicion();
+      tipear(fixture, campo, '4');
+      boton(raiz, 'Guardar').click();
+      editarConvenio().flush(
+        { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
+        { status: 409, statusText: 'Conflict' },
+      );
+      httpMock
+        .expectOne(
+          (peticion: HttpRequest<unknown>) =>
+            peticion.method === 'GET' && peticion.url === `${rutaConvenios(SEDE)}/${CONVENIO}`,
+        )
+        .flush(EL_CONVENIO);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(raiz.querySelector('#tope-sesiones')).not.toBeNull();
+    });
+
+    it('cancelar cierra sin mandar nada', async () => {
+      const { fixture, raiz } = await abrirEdicion();
+      boton(raiz, 'Cancelar').click();
+      fixture.detectChanges();
+      expect(raiz.querySelector('#tope-sesiones')).toBeNull();
+    });
+
+    it('el convenio del plan se titula con el nombre y vale en todas las sedes', async () => {
+      const fixture = await montar({ ...EL_CONVENIO, consultorioId: null, nombre: 'OSDE · 210' });
+      const raiz = fixture.nativeElement as HTMLElement;
+      expect(raiz.textContent).toContain('Precios de OSDE · 210');
+      expect(raiz.textContent).toContain('todas las sedes');
+    });
+  });
+
+  function boton(raiz: HTMLElement, texto: string): HTMLButtonElement {
+    const encontrado = [...raiz.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === texto,
+    );
+    if (encontrado === undefined) {
+      throw new Error(`No existe el botón «${texto}»`);
+    }
+    return encontrado;
+  }
+
   async function montar(
     convenio: Record<string, unknown> = EL_CONVENIO,
     aranceles: readonly unknown[] = [VIGENTE, ANTERIOR],

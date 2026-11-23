@@ -235,6 +235,46 @@ describe('OfertasDeLaSedePage', () => {
     httpMock.match((p) => p.method === 'GET').forEach((pedido) => pedido.flush([]));
   });
 
+  it('un servicio grupal sugiere una hora y habilita el cupo; "Siguiente" exige lo esencial', async () => {
+    const YOGA = {
+      ...SERVICIO,
+      id: 2,
+      codigo: undefined,
+      nombre: 'Yoga',
+      modalidadDefault: 'GRUPAL',
+    };
+    const fixture = await montar({ catalogo: [SERVICIO, YOGA] });
+    const anfitrion = fixture.nativeElement as HTMLElement;
+    const capacidad = () => anfitrion.querySelector<HTMLInputElement>('#alta-oferta-capacidad');
+
+    abrir(fixture, 'Publicar un servicio en la sede');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-1')?.hasAttribute('hidden')).toBe(false);
+
+    elegirServicio(fixture, httpMock, '2');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe('Yoga');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-duracion')?.value).toBe('60');
+    expect(capacidad()?.disabled).toBe(false);
+    expect(Number(capacidad()?.value)).toBeGreaterThan(1);
+
+    escribir(fixture, '#alta-oferta-duracion', '0');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-1')?.hasAttribute('hidden')).toBe(false);
+
+    escribir(fixture, '#alta-oferta-duracion', '50');
+    abrir(fixture, 'Siguiente');
+    expect(anfitrion.querySelector('#alta-oferta-paso-2')?.hasAttribute('hidden')).toBe(false);
+
+    // Volver a uno individual fija el cupo en 1 y respeta el nombre escrito a mano.
+    escribir(fixture, '#alta-oferta-nombre', 'Yoga para adultos');
+    elegirServicio(fixture, httpMock, '1');
+    expect(anfitrion.querySelector<HTMLInputElement>('#alta-oferta-nombre')?.value).toBe(
+      'Yoga para adultos',
+    );
+    expect(capacidad()?.value).toBe('1');
+    expect(capacidad()?.disabled).toBe(true);
+  });
+
   it('el alta OMITE lo que quedo en heredar: heredar no es apagar', async () => {
     const fixture = await montar();
 
