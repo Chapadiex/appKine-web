@@ -351,10 +351,13 @@
   width: min(26rem, calc(100vw - var(--flotante-izquierda) - var(--esp-4)));
   height: min(36rem, calc(100dvh - 7rem));
   padding: var(--esp-4);
-  border: 1px solid var(--color-borde-sutil);
-  border-radius: var(--radio-md);
+  border: 1px solid var(--color-borde-control);
+  border-top: 3px solid var(--color-accion-fondo);
+  border-radius: var(--radio-lg);
   background: var(--color-superficie);
-  box-shadow: var(--sombra-flotante);
+  box-shadow:
+    0 18px 40px rgb(0 0 0 / 0.18),
+    var(--sombra-flotante);
   box-sizing: border-box;
 }
 .panel[hidden] {
@@ -366,9 +369,40 @@
   justify-content: space-between;
   gap: var(--esp-2);
 }
+.panel__cabecera {
+  padding-bottom: var(--esp-3);
+  border-bottom: 1px solid var(--color-borde-sutil);
+}
 .panel__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
   margin: 0;
-  font-size: var(--tipo-md);
+  font-size: var(--tipo-base);
+  color: var(--color-texto-fuerte);
+}
+.panel__marca {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-accion-fondo);
+}
+.panel__nueva {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  min-height: 2rem;
+  padding: 0 var(--esp-3);
+  border: 0;
+  border-radius: var(--radio-md);
+  background: none;
+  color: var(--color-accion-fondo);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+  cursor: pointer;
+}
+.panel__nueva:hover {
+  background: var(--color-hover);
 }
 .panel__acciones {
   display: flex;
@@ -376,15 +410,21 @@
   gap: var(--esp-2);
 }
 .panel__cerrar {
-  min-width: 2.25rem;
-  min-height: 2.25rem;
-  border: 1px solid var(--color-borde-control);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
   border-radius: var(--radio-md);
   background: transparent;
-  color: var(--color-texto);
+  color: var(--color-texto-suave);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+}
+.panel__cerrar:hover {
+  background: var(--color-hover);
+  color: var(--color-texto-fuerte);
 }
 .panel__charla {
   flex: 1;

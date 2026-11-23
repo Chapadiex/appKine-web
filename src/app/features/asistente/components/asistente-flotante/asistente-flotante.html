@@ -11,11 +11,15 @@
     [hidden]="!abierto()"
   >
     <header class="panel__cabecera">
-      <h2 id="asistente-flotante-titulo" class="panel__titulo">Asistente de datos</h2>
+      <h2 id="asistente-flotante-titulo" class="panel__titulo">
+        <svg class="panel__marca" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+          <circle cx="12" cy="12" r="3.4" fill="currentColor" />
+        </svg>
+        Asistente de datos
+      </h2>
       <div class="panel__acciones">
-        <button type="button" class="boton boton--secundario boton--chico" (click)="nuevaCharla()">
-          Nueva charla
-        </button>
+        <button type="button" class="panel__nueva" (click)="nuevaCharla()">+ Nueva charla</button>
         <button type="button" class="panel__cerrar" (click)="cerrar()">
           <span aria-hidden="true">×</span>
           <span class="visualmente-oculto">Cerrar el asistente</span>

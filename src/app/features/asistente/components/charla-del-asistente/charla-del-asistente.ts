@@ -25,6 +25,7 @@ import {
   MarkdownSeguro,
 } from '../../../../shared/components/markdown-seguro/markdown-seguro';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
@@ -116,7 +117,7 @@ export interface MensajeDelAsistente {
 @Component({
   selector: 'app-charla-del-asistente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Dictado, EstadoVacio, MarkdownSeguro, RouterLink],
+  imports: [Dictado, EstadoVacio, Icono, MarkdownSeguro, RouterLink],
   host: { class: 'charla', '[class.charla--compacta]': 'compacta()' },
   templateUrl: './charla-del-asistente.html',
   styleUrl: './charla-del-asistente.css',

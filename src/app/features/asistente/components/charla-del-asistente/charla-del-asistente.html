@@ -9,11 +9,13 @@
       <app-estado-vacio titulo="El asistente no está habilitado en este entorno." />
     } @else if (mensajes().length === 0) {
       <div class="asistente__inicio">
-        <app-estado-vacio titulo="Preguntá algo sobre los datos de la sede." />
+        <p class="asistente__saludo">¿Qué querés saber de la sede?</p>
+        <p class="asistente__saludo-ayuda">Probá con una de estas o escribí la tuya.</p>
         <div class="asistente__sugerencias" role="group" aria-label="Preguntas de ejemplo">
           @for (s of sugerencias; track s) {
-            <button type="button" class="boton boton--secundario" (click)="usarSugerencia(s)">
-              {{ s }}
+            <button type="button" class="asistente__sugerencia" (click)="usarSugerencia(s)">
+              <span>{{ s }}</span>
+              <app-icono nombre="flecha-derecha" />
             </button>
           }
         </div>
@@ -111,6 +113,10 @@
 
   <div class="visualmente-oculto" aria-live="polite" role="status">{{ anuncio() }}</div>
 
+  <!--
+    Caja de pregunta (23/11/2026): un solo recuadro a todo el ancho con el campo, el micrófono y el
+    botón de enviar adentro. El contador aparece recién cerca del límite.
+  -->
   <form class="asistente__caja" (submit)="$event.preventDefault(); enviar()">
     <label class="visualmente-oculto" [for]="idPregunta">Tu pregunta</label>
     <textarea
@@ -118,7 +124,7 @@
       appDictado
       name="pregunta"
       rows="2"
-      placeholder="Por ejemplo: ¿Juan vino esta semana?"
+      placeholder="Escribí tu pregunta… ej.: ¿Juan vino esta semana?"
       [maxLength]="maxPregunta"
       [value]="texto()"
       [disabled]="deshabilitado()"
@@ -126,8 +132,20 @@
       (keydown)="alTeclear($event)"
     ></textarea>
     <div class="asistente__pie">
-      <span class="asistente__contador">{{ texto().length }} / {{ maxPregunta }}</span>
-      <button type="submit" class="boton" [disabled]="!puedeEnviar()">Preguntar</button>
+      @if (texto().length > maxPregunta * 0.8) {
+        <span class="asistente__contador">{{ texto().length }} / {{ maxPregunta }}</span>
+      } @else {
+        <span class="asistente__contador">Enter para enviar</span>
+      }
+      <button
+        type="submit"
+        class="asistente__enviar"
+        title="Enviar pregunta"
+        [disabled]="!puedeEnviar()"
+      >
+        <app-icono nombre="flecha-derecha" />
+        <span class="visualmente-oculto">Enviar pregunta</span>
+      </button>
     </div>
   </form>
 </section>
