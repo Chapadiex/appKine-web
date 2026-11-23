@@ -77,8 +77,9 @@ export class PresentacionesApi {
     financiadorId: number,
     desde?: string,
     hasta?: string,
+    limite?: number,
   ): Observable<readonly Obligacion[]> {
-    return this.api.elegibles({ consultorioId, financiadorId, desde, hasta });
+    return this.api.elegibles({ consultorioId, financiadorId, desde, hasta, limite });
   }
 
   agregarItem(

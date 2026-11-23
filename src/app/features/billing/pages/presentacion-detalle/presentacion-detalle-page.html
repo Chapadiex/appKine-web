@@ -52,8 +52,8 @@
       <p>
         Las prestaciones que este lote le reclama al financiador. En borrador se revisan, se agregan
         o se quitan; las observadas se corrigen en su origen o se quitan del lote, y vuelven a la
-        bandeja. Presentado, se registran la factura, los débitos y los pagos hasta que el saldo
-        llega a cero.
+        bandeja. Presentado, se registran los débitos, los pagos y, si querés, la factura, hasta que
+        el saldo llega a cero y el lote queda pagado.
       </p>
     </app-ayuda>
     <div cabeceraAcciones>
@@ -158,17 +158,9 @@
         <table class="tabla">
           <thead>
             <tr>
+              <th scope="col" appOrdenable [tabla]="tablaItems" columna="paciente">Paciente</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="prestacion">Prestación</th>
               <th scope="col" appOrdenable [tabla]="tablaItems" columna="fecha">Fecha</th>
-              <th
-                scope="col"
-                class="tabla__col--secundaria"
-                appOrdenable
-                [tabla]="tablaItems"
-                columna="paciente"
-              >
-                Paciente
-              </th>
               <th scope="col" class="importe" appOrdenable [tabla]="tablaItems" columna="importe">
                 Importe
               </th>
@@ -179,8 +171,33 @@
           <tbody>
             @for (item of tablaItems.visibles(); track item.id) {
               <tr [class.fila--seleccionada]="itemEnDebito()?.id === item.id">
+                <th scope="row" class="celda-ancha">
+                  <span class="celda-principal">{{
+                    item.pacienteNombre ?? 'Persona #' + item.personaId
+                  }}</span>
+                  @if (item.pacienteDocumento) {
+                    <span class="celda-secundaria">{{ item.pacienteDocumento }}</span>
+                  }
+                  @if (item.numeroAfiliado || item.planNombre) {
+                    <span class="celda-secundaria">
+                      @if (item.numeroAfiliado) {
+                        Afiliado {{ item.numeroAfiliado }}
+                      }
+                      @if (item.numeroAfiliado && item.planNombre) {
+                        ·
+                      }
+                      {{ item.planNombre }}
+                    </span>
+                  }
+                </th>
                 <td>
-                  {{ item.concepto }}
+                  <span class="celda-principal">{{ item.practicaNombre ?? item.concepto }}</span>
+                  @if (item.practicaCodigo) {
+                    <span class="celda-secundaria">Código {{ item.practicaCodigo }}</span>
+                  }
+                  @if (item.autorizacionNumero) {
+                    <span class="celda-secundaria">Autorización {{ item.autorizacionNumero }}</span>
+                  }
                   @if (item.id !== undefined && hallazgosPorItem().get(item.id); as observaciones) {
                     <ul class="ayuda">
                       @for (o of observaciones; track $index) {
@@ -200,7 +217,6 @@
                   }
                 </td>
                 <td class="celda-fecha">{{ fecha(item.fechaPrestacion) }}</td>
-                <td class="tabla__col--secundaria">Persona #{{ item.personaId }}</td>
                 <td class="importe">
                   {{ importe(item.importePresentado) }}
                   @if (item.importeDebitado) {
@@ -246,6 +262,54 @@
       <app-pie-de-tabla [tabla]="tablaItems" etiqueta="Páginas de prestaciones" />
     }
   </section>
+
+  @if (resumenPorPaciente().length > 0) {
+    <section class="tarjeta" aria-labelledby="titulo-resumen-pacientes">
+      <h2 id="titulo-resumen-pacientes">Resumen por paciente</h2>
+      <div
+        class="tabla-scroll"
+        tabindex="0"
+        role="region"
+        aria-label="Resumen de la liquidación por paciente"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Paciente</th>
+              <th scope="col">Sesiones</th>
+              <th scope="col">Fechas</th>
+              <th scope="col" class="importe">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of resumenPorPaciente(); track fila.personaId) {
+              <tr>
+                <th scope="row" class="celda-ancha">
+                  <span class="celda-principal">{{ fila.nombre }}</span>
+                  @if (fila.documento) {
+                    <span class="celda-secundaria">{{ fila.documento }}</span>
+                  }
+                  @if (fila.afiliado || fila.plan) {
+                    <span class="celda-secundaria"
+                      >{{ fila.afiliado ? 'Afiliado ' + fila.afiliado : '' }}
+                      {{ fila.afiliado && fila.plan ? '·' : '' }} {{ fila.plan ?? '' }}</span
+                    >
+                  }
+                </th>
+                <td>{{ fila.fechas.length }}</td>
+                <td>
+                  @for (f of fila.fechas; track $index) {
+                    {{ fecha(f) }}{{ $last ? '' : ', ' }}
+                  }
+                </td>
+                <td class="importe">{{ importe(fila.importe) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
 
   <!-- ============================ Borrador: revision y acciones ======================= -->
 
@@ -420,7 +484,7 @@
     <div class="grilla-de-tarjetas">
       @if (admiteFactura()) {
         <section class="tarjeta" aria-labelledby="titulo-factura">
-          <h2 id="titulo-factura">Factura del lote</h2>
+          <h2 id="titulo-factura">Factura del lote (opcional)</h2>
           <form [formGroup]="factura" (ngSubmit)="registrarFactura()" novalidate>
             @if (falloEn('factura'); as fallo) {
               <ng-container
@@ -536,18 +600,21 @@
 
       <section class="tarjeta" aria-labelledby="titulo-cierre">
         <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-          <h2 id="titulo-cierre">Cerrar el lote</h2>
-          <app-ayuda titulo="Cerrar el lote">
+          <h2 id="titulo-cierre">Marcar como pagada</h2>
+          <app-ayuda titulo="Marcar como pagada">
             <p>
-              Se cierra cuando el saldo llega a cero: todo lo presentado quedó explicado por débitos
-              o pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
+              Se marca como pagada cuando el saldo llega a cero: todo lo presentado quedó explicado
+              por débitos o pagos. Si queda saldo, el servidor lo rechaza y dice cuánto falta.
             </p>
           </app-ayuda>
         </div>
         @if (falloEn('conciliar'); as fallo) {
           <ng-container
             [ngTemplateOutlet]="alertaDeOperacion"
-            [ngTemplateOutletContext]="{ $implicit: fallo, titulo: 'No pudimos cerrar el lote' }"
+            [ngTemplateOutletContext]="{
+              $implicit: fallo,
+              titulo: 'No pudimos marcar el lote como pagado',
+            }"
           />
         }
         <div class="acciones">
@@ -557,7 +624,7 @@
             [disabled]="operando() !== null"
             (click)="conciliar()"
           >
-            Cerrar (conciliar) el lote
+            Marcar como pagada
           </button>
         </div>
       </section>

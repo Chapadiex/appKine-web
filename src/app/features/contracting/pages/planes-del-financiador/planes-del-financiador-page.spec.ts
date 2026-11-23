@@ -2,7 +2,7 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { convertToParamMap } from '@angular/router';
 
 import { PERMISO_CONVENIO_MANAGE } from '../../../../core/models/permisos';
@@ -514,6 +514,61 @@ describe('PlanesDelFinanciadorPage', () => {
     },
     TIMEOUT_AXE,
   );
+
+  describe('precios del plan', () => {
+    const RUTA_CONVENIO = `${PLANES}/${VIGENTE.id}/convenio`;
+
+    async function tocarPrecios() {
+      const fixture = await montar(OSDE, [VIGENTE]);
+      const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      abrir(fixture, 'Precios');
+      return { fixture, navegar };
+    }
+
+    it('con convenio del plan, abre sus precios', async () => {
+      const { navegar } = await tocarPrecios();
+      httpMock.expectOne({ method: 'GET', url: RUTA_CONVENIO }).flush({ id: 14 });
+      expect(navegar).toHaveBeenCalledWith(['/contratacion/convenios', 14, 'aranceles']);
+    });
+
+    it('sin convenio todavía (404), lo crea y abre sus precios', async () => {
+      const { navegar } = await tocarPrecios();
+      httpMock
+        .expectOne({ method: 'GET', url: RUTA_CONVENIO })
+        .flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
+      httpMock.expectOne({ method: 'POST', url: RUTA_CONVENIO }).flush({ id: 15 });
+      expect(navegar).toHaveBeenCalledWith(['/contratacion/convenios', 15, 'aranceles']);
+    });
+
+    it('sin permiso para crearlo (403), avisa que todavía no tiene precios', async () => {
+      const { navegar } = await tocarPrecios();
+      const info = vi.spyOn(TestBed.inject(AvisosStore), 'info');
+      httpMock
+        .expectOne({ method: 'GET', url: RUTA_CONVENIO })
+        .flush({ status: 404 }, { status: 404, statusText: 'Not Found' });
+      httpMock
+        .expectOne({ method: 'POST', url: RUTA_CONVENIO })
+        .flush({ status: 403 }, { status: 403, statusText: 'Forbidden' });
+      expect(info).toHaveBeenCalledWith(
+        'Este plan todavía no tiene precios cargados',
+        expect.anything(),
+      );
+      expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it('otro error avisa que no pudo abrirlos', async () => {
+      const { navegar } = await tocarPrecios();
+      const error = vi.spyOn(TestBed.inject(AvisosStore), 'error');
+      httpMock
+        .expectOne({ method: 'GET', url: RUTA_CONVENIO })
+        .flush({ status: 500 }, { status: 500, statusText: 'Server Error' });
+      expect(error).toHaveBeenCalledWith(
+        'No pudimos abrir los precios del plan',
+        expect.anything(),
+      );
+      expect(navegar).not.toHaveBeenCalled();
+    });
+  });
 
   async function montar(
     financiador: Record<string, unknown> = OSDE,

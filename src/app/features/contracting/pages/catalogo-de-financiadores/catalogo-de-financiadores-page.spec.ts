@@ -62,30 +62,45 @@ describe('CatalogoDeFinanciadoresPage', () => {
   afterEach(() => httpMock.verify());
 
   it(
-    'lista el catalogo: ofrece agregar lo que falta y enlaza a la copia de lo adoptado',
+    'lista el catalogo: marca lo que ya esta en el centro y deja marcar lo que falta',
     async () => {
       const fixture = await montar();
       const texto = textoDe(fixture);
 
       expect(texto).toContain('OSDE');
-      expect(texto).toContain('Ya agregado');
-      expect(texto).toContain('El catálogo cambio después de agregarlo');
-      expect(enlaceA(fixture, '/contratacion/financiadores/77/planes')).not.toBeNull();
-      expect(botones(fixture)).toContain('Agregar al centro OSDE');
+      expect(texto).toContain('En el centro');
+      expect(texto).not.toContain('Ver la copia del centro');
+      // Solo lo que falta se puede marcar; lo adoptado no tiene casilla.
+      expect(casilla(fixture, 'Marcar OSDE')).not.toBeNull();
+      expect(casilla(fixture, 'Marcar IOSFA')).toBeNull();
 
       await esperarSinViolaciones(fixture.nativeElement);
     },
     TIMEOUT_AXE,
   );
 
+  it('tocar una fila abre el panel con sus planes', async () => {
+    const fixture = await montar();
+
+    filaDe(fixture, 'OSDE').click();
+    await asentar(fixture);
+
+    const panel = panelDe(fixture);
+    expect(panel?.textContent).toContain('Plan 210');
+    expect(panel?.textContent).toContain('Código 210');
+    expect(panel?.textContent).toContain('Se agrega con todos sus planes');
+  });
+
   it.each([
     [201, true],
     [200, false],
-  ])('adoptar (%s) navega a la copia del centro', async (status, creado) => {
+  ])('agregar desde el panel (%s) se queda en el catalogo y relee', async (status, creado) => {
     const fixture = await montar();
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    filaDe(fixture, 'OSDE').click();
+    await asentar(fixture);
 
-    boton(fixture, 'Agregar al centro')?.click();
+    botonEn(panelDe(fixture), 'Agregar al centro')?.click();
     const pedido = httpMock.expectOne(`${CATALOGO}/11/adopcion`);
     expect(pedido.request.method).toBe('POST');
     pedido.flush(
@@ -93,14 +108,61 @@ describe('CatalogoDeFinanciadoresPage', () => {
       { status, statusText: status === 201 ? 'Created' : 'OK' },
     );
     await asentar(fixture);
+    httpMock
+      .expectOne((p) => p.url === CATALOGO)
+      .flush([{ ...ENTRADAS[0], financiadorAdoptadoId: 90 }, ENTRADAS[1]]);
+    await asentar(fixture);
 
-    expect(navegar).toHaveBeenCalledWith(['/contratacion', 'financiadores', 90, 'planes']);
+    expect(navegar).not.toHaveBeenCalled();
+    expect(panelDe(fixture)?.textContent).toContain('Ya está en el centro');
+  });
+
+  it('lo ya agregado lleva desde el panel a sus planes en el centro', async () => {
+    const fixture = await montar();
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    filaDe(fixture, 'IOSFA').click();
+    await asentar(fixture);
+
+    const panel = panelDe(fixture);
+    expect(panel?.textContent).toContain('El catálogo cambió después de agregarlo');
+    botonEn(panel, 'Ver sus planes en el centro')?.click();
+
+    expect(navegar).toHaveBeenCalledWith(['/contratacion', 'financiadores', 77, 'planes']);
+  });
+
+  it('marcar varios y agregarlos juntos: una adopcion por cada uno y un solo aviso', async () => {
+    const otra = { id: 13, codigo: 'APROSS', nombre: 'APROSS', tipo: 'OBRA_SOCIAL', planes: [] };
+    const fixture = await montar(undefined, [...ENTRADAS, otra]);
+
+    marcar(fixture, 'Marcar OSDE');
+    marcar(fixture, 'Marcar APROSS');
+    await asentar(fixture);
+    expect(textoDe(fixture)).toContain('2 financiadores marcados');
+
+    boton(fixture, 'Agregar al centro (2)')?.click();
+    httpMock.expectOne(`${CATALOGO}/11/adopcion`).flush({ creado: true, financiador: { id: 90 } });
+    httpMock.expectOne(`${CATALOGO}/13/adopcion`).flush({ creado: true, financiador: { id: 91 } });
+    await asentar(fixture);
+    httpMock
+      .expectOne((p) => p.url === CATALOGO)
+      .flush([
+        { ...ENTRADAS[0], financiadorAdoptadoId: 90 },
+        ENTRADAS[1],
+        { ...otra, financiadorAdoptadoId: 91 },
+      ]);
+    await asentar(fixture);
+
+    const [aviso] = TestBed.inject(AvisosStore).avisos();
+    expect(aviso?.titulo).toBe('2 financiadores agregados al centro');
+    expect(textoDe(fixture)).not.toContain('marcados');
   });
 
   it('una entrada dada de baja mientras tanto explica el 409 y relee', async () => {
     const fixture = await montar();
+    filaDe(fixture, 'OSDE').click();
+    await asentar(fixture);
 
-    boton(fixture, 'Agregar al centro')?.click();
+    botonEn(panelDe(fixture), 'Agregar al centro')?.click();
     httpMock.expectOne(`${CATALOGO}/11/adopcion`).flush(
       {
         type: 'https://akine.app/problems/financiador-inactivo',
@@ -113,8 +175,8 @@ describe('CatalogoDeFinanciadoresPage', () => {
     httpMock.expectOne((p) => p.url === CATALOGO).flush([ENTRADAS[1]]);
     await asentar(fixture);
 
-    expect(textoDe(fixture)).not.toContain('Agregar al centro');
-    // Boton de fila, sin formulario: el error va al aviso global, con el mensaje del backend.
+    // La entrada dejo de listarse: el panel se cierra solo y no queda nada para agregar.
+    expect(panelDe(fixture)).toBeNull();
     const [aviso] = TestBed.inject(AvisosStore).avisos();
     expect(aviso?.tipo).toBe('error');
     expect(aviso?.titulo).toContain('No pudimos agregar');
@@ -208,12 +270,6 @@ describe('CatalogoDeFinanciadoresPage', () => {
     return ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
   }
 
-  function botones(fixture: ComponentFixture<CatalogoDeFinanciadoresPage>): string[] {
-    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).map((b) =>
-      (b.textContent ?? '').replace(/\s+/g, ' ').trim(),
-    );
-  }
-
   function boton(
     fixture: ComponentFixture<CatalogoDeFinanciadoresPage>,
     texto: string,
@@ -227,10 +283,39 @@ describe('CatalogoDeFinanciadoresPage', () => {
     );
   }
 
-  function enlaceA(
+  function filaDe(
     fixture: ComponentFixture<CatalogoDeFinanciadoresPage>,
-    href: string,
-  ): HTMLAnchorElement | null {
-    return (fixture.nativeElement as HTMLElement).querySelector(`a[href="${href}"]`);
+    nombre: string,
+  ): HTMLTableRowElement {
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLTableRowElement>('tbody tr'),
+    ).find((fila) => fila.querySelector('th')?.textContent?.includes(nombre))!;
+  }
+
+  function panelDe(fixture: ComponentFixture<CatalogoDeFinanciadoresPage>): HTMLElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector('app-panel-lateral');
+  }
+
+  function botonEn(raiz: HTMLElement | null, texto: string): HTMLButtonElement | null {
+    return (
+      Array.from(raiz?.querySelectorAll<HTMLButtonElement>('button') ?? []).find((b) =>
+        (b.textContent ?? '').includes(texto),
+      ) ?? null
+    );
+  }
+
+  function casilla(
+    fixture: ComponentFixture<CatalogoDeFinanciadoresPage>,
+    etiqueta: string,
+  ): HTMLInputElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(
+      `input[type="checkbox"][aria-label="${etiqueta}"]`,
+    );
+  }
+
+  function marcar(fixture: ComponentFixture<CatalogoDeFinanciadoresPage>, etiqueta: string): void {
+    const input = casilla(fixture, etiqueta)!;
+    input.checked = true;
+    input.dispatchEvent(new Event('change'));
   }
 });

@@ -4,8 +4,8 @@ import { fechaLocal, sumarDias } from './support/sembrado';
 
 /**
  * E2E de financiadores y planes (M16, AKINE-03.02) contra el backend REAL, todo por pantalla: alta
- * de una obra social, busqueda en el listado, alta de un plan con copago y autorizacion previa, y el
- * convenio de la sede con ese plan (M17).
+ * de una obra social, busqueda en el listado, alta de un plan con copago y autorizacion previa, y la
+ * apertura de los precios del plan, que valen para todas las sedes (contrato 0.187.0).
  *
  * <p>Los demas specs siembran financiador y plan por la API (`crearFinanciador`); este es el que
  * recorre las dos pantallas. Lo que se afirma se relee del servidor: el copago viaja con su moneda
@@ -24,7 +24,7 @@ interface PlanGuardado {
 }
 
 test.describe('Financiadores y planes contra el backend real', () => {
-  test('alta de una obra social, su plan con copago y el convenio de la sede, por pantalla', async ({
+  test('alta de una obra social, su plan con copago y sus precios, por pantalla', async ({
     page,
     api,
     centro,
@@ -108,40 +108,25 @@ test.describe('Financiadores y planes contra el backend real', () => {
       vigenciaDesde: desde,
     });
 
-    // --- La sede firma un convenio con ese plan -----------------------------------------------
-    await navegar(page, '/contratacion/convenios');
-    await page.getByRole('button', { name: 'Firmar un convenio' }).click();
-    const formularioDelConvenio = page.getByRole('dialog', {
-      name: 'Nuevo convenio de esta sede',
-    });
-    const convenio = `Convenio 310 ${sufijo}`;
-    await formularioDelConvenio
-      .getByLabel('Financiador')
-      .selectOption({ value: String(financiadorId) });
-    await formularioDelConvenio.getByLabel('Plan').selectOption({ value: String(guardado!.id) });
-    await formularioDelConvenio
-      .getByLabel('Código', { exact: true })
-      .fill(`CV310${sufijo}`.slice(0, 20));
-    await formularioDelConvenio.getByLabel('Nombre', { exact: true }).fill(convenio);
-    await formularioDelConvenio
-      .getByLabel('Modalidad de liquidación')
-      .selectOption({ value: 'POR_PRESTACION' });
-    await formularioDelConvenio.getByLabel('Moneda').fill('ARS');
-    await formularioDelConvenio.getByLabel('Vigente desde').fill(desde);
-    const firma = respuestaDe(page, 'POST', /\/consultorios\/\d+\/convenios$/);
-    await formularioDelConvenio.getByRole('button', { name: 'Firmar convenio' }).click();
-    const firmado = await firma;
-    expect(firmado.status(), await firmado.text()).toBe(201);
-    expect(await firmado.json()).toMatchObject({
+    // --- Los precios del plan: se abren desde su fila y valen para todas las sedes -------------
+    await navegar(page, `/contratacion/financiadores/${financiadorId}/planes`);
+    const filaDelPlan = page
+      .getByRole('region', { name: 'Planes de cobertura' })
+      .getByRole('row', { name: new RegExp(plan) });
+    const preparacion = respuestaDe(page, 'POST', /\/planes\/\d+\/convenio$/);
+    await filaDelPlan.getByRole('button', { name: 'Precios', exact: true }).click();
+    const preparado = await preparacion;
+    expect(preparado.status(), await preparado.text()).toBe(200);
+    expect(await preparado.json()).toMatchObject({
       financiadorId,
       planId: guardado!.id,
-      modalidad: 'POR_PRESTACION',
+      consultorioId: null,
       moneda: 'ARS',
+      requiereAutorizacion: true,
     });
+    await expect(page).toHaveURL(/\/contratacion\/convenios\/\d+\/aranceles$/);
     await expect(
-      page.getByRole('region', { name: 'Convenios de la sede' }).getByRole('row', {
-        name: new RegExp(convenio),
-      }),
+      page.getByRole('heading', { name: new RegExp(`^Precios de .*${plan}`), level: 1 }),
     ).toBeVisible();
   });
 });

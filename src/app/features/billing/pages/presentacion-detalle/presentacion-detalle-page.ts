@@ -67,6 +67,17 @@ interface Lectura {
 /** El rechazo de una operacion y su clave (`factura`, `debito-12`...): se muestra ahi (UX-12). */
 type FalloDePresentacion = ErrorPresentacion & { readonly clave: string };
 
+/** Lo que el resumen por paciente muestra de cada uno. Se arma con los renglones del lote. */
+interface ResumenDePaciente {
+  readonly personaId: number;
+  readonly nombre: string;
+  readonly documento: string | null;
+  readonly afiliado: string | null;
+  readonly plan: string | null;
+  readonly fechas: readonly string[];
+  readonly importe: number;
+}
+
 /**
  * Un lote de presentacion a un financiador, de punta a punta (M21, RF-M21-002 a RF-M21-008).
  *
@@ -198,12 +209,40 @@ export class PresentacionDetallePage {
   /** Orden y paginado de las prestaciones del lote (plan §3.4): el lote las trae todas. */
   protected readonly tablaItems = tablaLocal(this.itemsVisibles, {
     columnas: {
-      prestacion: (item) => item.concepto ?? null,
+      prestacion: (item) => item.practicaNombre ?? item.concepto ?? null,
       fecha: (item) => item.fechaPrestacion ?? null,
-      paciente: (item) => item.personaId ?? null,
+      paciente: (item) => item.pacienteNombre ?? item.personaId ?? null,
       importe: (item) => item.importePresentado ?? null,
       estado: (item) => estadoDeItemEnPalabras(item.estado),
     },
+  });
+
+  /**
+   * Una fila por paciente con sus sesiones, fechas e importe: es el control que se hace antes de
+   * mandar la liquidacion. Los renglones anulados ya no estan en el lote y no cuentan.
+   */
+  protected readonly resumenPorPaciente = computed<readonly ResumenDePaciente[]>(() => {
+    const porPaciente = new Map<number, ResumenDePaciente>();
+    for (const item of this.items()) {
+      if (item.estado === 'ANULADO' || item.personaId === undefined) {
+        continue;
+      }
+      const previo = porPaciente.get(item.personaId);
+      const fechas = [
+        ...(previo?.fechas ?? []),
+        ...(item.fechaPrestacion ? [item.fechaPrestacion] : []),
+      ];
+      porPaciente.set(item.personaId, {
+        personaId: item.personaId,
+        nombre: previo?.nombre ?? item.pacienteNombre ?? `Persona #${item.personaId}`,
+        documento: previo?.documento ?? item.pacienteDocumento ?? null,
+        afiliado: previo?.afiliado ?? item.numeroAfiliado ?? null,
+        plan: previo?.plan ?? item.planNombre ?? null,
+        fechas: fechas.sort(),
+        importe: (previo?.importe ?? 0) + (item.importePresentado ?? 0),
+      });
+    }
+    return [...porPaciente.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   });
 
   /** Orden y paginado de la bandeja de elegibles: el backend devuelve un array. */
@@ -420,7 +459,7 @@ export class PresentacionDetallePage {
     this.operar(
       'conciliar',
       (c, p) => this.api.conciliar(c, p),
-      'Lote cerrado',
+      'Lote pagado',
       'Cada prestación aceptada salda su deuda por lo presentado; las debitadas en parte, por lo ' +
         'presentado menos lo debitado, que queda pendiente para otro lote.',
     );

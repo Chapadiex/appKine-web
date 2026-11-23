@@ -10,7 +10,7 @@ import { paginaDePlataforma, plataformaDisponible } from './support/sembrado-con
  *
  * <p>Lo que se afirma se relee del servidor: la copia es del centro (otro id, con `catalogoId`) y
  * lleva el plan; repetir la adopcion devuelve 200 con la MISMA copia (`creado = false`), y el
- * catalogo la marca "Ya agregado".
+ * catalogo la marca "En el centro".
  */
 test.describe('Catalogo global de financiadores contra el backend real', () => {
   test('la plataforma lo carga y el centro lo agrega por copia, una sola vez', async ({
@@ -83,7 +83,11 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
       'POST',
       new RegExp(`/catalogo-financiadores/${catalogoId}/adopcion$`),
     );
-    await fila.getByRole('button', { name: `Agregar al centro ${nombre}` }).click();
+    // Tocar la fila abre el panel con los planes; desde ahi se agrega.
+    await fila.click();
+    const panel = page.getByRole('dialog', { name: nombre });
+    await expect(panel.getByText(`Plan A ${sufijo}`)).toBeVisible();
+    await panel.getByRole('button', { name: 'Agregar al centro' }).click();
     const respuesta = await adopcion;
     expect(respuesta.status(), await respuesta.text()).toBe(201);
     const { financiador, creado } = (await respuesta.json()) as {
@@ -92,6 +96,9 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     };
     expect(creado).toBe(true);
     expect(financiador.catalogoId).toBe(catalogoId);
+    // Se queda en el catalogo: el panel pasa a "ya esta en el centro" y lleva a la copia.
+    await expect(panel.getByText('Ya está en el centro')).toBeVisible();
+    await panel.getByRole('button', { name: 'Ver sus planes en el centro' }).click();
     await expect(page).toHaveURL(
       new RegExp(`/contratacion/financiadores/${financiador.id}/planes$`),
     );
@@ -112,15 +119,12 @@ test.describe('Catalogo global de financiadores contra el backend real', () => {
     expect(otra.creado).toBe(false);
     expect(otra.financiador.id).toBe(financiador.id);
 
-    // El catalogo ya la marca como agregada y enlaza a la copia.
+    // El catalogo ya la marca como agregada y no ofrece marcarla otra vez.
     await navegar(page, '/contratacion/financiadores/catalogo');
     await page.getByLabel('Nombre, código o CUIT').fill(nombre);
     await page.getByRole('button', { name: 'Buscar', exact: true }).click();
-    await expect(fila.getByText('Ya agregado')).toBeVisible();
-    await expect(fila.getByRole('link', { name: 'Ver la copia del centro' })).toHaveAttribute(
-      'href',
-      `/contratacion/financiadores/${financiador.id}/planes`,
-    );
+    await expect(fila.getByText('En el centro')).toBeVisible();
+    await expect(fila.getByRole('checkbox')).toHaveCount(0);
 
     // Y el listado del centro la marca "Del catalogo".
     await navegar(page, '/contratacion/financiadores');

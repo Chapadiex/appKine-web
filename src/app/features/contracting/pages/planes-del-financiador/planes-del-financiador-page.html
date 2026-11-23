@@ -266,25 +266,32 @@
                     </td>
                     <td class="tabla__acciones">
                       @if (plan.estado === 'ACTIVO') {
-                        <app-acciones-de-fila
-                          *akinePermiso="permisoManage"
-                          [de]="plan.nombre ?? ''"
-                        >
+                        <!--
+                          "Precios" es lo que paga la obra social por práctica, en todas las sedes
+                          (22/11/2026): reemplaza a firmar un convenio por sede.
+                        -->
+                        <app-acciones-de-fila [de]="plan.nombre ?? ''">
                           <button
                             principal
                             type="button"
                             class="boton boton--secundario boton--chico"
-                            (click)="abrirPanel(plan, 'editar')"
+                            [disabled]="abriendoPrecios() === plan.id"
+                            (click)="abrirPrecios(plan)"
                           >
-                            Editar
+                            Precios
                           </button>
-                          <button
-                            type="button"
-                            class="accion--peligro"
-                            (click)="abrirPanel(plan, 'baja')"
-                          >
-                            Dar de baja
-                          </button>
+                          <ng-container *akinePermiso="permisoManage">
+                            <button type="button" (click)="abrirPanel(plan, 'editar')">
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              class="accion--peligro"
+                              (click)="abrirPanel(plan, 'baja')"
+                            >
+                              Dar de baja
+                            </button>
+                          </ng-container>
                         </app-acciones-de-fila>
                       }
                     </td>

@@ -40,7 +40,7 @@ import {
   hayQueRecargar,
   traducirErrorContracting,
 } from '../../models/contracting-errors';
-import { importeEnPalabras, importesCuadran } from '../../models/etiquetas-de-contracting';
+import { importeEnPalabras } from '../../models/etiquetas-de-contracting';
 import {
   SituacionDeVigencia,
   situacionDeVigencia,
@@ -67,16 +67,11 @@ type TipoAccion = 'editar' | 'baja';
  * <p>Es donde vive el precio: cuánto cuesta cada practica bajo este convenio, cuánto pone el
  * financiador y cuánto el paciente, y desde cuando hasta cuando.
  *
- * <h2>1. El arancel son TRES importes y no hay porcentaje de cobertura</h2>
+ * <h2>1. El arancel es UN importe: lo que paga la obra social (contrato 0.185.0)</h2>
  *
- * <p>§37. `importeFinanciador + coseguro = importeTotal`, exactamente, y el backend lo hace
- * cumplir desde la base con un CHECK. <b>No hay un campo de porcentaje y no se puede inventar</b>:
- * un porcentaje obliga a multiplicar y redondear, y el redondeo de un arancel es la diferencia de
- * un centavo que aparece seis meses despues en una presentacion rechazada.
- *
- * <p>La pantalla suma antes de mandar —en <b>centavos enteros</b>, porque
- * `1000.10 + 2000.20 !== 3000.30` en coma flotante— para poder senalar el campo en vez de gastar
- * un `400`. La autoridad sigue siendo el backend.
+ * <p>El coseguro no se carga: el backend lo calcula al cerrar cada sesion como precio de la
+ * actividad menos lo que paga la obra social, nunca menos de cero. El total y el coseguro que
+ * todavia traen algunos aranceles viejos son historicos y la pantalla no los muestra.
  *
  * <p><b>La moneda no se carga aca</b>: la hereda del convenio, que es por eso que la pantalla lo
  * lee al abrirse. Un arancel no puede estar en otra moneda que su convenio.
@@ -132,10 +127,16 @@ type TipoAccion = 'editar' | 'baja';
 })
 export class ArancelesDelConvenioPage {
   /** Ruta de navegacion de la barra superior (UX-13). */
-  private readonly migasDeLaBarra = publicarMigas(() => [
-    { etiqueta: 'Convenios de la sede', ruta: '/contratacion/convenios' },
-    { etiqueta: 'Aranceles' },
-  ]);
+  private readonly migasDeLaBarra = publicarMigas(() => {
+    const financiadorId = this.convenio()?.financiadorId;
+    return [
+      { etiqueta: 'Financiadores', ruta: '/contratacion/financiadores' },
+      ...(financiadorId === undefined
+        ? []
+        : [{ etiqueta: 'Planes', ruta: `/contratacion/financiadores/${financiadorId}/planes` }]),
+      { etiqueta: 'Precios' },
+    ];
+  });
 
   private readonly api = inject(ConveniosApi);
   private readonly avisos = inject(AvisosStore);
@@ -186,9 +187,7 @@ export class ArancelesDelConvenioPage {
   protected readonly tabla = tablaLocal(this.aranceles, {
     columnas: {
       practica: (arancel) => this.nombreDeLaPractica(arancel),
-      total: (arancel) => arancel.importeTotal,
       financiador: (arancel) => arancel.importeFinanciador,
-      coseguro: (arancel) => arancel.coseguro,
       vigencia: (arancel) => arancel.vigenciaDesde,
     },
   });
@@ -215,8 +214,22 @@ export class ArancelesDelConvenioPage {
   /** Moneda heredada del convenio, o `undefined` si todavia no se pudo leer. */
   protected readonly moneda = computed(() => this.convenio()?.moneda);
 
+  /** Tope de sesiones por mes: si se esta editando, lo tipeado y si se esta guardando. */
+  protected readonly editandoTope = signal(false);
+  protected readonly topeTipeado = signal('');
+  protected readonly guardandoTope = signal(false);
+
   /** `true` cuando el convenio esta dado de baja: no admite aranceles nuevos. */
   protected readonly convenioInactivo = computed(() => this.convenio()?.estado === 'INACTIVO');
+
+  /**
+   * El convenio del plan (contrato 0.187.0) no es de ninguna sede: es lo que paga la obra social
+   * en todas. La pantalla lo titula como "precios" del plan, sin código ni ventana de vigencia.
+   */
+  protected readonly esDelPlan = computed(() => {
+    const ficha = this.convenio();
+    return ficha !== null && (ficha.consultorioId === undefined || ficha.consultorioId === null);
+  });
 
   /**
    * Practicas del catalogo clinico, para el selector del alta.
@@ -261,7 +274,7 @@ export class ArancelesDelConvenioPage {
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
   protected readonly causaAccion = signal<CausaContracting | null>(null);
-  /** La terna de importes que no cuadra (o un importe vaciado): va debajo de los tres campos. */
+  /** Un importe vaciado al editar: va debajo del campo. */
   protected readonly errorImportes = signal<string | null>(null);
   private importacionAnunciada = false;
   protected readonly intentos = signal(0);
@@ -272,9 +285,7 @@ export class ArancelesDelConvenioPage {
 
   protected readonly formularioAlta = this.formBuilder.nonNullable.group({
     practicaId: ['', [Validators.required]],
-    importeTotal: ['', [Validators.required]],
     importeFinanciador: ['', [Validators.required]],
-    coseguro: ['', [Validators.required]],
     vigenciaDesde: ['', [Validators.required]],
     vigenciaHasta: [''],
     // Vacio = arancel GENERAL de la practica en el convenio, que es todo lo que existia antes.
@@ -307,9 +318,7 @@ export class ArancelesDelConvenioPage {
 
   /** Sin practica ni convenio: cambiarlos no seria editar este arancel, seria inventar otro. */
   protected readonly formularioEdicion = this.formBuilder.nonNullable.group({
-    importeTotal: [''],
     importeFinanciador: [''],
-    coseguro: [''],
     vigenciaDesde: [''],
     vigenciaHasta: [''],
   });
@@ -438,9 +447,7 @@ export class ArancelesDelConvenioPage {
     this.cerrarPanel();
     this.formularioAlta.reset({
       practicaId: '',
-      importeTotal: '',
       importeFinanciador: '',
-      coseguro: '',
       // Arranca en el inicio del convenio si es futuro, y si no en hoy: un arancel fuera de la
       // ventana del convenio se rechaza, y ofrecer de entrada una fecha invalida es empujar al
       // usuario a un 400.
@@ -464,13 +471,13 @@ export class ArancelesDelConvenioPage {
     if (tipo === 'editar') {
       this.original.set(arancel);
       this.formularioEdicion.reset({
-        importeTotal: comoTexto(arancel.importeTotal),
         importeFinanciador: comoTexto(arancel.importeFinanciador),
-        coseguro: comoTexto(arancel.coseguro),
         vigenciaDesde: arancel.vigenciaDesde ?? '',
         vigenciaHasta: arancel.vigenciaHasta ?? '',
       });
-      afterNextRender(() => this.enfocar('#editar-arancel-total'), { injector: this.injector });
+      afterNextRender(() => this.enfocar('#editar-arancel-financiador'), {
+        injector: this.injector,
+      });
     }
   }
 
@@ -508,17 +515,15 @@ export class ArancelesDelConvenioPage {
   }
 
   protected mostrarErrorAlta(
-    campo: 'practicaId' | 'importeTotal' | 'importeFinanciador' | 'coseguro' | 'vigenciaDesde',
+    campo: 'practicaId' | 'importeFinanciador' | 'vigenciaDesde',
   ): boolean {
     const control = this.formularioAlta.controls[campo];
     return control.invalid && (control.touched || this.intentos() > 0);
   }
 
   /**
-   * Da de alta un arancel.
-   *
-   * <p>Los tres importes se validan <b>como terna</b> antes de mandar: el backend lo hace igual y
-   * es la autoridad, pero su `400` no puede senalar cual de los tres está mal escrito.
+   * Da de alta un arancel con lo que paga la obra social. El coseguro no se carga: lo calcula el
+   * backend al cerrar cada sesion (precio de la actividad menos este importe, contrato 0.185.0).
    */
   protected enviarAlta(): void {
     const consultorioId = this.tenantContext.consultorioId();
@@ -533,28 +538,15 @@ export class ArancelesDelConvenioPage {
       this.enfocar(
         this.formularioAlta.controls.practicaId.invalid
           ? '#alta-arancel-practica'
-          : '#alta-arancel-total',
+          : '#alta-arancel-financiador',
       );
       return;
     }
 
     const valores = this.formularioAlta.getRawValue();
-    const total = Number(valores.importeTotal);
-    const financiador = Number(valores.importeFinanciador);
-    const coseguro = Number(valores.coseguro);
-
-    this.errorImportes.set(null);
-    if (!importesCuadran(total, financiador, coseguro)) {
-      this.errorImportes.set(mensajeDeTerna(total, financiador, coseguro));
-      this.enfocar('#alta-arancel-financiador');
-      return;
-    }
-
     const cuerpo: CreateArancelRequest = {
       practicaId: Number(valores.practicaId),
-      importeTotal: total,
-      importeFinanciador: financiador,
-      coseguro,
+      importeFinanciador: Number(valores.importeFinanciador),
       vigenciaDesde: valores.vigenciaDesde,
     };
     if (valores.vigenciaHasta !== '') {
@@ -636,11 +628,6 @@ export class ArancelesDelConvenioPage {
 
   /**
    * Arma el cuerpo de la edicion: lo que cambio y la `expectedVersion`.
-   *
-   * <p><b>Los importes viajan los tres o ninguno</b>, aunque solo uno haya cambiado. El backend
-   * los valida como terna justamente por eso: subir el total sin repartir la diferencia rompe la
-   * invariante economica sin que nadie lo note, y es el descuido tipico. Mandar los tres hace que
-   * el rechazo llegue con el conjunto completo delante.
    */
   private armarCambios(): UpdateArancelRequest | null {
     const original = this.original();
@@ -657,38 +644,16 @@ export class ArancelesDelConvenioPage {
     const valores = this.formularioEdicion.getRawValue();
     const cambios: UpdateArancelRequest = { expectedVersion: version };
 
-    const total = numeroDeclarado(valores.importeTotal);
     const financiador = numeroDeclarado(valores.importeFinanciador);
-    const coseguro = numeroDeclarado(valores.coseguro);
-    const tocoImportes =
-      valores.importeTotal !== comoTexto(original.importeTotal) ||
-      valores.importeFinanciador !== comoTexto(original.importeFinanciador) ||
-      valores.coseguro !== comoTexto(original.coseguro);
-
-    if (tocoImportes) {
-      // Un importe borrado entrega `null`, no `''`: sin esta guarda `Number(null)` daba `0`, la
-      // terna `0 = 0 + 0` cuadraba, el contrato acepta `minimum: 0.00` y el arancel quedaba en
-      // cero pesos CON cartel de exito. Es el unico de los cuatro campos numericos del repo que
-      // no terminaba en un 400.
-      if (total === null || financiador === null || coseguro === null) {
+    if (valores.importeFinanciador !== comoTexto(original.importeFinanciador)) {
+      // Un importe borrado entrega `null`, no `''`: sin esta guarda `Number(null)` daba `0`, el
+      // contrato acepta `minimum: 0.00` y el arancel quedaba en cero pesos CON cartel de exito.
+      if (financiador === null) {
         this.errorImportes.set(MENSAJE_IMPORTE_VACIO);
-        this.enfocar(
-          total === null
-            ? '#editar-arancel-total'
-            : financiador === null
-              ? '#editar-arancel-financiador'
-              : '#editar-arancel-coseguro',
-        );
-        return null;
-      }
-      if (!importesCuadran(total, financiador, coseguro)) {
-        this.errorImportes.set(mensajeDeTerna(total, financiador, coseguro));
         this.enfocar('#editar-arancel-financiador');
         return null;
       }
-      cambios.importeTotal = total;
       cambios.importeFinanciador = financiador;
-      cambios.coseguro = coseguro;
     }
 
     if (valores.vigenciaDesde !== '' && valores.vigenciaDesde !== (original.vigenciaDesde ?? '')) {
@@ -761,6 +726,60 @@ export class ArancelesDelConvenioPage {
    * <p>Un fallo aca <b>si</b> se nota, y por eso la plantilla lo dice: sin moneda los importes se
    * muestran sin unidad. Se prefiere una grilla con la aclaracion antes que una pantalla caida.
    */
+  protected empezarAEditarTope(): void {
+    const tope = this.convenio()?.limiteSesionesMensual;
+    this.topeTipeado.set(tope === undefined || tope === null ? '' : String(tope));
+    this.editandoTope.set(true);
+  }
+
+  /**
+   * Guarda el tope de sesiones por mes del convenio. Vacío lo quita. Pasado el tope en el mes, el
+   * cierre de la sesión la cobra como particular (contrato 0.187.0).
+   */
+  protected guardarTope(): void {
+    const consultorioId = this.tenantContext.consultorioId();
+    const convenio = this.convenio();
+    if (consultorioId === null || convenio === null || this.guardandoTope()) {
+      return;
+    }
+    const texto = this.topeTipeado().trim();
+    const tope = texto === '' ? null : Number(texto);
+    if (tope !== null && (!Number.isInteger(tope) || tope < 1)) {
+      this.avisos.error('El tope tiene que ser un número entero mayor que cero', {
+        descripcion: 'Dejalo vacío para que el plan cubra sin límite.',
+      });
+      return;
+    }
+    this.guardandoTope.set(true);
+    this.api
+      .editarConvenio(consultorioId, this.convenioId, {
+        expectedVersion: convenio.version ?? 0,
+        ...(tope === null
+          ? { limpiarLimiteSesionesMensual: true }
+          : { limiteSesionesMensual: tope }),
+      })
+      .subscribe({
+        next: (actualizado) => {
+          this.guardandoTope.set(false);
+          this.editandoTope.set(false);
+          this.convenio.set(actualizado);
+          this.avisos.exito(tope === null ? 'Tope quitado' : 'Tope guardado', {
+            descripcion:
+              tope === null
+                ? 'El plan cubre todas las sesiones del mes.'
+                : `Desde la sesión ${tope + 1} del mes, se cobra como particular.`,
+          });
+        },
+        error: () => {
+          this.guardandoTope.set(false);
+          this.avisos.error('No pudimos guardar el tope', {
+            descripcion: 'Puede que otra persona lo haya cambiado. Recargá y probá de nuevo.',
+          });
+          this.cargarConvenio();
+        },
+      });
+  }
+
   private cargarConvenio(): void {
     const consultorioId = this.tenantContext.consultorioId();
     if (consultorioId === null) {
@@ -871,35 +890,13 @@ export class ArancelesDelConvenioPage {
  * El aviso de un importe borrado.
  *
  * <p>Se dice "borraste" y no "es invalido" porque el campo vacio <b>no</b> es un error de formato:
- * es un dato que falta, y los tres se mandan como terna aunque cambie uno solo.
+ * es un dato que falta.
  */
 const MENSAJE_IMPORTE_VACIO =
-  'Los tres importes tienen que tener un valor. Dejar uno en blanco no es "no lo cambies": los ' +
-  'tres viajan juntos, así que un campo vacío guardaria el arancel en cero. Volvé a escribir el ' +
-  'importe, o cerra el panel para dejarlo como estaba.';
+  'Lo que paga la obra social tiene que tener un valor: un campo vacío guardaría el arancel en ' +
+  'cero. Volvé a escribir el importe, o cerrá el panel para dejarlo como estaba.';
 
 /** Un numero del backend como texto para un `input`, o `''` si no vino. */
 function comoTexto(valor: number | undefined | null): string {
   return valor === undefined || valor === null ? '' : String(valor);
-}
-
-/**
- * El mensaje de la terna que no cuadra, con la diferencia calculada.
- *
- * <p>Decir "no suman" sin decir cuanto falta obliga al usuario a hacer la resta a mano sobre tres
- * campos que ya tiene delante. La diferencia es la unica informacion accionable.
- */
-function mensajeDeTerna(total: number, financiador: number, coseguro: number): string {
-  const diferencia = Math.round((total - financiador - coseguro) * 100) / 100;
-  const detalle = Number.isFinite(diferencia)
-    ? ` Hoy la suma de las partes difiere del total en ${diferencia}.`
-    : '';
-  return (
-    'Los tres importes tienen que cuadrar: lo que pone el financiador mas el coseguro del ' +
-    'paciente tiene que dar exactamente el total.' +
-    detalle +
-    ' No hay porcentaje de cobertura a proposito: un porcentaje obliga a redondear, y el redondeo ' +
-    'de un arancel es la diferencia de un centavo que aparece meses después en una presentación ' +
-    'rechazada.'
-  );
 }

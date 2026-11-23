@@ -123,12 +123,57 @@ export function servicioInactivo(servicio: ServicioResponse): boolean {
 /**
  * Como se nombra un servicio en un selector: `Kinesiologia respiratoria (KRES)`.
  *
- * <p>El codigo va al lado del nombre y no en una columna aparte porque en un `select` no hay
- * columnas, y el codigo es lo que el equipo administrativo tiene memorizado.
+ * <p>Solo el nombre: el codigo es un dato interno que el usuario no necesita para elegir. Para
+ * orientarse, el alta agrupa los servicios por categoria ({@link serviciosPorCategoria}).
  */
 export function servicioEnUnaLinea(servicio: ServicioResponse): string {
-  const codigo = servicio.codigo ?? '';
-  return codigo === '' ? (servicio.nombre ?? '') : `${servicio.nombre ?? ''} (${codigo})`;
+  return servicio.nombre ?? servicio.codigo ?? '';
+}
+
+/**
+ * Los esquemas de cobro con nombre y explicacion en palabras (21/11/2026): el selector mostraba el
+ * valor del enum (`POR_PACK`) y nadie sabia que hacia cada uno. `''` es "sin esquema": cada
+ * atencion se cobra al cerrarla, como cualquier sesion.
+ */
+export const ESQUEMAS_DE_COBRO: readonly {
+  readonly valor: string;
+  readonly etiqueta: string;
+  readonly ayuda: string;
+}[] = [
+  {
+    valor: '',
+    etiqueta: 'Sin esquema especial',
+    ayuda: 'Cada atención se cobra al cerrarla, como cualquier sesión.',
+  },
+  {
+    valor: 'POR_SESION',
+    etiqueta: 'Por sesión',
+    ayuda: 'Cada sesión atendida genera su cobro.',
+  },
+  {
+    valor: 'POR_CLASE',
+    etiqueta: 'Por clase asistida',
+    ayuda:
+      'Genera una deuda por cada clase a la que la persona asiste (presente o con demora); la ' +
+      'ausencia no genera deuda.',
+  },
+  {
+    valor: 'POR_PACK',
+    etiqueta: 'Pack de sesiones',
+    ayuda:
+      'La persona compra un pack de varias sesiones y cada asistencia descuenta una. Los packs ' +
+      'se arman en Productos.',
+  },
+  {
+    valor: 'POR_ABONO',
+    etiqueta: 'Abono por período',
+    ayuda: 'La persona paga un abono con un tope de asistencias por período. Se arma en Productos.',
+  },
+];
+
+/** La explicacion del esquema elegido, para la linea de ayuda debajo del selector. */
+export function ayudaDeEsquema(valor: string): string {
+  return ESQUEMAS_DE_COBRO.find((esquema) => esquema.valor === valor)?.ayuda ?? '';
 }
 
 /** Rotulo del grupo de los servicios sin categoria: los propios creados desde cero. */

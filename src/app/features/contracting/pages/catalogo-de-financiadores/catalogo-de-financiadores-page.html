@@ -109,6 +109,17 @@
               </caption>
               <thead>
                 <tr>
+                  @if (puedeAdoptar()) {
+                    <th scope="col" class="celda-marca">
+                      <input
+                        type="checkbox"
+                        aria-label="Marcar todos los de esta página que no están en el centro"
+                        [checked]="todosVisiblesMarcados()"
+                        [disabled]="seleccionablesVisibles().length === 0 || agregandoVarios()"
+                        (change)="alternarVisibles($any($event.target).checked)"
+                      />
+                    </th>
+                  }
                   <th scope="col" appOrdenable [tabla]="tabla" columna="nombre">Financiador</th>
                   <th scope="col" appOrdenable [tabla]="tabla" columna="tipo">Tipo</th>
                   <th scope="col" class="tabla__col--secundaria">CUIT</th>
@@ -122,41 +133,43 @@
               </thead>
               <tbody>
                 @for (entrada of tabla.visibles(); track entrada.id) {
-                  <tr>
+                  <tr
+                    class="fila--clicable"
+                    [class.fila--seleccionada]="abierta() === entrada.id"
+                    (click)="abrir(entrada)"
+                  >
+                    @if (puedeAdoptar()) {
+                      <td class="celda-marca" (click)="$event.stopPropagation()">
+                        @if (!entrada.financiadorAdoptadoId) {
+                          <input
+                            type="checkbox"
+                            [attr.aria-label]="'Marcar ' + entrada.nombre"
+                            [checked]="entrada.id !== undefined && seleccionados().has(entrada.id)"
+                            [disabled]="agregandoVarios()"
+                            (change)="alternar(entrada.id, $any($event.target).checked)"
+                          />
+                        }
+                      </td>
+                    }
                     <th scope="row" class="celda-ancha">
-                      <span class="celda-principal">{{ entrada.nombre }}</span>
+                      <button
+                        type="button"
+                        class="boton-enlace celda-principal"
+                        [attr.aria-label]="'Ver los planes de ' + entrada.nombre"
+                        (click)="$event.stopPropagation(); abrir(entrada)"
+                      >
+                        {{ entrada.nombre }}
+                      </button>
                       <span class="celda-secundaria">Código {{ entrada.codigo }}</span>
                     </th>
                     <td>{{ etiquetaDeTipo(entrada.tipo) }}</td>
                     <td class="tabla__col--secundaria">{{ entrada.cuit || 'Sin CUIT' }}</td>
                     <td class="importe">{{ cantidadDePlanes(entrada) }}</td>
                     <td>
-                      @if (entrada.financiadorAdoptadoId; as copia) {
-                        <span class="marca-estado marca-estado--activa">Ya agregado</span>
-                        <a
-                          class="enlace"
-                          [routerLink]="['/contratacion', 'financiadores', copia, 'planes']"
-                        >
-                          Ver la copia del centro
-                        </a>
-                        @if (entrada.actualizacionDisponible) {
-                          <span class="celda-secundaria">
-                            El catálogo cambio después de agregarlo. La copia del centro no se
-                            actualiza sola: revisala y edita lo que haga falta.
-                          </span>
-                        }
-                      } @else if (puedeAdoptar()) {
-                        <button
-                          type="button"
-                          class="boton boton--secundario boton--chico"
-                          [disabled]="adoptando() !== null"
-                          (click)="adoptar(entrada)"
-                        >
-                          Agregar al centro
-                          <span class="visualmente-oculto">{{ entrada.nombre }}</span>
-                        </button>
+                      @if (entrada.financiadorAdoptadoId) {
+                        <span class="marca-estado marca-estado--activa">En el centro</span>
                       } @else {
-                        <span class="marca-estado marca-estado--neutra">No agregado</span>
+                        <span class="celda-secundaria">No agregado</span>
                       }
                     </td>
                   </tr>
@@ -165,9 +178,106 @@
             </table>
           </div>
 
+          @if (seleccionados().size > 0) {
+            <div class="barra-seleccion" role="status">
+              <span>
+                <b>{{ seleccionados().size }}</b>
+                {{ seleccionados().size === 1 ? 'financiador marcado' : 'financiadores marcados' }}
+              </span>
+              <span class="barra-seleccion__acciones">
+                <button
+                  type="button"
+                  class="boton boton--secundario boton--chico"
+                  [disabled]="agregandoVarios()"
+                  (click)="limpiarSeleccion()"
+                >
+                  Desmarcar
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--chico"
+                  [disabled]="agregandoVarios()"
+                  (click)="agregarSeleccionados()"
+                >
+                  {{
+                    agregandoVarios()
+                      ? 'Agregando…'
+                      : 'Agregar al centro (' + seleccionados().size + ')'
+                  }}
+                </button>
+              </span>
+            </div>
+          }
           <app-pie-de-tabla [tabla]="tabla" etiqueta="Páginas de financiadores" />
         }
       }
     }
   </div>
 </section>
+
+@if (entradaAbierta(); as entrada) {
+  <app-panel-lateral
+    [titulo]="entrada.nombre ?? 'Financiador'"
+    [subtitulo]="'Código ' + entrada.codigo + ' · ' + etiquetaDeTipo(entrada.tipo)"
+    (cerrar)="cerrarPanel()"
+  >
+    @if (entrada.observaciones) {
+      <p>{{ entrada.observaciones }}</p>
+    }
+
+    <h3>
+      {{ cantidadDePlanes(entrada) === 1 ? '1 plan' : cantidadDePlanes(entrada) + ' planes' }}
+    </h3>
+    @if (cantidadDePlanes(entrada) === 0) {
+      <p class="ayuda ayuda--fija">El catálogo no tiene planes cargados para este financiador.</p>
+    } @else {
+      <ul class="lista-planes">
+        @for (plan of entrada.planes; track plan.id) {
+          <li>
+            <span class="celda-principal">{{ plan.nombre }}</span>
+            <span class="celda-secundaria">Código {{ plan.codigo }}</span>
+            @if (plan.descripcion) {
+              <span class="celda-secundaria">{{ plan.descripcion }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (entrada.financiadorAdoptadoId; as copia) {
+      <p>
+        <span class="marca-estado marca-estado--activa">Ya está en el centro</span>
+      </p>
+      @if (entrada.actualizacionDisponible) {
+        <p class="ayuda ayuda--fija">
+          El catálogo cambió después de agregarlo. La copia del centro no se actualiza sola:
+          revisala y editá lo que haga falta.
+        </p>
+      }
+      <div class="acciones">
+        <button type="button" class="boton" (click)="irALosPlanes(copia)">
+          Ver sus planes en el centro
+        </button>
+      </div>
+    } @else if (puedeAdoptar()) {
+      <p class="ayuda ayuda--fija">
+        Se agrega con todos sus planes. Los que el centro no trabaje se dan de baja después desde
+        sus planes.
+      </p>
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton"
+          [disabled]="adoptando() !== null || agregandoVarios()"
+          (click)="adoptar(entrada)"
+        >
+          {{ adoptando() === entrada.id ? 'Agregando…' : 'Agregar al centro' }}
+        </button>
+      </div>
+    } @else {
+      <p class="ayuda ayuda--fija">
+        Agregarlo al centro necesita permiso para administrar convenios en esta sede.
+      </p>
+    }
+  </app-panel-lateral>
+}

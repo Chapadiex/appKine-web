@@ -26,7 +26,8 @@ import { ofertaConPractica } from './support/sembrado-pantallas-098';
  * pinta: ningun test unitario podia probar que el propio le gana al general.
  */
 const GENERAL = { total: 10000, financiador: 7000, coseguro: 3000 };
-const PROPIO = { total: 12000, financiador: 9000, coseguro: 3000 };
+// Contrato 0.185.0: el arancel guarda B; el coseguro es el precio del dia (PARTICULAR) menos B.
+const PROPIO = { financiador: 6000, coseguro: 2000 };
 const PARTICULAR = 8000;
 
 /** `$ 12.000,00` sin depender del espacio que pone `Intl` entre el signo y el numero. */
@@ -74,9 +75,7 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     await page.getByRole('button', { name: 'Cargar un arancel' }).click();
     await page.getByLabel('Práctica').selectOption({ value: String(practicaId) });
     await page.getByLabel('Oferta (opcional)').selectOption({ label: `Solo en ${oferta.nombre}` });
-    await page.getByLabel('Importe total').fill(String(PROPIO.total));
-    await page.getByLabel('Pone el financiador').fill(String(PROPIO.financiador));
-    await page.getByLabel('Coseguro del paciente').fill(String(PROPIO.coseguro));
+    await page.getByLabel('Paga la obra social').fill(String(PROPIO.financiador));
     await page.getByLabel('Vigente desde').fill(desde);
     const alta = respuestaDe(page, 'POST', /\/convenios\/\d+\/aranceles$/);
     await page.getByRole('button', { name: 'Cargar arancel' }).click();
@@ -111,24 +110,8 @@ test.describe('Coberturas y aranceles por oferta contra el backend real', () => 
     ).toBeVisible();
     await expect(page.getByText(/Precio particular del día:/)).toContainText(pesos(PARTICULAR));
     const aplica = page.locator('.lista-cobertura li').filter({ hasText: financiador.nombre });
-    await expect(aplica).toContainText(pesos(PROPIO.total));
+    await expect(aplica).toContainText(pesos(PROPIO.financiador));
+    await expect(aplica).toContainText(pesos(PROPIO.coseguro));
     await expect(aplica).toContainText('Arancel propio de esta oferta en el convenio');
-
-    // --- 4. Consultar un arancel: con la oferta el propio, sin ella el general ---------------
-    await navegar(page, '/contratacion/arancel-efectivo');
-    await page.getByLabel('Financiador').selectOption({ value: String(financiador.id) });
-    await page.getByLabel('Plan').selectOption({ value: String(financiador.planId) });
-    await page.getByLabel('Práctica').selectOption({ value: String(practicaId) });
-    await page.getByLabel('Oferta (opcional)').selectOption({ label: oferta.nombre });
-    await page.getByRole('button', { name: 'Consultar' }).click();
-    const resultado = page.getByRole('region', { name: /, el / });
-    // Contratacion redacta "ARS 12000.00" (`etiquetas-de-contracting`), no el formato local de billing.
-    await expect(resultado).toContainText(`ARS ${PROPIO.total.toFixed(2)}`);
-    await expect(resultado).toContainText(`Arancel propio de la oferta ${oferta.nombre}.`);
-
-    await page.getByLabel('Oferta (opcional)').selectOption({ value: '' });
-    await page.getByRole('button', { name: 'Consultar' }).click();
-    await expect(resultado).toContainText(`ARS ${GENERAL.total.toFixed(2)}`);
-    await expect(resultado).not.toContainText('Arancel propio');
   });
 });

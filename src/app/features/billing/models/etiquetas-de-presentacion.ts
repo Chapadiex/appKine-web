@@ -29,9 +29,9 @@ export function estadoDePresentacionEnPalabras(estado: string | undefined): stri
     case PresentacionEstadoEnum.PRESENTADA:
       return 'Presentada';
     case PresentacionEstadoEnum.FACTURADA:
-      return 'Facturada';
+      return 'Presentada con factura';
     case PresentacionEstadoEnum.CONCILIADA:
-      return 'Conciliada';
+      return 'Pagada';
     case PresentacionEstadoEnum.ANULADA:
       return 'Anulada';
     default:
