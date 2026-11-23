@@ -46,21 +46,21 @@ export interface ArancelEfectivoResponse {
      */
     convenioVigenciaHasta?: string;
     /**
-     * La parte que paga el paciente
+     * Lo que paga el paciente: precio de la oferta menos B, nunca negativo. Nulo si no se paso la oferta
      */
-    coseguro?: number;
+    coseguro?: number | null;
     /**
      * Dia contra el que se resolvio
      */
     fecha?: string;
     /**
-     * La parte que paga el financiador
+     * Lo que paga el financiador (B)
      */
     importeFinanciador?: number;
     /**
-     * Lo que vale la practica bajo ese convenio
+     * Lo que paga en total la practica: financiador mas coseguro. Nulo si no se paso la oferta, porque sin su precio no se calcula
      */
-    importeTotal?: number;
+    importeTotal?: number | null;
     /**
      * Tope de sesiones por mes pactado. Null = sin tope
      */

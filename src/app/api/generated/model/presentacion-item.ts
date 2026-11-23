@@ -14,6 +14,10 @@
  */
 export interface PresentacionItem { 
     /**
+     * Numero de la autorizacion que consumio la sesion; varias separadas por coma
+     */
+    autorizacionNumero?: string | null;
+    /**
      * Que se presto, al momento de devengar
      */
     concepto?: string;
@@ -40,8 +44,32 @@ export interface PresentacionItem {
      * Obligatorio al debitar
      */
     motivoDebito?: string;
+    /**
+     * Numero de afiliado de la cobertura con la que se atendio
+     */
+    numeroAfiliado?: string | null;
     obligacionId?: number;
+    /**
+     * Tipo y numero de documento. Solo en el detalle del lote
+     */
+    pacienteDocumento?: string | null;
+    /**
+     * Apellido y nombre del paciente. Solo en el detalle del lote
+     */
+    pacienteNombre?: string | null;
     personaId?: number;
+    /**
+     * Plan de la cobertura, como estaba al cargarla
+     */
+    planNombre?: string | null;
+    /**
+     * Codigo de la practica en el catalogo
+     */
+    practicaCodigo?: string | null;
+    /**
+     * Nombre de la practica
+     */
+    practicaNombre?: string | null;
     /**
      * Referencia de trazabilidad congelada. La sesion no se toca.
      */

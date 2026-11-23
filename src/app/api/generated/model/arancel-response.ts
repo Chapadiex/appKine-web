@@ -18,9 +18,10 @@ export interface ArancelResponse {
      */
     convenioId?: number;
     /**
-     * La parte que paga el paciente
+     * OBSOLETO desde 0.189.0: historico; nulo en los nuevos. El coseguro es precio de la oferta menos importeFinanciador
+     * @deprecated
      */
-    coseguro?: number;
+    coseguro?: number | null;
     /**
      * Motivo declarado de la baja. Null mientras este vigente
      */
@@ -38,13 +39,14 @@ export interface ArancelResponse {
      */
     id?: number;
     /**
-     * La parte que paga el financiador
+     * Lo que paga el financiador por la practica (B)
      */
     importeFinanciador?: number;
     /**
-     * Lo que vale la practica bajo este convenio
+     * OBSOLETO desde 0.189.0: historico de aranceles anteriores; nulo en los nuevos
+     * @deprecated
      */
-    importeTotal?: number;
+    importeTotal?: number | null;
     /**
      * ISO 4217, heredada del convenio
      */

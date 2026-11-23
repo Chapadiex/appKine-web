@@ -63,16 +63,11 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
     }
 
     await deAUnLogin(() => ingresarAlCentro(page, emailPaciente, centro));
-    for (const ruta of [
-      '/contratacion/convenios',
-      '/contratacion/financiadores',
-      '/contratacion/arancel-efectivo',
-      '/catalogo/especialidades',
-    ]) {
+    for (const ruta of ['/contratacion/financiadores', '/catalogo/especialidades']) {
       await esperarSinPermiso(page, ruta, centro.nombreCentro);
     }
     await expect(
-      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Financiadores', includeHidden: true, exact: true }),
     ).toHaveCount(0);
     await expect(
       page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
@@ -89,16 +84,14 @@ test.describe('Permisos de convenios y catalogo por rol contra el backend real (
 
     await deAUnLogin(() => ingresarAlCentro(page, centro.emailProfesional, centro));
     await expect(
-      page.getByRole('link', { name: 'Convenios de la sede', includeHidden: true, exact: true }),
+      page.getByRole('link', { name: 'Financiadores', includeHidden: true, exact: true }),
     ).toHaveCount(1);
     await expect(
       page.getByRole('link', { name: 'Catálogo clínico', includeHidden: true, exact: true }),
     ).toHaveCount(1);
 
-    await irA(page, '/contratacion/convenios');
-    await expect(
-      page.getByRole('heading', { name: 'Convenios de la sede', level: 1 }),
-    ).toBeVisible();
+    await irA(page, '/contratacion/financiadores');
+    await expect(page.getByRole('heading', { name: 'Financiadores', level: 1 })).toBeVisible();
     await irA(page, '/catalogo/especialidades');
     await expect(page.getByRole('heading', { name: 'Catálogo clínico', level: 1 })).toBeVisible();
     await expect(

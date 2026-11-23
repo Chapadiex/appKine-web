@@ -113,10 +113,8 @@ describe('servicioInactivo', () => {
 });
 
 describe('servicioEnUnaLinea', () => {
-  it('el código acompania al nombre, que es lo que el equipo tiene memorizado', () => {
-    expect(servicioEnUnaLinea(servicio({ codigo: 'KRES' }))).toBe(
-      'Kinesiologia respiratoria (KRES)',
-    );
+  it('muestra solo el nombre: el código es interno', () => {
+    expect(servicioEnUnaLinea(servicio({ codigo: 'KRES' }))).toBe('Kinesiologia respiratoria');
   });
 
   it('sin código no deja un parentesis vacío colgando', () => {

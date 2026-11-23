@@ -22,9 +22,13 @@ export interface UpdateConvenioRequest {
      */
     expectedVersion: number;
     /**
-     * Tope de sesiones por mes. Cero no es un valor valido
+     * Tope de sesiones por mes y por paciente. Pasado el tope, la sesion se cobra como particular. Cero no es un valor valido
      */
     limiteSesionesMensual?: number;
+    /**
+     * true quita el tope de sesiones por mes. Gana sobre limiteSesionesMensual
+     */
+    limpiarLimiteSesionesMensual?: boolean;
     /**
      * Como se pacto la prestacion
      */

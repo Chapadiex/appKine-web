@@ -54,7 +54,7 @@
         "numero": 4
       },
       {
-        "selector": "#alta-oferta-capacidad",
+        "selector": "#alta-oferta-precio",
         "numero": 5
       },
       {
@@ -129,41 +129,6 @@
   },
   {
     "ficha": "convenios",
-    "nombre": "firmar-convenio",
-    "ruta": "/contratacion/convenios",
-    "preparacion": "Con una cuenta con convenio:manage y al menos un financiador con plan activo, tocar 'Firmar un convenio' y esperar el panel 'Nuevo convenio de esta sede'.",
-    "recorte": "dialog.panel-lateral[open]",
-    "marcas": [
-      {
-        "selector": "#alta-convenio-financiador",
-        "numero": 2
-      },
-      {
-        "selector": "#alta-convenio-codigo",
-        "numero": 3
-      },
-      {
-        "selector": "#alta-convenio-modalidad",
-        "numero": 4
-      },
-      {
-        "selector": "#alta-convenio-desde",
-        "numero": 5
-      },
-      {
-        "selector": "dialog.panel-lateral[open] form button[type=submit]",
-        "numero": 6
-      }
-    ],
-    "pasos": [
-      {
-        "accion": "click",
-        "selector": "role=button[name=\"Firmar un convenio\"]"
-      }
-    ]
-  },
-  {
-    "ficha": "convenios",
     "nombre": "nuevo-arancel",
     "ruta": "/contratacion/convenios/:convenioId/aranceles",
     "preparacion": "Usar un convenio activo sembrado; tocar 'Cargar un arancel' y esperar el panel 'Nuevo arancel'.",
@@ -184,7 +149,7 @@
         "numero": 2
       },
       {
-        "selector": "#alta-arancel-total",
+        "selector": "#alta-arancel-financiador",
         "numero": 3
       },
       {
@@ -232,7 +197,7 @@
     "pasos": [
       {
         "accion": "esperar",
-        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico"
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]"
       }
     ],
     "recorte": "section[aria-label='Financiadores del catálogo']",
@@ -242,7 +207,7 @@
         "numero": 2
       },
       {
-        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child button.boton--chico",
+        "selector": "section[aria-label='Financiadores del catálogo'] tbody tr:first-child input[type=checkbox]",
         "numero": 3
       }
     ]
@@ -275,52 +240,6 @@
       {
         "accion": "click",
         "selector": "role=button[name=\"Dar de alta un financiador\"]"
-      }
-    ]
-  },
-  {
-    "ficha": "arancel-efectivo",
-    "nombre": "consultar",
-    "ruta": "/contratacion/arancel-efectivo",
-    "preparacion": "Elegir el financiador y el plan sembrados para que el formulario muestre valores.",
-    "pasos": [
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-financiador",
-        "valor": ":financiadorId"
-      },
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-plan",
-        "valor": ":planId"
-      },
-      {
-        "accion": "seleccionar",
-        "selector": "#consulta-practica",
-        "valor": ":practicaId"
-      }
-    ],
-    "recorte": "section[aria-labelledby=titulo-consulta]",
-    "marcas": [
-      {
-        "selector": "#consulta-financiador",
-        "numero": 2
-      },
-      {
-        "selector": "#consulta-plan",
-        "numero": 3
-      },
-      {
-        "selector": "#consulta-practica",
-        "numero": 4
-      },
-      {
-        "selector": "#consulta-fecha",
-        "numero": 5
-      },
-      {
-        "selector": "section[aria-labelledby=titulo-consulta] button[type=submit]",
-        "numero": 6
       }
     ]
   },

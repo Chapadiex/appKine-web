@@ -30,9 +30,9 @@ const EL_CONVENIO = {
 };
 
 const PLANILLA = [
-  'codigoPractica;importeTotal;importeFinanciador;coseguro;vigenciaDesde',
-  'KIN-01;12000;9000;3000;2027-01-01',
-  'KIN-02;8000;8000;0;2027-01-01',
+  'codigoPractica;importeFinanciador;vigenciaDesde',
+  'KIN-01;9000;2027-01-01',
+  'KIN-02;8000;2027-01-01',
 ].join('\n');
 
 const TODAS_ENTRAN = {
@@ -94,10 +94,7 @@ describe('ImportarArancelesPage', () => {
 
   it('el formato malo se marca por linea y no deja pedir la vista previa', async () => {
     const fixture = await montar();
-    pegar(
-      fixture,
-      'codigoPractica;importeTotal;importeFinanciador;coseguro;vigenciaDesde\nKIN-01;1,234;1;0;2027-01-01',
-    );
+    pegar(fixture, 'codigoPractica;importeFinanciador;vigenciaDesde\nKIN-01;1,234;2027-01-01');
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Linea 2:');
@@ -117,16 +114,12 @@ describe('ImportarArancelesPage', () => {
       filas: [
         {
           codigoPractica: 'KIN-01',
-          importeTotal: 12000,
           importeFinanciador: 9000,
-          coseguro: 3000,
           vigenciaDesde: '2027-01-01',
         },
         {
           codigoPractica: 'KIN-02',
-          importeTotal: 8000,
           importeFinanciador: 8000,
-          coseguro: 0,
           vigenciaDesde: '2027-01-01',
         },
       ],
@@ -137,7 +130,7 @@ describe('ImportarArancelesPage', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Las 2 filas entran');
     expect(texto).toContain('KIN-01 (#55)');
-    expect(texto).toContain('ARS 12000.00');
+    expect(texto).toContain('ARS 9000.00');
     expect(pasoActual(fixture)).toBe('Vista previa');
     expect(boton(fixture, 'Continuar').disabled).toBe(false);
 

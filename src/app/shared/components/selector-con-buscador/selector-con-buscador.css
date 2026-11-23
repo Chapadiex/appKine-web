@@ -1,0 +1,45 @@
+/*
+ * Selector con buscador y grupos. Toma el campo, la lista flotante y las opciones de
+ * buscador-con-alta.css (la clase del host las activa) y suma lo propio: el titulo de cada grupo,
+ * la opcion elegida y el vacio.
+ */
+
+.selector-con-buscador__lista {
+  max-height: 20rem;
+}
+
+/* El titulo de la categoria se nota: mayusculas chicas, peso y una linea que separa los grupos. */
+.selector-con-buscador__grupo {
+  position: sticky;
+  top: calc(-1 * var(--esp-2));
+  z-index: 1;
+  margin-top: var(--esp-3);
+  padding: var(--esp-3) var(--esp-5);
+  border-bottom: var(--borde-fino) solid var(--color-borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: var(--tipo-xs, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.selector-con-buscador__grupo:first-child {
+  margin-top: 0;
+}
+
+.selector-con-buscador__opcion--elegida {
+  font-weight: var(--peso-medio, 600);
+}
+
+.selector-con-buscador__opcion--elegida::after {
+  content: '✓';
+  margin-left: auto;
+  color: var(--color-enlace);
+}
+
+.selector-con-buscador__vacio {
+  padding: var(--esp-4) var(--esp-5);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}

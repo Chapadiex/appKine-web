@@ -25,9 +25,18 @@ export interface CoberturaParaOfertaArancel {
      * Convenio del que salio
      */
     convenioId?: number;
-    coseguro?: number;
+    /**
+     * Precio de la oferta menos B, nunca negativo. Nulo si la oferta no tiene precio
+     */
+    coseguro?: number | null;
+    /**
+     * Lo que paga el financiador (B)
+     */
     importeFinanciador?: number;
-    importeTotal?: number;
+    /**
+     * Financiador mas coseguro. Nulo si la oferta no tiene precio
+     */
+    importeTotal?: number | null;
     moneda?: string;
     /**
      * Null si es el arancel general de la practica; el id de la oferta si es el arancel especifico de la oferta (RF-M16-008)
