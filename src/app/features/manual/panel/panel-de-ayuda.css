@@ -118,12 +118,6 @@
   color: var(--color-texto);
 }
 
-.ayuda__buscador input:focus,
-.ayuda__buscador input:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .ayuda__buscador {
     transition: none;
