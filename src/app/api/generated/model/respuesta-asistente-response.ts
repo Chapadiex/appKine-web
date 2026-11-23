@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AccionPropuesta } from './accion-propuesta';
 import { InterpretacionDto } from './interpretacion-dto';
 import { OpcionDePersonaDelAsistente } from './opcion-de-persona-del-asistente';
 
@@ -15,6 +16,10 @@ import { OpcionDePersonaDelAsistente } from './opcion-de-persona-del-asistente';
  * La respuesta del asistente de datos
  */
 export interface RespuestaAsistenteResponse { 
+    /**
+     * Con `resultado` PROPUESTA: la accion que se propone, para revisarla y confirmarla con `confirmarAccionDelAsistente`. Nada se grabo todavia; null en las consultas
+     */
+    accion?: AccionPropuesta;
     advertencias: Array<string>;
     /**
      * El SELECT que respondio una consulta libre (la pregunta no entraba en ninguna intencion y el usuario tiene asistente:sql); null en las demas
@@ -48,7 +53,8 @@ export enum RespuestaAsistenteResponseResultadoEnum {
     FALTA_PERSONA = 'FALTA_PERSONA',
     PERSONA_NO_ENCONTRADA = 'PERSONA_NO_ENCONTRADA',
     SIN_PERMISO = 'SIN_PERMISO',
-    FUERA_DE_ALCANCE = 'FUERA_DE_ALCANCE'
+    FUERA_DE_ALCANCE = 'FUERA_DE_ALCANCE',
+    PROPUESTA = 'PROPUESTA'
 };
 
 

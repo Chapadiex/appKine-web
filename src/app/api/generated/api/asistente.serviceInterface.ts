@@ -11,17 +11,30 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { ConfirmarAccion } from '../model/models';
 import { ConsultaAsistenteRequest } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { RespuestaAsistenteResponse } from '../model/models';
+import { ResultadoDeAccion } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
 
+export interface ConfirmarAccionDelAsistenteRequestParams {
+    consultorioId: number;
+    accionId: number;
+    confirmarAccion: ConfirmarAccion;
+}
+
 export interface ConsultarAsistenteRequestParams {
     consultorioId: number;
     consultaAsistenteRequest: ConsultaAsistenteRequest;
+}
+
+export interface DescartarAccionDelAsistenteRequestParams {
+    consultorioId: number;
+    accionId: number;
 }
 
 
@@ -30,11 +43,27 @@ export interface AsistenteServiceInterface {
     configuration: Configuration;
 
     /**
+     * Confirmar una accion propuesta por el asistente
+     * Graba la accion con lo que quedo en la tarjeta. Requiere &#x60;asistente:acciones&#x60;, el interruptor &#x60;akine.asistente.acciones.enabled&#x60; y, ademas, el permiso de la operacion que se graba (&#x60;asistencia:manage&#x60;, &#x60;cobro:register&#x60;, &#x60;sesion:register&#x60;, &#x60;turno:manage&#x60; o &#x60;paciente:manage&#x60;): sin ese permiso responde 200 con &#x60;estado&#x60; RECHAZADA.  Solo la confirma la cuenta que la pidio, en la misma sede, antes de que venza. **Confirmar dos veces no graba de nuevo:** la segunda responde CONFIRMADA con el mismo &#x60;enlace&#x60; y un &#x60;texto&#x60; que lo dice. Un rechazo del negocio (la caja esta cerrada, la ficha cambio) vuelve con &#x60;estado&#x60; RECHAZADA y la propuesta sigue abierta para corregirla y reintentar.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/acciones/{accionId}/confirmacion
+* @param requestParameters
+     */
+    confirmarAccionDelAsistente(requestParameters: ConfirmarAccionDelAsistenteRequestParams, extraHttpRequestParams?: any): Observable<ResultadoDeAccion>;
+
+    /**
      * Preguntarle al asistente de datos
-     * Responde una pregunta sobre los datos de la sede: si una persona vino o tiene la sesion cargada, quienes vienen un dia, quienes fueron a una clase y los numeros de los reportes ECONOMICO, TURNOS y CLASES. Requiere &#x60;asistente:use&#x60; y el interruptor &#x60;akine.asistente.enabled&#x60;.  Un modelo de lenguaje local **solo interpreta** la pregunta; el texto se arma con plantillas a partir de los datos, y ningun dato de la sede llega al modelo. Cada respuesta corre con los permisos del usuario: lo que no puede ver en pantalla vuelve con &#x60;resultado&#x60; SIN_PERMISO, con 200.  Si no esta claro de que persona se habla, &#x60;resultado&#x60; es ACLARACION y &#x60;opciones&#x60; trae hasta cinco: el cliente reenvia la misma pregunta con el &#x60;personaId&#x60; elegido. El servidor no guarda la conversacion: &#x60;historial&#x60; lleva las preguntas anteriores con la &#x60;interpretacion&#x60; que devolvio cada una.
+     * Responde una pregunta sobre los datos de la sede: si una persona vino o tiene la sesion cargada, quienes vienen un dia, quienes fueron a una clase y los numeros de los reportes ECONOMICO, TURNOS y CLASES. Requiere &#x60;asistente:use&#x60; y el interruptor &#x60;akine.asistente.enabled&#x60;.  Un modelo de lenguaje local **solo interpreta** la pregunta; el texto se arma con plantillas a partir de los datos, y ningun dato de la sede llega al modelo. Cada respuesta corre con los permisos del usuario: lo que no puede ver en pantalla vuelve con &#x60;resultado&#x60; SIN_PERMISO, con 200.  Si no esta claro de que persona se habla, &#x60;resultado&#x60; es ACLARACION y &#x60;opciones&#x60; trae hasta cinco: el cliente reenvia la misma pregunta con el &#x60;personaId&#x60; elegido. El servidor no guarda la conversacion: &#x60;historial&#x60; lleva las preguntas anteriores con la &#x60;interpretacion&#x60; que devolvio cada una.  Con &#x60;akine.asistente.acciones.enabled&#x60; y &#x60;asistente:acciones&#x60;, una frase que cuenta o pide algo (\&quot;vinieron todos menos Maria\&quot;, \&quot;Juan pago 15.000 en efectivo\&quot;) no se responde: &#x60;resultado&#x60; es PROPUESTA y &#x60;accion&#x60; trae una tarjeta para revisar. **Nada se graba** hasta &#x60;confirmarAccionDelAsistente&#x60;.
      * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/consultas
 * @param requestParameters
      */
     consultarAsistente(requestParameters: ConsultarAsistenteRequestParams, extraHttpRequestParams?: any): Observable<RespuestaAsistenteResponse>;
+
+    /**
+     * Descartar una accion propuesta por el asistente
+     * No graba nada. Descartar una accion que ya no esta propuesta no hace nada. Requiere &#x60;asistente:acciones&#x60;.
+     * @endpoint post /api/v1/consultorios/{consultorioId}/asistente/acciones/{accionId}/descarte
+* @param requestParameters
+     */
+    descartarAccionDelAsistente(requestParameters: DescartarAccionDelAsistenteRequestParams, extraHttpRequestParams?: any): Observable<{}>;
 
 }

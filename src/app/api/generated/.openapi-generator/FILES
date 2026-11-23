@@ -159,6 +159,7 @@ model/accept-invitacion-request.ts
 model/accepted-invitacion-response.ts
 model/accepted-response.ts
 model/access-token-response.ts
+model/accion-propuesta.ts
 model/account-response.ts
 model/account-state-change-request.ts
 model/aceptar-terminos-request.ts
@@ -258,6 +259,7 @@ model/change-membership-request.ts
 model/cierre-de-sede-en-historial.ts
 model/cierre-de-sesion.ts
 model/clase-en-agenda.ts
+model/clase-en-tarjeta.ts
 model/clase-excluida-de-honorarios.ts
 model/clase.ts
 model/clasificar-adjunto-request.ts
@@ -269,10 +271,12 @@ model/cobertura-para-oferta-no-aplicable.ts
 model/cobertura-para-oferta-practica.ts
 model/cobertura-para-oferta-response.ts
 model/cobertura-response.ts
+model/cobro-de-suscripcion-response.ts
 model/cobro.ts
 model/colores-de-interfaz.ts
 model/comparacion-de-mediciones.ts
 model/configuracion-de-renovacion-de-abono.ts
+model/confirmar-accion.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
 model/consulta-asistente-request.ts
@@ -327,6 +331,7 @@ model/cuentas-de-plataforma-response.ts
 model/cupos.ts
 model/dar-de-baja-tratamiento.ts
 model/datos-administrativos-de-historia-response.ts
+model/datos-de-persona.ts
 model/datos-declarados-response.ts
 model/datos-fiscales-efectivos-response.ts
 model/deactivate-bloque-request.ts
@@ -435,6 +440,7 @@ model/importacion-aranceles-response.ts
 model/importar-aranceles-request.ts
 model/imputacion-aplicada.ts
 model/imputacion-de-cobro.ts
+model/imputacion-en-tarjeta.ts
 model/imputar-saldo-a-favor.ts
 model/indicador-de-reporte-response.ts
 model/indicador-response.ts
@@ -454,6 +460,7 @@ model/intervalo-horario-response.ts
 model/invitacion-preview-response.ts
 model/invitacion-response.ts
 model/invitacion-token-request.ts
+model/item-de-asistencia.ts
 model/item-de-atencion-grupal.ts
 model/item-de-lote-de-asistencia.ts
 model/jornada-caja.ts
@@ -504,6 +511,7 @@ model/ocurrencia-prevista.ts
 model/oferta-response.ts
 model/opcion-de-aclaracion-response.ts
 model/opcion-de-persona-del-asistente.ts
+model/opcion-de-tarjeta.ts
 model/operativo-de-turno.ts
 model/orden-response.ts
 model/organization-response.ts
@@ -577,6 +585,7 @@ model/registrar-antecedente-request.ts
 model/registrar-asistencia-lote.ts
 model/registrar-asistencia.ts
 model/registrar-ausencia.ts
+model/registrar-cobro-request.ts
 model/registrar-cobro.ts
 model/registrar-debito.ts
 model/registrar-egreso.ts
@@ -602,6 +611,7 @@ model/reservar-turno.ts
 model/resolve-catalogo-solicitud-request.ts
 model/resolver-autorizacion-request.ts
 model/respuesta-asistente-response.ts
+model/resultado-de-accion.ts
 model/resultado-de-anulacion-de-pase.ts
 model/resultado-de-asistencia.ts
 model/resultado-de-atencion-grupal.ts
@@ -654,6 +664,11 @@ model/sugerencia-de-evolucion-response.ts
 model/sugerencia-de-evolucion-respuesta-request.ts
 model/support-access-response.ts
 model/suspender-plan-tratamiento-request.ts
+model/tarjeta-de-asistencia.ts
+model/tarjeta-de-atencion.ts
+model/tarjeta-de-llegada.ts
+model/tarjeta-de-paciente.ts
+model/tarjeta-de-pago.ts
 model/terms-response.ts
 model/timeline-response.ts
 model/total-por-medio-de-caja.ts
@@ -664,6 +679,7 @@ model/transicion-de-plan.ts
 model/transicion-de-recepcion.ts
 model/trasladar-turno.ts
 model/traslado-de-turno.ts
+model/tratamiento-en-tarjeta.ts
 model/tratamiento-en-version.ts
 model/tratamiento-enmendado.ts
 model/tratamiento.ts

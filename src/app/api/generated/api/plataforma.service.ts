@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { CobroDeSuscripcionResponse } from '../model/cobro-de-suscripcion-response';
+// @ts-ignore
 import { CuentasDePlataformaResponse } from '../model/cuentas-de-plataforma-response';
 // @ts-ignore
 import { GrantPlatformRoleRequest } from '../model/grant-platform-role-request';
@@ -33,6 +35,8 @@ import { PlatformSubscriptionResponse } from '../model/platform-subscription-res
 // @ts-ignore
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
+import { RegistrarCobroRequest } from '../model/registrar-cobro-request';
+// @ts-ignore
 import { SupportAccessResponse } from '../model/support-access-response';
 
 // @ts-ignore
@@ -44,8 +48,10 @@ import {
     GetPlatformSubscriptionRequestParams,
     GrantPlatformRoleRequestParams,
     GrantSupportAccessRequestParams,
+    ListCobrosDeSuscripcionRequestParams,
     ListPlatformOrganizationsRequestParams,
     ListSupportAccessRequestParams,
+    RegistrarCobroDeSuscripcionRequestParams,
     RevokePlatformRoleRequestParams,
     RevokeSupportAccessRequestParams
 } from './plataforma.serviceInterface';
@@ -386,6 +392,68 @@ export class PlataformaService extends BaseService implements PlataformaServiceI
     }
 
     /**
+     * Historial de cobros de la suscripcion de un centro
+     * Todos los cobros registrados al centro, el mas nuevo primero. El vencimiento vigente es el periodoHasta del primero, y tambien viaja como pagadoHasta en el listado de centros y en la contratacion. Reservado a la administracion de plataforma.
+     * @endpoint get /api/v1/platform/organizations/{orgId}/cobros
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public listCobrosDeSuscripcion(requestParameters: ListCobrosDeSuscripcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<Array<CobroDeSuscripcionResponse>>;
+    public listCobrosDeSuscripcion(requestParameters: ListCobrosDeSuscripcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<Array<CobroDeSuscripcionResponse>>>;
+    public listCobrosDeSuscripcion(requestParameters: ListCobrosDeSuscripcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<Array<CobroDeSuscripcionResponse>>>;
+    public listCobrosDeSuscripcion(requestParameters: ListCobrosDeSuscripcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling listCobrosDeSuscripcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/platform/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobros`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<Array<CobroDeSuscripcionResponse>>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Listado de centros, para la administracion de plataforma
      * Listado paginado de las organizaciones vigentes con el estado y el plan de su suscripcion, ordenado por nombre. Es el insumo para elegir el centro cuya suscripcion se opera. Las dadas de baja no aparecen. No trae miembros, sedes, consumo de limites ni datos de pacientes. Reservado a la administracion de plataforma, igual que la lectura y el cambio del plan. El tamano de pagina se acota a 100: pedir mas devuelve ese maximo, no un error. DP-45: sort ordena por nombre, slug o creadaEn; sin el, por nombre.
      * @endpoint get /api/v1/platform/organizations
@@ -605,6 +673,82 @@ export class PlataformaService extends BaseService implements PlataformaServiceI
         return this.httpClient.request<Array<SupportAccessResponse>>('get', `${basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Registrar un cobro de la suscripcion de un centro
+     * Extiende el periodo pagado del centro en la cantidad de meses (1 a 12). El periodo arranca en el vencimiento anterior si todavia no llego (pagar antes conserva el ciclo) o ahora si ya paso o es el primer cobro, y suma meses calendario en la zona del centro. El centro vuelve a operar normalmente en el acto.  Sobre una suscripcion en PRUEBA, el cobro la pasa a ACTIVA. Sobre una SUSPENDIDA o CANCELADA guardada responde 409 subscription-suspended: primero se reactiva por la transicion de siempre. Reservado a la administracion de plataforma.
+     * @endpoint post /api/v1/platform/organizations/{orgId}/cobros
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public registrarCobroDeSuscripcion(requestParameters: RegistrarCobroDeSuscripcionRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<CobroDeSuscripcionResponse>;
+    public registrarCobroDeSuscripcion(requestParameters: RegistrarCobroDeSuscripcionRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<CobroDeSuscripcionResponse>>;
+    public registrarCobroDeSuscripcion(requestParameters: RegistrarCobroDeSuscripcionRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<CobroDeSuscripcionResponse>>;
+    public registrarCobroDeSuscripcion(requestParameters: RegistrarCobroDeSuscripcionRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling registrarCobroDeSuscripcion.');
+        }
+        const registrarCobroRequest = requestParameters?.registrarCobroRequest;
+        if (registrarCobroRequest === null || registrarCobroRequest === undefined) {
+            throw new Error('Required parameter registrarCobroRequest was null or undefined when calling registrarCobroDeSuscripcion.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/platform/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/cobros`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<CobroDeSuscripcionResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: registrarCobroRequest,
                 responseType: <any>responseType_,
                 ...(withCredentials ? { withCredentials } : {}),
                 headers: localVarHeaders,
