@@ -27,7 +27,7 @@ const SUSCRIPCION_ACTIVA = {
   allowedTargets: ['SUSPENDIDA', 'CANCELADA'],
   limits: [
     { code: 'MAX_CONSULTORIOS', currentUsage: 2, limitValue: 3, exceeded: false },
-    { code: 'MAX_MIEMBROS_ACTIVOS', currentUsage: 12, exceeded: false },
+    { code: 'MAX_PROFESIONALES', currentUsage: 2, exceeded: false },
   ],
 };
 
@@ -96,7 +96,7 @@ describe('SubscriptionPage', () => {
     expect(texto(fixture)).toContain('Plan Base');
     // Los codigos tecnicos no se muestran crudos.
     expect(texto(fixture)).toContain('Sedes habilitadas');
-    expect(texto(fixture)).toContain('Miembros activos');
+    expect(texto(fixture)).toContain('Profesionales');
     // Un limite sin limitValue es ilimitado, no cero.
     expect(texto(fixture)).toContain('Sin tope');
     // El historico solo se consulta cuando hace falta el motivo de una suspension.
@@ -313,7 +313,7 @@ describe('SubscriptionPage', () => {
   );
 
   it('muestra que incluye el plan y los terminos aceptados', async () => {
-    planes.listPlans = () => of([{ code: 'BASICO', features: ['REPORTES_AVANZADOS'] }]);
+    planes.listPlans = () => of([{ code: 'BASE', features: ['REPORTES_AVANZADOS'] }]);
     terminos.set({
       pendiente: false,
       aceptadaEn: '2026-11-21T10:00:00Z',
@@ -324,7 +324,7 @@ describe('SubscriptionPage', () => {
     const fixture = await cargarCon(SUSCRIPCION_ACTIVA);
 
     expect(texto(fixture)).toContain('Hasta 3 sedes');
-    expect(texto(fixture)).toContain('Miembros activos sin límite');
+    expect(texto(fixture)).toContain('Profesionales sin límite');
     expect(texto(fixture)).toContain('Reportes avanzados');
     expect(texto(fixture)).toContain('No incluido');
     expect(texto(fixture)).toContain('Aceptados el');
