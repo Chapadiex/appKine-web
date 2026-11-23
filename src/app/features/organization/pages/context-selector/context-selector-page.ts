@@ -14,7 +14,6 @@ import { SessionService } from '../../../../core/services/session.service';
 import { TenantContext } from '../../../../core/services/tenant-context.store';
 import { RUTA_LOGIN } from '../../../../core/models/rutas';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { MOTIVO_SIN_ACCESO } from '../../../../core/models/situacion-de-cobro';
 
 /** Destino cuando nadie pidio volver a ningun lado. */
 const DESTINO_POR_DEFECTO = '/organizacion';
@@ -150,7 +149,7 @@ export class ContextSelectorPage {
 
   /** Centros cerrados por falta de pago (`sinAcceso`): se muestran con el motivo, sin elegirse. */
   protected readonly sinAcceso = signal<readonly { id: number; nombre: string }[]>([]);
-  protected readonly motivoSinAcceso = MOTIVO_SIN_ACCESO;
+  protected readonly motivoSinAcceso = 'Sin acceso: suscripción cerrada por falta de pago';
 
   /** Dos letras para el cuadrado del centro: "Consultorio Centro" → "CC". */
   protected iniciales(nombre: string): string {

@@ -16,7 +16,6 @@ export interface AvisoDeCobro {
   /** Instante en que se cierra el acceso si no paga. */
   readonly cierreEl: string | null;
   readonly diasParaVencer: number;
-  readonly diasParaCierre: number | null;
 }
 
 /** Milisegundos de un dia, para contar los que le quedan a la prueba. */
@@ -71,16 +70,11 @@ export class ContratacionStore {
     ) {
       return null;
     }
-    const venceEn = Date.parse(c.pagadoHasta);
-    const cierreEn = c.cierreEl ? Date.parse(c.cierreEl) : Number.NaN;
     return {
       situacion,
       venceEl: c.pagadoHasta,
       cierreEl: c.cierreEl ?? null,
-      diasParaVencer: Math.max(0, Math.ceil((venceEn - Date.now()) / UN_DIA)),
-      diasParaCierre: Number.isNaN(cierreEn)
-        ? null
-        : Math.max(0, Math.ceil((cierreEn - Date.now()) / UN_DIA)),
+      diasParaVencer: Math.max(0, Math.ceil((Date.parse(c.pagadoHasta) - Date.now()) / UN_DIA)),
     };
   });
 

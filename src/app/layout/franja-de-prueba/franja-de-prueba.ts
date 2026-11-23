@@ -2,7 +2,16 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ContratacionStore } from '../../core/services/contratacion.store';
 import { Icono } from '../../shared/components/icono/icono';
-import { formatearFecha } from '../../shared/utils/instantes';
+
+/**
+ * dd/mm/aaaa. No usa `formatearFecha` de `shared/utils/instantes` a proposito: la franja vive en
+ * el bundle inicial y ese modulo le sumaba 2,3 kB.
+ */
+const FECHA = new Intl.DateTimeFormat('es-AR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
 
 /**
  * Franja del shell con el estado de la prueba gratis (18/11/2026): cuantos dias quedan, o que
@@ -124,7 +133,7 @@ export class FranjaDePrueba {
     'mailto:hola@akine.app?subject=Pago%20de%20la%20suscripci%C3%B3n%20AKINE';
 
   protected fecha(instante: string): string {
-    return formatearFecha(instante);
+    return FECHA.format(new Date(instante));
   }
 
   protected enDias(dias: number): string {

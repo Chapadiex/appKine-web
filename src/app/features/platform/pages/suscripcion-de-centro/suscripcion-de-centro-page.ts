@@ -8,7 +8,6 @@ import { PlataformaService } from '../../../../api/generated/api/plataforma.serv
 import { ListPlatformOrganizationsRequestParams } from '../../../../api/generated/api/plataforma.serviceInterface';
 import { CobroDeSuscripcionResponse } from '../../../../api/generated/model/cobro-de-suscripcion-response';
 import { ContratacionResponse } from '../../../../api/generated/model/contratacion-response';
-import { marcaDeCobro } from '../../../../core/models/situacion-de-cobro';
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
 import { PlatformOrganizationResponse } from '../../../../api/generated/model/platform-organization-response';
 import {
@@ -44,6 +43,7 @@ import {
   SIGLAS_DE_PLAN,
   diasRestantes,
   marcaDePlan,
+  marcaDeCobro,
   marcaDeSuscripcion,
   marcasDeServicios,
   nombreVisibleDePlan,
