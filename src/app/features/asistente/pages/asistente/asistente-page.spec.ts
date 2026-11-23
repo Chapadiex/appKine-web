@@ -111,9 +111,7 @@ describe('AsistentePage', () => {
     expect(el().querySelector('summary')?.textContent).toContain('Ver los datos (1)');
     const encabezados = [...el().querySelectorAll('th')].map((th) => th.textContent?.trim());
     expect(encabezados).toEqual(['Fecha y hora', 'Paciente', 'Estado']);
-    expect(el().querySelector('a.asistente__chip')?.getAttribute('href')).toBe(
-      '/agenda/recepcion',
-    );
+    expect(el().querySelector('a.asistente__chip')?.getAttribute('href')).toBe('/agenda/recepcion');
   });
 
   it('elSeguimientoMandaLaInterpretacionAnterior', async () => {

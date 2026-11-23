@@ -58,7 +58,7 @@ test.describe('Contraste no textual, foco y teclado', () => {
     await auditarPantalla(page, 'login');
   });
 
-  test('selector de contexto con dos sedes', async ({ page }) => {
+  test('selector de contexto con dos centros', async ({ page }) => {
     await instalarApiDelRecorrido(page, { conContexto: false });
     await page.goto('/seleccionar-contexto');
     await expect(page.getByText('Sede Norte')).toBeVisible({ timeout: LLEGADA });
