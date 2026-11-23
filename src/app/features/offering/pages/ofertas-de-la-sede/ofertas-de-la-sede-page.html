@@ -402,8 +402,40 @@
         (volver)="irAlPasoDelAlta($event)"
       />
 
-      <div id="alta-oferta-paso-1" class="grilla-12 paso-del-alta" [hidden]="pasoDelAlta() !== 1">
-        <div class="campo campo--3">
+      <!-- Mismas secciones, filas e interruptores que la edición (23/11/2026). -->
+      <div
+        id="alta-oferta-paso-1"
+        class="grilla-12 paso-del-alta edicion-oferta"
+        [hidden]="pasoDelAlta() !== 1"
+      >
+        <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+          <app-icono nombre="actividades" />Actividad
+          <app-ayuda titulo="Actividad"
+            ><p>
+              <b>Qué es esta sección:</b> lo esencial de la actividad que ofrece esta sede: de qué
+              servicio sale, cómo se llama, cuánto dura y cuánto cuesta.
+            </p>
+            <p>
+              <b>Servicio del catálogo:</b> toda actividad cuelga de uno. Al elegirlo se completan
+              el nombre, la duración y la práctica que se le factura a la obra social.
+            </p>
+            <p><b>Nombre comercial:</b> con este nombre la ve el paciente.</p>
+            <p><b>Descripción:</b> un texto corto y opcional sobre la actividad.</p>
+            <p>
+              <b>Duración:</b> cuánto dura cada turno o clase; la agenda arma los horarios con ella.
+            </p>
+            <p>
+              <b>Precio de la sesión:</b> lo que paga un particular. Con obra social, el paciente
+              paga solo la diferencia con lo que cubre su plan (el coseguro).
+            </p>
+            <p>
+              <b>Admite obra social:</b> al reservar se elige la cobertura del paciente; apagado, se
+              atiende siempre como particular.
+            </p></app-ayuda
+          >
+        </h3>
+
+        <div class="campo campo--6">
           <label for="alta-oferta-servicio">Servicio del catálogo</label>
           <app-selector-con-buscador
             idCampo="alta-oferta-servicio"
@@ -428,13 +460,11 @@
                 No pudimos traer el catálogo de servicios. Recargá la pantalla; si sigue vacío,
                 revisá el <a routerLink="/servicios/catalogo">catálogo</a>.
               </b>
-            } @else {
-              Al elegirlo se completan el nombre y la duración.
             }
           </p>
         </div>
 
-        <div class="campo campo--3">
+        <div class="campo campo--6">
           <label for="alta-oferta-nombre">Nombre comercial</label>
           <input
             id="alta-oferta-nombre"
@@ -442,174 +472,199 @@
             formControlName="nombreComercial"
             autocomplete="off"
             [attr.aria-invalid]="mostrarErrorAlta('nombreComercial') ? 'true' : null"
-            aria-describedby="alta-oferta-nombre-ayuda"
           />
           @if (mostrarErrorAlta('nombreComercial')) {
             <p class="campo__error" role="alert">El nombre comercial es obligatorio.</p>
           }
-          <p class="ayuda" id="alta-oferta-nombre-ayuda">Con este nombre la ve el paciente.</p>
         </div>
 
-        <div class="campo campo--2">
-          <label for="alta-oferta-duracion">Duración (minutos)</label>
+        <div class="campo campo--ancho">
+          <label for="alta-oferta-descripcion">Descripción</label>
           <input
-            id="alta-oferta-duracion"
-            type="number"
-            min="1"
-            formControlName="duracionMinutos"
-            [attr.aria-invalid]="mostrarErrorAlta('duracionMinutos') ? 'true' : null"
+            id="alta-oferta-descripcion"
+            type="text"
+            formControlName="descripcion"
+            autocomplete="off"
           />
-          @if (mostrarErrorAlta('duracionMinutos')) {
-            <p class="campo__error" role="alert">Tiene que ser mayor a cero.</p>
-          }
         </div>
 
-        <div class="campo campo--2">
-          <label for="alta-oferta-precio">Precio de la sesión</label>
-          <div class="campo-importe">
-            <span class="campo-importe__signo" aria-hidden="true">$</span>
+        <div class="edicion-oferta__fila">
+          <div class="campo">
+            <label for="alta-oferta-duracion">Duración (minutos)</label>
             <input
-              id="alta-oferta-precio"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="0,00"
-              formControlName="precioBase"
-              aria-describedby="alta-oferta-precio-ayuda"
-              (blur)="
-                formularioAlta.controls.precioBase.setValue(
-                  reformatearImporte(formularioAlta.controls.precioBase.value)
-                )
-              "
+              id="alta-oferta-duracion"
+              type="number"
+              min="1"
+              formControlName="duracionMinutos"
+              [attr.aria-invalid]="mostrarErrorAlta('duracionMinutos') ? 'true' : null"
             />
-          </div>
-          <p class="ayuda" id="alta-oferta-precio-ayuda">
-            Lo que cobrás en particular. Con obra social, el paciente paga la diferencia.
-          </p>
-        </div>
-
-        <div class="campo campo--2 campo--interruptor">
-          <span class="campo__rotulo" aria-hidden="true">Obra social</span>
-          <label class="interruptor" for="alta-oferta-obra-social">
-            <input
-              id="alta-oferta-obra-social"
-              type="checkbox"
-              role="switch"
-              formControlName="admiteObraSocial"
-            />
-            <span class="interruptor__titulo">Admite obra social</span>
-          </label>
-        </div>
-      </div>
-
-      <div id="alta-oferta-paso-2" class="grilla-12 paso-del-alta" [hidden]="pasoDelAlta() !== 2">
-        <div class="campo campo--3">
-          <div class="rotulo-con-ayuda">
-            <span class="campo__rotulo">Modalidad</span>
-            <app-ayuda titulo="Modalidad">
-              <p><b>Individual:</b> una persona por turno.</p>
-              <p>
-                <b>Grupal:</b> varias personas en el mismo turno, hasta la capacidad. Viene marcada
-                la del servicio.
-              </p>
-            </app-ayuda>
-          </div>
-          <app-segmentado
-            id="alta-oferta-modalidad"
-            etiqueta="Modalidad"
-            [opciones]="opcionesDeModalidad"
-            [valor]="modalidadEfectivaDelAlta()"
-            (valorChange)="marcarModalidadDelAlta($event)"
-          />
-        </div>
-
-        <div class="campo campo--2">
-          <label for="alta-oferta-capacidad">Capacidad</label>
-          <input
-            id="alta-oferta-capacidad"
-            type="number"
-            min="2"
-            formControlName="capacidad"
-            aria-describedby="alta-oferta-capacidad-ayuda"
-          />
-          <p class="ayuda" [class.ayuda--fija]="altaEsGrupal()" id="alta-oferta-capacidad-ayuda">
-            @if (altaEsGrupal()) {
-              Personas por turno: más de 1.
-            } @else {
-              Individual: una persona por turno.
+            @if (mostrarErrorAlta('duracionMinutos')) {
+              <p class="campo__error" role="alert">Tiene que ser mayor a cero.</p>
             }
-          </p>
-        </div>
+          </div>
 
-        <div class="campo campo--3 campo--interruptor">
-          <span class="campo__rotulo" aria-hidden="true">Profesional</span>
-          <label class="interruptor" for="alta-oferta-profesional">
-            <input
-              id="alta-oferta-profesional"
-              type="checkbox"
-              role="switch"
-              formControlName="requiereProfesional"
-            />
-            <span class="interruptor__titulo">Requiere profesional asignado</span>
-          </label>
-        </div>
+          <div class="campo">
+            <label for="alta-oferta-precio">Precio de la sesión</label>
+            <div class="campo-importe">
+              <span class="campo-importe__signo" aria-hidden="true">$</span>
+              <input
+                id="alta-oferta-precio"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="0,00"
+                formControlName="precioBase"
+                (blur)="
+                  formularioAlta.controls.precioBase.setValue(
+                    reformatearImporte(formularioAlta.controls.precioBase.value)
+                  )
+                "
+              />
+            </div>
+          </div>
 
-        <div class="campo campo--3 campo--interruptor">
-          <span class="campo__rotulo" aria-hidden="true">Box</span>
-          <label class="interruptor" for="alta-oferta-espacio">
-            <input
-              id="alta-oferta-espacio"
-              type="checkbox"
-              role="switch"
-              formControlName="requiereEspacio"
-            />
-            <span class="interruptor__titulo">Requiere espacio o box</span>
-          </label>
-        </div>
-
-        <div class="campo campo--3">
-          <label for="alta-oferta-caso">Requiere caso clínico</label>
-          <select
-            id="alta-oferta-caso"
-            formControlName="requiereCasoClinico"
-            aria-describedby="alta-oferta-caso-ayuda"
-          >
-            <option value="">Como el servicio</option>
-            <option value="true">Sí, lo requiere</option>
-            <option value="false">No lo requiere</option>
-          </select>
-          <p class="ayuda" id="alta-oferta-caso-ayuda">Si cada atención cuelga de un caso.</p>
-        </div>
-
-        <div class="campo campo--3">
-          <label for="alta-oferta-registro">Genera registro clínico</label>
-          <select
-            id="alta-oferta-registro"
-            formControlName="generaRegistroClinico"
-            aria-describedby="alta-oferta-registro-ayuda"
-          >
-            <option value="">Como el servicio</option>
-            <option value="true">Sí, genera</option>
-            <option value="false">No genera</option>
-          </select>
-          <p class="ayuda" id="alta-oferta-registro-ayuda">
-            Si cada atención escribe en la historia clínica.
-          </p>
+          <div class="campo campo--interruptor">
+            <span class="campo__rotulo" aria-hidden="true">Obra social</span>
+            <label class="interruptor" for="alta-oferta-obra-social">
+              <input
+                id="alta-oferta-obra-social"
+                type="checkbox"
+                role="switch"
+                formControlName="admiteObraSocial"
+              />
+              <span class="interruptor__titulo">Admite obra social</span>
+            </label>
+          </div>
         </div>
       </div>
 
-      <div id="alta-oferta-paso-3" class="grilla-12 paso-del-alta" [hidden]="pasoDelAlta() !== 3">
-        <div class="campo campo--3">
-          <div class="rotulo-con-ayuda">
-            <label for="alta-oferta-esquema">Esquema de cobro</label>
-            <app-ayuda titulo="Esquemas de cobro">
-              @for (esquema of opcionesDeEsquema; track esquema.valor) {
-                <p>
-                  <b>{{ esquema.etiqueta }}:</b> {{ esquema.ayuda }}
-                </p>
-              }
-            </app-ayuda>
+      <div
+        id="alta-oferta-paso-2"
+        class="grilla-12 paso-del-alta edicion-oferta"
+        [hidden]="pasoDelAlta() !== 2"
+      >
+        <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+          <app-icono nombre="pacientes" />Cómo se atiende
+          <app-ayuda titulo="Cómo se atiende"
+            ><p>
+              <b>Qué es esta sección:</b> qué hace falta para dar un turno y qué queda registrado
+              después: cuántos entran, quién atiende, dónde y si deja huella en lo clínico. Casi
+              siempre queda como viene del servicio.
+            </p>
+            <p>
+              <b>Modalidad:</b> individual es una persona por turno; grupal, varias en el mismo
+              turno. Viene marcada la del servicio.
+            </p>
+            <p><b>Capacidad:</b> en una grupal, cuántas personas entran por turno (más de 1).</p>
+            <p><b>Profesional asignado:</b> cada turno necesita alguien que atienda.</p>
+            <p>
+              <b>Espacio o box:</b> cada turno ocupa un box, y no se dan dos turnos en el mismo box
+              a la misma hora.
+            </p>
+            <p>
+              <b>Caso clínico:</b> si cada atención cuelga de un caso del paciente. "Como el
+              servicio" toma lo que dice el catálogo.
+            </p>
+            <p>
+              <b>Registro clínico:</b> si al cerrar la atención se escribe en la historia clínica.
+            </p></app-ayuda
+          >
+        </h3>
+
+        <div class="edicion-oferta__fila">
+          <div class="campo">
+            <span class="campo__rotulo">Modalidad</span>
+            <app-segmentado
+              id="alta-oferta-modalidad"
+              etiqueta="Modalidad"
+              [opciones]="opcionesDeModalidad"
+              [valor]="modalidadEfectivaDelAlta()"
+              (valorChange)="marcarModalidadDelAlta($event)"
+            />
           </div>
+
+          <div class="campo">
+            <label for="alta-oferta-capacidad">Capacidad</label>
+            <input
+              id="alta-oferta-capacidad"
+              type="number"
+              min="2"
+              formControlName="capacidad"
+              aria-describedby="alta-oferta-capacidad-ayuda"
+            />
+            <p class="ayuda" id="alta-oferta-capacidad-ayuda">
+              {{ altaEsGrupal() ? 'Personas por turno: más de 1.' : 'Individual: una por turno.' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="edicion-oferta__fila edicion-oferta__fila--interruptores">
+          <div class="campo campo--interruptor">
+            <label class="interruptor" for="alta-oferta-profesional">
+              <input
+                id="alta-oferta-profesional"
+                type="checkbox"
+                role="switch"
+                formControlName="requiereProfesional"
+              />
+              <span class="interruptor__titulo">Profesional asignado</span>
+            </label>
+          </div>
+
+          <div class="campo campo--interruptor">
+            <label class="interruptor" for="alta-oferta-espacio">
+              <input
+                id="alta-oferta-espacio"
+                type="checkbox"
+                role="switch"
+                formControlName="requiereEspacio"
+              />
+              <span class="interruptor__titulo">Espacio o box</span>
+            </label>
+          </div>
+
+          <div class="campo">
+            <label for="alta-oferta-caso">Caso clínico</label>
+            <select id="alta-oferta-caso" formControlName="requiereCasoClinico">
+              <option value="">Como el servicio</option>
+              <option value="true">Lo requiere</option>
+              <option value="false">No lo requiere</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="alta-oferta-registro">Registro clínico</label>
+            <select id="alta-oferta-registro" formControlName="generaRegistroClinico">
+              <option value="">Como el servicio</option>
+              <option value="true">Genera</option>
+              <option value="false">No genera</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="alta-oferta-paso-3"
+        class="grilla-12 paso-del-alta edicion-oferta"
+        [hidden]="pasoDelAlta() !== 3"
+      >
+        <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+          <app-icono nombre="economia" />Cobro
+          <app-ayuda titulo="Cobro"
+            ><p>
+              <b>Qué es esta sección:</b> cómo se le cobra al paciente. Define cuándo nace la deuda:
+              en cada sesión, en cada clase, al vender un pack o con una cuota por período.
+            </p>
+            @for (esquema of opcionesDeEsquema; track esquema.valor) {
+              <p>
+                <b>{{ esquema.etiqueta }}:</b> {{ esquema.ayuda }}
+              </p>
+            }
+          </app-ayuda>
+        </h3>
+
+        <div class="campo campo--6">
+          <label for="alta-oferta-esquema">Esquema de cobro</label>
           <select
             id="alta-oferta-esquema"
             formControlName="esquemaCobro"
@@ -624,38 +679,30 @@
           </p>
         </div>
 
-        <div class="campo campo--3">
-          <label for="alta-oferta-descripcion">Descripción</label>
-          <input
-            id="alta-oferta-descripcion"
-            type="text"
-            formControlName="descripcion"
-            autocomplete="off"
-          />
-        </div>
+        <h3 class="formulario__seccion seccion-con-icono edicion-oferta__seccion">
+          <app-icono nombre="calendario" />Vigencia
+          <app-ayuda titulo="Vigencia"
+            ><p>
+              <b>Qué es esta sección:</b> entre qué fechas la actividad está disponible para
+              reservar.
+            </p>
+            <p><b>Vigente desde:</b> sin fecha, rige desde hoy.</p>
+            <p>
+              <b>Vigente hasta:</b> ese día ya no se ofrece. Sin fecha, no vence nunca.
+            </p></app-ayuda
+          >
+        </h3>
 
-        <div class="campo campo--3">
-          <label for="alta-oferta-desde">Vigente desde</label>
-          <input
-            id="alta-oferta-desde"
-            type="date"
-            formControlName="vigenciaDesde"
-            aria-describedby="alta-oferta-desde-ayuda"
-          />
-          <p class="ayuda" id="alta-oferta-desde-ayuda">Sin fecha rige desde hoy.</p>
-        </div>
+        <div class="edicion-oferta__fila">
+          <div class="campo">
+            <label for="alta-oferta-desde">Vigente desde</label>
+            <input id="alta-oferta-desde" type="date" formControlName="vigenciaDesde" />
+          </div>
 
-        <div class="campo campo--3">
-          <label for="alta-oferta-hasta">Vigente hasta</label>
-          <input
-            id="alta-oferta-hasta"
-            type="date"
-            formControlName="vigenciaHasta"
-            aria-describedby="alta-oferta-vigencia-ayuda"
-          />
-          <p class="ayuda" id="alta-oferta-vigencia-ayuda">
-            Ese día ya no se ofrece. Sin fecha, no vence.
-          </p>
+          <div class="campo">
+            <label for="alta-oferta-hasta">Vigente hasta</label>
+            <input id="alta-oferta-hasta" type="date" formControlName="vigenciaHasta" />
+          </div>
         </div>
       </div>
 
