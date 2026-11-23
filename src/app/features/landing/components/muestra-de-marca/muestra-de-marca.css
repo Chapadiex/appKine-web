@@ -1,0 +1,173 @@
+:host {
+  display: block;
+}
+
+.muestra {
+  display: grid;
+  gap: var(--esp-7);
+}
+
+/* --- Paletas --------------------------------------------------------------------------- */
+
+.paletas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.paleta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-3);
+  min-height: 2.75rem;
+  padding: var(--esp-2) var(--esp-6) var(--esp-2) var(--esp-3);
+  border: 2px solid var(--color-borde);
+  border-radius: 999px;
+  background: var(--color-superficie);
+  color: var(--color-texto-fuerte);
+  font: inherit;
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+
+.paleta[aria-checked='true'] {
+  border-color: var(--color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color) 25%, transparent);
+}
+
+.paleta__punto {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--color);
+}
+
+/* --- La app de ejemplo ----------------------------------------------------------------- */
+
+.app {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  overflow: hidden;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: 20px;
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-escaparate);
+  font-size: var(--tipo-xs);
+}
+
+.app__lateral {
+  display: grid;
+  align-content: start;
+  gap: var(--esp-2);
+  padding: var(--esp-6) var(--esp-4);
+  background: var(--marca);
+  color: var(--color-superficie);
+  transition: background 300ms ease;
+}
+
+.app__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-block-end: var(--esp-5);
+  font-weight: var(--peso-fuerte);
+}
+
+.app__logo span {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  background: var(--color-superficie);
+  color: var(--marca);
+  font-size: 0.65rem;
+}
+
+.app__enlace {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: 10px;
+  opacity: 0.85;
+}
+
+.app__enlace--activo {
+  background: color-mix(in srgb, var(--color-superficie) 22%, transparent);
+  opacity: 1;
+  font-weight: var(--peso-medio);
+}
+
+.app__cuerpo {
+  display: grid;
+  align-content: start;
+  gap: var(--esp-4);
+  padding: var(--esp-6);
+  background: var(--color-superficie-sutil);
+}
+
+.app__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-4);
+  color: var(--color-texto-fuerte);
+  font-size: var(--tipo-sm);
+}
+
+.app__boton {
+  padding: var(--esp-2) var(--esp-5);
+  border-radius: 10px;
+  background: var(--marca);
+  color: var(--color-superficie);
+  font-weight: var(--peso-medio);
+  transition: background 300ms ease;
+}
+
+.app__turno {
+  display: grid;
+  gap: var(--esp-1);
+  padding: var(--esp-4) var(--esp-5);
+  border-inline-start: 4px solid var(--color-borde-control);
+  border-radius: 10px;
+  background: var(--color-superficie);
+  color: var(--color-texto-suave);
+}
+
+.app__turno b {
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-medio);
+}
+
+.app__turno--marca {
+  border-inline-start-color: var(--marca);
+}
+
+.app__turno--acento {
+  border-inline-start-color: var(--marca);
+  background: var(--marca-acento);
+  transition: background 300ms ease;
+}
+
+@media (max-width: 40rem) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app__lateral {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow: hidden;
+  }
+
+  .app__logo {
+    margin: 0;
+  }
+
+  .app__enlace:not(.app__enlace--activo) {
+    display: none;
+  }
+}

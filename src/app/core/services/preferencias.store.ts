@@ -46,6 +46,18 @@ export class PreferenciasStore {
     }
   }
 
+  /**
+   * La landing pública va siempre en claro (22/11/2026): mientras está activa se fija `claro` sin
+   * tocar lo guardado; al salir vuelve el tema elegido.
+   */
+  forzarClaro(activo: boolean): void {
+    if (activo) {
+      this.documento.documentElement.setAttribute('data-tema', 'claro');
+    } else {
+      this.aplicarTema(this.temaElegido());
+    }
+  }
+
   private aplicarTema(tema: Tema): void {
     const raiz = this.documento.documentElement;
     if (tema === 'sistema') {

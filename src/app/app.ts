@@ -89,8 +89,10 @@ export class App {
   private readonly manual = inject(ManualStore);
 
   constructor() {
-    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla.
-    inject(PreferenciasStore);
+    // El tema elegido en Preferencias se aplica al arrancar, antes de la primera pantalla. La
+    // landing pública va siempre en claro: no tiene modo oscuro (22/11/2026).
+    const preferencias = inject(PreferenciasStore);
+    effect(() => preferencias.forzarClaro(this.esLanding()));
 
     // Avisos globales: el contenedor llega en su propio chunk despues de la primera pintura (la
     // carga inicial esta al borde de su presupuesto), y antes de cualquier accion del usuario,
@@ -269,11 +271,12 @@ export class App {
   protected readonly esIngreso = computed(() => /^\/auth\/ingresar(\?|$)/.test(this.url()));
 
   /**
-   * La landing pública (`/`, con o sin ancla) y sus textos legales (`/terminos`, `/privacidad`):
-   * sin barra superior ni lateral y a todo el ancho. Traen su propia cabecera y su pie.
+   * La landing pública (`/`, con o sin ancla), sus textos legales (`/terminos`, `/privacidad`) y el
+   * pedido de prueba (`/prueba`): sin barra superior ni lateral y a todo el ancho. Traen su propia
+   * cabecera y su pie.
    */
   protected readonly esLanding = computed(() =>
-    /^\/(terminos|privacidad)?(#|\?|$)/.test(this.url()),
+    /^\/(terminos|privacidad|prueba)?(#|\?|$)/.test(this.url()),
   );
 
   protected readonly ancho = toSignal(

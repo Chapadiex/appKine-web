@@ -8,12 +8,12 @@
       <nav class="cabecera__nav" aria-label="Secciones de la página">
         <a class="cabecera__ia" href="#ia"><app-icono nombre="chispa" />IA</a>
         <a href="#servicios">Servicios</a>
-        <a href="#planes">Planes</a>
+        <a href="#prueba">Planes</a>
         <a href="#preguntas">Preguntas</a>
       </nav>
       <div class="cabecera__acciones">
         <a class="boton-texto cabecera__ingresar" [routerLink]="rutaLogin">Ingresar</a>
-        <a class="boton" href="#prueba">Probalo gratis</a>
+        <a class="boton" [routerLink]="rutaPrueba">Probalo gratis</a>
       </div>
     </div>
   </header>
@@ -59,9 +59,9 @@
           de que se te pase.
         </p>
         <div class="portada__acciones">
-          <a class="boton boton--grande" href="#prueba">Probalo gratis 30 días</a>
-          <a class="boton boton--secundario boton--grande" href="#planes">
-            Ver planes <app-icono nombre="flecha-derecha" />
+          <a class="boton boton--grande" [routerLink]="rutaPrueba">Probalo gratis 30 días</a>
+          <a class="boton boton--secundario boton--grande" href="#ia">
+            Conocé la IA <app-icono nombre="chispa" />
           </a>
         </div>
         <ul class="portada__datos">
@@ -236,50 +236,66 @@
     </div>
   </section>
 
-  <!-- Planes con el armador. Sin precios: todavía no están definidos. -->
-  <section class="seccion" id="planes" aria-labelledby="planes-titulo">
-    <div class="envoltura">
-      <div class="seccion__encabezado">
-        <h2 class="seccion__titulo" id="planes-titulo">Armá tu plan.</h2>
+  <!-- La marca propia: la app con la cara de cada centro. -->
+  <section class="seccion marca" id="marca" aria-labelledby="marca-titulo">
+    <div class="envoltura marca__fila">
+      <div>
+        <h2 class="seccion__titulo" id="marca-titulo">Con la cara de tu centro.</h2>
         <p class="seccion__bajada">
-          El plan lo define la cantidad de sedes. Los servicios y la IA se suman a cualquiera.
+          AKINE se viste con tu marca: tu logo y tus colores en cada pantalla, para tu equipo y para
+          la tablet que ve el paciente.
         </p>
+        <ul class="marca__lista">
+          <li>
+            <span class="marca__icono"><app-icono nombre="preferencias" /></span
+            ><span
+              ><b>Color principal y acento</b>Los botones, la barra y los destacados con los colores
+              del centro.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="capas" /></span
+            ><span
+              ><b>Seis zonas a elección</b>Barra lateral, cabecera, fondo, tarjetas, pie y botón
+              secundario.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="organizacion" /></span
+            ><span
+              ><b>Tu logo, en claro y en oscuro</b>Uno para cada tema, para que siempre se lea
+              bien.</span
+            >
+          </li>
+          <li>
+            <span class="marca__icono"><app-icono nombre="telefono" /></span
+            ><span
+              ><b>Tus datos de contacto</b>Dirección, teléfono y redes al pie de cada
+              pantalla.</span
+            >
+          </li>
+        </ul>
       </div>
-      <app-armador-de-plan />
+      <app-muestra-de-marca />
     </div>
   </section>
 
-  <!-- Pedido de la prueba gratis. -->
-  <section class="seccion seccion--coral" id="prueba" aria-labelledby="prueba-titulo">
+  <!-- Un solo bloque: se arma el plan acá y el botón lleva a /prueba, donde se piden los datos. -->
+  <section class="seccion llamado" id="prueba" aria-labelledby="prueba-titulo">
     <div class="formas" aria-hidden="true">
       <span class="forma forma--menta"></span>
       <span class="forma forma--sol"></span>
     </div>
-    <div class="envoltura prueba">
-      <div>
-        <h2 class="seccion__titulo" id="prueba-titulo">Probalo gratis 30 días.</h2>
-        <p class="seccion__bajada">
-          Arranca con todo prendido: los dos servicios, la IA y hasta tres sedes.
+    <div class="envoltura">
+      <div class="seccion__encabezado">
+        <span class="llamado__sello"><app-icono nombre="chispa" />Con la IA incluida</span>
+        <h2 class="llamado__titulo" id="prueba-titulo">Armá tu plan y probalo gratis 30 días.</h2>
+        <p class="llamado__bajada">
+          El plan lo define la cantidad de sedes; los servicios y la IA se suman a cualquiera. La
+          prueba arranca con todo prendido, sin tarjeta y sin instalar nada.
         </p>
-        <ol class="pasos">
-          <li>
-            <span
-              ><b>Nos pedís la prueba</b> Con el nombre de tu centro y cómo te contactamos.</span
-            >
-          </li>
-          <li>
-            <span><b>Armamos tu organización</b> Te llega una invitación por correo.</span>
-          </li>
-          <li>
-            <span><b>Ponés tu contraseña</b> Cargás tu primera sede y empezás a dar turnos.</span>
-          </li>
-        </ol>
       </div>
-
-      <!-- El pedido de prueba (AKINE-landing-y-ofertas.md §5): formulario público, sin sesión. -->
-      <div class="prueba__panel">
-        <app-pedido-de-prueba />
-      </div>
+      <app-armador-de-plan />
     </div>
   </section>
 

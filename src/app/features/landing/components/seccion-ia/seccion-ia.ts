@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { Icono } from '../../../../shared/components/icono/icono';
+import { RUTA_PRUEBA } from '../../models/rutas-de-landing';
 
 interface BarraDeAusentes {
   readonly dia: string;
@@ -16,11 +18,13 @@ interface BarraDeAusentes {
 @Component({
   selector: 'app-seccion-ia',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icono],
+  imports: [Icono, RouterLink],
   templateUrl: './seccion-ia.html',
   styleUrls: ['../../landing-comun.css', './seccion-ia.css'],
 })
 export class SeccionIa {
+  protected readonly rutaPrueba = RUTA_PRUEBA;
+
   protected readonly ausentes: readonly BarraDeAusentes[] = [
     { dia: 'L', valor: 1 },
     { dia: 'M', valor: 3, destacada: true },

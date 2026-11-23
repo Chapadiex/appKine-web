@@ -90,6 +90,13 @@ export const routes: Routes = [
     title: 'AKINE - Gestión para centros de salud y actividades',
   },
 
+  // Armar el plan y pedir la prueba gratis (22/11/2026): pública, con o sin sesión.
+  {
+    path: 'prueba',
+    loadComponent: () => import('./features/landing/pages/prueba/prueba').then((m) => m.Prueba),
+    title: 'AKINE - Probalo gratis 30 días',
+  },
+
   // Textos legales de la landing (borradores para revisión legal): públicos, con o sin sesión, y
   // con el mismo marco que la landing.
   {

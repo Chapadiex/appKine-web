@@ -24,6 +24,8 @@ export interface Plan {
   readonly nombre: string;
   readonly sedes: string;
   readonly profesionales: string;
+  /** Los topes en grande, para la tarjeta del plan: la cifra y lo que cuenta. */
+  readonly topes: readonly { readonly cifra: string; readonly que: string }[];
   readonly paraQuien: string;
 }
 
@@ -43,6 +45,10 @@ export const PLANES: readonly Plan[] = [
     nombre: 'Plan Base',
     sedes: '1 sede',
     profesionales: 'Hasta 2 profesionales',
+    topes: [
+      { cifra: '1', que: 'sede' },
+      { cifra: '2', que: 'profesionales' },
+    ],
     paraQuien: 'Un consultorio o un estudio.',
   },
   {
@@ -50,6 +56,10 @@ export const PLANES: readonly Plan[] = [
     nombre: 'Plan Intermedio',
     sedes: 'De 1 a 3 sedes',
     profesionales: 'Hasta 6 profesionales',
+    topes: [
+      { cifra: '3', que: 'sedes' },
+      { cifra: '6', que: 'profesionales' },
+    ],
     paraQuien: 'El centro que abre su segunda o su tercera sede.',
   },
   {
@@ -57,6 +67,10 @@ export const PLANES: readonly Plan[] = [
     nombre: 'Plan Plus',
     sedes: 'Más de 3 sedes, a convenir',
     profesionales: 'Profesionales sin tope',
+    topes: [
+      { cifra: '∞', que: 'sedes, a convenir' },
+      { cifra: '∞', que: 'profesionales' },
+    ],
     paraQuien: 'Cadenas y franquicias. Lo armamos con vos.',
   },
 ];

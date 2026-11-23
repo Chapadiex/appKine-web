@@ -8,12 +8,13 @@ import { publicarMetadatosDeLanding } from './models/metadatos-de-landing';
 import { RUTA_LOGIN } from '../../core/models/rutas';
 import { Icono, NombreDeIcono } from '../../shared/components/icono/icono';
 import { AgendaDeMuestra } from './components/agenda-de-muestra/agenda-de-muestra';
-import { ArmadorDePlan } from './components/armador-de-plan/armador-de-plan';
-import { PedidoDePrueba } from './components/pedido-de-prueba/pedido-de-prueba';
 import { MapaDeSedes } from './components/mapa-de-sedes/mapa-de-sedes';
 import { SeccionIa } from './components/seccion-ia/seccion-ia';
-import { PieDeLanding } from './components/pie-de-landing/pie-de-landing';
+import { ArmadorDePlan } from './components/armador-de-plan/armador-de-plan';
+import { MuestraDeMarca } from './components/muestra-de-marca/muestra-de-marca';
 import { EleccionDelArmador } from './models/eleccion-del-armador';
+import { PieDeLanding } from './components/pie-de-landing/pie-de-landing';
+import { RUTA_PRUEBA } from './models/rutas-de-landing';
 
 interface Beneficio {
   readonly icono: NombreDeIcono;
@@ -64,18 +65,19 @@ interface Pregunta {
     RouterLink,
     Icono,
     AgendaDeMuestra,
-    ArmadorDePlan,
     MapaDeSedes,
     SeccionIa,
-    PedidoDePrueba,
+    ArmadorDePlan,
+    MuestraDeMarca,
     PieDeLanding,
   ],
   templateUrl: './landing-page.html',
-  styleUrls: ['./landing-comun.css', './landing-page.css'],
+  styleUrls: ['./landing-comun.css', './landing-secciones.css', './landing-page.css'],
   providers: [EleccionDelArmador],
 })
 export class LandingPage {
   protected readonly rutaLogin = RUTA_LOGIN;
+  protected readonly rutaPrueba = RUTA_PRUEBA;
 
   constructor() {
     publicarMetadatosDeLanding(inject(Meta), inject(DOCUMENT), inject(DestroyRef));
@@ -250,6 +252,20 @@ export class LandingPage {
         'En la instalación de AKINE, separados por organización. La inteligencia artificial ' +
         'corre en esa misma instalación: lo que se escribe en una historia clínica no se manda a ' +
         'servicios externos.',
+    },
+    {
+      pregunta: '¿La IA viene incluida o tengo que traer la mía?',
+      respuesta:
+        'Viene incluida: AKINE trae su propio modelo de lenguaje y su propio modelo de voz para el ' +
+        'dictado, listos para usar. No tenés que contratar nada aparte, ni cargar claves, ni pagar ' +
+        'por consulta. Si tu centro ya trabaja con otro modelo, lo vemos juntos y lo configuramos ' +
+        'en tu instalación.',
+    },
+    {
+      pregunta: '¿La IA decide por mí?',
+      respuesta:
+        'No. Responde, propone y avisa; el profesional decide. Cada sugerencia muestra de dónde ' +
+        'sale, se acepta o se descarta, y sólo ve los datos que el rol de quien pregunta puede ver.',
     },
     {
       pregunta: '¿Sirve para obras sociales y prepagas?',
