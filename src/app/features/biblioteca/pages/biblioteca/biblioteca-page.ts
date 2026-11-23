@@ -91,6 +91,10 @@ export type DialogoDeBiblioteca =
   styleUrl: './biblioteca-page.css',
 })
 export class BibliotecaPage {
+  /** Hoja con la esquina doblada y renglones: un archivo, no una credencial. */
+  protected readonly trazoPdf =
+    'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4';
+
   private readonly api = inject(BibliotecaApi);
   private readonly avisos = inject(AvisosStore);
   private readonly tenantContext = inject(TenantContextStore);

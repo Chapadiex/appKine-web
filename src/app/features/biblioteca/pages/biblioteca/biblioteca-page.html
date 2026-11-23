@@ -164,7 +164,7 @@
                   <tr>
                     <td>
                       <div class="biblioteca__libro">
-                        <app-icono class="biblioteca__libro-icono" nombre="documento" />
+                        <app-icono class="biblioteca__libro-icono" [trazo]="trazoPdf" />
                         <div>
                           <a class="biblioteca__titulo" [routerLink]="['/biblioteca', libro.id]">{{
                             libro.titulo

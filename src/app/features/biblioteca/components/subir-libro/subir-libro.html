@@ -26,7 +26,7 @@
         [class.subir-libro__zona--elegido]="archivo() !== null"
         [class.subir-libro__zona--error]="intento() && archivo() === null"
       >
-        <app-icono class="subir-libro__zona-icono" nombre="documento" />
+        <app-icono class="subir-libro__zona-icono" [trazo]="trazoPdf" />
         @if (archivo(); as elegido) {
           <span class="subir-libro__zona-titulo">{{ elegido.name }}</span>
           <span class="subir-libro__zona-ayuda"

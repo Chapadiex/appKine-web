@@ -141,3 +141,10 @@
     transition: none;
   }
 }
+
+/* Todo a lo ancho del panel: el formulario es una grilla y .campo ocupaba media fila. */
+form > .campo,
+form > .subir-libro__datos {
+  grid-column: 1 / -1;
+  width: 100%;
+}
