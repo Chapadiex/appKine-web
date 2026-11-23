@@ -91,6 +91,10 @@ interface Rect {
         [style.top.px]="posicion().top"
         [style.left.px]="posicion().left"
       >
+        <button type="button" class="recorrido__cerrar" title="Cerrar la guía" (click)="cerrar()">
+          <span aria-hidden="true">×</span>
+          <span class="visualmente-oculto">Cerrar la guía</span>
+        </button>
         <p class="recorrido__contador">Paso {{ indice() + 1 }} de {{ pasos().length }}</p>
         <h2 id="recorrido-titulo" class="recorrido__titulo">{{ paso().titulo }}</h2>
         <p id="recorrido-texto" class="recorrido__texto">{{ paso().texto }}</p>
@@ -145,6 +149,29 @@ interface Rect {
       background: var(--color-superficie);
       color: var(--color-texto);
       box-shadow: var(--sombra-flotante);
+    }
+
+    /* Cerrar arriba a la derecha (23/11/2026), además de "Saltar recorrido" y Escape. */
+    .recorrido__cerrar {
+      position: absolute;
+      top: var(--esp-3);
+      right: var(--esp-3);
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border: 0;
+      border-radius: var(--radio-md);
+      background: none;
+      color: var(--color-texto-suave);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .recorrido__cerrar:hover {
+      background: var(--color-hover);
+      color: var(--color-texto-fuerte);
     }
 
     .recorrido__contador {
