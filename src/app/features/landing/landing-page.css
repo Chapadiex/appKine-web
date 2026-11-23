@@ -503,6 +503,30 @@
 
 /* --- Responsive ----------------------------------------------------------------------- */
 
+/* Servicios: una tarjeta abajo de la otra, con la persona compartida en el medio, acostada. */
+@media (max-width: 64rem) {
+  .servicios {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+
+  .puente {
+    flex-direction: row;
+  }
+
+  .ficha {
+    width: auto;
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    text-align: start;
+  }
+
+  .ficha__avatar {
+    grid-row: span 3;
+  }
+}
+
 @media (max-width: 64rem) {
   .portada__fila,
   .sedes,
@@ -521,24 +545,8 @@
     display: none;
   }
 
-  .servicios,
   .rasgos {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .puente {
-    flex-direction: row;
-  }
-
-  .ficha {
-    width: auto;
-    grid-template-columns: auto 1fr;
-    justify-items: start;
-    text-align: start;
-  }
-
-  .ficha__avatar {
-    grid-row: span 3;
   }
 }
 
