@@ -181,6 +181,20 @@
   color: var(--color-texto-suave);
 }
 
+/* "Otra…": con forma de pastilla, para que se lea como una condición más de la fila. */
+.ficha__otra {
+  display: inline-flex;
+}
+
+.ficha .ficha__otra input[type='text'] {
+  inline-size: 11rem;
+  min-height: var(--alto-tocable);
+  padding: var(--esp-1) var(--esp-4);
+  border-style: dashed;
+  border-radius: var(--radio-pastilla);
+  font-size: var(--tipo-xs);
+}
+
 /* Revisada por un profesional: marcada y fija, con borde punteado para que no parezca editable. */
 .ficha__tilde--fija {
   border-style: dashed;
@@ -199,4 +213,31 @@
 
 app-texto-opcional.ficha__campo {
   display: flex;
+}
+
+/* Observaciones: rótulo arriba, campo ancho y su botón al lado. */
+.ficha__observaciones {
+  display: grid;
+  gap: var(--esp-1);
+  max-inline-size: 48rem;
+}
+
+.ficha__observaciones > label {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.ficha__observaciones-linea {
+  display: flex;
+  gap: var(--esp-2);
+}
+
+.ficha__observaciones-linea input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.ficha__observaciones-linea .boton {
+  gap: var(--esp-2);
+  min-height: var(--alto-control);
 }

@@ -59,6 +59,9 @@
         (guardar)="guardarFicha($event)"
         (agregarOcupacion)="agregarOcupacion($event)"
         (tildar)="tildarEnfermedad($event)"
+        [conOtraCondicion]="true"
+        (otraCondicion)="agregarOtraCondicion($event)"
+        (observacion)="agregarObservacion($event)"
       >
         <app-dictado-de-ficha
           fichaAcciones

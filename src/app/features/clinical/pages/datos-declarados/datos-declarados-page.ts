@@ -397,6 +397,34 @@ export class DatosDeclaradosPage {
     }
   }
 
+  /** Una condición fuera de la lista de la ficha: antecedente médico sin código. */
+  protected agregarOtraCondicion(texto: string): void {
+    this.agregarSuelto('MEDICO', texto, 'Condición cargada');
+  }
+
+  /** Observaciones, indicaciones o lo que no tiene lugar: antecedente "Otro". */
+  protected agregarObservacion(texto: string): void {
+    this.agregarSuelto('OTRO', texto, 'Observación cargada');
+  }
+
+  private agregarSuelto(tipo: 'MEDICO' | 'OTRO', texto: string, titulo: string): void {
+    this.api.declararAntecedente(this.id(), tipo, texto, this.justificacion()).subscribe({
+      next: () => {
+        this.avisos.exito(titulo, {
+          descripcion: 'Queda en Antecedentes, sin revisar hasta que lo vea un profesional.',
+        });
+        this.refrescar();
+      },
+      error: (error: unknown) => {
+        if (esSinPerfil(error)) {
+          this.estado.set({ tipo: 'sin-perfil' });
+          return;
+        }
+        this.avisos.error('No pudimos cargarlo', { descripcion: mensajeDe(error) });
+      },
+    });
+  }
+
   protected problemaDeDictado(mensaje: string): void {
     this.avisos.error('Dictado', { descripcion: mensaje });
   }

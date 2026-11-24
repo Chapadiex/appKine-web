@@ -16,6 +16,7 @@ import { OcupacionResponse } from '../../../../api/generated/model/ocupacion-res
 import { BuscadorConAlta } from '../../../../shared/components/buscador-con-alta/buscador-con-alta';
 import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
 import { NumeroConPasos } from '../../../../shared/components/numero-con-pasos/numero-con-pasos';
+import { Icono } from '../../../../shared/components/icono/icono';
 import { TextoOpcional } from '../../../../shared/components/texto-opcional/texto-opcional';
 
 /** Las diez enfermedades que pregunta la ficha (lista del producto, `EnfermedadDeIngreso`). */
@@ -53,7 +54,7 @@ export interface TildeDeEnfermedad {
 @Component({
   selector: 'app-ficha-de-ingreso',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, BuscadorConAlta, Chips, NumeroConPasos, TextoOpcional],
+  imports: [ReactiveFormsModule, BuscadorConAlta, Chips, Icono, NumeroConPasos, TextoOpcional],
   templateUrl: './ficha-de-ingreso.html',
   styleUrl: './ficha-de-ingreso.css',
 })
@@ -76,6 +77,12 @@ export class FichaDeIngreso {
   readonly agregarOcupacion = output<string>();
   readonly tildar = output<TildeDeEnfermedad>();
   readonly revisar = output<void>();
+  /** Muestra "Otra…" al final de las condiciones (datos declarados). */
+  readonly conOtraCondicion = input(false);
+  /** Una condición que no está en la lista: la página la carga como antecedente médico. */
+  readonly otraCondicion = output<string>();
+  /** Una observación o indicación suelta: la página la carga como antecedente "Otro". */
+  readonly observacion = output<string>();
 
   protected readonly enfermedades = ENFERMEDADES_DE_INGRESO;
   protected readonly actividades = ACTIVIDADES;
@@ -233,6 +240,22 @@ export class FichaDeIngreso {
       this.detalle().trim() !== (actual?.detalle ?? '');
     if (cambio) {
       this.emitir({});
+    }
+  }
+
+  protected enviarOtra(campo: HTMLInputElement): void {
+    this.enviarTexto(campo, (texto) => this.otraCondicion.emit(texto));
+  }
+
+  protected enviarObservacion(campo: HTMLInputElement): void {
+    this.enviarTexto(campo, (texto) => this.observacion.emit(texto));
+  }
+
+  private enviarTexto(campo: HTMLInputElement, emitir: (texto: string) => void): void {
+    const texto = campo.value.trim();
+    if (texto) {
+      emitir(texto.charAt(0).toUpperCase() + texto.slice(1));
+      campo.value = '';
     }
   }
 

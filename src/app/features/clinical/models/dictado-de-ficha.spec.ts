@@ -47,6 +47,19 @@ describe('interpretarDictadoDeFicha', () => {
     });
   });
 
+  it('carga las condiciones fuera de la lista y las observaciones', () => {
+    const ficha = interpretarDictadoDeFicha(
+      'Tiene marcapasos, TDAH y celiaquía. Observaciones: viene con su madre, no maneja.',
+    );
+
+    expect(ficha.condiciones).toEqual(['MARCAPASOS']);
+    expect(ficha.antecedentes).toEqual([
+      { tipo: 'MEDICO', descripcion: 'TDAH' },
+      { tipo: 'MEDICO', descripcion: 'Celiaquía' },
+      { tipo: 'OTRO', descripcion: 'Viene con su madre, no maneja' },
+    ]);
+  });
+
   it('no toma una condición negada ni inventa lo que no se dijo', () => {
     const ficha = interpretarDictadoDeFicha(
       'Peso 72,5. Tiene diabetes, no tiene asma. Antecedentes: alérgico a la penicilina.',
