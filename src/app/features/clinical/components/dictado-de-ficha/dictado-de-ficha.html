@@ -1,5 +1,5 @@
 @if (dictado.disponible()) {
-  <div class="dictado-ficha" [class.dictado-ficha--abierto]="paso() === 'revision'">
+  <div class="dictado-ficha">
     @switch (paso()) {
       @case ('reposo') {
         <button type="button" class="boton boton--secundario boton--chico" (click)="grabar()">
@@ -7,18 +7,14 @@
         </button>
         <span class="dictado-ficha__pista">
           Recorré la pantalla en voz alta: ocupación, peso, altura, actividad, condiciones y
-          antecedentes.
+          antecedentes. Al terminar se carga solo.
         </span>
       }
       @case ('grabando') {
         <button type="button" class="boton boton--peligro boton--chico" (click)="terminar()">
-          <app-icono nombre="detener" /> Terminar y revisar
+          <app-icono nombre="detener" /> Terminar y cargar
         </button>
-        <button
-          type="button"
-          class="boton boton--secundario boton--chico"
-          (click)="descartarGrabacion()"
-        >
+        <button type="button" class="boton boton--secundario boton--chico" (click)="descartar()">
           Descartar
         </button>
         <span class="dictado-ficha__pista" role="status">
@@ -27,53 +23,7 @@
         </span>
       }
       @case ('procesando') {
-        <span class="dictado-ficha__pista" role="status">Procesando el dictado…</span>
-      }
-      @case ('revision') {
-        <section class="dictado-ficha__revision" aria-labelledby="dictado-ficha-titulo">
-          <h2 id="dictado-ficha-titulo" class="dictado-ficha__titulo">Lo que entendí</h2>
-          @if (filas().length === 0) {
-            <p class="dictado-ficha__vacio">
-              No reconocí ningún dato. Probá nombrando cada campo: «peso 80», «tiene diabetes»…
-            </p>
-          } @else {
-            <ul class="dictado-ficha__filas">
-              @for (fila of filas(); track fila.clave) {
-                <li>
-                  <label class="dictado-ficha__fila">
-                    <input
-                      type="checkbox"
-                      [checked]="marcadas().has(fila.clave)"
-                      (change)="alternar(fila.clave)"
-                    />
-                    <span class="dictado-ficha__rotulo">{{ fila.rotulo }}</span>
-                    <span class="dictado-ficha__valor">{{ fila.valor }}</span>
-                  </label>
-                </li>
-              }
-            </ul>
-          }
-          <details class="dictado-ficha__texto">
-            <summary>Ver lo que se transcribió</summary>
-            <blockquote>{{ texto() }}</blockquote>
-          </details>
-          <div class="dictado-ficha__acciones">
-            @if (filas().length > 0) {
-              <button
-                type="button"
-                class="boton boton--primario boton--chico"
-                [disabled]="marcadas().size === 0"
-                (click)="cargarMarcadas()"
-              >
-                {{ marcadas().size === filas().length ? 'Cargar todo' : 'Cargar lo marcado' }}
-              </button>
-            }
-            <button type="button" class="boton boton--secundario boton--chico" (click)="grabar()">
-              <app-icono nombre="microfono" /> Volver a dictar
-            </button>
-            <button type="button" class="boton-texto" (click)="reiniciar()">Descartar</button>
-          </div>
-        </section>
+        <span class="dictado-ficha__pista" role="status">Cargando lo dictado…</span>
       }
     }
   </div>

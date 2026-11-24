@@ -22,6 +22,31 @@ describe('interpretarDictadoDeFicha', () => {
     });
   });
 
+  it('toma la actividad sin que se la nombre y no carga los rótulos como datos', () => {
+    const ficha = interpretarDictadoDeFicha(
+      'La persona es albañil, ocupación albañil, peso 120 kilos, altura 1 metro 90, deportista, ' +
+        'realiza 3 veces por semana fútbol, tiene marcapasos y epilepsia. Antecedentes médicos, ' +
+        'no tiene ninguno, quirúrgicos, pero la mano derecha en el 20-25.',
+    );
+
+    expect(ficha).toEqual({
+      ocupacion: 'Albañil',
+      pesoKg: 120,
+      alturaCm: 190,
+      actividad: 'DEPORTISTA',
+      detalle: 'Realiza 3 veces por semana fútbol',
+      condiciones: ['MARCAPASOS', 'EPILEPSIA'],
+      antecedentes: [
+        {
+          tipo: 'QUIRURGICO',
+          descripcion: 'Operación de la mano derecha',
+          anio: 2025,
+          zona: 'Mano',
+        },
+      ],
+    });
+  });
+
   it('no toma una condición negada ni inventa lo que no se dijo', () => {
     const ficha = interpretarDictadoDeFicha(
       'Peso 72,5. Tiene diabetes, no tiene asma. Antecedentes: alérgico a la penicilina.',
