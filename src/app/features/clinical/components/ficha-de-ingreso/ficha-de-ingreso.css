@@ -1,4 +1,7 @@
-/* Ficha de ingreso: tres lineas, compacta. Solo tokens del sistema. */
+/*
+ * Ficha de ingreso en tres bloques: datos fisicos, actividad y condiciones. Cada bloque en su
+ * fila, con los rotulos alineados arriba. Solo tokens del sistema.
+ */
 
 :host {
   display: block;
@@ -6,7 +9,7 @@
 
 .ficha {
   display: grid;
-  gap: var(--esp-3);
+  gap: var(--esp-5);
   margin: 0;
 }
 
@@ -30,7 +33,7 @@
 .ficha__fila {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: start;
   gap: var(--esp-2) var(--esp-3);
 }
 
@@ -49,6 +52,13 @@
 
 .ficha__campo--ancho {
   flex: 1 1 12rem;
+  max-inline-size: 26rem;
+}
+
+/* Actividad: las opciones y el detalle libre van juntos, el detalle toma lo que sobra. */
+.ficha__fila--actividad app-texto-opcional.ficha__campo {
+  flex: 1 1 14rem;
+  max-inline-size: 26rem;
 }
 
 .ficha__campo--numero input {
@@ -94,8 +104,7 @@
 }
 
 .ficha input[type='text']:focus-visible,
-.ficha select:focus-visible,
-.ficha input[type='checkbox']:focus-visible {
+.ficha select:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }
@@ -112,31 +121,69 @@
 .ficha__enfermedades {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-1) var(--hueco-tocable);
+  gap: var(--esp-2);
   margin: 0;
   padding: 0;
   border: 0;
 }
 
 .ficha__enfermedades legend {
-  float: left;
-  margin-inline-end: var(--esp-2);
+  margin-block-end: var(--esp-2);
+  padding: 0;
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
 }
 
+/*
+ * Cada condicion es una pastilla que se marca entera, como los chips de antecedentes. Sigue siendo
+ * una casilla real (teclado, lector y bloqueo por item); marcada se rellena y conserva el tilde.
+ */
 .ficha__tilde {
   display: inline-flex;
   align-items: center;
-  gap: var(--esp-1);
+  gap: var(--esp-2);
   min-height: var(--alto-tocable);
+  padding: var(--esp-1) var(--esp-4) var(--esp-1) var(--esp-3);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-pastilla);
+  background: var(--color-superficie);
+  font-size: var(--tipo-xs);
+  font-weight: var(--peso-medio);
   cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.ficha__tilde:has(input:checked) {
+  border-color: var(--color-accion-fondo);
+  background: var(--color-seleccion);
+  color: var(--color-texto);
+  font-weight: var(--peso-semi);
+}
+
+.ficha__tilde:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+@media (hover: hover) {
+  .ficha__tilde:not(:has(input:disabled)):hover {
+    border-color: var(--color-acento);
+  }
 }
 
 .ficha__tilde:has(input:disabled) {
   cursor: default;
+}
+
+.ficha__tilde:has(input:disabled):not(:has(input:checked)) {
   color: var(--color-texto-suave);
+}
+
+/* Revisada por un profesional: marcada y fija, con borde punteado para que no parezca editable. */
+.ficha__tilde--fija {
+  border-style: dashed;
 }
 
 @media (max-width: 40rem) {
@@ -145,10 +192,9 @@
   }
 }
 
-/* En modo táctil el tilde mismo también se agranda: el dedo apunta al cuadrito. */
-.ficha__tilde input[type='checkbox'] {
-  inline-size: calc(var(--alto-tocable) / 2);
-  block-size: calc(var(--alto-tocable) / 2);
+/* El foco se dibuja en la pastilla entera; la casilla de adentro no repite el anillo. */
+.ficha__tilde input[type='checkbox']:focus-visible {
+  outline: none;
 }
 
 app-texto-opcional.ficha__campo {
