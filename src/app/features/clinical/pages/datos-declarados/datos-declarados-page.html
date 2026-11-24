@@ -45,35 +45,10 @@
 
   @case ('lista') {
     @if (datos(); as lista) {
-      <!-- Motivo de acceso: queda registrado con cada carga. Se cambia en linea. -->
-      @if (editandoMotivo()) {
-        <form class="declarados__motivo" (submit)="$event.preventDefault(); guardarMotivo()">
-          <label for="declarados-motivo">Motivo del acceso</label>
-          <input
-            id="declarados-motivo"
-            type="text"
-            maxlength="280"
-            [value]="motivoEscrito()"
-            (input)="motivoEscrito.set($any($event.target).value)"
-          />
-          <button type="submit" class="boton boton--secundario boton--chico">Listo</button>
-        </form>
-      } @else {
-        <p class="declarados__motivo">
-          <span
-            >Motivo registrado: <b>{{ justificacion() }}</b></span
-          >
-          <button type="button" class="boton-texto" (click)="cambiarMotivo()">Cambiar</button>
-        </p>
-      }
-
-      <!-- Dictar todo: se graba recorriendo la pantalla y se carga lo que se marca. -->
-      <app-dictado-de-ficha
-        class="declarados__dictado"
-        (cargar)="cargarDictado($event)"
-        (problema)="problemaDeDictado($event)"
-      />
-
+      <!--
+        El motivo de acceso viaja con cada carga (DP-03): el sugerido, sin mostrarlo (pedido del
+        usuario, 23/11/2026). El micrófono de la ficha dicta todo y lo carga al terminar.
+      -->
       <app-ficha-de-ingreso
         class="declarados__ficha"
         [ficha]="lista.ficha ?? null"
@@ -84,7 +59,13 @@
         (guardar)="guardarFicha($event)"
         (agregarOcupacion)="agregarOcupacion($event)"
         (tildar)="tildarEnfermedad($event)"
-      />
+      >
+        <app-dictado-de-ficha
+          fichaAcciones
+          (cargar)="cargarDictado($event)"
+          (problema)="problemaDeDictado($event)"
+        />
+      </app-ficha-de-ingreso>
 
       <div class="declarados">
         <!-- Antecedentes -->

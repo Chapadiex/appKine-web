@@ -16,6 +16,8 @@
       }
     }
     <span class="ficha__estado" role="status">{{ guardando() ? 'Guardando…' : '' }}</span>
+    <!-- Acciones de la pantalla que la usa (el micrófono de datos declarados), a la derecha. -->
+    <ng-content select="[fichaAcciones]" />
   </header>
 
   <div class="ficha__fila">

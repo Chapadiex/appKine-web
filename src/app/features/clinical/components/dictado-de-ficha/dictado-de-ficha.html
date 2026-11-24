@@ -1,30 +1,33 @@
 @if (dictado.disponible()) {
-  <div class="dictado-ficha">
-    @switch (paso()) {
-      @case ('reposo') {
-        <button type="button" class="boton boton--secundario boton--chico" (click)="grabar()">
-          <app-icono nombre="microfono" /> Dictar todo
-        </button>
-        <span class="dictado-ficha__pista">
-          Recorré la pantalla en voz alta: ocupación, peso, altura, actividad, condiciones y
-          antecedentes. Al terminar se carga solo.
-        </span>
-      }
-      @case ('grabando') {
-        <button type="button" class="boton boton--peligro boton--chico" (click)="terminar()">
-          <app-icono nombre="detener" /> Terminar y cargar
-        </button>
-        <button type="button" class="boton boton--secundario boton--chico" (click)="descartar()">
-          Descartar
-        </button>
-        <span class="dictado-ficha__pista" role="status">
-          <span class="dictado-ficha__punto" aria-hidden="true"></span>
-          Grabando… por ejemplo «peso 80 kilos, tiene diabetes, antecedentes: alérgico a…»
-        </span>
-      }
-      @case ('procesando') {
-        <span class="dictado-ficha__pista" role="status">Cargando lo dictado…</span>
-      }
+  @switch (paso()) {
+    @case ('reposo') {
+      <button
+        type="button"
+        class="dictado-ficha"
+        aria-label="Dictar la ficha"
+        title="Dictar la ficha: decí ocupación, peso, altura, actividad, condiciones y antecedentes"
+        (click)="grabar()"
+      >
+        <app-icono nombre="microfono" />
+      </button>
     }
-  </div>
+    @case ('grabando') {
+      <button
+        type="button"
+        class="dictado-ficha dictado-ficha--grabando"
+        aria-label="Terminar el dictado y cargar"
+        title="Terminar y cargar"
+        (click)="terminar()"
+        (keydown.escape)="descartar()"
+      >
+        <app-icono nombre="detener" />
+      </button>
+    }
+    @case ('procesando') {
+      <button type="button" class="dictado-ficha" aria-label="Cargando lo dictado" disabled>
+        <span class="dictado-ficha__giro" aria-hidden="true"></span>
+      </button>
+    }
+  }
+  <span class="visualmente-oculto" role="status">{{ anuncio() }}</span>
 }
