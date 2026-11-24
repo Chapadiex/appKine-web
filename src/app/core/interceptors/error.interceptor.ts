@@ -242,12 +242,14 @@ export function esSinPermiso(error: unknown): boolean {
 }
 
 /**
- * Los 503 de un modelo local ocupado o caido (sugerencias de evolucion). No publican el aviso
- * global: el backend anda, y la pantalla que pidio ya muestra el texto del problema.
+ * Los 503 de un modelo local ocupado o caido (sugerencias de evolucion, transcriptor del dictado).
+ * No publican el aviso global: el backend anda, y la pantalla que pidio ya muestra el texto del
+ * problema.
  */
 const PROBLEMAS_DE_MODELO_LOCAL: ReadonlySet<string> = new Set([
   'modelo-ocupado',
   'modelo-no-disponible',
+  'dictado-no-disponible',
 ]);
 
 function esDeUnModeloLocal(cuerpo: unknown): boolean {
