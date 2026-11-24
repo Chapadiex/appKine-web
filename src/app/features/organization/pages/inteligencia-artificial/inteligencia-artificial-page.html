@@ -113,6 +113,26 @@
         </app-alerta>
       }
 
+      <!-- El asistente es un agente con su propio proveedor (contrato 0.193.0); la key nunca viaja. -->
+      @if (m.proveedorAsistente; as pa) {
+        <p class="ia__linea ia__proveedor">
+          <span>Asistente:</span>
+          <strong>{{ nombreDeProveedor(pa.nombre) }}</strong>
+          @if (pa.modelo) {
+            <span class="ia__modelo">{{ pa.modelo }}</span>
+          }
+          @if (pa.nombre === 'claude' && !pa.tieneKey) {
+            <span class="marca-estado marca-estado--suspendida">Sin key</span>
+          }
+          @if (pa.alternativo; as alt) {
+            <span>· si no responde, {{ nombreDeProveedor(alt.nombre) }}</span>
+            @if (alt.modelo) {
+              <span class="ia__modelo">{{ alt.modelo }}</span>
+            }
+          }
+        </p>
+      }
+
       @if (m.modelos.length > 0) {
         <div class="tabla-scroll">
           <table class="tabla">

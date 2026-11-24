@@ -9,13 +9,14 @@ import {
 } from '../../../../api/generated/model/respuesta-asistente-response';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
+import { TurnoPrevioRequest } from '../../../../api/generated/model/turno-previo-request';
+import { AsistenteApi } from '../../services/asistente-api';
 import { AsistentePage } from './asistente-page';
 
 interface Pedido {
   readonly sede: number;
   readonly pregunta: string;
-  readonly historial: readonly TurnoPrevio[];
+  readonly historial: readonly TurnoPrevioRequest[];
   readonly personaId?: number;
 }
 
@@ -27,6 +28,7 @@ function respuesta(parcial: Partial<RespuestaAsistenteResponse>): RespuestaAsist
     filas: [],
     opciones: [],
     advertencias: [],
+    herramientas: [],
     ...parcial,
   };
 }
@@ -49,7 +51,7 @@ describe('AsistentePage', () => {
             consultar: (
               sede: number,
               pregunta: string,
-              historial: readonly TurnoPrevio[],
+              historial: readonly TurnoPrevioRequest[],
               personaId?: number,
             ) => {
               pedidos.push({ sede, pregunta, historial, personaId });
@@ -114,17 +116,15 @@ describe('AsistentePage', () => {
     expect(el().querySelector('a.asistente__chip')?.getAttribute('href')).toBe('/agenda/recepcion');
   });
 
-  it('elSeguimientoMandaLaInterpretacionAnterior', async () => {
-    const interpretacion = {
-      intencion: InterpretacionDtoIntencionEnum.ASISTENCIA_PERSONA,
-      persona: 'Juan',
-      periodo: 'ESTA_SEMANA',
-    };
-    siguiente = () => of(respuesta({ interpretacion }));
+  it('elSeguimientoMandaElTextoYLasPersonasNombradas', async () => {
+    const texto = 'Sí, [Juan Pérez](/pacientes/5) vino el martes.';
+    siguiente = () => of(respuesta({ texto, filas: [{ persona_id: 7, nombre: 'Ana' }] }));
     await preguntar('¿Juan vino esta semana?');
     await preguntar('¿y la semana pasada?');
 
-    expect(pedidos[1].historial).toEqual([{ pregunta: '¿Juan vino esta semana?', interpretacion }]);
+    expect(pedidos[1].historial).toEqual([
+      { pregunta: '¿Juan vino esta semana?', respuesta: texto, personaIds: [7, 5] },
+    ]);
   });
 
   it('unaAclaracionReenviaLaMismaPreguntaConLaPersonaElegida', async () => {

@@ -14,7 +14,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-import { InterpretacionDto } from '../../../../api/generated/model/interpretacion-dto';
+import { LlamadaDeHerramientaDelAsistente } from '../../../../api/generated/model/llamada-de-herramienta-del-asistente';
 import { OpcionDePersonaDelAsistente } from '../../../../api/generated/model/opcion-de-persona-del-asistente';
 import { RespuestaAsistenteResponse } from '../../../../api/generated/model/respuesta-asistente-response';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
@@ -29,7 +29,14 @@ import { Icono, type NombreDeIcono } from '../../../../shared/components/icono/i
 import { formatearInstante } from '../../../../shared/utils/instantes';
 import { rutaDePantalla } from '../../../../shared/utils/ruta-de-pantalla';
 import { traducirErrorAsistente } from '../../models/asistente-errors';
-import { AsistenteApi, TurnoPrevio } from '../../services/asistente-api';
+import { TurnoPrevioRequest } from '../../../../api/generated/model/turno-previo-request';
+import {
+  idDePersonaEnRuta,
+  parsearTextoDelAgente,
+  personasEnlazadas,
+} from '../../models/texto-del-agente';
+import { AsistenteApi } from '../../services/asistente-api';
+import { TextoDelAgente } from '../texto-del-agente/texto-del-agente';
 import { Dictado } from '../../../../shared/dictado/dictado.directive';
 import { TarjetaDeAccion } from '../tarjeta-de-accion/tarjeta-de-accion';
 
@@ -53,7 +60,72 @@ export const SUGERENCIAS: readonly string[] = [
 ];
 
 /** Claves de las filas que no se muestran en la tabla: son ids internos. */
-const CLAVES_OCULTAS = new Set(['personaId', 'turnoId', 'sesionId', 'claseId']);
+const CLAVES_OCULTAS = new Set([
+  'personaId',
+  'turnoId',
+  'sesionId',
+  'claseId',
+  'persona_id',
+  'turno_id',
+  'sesion_id',
+  'clase_id',
+]);
+/** El servidor admite hasta 10 personas y 2000 caracteres por turno del historial. */
+const MAX_PERSONAS_POR_TURNO = 10;
+const MAX_RESPUESTA_EN_HISTORIAL = 2000;
+
+/** Cada herramienta del agente, en palabras, para "Ver cómo lo resolví". */
+const HERRAMIENTAS: Readonly<Record<string, string>> = {
+  buscar_persona: 'Buscó la persona',
+  turnos: 'Turnos',
+  ausentes: 'Ausentes',
+  practicas_aplicadas: 'Prácticas aplicadas',
+  arancel_vigente: 'Arancel vigente',
+  deudas_persona: 'Deudas',
+  datos_persona: 'Datos de la persona',
+  casos_persona: 'Casos',
+  buscar_oferta: 'Ofertas',
+  ficha_paciente: 'Ficha del paciente',
+  ficha_practica: 'Ficha de la práctica',
+  agenda_del_dia: 'Ficha de la agenda del día',
+  consulta_sql: 'Consulta a la base',
+  consulta_sql_clinica: 'Consulta a la base',
+  como_se_hace: 'Manual',
+  reporte: 'Reporte',
+  clases: 'Clases',
+};
+
+/** Una llamada a herramienta lista para mostrar. */
+export interface PasoDelAgente {
+  readonly etiqueta: string;
+  /** La entrada en "clave: valor", separada por " · "; vacía si no tuvo. */
+  readonly entrada: string;
+  readonly sinPermiso: boolean;
+  readonly filas: number;
+}
+
+export function pasoDelAgente(llamada: LlamadaDeHerramientaDelAsistente): PasoDelAgente {
+  const entrada = Object.entries(llamada.entrada ?? {})
+    .filter(([, valor]) => valor !== null && valor !== undefined && valor !== '')
+    .map(([clave, valor]) => `${clave.replaceAll('_', ' ')}: ${valorCompacto(valor)}`)
+    .join(' · ');
+  return {
+    etiqueta: HERRAMIENTAS[llamada.herramienta] ?? llamada.herramienta.replaceAll('_', ' '),
+    entrada,
+    sinPermiso: llamada.sinPermiso,
+    filas: llamada.filas,
+  };
+}
+
+function valorCompacto(valor: unknown): string {
+  if (Array.isArray(valor)) {
+    return valor.map(valorCompacto).join(', ');
+  }
+  if (typeof valor === 'object' && valor !== null) {
+    return JSON.stringify(valor);
+  }
+  return String(valor);
+}
 const ETIQUETAS: Readonly<Record<string, string>> = {
   inicio: 'Fecha y hora',
   estado: 'Estado',
@@ -113,6 +185,8 @@ export interface MensajeDelAsistente {
   readonly pregunta?: string;
   readonly respuesta?: RespuestaAsistenteResponse;
   readonly tabla?: TablaDeDatos;
+  /** Las herramientas que llamó el agente, para "Ver cómo lo resolví". */
+  readonly pasos?: readonly PasoDelAgente[];
 }
 
 /**
@@ -122,7 +196,15 @@ export interface MensajeDelAsistente {
 @Component({
   selector: 'app-charla-del-asistente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Dictado, EstadoVacio, Icono, MarkdownSeguro, RouterLink, TarjetaDeAccion],
+  imports: [
+    Dictado,
+    EstadoVacio,
+    Icono,
+    MarkdownSeguro,
+    RouterLink,
+    TarjetaDeAccion,
+    TextoDelAgente,
+  ],
   host: { class: 'charla', '[class.charla--compacta]': 'compacta()' },
   templateUrl: './charla-del-asistente.html',
   styleUrl: './charla-del-asistente.css',
@@ -245,9 +327,12 @@ export class CharlaDelAsistente {
     return DESTINOS[seccion] ?? { texto: 'Abrir la pantalla', icono: 'operacion' };
   }
 
-  /** Una respuesta del manual de usuario: su texto es Markdown. */
+  /**
+   * Una respuesta que cita una ficha del manual: su texto es el Markdown de la ficha (con capturas).
+   * El resto lo redacta el agente y va con el formato liviano de `app-texto-del-agente`.
+   */
   protected esDelManual(m: MensajeDelAsistente): boolean {
-    return m.respuesta?.interpretacion.intencion === 'COMO_SE_HACE';
+    return m.respuesta ? this.fichaDelManual(m.respuesta) !== null : false;
   }
 
   /** La ficha citada por una respuesta del manual, o null. */
@@ -281,16 +366,17 @@ export class CharlaDelAsistente {
       { rol: 'usuario', texto: visible, estado: 'listo' },
       { rol: 'asistente', texto: '', estado: 'esperando', pregunta },
     ]);
-    this.anuncio.set('Consultando…');
+    this.anuncio.set('Buscando…');
     this.abortar();
     this.suscripcion = this.api
       .consultar(sede, pregunta, historial, personaId, rutaDePantalla(this.router.url))
       .subscribe({
         next: (respuesta) => {
           const tabla =
-            respuesta.filas.length > 0 && respuesta.interpretacion.intencion !== 'COMO_SE_HACE'
+            respuesta.filas.length > 0 && this.fichaDelManual(respuesta) === null
               ? this.armarTabla(respuesta)
               : undefined;
+          const pasos = (respuesta.herramientas ?? []).map(pasoDelAgente);
           if (respuesta.accion) {
             this.huboAcciones.set(true);
           }
@@ -300,6 +386,7 @@ export class CharlaDelAsistente {
             texto: respuesta.texto,
             respuesta,
             tabla,
+            pasos,
           }));
           this.anuncio.set('Respuesta lista');
           this.escribir(this.mensajes().length - 1, respuesta.texto.length);
@@ -319,8 +406,8 @@ export class CharlaDelAsistente {
   }
 
   /**
-   * Efecto de escritura: la respuesta ya llegó entera (sale de una plantilla del servidor) y se
-   * revela de a poco, en no más de ~1,5 s. Sin animación si el usuario pidió movimiento reducido.
+   * Efecto de escritura: la respuesta ya llegó entera (sin streaming) y se revela de a
+   * poco, en texto plano; el formato aparece al terminar, en no más de ~1,5 s. Sin animación si el usuario pidió movimiento reducido.
    * Los datos, opciones y enlace aparecen al terminar.
    */
   private escribir(indice: number, total: number): void {
@@ -351,13 +438,20 @@ export class CharlaDelAsistente {
     this.escritura.set(null);
   }
 
-  /** Las últimas preguntas con su interpretación, para que "¿y la semana pasada?" se entienda. */
-  private historial(): TurnoPrevio[] {
-    const turnos: TurnoPrevio[] = [];
+  /**
+   * Las últimas preguntas con el texto que respondió el agente y las personas que nombró, para que
+   * "¿y la semana pasada?" o "¿y qué debe?" se entiendan. Nunca filas: el servidor vuelve a pedir
+   * cada dato.
+   */
+  private historial(): TurnoPrevioRequest[] {
+    const turnos: TurnoPrevioRequest[] = [];
     for (const m of this.mensajes()) {
-      const interpretacion: InterpretacionDto | undefined = m.respuesta?.interpretacion;
-      if (m.rol === 'asistente' && m.estado === 'listo' && m.pregunta && interpretacion) {
-        turnos.push({ pregunta: m.pregunta, interpretacion });
+      if (m.rol === 'asistente' && m.estado === 'listo' && m.pregunta && m.respuesta) {
+        turnos.push({
+          pregunta: m.pregunta,
+          respuesta: m.respuesta.texto.slice(0, MAX_RESPUESTA_EN_HISTORIAL),
+          personaIds: personasDeLaRespuesta(m.respuesta),
+        });
       }
     }
     return turnos.slice(-MAX_TURNOS);
@@ -426,6 +520,29 @@ export class CharlaDelAsistente {
     this.cambiarUltimo((m) => ({ ...m, estado: 'error', texto: traducido.mensaje }));
     this.anuncio.set('Error en la respuesta');
   }
+}
+
+/**
+ * Las personas que nombró una respuesta: las opciones de una aclaración, el enlace a su ficha, las
+ * filas con id de persona y los enlaces del texto. Sin repetidos y hasta lo que admite el servidor.
+ */
+export function personasDeLaRespuesta(r: RespuestaAsistenteResponse): number[] {
+  const ids = new Set<number>();
+  const sumar = (id: unknown): void => {
+    const n = typeof id === 'string' ? Number(id) : id;
+    if (typeof n === 'number' && Number.isSafeInteger(n) && n > 0) {
+      ids.add(n);
+    }
+  };
+  r.opciones.forEach((o) => sumar(o.personaId));
+  if (r.enlace) {
+    sumar(idDePersonaEnRuta(r.enlace));
+  }
+  for (const fila of r.filas as Record<string, unknown>[]) {
+    sumar(fila['persona_id'] ?? fila['personaId']);
+  }
+  personasEnlazadas(parsearTextoDelAgente(r.texto)).forEach(sumar);
+  return [...ids].slice(0, MAX_PERSONAS_POR_TURNO);
 }
 
 /** Texto e ícono del botón según la primera parte de la ruta del enlace. */

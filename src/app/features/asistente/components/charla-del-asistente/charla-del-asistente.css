@@ -136,6 +136,34 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* "Ver cómo lo resolví": una herramienta por renglón, con su entrada debajo en tono suave. */
+.asistente__pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  margin: var(--esp-3) 0 0;
+  padding-left: var(--esp-7);
+}
+.asistente__paso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-1) var(--esp-3);
+}
+.asistente__paso-nombre {
+  font-weight: var(--peso-semi);
+  color: var(--color-texto-fuerte);
+}
+.asistente__paso-filas {
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+}
+.asistente__paso-entrada {
+  flex-basis: 100%;
+  font-size: var(--tipo-xs);
+  color: var(--color-texto-suave);
+  overflow-wrap: anywhere;
+}
 .asistente__nota {
   margin: var(--esp-1) 0 0;
   color: var(--color-texto-suave);
