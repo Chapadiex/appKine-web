@@ -1,45 +1,74 @@
-/* Dictar todo: una fila con el botón; al revisar, un panel con lo entendido. Solo tokens. */
+/*
+ * Micrófono redondo y rojo en la cabecera de la ficha. El ícono va con el color de texto sobre
+ * acción: blanco en claro, oscuro en el tema oscuro (donde el rojo es claro). Solo tokens.
+ */
 
 :host {
-  display: block;
+  display: inline-flex;
 }
 
 .dictado-ficha {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-2) var(--esp-3);
-}
-
-.dictado-ficha .boton {
-  gap: var(--esp-2);
-}
-
-.dictado-ficha__pista {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--esp-2);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-}
-
-/* Punto que late mientras graba: el estado también va en texto. */
-.dictado-ficha__punto {
-  inline-size: 0.6rem;
-  block-size: 0.6rem;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--alto-tocable);
+  block-size: var(--alto-tocable);
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: var(--color-peligro);
-  animation: latido 1.2s ease-in-out infinite;
+  color: var(--color-accion-texto);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+@media (hover: hover) {
+  .dictado-ficha:not(:disabled):hover {
+    transform: scale(1.06);
+  }
+}
+
+.dictado-ficha:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.dictado-ficha:disabled {
+  cursor: progress;
+}
+
+/* Grabando: un anillo que late alrededor; el ícono cambia a detener. */
+.dictado-ficha--grabando {
+  animation: latido 1.2s ease-out infinite;
 }
 
 @keyframes latido {
-  50% {
-    opacity: 0.3;
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-peligro) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+
+.dictado-ficha__giro {
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: giro 0.8s linear infinite;
+}
+
+@keyframes giro {
+  to {
+    transform: rotate(1turn);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dictado-ficha__punto {
+  .dictado-ficha--grabando,
+  .dictado-ficha__giro {
     animation: none;
   }
 }

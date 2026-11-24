@@ -1,20 +1,5 @@
 /* Datos declarados (DP-47). Compacta: dos paneles en una pantalla. Solo tokens del sistema. */
 
-.declarados__motivo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-2) var(--esp-3);
-  margin-block-end: var(--esp-3);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-}
-
-.declarados__motivo input {
-  flex: 1 1 18rem;
-  max-inline-size: 32rem;
-}
-
 .declarados {
   display: grid;
   gap: var(--esp-4);
@@ -73,10 +58,6 @@
 .declarados__linea .declarados__anio {
   flex: 0 0 5.5rem;
   inline-size: 5.5rem;
-}
-
-.declarados__dictado {
-  margin-block-end: var(--esp-3);
 }
 
 .declarados__ficha {
@@ -184,8 +165,7 @@
 }
 
 /* Controles en linea: mismos tokens que `.campo input` del sistema, sin la columna de etiqueta. */
-.declarados :is(input[type='text'], input[type='number'], select),
-.declarados__motivo input {
+.declarados :is(input[type='text'], input[type='number'], select) {
   padding: var(--esp-2) 0.625rem;
   min-height: var(--alto-control);
   box-sizing: border-box;
@@ -196,8 +176,7 @@
   font: inherit;
 }
 
-.declarados :is(input[type='text'], input[type='number'], select):focus-visible,
-.declarados__motivo input:focus-visible {
+.declarados :is(input[type='text'], input[type='number'], select):focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }

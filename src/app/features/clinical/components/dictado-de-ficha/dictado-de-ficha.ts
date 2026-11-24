@@ -50,6 +50,15 @@ export class DictadoDeFicha {
     return this.dictado.grabando(this) ? 'grabando' : 'reposo';
   });
 
+  /** El estado en palabras: el botón solo muestra un ícono. */
+  protected readonly anuncio = computed(() =>
+    this.paso() === 'grabando'
+      ? 'Grabando el dictado. Tocá el botón para terminar y cargar, o Escape para descartar.'
+      : this.paso() === 'procesando'
+        ? 'Cargando lo dictado…'
+        : '',
+  );
+
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       clearTimeout(this.limite);

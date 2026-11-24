@@ -124,11 +124,9 @@ export class DatosDeclaradosPage {
 
   /**
    * El motivo de acceso de esta visita. Arranca con el sugerido para no frenar la carga con una
-   * pantalla previa; se cambia en linea y viaja con cada pedido (DP-03).
+   * pantalla previa; no se muestra y viaja con cada pedido (DP-03).
    */
   protected readonly justificacion = signal<string | null>(MOTIVO_SUGERIDO);
-  protected readonly motivoEscrito = signal(MOTIVO_SUGERIDO);
-  protected readonly editandoMotivo = signal(false);
 
   protected readonly tipos = Object.entries(TIPOS_DE_ANTECEDENTE) as [
     AntecedenteResponseTipoEnum,
@@ -401,20 +399,6 @@ export class DatosDeclaradosPage {
 
   protected problemaDeDictado(mensaje: string): void {
     this.avisos.error('Dictado', { descripcion: mensaje });
-  }
-
-  protected cambiarMotivo(): void {
-    this.motivoEscrito.set(this.justificacion() ?? MOTIVO_SUGERIDO);
-    this.editandoMotivo.set(true);
-  }
-
-  protected guardarMotivo(): void {
-    const motivo = this.motivoEscrito().trim();
-    if (motivo === '') {
-      return;
-    }
-    this.justificacion.set(motivo);
-    this.editandoMotivo.set(false);
   }
 
   protected cargar(): void {
