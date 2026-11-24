@@ -11,138 +11,176 @@
       </span>
       @if (puedeRevisar() && sinRevisar()) {
         <button type="button" class="boton boton--secundario boton--chico" (click)="revisar.emit()">
-          Revisado
+          Marcar revisada
         </button>
       }
     }
-    <span class="ficha__estado" role="status">{{ guardando() ? 'Guardando…' : '' }}</span>
+    <span class="ficha__estado" role="status">{{ estadoDeGuardado() }}</span>
     <!-- Acciones de la pantalla que la usa (el micrófono de datos declarados), a la derecha. -->
     <ng-content select="[fichaAcciones]" />
   </header>
 
-  <div class="ficha__fila">
-    <div class="ficha__campo ficha__campo--ancho">
-      <label for="ficha-ocupacion">Ocupación</label>
-      <app-buscador-con-alta
-        idCampo="ficha-ocupacion"
-        placeholder="Buscá o agregá"
-        [opciones]="nombresDeOcupacion()"
-        [formControl]="ocupacion"
-        (elegido)="elegirOcupacion($event)"
-      />
-    </div>
-    <div class="ficha__campo ficha__campo--numero">
-      <label for="ficha-peso">Peso (kg)</label>
-      <app-numero-con-pasos
-        idCampo="ficha-peso"
-        etiqueta="Peso"
-        [paso]="0.5"
-        [decimales]="1"
-        [min]="1"
-        [max]="400"
-        [deshabilitado]="soloLectura()"
-        [(valor)]="peso"
-        (invalido)="marcarInvalido('peso', $event)"
-        (confirmado)="salirDeCampo()"
-      />
-    </div>
-    <div class="ficha__campo ficha__campo--numero">
-      <label for="ficha-altura">Altura (cm)</label>
-      <app-numero-con-pasos
-        idCampo="ficha-altura"
-        etiqueta="Altura"
-        [min]="30"
-        [max]="250"
-        [deshabilitado]="soloLectura()"
-        [(valor)]="altura"
-        (invalido)="marcarInvalido('altura', $event)"
-        (confirmado)="salirDeCampo()"
-      />
-    </div>
-    <div class="ficha__campo ficha__campo--imc">
-      <span class="ficha__etiqueta">IMC</span>
-      <output aria-live="polite">{{ imc() ?? '—' }}</output>
-    </div>
-  </div>
-
-  <div class="ficha__fila ficha__fila--actividad">
-    <div class="ficha__campo">
-      <span class="ficha__etiqueta">Actividad física</span>
-      <app-chips
-        etiqueta="Actividad física"
-        [opciones]="actividades"
-        [deshabilitado]="soloLectura()"
-        [valor]="actividad() || null"
-        (valorChange)="elegirActividad($event)"
-      />
-    </div>
-    <app-texto-opcional
-      class="ficha__campo ficha__campo--ancho"
-      idCampo="ficha-detalle"
-      etiqueta="¿Cuál?"
-      placeholder="Ej.: camina 3 veces por semana"
-      [maxlength]="120"
-      [deshabilitado]="soloLectura()"
-      [(valor)]="detalle"
-      (confirmado)="salirDeCampo()"
-    />
-  </div>
-
-  @if (numeroInvalido(); as mensaje) {
-    <p id="ficha-numero-error" class="campo__error" role="alert">{{ mensaje }}</p>
-  }
-
-  <fieldset class="ficha__enfermedades">
-    <legend>¿Tiene alguna de estas condiciones?</legend>
-    @for (e of enfermedades; track e[0]) {
-      <label
-        class="ficha__tilde"
-        [class.ficha__tilde--fija]="enfermedadesFijas().has(e[0])"
-        [title]="enfermedadesFijas().has(e[0]) ? motivoFijo() : ''"
-      >
-        <input
-          type="checkbox"
-          [checked]="enfermedadesTildadas().has(e[0])"
-          [disabled]="soloLectura() || enfermedadesFijas().has(e[0])"
-          (change)="alTildar(e[0], e[1], $event)"
+  <div class="ficha__cuerpo">
+    <!-- Izquierda: datos físicos y actividad -->
+    <div class="ficha__datos">
+      <div class="ficha__campo">
+        <label for="ficha-ocupacion">Ocupación</label>
+        <app-buscador-con-alta
+          idCampo="ficha-ocupacion"
+          placeholder="Buscá o agregá"
+          [opciones]="nombresDeOcupacion()"
+          [formControl]="ocupacion"
+          (elegido)="elegirOcupacion($event)"
         />
-        {{ e[1] }}
-      </label>
-    }
-    <!-- Lo que no está en la lista (TDAH, celiaquía): se carga como antecedente médico. -->
-    @if (conOtraCondicion() && !soloLectura()) {
-      <form class="ficha__otra" (submit)="$event.preventDefault(); enviarOtra(otra)">
-        <label class="visualmente-oculto" for="ficha-otra-condicion">
-          Otra condición (se carga como antecedente médico)
-        </label>
-        <input
-          #otra
-          id="ficha-otra-condicion"
-          type="text"
-          maxlength="120"
-          placeholder="Otra… y Enter"
-          title="Otra condición, por ejemplo TDAH o celiaquía: se carga en Antecedentes"
-        />
-      </form>
-    }
-  </fieldset>
-
-  <!-- Indicaciones o cosas extra que no entran en ningún campo: antecedente "Otro". -->
-  @if (conOtraCondicion() && !soloLectura()) {
-    <form class="ficha__observaciones" (submit)="$event.preventDefault(); enviarObservacion(obs)">
-      <label for="ficha-observaciones">Observaciones</label>
-      <div class="ficha__observaciones-linea">
-        <input
-          #obs
-          id="ficha-observaciones"
-          type="text"
-          maxlength="1000"
-          placeholder="Indicaciones o lo que no entra en otro campo"
-        />
-        <button type="submit" class="boton boton--secundario boton--chico">
-          <app-icono nombre="agregar" /> Agregar
-        </button>
       </div>
-    </form>
-  }
+
+      <div class="ficha__medidas">
+        <div class="ficha__campo">
+          <label for="ficha-peso">Peso (kg)</label>
+          <app-numero-con-pasos
+            idCampo="ficha-peso"
+            etiqueta="Peso"
+            [paso]="0.5"
+            [decimales]="1"
+            [min]="1"
+            [max]="400"
+            [deshabilitado]="soloLectura()"
+            [(valor)]="peso"
+            (invalido)="marcarInvalido('peso', $event)"
+            (confirmado)="salirDeCampo()"
+          />
+        </div>
+        <div class="ficha__campo">
+          <label for="ficha-altura">Altura (cm)</label>
+          <app-numero-con-pasos
+            idCampo="ficha-altura"
+            etiqueta="Altura"
+            [min]="30"
+            [max]="250"
+            [deshabilitado]="soloLectura()"
+            [(valor)]="altura"
+            (invalido)="marcarInvalido('altura', $event)"
+            (confirmado)="salirDeCampo()"
+          />
+        </div>
+        <div class="ficha__imc" aria-live="polite">
+          <span class="ficha__imc-rotulo">IMC</span>
+          <output class="ficha__imc-valor">{{ imc()?.valor ?? '—' }}</output>
+          @if (imc(); as calculado) {
+            <span class="ficha__imc-categoria" [attr.data-tono]="calculado.tono">
+              {{ calculado.categoria }}
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (numeroInvalido(); as mensaje) {
+        <p id="ficha-numero-error" class="campo__error" role="alert">{{ mensaje }}</p>
+      }
+
+      <div class="ficha__actividad">
+        <span class="ficha__etiqueta" id="ficha-actividad-rotulo">Actividad física</span>
+        <app-segmentado
+          class="ficha__segmentado"
+          etiqueta="Actividad física"
+          [opciones]="actividades"
+          [deshabilitado]="soloLectura()"
+          [valor]="actividad() || null"
+          (valorChange)="elegirActividad($event)"
+        />
+        <div class="ficha__actividad-fila">
+          <app-texto-opcional
+            class="ficha__campo ficha__que-hace"
+            idCampo="ficha-detalle"
+            etiqueta="¿Qué hace?"
+            placeholder="Ej.: fútbol, camina"
+            [maxlength]="90"
+            [deshabilitado]="soloLectura()"
+            [(valor)]="queHace"
+            (confirmado)="salirDeCampo()"
+          />
+          <div class="ficha__campo ficha__veces">
+            <label for="ficha-veces">Veces por semana</label>
+            <app-numero-con-pasos
+              idCampo="ficha-veces"
+              etiqueta="Veces por semana"
+              [min]="1"
+              [max]="14"
+              [deshabilitado]="soloLectura()"
+              [(valor)]="veces"
+              (confirmado)="salirDeCampo()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Derecha: condiciones -->
+    <fieldset class="ficha__condiciones">
+      <legend>Condiciones <span class="ficha__pista">· tildá sólo las que tiene</span></legend>
+      <div class="ficha__lista">
+        @for (e of enfermedades; track e[0]) {
+          <label
+            class="ficha__tilde"
+            [class.ficha__tilde--fija]="enfermedadesFijas().has(e[0])"
+            [title]="enfermedadesFijas().has(e[0]) ? motivoFijo() : ''"
+          >
+            <input
+              type="checkbox"
+              [checked]="enfermedadesTildadas().has(e[0])"
+              [disabled]="soloLectura() || enfermedadesFijas().has(e[0])"
+              (change)="alTildar(e[0], e[1], $event)"
+            />
+            {{ e[1] }}
+          </label>
+        }
+        @if (conOtraCondicion()) {
+          @for (c of condicionesTipicas(); track c.etiqueta) {
+            <label
+              class="ficha__tilde"
+              [class.ficha__tilde--fija]="c.fija"
+              [title]="c.fija ? motivoFijo() : ''"
+            >
+              <input
+                type="checkbox"
+                [checked]="c.marcada"
+                [disabled]="soloLectura() || c.fija"
+                (change)="alTildarSuelta(c.etiqueta, c.id, $event)"
+              />
+              {{ c.etiqueta }}
+            </label>
+          }
+          @for (c of otrasMarcadas(); track c.id) {
+            <label
+              class="ficha__tilde ficha__tilde--otra"
+              [class.ficha__tilde--fija]="c.fija"
+              [title]="c.fija ? motivoFijo() : ''"
+            >
+              <input
+                type="checkbox"
+                checked
+                [disabled]="soloLectura() || c.fija"
+                (change)="alTildarSuelta(c.descripcion, c.id, $event)"
+              />
+              {{ c.descripcion }}
+            </label>
+          }
+        }
+      </div>
+      <!-- Lo que no está en la lista (TDAH, celiaquía): se carga como antecedente médico. -->
+      @if (conOtraCondicion() && !soloLectura()) {
+        <form class="ficha__otra" (submit)="$event.preventDefault(); enviarOtra(otra)">
+          <label class="visualmente-oculto" for="ficha-otra-condicion">Otra condición</label>
+          <input
+            #otra
+            id="ficha-otra-condicion"
+            type="text"
+            maxlength="120"
+            placeholder="Otra condición"
+          />
+          <button type="submit" class="boton boton--secundario boton--chico">+ Otra</button>
+        </form>
+      }
+    </fieldset>
+  </div>
 </section>

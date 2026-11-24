@@ -1,6 +1,6 @@
 /*
- * Ficha de ingreso en tres bloques: datos fisicos, actividad y condiciones. Cada bloque en su
- * fila, con los rotulos alineados arriba. Solo tokens del sistema.
+ * Ficha de ingreso en dos columnas: a la izquierda datos físicos y actividad, a la derecha las
+ * condiciones en lista. En pantallas angostas, una debajo de la otra. Solo tokens del sistema.
  */
 
 :host {
@@ -9,7 +9,7 @@
 
 .ficha {
   display: grid;
-  gap: var(--esp-5);
+  gap: var(--esp-4);
   margin: 0;
 }
 
@@ -17,7 +17,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--esp-2);
+  gap: var(--esp-3);
 }
 
 .ficha__cabeza h2 {
@@ -27,51 +27,127 @@
 .ficha__estado {
   margin-inline-start: auto;
   color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
+  font-size: var(--tipo-xs);
 }
 
-.ficha__fila {
-  display: flex;
-  flex-wrap: wrap;
+.ficha__cuerpo {
+  display: grid;
+  gap: var(--esp-5) var(--esp-6);
   align-items: start;
-  gap: var(--esp-2) var(--esp-3);
+}
+
+@media (min-width: 56rem) {
+  .ficha__cuerpo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ficha__datos {
+  display: grid;
+  gap: var(--esp-3);
 }
 
 .ficha__campo {
   display: grid;
   gap: var(--esp-1);
-  flex: 0 1 auto;
   min-inline-size: 0;
 }
 
 .ficha__campo > label,
 .ficha__etiqueta {
   color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
+  font-size: var(--tipo-xs);
 }
 
-.ficha__campo--ancho {
-  flex: 1 1 12rem;
-  max-inline-size: 26rem;
-}
-
-/* Actividad: las opciones y el detalle libre van juntos, el detalle toma lo que sobra. */
-.ficha__fila--actividad app-texto-opcional.ficha__campo {
-  flex: 1 1 14rem;
-  max-inline-size: 26rem;
-}
-
-.ficha__campo--numero input {
-  inline-size: 5.5rem;
-}
-
-.ficha__campo--imc output {
+/* Peso, altura e IMC en una fila. */
+.ficha__medidas {
   display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--esp-3);
+}
+
+.ficha__medidas .ficha__campo input {
+  inline-size: 4.5rem;
+}
+
+.ficha__imc {
+  display: inline-flex;
+  flex: 1 1 9rem;
   align-items: center;
+  gap: var(--esp-2);
   min-height: var(--alto-control);
-  padding-inline: var(--esp-2);
-  font-weight: 600;
+  padding-inline: var(--esp-3);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.ficha__imc-rotulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.ficha__imc-valor {
+  font-size: var(--tipo-md);
+  font-weight: var(--peso-semi);
   font-variant-numeric: tabular-nums;
+}
+
+.ficha__imc-categoria {
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-pastilla);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.ficha__imc-categoria[data-tono='exito'] {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.ficha__imc-categoria[data-tono='aviso'] {
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+}
+
+.ficha__imc-categoria[data-tono='peligro'] {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+/* Actividad: compacta, el segmentado chico y abajo qué hace y cuántas veces. */
+.ficha__actividad {
+  display: grid;
+  gap: var(--esp-2);
+}
+
+:host ::ng-deep .ficha__segmentado .segmentado-tactil {
+  min-height: 0;
+}
+
+:host ::ng-deep .ficha__segmentado .segmentado-tactil__opcion {
+  min-height: 2rem;
+  padding-block: var(--esp-1);
+  font-size: var(--tipo-xs);
+}
+
+.ficha__actividad-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--esp-3);
+}
+
+.ficha__que-hace {
+  flex: 1 1 12rem;
+}
+
+app-texto-opcional.ficha__campo {
+  display: flex;
+}
+
+.ficha__veces input {
+  inline-size: 3rem;
 }
 
 .ficha input[type='text'],
@@ -86,7 +162,7 @@
   font: inherit;
 }
 
-/* El input del buscador vive en otro componente: mismo alto y borde que el resto de la fila. */
+/* El input del buscador vive en otro componente: mismo alto y borde que el resto. */
 :host ::ng-deep .buscador-con-alta__campo input {
   min-height: var(--alto-control);
   box-sizing: border-box;
@@ -118,58 +194,58 @@
   margin: 0;
 }
 
-.ficha__enfermedades {
-  display: flex;
-  flex-wrap: wrap;
+/* Condiciones: lista en dos columnas; la tildada se tiñe, además del tilde. */
+.ficha__condiciones {
+  display: grid;
   gap: var(--esp-2);
   margin: 0;
   padding: 0;
   border: 0;
+  min-inline-size: 0;
 }
 
-.ficha__enfermedades legend {
+.ficha__condiciones legend {
   margin-block-end: var(--esp-2);
   padding: 0;
   color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
+  font-size: var(--tipo-xs);
 }
 
-/*
- * Cada condicion es una pastilla que se marca entera, como los chips de antecedentes. Sigue siendo
- * una casilla real (teclado, lector y bloqueo por item); marcada se rellena y conserva el tilde.
- */
+.ficha__pista {
+  font-size: var(--tipo-2xs);
+}
+
+.ficha__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
+  gap: var(--esp-1) var(--esp-3);
+}
+
 .ficha__tilde {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--esp-2);
-  min-height: var(--alto-tocable);
-  padding: var(--esp-1) var(--esp-4) var(--esp-1) var(--esp-3);
-  border: var(--borde-fino) solid var(--color-borde-control);
-  border-radius: var(--radio-pastilla);
-  background: var(--color-superficie);
+  min-height: 2rem;
+  padding-inline: var(--esp-2);
+  border-radius: var(--radio-sm);
   font-size: var(--tipo-xs);
-  font-weight: var(--peso-medio);
   cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
 }
 
 .ficha__tilde:has(input:checked) {
-  border-color: var(--color-accion-fondo);
-  background: var(--color-seleccion);
-  color: var(--color-texto);
-  font-weight: var(--peso-semi);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+  font-weight: var(--peso-medio);
 }
 
 .ficha__tilde:has(input:focus-visible) {
   outline: var(--foco-grosor) solid var(--color-foco);
-  outline-offset: var(--foco-offset);
+  outline-offset: 1px;
 }
 
 @media (hover: hover) {
-  .ficha__tilde:not(:has(input:disabled)):hover {
-    border-color: var(--color-acento);
+  .ficha__tilde:not(:has(input:disabled)):not(:has(input:checked)):hover {
+    background: var(--color-hover);
   }
 }
 
@@ -181,63 +257,34 @@
   color: var(--color-texto-suave);
 }
 
-/* "Otra…": con forma de pastilla, para que se lea como una condición más de la fila. */
-.ficha__otra {
-  display: inline-flex;
-}
-
-.ficha .ficha__otra input[type='text'] {
-  inline-size: 11rem;
-  min-height: var(--alto-tocable);
-  padding: var(--esp-1) var(--esp-4);
-  border-style: dashed;
-  border-radius: var(--radio-pastilla);
-  font-size: var(--tipo-xs);
-}
-
-/* Revisada por un profesional: marcada y fija, con borde punteado para que no parezca editable. */
-.ficha__tilde--fija {
-  border-style: dashed;
-}
-
-@media (max-width: 40rem) {
-  .ficha__campo--ancho {
-    flex-basis: 100%;
-  }
-}
-
-/* El foco se dibuja en la pastilla entera; la casilla de adentro no repite el anillo. */
 .ficha__tilde input[type='checkbox']:focus-visible {
   outline: none;
 }
 
-app-texto-opcional.ficha__campo {
-  display: flex;
+/* Revisada por un profesional: marcada y fija, con borde punteado para que no parezca editable. */
+.ficha__tilde--fija {
+  outline: var(--borde-fino) dashed var(--color-borde-control);
 }
 
-/* Observaciones: rótulo arriba, campo ancho y su botón al lado. */
-.ficha__observaciones {
-  display: grid;
-  gap: var(--esp-1);
-  max-inline-size: 48rem;
-}
-
-.ficha__observaciones > label {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-}
-
-.ficha__observaciones-linea {
+/* "Otra": campo y botón en una línea, al pie de la lista. */
+.ficha__otra {
   display: flex;
   gap: var(--esp-2);
 }
 
-.ficha__observaciones-linea input {
+.ficha .ficha__otra input[type='text'] {
   flex: 1 1 auto;
   min-inline-size: 0;
+  min-height: 2rem;
+  font-size: var(--tipo-xs);
 }
 
-.ficha__observaciones-linea .boton {
-  gap: var(--esp-2);
-  min-height: var(--alto-control);
+.ficha__otra .boton {
+  min-height: 2rem;
+}
+
+@media (max-width: 40rem) {
+  .ficha__medidas .ficha__campo {
+    flex: 1 1 8rem;
+  }
 }

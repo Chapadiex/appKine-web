@@ -49,7 +49,7 @@ describe('interpretarDictadoDeFicha', () => {
 
   it('carga las condiciones fuera de la lista y las observaciones', () => {
     const ficha = interpretarDictadoDeFicha(
-      'Tiene marcapasos, TDAH y celiaquía. Observaciones: viene con su madre, no maneja.',
+      'Tiene marcapasos, TDAH y es celíaco. Observaciones: viene con su madre, no maneja.',
     );
 
     expect(ficha.condiciones).toEqual(['MARCAPASOS']);

@@ -1,6 +1,5 @@
 /*
- * Micrófono redondo y rojo en la cabecera de la ficha. El ícono va con el color de texto sobre
- * acción: blanco en claro, oscuro en el tema oscuro (donde el rojo es claro). Solo tokens.
+ * Micrófono redondo con contorno rojo en la cabecera de la ficha; grabando se rellena. Solo tokens.
  */
 
 :host {
@@ -13,10 +12,10 @@
   inline-size: var(--alto-tocable);
   block-size: var(--alto-tocable);
   padding: 0;
-  border: 0;
+  border: var(--borde-medio, 2px) solid var(--color-peligro);
   border-radius: 50%;
-  background: var(--color-peligro);
-  color: var(--color-accion-texto);
+  background: var(--color-superficie);
+  color: var(--color-peligro-texto);
   font-size: 1.15rem;
   cursor: pointer;
   transition: transform 120ms ease;
@@ -37,8 +36,10 @@
   cursor: progress;
 }
 
-/* Grabando: un anillo que late alrededor; el ícono cambia a detener. */
+/* Grabando: se rellena de rojo y late; el ícono cambia a detener. */
 .dictado-ficha--grabando {
+  background: var(--color-peligro);
+  color: var(--color-accion-texto);
   animation: latido 1.2s ease-out infinite;
 }
 

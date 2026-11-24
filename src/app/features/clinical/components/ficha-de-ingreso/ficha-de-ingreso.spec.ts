@@ -16,14 +16,12 @@ describe('FichaDeIngreso', () => {
     fixture.componentInstance.guardar.subscribe((ficha) => emitidos.push(ficha));
     const raiz = fixture.nativeElement as HTMLElement;
 
-    // Salir de la altura y tocar un chip antes de que la página avise que está guardando.
+    // Salir de la altura y elegir la actividad antes de que la página avise que está guardando.
     const altura = raiz.querySelector<HTMLInputElement>('#ficha-altura')!;
     altura.value = '176';
     altura.dispatchEvent(new Event('input'));
     altura.dispatchEvent(new Event('blur'));
-    [...raiz.querySelectorAll<HTMLButtonElement>('app-chips button')]
-      .find((b) => b.textContent?.trim() === 'Ocasional')!
-      .click();
+    raiz.querySelector<HTMLInputElement>('app-segmentado input[value="OCASIONAL"]')!.click();
     expect(emitidos.length).toBe(1);
 
     // La página guarda y devuelve la versión nueva: recién ahí sale lo que quedó en cola.
