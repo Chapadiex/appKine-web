@@ -67,6 +67,13 @@
         </p>
       }
 
+      <!-- Dictar todo: se graba recorriendo la pantalla y se carga lo que se marca. -->
+      <app-dictado-de-ficha
+        class="declarados__dictado"
+        (cargar)="cargarDictado($event)"
+        (problema)="problemaDeDictado($event)"
+      />
+
       <app-ficha-de-ingreso
         class="declarados__ficha"
         [ficha]="lista.ficha ?? null"

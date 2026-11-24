@@ -29,10 +29,13 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { Icono } from '../../../../shared/components/icono/icono';
 import { tamanoEnPalabras } from '../../../../shared/utils/archivos';
 import { ImagenNoLegible, prepararArchivoParaSubir } from '../../../../shared/utils/imagenes';
+import { DictadoDeFicha } from '../../components/dictado-de-ficha/dictado-de-ficha';
 import {
+  ENFERMEDADES_DE_INGRESO,
   FichaDeIngreso,
   TildeDeEnfermedad,
 } from '../../components/ficha-de-ingreso/ficha-de-ingreso';
+import { FichaDictada } from '../../models/dictado-de-ficha';
 import { CATEGORIAS_DE_ADJUNTO, TIPOS_DE_ANTECEDENTE } from '../../models/etiquetas-de-historia';
 import { traducirErrorHistoria } from '../../models/historia-errors';
 import { VisorDeAdjunto } from '../historia-clinica/components/visor-de-adjunto';
@@ -96,6 +99,7 @@ interface Baja {
     Ayuda,
     CabeceraDeFicha,
     ConfirmacionConMotivo,
+    DictadoDeFicha,
     EstadoVacio,
     FichaDeIngreso,
     Icono,
@@ -334,6 +338,74 @@ export class DatosDeclaradosPage {
           this.refrescar();
         },
       });
+  }
+
+  /**
+   * Carga lo elegido de un dictado. Primero condiciones y antecedentes, de a uno; después una sola
+   * relectura, y recién ahí la ficha: así su guardado sale con la versión vigente y nada lo pisa.
+   */
+  protected async cargarDictado(dictado: FichaDictada): Promise<void> {
+    const tildadas = this.enfermedadesTildadas();
+    let fallas = 0;
+    let cargados = 0;
+    const pedidos = [
+      ...dictado.condiciones
+        .filter((codigo) => !tildadas.has(codigo))
+        .map(
+          (codigo) => () =>
+            this.api.declararAntecedente(
+              this.id(),
+              'MEDICO',
+              ENFERMEDADES_DE_INGRESO.find(([c]) => c === codigo)?.[1] ?? codigo,
+              this.justificacion(),
+              { codigo },
+            ),
+        ),
+      ...dictado.antecedentes.map(
+        (a) => () =>
+          this.api.declararAntecedente(this.id(), a.tipo, a.descripcion, this.justificacion(), {
+            ...(a.zona ? { zona: a.zona } : {}),
+            ...(a.anio ? { anio: a.anio } : {}),
+          }),
+      ),
+    ];
+    for (const pedido of pedidos) {
+      try {
+        await firstValueFrom(pedido());
+        cargados++;
+      } catch (error: unknown) {
+        if (esSinPerfil(error)) {
+          this.estado.set({ tipo: 'sin-perfil' });
+          return;
+        }
+        fallas++;
+      }
+    }
+    if (pedidos.length > 0) {
+      try {
+        const datos = await firstValueFrom(this.api.ver(this.id(), this.justificacion()));
+        this.estado.set({ tipo: 'lista', datos });
+      } catch {
+        // Sin relectura la ficha igual guarda; la lista se pone al día en la próxima carga.
+      }
+    }
+    this.fichaDeIngreso()?.aplicarDictado(dictado);
+    if (fallas > 0) {
+      this.avisos.error('Parte del dictado no se cargó', {
+        descripcion: `${fallas} de ${pedidos.length} datos fallaron. Revisalos y cargalos a mano.`,
+      });
+    } else {
+      this.avisos.exito('Dictado cargado', {
+        descripcion:
+          cargados > 0
+            ? 'Queda todo sin revisar hasta que lo vea un profesional.'
+            : 'La ficha se guardó con lo dictado.',
+      });
+    }
+  }
+
+  protected problemaDeDictado(mensaje: string): void {
+    this.avisos.error('Dictado', { descripcion: mensaje });
   }
 
   protected cambiarMotivo(): void {

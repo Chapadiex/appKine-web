@@ -159,6 +159,41 @@ export class FichaDeIngreso {
     this.enviando = false;
   }
 
+  /**
+   * Lo dictado de la ficha (Dictar todo): lo lleva a los campos y lo guarda como si se hubiera
+   * escrito. La ocupacion pasa por el mismo camino que elegirla en el buscador.
+   */
+  aplicarDictado(dictado: {
+    readonly ocupacion?: string;
+    readonly pesoKg?: number;
+    readonly alturaCm?: number;
+    readonly actividad?: string;
+    readonly detalle?: string;
+  }): void {
+    if (this.soloLectura()) {
+      return;
+    }
+    if (dictado.pesoKg !== undefined) {
+      this.pesoInvalido.set(false);
+      this.peso.set(dictado.pesoKg);
+    }
+    if (dictado.alturaCm !== undefined) {
+      this.alturaInvalida.set(false);
+      this.altura.set(dictado.alturaCm);
+    }
+    if (dictado.actividad !== undefined) {
+      this.actividad.set(dictado.actividad);
+    }
+    if (dictado.detalle !== undefined) {
+      this.detalle.set(dictado.detalle);
+    }
+    this.salirDeCampo();
+    if (dictado.ocupacion) {
+      this.ocupacion.setValue(dictado.ocupacion, { emitEvent: false });
+      this.elegirOcupacion(dictado.ocupacion);
+    }
+  }
+
   /** Lo llama la pagina despues de crear la ocupacion. */
   guardarOcupacion(ocupacionId: number): void {
     this.emitir({ ocupacionId });
