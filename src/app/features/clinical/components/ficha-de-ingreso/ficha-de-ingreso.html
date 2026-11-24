@@ -61,6 +61,9 @@
       <span class="ficha__etiqueta">IMC</span>
       <output aria-live="polite">{{ imc() ?? '—' }}</output>
     </div>
+  </div>
+
+  <div class="ficha__fila ficha__fila--actividad">
     <div class="ficha__campo">
       <span class="ficha__etiqueta">Actividad física</span>
       <app-chips
@@ -88,9 +91,13 @@
   }
 
   <fieldset class="ficha__enfermedades">
-    <legend>¿Tiene…?</legend>
+    <legend>¿Tiene alguna de estas condiciones?</legend>
     @for (e of enfermedades; track e[0]) {
-      <label class="ficha__tilde" [title]="enfermedadesFijas().has(e[0]) ? motivoFijo() : ''">
+      <label
+        class="ficha__tilde"
+        [class.ficha__tilde--fija]="enfermedadesFijas().has(e[0])"
+        [title]="enfermedadesFijas().has(e[0]) ? motivoFijo() : ''"
+      >
         <input
           type="checkbox"
           [checked]="enfermedadesTildadas().has(e[0])"

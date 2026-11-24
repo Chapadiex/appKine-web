@@ -102,6 +102,10 @@
   gap: var(--esp-2);
 }
 
+.declarados__soltar-fila .boton {
+  gap: var(--esp-2);
+}
+
 .declarados__pista {
   margin: 0;
   color: var(--color-texto-suave);
