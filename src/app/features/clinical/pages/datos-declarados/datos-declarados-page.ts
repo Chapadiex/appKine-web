@@ -35,7 +35,7 @@ import {
   FichaDeIngreso,
   TildeDeEnfermedad,
 } from '../../components/ficha-de-ingreso/ficha-de-ingreso';
-import { FichaDictada } from '../../models/dictado-de-ficha';
+import { FichaDictada, resumirDictado } from '../../models/dictado-de-ficha';
 import { CATEGORIAS_DE_ADJUNTO, TIPOS_DE_ANTECEDENTE } from '../../models/etiquetas-de-historia';
 import { traducirErrorHistoria } from '../../models/historia-errors';
 import { VisorDeAdjunto } from '../historia-clinica/components/visor-de-adjunto';
@@ -347,7 +347,6 @@ export class DatosDeclaradosPage {
   protected async cargarDictado(dictado: FichaDictada): Promise<void> {
     const tildadas = this.enfermedadesTildadas();
     let fallas = 0;
-    let cargados = 0;
     const pedidos = [
       ...dictado.condiciones
         .filter((codigo) => !tildadas.has(codigo))
@@ -372,7 +371,6 @@ export class DatosDeclaradosPage {
     for (const pedido of pedidos) {
       try {
         await firstValueFrom(pedido());
-        cargados++;
       } catch (error: unknown) {
         if (esSinPerfil(error)) {
           this.estado.set({ tipo: 'sin-perfil' });
@@ -396,10 +394,7 @@ export class DatosDeclaradosPage {
       });
     } else {
       this.avisos.exito('Dictado cargado', {
-        descripcion:
-          cargados > 0
-            ? 'Queda todo sin revisar hasta que lo vea un profesional.'
-            : 'La ficha se guardó con lo dictado.',
+        descripcion: `${resumirDictado(dictado)}. Queda sin revisar hasta que lo vea un profesional.`,
       });
     }
   }

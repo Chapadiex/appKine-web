@@ -63,7 +63,18 @@ const TIPOS_POR_PALABRA: readonly (readonly [AntecedenteResponseTipoEnum, RegExp
     /familiar|\bpadre\b|\bmadre\b|\bhermano|\bhermana|\babuel/,
   ],
   [AntecedenteResponseTipoEnum.HABITO, /\bfuma|tabaco|cigarr|alcohol|\bbebe\b/],
+  [AntecedenteResponseTipoEnum.MEDICO, /\bmedic[oa]s?\b/],
 ];
+
+/** Palabras de relleno al principio de un rótulo: "algo quirúrgico", "los médicos". */
+const RELLENO_DE_ROTULO = /^(?:(?:algo|los|las|de|en|antecedentes?)\s+)+/;
+
+/** Palabras que dicen qué actividad hace, para encontrarla aunque no se diga "actividad física". */
+const HACE_ACTIVIDAD =
+  /\b(realiza|hace|practica|juega|camina|caminatas?|corre|entrena|gimnasio|futbol|natacion|nada en|bicicleta|yoga|pilates)\b/;
+
+/** Conectores sueltos al principio de una frase dictada. */
+const CONECTOR_INICIAL = /^(?:pero|y|que|tambien|ademas|entonces|bueno)\s+/i;
 
 /** Dónde empieza cada parte del dictado. El texto de una parte llega hasta la siguiente. */
 const MARCAS: readonly (readonly [Parte, RegExp])[] = [
@@ -87,7 +98,8 @@ const NEGACION = /\b(no|sin|niega|nunca|ningun|ninguna|nada)\b/;
  * cargar.
  */
 export function interpretarDictadoDeFicha(dictado: string): FichaDictada {
-  const original = dictado.normalize('NFC');
+  // "en el 20-25": el transcriptor parte los años; se juntan antes de leer.
+  const original = dictado.normalize('NFC').replace(/\b(19|20)-(\d{2})\b/g, '$1$2');
   // Mismo largo que el original (cada letra con tilde queda en una): los índices sirven para los dos.
   const plano = original.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC').toLowerCase();
   const partes = partir(original, plano);
@@ -96,7 +108,9 @@ export function interpretarDictadoDeFicha(dictado: string): FichaDictada {
     ocupacion: ocupacionDe(partes.get('ocupacion')),
     pesoKg: pesoDe(plano),
     alturaCm: alturaDe(plano),
-    ...actividadDe(partes.get('actividad')),
+    ...(partes.has('actividad')
+      ? actividadDe(partes.get('actividad'), false)
+      : actividadDe(antesDeAntecedentes(original, plano), true)),
     condiciones: condicionesDe(plano),
     antecedentes: antecedentesDe(partes.get('antecedentes')),
   };
@@ -191,7 +205,20 @@ function alturaDe(plano: string): number | undefined {
   return valor >= 30 && valor <= 250 ? valor : undefined;
 }
 
-function actividadDe(tramo: Tramo | undefined): Pick<FichaDictada, 'actividad' | 'detalle'> {
+/** Todo lo dicho antes de "antecedentes": ahí se busca la actividad cuando no se la nombró. */
+function antesDeAntecedentes(original: string, plano: string): Tramo {
+  const hasta = /\bantecedentes?\b/.exec(plano)?.index ?? plano.length;
+  return { original: original.slice(0, hasta), plano: plano.slice(0, hasta) };
+}
+
+/**
+ * Nivel y detalle de la actividad. Con `suelta` el tramo es todo el dictado sin la parte de
+ * antecedentes: solo cuentan las frases que dicen qué hace ("juega al fútbol dos veces por semana").
+ */
+function actividadDe(
+  tramo: Tramo | undefined,
+  suelta: boolean,
+): Pick<FichaDictada, 'actividad' | 'detalle'> {
   if (!tramo) {
     return {};
   }
@@ -203,10 +230,10 @@ function actividadDe(tramo: Tramo | undefined): Pick<FichaDictada, 'actividad' |
       actividad ??= nivel[0];
       continue;
     }
-    if (/^fisica$/.test(frase.plano)) {
+    if (/^fisica$/.test(frase.plano) || (suelta && !HACE_ACTIVIDAD.test(frase.plano))) {
       continue;
     }
-    resto.push(frase.original);
+    resto.push(frase.original.replace(CONECTOR_INICIAL, ''));
   }
   const detalle = resto.join(', ').trim();
   return {
@@ -244,8 +271,9 @@ function antecedentesDe(tramo: Tramo | undefined): AntecedenteDictado[] {
       continue;
     }
     const tipo = TIPOS_POR_PALABRA.find(([, palabras]) => palabras.test(frase.plano))?.[0];
-    // "Algo quirúrgico" o "alergias": solo dice de qué tipo es lo que sigue.
-    if (frase.plano.split(/\s+/).length <= 2 && tipo) {
+    // "Médicos", "algo quirúrgico": un rótulo que dice de qué tipo es lo que sigue, no un dato.
+    const sinRelleno = frase.plano.replace(RELLENO_DE_ROTULO, '');
+    if (tipo && sinRelleno.split(/\s+/).length <= 2) {
       tipoNombrado = tipo;
       continue;
     }
@@ -264,21 +292,60 @@ function antecedentesDe(tramo: Tramo | undefined): AntecedenteDictado[] {
 }
 
 function armarAntecedente(frase: Tramo, tipo: AntecedenteResponseTipoEnum): AntecedenteDictado {
+  const texto = frase.original.replace(CONECTOR_INICIAL, '');
   if (tipo !== AntecedenteResponseTipoEnum.QUIRURGICO) {
-    return { tipo, descripcion: capitalizar(frase.original).slice(0, 1000) };
+    return { tipo, descripcion: capitalizar(texto).slice(0, 1000) };
   }
   const anioHallado = /\b(19\d{2}|20\d{2})\b/.exec(frase.plano);
   const anio = anioHallado ? Number(anioHallado[1]) : undefined;
   const zona = ZONAS_DEL_CUERPO.find((z) =>
     frase.plano.includes(z.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()),
   );
-  const descripcion = frase.original
-    .replace(/\s*(en\s+(el\s+)?(año\s+)?)?\b(19|20)\d{2}\b/i, '')
-    .trim();
+  let descripcion = texto.replace(/\s*(en\s+(el\s+)?(año\s+)?)?\b(19|20)\d{2}\b/i, '').trim();
+  // "La mano derecha" a secas, dicho después de "quirúrgicos": se lee como la operación.
+  if (descripcion && !TIPOS_POR_PALABRA[0][1].test(sinTildes(descripcion))) {
+    descripcion = `Operación de ${descripcion.charAt(0).toLowerCase()}${descripcion.slice(1)}`;
+  }
   return {
     tipo,
-    descripcion: capitalizar(descripcion || frase.original).slice(0, 1000),
+    descripcion: capitalizar(descripcion || texto).slice(0, 1000),
     ...(anio && anio <= new Date().getFullYear() ? { anio } : {}),
     ...(zona ? { zona } : {}),
   };
+}
+
+function sinTildes(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+/** Si el dictado no dejó ningún dato que cargar. */
+export function nadaReconocido(ficha: FichaDictada): boolean {
+  return (
+    !ficha.ocupacion &&
+    ficha.pesoKg === undefined &&
+    ficha.alturaCm === undefined &&
+    !ficha.actividad &&
+    !ficha.detalle &&
+    ficha.condiciones.length === 0 &&
+    ficha.antecedentes.length === 0
+  );
+}
+
+/** "Ocupación, peso, altura, actividad, 2 condiciones y 1 antecedente": para el aviso. */
+export function resumirDictado(ficha: FichaDictada): string {
+  const partes = [
+    ficha.ocupacion ? 'ocupación' : null,
+    ficha.pesoKg !== undefined ? 'peso' : null,
+    ficha.alturaCm !== undefined ? 'altura' : null,
+    ficha.actividad || ficha.detalle ? 'actividad' : null,
+    contar(ficha.condiciones.length, 'condición', 'condiciones'),
+    contar(ficha.antecedentes.length, 'antecedente', 'antecedentes'),
+  ].filter((parte): parte is string => parte !== null);
+  const texto =
+    partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : (partes[0] ?? '');
+  return capitalizar(texto);
+}
+
+function contar(cantidad: number, singular: string, plural: string): string | null {
+  return cantidad === 0 ? null : `${cantidad} ${cantidad === 1 ? singular : plural}`;
 }
