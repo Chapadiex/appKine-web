@@ -56,12 +56,13 @@
         [enfermedadesTildadas]="enfermedadesTildadas()"
         [enfermedadesFijas]="enfermedadesFijas()"
         [guardando]="guardandoFicha()"
+        [conOtraCondicion]="true"
+        [condicionesSueltas]="condicionesSueltas()"
         (guardar)="guardarFicha($event)"
         (agregarOcupacion)="agregarOcupacion($event)"
         (tildar)="tildarEnfermedad($event)"
-        [conOtraCondicion]="true"
+        (tildarSuelta)="tildarSuelta($event)"
         (otraCondicion)="agregarOtraCondicion($event)"
-        (observacion)="agregarObservacion($event)"
       >
         <app-dictado-de-ficha
           fichaAcciones
@@ -77,16 +78,19 @@
             Antecedentes <span class="declarados__cuenta">{{ antecedentesSueltos().length }}</span>
           </h2>
 
-          <app-chips
-            id="declarados-tipo"
-            class="declarados__tipos"
-            etiqueta="Tipo de antecedente"
-            [opciones]="opcionesDeTipo"
-            [deseleccionable]="false"
-            [valor]="tipoNuevo()"
-            (valorChange)="elegirTipo($event)"
-          />
           <form class="declarados__linea" (submit)="$event.preventDefault(); agregarAntecedente()">
+            <label class="visualmente-oculto" for="declarados-tipo">Tipo de antecedente</label>
+            <select
+              id="declarados-tipo"
+              class="declarados__tipo-campo"
+              (change)="elegirTipo($any($event.target).value)"
+            >
+              @for (tipo of opcionesDeTipo; track tipo.valor) {
+                <option [value]="tipo.valor" [selected]="tipo.valor === tipoNuevo()">
+                  {{ tipo.etiqueta }}
+                </option>
+              }
+            </select>
             <label class="visualmente-oculto" for="declarados-descripcion">
               Lo que declara el paciente
             </label>
@@ -94,33 +98,12 @@
               id="declarados-descripcion"
               type="text"
               maxlength="1000"
-              placeholder="Ej.: alérgico a la penicilina"
+              [placeholder]="ejemploDeTipo()"
               [value]="descripcionNueva()"
               (input)="descripcionNueva.set($any($event.target).value)"
               [attr.aria-invalid]="intentoAntecedente() && !descripcionNueva().trim()"
               aria-describedby="declarados-descripcion-error"
             />
-            @if (tipoNuevo() === 'QUIRURGICO') {
-              <label class="visualmente-oculto" for="declarados-anio">Año</label>
-              <app-numero-con-pasos
-                idCampo="declarados-anio"
-                etiqueta="Año"
-                [min]="1900"
-                [max]="anioMaximo"
-                [valor]="anioNumero()"
-                [desdeVacio]="anioMaximo"
-                (invalido)="anioInvalido.set($event)"
-                (valorChange)="anioNuevo.set($event === null ? '' : '' + $event)"
-              />
-              <app-texto-opcional
-                class="declarados__corto"
-                idCampo="declarados-lugar"
-                etiqueta="Dónde"
-                [maxlength]="160"
-                [valor]="lugarNuevo()"
-                (valorChange)="lugarNuevo.set($event)"
-              />
-            }
             <button
               type="submit"
               class="boton boton--primario boton--chico"
@@ -131,20 +114,31 @@
             </button>
           </form>
           @if (tipoNuevo() === 'QUIRURGICO') {
-            <div class="declarados__zona">
-              <span class="declarados__rotulo"
-                >Zona de la cirugía <span class="campo__opcional">(opcional)</span></span
-              >
-              <app-chips
-                etiqueta="Zona de la cirugía"
-                idOtra="declarados-zona"
-                [opciones]="opcionesDeZona"
-                [permitirOtra]="true"
-                [valor]="zonaEnChips().chip"
-                [textoOtra]="zonaEnChips().otra"
-                (valorChange)="elegirZonaDeCirugia($event)"
-                (textoOtraChange)="zonaNueva.set($event)"
-              />
+            <div class="declarados__cirugia">
+              <div class="declarados__campo-chico">
+                <label for="declarados-anio">Año</label>
+                <app-numero-con-pasos
+                  idCampo="declarados-anio"
+                  etiqueta="Año"
+                  [min]="1900"
+                  [max]="anioMaximo"
+                  [valor]="anioNumero()"
+                  [desdeVacio]="anioMaximo"
+                  (invalido)="anioInvalido.set($event)"
+                  (valorChange)="anioNuevo.set($event === null ? '' : '' + $event)"
+                />
+              </div>
+              <div class="declarados__campo-chico">
+                <label for="declarados-zona">Zona</label>
+                <select id="declarados-zona" (change)="zonaNueva.set($any($event.target).value)">
+                  <option value="" [selected]="!zonaNueva()">—</option>
+                  @for (zona of opcionesDeZona; track zona.valor) {
+                    <option [value]="zona.valor" [selected]="zona.valor === zonaNueva()">
+                      {{ zona.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </div>
             </div>
           }
           @if (intentoAntecedente() && !descripcionNueva().trim()) {
@@ -163,31 +157,29 @@
             <ul class="declarados__lista" aria-label="Antecedentes declarados">
               @for (antecedente of antecedentesSueltos(); track antecedente.id) {
                 <li class="declarados__item">
-                  <span class="declarados__etiqueta">{{ etiquetaDeTipo(antecedente.tipo) }}</span>
-                  <span class="declarados__texto">
-                    {{ antecedente.descripcion }}
-                    @if (detalleDe(antecedente); as detalle) {
-                      <span class="declarados__peso">· {{ detalle }}</span>
-                    }
+                  <span class="declarados__tipo" [attr.data-tipo]="antecedente.tipo">
+                    {{ etiquetaDeTipo(antecedente.tipo) }}
                   </span>
                   <span
-                    class="marca-estado"
-                    [class.marca-estado--activa]="revisado(antecedente)"
-                    [class.marca-estado--suspendida]="!revisado(antecedente)"
+                    class="declarados__texto"
                     [title]="estadoDe(antecedente, antecedente.registradoEn)"
                   >
-                    {{ revisado(antecedente) ? 'Revisado' : 'Sin revisar' }}
+                    {{ antecedente.descripcion }}
+                    @if (detalleDe(antecedente); as detalle) {
+                      <span class="declarados__peso">({{ detalle }})</span>
+                    }
                   </span>
-                  @if (!revisado(antecedente)) {
-                    <app-acciones-de-fila de="el antecedente">
-                      <button
-                        type="button"
-                        class="accion--peligro"
-                        (click)="pedirBaja('antecedentes', antecedente.id, antecedente.descripcion)"
-                      >
-                        Dar de baja
-                      </button>
-                    </app-acciones-de-fila>
+                  @if (revisado(antecedente)) {
+                    <span class="declarados__revisado">Revisado</span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="boton-texto declarados__quitar"
+                      [attr.aria-label]="'Quitar ' + antecedente.descripcion"
+                      (click)="quitar('antecedentes', antecedente.id)"
+                    >
+                      Quitar
+                    </button>
                   }
                 </li>
               }
@@ -214,7 +206,6 @@
               <select
                 id="declarados-categoria"
                 class="declarados__tipo-campo"
-                [value]="categoriaNueva()"
                 (change)="categoriaNueva.set($any($event.target).value)"
               >
                 @for (categoria of categoriasDeclarables; track categoria) {
@@ -229,7 +220,7 @@
                 (click)="foto.click()"
               >
                 <app-icono nombre="camara" />
-                Sacar foto
+                Foto
               </button>
               <button
                 type="button"
@@ -237,14 +228,14 @@
                 (click)="selector.click()"
               >
                 <app-icono nombre="subir" />
-                Elegir archivo
+                Archivo
               </button>
             </div>
             <p class="declarados__pista">
               @if (subiendo() > 0) {
                 <span role="status">Subiendo…</span>
               } @else {
-                o arrastrá archivos acá · PDF o imagen; las fotos se achican solas
+                o arrastrá acá · PDF o imagen
               }
             </p>
             <input
@@ -278,38 +269,28 @@
             <ul class="declarados__lista" aria-label="Archivos declarados">
               @for (adjunto of lista.adjuntos; track adjunto.id) {
                 <li class="declarados__item">
-                  <span class="declarados__etiqueta">{{
-                    etiquetaDeCategoria(adjunto.categoria)
-                  }}</span>
+                  <span class="declarados__tipo">{{ etiquetaDeCategoria(adjunto.categoria) }}</span>
+                  <span class="declarados__texto" [title]="estadoDe(adjunto, adjunto.subidoEn)">
+                    {{ adjunto.titulo || adjunto.nombreArchivo }}
+                    <span class="declarados__peso">· {{ fechaCorta(adjunto.subidoEn) }}</span>
+                  </span>
                   <button
                     type="button"
-                    class="boton-texto declarados__texto"
+                    class="boton-texto declarados__ver"
                     [attr.aria-expanded]="adjuntoAbierto() === adjunto.id"
                     (click)="alternarAdjunto(adjunto.id)"
                   >
-                    {{ adjunto.titulo || adjunto.nombreArchivo }}
-                    <span class="declarados__peso">· {{ tamano(adjunto.tamanoBytes) }}</span>
+                    {{ adjuntoAbierto() === adjunto.id ? 'Cerrar' : 'Ver' }}
                   </button>
-                  <span
-                    class="marca-estado"
-                    [class.marca-estado--activa]="revisado(adjunto)"
-                    [class.marca-estado--suspendida]="!revisado(adjunto)"
-                    [title]="estadoDe(adjunto, adjunto.subidoEn)"
-                  >
-                    {{ revisado(adjunto) ? 'Revisado' : 'Sin revisar' }}
-                  </span>
                   @if (!revisado(adjunto)) {
-                    <app-acciones-de-fila de="el archivo">
-                      <button
-                        type="button"
-                        class="accion--peligro"
-                        (click)="
-                          pedirBaja('adjuntos', adjunto.id, adjunto.titulo || adjunto.nombreArchivo)
-                        "
-                      >
-                        Dar de baja
-                      </button>
-                    </app-acciones-de-fila>
+                    <button
+                      type="button"
+                      class="boton-texto declarados__quitar"
+                      [attr.aria-label]="'Quitar ' + (adjunto.titulo || adjunto.nombreArchivo)"
+                      (click)="quitar('adjuntos', adjunto.id)"
+                    >
+                      Quitar
+                    </button>
                   }
                 </li>
                 @if (adjuntoAbierto() === adjunto.id) {
@@ -328,20 +309,29 @@
         </section>
       </div>
 
-      @if (baja(); as pedida) {
-        <section class="tarjeta" aria-labelledby="declarados-baja-titulo">
-          <h2 id="declarados-baja-titulo" class="visualmente-oculto">Dar de baja</h2>
-          <app-confirmacion-con-motivo
-            idCampo="declarados-baja-motivo"
-            [titulo]="'Dar de baja «' + pedida.descripcion + '»'"
-            ayuda="El dato no se borra: queda en la historia como dado de baja, con este motivo."
-            textoConfirmar="Dar de baja"
-            [enviando]="dandoDeBaja()"
-            (confirmado)="confirmarBaja($event)"
-            (cancelado)="baja.set(null)"
-          />
-        </section>
-      }
+      <!-- Observaciones e indicaciones: una sola, se guarda al salir del campo. -->
+      <section class="tarjeta declarados__observaciones" aria-labelledby="declarados-obs-titulo">
+        <h2 id="declarados-obs-titulo">
+          Observaciones e indicaciones
+          <span class="declarados__pista-titulo">
+            · lo que no entra arriba: derivación, indicación médica, cuidados
+          </span>
+        </h2>
+        <label class="visualmente-oculto" for="declarados-observaciones">
+          Observaciones e indicaciones
+        </label>
+        <textarea
+          id="declarados-observaciones"
+          rows="3"
+          maxlength="1000"
+          placeholder="Ej.: derivado por traumatólogo por dolor de rodilla. Indicación: 10 sesiones."
+          [value]="observacionActual()"
+          (blur)="guardarObservaciones($any($event.target).value)"
+        ></textarea>
+        @if (guardandoObservaciones()) {
+          <span class="declarados__pista" role="status">Guardando…</span>
+        }
+      </section>
     }
   }
 }

@@ -209,3 +209,92 @@
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
 }
+
+/* --- Rediseño 24/11/2026: listas con etiqueta de tipo y "Quitar", cirugía y observaciones --- */
+
+.declarados__tipo {
+  flex: none;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-atenuada);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.declarados__tipo[data-tipo='ALERGIA'] {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.declarados__quitar,
+.declarados__ver {
+  flex: none;
+  font-size: var(--tipo-xs);
+}
+
+.declarados__quitar {
+  color: var(--color-texto-suave);
+}
+
+.declarados__revisado {
+  flex: none;
+  color: var(--color-exito-texto);
+  font-size: var(--tipo-2xs);
+}
+
+.declarados__lista {
+  max-block-size: 14rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  padding-inline: var(--esp-3);
+}
+
+.declarados__cirugia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.declarados__campo-chico {
+  display: grid;
+  gap: var(--esp-1);
+}
+
+.declarados__campo-chico label {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.declarados__observaciones {
+  display: grid;
+  gap: var(--esp-2);
+  margin-block-start: var(--esp-4);
+}
+
+.declarados__observaciones h2 {
+  margin: 0;
+}
+
+.declarados__pista-titulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-normal, 400);
+}
+
+.declarados__observaciones textarea {
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-2) 0.625rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  resize: vertical;
+}
+
+.declarados__observaciones textarea:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}

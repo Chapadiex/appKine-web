@@ -39,6 +39,23 @@ const SINONIMOS_DE_CONDICION: Readonly<Record<string, readonly string[]>> = {
   RESPIRATORIA: ['asma', 'epoc', 'enfisema'],
 };
 
+/**
+ * Las condiciones tipicas de la ficha (sin codigo en el backend): dichas con cualquiera de estas
+ * raices, se cargan con el nombre exacto de la ficha para que aparezcan tildadas.
+ */
+const TIPICAS_POR_PALABRA: readonly (readonly [string, readonly string[]])[] = [
+  ['Artrosis', ['artrosis']],
+  ['Artritis', ['artritis']],
+  ['Hernia de disco', ['hernia']],
+  ['Escoliosis', ['escoliosis']],
+  ['Fibromialgia', ['fibromialgia']],
+  ['Prótesis / implante', ['protesis', 'implante']],
+  ['Hipotiroidismo', ['hipotiroid', 'tiroides']],
+  ['Colesterol alto', ['colesterol']],
+  ['Celiaquía', ['celiac', 'celiaqu']],
+  ['Depresión / ansiedad', ['depresi', 'ansiedad']],
+];
+
 /** Nivel de actividad por palabras; el primero que aparece manda. */
 const NIVELES_DE_ACTIVIDAD: readonly (readonly [FichaDeIngresoRequestActividadEnum, RegExp])[] = [
   [
@@ -142,7 +159,9 @@ function condicionesSueltasDe(tramo: Tramo | undefined): AntecedenteDictado[] {
     )
     .map((f) => ({
       tipo: AntecedenteResponseTipoEnum.MEDICO,
-      descripcion: capitalizar(f.original.replace(CONECTOR_INICIAL, '')),
+      descripcion:
+        TIPICAS_POR_PALABRA.find(([, raices]) => raices.some((r) => f.plano.includes(r)))?.[0] ??
+        capitalizar(f.original.replace(CONECTOR_INICIAL, '')),
     }));
 }
 

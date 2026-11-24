@@ -20,29 +20,28 @@ import { PersonaResponse } from '../../../../api/generated/model/persona-respons
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
-import { ConfirmacionConMotivo } from '../../../../shared/components/confirmacion-con-motivo/confirmacion-con-motivo';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { tamanoEnPalabras } from '../../../../shared/utils/archivos';
 import { ImagenNoLegible, prepararArchivoParaSubir } from '../../../../shared/utils/imagenes';
 import { DictadoDeFicha } from '../../components/dictado-de-ficha/dictado-de-ficha';
 import {
+  CondicionSuelta,
   ENFERMEDADES_DE_INGRESO,
   FichaDeIngreso,
   TildeDeEnfermedad,
+  TildeSuelto,
 } from '../../components/ficha-de-ingreso/ficha-de-ingreso';
 import { FichaDictada, resumirDictado } from '../../models/dictado-de-ficha';
 import { CATEGORIAS_DE_ADJUNTO, TIPOS_DE_ANTECEDENTE } from '../../models/etiquetas-de-historia';
 import { traducirErrorHistoria } from '../../models/historia-errors';
 import { VisorDeAdjunto } from '../historia-clinica/components/visor-de-adjunto';
-import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
+import { OpcionChip } from '../../../../shared/components/chips/chips';
 import { NumeroConPasos } from '../../../../shared/components/numero-con-pasos/numero-con-pasos';
-import { TextoOpcional } from '../../../../shared/components/texto-opcional/texto-opcional';
-import { OPCIONES_DE_ZONA, zonaEnChips } from '../../models/zonas-del-cuerpo';
+import { OPCIONES_DE_ZONA } from '../../models/zonas-del-cuerpo';
 import {
   AdjuntoDeclarado,
   AntecedenteDeclarado,
@@ -56,6 +55,29 @@ import {
 
 /** Motivo fijo de la baja cuando se destilda una enfermedad que nadie reviso. */
 export const MOTIVO_DESTILDADO = 'Destildado en la ficha de ingreso';
+
+/** Motivo fijo de la baja cuando se quita algo con "Quitar". */
+export const MOTIVO_QUITADO = 'Quitado en los datos declarados';
+
+/** Motivo fijo de la observacion anterior cuando se escribe una nueva. */
+export const MOTIVO_OBSERVACION_REEMPLAZADA = 'Reemplazada por una observación nueva';
+
+/** Tipos que se cargan en la lista de antecedentes: Medico va en Condiciones y Otro en Observaciones. */
+const TIPOS_DE_LA_LISTA: readonly AntecedenteResponseTipoEnum[] = [
+  AntecedenteResponseTipoEnum.ALERGIA,
+  AntecedenteResponseTipoEnum.QUIRURGICO,
+  AntecedenteResponseTipoEnum.MEDICACION,
+  AntecedenteResponseTipoEnum.FAMILIAR,
+  AntecedenteResponseTipoEnum.HABITO,
+];
+
+const EJEMPLOS_DE_TIPO: Readonly<Partial<Record<AntecedenteResponseTipoEnum, string>>> = {
+  ALERGIA: 'Ej.: alérgico a la penicilina',
+  QUIRURGICO: 'Ej.: artroscopía de rodilla derecha',
+  MEDICACION: 'Ej.: enalapril 10 mg/día',
+  FAMILIAR: 'Ej.: madre con artritis',
+  HABITO: 'Ej.: fuma 10 cigarrillos por día',
+};
 
 /** Texto sugerido del motivo de acceso (diseño §7): se puede cambiar antes de seguir. */
 export const MOTIVO_SUGERIDO = 'Carga de datos que declara el paciente';
@@ -74,13 +96,6 @@ type Estado =
   | { readonly tipo: 'lista'; readonly datos: DatosDeclaradosResponse }
   | { readonly tipo: 'error'; readonly mensaje: string };
 
-/** Lo que se esta por dar de baja. */
-interface Baja {
-  readonly tipoDato: TipoDatoDeclarado;
-  readonly id: number;
-  readonly descripcion: string;
-}
-
 /**
  * Los datos que declara el paciente (DP-47, diseño §8.1).
  *
@@ -91,14 +106,10 @@ interface Baja {
   selector: 'app-datos-declarados-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    Chips,
     NumeroConPasos,
-    TextoOpcional,
-    AccionesDeFila,
     Alerta,
     Ayuda,
     CabeceraDeFicha,
-    ConfirmacionConMotivo,
     DictadoDeFicha,
     EstadoVacio,
     FichaDeIngreso,
@@ -128,37 +139,26 @@ export class DatosDeclaradosPage {
    */
   protected readonly justificacion = signal<string | null>(MOTIVO_SUGERIDO);
 
-  protected readonly tipos = Object.entries(TIPOS_DE_ANTECEDENTE) as [
-    AntecedenteResponseTipoEnum,
-    string,
-  ][];
   protected readonly tipoNuevo = signal<AntecedenteResponseTipoEnum>(
     AntecedenteResponseTipoEnum.ALERGIA,
   );
   protected readonly descripcionNueva = signal('');
 
-  // --- Modo táctil (16/11/2026): tipo y zona con un toque, año con −/+ ----------------------
-  protected readonly opcionesDeTipo: readonly OpcionChip[] = this.tipos.map(
-    ([valor, etiqueta]) => ({
-      valor,
-      etiqueta,
-    }),
+  protected readonly opcionesDeTipo: readonly OpcionChip[] = TIPOS_DE_LA_LISTA.map((valor) => ({
+    valor,
+    etiqueta: TIPOS_DE_ANTECEDENTE[valor],
+  }));
+  protected readonly ejemploDeTipo = computed(
+    () => EJEMPLOS_DE_TIPO[this.tipoNuevo()] ?? 'Lo que declara el paciente',
   );
   protected readonly opcionesDeZona = OPCIONES_DE_ZONA;
-  protected readonly zonaEnChips = computed(() => zonaEnChips(this.zonaNueva()));
   protected readonly anioNumero = computed(() => {
     const anio = Number(this.anioNuevo());
     return this.anioNuevo() === '' || !Number.isFinite(anio) ? null : anio;
   });
 
-  protected elegirTipo(valor: string | readonly string[] | null): void {
-    if (typeof valor === 'string') {
-      this.tipoNuevo.set(valor as AntecedenteResponseTipoEnum);
-    }
-  }
-
-  protected elegirZonaDeCirugia(valor: string | readonly string[] | null): void {
-    this.zonaNueva.set(typeof valor === 'string' ? valor : this.zonaEnChips().otra);
+  protected elegirTipo(valor: string): void {
+    this.tipoNuevo.set(valor as AntecedenteResponseTipoEnum);
   }
   protected readonly intentoAntecedente = signal(false);
   protected readonly guardandoAntecedente = signal(false);
@@ -186,8 +186,7 @@ export class DatosDeclaradosPage {
   protected readonly lugarNuevo = signal('');
   protected readonly anioMaximo = new Date().getFullYear();
 
-  protected readonly baja = signal<Baja | null>(null);
-  protected readonly dandoDeBaja = signal(false);
+  protected readonly guardandoObservaciones = signal(false);
 
   protected readonly cabecera = cabeceraDePersona(() => ({
     personaId: this.personaId(),
@@ -203,9 +202,35 @@ export class DatosDeclaradosPage {
 
   protected readonly rutaFicha = computed(() => `/pacientes/${this.personaId()}`);
 
-  /** Los antecedentes de la lista de abajo: las enfermedades tildadas ya se ven en la ficha. */
+  /**
+   * Los antecedentes de la lista: sin las condiciones (con codigo, o Medico sin codigo, que se ven
+   * en la ficha) ni las observaciones (Otro, que tienen su cuadro).
+   */
   protected readonly antecedentesSueltos = computed(() =>
-    (this.datos()?.antecedentes ?? []).filter((a) => !a.codigo),
+    (this.datos()?.antecedentes ?? []).filter(
+      (a) => !a.codigo && a.tipo !== 'MEDICO' && a.tipo !== 'OTRO',
+    ),
+  );
+
+  /** Condiciones sin codigo: las tipicas tildadas y las "Otra". */
+  protected readonly condicionesSueltas = computed<readonly CondicionSuelta[]>(() =>
+    (this.datos()?.antecedentes ?? []).flatMap((a) =>
+      !a.codigo && a.tipo === 'MEDICO' && a.id !== undefined
+        ? [{ id: a.id, descripcion: a.descripcion ?? '', fija: this.revisado(a) }]
+        : [],
+    ),
+  );
+
+  /** Las observaciones declaradas (antecedentes "Otro"), la mas nueva al final. */
+  private readonly observaciones = computed(() =>
+    (this.datos()?.antecedentes ?? [])
+      .filter((a) => a.tipo === 'OTRO' && a.id !== undefined)
+      .sort((a, b) => (a.id ?? 0) - (b.id ?? 0)),
+  );
+
+  /** Lo que muestra el cuadro: la ultima observacion. */
+  protected readonly observacionActual = computed(
+    () => this.observaciones().at(-1)?.descripcion ?? '',
   );
 
   /** Enfermedades de la lista que esta pantalla ve tildadas (solo lo declarado). */
@@ -358,13 +383,22 @@ export class DatosDeclaradosPage {
               { codigo },
             ),
         ),
-      ...dictado.antecedentes.map(
-        (a) => () =>
-          this.api.declararAntecedente(this.id(), a.tipo, a.descripcion, this.justificacion(), {
-            ...(a.zona ? { zona: a.zona } : {}),
-            ...(a.anio ? { anio: a.anio } : {}),
-          }),
-      ),
+      ...dictado.antecedentes
+        .filter(
+          (a) =>
+            a.tipo !== 'OTRO' &&
+            !(
+              a.tipo === 'MEDICO' &&
+              this.condicionesSueltas().some((c) => mismoTexto(c.descripcion, a.descripcion))
+            ),
+        )
+        .map(
+          (a) => () =>
+            this.api.declararAntecedente(this.id(), a.tipo, a.descripcion, this.justificacion(), {
+              ...(a.zona ? { zona: a.zona } : {}),
+              ...(a.anio ? { anio: a.anio } : {}),
+            }),
+        ),
     ];
     for (const pedido of pedidos) {
       try {
@@ -386,6 +420,15 @@ export class DatosDeclaradosPage {
       }
     }
     this.fichaDeIngreso()?.aplicarDictado(dictado);
+    // Lo dictado como observacion se suma a lo que ya decia el cuadro.
+    const observado = dictado.antecedentes
+      .filter((a) => a.tipo === 'OTRO')
+      .map((a) => a.descripcion)
+      .join(' ');
+    if (observado) {
+      const previa = this.observacionActual().trim();
+      await this.guardarObservaciones(previa ? `${previa} ${observado}` : observado);
+    }
     if (fallas > 0) {
       this.avisos.error('Parte del dictado no se cargó', {
         descripcion: `${fallas} de ${pedidos.length} datos fallaron. Revisalos y cargalos a mano.`,
@@ -397,24 +440,94 @@ export class DatosDeclaradosPage {
     }
   }
 
-  /** Una condición fuera de la lista de la ficha: antecedente médico sin código. */
-  protected agregarOtraCondicion(texto: string): void {
-    this.agregarSuelto('MEDICO', texto, 'Condición cargada');
-  }
-
-  /** Observaciones, indicaciones o lo que no tiene lugar: antecedente "Otro". */
-  protected agregarObservacion(texto: string): void {
-    this.agregarSuelto('OTRO', texto, 'Observación cargada');
-  }
-
-  private agregarSuelto(tipo: 'MEDICO' | 'OTRO', texto: string, titulo: string): void {
-    this.api.declararAntecedente(this.id(), tipo, texto, this.justificacion()).subscribe({
-      next: () => {
-        this.avisos.exito(titulo, {
-          descripcion: 'Queda en Antecedentes, sin revisar hasta que lo vea un profesional.',
-        });
+  /** "Quitar" de una fila: baja con motivo fijo, sin preguntar (lo revisado no tiene el boton). */
+  protected quitar(tipoDato: TipoDatoDeclarado, id: number | undefined): void {
+    if (id === undefined) {
+      return;
+    }
+    this.api.darDeBaja(this.id(), tipoDato, id, MOTIVO_QUITADO, this.justificacion()).subscribe({
+      next: () => this.refrescar(),
+      error: (error: unknown) => {
+        this.avisos.error('No pudimos quitarlo', { descripcion: mensajeDe(error) });
         this.refrescar();
       },
+    });
+  }
+
+  /** Una condicion tipica o una "Otra": tildar la carga como antecedente medico, destildar la quita. */
+  protected tildarSuelta(tilde: TildeSuelto): void {
+    if (tilde.marcado) {
+      this.agregarOtraCondicion(tilde.descripcion);
+      return;
+    }
+    if (tilde.id === null) {
+      return;
+    }
+    this.api
+      .darDeBaja(this.id(), 'antecedentes', tilde.id, MOTIVO_DESTILDADO, this.justificacion())
+      .subscribe({
+        next: () => this.refrescar(),
+        error: (error: unknown) => {
+          this.avisos.error('No pudimos quitar el tilde', { descripcion: mensajeDe(error) });
+          this.refrescar();
+        },
+      });
+  }
+
+  /**
+   * Guarda el cuadro de observaciones al salir. El texto nuevo entra como un antecedente "Otro" y
+   * las observaciones anteriores que nadie reviso se dan de baja: queda una sola vigente.
+   */
+  protected async guardarObservaciones(escrito: string): Promise<void> {
+    const texto = escrito.trim();
+    if (texto === this.observacionActual().trim() || this.guardandoObservaciones()) {
+      return;
+    }
+    this.guardandoObservaciones.set(true);
+    try {
+      const anteriores = this.observaciones().filter((o) => !this.revisado(o));
+      if (texto) {
+        await firstValueFrom(
+          this.api.declararAntecedente(this.id(), 'OTRO', texto, this.justificacion()),
+        );
+      }
+      for (const anterior of anteriores) {
+        await firstValueFrom(
+          this.api.darDeBaja(
+            this.id(),
+            'antecedentes',
+            anterior.id ?? 0,
+            MOTIVO_OBSERVACION_REEMPLAZADA,
+            this.justificacion(),
+          ),
+        );
+      }
+    } catch (error: unknown) {
+      this.avisos.error('No pudimos guardar las observaciones', { descripcion: mensajeDe(error) });
+    } finally {
+      this.guardandoObservaciones.set(false);
+      this.refrescar();
+    }
+  }
+
+  /** "12/11", para la lista de estudios. */
+  protected fechaCorta(instante: string | undefined): string {
+    return instante
+      ? new Date(instante).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
+      : '';
+  }
+
+  /** Una condición fuera de la lista de la ficha: antecedente médico sin código. */
+  protected agregarOtraCondicion(texto: string): void {
+    const ya = this.condicionesSueltas().some((c) => mismoTexto(c.descripcion, texto));
+    if (!ya) {
+      this.agregarSuelto('MEDICO', texto);
+    }
+  }
+
+  private agregarSuelto(tipo: 'MEDICO' | 'OTRO', texto: string): void {
+    this.api.declararAntecedente(this.id(), tipo, texto, this.justificacion()).subscribe({
+      next: () => this.refrescar(),
       error: (error: unknown) => {
         if (esSinPerfil(error)) {
           this.estado.set({ tipo: 'sin-perfil' });
@@ -576,39 +689,6 @@ export class DatosDeclaradosPage {
     this.adjuntoAbierto.update((actual) => (actual === adjuntoId ? null : adjuntoId));
   }
 
-  protected pedirBaja(
-    tipoDato: TipoDatoDeclarado,
-    id: number | undefined,
-    descripcion: string | undefined,
-  ): void {
-    if (id === undefined) {
-      return;
-    }
-    this.baja.set({ tipoDato, id, descripcion: descripcion ?? '' });
-  }
-
-  protected confirmarBaja(motivo: string): void {
-    const baja = this.baja();
-    if (baja === null || this.dandoDeBaja()) {
-      return;
-    }
-    this.dandoDeBaja.set(true);
-    this.api.darDeBaja(this.id(), baja.tipoDato, baja.id, motivo, this.justificacion()).subscribe({
-      next: () => {
-        this.dandoDeBaja.set(false);
-        this.baja.set(null);
-        this.avisos.exito('Dato dado de baja');
-        this.cargar();
-      },
-      error: (error: unknown) => {
-        this.dandoDeBaja.set(false);
-        this.baja.set(null);
-        this.avisos.error('No pudimos darlo de baja', { descripcion: mensajeDe(error) });
-        this.cargar();
-      },
-    });
-  }
-
   protected etiquetaDeTipo(tipo: string | undefined): string {
     return tipo === undefined
       ? ''
@@ -677,3 +757,9 @@ const MENSAJES_DECLARADOS: Readonly<Record<string, string>> = {
   'adjunto-ya-en-historia': 'Ese archivo ya está en la historia clínica.',
   'dato-ya-en-historia': 'Ya está registrado en la historia clínica: lo maneja el profesional.',
 };
+
+function mismoTexto(a: string | undefined, b: string | undefined): boolean {
+  const limpiar = (t: string | undefined) =>
+    (t ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  return limpiar(a) === limpiar(b);
+}
