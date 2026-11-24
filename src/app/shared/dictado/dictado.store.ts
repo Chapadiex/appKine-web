@@ -13,6 +13,13 @@ import { Grabadora } from './grabadora';
 export const MAXIMO_DE_GRABACION_MS = 120_000;
 
 /**
+ * Menos que esto no se manda: un toque y otro enseguida deja un archivo sin audio que el
+ * transcriptor no puede abrir, y el servidor lo devolvia como "no disponible" (23/11/2026).
+ */
+const MINIMO_DE_GRABACION_MS = 1000;
+const MINIMO_DE_BYTES = 1024;
+
+/**
  * El dictado por voz de la aplicación (contrato 0.175.0): una sola grabación a la vez, en toda la
  * pantalla, y lo que el servidor contesta. Lo usan el botón de micrófono de cada campo
  * (`[appDictado]`) y el dictado de la evaluación de la sesión.
@@ -28,6 +35,7 @@ export class DictadoStore {
 
   /** Quién está grabando ahora; `null` si nadie. */
   private readonly dueno = signal<object | null>(null);
+  private inicio = 0;
 
   /** El servidor dijo 409 `dictado-deshabilitado`: no se ofrece más hasta recargar. */
   private readonly apagado = signal(false);
@@ -50,6 +58,7 @@ export class DictadoStore {
     this.dueno.set(dueno);
     try {
       await this.grabadora.empezar();
+      this.inicio = Date.now();
     } catch (error) {
       this.dueno.set(null);
       throw traducirErrorDictado(error);
@@ -71,7 +80,8 @@ export class DictadoStore {
     const audio = await this.grabadora.detener();
     this.dueno.set(null);
     const consultorioId = this.tenant.consultorioId();
-    if (audio.size === 0 || consultorioId === null) {
+    const corta = Date.now() - this.inicio < MINIMO_DE_GRABACION_MS;
+    if (corta || audio.size < MINIMO_DE_BYTES || consultorioId === null) {
       return '';
     }
     try {
