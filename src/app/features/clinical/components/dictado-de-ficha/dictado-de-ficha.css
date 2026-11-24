@@ -1,0 +1,121 @@
+/* Dictar todo: una fila con el botón; al revisar, un panel con lo entendido. Solo tokens. */
+
+:host {
+  display: block;
+}
+
+.dictado-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.dictado-ficha .boton {
+  gap: var(--esp-2);
+}
+
+.dictado-ficha__pista {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+/* Punto que late mientras graba: el estado también va en texto. */
+.dictado-ficha__punto {
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border-radius: 50%;
+  background: var(--color-peligro);
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictado-ficha__punto {
+    animation: none;
+  }
+}
+
+.dictado-ficha__revision {
+  flex: 1 1 100%;
+  display: grid;
+  gap: var(--esp-3);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-accion-fondo);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.dictado-ficha__titulo {
+  margin: 0;
+  font-size: var(--tipo-md);
+}
+
+.dictado-ficha__vacio {
+  margin: 0;
+  color: var(--color-texto-suave);
+}
+
+.dictado-ficha__filas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--esp-1) var(--esp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dictado-ficha__fila {
+  display: flex;
+  gap: var(--esp-2);
+  min-height: var(--alto-tocable);
+  align-items: center;
+  cursor: pointer;
+}
+
+.dictado-ficha__rotulo {
+  flex: none;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.dictado-ficha__valor {
+  font-weight: var(--peso-medio);
+  overflow-wrap: anywhere;
+}
+
+.dictado-ficha__fila:has(input:not(:checked)) .dictado-ficha__valor {
+  color: var(--color-texto-suave);
+  text-decoration: line-through;
+}
+
+.dictado-ficha__texto {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.dictado-ficha__texto summary {
+  cursor: pointer;
+}
+
+.dictado-ficha__texto blockquote {
+  margin: var(--esp-2) 0 0;
+  padding-inline-start: var(--esp-3);
+  border-inline-start: 3px solid var(--color-borde-control);
+  font-style: italic;
+}
+
+.dictado-ficha__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2);
+}

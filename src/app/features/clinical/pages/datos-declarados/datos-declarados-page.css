@@ -75,6 +75,10 @@
   inline-size: 5.5rem;
 }
 
+.declarados__dictado {
+  margin-block-end: var(--esp-3);
+}
+
 .declarados__ficha {
   margin-block-end: var(--esp-4);
 }
