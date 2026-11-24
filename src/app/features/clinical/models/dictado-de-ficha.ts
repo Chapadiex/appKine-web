@@ -84,9 +84,11 @@ const MARCAS: readonly (readonly [Parte, RegExp])[] = [
   ['actividad', /\bactividad fisica\b|\bactividad\b/],
   ['condiciones', /\btiene\b|\bcondiciones\b|\benfermedades\b|\bpatologias\b/],
   ['antecedentes', /\bantecedentes?\b/],
+  ['observaciones', /\bobservaciones?\b|\bindicaciones?\b|\botras cosas\b/],
 ];
 
-type Parte = 'ocupacion' | 'peso' | 'altura' | 'actividad' | 'condiciones' | 'antecedentes';
+type Parte =
+  'ocupacion' | 'peso' | 'altura' | 'actividad' | 'condiciones' | 'antecedentes' | 'observaciones';
 
 const NEGACION = /\b(no|sin|niega|nunca|ningun|ninguna|nada)\b/;
 
@@ -112,8 +114,51 @@ export function interpretarDictadoDeFicha(dictado: string): FichaDictada {
       ? actividadDe(partes.get('actividad'), false)
       : actividadDe(antesDeAntecedentes(original, plano), true)),
     condiciones: condicionesDe(plano),
-    antecedentes: antecedentesDe(partes.get('antecedentes')),
+    antecedentes: [
+      ...condicionesSueltasDe(partes.get('condiciones')),
+      ...antecedentesDe(partes.get('antecedentes')),
+      ...observacionesDe(partes.get('observaciones')),
+    ],
   };
+}
+
+/**
+ * Lo nombrado después de "tiene" que no está en la lista de la ficha ("TDAH", "celiaquía"): va
+ * como antecedente médico. Se saltean lo negado, lo que trae números ("40 años") y lo ya conocido.
+ */
+function condicionesSueltasDe(tramo: Tramo | undefined): AntecedenteDictado[] {
+  if (!tramo) {
+    return [];
+  }
+  const conocidas = Object.values(SINONIMOS_DE_CONDICION).flat();
+  return frases(tramo)
+    .filter(
+      (f) =>
+        !NEGACION.test(f.plano) &&
+        !/\d/.test(f.plano) &&
+        f.plano.split(/\s+/).length <= 4 &&
+        !conocidas.some((raiz) => f.plano.includes(raiz)) &&
+        !TIPOS_POR_PALABRA.some(([, palabras]) => palabras.test(f.plano)),
+    )
+    .map((f) => ({
+      tipo: AntecedenteResponseTipoEnum.MEDICO,
+      descripcion: capitalizar(f.original.replace(CONECTOR_INICIAL, '')),
+    }));
+}
+
+/** Lo dicho después de "observaciones" o "indicaciones", entero, como un antecedente "Otro". */
+function observacionesDe(tramo: Tramo | undefined): AntecedenteDictado[] {
+  if (!tramo) {
+    return [];
+  }
+  const texto = tramo.original.replace(/^[\s.,;:]+|[\s.,;:]+$/g, '');
+  const plano = tramo.plano.replace(/^[\s.,;:]+/, '');
+  if (!texto || /^(no|ninguna|nada)\b/.test(plano)) {
+    return [];
+  }
+  return [
+    { tipo: AntecedenteResponseTipoEnum.OTRO, descripcion: capitalizar(texto).slice(0, 1000) },
+  ];
 }
 
 interface Tramo {

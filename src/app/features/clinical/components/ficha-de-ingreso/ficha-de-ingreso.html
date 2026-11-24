@@ -109,5 +109,40 @@
         {{ e[1] }}
       </label>
     }
+    <!-- Lo que no está en la lista (TDAH, celiaquía): se carga como antecedente médico. -->
+    @if (conOtraCondicion() && !soloLectura()) {
+      <form class="ficha__otra" (submit)="$event.preventDefault(); enviarOtra(otra)">
+        <label class="visualmente-oculto" for="ficha-otra-condicion">
+          Otra condición (se carga como antecedente médico)
+        </label>
+        <input
+          #otra
+          id="ficha-otra-condicion"
+          type="text"
+          maxlength="120"
+          placeholder="Otra… y Enter"
+          title="Otra condición, por ejemplo TDAH o celiaquía: se carga en Antecedentes"
+        />
+      </form>
+    }
   </fieldset>
+
+  <!-- Indicaciones o cosas extra que no entran en ningún campo: antecedente "Otro". -->
+  @if (conOtraCondicion() && !soloLectura()) {
+    <form class="ficha__observaciones" (submit)="$event.preventDefault(); enviarObservacion(obs)">
+      <label for="ficha-observaciones">Observaciones</label>
+      <div class="ficha__observaciones-linea">
+        <input
+          #obs
+          id="ficha-observaciones"
+          type="text"
+          maxlength="1000"
+          placeholder="Indicaciones o lo que no entra en otro campo"
+        />
+        <button type="submit" class="boton boton--secundario boton--chico">
+          <app-icono nombre="agregar" /> Agregar
+        </button>
+      </div>
+    </form>
+  }
 </section>
