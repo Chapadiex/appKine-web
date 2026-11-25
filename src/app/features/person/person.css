@@ -258,7 +258,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: var(--esp-6);
-  align-items: start;
+  /* Las dos tarjetas del mismo alto (25/11/2026). */
+  align-items: stretch;
   margin-bottom: var(--esp-6);
 }
 
