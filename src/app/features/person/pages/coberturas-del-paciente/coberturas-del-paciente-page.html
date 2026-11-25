@@ -415,10 +415,46 @@
       }
 
       <fieldset class="grupo cobertura__grupo campo--ancho">
-        <legend><app-icono nombre="calendario" /> Vigencia</legend>
+        <legend><app-icono nombre="mas" /> Más</legend>
+        <div class="campo">
+          <label for="alta-cobertura-principal" class="cobertura__casilla">
+            <input
+              id="alta-cobertura-principal"
+              type="checkbox"
+              formControlName="principal"
+              [attr.aria-invalid]="
+                causaAccion() === 'cobertura-principal-superpuesta' ? 'true' : null
+              "
+              aria-describedby="alta-cobertura-principal-ayuda"
+            />
+            Marcarla como cobertura principal
+          </label>
+          <p class="ayuda" id="alta-cobertura-principal-ayuda">
+            Si ya hay otra principal en el mismo periodo, se rechaza.
+          </p>
+        </div>
+
+        <!-- Ya hay otra principal vigente: pegado a la marca que lo produjo. -->
+        @if (causaAccion() === 'cobertura-principal-superpuesta') {
+          <app-alerta
+            tipo="advertencia"
+            titulo="Ya hay otra cobertura principal en ese periodo"
+            id="alta-cobertura-principal-superpuesta"
+          >
+            <p>{{ errorAccion() }}</p>
+            @if (senalada() !== null) {
+              <p class="alerta__acciones">
+                <button type="button" class="boton boton--secundario" (click)="verSenalada()">
+                  Ver la cobertura
+                </button>
+              </p>
+            }
+          </app-alerta>
+        }
+
         <div class="grilla-12">
           <div class="campo campo--6">
-            <label for="alta-cobertura-desde">Desde</label>
+            <label for="alta-cobertura-desde">Vigente desde</label>
             <input
               id="alta-cobertura-desde"
               type="date"
@@ -436,9 +472,7 @@
                   : '')
               "
             />
-            <p class="ayuda" id="alta-cobertura-desde-ayuda">
-              El plan se congela contra <b>esta</b> fecha.
-            </p>
+            <p class="ayuda" id="alta-cobertura-desde-ayuda">Hoy, salvo que empiece otro día.</p>
             @if (mostrarErrorAlta('vigenciaDesde')) {
               <p class="campo__error" id="alta-cobertura-desde-error">
                 La fecha de inicio es obligatoria.
@@ -448,7 +482,7 @@
 
           <div class="campo campo--6">
             <label for="alta-cobertura-hasta"
-              >Hasta <span class="campo__opcional">(opcional)</span></label
+              >Vigente hasta <span class="campo__opcional">(opcional)</span></label
             >
             <input
               id="alta-cobertura-hasta"
@@ -482,45 +516,6 @@
             tipo="advertencia"
             titulo="Ya hay una cobertura de ese plan en ese periodo"
             id="alta-cobertura-superpuesta"
-          >
-            <p>{{ errorAccion() }}</p>
-            @if (senalada() !== null) {
-              <p class="alerta__acciones">
-                <button type="button" class="boton boton--secundario" (click)="verSenalada()">
-                  Ver la cobertura
-                </button>
-              </p>
-            }
-          </app-alerta>
-        }
-      </fieldset>
-
-      <fieldset class="grupo cobertura__grupo campo--ancho">
-        <legend><app-icono nombre="mas" /> Más</legend>
-        <div class="campo">
-          <label for="alta-cobertura-principal" class="cobertura__casilla">
-            <input
-              id="alta-cobertura-principal"
-              type="checkbox"
-              formControlName="principal"
-              [attr.aria-invalid]="
-                causaAccion() === 'cobertura-principal-superpuesta' ? 'true' : null
-              "
-              aria-describedby="alta-cobertura-principal-ayuda"
-            />
-            Marcarla como cobertura principal
-          </label>
-          <p class="ayuda" id="alta-cobertura-principal-ayuda">
-            Si ya hay otra principal en el mismo periodo, se rechaza.
-          </p>
-        </div>
-
-        <!-- Ya hay otra principal vigente: pegado a la marca que lo produjo. -->
-        @if (causaAccion() === 'cobertura-principal-superpuesta') {
-          <app-alerta
-            tipo="advertencia"
-            titulo="Ya hay otra cobertura principal en ese periodo"
-            id="alta-cobertura-principal-superpuesta"
           >
             <p>{{ errorAccion() }}</p>
             @if (senalada() !== null) {
