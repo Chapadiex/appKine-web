@@ -85,4 +85,24 @@ describe('parsearTextoDelAgente', () => {
 
     expect(personasEnlazadas(bloques)).toEqual([12, 7]);
   });
+
+  it('cambiaDeListaCuandoPasaDeVinetasANumerada', () => {
+    const bloques = parsearTextoDelAgente('- uno\n1. dos');
+
+    expect(bloques.map((b) => b.tipo)).toEqual(['lista', 'lista-ordenada']);
+  });
+
+  it('leeUnTituloComoParrafoEnNegrita', () => {
+    expect(parsearTextoDelAgente('## Ausentes de hoy')).toEqual([
+      { tipo: 'parrafo', tramos: [{ tipo: 'negrita', texto: 'Ausentes de hoy' }] },
+    ]);
+  });
+
+  it('enlazaSoloLasRutasSueltasDeSeccionesConocidas', () => {
+    const [bloque] = parsearTextoDelAgente('Mirá /agenda/recepcion y /desconocida/1.');
+    const enlaces =
+      bloque.tipo === 'parrafo' ? bloque.tramos.filter((t) => t.tipo === 'enlace') : [];
+
+    expect(enlaces).toHaveLength(1);
+  });
 });
