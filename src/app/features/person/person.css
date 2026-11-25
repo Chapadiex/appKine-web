@@ -712,3 +712,21 @@
   align-items: center;
   gap: var(--esp-2);
 }
+
+/*
+ * En el panel lateral la grilla del sistema duplica cada campo (uno por fila). Acá los campos son
+ * cortos: tres o dos por fila como están declarados, y uno por fila solo en un teléfono.
+ */
+.cobertura__grupo .grilla-12 > .campo--4 {
+  grid-column: span 4;
+}
+
+.cobertura__grupo .grilla-12 > .campo--6 {
+  grid-column: span 6;
+}
+
+@container (max-width: 26rem) {
+  .cobertura__grupo .grilla-12 > :is(.campo--4, .campo--6) {
+    grid-column: 1 / -1;
+  }
+}
