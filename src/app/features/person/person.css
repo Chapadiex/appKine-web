@@ -674,3 +674,41 @@
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
 }
+
+/* Alta de cobertura en grupos con ícono (25/11/2026): más compactos que el .grupo del sistema. */
+.cobertura__grupo {
+  display: grid;
+  gap: var(--esp-3);
+  margin-block-end: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.cobertura__grupo legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+
+.cobertura__grupo legend app-icono {
+  color: var(--color-acento);
+}
+
+.cobertura__grupo .grilla-12 {
+  row-gap: var(--esp-2);
+}
+
+.cobertura__grupo .campo {
+  margin-bottom: 0;
+}
+
+.cobertura__nota {
+  align-self: end;
+  margin: 0;
+}
+
+.cobertura__casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
