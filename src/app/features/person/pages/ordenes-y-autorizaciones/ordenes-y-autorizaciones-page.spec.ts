@@ -1064,7 +1064,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     });
 
     apretar(fixture, 'Registrar una autorización');
-    apretar(fixture, 'Registrar autorizacion');
+    apretar(fixture, 'Registrar autorización');
     httpMock.expectNone((p) => p.method === 'POST' && p.url === AUTORIZACIONES);
     const contenido = texto(fixture);
     expect(contenido).toContain('Elegí la cobertura');
@@ -1091,7 +1091,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     escribirEn(fixture, '#autorizacion-hasta', '2026-10-01');
     elegirEn(fixture, '#autorizacion-estado', 'APROBADA');
     escribirEn(fixture, '#autorizacion-observaciones', 'Por fax');
-    apretar(fixture, 'Registrar autorizacion');
+    apretar(fixture, 'Registrar autorización');
 
     const esAlta = (p: HttpRequest<unknown>) => p.method === 'POST' && p.url === AUTORIZACIONES;
     const primero = httpMock.expectOne(esAlta);
@@ -1114,7 +1114,7 @@ describe('OrdenesYAutorizacionesPage', () => {
     await estabilizar(fixture);
     expect(enlaces(fixture)).toContain('Ir a la ficha para activar el perfil');
 
-    apretar(fixture, 'Registrar autorizacion');
+    apretar(fixture, 'Registrar autorización');
     httpMock
       .expectOne(esAlta)
       .flush(
@@ -1126,7 +1126,7 @@ describe('OrdenesYAutorizacionesPage', () => {
       (fixture.nativeElement as HTMLElement).querySelector('#autorizacion-numero-en-uso'),
     ).not.toBeNull();
 
-    apretar(fixture, 'Registrar autorizacion');
+    apretar(fixture, 'Registrar autorización');
     httpMock.expectOne(esAlta).flush(
       {
         type: 'https://akine.app/problems/autorizacion-superpuesta',
