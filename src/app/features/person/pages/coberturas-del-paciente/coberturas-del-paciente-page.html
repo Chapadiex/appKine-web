@@ -210,14 +210,53 @@
               [class.fila--seleccionada]="coberturaEnPanel()?.id === cobertura.id"
             >
               <td>
-                {{ coberturaEnUnaLinea(cobertura) }}
+                <!-- Obra social arriba y plan abajo (25/11/2026). -->
+                @if (cobertura.tipo === 'PARTICULAR') {
+                  Particular
+                } @else {
+                  <span class="celda-doble">
+                    <b>{{ cobertura.financiadorNombre ?? 'Financiador sin nombre' }}</b>
+                    @if (cobertura.planNombre) {
+                      <span class="ayuda">{{ cobertura.planNombre }}</span>
+                    }
+                  </span>
+                }
                 @if (estaSenalada(cobertura)) {
                   <span class="etiqueta">Es la que impide el cambio</span>
                 }
               </td>
               <td>{{ cobertura.numeroAfiliado || '—' }}</td>
-              <td>{{ vigenciaEnPalabras(cobertura) }}</td>
-              <td class="tabla__col--secundaria">{{ credencialEnPalabras(cobertura) }}</td>
+              <!-- Vigencia en dos renglones con fechas dd/mm/aaaa (25/11/2026). -->
+              <td>
+                <span class="celda-doble">
+                  <span>Desde {{ fechaEnPalabras(cobertura.vigenciaDesde) }}</span>
+                  <span class="ayuda">
+                    @if (cobertura.vigenciaHasta) {
+                      Hasta {{ fechaEnPalabras(cobertura.vigenciaHasta) }}
+                    } @else {
+                      Sin fecha de fin
+                    }
+                  </span>
+                </span>
+              </td>
+              <td class="tabla__col--secundaria">
+                @if (cobertura.credencialVigenciaHasta) {
+                  @if (cobertura.credencialVencida) {
+                    <span class="marca-estado marca-estado--suspendida">
+                      Vencida el {{ fechaEnPalabras(cobertura.credencialVigenciaHasta) }}
+                    </span>
+                  } @else {
+                    Vence {{ fechaEnPalabras(cobertura.credencialVigenciaHasta) }}
+                  }
+                } @else {
+                  <span class="celda-doble">
+                    <span aria-label="Sin vencimiento cargado">—</span>
+                    @if (cobertura.requeriaCredencial) {
+                      <span class="ayuda">El plan la exige</span>
+                    }
+                  </span>
+                }
+              </td>
               <td>
                 <!-- Estado con color y texto (norma de diseño): nunca solo el color. -->
                 <span
