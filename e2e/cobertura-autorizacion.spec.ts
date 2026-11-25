@@ -326,5 +326,5 @@ async function registrarAutorizacion(
   await formulario.getByLabel('Vigente desde').fill(datos.desde);
   await formulario.getByLabel('Vigente hasta').fill(datos.hasta);
   await formulario.getByLabel('Estado inicial').selectOption('APROBADA');
-  await formulario.getByRole('button', { name: 'Registrar autorizacion' }).click();
+  await formulario.getByRole('button', { name: 'Registrar autorización' }).click();
 }

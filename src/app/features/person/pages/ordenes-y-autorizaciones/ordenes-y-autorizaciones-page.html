@@ -565,7 +565,7 @@
         </app-alerta>
       }
 
-      <h3 class="formulario__seccion">Quién la firmó</h3>
+      <h3 class="formulario__seccion"><app-icono nombre="perfil" />Quién la firmó</h3>
 
       <div class="campo campo--6">
         <label for="orden-emisor">Profesional que la firmo</label>
@@ -637,7 +637,7 @@
         }
       </div>
 
-      <h3 class="formulario__seccion">Sesiones y vigencia</h3>
+      <h3 class="formulario__seccion"><app-icono nombre="calendario" />Sesiones y vigencia</h3>
 
       <div class="campo">
         <label for="orden-sesiones">Sesiones prescriptas</label>
@@ -681,7 +681,7 @@
         </p>
       </div>
 
-      <h3 class="formulario__seccion">Indicación</h3>
+      <h3 class="formulario__seccion"><app-icono nombre="documento" />Indicación</h3>
 
       <div class="campo">
         <label for="orden-indicacion">Indicacion</label>
@@ -706,6 +706,7 @@
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
+          <app-icono nombre="agregar" />
           {{ enviando() ? 'Guardando...' : 'Registrar orden' }}
         </button>
         <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -732,7 +733,7 @@
         </app-alerta>
       }
 
-      <h3 class="formulario__seccion">Pedido</h3>
+      <h3 class="formulario__seccion"><app-icono nombre="contratacion" />Pedido</h3>
 
       <div class="campo campo--2">
         <label for="autorizacion-numero">Número</label>
@@ -839,7 +840,7 @@
         }
       </div>
 
-      <h3 class="formulario__seccion">Cantidad y vigencia</h3>
+      <h3 class="formulario__seccion"><app-icono nombre="calendario" />Cantidad y vigencia</h3>
 
       <div class="campo">
         <label for="autorizacion-cantidad">Cantidad pedida</label>
@@ -927,7 +928,8 @@
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
-          {{ enviando() ? 'Guardando...' : 'Registrar autorizacion' }}
+          <app-icono nombre="agregar" />
+          {{ enviando() ? 'Guardando...' : 'Registrar autorización' }}
         </button>
         <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
           Cancelar
@@ -1062,6 +1064,7 @@
 
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
+              <app-icono nombre="tilde" />
               {{ enviando() ? 'Guardando...' : 'Guardar la orden' }}
             </button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -1100,6 +1103,7 @@
 
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
+              <app-icono nombre="tilde" />
               {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
             </button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -1244,6 +1248,7 @@
 
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
+              <app-icono nombre="tilde" />
               {{ enviando() ? 'Guardando...' : 'Registrar la respuesta' }}
             </button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -1356,6 +1361,7 @@
 
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
+              <app-icono nombre="tilde" />
               {{ enviando() ? 'Guardando...' : 'Guardar la autorización' }}
             </button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -1394,6 +1400,7 @@
 
           <div class="acciones">
             <button type="submit" class="boton" [disabled]="enviando()">
+              <app-icono nombre="tilde" />
               {{ enviando() ? 'Guardando...' : 'Guardar el vinculo' }}
             </button>
             <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
