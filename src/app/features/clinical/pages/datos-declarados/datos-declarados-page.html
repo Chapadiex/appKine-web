@@ -69,24 +69,6 @@
           (cargar)="cargarDictado($event)"
           (problema)="problemaDeDictado($event)"
         />
-        <!-- Observaciones e indicaciones: una sola, se guarda al salir del campo. -->
-        <div fichaPie class="declarados__observaciones">
-          <label for="declarados-observaciones">
-            Observaciones e indicaciones
-            <span class="declarados__pista-titulo">· derivación, indicación médica, cuidados</span>
-          </label>
-          <textarea
-            id="declarados-observaciones"
-            rows="2"
-            maxlength="1000"
-            placeholder="Ej.: derivado por traumatólogo. Indicación: 10 sesiones."
-            [value]="observacionActual()"
-            (blur)="guardarObservaciones($any($event.target).value)"
-          ></textarea>
-          @if (guardandoObservaciones()) {
-            <span class="declarados__pista" role="status">Guardando…</span>
-          }
-        </div>
       </app-ficha-de-ingreso>
 
       <div class="declarados">
@@ -326,6 +308,25 @@
           }
         </section>
       </div>
+
+      <!-- Observaciones e indicaciones: a todo el ancho, debajo; se guarda al salir del campo. -->
+      <section class="tarjeta declarados__observaciones" aria-labelledby="declarados-obs-titulo">
+        <h2 id="declarados-obs-titulo">
+          <label for="declarados-observaciones">Observaciones e indicaciones</label>
+          <span class="declarados__pista-titulo">· derivación, indicación médica, cuidados</span>
+          @if (guardandoObservaciones()) {
+            <span class="declarados__pista-titulo" role="status">· Guardando…</span>
+          }
+        </h2>
+        <textarea
+          id="declarados-observaciones"
+          rows="2"
+          maxlength="1000"
+          placeholder="Ej.: derivado por traumatólogo por dolor de rodilla. Indicación: 10 sesiones."
+          [value]="observacionActual()"
+          (blur)="guardarObservaciones($any($event.target).value)"
+        ></textarea>
+      </section>
     }
   }
 }
