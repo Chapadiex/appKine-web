@@ -50,8 +50,6 @@ const TIPICAS_POR_PALABRA: readonly (readonly [string, readonly string[]])[] = [
   ['Escoliosis', ['escoliosis']],
   ['Fibromialgia', ['fibromialgia']],
   ['Prótesis / implante', ['protesis', 'implante']],
-  ['Hipotiroidismo', ['hipotiroid', 'tiroides']],
-  ['Colesterol alto', ['colesterol']],
   ['Celiaquía', ['celiac', 'celiaqu']],
   ['Depresión / ansiedad', ['depresi', 'ansiedad']],
 ];
