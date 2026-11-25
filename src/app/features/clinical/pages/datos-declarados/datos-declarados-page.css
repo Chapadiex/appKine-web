@@ -266,16 +266,6 @@
   font-size: var(--tipo-xs);
 }
 
-.declarados__observaciones {
-  display: grid;
-  gap: var(--esp-1);
-}
-
-.declarados__observaciones > label {
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-xs);
-}
-
 .declarados__pista-titulo {
   color: var(--color-texto-suave);
   font-size: var(--tipo-2xs);
@@ -297,4 +287,52 @@
 .declarados__observaciones textarea:focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
+}
+
+/* --- Compacto (25/11/2026): paneles más bajos para que entren las observaciones debajo --- */
+
+.declarados__panel {
+  gap: var(--esp-2);
+  padding-block: var(--esp-4);
+}
+
+.declarados__panel h2,
+.declarados__observaciones h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: var(--tipo-sm);
+}
+
+.declarados :is(input[type='text'], input[type='number'], select),
+.declarados .boton {
+  min-height: 2.25rem;
+  padding-block: var(--esp-1);
+}
+
+.declarados__soltar {
+  padding: var(--esp-2);
+}
+
+.declarados__soltar-fila {
+  align-items: center;
+}
+
+.declarados__item {
+  padding-block: var(--esp-1);
+}
+
+.declarados__lista {
+  max-block-size: 9rem;
+}
+
+.declarados__observaciones {
+  display: grid;
+  gap: var(--esp-2);
+  margin-block-start: var(--esp-3);
+  padding-block: var(--esp-3);
+}
+
+.declarados__observaciones label {
+  font-weight: inherit;
 }
