@@ -3,7 +3,8 @@
 .declarados {
   display: grid;
   gap: var(--esp-4);
-  align-items: start;
+  /* Las dos tarjetas del mismo alto. */
+  align-items: stretch;
 }
 
 /* Dos columnas solo si cada panel tiene lugar (26rem); si no, uno debajo del otro. */
@@ -14,6 +15,7 @@
 .declarados__panel {
   display: grid;
   gap: var(--esp-3);
+  align-content: start;
   margin: 0;
 }
 

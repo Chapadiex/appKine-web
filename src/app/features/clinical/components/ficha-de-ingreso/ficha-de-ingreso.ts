@@ -51,8 +51,6 @@ export const CONDICIONES_TIPICAS: readonly string[] = [
   'Escoliosis',
   'Fibromialgia',
   'Prótesis / implante',
-  'Hipotiroidismo',
-  'Colesterol alto',
   'Celiaquía',
   'Depresión / ansiedad',
 ];
