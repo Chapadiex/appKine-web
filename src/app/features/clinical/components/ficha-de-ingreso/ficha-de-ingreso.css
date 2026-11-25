@@ -9,7 +9,7 @@
 
 .ficha {
   display: grid;
-  gap: var(--esp-4);
+  gap: var(--esp-3);
   margin: 0;
 }
 
@@ -44,7 +44,7 @@
 
 .ficha__datos {
   display: grid;
-  gap: var(--esp-3);
+  gap: var(--esp-2);
 }
 
 .ficha__campo {
@@ -218,14 +218,14 @@ app-texto-opcional.ficha__campo {
 .ficha__lista {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
-  gap: var(--esp-1) var(--esp-3);
+  gap: 2px var(--esp-3);
 }
 
 .ficha__tilde {
   display: flex;
   align-items: center;
   gap: var(--esp-2);
-  min-height: 2rem;
+  min-height: 1.75rem;
   padding-inline: var(--esp-2);
   border-radius: var(--radio-sm);
   font-size: var(--tipo-xs);
