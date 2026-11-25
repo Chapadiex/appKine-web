@@ -268,12 +268,12 @@
 
 .declarados__observaciones {
   display: grid;
-  gap: var(--esp-2);
-  margin-block-start: var(--esp-4);
+  gap: var(--esp-1);
 }
 
-.declarados__observaciones h2 {
-  margin: 0;
+.declarados__observaciones > label {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
 }
 
 .declarados__pista-titulo {
