@@ -80,7 +80,7 @@
 
     @if (!consultaAbierta()) {
       <button type="button" class="boton boton--secundario" (click)="abrirConsulta()">
-        Consultar por actividad
+        <app-icono nombre="buscar" /> Consultar por actividad
       </button>
     } @else {
       <div class="grilla-12">
@@ -177,7 +177,7 @@
         (click)="abrirAlta()"
         *akinePermiso="permisoManage"
       >
-        Agregar la primera cobertura
+        <app-icono nombre="agregar" /> Agregar la primera cobertura
       </button>
     </app-estado-vacio>
   } @else if (coberturas().length === 0) {
@@ -219,16 +219,26 @@
               <td>{{ vigenciaEnPalabras(cobertura) }}</td>
               <td class="tabla__col--secundaria">{{ credencialEnPalabras(cobertura) }}</td>
               <td>
-                {{ situacionEnPalabras(cobertura) }}
+                <!-- Estado con color y texto (norma de diseño): nunca solo el color. -->
+                <span
+                  class="marca-estado"
+                  [class.marca-estado--activa]="situacionEnPalabras(cobertura) === 'Vigente'"
+                  [class.marca-estado--suspendida]="
+                    situacionEnPalabras(cobertura) === 'Vigencia terminada'
+                  "
+                  [class.marca-estado--revocada]="situacionEnPalabras(cobertura) === 'Dada de baja'"
+                >
+                  {{ situacionEnPalabras(cobertura) }}
+                </span>
                 @if (cobertura.deactivationReason) {
-                  — {{ cobertura.deactivationReason }}
+                  <span class="ayuda"> — {{ cobertura.deactivationReason }}</span>
                 }
               </td>
               <td>
                 @if (cobertura.principal) {
                   <span class="marca-principal">Principal</span>
                 } @else {
-                  <span class="ayuda">No</span>
+                  <span class="ayuda" aria-label="No es la principal">—</span>
                 }
               </td>
               <td class="tabla__acciones">
@@ -526,6 +536,7 @@
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando()">
+          <app-icono nombre="agregar" />
           {{ enviando() ? 'Guardando...' : 'Agregar cobertura' }}
         </button>
         <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
@@ -637,6 +648,7 @@
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="enviando()">
+            <app-icono nombre="tilde" />
             {{ enviando() ? 'Guardando...' : 'Guardar' }}
           </button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">
