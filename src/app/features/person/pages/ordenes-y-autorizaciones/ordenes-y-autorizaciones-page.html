@@ -24,16 +24,19 @@
     <div cabeceraAcciones *akinePermiso="permisoManage">
       <button type="button" class="boton boton--secundario" (click)="abrirAltaDeOrden()">
         <app-icono nombre="agregar" />
-        Registrar una orden
+        <span class="visualmente-oculto">Registrar una </span
+        ><span class="cabecera__corto">orden</span>
       </button>
       <button
         type="button"
         class="boton"
         (click)="abrirAltaDeAutorizacion()"
         [disabled]="sinCoberturas()"
+        [title]="sinCoberturas() ? 'Primero hay que cargar una cobertura' : ''"
       >
         <app-icono nombre="agregar" />
-        Registrar una autorización
+        <span class="visualmente-oculto">Registrar una </span
+        ><span class="cabecera__corto">autorización</span>
       </button>
     </div>
   }
@@ -56,13 +59,17 @@
   </app-alerta>
 } @else {
   @if (sinCoberturas()) {
-    <p class="estado">
-      Este paciente no tiene ninguna cobertura activa cargada. Una autorización se pide contra una
-      cobertura, así que primero hay que cargarla.
-    </p>
-    <p class="acciones">
-      <a class="boton" [routerLink]="rutaCoberturas()">Cargar una cobertura</a>
-    </p>
+    <app-alerta tipo="advertencia" titulo="Sin cobertura activa">
+      <p>
+        Este paciente no tiene ninguna cobertura activa cargada. Una autorización se pide contra una
+        cobertura: primero hay que cargarla.
+      </p>
+      <p class="alerta__acciones">
+        <a class="boton boton--secundario boton--chico" [routerLink]="rutaCoberturas()">
+          <app-icono nombre="agregar" /> Cargar una cobertura
+        </a>
+      </p>
+    </app-alerta>
   }
 
   <!-- =================================================================================
@@ -81,7 +88,7 @@
     </div>
 
     <form
-      class="formulario-consulta"
+      class="formulario-consulta formulario--libre"
       [formGroup]="formularioElegibilidad"
       (ngSubmit)="consultarElegibilidad()"
       novalidate
@@ -155,6 +162,7 @@
           class="boton boton--secundario"
           [disabled]="consultandoElegibilidad()"
         >
+          <app-icono nombre="buscar" />
           {{ consultandoElegibilidad() ? 'Consultando...' : 'Consultar' }}
         </button>
       </p>
