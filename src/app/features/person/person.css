@@ -309,15 +309,36 @@
 }
 
 /*
- * Formulario de consulta (no guarda nada): el boton va en la misma fila que los campos, como una
- * herramienta, y no en la barra de pie de un formulario de alta.
+ * Formulario de consulta (no guarda nada): campos y boton en una sola fila, como una herramienta.
+ * Fuera de la grilla de formularios (formulario--libre): el boton se alinea con los controles,
+ * no con el pie de la ayuda de un campo (25/11/2026).
  */
+.formulario-consulta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--esp-2) var(--esp-4);
+}
+
+.formulario-consulta > app-alerta {
+  flex: 1 1 100%;
+}
+
+.formulario-consulta > .campo {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+
+.formulario-consulta > .campo:has(input[type='date']) {
+  flex: 0 1 11rem;
+}
+
+/* El boton baja lo que mide el rotulo, para quedar a la altura de los controles. */
 .tarjeta .formulario-consulta > .acciones:last-child {
   position: static;
-  grid-column: auto / span 2;
-  align-self: end;
-  margin: 0 0 var(--esp-6);
-  padding: 0;
+  flex: none;
+  margin: 0;
+  padding: calc(var(--tipo-sm) * 1.5 + var(--esp-1)) 0 0;
   border: 0;
   background: none;
 }
@@ -729,4 +750,13 @@
   .cobertura__grupo .grilla-12 > :is(.campo--4, .campo--6) {
     grid-column: 1 / -1;
   }
+}
+
+/* Altas de la cabecera con el verbo solo para el lector: a la vista, "+ Orden", "+ Autorización". */
+.cabecera__corto {
+  display: inline-block;
+}
+
+.cabecera__corto::first-letter {
+  text-transform: uppercase;
 }
