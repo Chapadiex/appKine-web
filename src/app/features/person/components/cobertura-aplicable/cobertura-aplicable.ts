@@ -21,6 +21,7 @@ import { motivoDeNoAplicable } from '../../models/etiquetas-de-cobertura';
 import { traducirErrorPersona } from '../../models/person-errors';
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 type EstadoDeConsulta =
   | { readonly tipo: 'sin-oferta' }
@@ -46,7 +47,7 @@ type EstadoDeConsulta =
  */
 @Component({
   selector: 'app-cobertura-aplicable',
-  imports: [Alerta],
+  imports: [Alerta, Icono],
   templateUrl: './cobertura-aplicable.html',
   styleUrl: '../../person.css',
 })

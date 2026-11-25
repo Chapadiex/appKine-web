@@ -761,3 +761,59 @@
 .cabecera__corto::first-letter {
   text-transform: uppercase;
 }
+
+/* Qué cobertura aplica: veredicto en una franja y datos en lista corta (25/11/2026). */
+.aplicable__veredicto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+  margin-block: var(--esp-4) var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.aplicable__veredicto--cobertura {
+  background: var(--color-exito-fondo);
+  color: var(--color-exito-texto);
+}
+
+.aplicable__veredicto > app-icono {
+  flex: none;
+  font-size: 1.25rem;
+}
+
+.aplicable__titulo {
+  margin: 0;
+  font-weight: var(--peso-semi);
+}
+
+.aplicable__fecha {
+  margin-inline-start: auto;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.aplicable__datos {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--esp-1) var(--esp-4);
+  margin: 0;
+  font-size: var(--tipo-sm);
+}
+
+.aplicable__datos dt {
+  color: var(--color-texto-suave);
+}
+
+.aplicable__datos dd {
+  margin: 0;
+}
+
+.aplicable__aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  color: var(--color-aviso-texto);
+}

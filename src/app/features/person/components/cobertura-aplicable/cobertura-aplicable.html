@@ -21,38 +21,52 @@
 
     @case ('listo') {
       @if (respuesta(); as resultado) {
-        <p>
-          @if (resultado.condicionSugerida === 'COBERTURA') {
-            Sugerencia: <b>atender con cobertura</b>
-            @if (resultado.aplicables?.[0]; as primera) {
-              — {{ primera.financiadorNombre }}
-              @if (primera.planNombre) {
-                {{ primera.planNombre }}
+        <!-- Veredicto primero, en una línea; debajo, los datos que lo explican (25/11/2026). -->
+        <div
+          class="aplicable__veredicto"
+          [class.aplicable__veredicto--cobertura]="resultado.condicionSugerida === 'COBERTURA'"
+        >
+          <app-icono [nombre]="resultado.condicionSugerida === 'COBERTURA' ? 'exito' : 'perfil'" />
+          <p class="aplicable__titulo">
+            @if (resultado.condicionSugerida === 'COBERTURA') {
+              Sugerencia: atender con cobertura
+              @if (resultado.aplicables?.[0]; as primera) {
+                — {{ primera.financiadorNombre }}
+                @if (primera.planNombre) {
+                  {{ primera.planNombre }}
+                }
               }
+            } @else {
+              Sugerencia: atender como particular
             }
-          } @else {
-            Sugerencia: <b>atender como particular</b>
-          }
+          </p>
           @if (resultado.fecha) {
-            <span class="ayuda"> (al {{ fechaEnPalabras(resultado.fecha) }})</span>
+            <span class="aplicable__fecha">al {{ fechaEnPalabras(resultado.fecha) }}</span>
           }
-        </p>
+        </div>
 
-        <p>
-          Precio particular del día:
-          @if (resultado.precioParticular !== undefined && resultado.precioParticular !== null) {
-            <b>{{ importe(resultado.precioParticular) }}</b>
-          } @else {
-            <b>la actividad no tiene precio cargado</b>
+        <dl class="aplicable__datos">
+          <dt>Precio particular del día</dt>
+          <dd>
+            @if (resultado.precioParticular !== undefined && resultado.precioParticular !== null) {
+              <b>{{ importe(resultado.precioParticular) }}</b>
+            } @else {
+              <span class="aplicable__aviso">
+                <app-icono nombre="advertencia" /> la actividad no tiene precio cargado
+              </span>
+            }
+          </dd>
+          @if (resultado.admiteObraSocial === false) {
+            <dt>Obra social</dt>
+            <dd>Esta actividad no admite obra social</dd>
           }
-          <span class="ayuda">
-            Particular siempre esta disponible, aunque alguna cobertura aplique.
-          </span>
-        </p>
-
-        @if (resultado.admiteObraSocial === false) {
-          <p class="ayuda">Esta actividad no admite obra social.</p>
-        }
+          @if (
+            (resultado.aplicables?.length ?? 0) === 0 && (resultado.noAplicables?.length ?? 0) === 0
+          ) {
+            <dt>Coberturas</dt>
+            <dd>El paciente no tiene coberturas financiadas vigentes ese día</dd>
+          }
+        </dl>
 
         @if ((resultado.aplicables?.length ?? 0) > 0) {
           <h3>Aplican</h3>
@@ -130,15 +144,6 @@
               </li>
             }
           </ul>
-        }
-
-        @if (
-          (resultado.aplicables?.length ?? 0) === 0 && (resultado.noAplicables?.length ?? 0) === 0
-        ) {
-          <p class="estado estado--vacio">
-            El paciente no tiene coberturas financiadas vigentes ese día: se atiende como
-            particular.
-          </p>
         }
       }
     }
