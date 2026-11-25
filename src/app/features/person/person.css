@@ -604,3 +604,73 @@
 .padron-contacto > .padron-persona__dato {
   display: flex;
 }
+
+/* Subida de documentos: zona para soltar con botones, sin el selector nativo (25/11/2026). */
+.subida__rotulo {
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-medio);
+}
+
+.subida {
+  display: grid;
+  justify-items: center;
+  gap: var(--esp-2);
+  padding: var(--esp-5) var(--esp-4);
+  border: 1.5px dashed var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+  text-align: center;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.subida--activa {
+  border-color: var(--color-acento);
+  background: var(--color-seleccion);
+}
+
+.subida--error {
+  border-color: var(--color-peligro);
+}
+
+.subida__icono {
+  color: var(--color-acento);
+  font-size: 1.75rem;
+}
+
+.subida__texto {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.subida__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--esp-2);
+}
+
+.subida__botones .boton,
+.subida__elegido {
+  gap: var(--esp-2);
+}
+
+.subida__elegido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+}
+
+.subida__nombre {
+  font-weight: var(--peso-medio);
+  overflow-wrap: anywhere;
+}
+
+.subida__peso {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}

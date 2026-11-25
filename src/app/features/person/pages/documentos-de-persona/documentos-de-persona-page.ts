@@ -187,6 +187,8 @@ export class DocumentosDePersonaPage {
 
   /** Archivo elegido en el formulario. Vive fuera del `FormGroup`: un input de archivo no se ata. */
   protected readonly archivo = signal<File | null>(null);
+  /** Hay un archivo arrastrado encima de la zona de subida. */
+  protected readonly arrastrando = signal(false);
 
   protected readonly enviando = signal(false);
   protected readonly errorAccion = signal<string | null>(null);
@@ -374,6 +376,20 @@ export class DocumentosDePersonaPage {
   protected elegirArchivo(entrada: EventTarget | null): void {
     const input = entrada as HTMLInputElement | null;
     this.archivo.set(input?.files?.[0] ?? null);
+  }
+
+  protected alArrastrar(evento: DragEvent, encima: boolean): void {
+    evento.preventDefault();
+    this.arrastrando.set(encima);
+  }
+
+  protected soltarArchivo(evento: DragEvent): void {
+    evento.preventDefault();
+    this.arrastrando.set(false);
+    const archivo = evento.dataTransfer?.files?.[0];
+    if (archivo) {
+      this.archivo.set(archivo);
+    }
   }
 
   protected subir(): void {
