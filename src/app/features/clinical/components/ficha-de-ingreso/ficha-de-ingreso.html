@@ -1,20 +1,6 @@
 <section class="tarjeta ficha" aria-labelledby="ficha-titulo">
   <header class="ficha__cabeza">
     <h2 id="ficha-titulo">Ficha de ingreso</h2>
-    @if (ficha(); as actual) {
-      <span
-        class="marca-estado"
-        [class.marca-estado--activa]="!sinRevisar()"
-        [class.marca-estado--suspendida]="sinRevisar()"
-      >
-        {{ sinRevisar() ? 'Sin revisar' : 'Revisada' }}
-      </span>
-      @if (puedeRevisar() && sinRevisar()) {
-        <button type="button" class="boton boton--secundario boton--chico" (click)="revisar.emit()">
-          Marcar revisada
-        </button>
-      }
-    }
     <span class="ficha__estado" role="status">{{ estadoDeGuardado() }}</span>
     <!-- Acciones de la pantalla que la usa (el micrófono de datos declarados), a la derecha. -->
     <ng-content select="[fichaAcciones]" />

@@ -1,16 +1,7 @@
-import {
-  Component,
-  DestroyRef,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-  viewChild,
-} from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { cabeceraDePersona } from '../../../../core/services/cabecera-de-persona';
 import { CabeceraDeFicha } from '../../../../shared/components/cabecera-de-ficha/cabecera-de-ficha';
-import { Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import {
   AntecedenteResponse,
@@ -22,10 +13,6 @@ import { HistoriaClinicaResponse } from '../../../../api/generated/model/histori
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { CasosDeLaHistoria } from '../../casos/components/casos-de-la-historia';
 import { PedidoDeMotivo } from '../../components/pedido-de-motivo';
-import {
-  FichaDeIngreso,
-  TildeDeEnfermedad,
-} from '../../components/ficha-de-ingreso/ficha-de-ingreso';
 import {
   TIPOS_DE_ANTECEDENTE,
   etiquetaDeOrigen,
@@ -46,7 +33,6 @@ import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { AvisosStore } from '../../../../core/services/avisos.store';
-import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { PERMISO_HC_DECLARAR, PERMISO_HC_WRITE } from '../../../../core/models/permisos';
 import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
@@ -56,9 +42,6 @@ import { OPCIONES_DE_ZONA, zonaEnChips } from '../../models/zonas-del-cuerpo';
 import {
   DatosDeclaradosApi,
   DatosDeclaradosResponse,
-  FichaDeIngresoRequest,
-  FichaDeIngresoResponse,
-  OcupacionResponse,
 } from '../datos-declarados/datos-declarados.api';
 
 type Estado =
@@ -106,7 +89,6 @@ type Estado =
     SesionesDeLaHistoria,
     RouterLink,
     Icono,
-    FichaDeIngreso,
   ],
   templateUrl: './historia-clinica-page.html',
   styleUrl: './historia-clinica.css',
@@ -169,44 +151,14 @@ export class HistoriaClinicaPage {
     return this.historia()?.antecedentes?.find((a) => a.id === evento.referencia) ?? null;
   });
 
-  /** DP-47: cuantos datos declarados esperan revision. */
-  protected readonly declaradosSinRevisar = computed(
-    () => this.historia()?.declaradosSinRevisar ?? 0,
-  );
-
   /** Los declarados pendientes, para revisarlos desde aca. Se piden solo si hay alguno. */
   protected readonly declarados = signal<DatosDeclaradosResponse | null>(null);
-  protected readonly revisando = signal<number | null>(null);
-
-  /** Ficha de ingreso de la historia: se pide aparte (GET 200/204). */
-  protected readonly ficha = signal<FichaDeIngresoResponse | null>(null);
-  protected readonly ocupaciones = signal<readonly OcupacionResponse[]>([]);
-  protected readonly guardandoFicha = signal(false);
-  private readonly fichaDeIngreso = viewChild(FichaDeIngreso);
 
   /** Detalle de una cirugia en el alta de antecedente. */
   protected readonly zonaNueva = signal('');
   protected readonly anioNuevo = signal('');
   protected readonly lugarNuevo = signal('');
   protected readonly anioMaximo = new Date().getFullYear();
-
-  /** Enfermedades de la lista vigentes en la historia (de cualquier origen). */
-  protected readonly enfermedadesTildadas = computed(
-    () =>
-      new Set(
-        (this.historia()?.antecedentes ?? []).flatMap((a) =>
-          a.codigo ? [a.codigo as string] : [],
-        ),
-      ),
-  );
-  protected readonly adjuntoDeclaradoAbierto = signal<number | null>(null);
-
-  protected readonly antecedentesPendientes = computed(
-    () => this.declarados()?.antecedentes?.filter((a) => !a.revisadoEn) ?? [],
-  );
-  protected readonly adjuntosPendientes = computed(
-    () => this.declarados()?.adjuntos?.filter((a) => !a.revisadoEn) ?? [],
-  );
 
   /** DP-47: la marca de cada adjunto declarado, revisado o no, para el timeline y el detalle. */
   protected readonly marcasDeAdjuntos = computed(() => {
@@ -220,166 +172,13 @@ export class HistoriaClinicaPage {
     return marcas;
   });
 
-  protected puedeRevisar(): boolean {
+  protected puedeEscribir(): boolean {
     return this.permisos.tiene(PERMISO_HC_WRITE);
   }
 
-  /** "Declarado · sin revisar" o "Declarado · revisado por X"; `null` si lo cargo un profesional. */
-  protected marcaDeclarado(campos: {
-    origen?: string;
-    revisadoEn?: string | null;
-    revisadoPorNombre?: string | null;
-  }): string | null {
-    if (campos.origen !== 'DECLARADO') {
-      return null;
-    }
-    if (!campos.revisadoEn) {
-      return 'Declarado · sin revisar';
-    }
-    return campos.revisadoPorNombre
-      ? `Declarado · revisado por ${campos.revisadoPorNombre}`
-      : 'Declarado · revisado';
-  }
-
-  protected revisarAntecedente(antecedenteId: number): void {
-    this.revisar(
-      antecedenteId,
-      this.declaradosApi.revisarAntecedente(
-        this.idDePersona(),
-        antecedenteId,
-        this.justificacion(),
-      ),
-    );
-  }
-
-  protected revisarAdjunto(adjuntoId: number): void {
-    const historiaClinicaId = this.historia()?.id;
-    if (historiaClinicaId === undefined) {
-      return;
-    }
-    this.revisar(
-      adjuntoId,
-      this.declaradosApi.revisarAdjunto(historiaClinicaId, adjuntoId, this.justificacion()),
-    );
-  }
-
-  protected alternarAdjuntoDeclarado(adjuntoId: number): void {
-    this.adjuntoDeclaradoAbierto.update((actual) => (actual === adjuntoId ? null : adjuntoId));
-  }
-
-  private revisar(id: number, pedido: Observable<unknown>): void {
-    if (this.revisando() !== null) {
-      return;
-    }
-    this.revisando.set(id);
-    pedido.subscribe({
-      next: () => {
-        this.revisando.set(null);
-        this.avisos.exito('Marcado como revisado');
-        this.cargar();
-      },
-      error: (error: unknown) => {
-        this.revisando.set(null);
-        this.avisos.error('No pudimos marcarlo como revisado', {
-          descripcion: traducirErrorHistoria(error).mensaje,
-        });
-      },
-    });
-  }
-
-  private cargarFicha(): void {
-    this.ficha.set(null);
-    this.releerFicha();
-    if (this.ocupaciones().length === 0 && this.puedeRevisar()) {
-      this.declaradosApi.ocupaciones().subscribe({
-        next: (lista) => this.ocupaciones.set(lista),
-        error: () => this.ocupaciones.set([]),
-      });
-    }
-  }
-
-  /** Relee la ficha sin pasar por null: el componente no pierde lo que se esta escribiendo. */
-  private releerFicha(): void {
-    this.declaradosApi.verFicha(this.idDePersona(), this.justificacion()).subscribe({
-      next: (ficha) => this.ficha.set(ficha ?? null),
-      error: () => undefined,
-    });
-  }
-
-  protected guardarFicha(ficha: FichaDeIngresoRequest): void {
-    this.guardandoFicha.set(true);
-    this.declaradosApi.registrarFicha(this.idDePersona(), ficha, this.justificacion()).subscribe({
-      next: (guardada) => {
-        this.guardandoFicha.set(false);
-        this.ficha.set(guardada);
-        this.refrescar();
-      },
-      error: (error: unknown) => {
-        this.fichaDeIngreso()?.fallo();
-        this.guardandoFicha.set(false);
-        this.avisos.error('No pudimos guardar la ficha', {
-          descripcion: traducirErrorHistoria(error).mensaje,
-        });
-        if (error instanceof AkineHttpError && error.status === 409) {
-          this.releerFicha();
-        }
-      },
-    });
-  }
-
-  protected revisarFicha(): void {
-    this.declaradosApi.revisarFicha(this.idDePersona(), this.justificacion()).subscribe({
-      next: (revisada) => {
-        this.ficha.set(revisada);
-        this.avisos.exito('Ficha revisada');
-        this.refrescar();
-      },
-      error: (error: unknown) =>
-        this.avisos.error('No pudimos marcarla como revisada', {
-          descripcion: traducirErrorHistoria(error).mensaje,
-        }),
-    });
-  }
-
-  protected agregarOcupacion(nombre: string): void {
-    this.declaradosApi.agregarOcupacion(nombre).subscribe({
-      next: (ocupacion) => {
-        this.ocupaciones.update((lista) =>
-          lista.some((o) => o.id === ocupacion.id)
-            ? lista
-            : [...lista, ocupacion].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
-        );
-        this.fichaDeIngreso()?.guardarOcupacion(ocupacion.id);
-      },
-      error: (error: unknown) =>
-        this.avisos.error('No pudimos agregar la ocupación', {
-          descripcion: traducirErrorHistoria(error).mensaje,
-        }),
-    });
-  }
-
-  /** El profesional tilda: queda registrado. Destildar no se hace aca (la casilla queda fija). */
-  protected tildarEnfermedad(tilde: TildeDeEnfermedad): void {
-    if (!tilde.marcado) {
-      return;
-    }
-    this.api
-      .registrarAntecedente(
-        this.idDePersona(),
-        'MEDICO' as RegistrarAntecedenteRequest['tipo'],
-        tilde.etiqueta,
-        this.justificacion(),
-        { codigo: tilde.codigo as RegistrarAntecedenteRequest['codigo'] },
-      )
-      .subscribe({
-        next: () => this.refrescar(),
-        error: (error: unknown) => {
-          this.avisos.error('No pudimos guardar el tilde', {
-            descripcion: traducirErrorHistoria(error).mensaje,
-          });
-          this.refrescar();
-        },
-      });
+  /** "Declarado" si lo cargo el paciente o la recepcion; `null` si lo cargo un profesional. */
+  protected marcaDeclarado(campos: { origen?: string }): string | null {
+    return campos.origen === 'DECLARADO' ? 'Declarado' : null;
   }
 
   /** "Rodilla derecha · 2019 · Hospital Privado", o vacio si no tiene detalle. */
@@ -639,7 +438,6 @@ export class HistoriaClinicaPage {
       next: (historia) => {
         this.estado.set({ tipo: 'lista', historia });
         this.cargarDeclarados(historia);
-        this.cargarFicha();
       },
       error: (error: unknown) => {
         const traducido = traducirErrorHistoria(error, 'historia');
