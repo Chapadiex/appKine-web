@@ -162,6 +162,7 @@ model/access-token-response.ts
 model/accion-propuesta.ts
 model/account-response.ts
 model/account-state-change-request.ts
+model/aceptar-consentimiento-ia-request.ts
 model/aceptar-terminos-request.ts
 model/activar-perfil-paciente-request.ts
 model/activate-account-request.ts
@@ -279,6 +280,7 @@ model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-accion.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
 model/conflicto-de-agenda.ts
+model/consentimiento-ia-response.ts
 model/consulta-asistente-request.ts
 model/consulta-evento-aclaracion.ts
 model/consulta-evento-error.ts
@@ -673,6 +675,7 @@ model/tarjeta-de-llegada.ts
 model/tarjeta-de-paciente.ts
 model/tarjeta-de-pago.ts
 model/terms-response.ts
+model/texto-consentimiento-ia-response.ts
 model/timeline-response.ts
 model/total-por-medio-de-caja.ts
 model/totales-de-egresos-por-categoria.ts

@@ -11,15 +11,26 @@ import { HttpHeaders }                                       from '@angular/comm
 
 import { Observable }                                        from 'rxjs';
 
+import { AceptarConsentimientoIaRequest } from '../model/models';
 import { EstadoDelMotorResponse } from '../model/models';
 import { FuncionesIaResponse } from '../model/models';
 import { ProblemDetail } from '../model/models';
 import { PruebaDelMotorResponse } from '../model/models';
+import { TextoConsentimientoIaResponse } from '../model/models';
 import { UpdateFuncionesIaRequest } from '../model/models';
 
 
 import { Configuration }                                     from '../configuration';
 
+
+export interface AceptarConsentimientoIaRequestParams {
+    orgId: number;
+    aceptarConsentimientoIaRequest: AceptarConsentimientoIaRequest;
+}
+
+export interface GetConsentimientoIaRequestParams {
+    orgId: number;
+}
 
 export interface GetEstadoDelMotorDeIaRequestParams {
     orgId: number;
@@ -46,6 +57,22 @@ export interface UpdateFuncionesIaDeOrganizacionRequestParams {
 export interface InteligenciaArtificialDelCentroServiceInterface {
     defaultHeaders: HttpHeaders;
     configuration: Configuration;
+
+    /**
+     * Aceptar el consentimiento de IA en nombre del centro
+     * Guarda quien acepto, cuando y que version del texto. Requiere tenant:update (solo el ORG_ADMIN). Sin una aceptacion de la version vigente ninguna funcion de IA queda activa. Aceptar de nuevo la misma version no agrega otra aceptacion.  Si la version enviada no es la vigente (el texto cambio mientras se leia), 409 concurrent-modification: releer el texto y aceptar de nuevo.
+     * @endpoint post /api/v1/organizations/{orgId}/ia/consentimiento
+* @param requestParameters
+     */
+    aceptarConsentimientoIa(requestParameters: AceptarConsentimientoIaRequestParams, extraHttpRequestParams?: any): Observable<FuncionesIaResponse>;
+
+    /**
+     * Texto vigente del consentimiento de IA
+     * El texto que el centro tiene que aceptar para usar cualquier funcion de IA (Ley 25.326), con su version. Requiere ser miembro vigente. Version vacia: el despliegue no exige consentimiento.
+     * @endpoint get /api/v1/organizations/{orgId}/ia/consentimiento
+* @param requestParameters
+     */
+    getConsentimientoIa(requestParameters: GetConsentimientoIaRequestParams, extraHttpRequestParams?: any): Observable<TextoConsentimientoIaResponse>;
 
     /**
      * Estado del servidor de modelos

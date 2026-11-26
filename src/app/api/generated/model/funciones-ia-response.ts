@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ConsentimientoIaResponse } from './consentimiento-ia-response';
 import { FuncionIaResponse } from './funcion-ia-response';
 
 
@@ -14,6 +15,10 @@ import { FuncionIaResponse } from './funcion-ia-response';
  * Funciones de IA del centro: lo que ofrece el servidor, lo que eligio el centro y lo que queda activo
  */
 export interface FuncionesIaResponse { 
+    /**
+     * Consentimiento del centro para usar IA (Ley 25.326). Sin aceptar la version vigente ninguna funcion queda activa
+     */
+    consentimiento: ConsentimientoIaResponse;
     /**
      * Una entrada por funcion, siempre las cuatro
      */

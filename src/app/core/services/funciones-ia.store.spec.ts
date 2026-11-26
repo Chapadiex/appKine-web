@@ -23,6 +23,7 @@ const funcion = (codigo: FuncionIaResponseFuncionEnum, activa: boolean): Funcion
 const respuesta = (activas: readonly FuncionIaResponseFuncionEnum[]): FuncionesIaResponse => ({
   organizationId: 1,
   version: 0,
+  consentimiento: { exigido: false, aceptado: false },
   funciones: Object.values(FuncionIaResponseFuncionEnum).map((f) =>
     funcion(f, activas.includes(f)),
   ),
