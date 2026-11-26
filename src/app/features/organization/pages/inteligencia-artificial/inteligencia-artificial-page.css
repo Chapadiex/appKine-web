@@ -84,3 +84,44 @@
   margin-top: var(--esp-4);
   font-size: var(--tipo-sm);
 }
+
+/* Consentimiento de IA: el centro lo acepta antes de usar cualquier funcion. */
+.ia__consentimiento {
+  border-inline-start: var(--borde-acento) solid var(--color-aviso);
+}
+
+.ia__consentimiento .ia__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.ia__aviso {
+  margin: 0;
+  font-weight: var(--peso-semi);
+}
+
+.ia__texto-legal {
+  max-inline-size: 72ch;
+  color: var(--color-texto);
+  line-height: 1.55;
+}
+
+.ia__texto-legal p,
+.ia__texto-legal ul {
+  margin: 0 0 var(--esp-3);
+}
+
+.ia__texto-legal ul {
+  padding-inline-start: var(--esp-5);
+}
+
+.ia__version {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.ia__consentido {
+  flex-wrap: wrap;
+  color: var(--color-texto-suave);
+}

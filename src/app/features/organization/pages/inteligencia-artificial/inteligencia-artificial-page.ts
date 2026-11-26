@@ -14,6 +14,7 @@ import { EstadoDelMotorResponse } from '../../../../api/generated/model/estado-d
 import { FuncionIaResponse } from '../../../../api/generated/model/funcion-ia-response';
 import { FuncionesIaResponse } from '../../../../api/generated/model/funciones-ia-response';
 import { PruebaDelMotorResponse } from '../../../../api/generated/model/prueba-del-motor-response';
+import { TextoConsentimientoIaResponse } from '../../../../api/generated/model/texto-consentimiento-ia-response';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import {
   ETIQUETA_PESTANAS_DE_ORGANIZACION,
@@ -71,6 +72,28 @@ const DESCRIPCIONES: Readonly<Record<FuncionIa, DescripcionDeFuncion>> = {
 
 const ORDEN: readonly FuncionIa[] = ['ASISTENTE', 'EVOLUCION', 'SUGERENCIAS', 'BIBLIOTECA'];
 
+/** Un bloque del texto del consentimiento: un parrafo o una lista de puntos. */
+export type BloqueDeTexto =
+  | { readonly tipo: 'parrafo'; readonly texto: string }
+  | { readonly tipo: 'lista'; readonly items: readonly string[] };
+
+/**
+ * Parte el texto del consentimiento en parrafos (separados por una linea en blanco) y listas (lineas
+ * que empiezan con "- "), como lo declara el contrato. Se pinta como texto: nunca `innerHTML`.
+ */
+export function bloquesDelConsentimiento(texto: string): BloqueDeTexto[] {
+  return texto
+    .split(/\r?\n\s*\r?\n/)
+    .map((bloque) => bloque.trim())
+    .filter((bloque) => bloque.length > 0)
+    .map((bloque): BloqueDeTexto => {
+      const lineas = bloque.split(/\r?\n/).map((l) => l.trim());
+      return lineas.every((l) => l.startsWith('- '))
+        ? { tipo: 'lista', items: lineas.map((l) => l.slice(2).trim()) }
+        : { tipo: 'parrafo', texto: lineas.join(' ') };
+    });
+}
+
 /** Una fila de la tabla de funciones, ya resuelta para la plantilla. */
 interface FilaDeFuncion extends DescripcionDeFuncion {
   readonly funcion: FuncionIa;
@@ -114,6 +137,21 @@ export class InteligenciaArtificialPage {
 
   private readonly funciones = signal<FuncionesIaResponse | null>(null);
 
+  /** Estado del consentimiento de IA del centro (Ley 25.326); `null` mientras no se leyo. */
+  protected readonly consentimiento = computed(() => this.funciones()?.consentimiento ?? null);
+  /** El despliegue lo exige y el centro todavia no acepto la version vigente. */
+  protected readonly consentimientoPendiente = computed(() => {
+    const c = this.consentimiento();
+    return c !== null && c.exigido && !c.aceptado;
+  });
+  protected readonly textoDelConsentimiento = signal<TextoConsentimientoIaResponse | null>(null);
+  protected readonly bloquesDelConsentimiento = computed(() => {
+    const t = this.textoDelConsentimiento();
+    return t === null ? [] : bloquesDelConsentimiento(t.texto);
+  });
+  protected readonly aceptando = signal(false);
+  protected readonly errorDelConsentimiento = signal<string | null>(null);
+
   protected readonly motor = signal<EstadoDelMotorResponse | null>(null);
   protected readonly motorOcupado = signal<'consultando' | 'cargando' | 'probando' | null>(null);
   protected readonly prueba = signal<PruebaDelMotorResponse | null>(null);
@@ -154,6 +192,8 @@ export class InteligenciaArtificialPage {
       untracked(() => {
         this.guardando.set(null);
         this.prueba.set(null);
+        this.textoDelConsentimiento.set(null);
+        this.errorDelConsentimiento.set(null);
         this.cargar();
         this.consultarMotor();
       });
@@ -170,11 +210,68 @@ export class InteligenciaArtificialPage {
       next: (funciones) => {
         this.funciones.set(funciones);
         this.estado.set('listo');
+        if (this.consentimientoPendiente()) {
+          this.cargarTextoDelConsentimiento(orgId);
+        }
       },
       error: (error: unknown) => {
         this.mensajeDeCarga.set(mensajeDe(error));
         this.estado.set('error');
       },
+    });
+  }
+
+  /**
+   * Acepta, en nombre del centro, la version del texto que se esta mostrando. Si el texto cambio
+   * mientras se leia (409), se vuelve a leer y se pide aceptar de nuevo.
+   */
+  protected aceptarConsentimiento(): void {
+    const orgId = this.tenant.organizationId();
+    const texto = this.textoDelConsentimiento();
+    if (orgId === null || texto === null || this.aceptando()) {
+      return;
+    }
+    this.aceptando.set(true);
+    this.errorDelConsentimiento.set(null);
+    this.delContextoActual(
+      this.api.aceptarConsentimientoIa({
+        orgId,
+        aceptarConsentimientoIaRequest: { version: texto.version },
+      }),
+    ).subscribe({
+      next: (funciones) => {
+        this.funciones.set(funciones);
+        this.store.adoptar(funciones);
+        this.aceptando.set(false);
+        this.avisos.exito('Consentimiento aceptado: ya podés usar la inteligencia artificial');
+      },
+      error: (error: unknown) => {
+        this.aceptando.set(false);
+        const cambio =
+          error instanceof AkineHttpError && error.problemType === 'concurrent-modification';
+        this.errorDelConsentimiento.set(
+          cambio
+            ? 'El texto del consentimiento cambió mientras lo leías. Te mostramos el nuevo: leelo y aceptalo de nuevo.'
+            : mensajeDe(error),
+        );
+        if (cambio) {
+          this.cargar();
+        }
+      },
+    });
+  }
+
+  /** "26/11/2026 10:30" en la zona del navegador; el dato es un instante. */
+  protected fechaYHora(instante: string | undefined): string {
+    return instante
+      ? new Date(instante).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })
+      : '';
+  }
+
+  private cargarTextoDelConsentimiento(orgId: number): void {
+    this.delContextoActual(this.api.getConsentimientoIa({ orgId })).subscribe({
+      next: (texto) => this.textoDelConsentimiento.set(texto),
+      error: (error: unknown) => this.errorDelConsentimiento.set(mensajeDe(error)),
     });
   }
 

@@ -5,9 +5,9 @@
       desaparece del menú para todas las personas del centro; al prenderla, vuelve.
     </p>
     <p>
-      El modelo corre en el servidor del centro, no en internet: los datos de los pacientes no salen
-      de ahí. Con placa de video (GPU) cada respuesta tarda un par de segundos; sin ella, bastante
-      más.
+      Según cómo esté instalado, el modelo corre en el servidor o en un proveedor externo. En los
+      dos casos, antes de usar cualquier función el centro tiene que aceptar el consentimiento para
+      que se procesen los datos de sus pacientes.
     </p>
     <p>
       Si una función dice "No disponible en el servidor", la prende quien administra la instalación,
@@ -40,9 +40,68 @@
   }
 </div>
 
+@if (estado() === 'listo' && consentimientoPendiente()) {
+  <section class="tarjeta ia ia__consentimiento" aria-labelledby="titulo-consentimiento">
+    <h2 id="titulo-consentimiento" class="ia__titulo">
+      <app-icono nombre="candado" /> Consentimiento para usar inteligencia artificial
+    </h2>
+    <p class="ia__aviso">
+      Hasta que el centro lo acepte, ninguna función de inteligencia artificial anda, ni siquiera
+      con el modelo instalado en el servidor.
+    </p>
+
+    @if (errorDelConsentimiento(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos registrar la aceptación">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    @if (textoDelConsentimiento(); as texto) {
+      <div class="ia__texto-legal">
+        @for (bloque of bloquesDelConsentimiento(); track $index) {
+          @if (bloque.tipo === 'lista') {
+            <ul>
+              @for (item of bloque.items; track $index) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          } @else {
+            <p>{{ bloque.texto }}</p>
+          }
+        }
+      </div>
+      <p class="ia__acciones">
+        <button
+          type="button"
+          class="boton boton--primario"
+          [disabled]="aceptando()"
+          (click)="aceptarConsentimiento()"
+        >
+          {{ aceptando() ? 'Registrando…' : 'Acepto en nombre del centro' }}
+        </button>
+        <span class="ia__version">Versión {{ texto.version }}</span>
+      </p>
+    } @else if (errorDelConsentimiento() === null) {
+      <p class="estado estado--cargando">Cargando el texto del consentimiento&hellip;</p>
+    }
+  </section>
+}
+
 @if (estado() === 'listo') {
   <section class="tarjeta ia" aria-labelledby="titulo-funciones">
     <h2 id="titulo-funciones" class="ia__titulo">Funciones del centro</h2>
+
+    @if (consentimiento(); as c) {
+      @if (c.exigido && c.aceptado) {
+        <p class="ia__linea ia__consentido">
+          <span class="marca-estado marca-estado--activa">Consentimiento aceptado</span>
+          <span>
+            por {{ c.aceptadoPor ?? 'una persona sin nombre registrado' }} el
+            {{ fechaYHora(c.aceptadoAt) }} (versión {{ c.versionVigente }})
+          </span>
+        </p>
+      }
+    }
 
     @if (errorAlGuardar(); as mensaje) {
       <app-alerta tipo="error" titulo="No pudimos guardar el cambio">
@@ -58,7 +117,7 @@
             type="checkbox"
             role="switch"
             [checked]="fila.centro"
-            [disabled]="!fila.despliegue || guardando() !== null"
+            [disabled]="!fila.despliegue || guardando() !== null || consentimientoPendiente()"
             [attr.aria-describedby]="'ia-' + fila.funcion + '-detalle'"
             (change)="alternar(fila.funcion, $any($event.target))"
           />

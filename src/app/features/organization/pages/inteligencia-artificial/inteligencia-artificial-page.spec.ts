@@ -15,7 +15,10 @@ import { FuncionesIaStore } from '../../../../core/services/funciones-ia.store';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
-import { InteligenciaArtificialPage } from './inteligencia-artificial-page';
+import {
+  InteligenciaArtificialPage,
+  bloquesDelConsentimiento,
+} from './inteligencia-artificial-page';
 
 const FUNCIONES = '/api/v1/organizations/1/ia';
 const MOTOR = '/api/v1/organizations/1/ia/motor';
@@ -45,6 +48,18 @@ const LEIDAS: FuncionesIaResponse = {
     f(F.SUGERENCIAS, true, true, false),
     f(F.BIBLIOTECA, false, true, false),
   ],
+  consentimiento: { exigido: false, aceptado: false },
+};
+
+const PENDIENTE: FuncionesIaResponse = {
+  ...LEIDAS,
+  funciones: LEIDAS.funciones.map((x) => ({ ...x, activa: false })),
+  consentimiento: { exigido: true, aceptado: false, versionVigente: '2026-11-26' },
+};
+
+const TEXTO = {
+  version: '2026-11-26',
+  texto: 'El centro es responsable.\n\n- Autoriza a AKINE.\n- Cuenta con el consentimiento.',
 };
 
 const MOTOR_EN_GPU: EstadoDelMotorResponse = {
@@ -194,5 +209,56 @@ describe('InteligenciaArtificialPage', () => {
     expect(raiz().textContent).toContain('Tardó 2,4 s.');
     expect(raiz().textContent).toContain('CPU (lento)');
     expect(raiz().textContent).not.toContain('En GPU');
+  });
+
+  describe('consentimiento de IA', () => {
+    const pendiente = async (): Promise<void> => {
+      (fixture.componentInstance as unknown as { cargar(): void }).cargar();
+      httpMock.expectOne(FUNCIONES).flush(PENDIENTE);
+      await fixture.whenStable();
+      httpMock.expectOne(`${FUNCIONES}/consentimiento`).flush(TEXTO);
+      await fixture.whenStable();
+    };
+
+    it('sin consentimiento muestra el texto y deshabilita los interruptores', async () => {
+      await pendiente();
+
+      expect(raiz().textContent).toContain('Consentimiento para usar inteligencia artificial');
+      expect(raiz().querySelectorAll('.ia__texto-legal li')).toHaveLength(2);
+      expect(interruptor('ASISTENTE').disabled).toBe(true);
+    });
+
+    it('aceptar manda la version leida y adopta lo que devuelve', async () => {
+      await pendiente();
+
+      boton('Acepto en nombre del centro').click();
+      await fixture.whenStable();
+      const post = httpMock.expectOne({ method: 'POST', url: `${FUNCIONES}/consentimiento` });
+      expect(post.request.body).toEqual({ version: '2026-11-26' });
+      const aceptado: FuncionesIaResponse = {
+        ...LEIDAS,
+        consentimiento: {
+          exigido: true,
+          aceptado: true,
+          versionVigente: '2026-11-26',
+          aceptadoPor: 'Ana Gomez',
+          aceptadoAt: '2026-11-26T13:00:00Z',
+        },
+      };
+      post.flush(aceptado);
+      await fixture.whenStable();
+
+      expect(adoptar).toHaveBeenCalledWith(aceptado);
+      expect(raiz().textContent).not.toContain('Acepto en nombre del centro');
+      expect(raiz().textContent).toContain('Consentimiento aceptado');
+      expect(raiz().textContent).toContain('Ana Gomez');
+    });
+
+    it('parte el texto en parrafos y listas', () => {
+      expect(bloquesDelConsentimiento(TEXTO.texto)).toEqual([
+        { tipo: 'parrafo', texto: 'El centro es responsable.' },
+        { tipo: 'lista', items: ['Autoriza a AKINE.', 'Cuenta con el consentimiento.'] },
+      ]);
+    });
   });
 });

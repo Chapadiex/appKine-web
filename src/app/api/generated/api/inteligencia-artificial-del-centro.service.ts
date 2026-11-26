@@ -17,6 +17,8 @@ import { Observable }                                        from 'rxjs';
 import { OpenApiHttpParams, QueryParamStyle } from '../query.params';
 
 // @ts-ignore
+import { AceptarConsentimientoIaRequest } from '../model/aceptar-consentimiento-ia-request';
+// @ts-ignore
 import { EstadoDelMotorResponse } from '../model/estado-del-motor-response';
 // @ts-ignore
 import { FuncionesIaResponse } from '../model/funciones-ia-response';
@@ -24,6 +26,8 @@ import { FuncionesIaResponse } from '../model/funciones-ia-response';
 import { ProblemDetail } from '../model/problem-detail';
 // @ts-ignore
 import { PruebaDelMotorResponse } from '../model/prueba-del-motor-response';
+// @ts-ignore
+import { TextoConsentimientoIaResponse } from '../model/texto-consentimiento-ia-response';
 // @ts-ignore
 import { UpdateFuncionesIaRequest } from '../model/update-funciones-ia-request';
 
@@ -33,6 +37,8 @@ import { Configuration }                                     from '../configurat
 import { BaseService } from '../api.base.service';
 import {
     InteligenciaArtificialDelCentroServiceInterface,
+    AceptarConsentimientoIaRequestParams,
+    GetConsentimientoIaRequestParams,
     GetEstadoDelMotorDeIaRequestParams,
     GetFuncionesIaDeOrganizacionRequestParams,
     PrecargarMotorDeIaRequestParams,
@@ -49,6 +55,144 @@ export class InteligenciaArtificialDelCentroService extends BaseService implemen
 
     constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string|string[], @Optional() configuration?: Configuration) {
         super(basePath, configuration);
+    }
+
+    /**
+     * Aceptar el consentimiento de IA en nombre del centro
+     * Guarda quien acepto, cuando y que version del texto. Requiere tenant:update (solo el ORG_ADMIN). Sin una aceptacion de la version vigente ninguna funcion de IA queda activa. Aceptar de nuevo la misma version no agrega otra aceptacion.  Si la version enviada no es la vigente (el texto cambio mientras se leia), 409 concurrent-modification: releer el texto y aceptar de nuevo.
+     * @endpoint post /api/v1/organizations/{orgId}/ia/consentimiento
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public aceptarConsentimientoIa(requestParameters: AceptarConsentimientoIaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<FuncionesIaResponse>;
+    public aceptarConsentimientoIa(requestParameters: AceptarConsentimientoIaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<FuncionesIaResponse>>;
+    public aceptarConsentimientoIa(requestParameters: AceptarConsentimientoIaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<FuncionesIaResponse>>;
+    public aceptarConsentimientoIa(requestParameters: AceptarConsentimientoIaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling aceptarConsentimientoIa.');
+        }
+        const aceptarConsentimientoIaRequest = requestParameters?.aceptarConsentimientoIaRequest;
+        if (aceptarConsentimientoIaRequest === null || aceptarConsentimientoIaRequest === undefined) {
+            throw new Error('Required parameter aceptarConsentimientoIaRequest was null or undefined when calling aceptarConsentimientoIa.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ia/consentimiento`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<FuncionesIaResponse>('post', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: aceptarConsentimientoIaRequest,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * Texto vigente del consentimiento de IA
+     * El texto que el centro tiene que aceptar para usar cualquier funcion de IA (Ley 25.326), con su version. Requiere ser miembro vigente. Version vacia: el despliegue no exige consentimiento.
+     * @endpoint get /api/v1/organizations/{orgId}/ia/consentimiento
+     * @param requestParameters
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     * @param options additional options
+     */
+    public getConsentimientoIa(requestParameters: GetConsentimientoIaRequestParams, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<TextoConsentimientoIaResponse>;
+    public getConsentimientoIa(requestParameters: GetConsentimientoIaRequestParams, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpResponse<TextoConsentimientoIaResponse>>;
+    public getConsentimientoIa(requestParameters: GetConsentimientoIaRequestParams, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<HttpEvent<TextoConsentimientoIaResponse>>;
+    public getConsentimientoIa(requestParameters: GetConsentimientoIaRequestParams, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json' | 'application/problem+json', context?: HttpContext, transferCache?: boolean}): Observable<any> {
+        const orgId = requestParameters?.orgId;
+        if (orgId === null || orgId === undefined) {
+            throw new Error('Required parameter orgId was null or undefined when calling getConsentimientoIa.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        // authentication (bearerAuth) required
+        localVarHeaders = this.configuration.addCredentialToHeaders('bearerAuth', 'Authorization', localVarHeaders, 'Bearer ');
+
+        const localVarHttpHeaderAcceptSelected: string | undefined = options?.httpHeaderAccept ?? this.configuration.selectHeaderAccept([
+            'application/json',
+            'application/problem+json'
+        ]);
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        const localVarHttpContext: HttpContext = options?.context ?? new HttpContext();
+
+        const localVarTransferCache: boolean = options?.transferCache ?? true;
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/v1/organizations/${this.configuration.encodeParam({name: "orgId", value: orgId, in: "path", style: "simple", explode: false, dataType: "number", dataFormat: "int64"})}/ia/consentimiento`;
+        const { basePath, withCredentials } = this.configuration;
+        return this.httpClient.request<TextoConsentimientoIaResponse>('get', `${basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                ...(withCredentials ? { withCredentials } : {}),
+                headers: localVarHeaders,
+                observe: observe,
+                ...(localVarTransferCache !== undefined ? { transferCache: localVarTransferCache } : {}),
+                reportProgress: reportProgress
+            }
+        );
     }
 
     /**
