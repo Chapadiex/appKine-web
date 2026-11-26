@@ -15,7 +15,7 @@ import {
 import { DiaDeLaSede } from '../../../../core/services/dia-de-la-sede';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { nuevaClaveDeIntento } from '../../../../shared/utils/clave-de-intento';
-import { centavosDeTexto, deCentavos } from '../../models/dinero';
+import { centavosDeTexto, deCentavos, importeConDecimales } from '../../models/dinero';
 import {
   ErrorEgreso,
   errorSinContextoDeEgreso,
@@ -23,6 +23,7 @@ import {
 } from '../../models/egreso-errors';
 import {
   CATEGORIAS_DE_EGRESO,
+  TIPOS_DE_COMPROBANTE,
   ESTADOS_DE_EGRESO,
   categoriaEnPalabras,
   claseDeEstadoDeEgreso,
@@ -122,6 +123,13 @@ export class EgresosPage {
 
   protected readonly estados = ESTADOS_DE_EGRESO;
   protected readonly categorias = CATEGORIAS_DE_EGRESO;
+  protected readonly tiposDeComprobante = TIPOS_DE_COMPROBANTE;
+
+  /** Al salir del importe se completan los decimales: `15000` queda `15000,00`. */
+  protected completarDecimales(): void {
+    const control = this.alta.controls.importe;
+    control.setValue(importeConDecimales(control.value));
+  }
   protected readonly estadoEnPalabras = estadoDeEgresoEnPalabras;
   protected readonly claseDeEstado = claseDeEstadoDeEgreso;
   protected readonly categoriaEnPalabras = categoriaEnPalabras;

@@ -277,162 +277,163 @@
         </app-alerta>
       }
 
-      <fieldset class="grupo">
-        <legend>Beneficiario</legend>
-        <label class="opcion-radio">
-          <input type="radio" formControlName="tipoBeneficiario" [value]="COLABORADOR" />
-          Un colaborador del centro
-        </label>
-        <label class="opcion-radio">
-          <input type="radio" formControlName="tipoBeneficiario" [value]="EXTERNO" />
-          Alguien externo (proveedor, locador)
-        </label>
+      <!--
+        Tres grupos con ícono, campos cortos en la misma fila (25/11/2026). La moneda no se pide:
+        el centro opera en pesos y el control sigue mandando ARS.
+      -->
+      <fieldset class="grupo egreso__grupo">
+        <legend><app-icono nombre="perfil" /> Beneficiario</legend>
+        <div class="egreso__opciones">
+          <label class="opcion-radio">
+            <input type="radio" formControlName="tipoBeneficiario" [value]="COLABORADOR" />
+            Un colaborador del centro
+          </label>
+          <label class="opcion-radio">
+            <input type="radio" formControlName="tipoBeneficiario" [value]="EXTERNO" />
+            Alguien externo (proveedor, locador)
+          </label>
+        </div>
+
+        @if (tipoBeneficiario() === COLABORADOR) {
+          <div class="campo egreso__campo--12">
+            <label for="alta-colaborador">Colaborador</label>
+            <select
+              id="alta-colaborador"
+              formControlName="beneficiarioMembershipId"
+              [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
+              [attr.aria-describedby]="
+                campoInvalido('beneficiarioMembershipId') ? 'alta-colaborador-error' : null
+              "
+            >
+              <option value="">Elegí un colaborador</option>
+              @for (vinculo of colaboradores(); track vinculo.id) {
+                <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
+              }
+            </select>
+            @if (sinColaboradores()) {
+              <p class="ayuda">
+                No se pudo leer el padrón de colaboradores. Podés cargarlo como externo.
+              </p>
+            }
+            @if (campoInvalido('beneficiarioMembershipId')) {
+              <p class="campo__error" id="alta-colaborador-error" role="alert">
+                Elegí a quién se le paga.
+              </p>
+            }
+          </div>
+        } @else {
+          <div class="campo egreso__campo--8">
+            <label for="alta-nombre">Nombre o razón social</label>
+            <input
+              id="alta-nombre"
+              type="text"
+              autocomplete="off"
+              maxlength="200"
+              formControlName="beneficiarioNombre"
+              [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
+              [attr.aria-describedby]="
+                campoInvalido('beneficiarioNombre') ? 'alta-nombre-error' : null
+              "
+            />
+            @if (campoInvalido('beneficiarioNombre')) {
+              <p class="campo__error" id="alta-nombre-error" role="alert">
+                Escribí a quién se le paga.
+              </p>
+            }
+          </div>
+          <div class="campo egreso__campo--4">
+            <label for="alta-documento">
+              CUIT o documento <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="alta-documento"
+              type="text"
+              autocomplete="off"
+              maxlength="30"
+              formControlName="beneficiarioDocumento"
+            />
+          </div>
+        }
       </fieldset>
 
-      @if (tipoBeneficiario() === COLABORADOR) {
-        <div class="campo">
-          <label for="alta-colaborador">Colaborador</label>
-          <select
-            id="alta-colaborador"
-            formControlName="beneficiarioMembershipId"
-            [attr.aria-invalid]="campoInvalido('beneficiarioMembershipId') ? 'true' : null"
-            [attr.aria-describedby]="
-              campoInvalido('beneficiarioMembershipId') ? 'alta-colaborador-error' : null
-            "
-          >
-            <option value="">Elegí un colaborador</option>
-            @for (vinculo of colaboradores(); track vinculo.id) {
-              <option [value]="vinculo.id">{{ nombreDe(vinculo) }}</option>
+      <fieldset class="grupo egreso__grupo">
+        <legend><app-icono nombre="economia" /> Gasto</legend>
+        <div class="campo egreso__campo--6">
+          <label for="alta-categoria">Categoría</label>
+          <select id="alta-categoria" formControlName="categoria">
+            @for (opcion of categorias; track opcion) {
+              <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
             }
           </select>
-          @if (sinColaboradores()) {
-            <p class="ayuda">
-              No se pudo leer el padrón de colaboradores. Podés cargarlo como externo.
-            </p>
-          }
-          @if (campoInvalido('beneficiarioMembershipId')) {
-            <p class="campo__error" id="alta-colaborador-error" role="alert">
-              Elegí a quién se le paga.
+        </div>
+        <div class="campo egreso__campo--6">
+          <label for="alta-importe">Importe total</label>
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              id="alta-importe"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="0,00"
+              formControlName="importe"
+              [attr.aria-invalid]="campoInvalido('importe') ? 'true' : null"
+              [attr.aria-describedby]="campoInvalido('importe') ? 'alta-importe-error' : null"
+              (blur)="completarDecimales()"
+            />
+          </div>
+          @if (campoInvalido('importe')) {
+            <p class="campo__error" id="alta-importe-error" role="alert">
+              Un importe mayor que cero, por ejemplo 15000,50.
             </p>
           }
         </div>
-      } @else {
-        <div class="campo campo--6">
-          <label for="alta-nombre">Nombre o razón social</label>
+        <div class="campo egreso__campo--12">
+          <label for="alta-concepto">Concepto</label>
           <input
-            id="alta-nombre"
+            id="alta-concepto"
             type="text"
             autocomplete="off"
             maxlength="200"
-            formControlName="beneficiarioNombre"
-            [attr.aria-invalid]="campoInvalido('beneficiarioNombre') ? 'true' : null"
-            [attr.aria-describedby]="
-              campoInvalido('beneficiarioNombre') ? 'alta-nombre-error' : null
-            "
+            placeholder="Por ejemplo: honorarios de noviembre, alquiler del local"
+            formControlName="concepto"
+            [attr.aria-invalid]="campoInvalido('concepto') ? 'true' : null"
+            [attr.aria-describedby]="campoInvalido('concepto') ? 'alta-concepto-error' : null"
           />
-          @if (campoInvalido('beneficiarioNombre')) {
-            <p class="campo__error" id="alta-nombre-error" role="alert">
-              Escribí a quién se le paga.
+          @if (campoInvalido('concepto')) {
+            <p class="campo__error" id="alta-concepto-error" role="alert">
+              El concepto es obligatorio.
             </p>
           }
         </div>
-        <div class="campo campo--3">
-          <label for="alta-documento">CUIT o documento (opcional)</label>
-          <input
-            id="alta-documento"
-            type="text"
-            autocomplete="off"
-            maxlength="30"
-            formControlName="beneficiarioDocumento"
-          />
-        </div>
-      }
+      </fieldset>
 
-      <div class="campo">
-        <label for="alta-categoria">Categoría</label>
-        <select id="alta-categoria" formControlName="categoria">
-          @for (opcion of categorias; track opcion) {
-            <option [value]="opcion">{{ categoriaEnPalabras(opcion) }}</option>
-          }
-        </select>
-      </div>
-      <div class="campo campo--6">
-        <label for="alta-concepto">Concepto</label>
-        <input
-          id="alta-concepto"
-          type="text"
-          autocomplete="off"
-          maxlength="200"
-          formControlName="concepto"
-          [attr.aria-invalid]="campoInvalido('concepto') ? 'true' : null"
-          [attr.aria-describedby]="campoInvalido('concepto') ? 'alta-concepto-error' : null"
-        />
-        @if (campoInvalido('concepto')) {
-          <p class="campo__error" id="alta-concepto-error" role="alert">
-            El concepto es obligatorio.
-          </p>
-        }
-      </div>
-
-      <div class="campo campo--2">
-        <label for="alta-importe">Importe total</label>
-        <input
-          id="alta-importe"
-          type="text"
-          inputmode="decimal"
-          autocomplete="off"
-          formControlName="importe"
-          [attr.aria-invalid]="campoInvalido('importe') ? 'true' : null"
-          [attr.aria-describedby]="campoInvalido('importe') ? 'alta-importe-error' : null"
-        />
-        @if (campoInvalido('importe')) {
-          <p class="campo__error" id="alta-importe-error" role="alert">
-            Un importe mayor que cero, por ejemplo 15000,50.
-          </p>
-        }
-      </div>
-
-      <div class="campo campo--2">
-        <label for="alta-moneda">Moneda</label>
-        <input
-          id="alta-moneda"
-          type="text"
-          maxlength="3"
-          formControlName="moneda"
-          [attr.aria-invalid]="campoInvalido('moneda') ? 'true' : null"
-          [attr.aria-describedby]="campoInvalido('moneda') ? 'alta-moneda-error' : null"
-        />
-        @if (campoInvalido('moneda')) {
-          <p class="campo__error" id="alta-moneda-error" role="alert">
-            Tres letras, por ejemplo ARS.
-          </p>
-        }
-      </div>
-
-      <fieldset class="grupo">
-        <legend>Comprobante (obligatorio para confirmar)</legend>
-        <div class="campo campo--2">
+      <fieldset class="grupo egreso__grupo">
+        <legend>
+          <app-icono nombre="documento" /> Comprobante
+          <span class="campo__opcional">(obligatorio para confirmar)</span>
+        </legend>
+        <div class="campo egreso__campo--4">
           <label for="alta-comprobante-tipo">Tipo</label>
-          <input
-            id="alta-comprobante-tipo"
-            type="text"
-            autocomplete="off"
-            maxlength="40"
-            placeholder="Factura C, Recibo"
-            formControlName="comprobanteTipo"
-          />
+          <select id="alta-comprobante-tipo" formControlName="comprobanteTipo">
+            <option value="">Sin cargar todavía</option>
+            @for (tipo of tiposDeComprobante; track tipo) {
+              <option [value]="tipo">{{ tipo }}</option>
+            }
+          </select>
         </div>
-        <div class="campo campo--2">
+        <div class="campo egreso__campo--4">
           <label for="alta-comprobante-numero">Número</label>
           <input
             id="alta-comprobante-numero"
             type="text"
             autocomplete="off"
             maxlength="40"
+            placeholder="0001-00000042"
             formControlName="comprobanteNumero"
           />
         </div>
-        <div class="campo">
+        <div class="campo egreso__campo--4">
           <label for="alta-comprobante-fecha">Fecha</label>
           <input id="alta-comprobante-fecha" type="date" formControlName="comprobanteFecha" />
         </div>
@@ -485,7 +486,10 @@
       </details>
 
       <div class="acciones">
-        <button type="submit" class="boton" [disabled]="creando()">Cargar el borrador</button>
+        <button type="submit" class="boton" [disabled]="creando()">
+          <app-icono nombre="tilde" />
+          Cargar el borrador
+        </button>
         <button type="button" class="boton boton--secundario" (click)="cerrarAlta()">
           Cancelar
         </button>
