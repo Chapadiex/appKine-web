@@ -257,10 +257,6 @@ app-texto-opcional.ficha__campo {
   color: var(--color-texto-suave);
 }
 
-.ficha__tilde input[type='checkbox']:focus-visible {
-  outline: none;
-}
-
 /* Revisada por un profesional: marcada y fija, con borde punteado para que no parezca editable. */
 .ficha__tilde--fija {
   outline: var(--borde-fino) dashed var(--color-borde-control);
