@@ -10,26 +10,31 @@
       nunca estuvieron en el cajón.
     </p>
   </app-ayuda>
-  @if (jornada()) {
+  <!--
+    La jornada va pegada a la insignia y no en la region de contexto: con cinco pestañas y tres
+    acciones no entraba en la fila y se superponia (25/11/2026).
+  -->
+  @if (jornada(); as abierta) {
     <span class="marca-estado marca-estado--activa">Abierta</span>
+    <span class="caja-contexto" [title]="'Jornada ' + fechaEnPalabras(abierta.fechaNegocio)"
+      >abrió {{ horaDeLaJornada(abierta.abiertaEn) }}</span
+    >
   } @else if (cerrada()) {
     <span class="marca-estado marca-estado--neutra">Cerrada</span>
-  }
-  @if (jornada(); as abierta) {
-    <span cabeceraContexto class="caja-contexto">
-      Jornada {{ fechaEnPalabras(abierta.fechaNegocio) }} · abrió
-      {{ horaDeLaJornada(abierta.abiertaEn) }}
-    </span>
   }
   @if (jornada()) {
     <div cabeceraAcciones>
       <button
         type="button"
-        class="boton boton--secundario boton--chico"
+        class="boton boton--secundario boton--chico boton--icono"
         [disabled]="actualizando()"
+        [title]="actualizando() ? 'Actualizando…' : 'Actualizar'"
         (click)="recargar()"
       >
-        {{ actualizando() ? 'Actualizando…' : 'Actualizar' }}
+        <app-icono nombre="repetir" />
+        <span class="visualmente-oculto">{{
+          actualizando() ? 'Actualizando…' : 'Actualizar'
+        }}</span>
       </button>
       <button
         type="button"

@@ -13,6 +13,33 @@
   white-space: nowrap;
 }
 
+/* "Actualizar" solo con icono: cuadrado, del alto de los otros botones (25/11/2026). */
+.boton--icono {
+  aspect-ratio: 1;
+  padding: 0;
+  justify-content: center;
+}
+
+/*
+ * Si titulo, cinco pestañas y tres acciones no entran en una fila, las pestañas bajan a la suya
+ * antes que superponerse. El selector repetido le gana al de la cabecera para pestañas centradas.
+ */
+@container cabecera-pagina (max-width: 92rem) {
+  :host ::ng-deep .cabecera-pagina__fila.cabecera-pagina__fila.cabecera-pagina__fila {
+    grid-template-columns: minmax(min(12rem, 40%), max-content) minmax(0, 1fr) minmax(
+        0,
+        max-content
+      );
+    grid-template-areas:
+      'titulo . principal'
+      'pestanas pestanas pestanas';
+  }
+
+  :host ::ng-deep .cabecera-pagina__pestanas {
+    margin: var(--esp-3) 0 0;
+  }
+}
+
 /* --- Banda de indicadores ---------------------------------------------------------------- */
 
 .banda-de-caja {
