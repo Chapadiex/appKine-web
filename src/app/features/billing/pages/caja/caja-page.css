@@ -54,6 +54,11 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* Sobre la fila revertida (fondo atenuado) el verde no llega a 4,5:1: se usa su tono de texto. */
+.fila--revocada .importe--suma {
+  color: var(--color-exito-texto);
+}
+
 /* --- Banda de indicadores ---------------------------------------------------------------- */
 
 .banda-de-caja {
