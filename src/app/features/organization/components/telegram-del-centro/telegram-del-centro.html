@@ -1,7 +1,7 @@
 @if (estado() !== 'oculto') {
   <section class="tarjeta telegram" aria-labelledby="titulo-telegram">
     <div class="tarjeta__cabecera">
-      <h2 id="titulo-telegram"><app-icono nombre="telefono" /> Carga por Telegram</h2>
+      <h2 id="titulo-telegram"><app-icono nombre="avion" /> Carga por Telegram</h2>
       @if (estado() === 'listo') {
         @if (bot()?.conectado) {
           <span class="marca-estado marca-estado--activa">Conectado</span>
@@ -38,7 +38,7 @@
       @case ('error') {
         <p class="acciones">
           <button type="button" class="boton boton--secundario" (click)="cargar()">
-            Reintentar
+            <app-icono nombre="repetir" /> Reintentar
           </button>
         </p>
       }
@@ -72,7 +72,7 @@
               [disabled]="guardando()"
               (click)="reemplazando.set(true)"
             >
-              Cambiar de bot
+              <app-icono nombre="repetir" /> Cambiar de bot
             </button>
             <button
               type="button"
@@ -80,7 +80,7 @@
               [disabled]="guardando()"
               (click)="desconectar()"
             >
-              Desconectar
+              <app-icono nombre="salir" /> Desconectar
             </button>
           </p>
         } @else {
@@ -147,11 +147,11 @@
                   [disabled]="guardando()"
                   (click)="reemplazando.set(false)"
                 >
-                  Cancelar
+                  <app-icono nombre="cerrar" /> Cancelar
                 </button>
               }
               <button type="submit" class="boton" [disabled]="guardando()">
-                {{ guardando() ? 'Conectando…' : 'Conectar bot' }}
+                <app-icono nombre="avion" /> {{ guardando() ? 'Conectando…' : 'Conectar bot' }}
               </button>
             </p>
           </form>
