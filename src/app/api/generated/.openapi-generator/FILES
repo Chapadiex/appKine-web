@@ -145,6 +145,8 @@ api/sugerencias-de-evolucion.service.ts
 api/sugerencias-de-evolucion.serviceInterface.ts
 api/suscripciones.service.ts
 api/suscripciones.serviceInterface.ts
+api/telegram.service.ts
+api/telegram.serviceInterface.ts
 api/timeline-clinico.service.ts
 api/timeline-clinico.serviceInterface.ts
 api/tratamientos-realizados.service.ts
@@ -228,6 +230,7 @@ model/bloque-response.ts
 model/bloqueo-en-agenda.ts
 model/bloques-creados-response.ts
 model/borrador-de-honorarios.ts
+model/bot-de-telegram.ts
 model/buscar-disponibilidad-de-turnos.ts
 model/busqueda-de-direcciones-response.ts
 model/calendario-sede-response.ts
@@ -278,6 +281,7 @@ model/cobro-de-suscripcion-response.ts
 model/cobro.ts
 model/colores-de-interfaz.ts
 model/comparacion-de-mediciones.ts
+model/conectar-bot-de-telegram.ts
 model/configuracion-de-renovacion-de-abono.ts
 model/confirmar-accion.ts
 model/confirmar-liquidacion-de-honorarios-request.ts
@@ -739,6 +743,7 @@ model/version-de-pedido-request.ts
 model/version-response.ts
 model/vincular-autorizacion-request.ts
 model/vincular-documento-request.ts
+model/vinculo-de-telegram.ts
 ng-package.json
 package.json
 param.ts

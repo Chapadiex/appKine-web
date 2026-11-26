@@ -504,6 +504,10 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_DICTADO_NO_DISPONIBLE = 'https://akine.app/problems/dictado-no-disponible',
 
+    HTTPS___AKINE_APP_PROBLEMS_TELEGRAM_DESHABILITADO = 'https://akine.app/problems/telegram-deshabilitado',
+
+    HTTPS___AKINE_APP_PROBLEMS_TELEGRAM_SIN_BOT = 'https://akine.app/problems/telegram-sin-bot',
+
     HTTPS___AKINE_APP_PROBLEMS_GENERACION_EN_CURSO = 'https://akine.app/problems/generacion-en-curso',
 
     HTTPS___AKINE_APP_PROBLEMS_MODELO_OCUPADO = 'https://akine.app/problems/modelo-ocupado',

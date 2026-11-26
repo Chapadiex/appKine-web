@@ -1,0 +1,104 @@
+@if (visible()) {
+  <section
+    class="vinculo"
+    [class.vinculo--franja]="variante() === 'franja'"
+    aria-labelledby="titulo-vinculo-telegram"
+  >
+    <div class="vinculo__cabecera">
+      @if (variante() === 'franja') {
+        <h2 id="titulo-vinculo-telegram" class="vinculo__titulo">
+          <app-icono nombre="avion" /> Telegram
+        </h2>
+      } @else {
+        <h3 id="titulo-vinculo-telegram" class="vinculo__titulo">Tu cuenta</h3>
+      }
+      @if (vinculo()?.vinculado) {
+        <span class="marca-estado marca-estado--activa">Vinculado</span>
+      } @else if (comando()) {
+        <span class="marca-estado marca-estado--suspendida">Esperando el código</span>
+      } @else {
+        <span class="marca-estado marca-estado--neutra">Sin vincular</span>
+      }
+    </div>
+
+    @if (vinculo()?.vinculado) {
+      <p class="vinculo__texto">
+        Lo que le mandes a
+        <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+          >&#64;{{ vinculo()?.botUsuario }}</a
+        >
+        desde Telegram ({{ vinculo()?.telegramNombre }}) se carga con tu cuenta en esta sede.
+      </p>
+      <p class="vinculo__acciones">
+        <a
+          class="boton boton--secundario"
+          [href]="enlaceDelBot()"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <app-icono nombre="avion" /> Abrir el bot
+        </a>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="ocupado()"
+          (click)="desvincular()"
+        >
+          <app-icono nombre="salir" /> Desvincular
+        </button>
+      </p>
+    } @else if (comando()) {
+      <ol class="vinculo__pasos">
+        <li>
+          Abrí
+          <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+            >&#64;{{ vinculo()?.botUsuario }}</a
+          >
+          en Telegram y tocá <b>Iniciar</b>.
+        </li>
+        <li>
+          Mandale este mensaje:
+          <span class="vinculo__comando">
+            <code>{{ comando() }}</code>
+            <button type="button" class="boton boton--secundario" (click)="copiar()">
+              <app-icono nombre="documento" /> Copiar
+            </button>
+          </span>
+        </li>
+        <li>Esperá unos segundos: esto pasa a <b>Vinculado</b> solo.</li>
+      </ol>
+      <p class="ayuda">
+        El código vence a las {{ hora(vinculo()?.codigoVenceEn) }} y sirve una sola vez.
+      </p>
+      <p class="vinculo__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          [disabled]="ocupado()"
+          (click)="pedirCodigo()"
+        >
+          <app-icono nombre="repetir" /> Otro código
+        </button>
+      </p>
+    } @else {
+      <p class="vinculo__texto">
+        Vinculá tu usuario de Telegram con tu cuenta de AKINE: lo que le mandes a
+        <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+          >&#64;{{ vinculo()?.botUsuario }}</a
+        >
+        se carga a tu nombre.
+      </p>
+      <p class="vinculo__acciones">
+        <button type="button" class="boton" [disabled]="ocupado()" (click)="pedirCodigo()">
+          <app-icono nombre="avion" /> Vincular mi Telegram
+        </button>
+      </p>
+    }
+
+    @if (error(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos completar la operación">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+  </section>
+}

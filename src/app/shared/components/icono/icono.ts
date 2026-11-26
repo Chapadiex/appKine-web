@@ -80,6 +80,8 @@ const TRAZOS = {
   error: ANILLO + 'M9 9l6 6M15 9l-6 6',
   repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   microfono: rectangulo(9, 3, 6, 11, 3) + 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
+  /** Avion de papel: el de Telegram, sin la marca. */
+  avion: 'M21.5 3.5L2.5 11l6.5 2.5 2.5 7zM9 13.5l12.5-10',
   detener: rectangulo(6.5, 6.5, 11, 11, 2),
   /** Sacar una foto con la camara del equipo. */
   camara: 'M4 8h3l1.5-2.5h7L17 8h3v11H4z' + circulo(12, 13, 3.5),
