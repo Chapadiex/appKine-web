@@ -1,4 +1,11 @@
-import { interpretarDictadoDeFicha } from './dictado-de-ficha';
+import { AntecedenteResponseTipoEnum as Tipo } from '../../../api/generated/model/antecedente-response';
+import { FichaDeIngresoRequestActividadEnum as Actividad } from '../../../api/generated/model/ficha-de-ingreso-request';
+import {
+  FichaDictada,
+  interpretarDictadoDeFicha,
+  nadaReconocido,
+  resumirDictado,
+} from './dictado-de-ficha';
 
 describe('interpretarDictadoDeFicha', () => {
   it('reparte un dictado recorriendo la pantalla', () => {
@@ -72,5 +79,54 @@ describe('interpretarDictadoDeFicha', () => {
     expect(ficha.antecedentes).toEqual([
       { tipo: 'ALERGIA', descripcion: 'Alérgico a la penicilina' },
     ]);
+  });
+});
+
+describe('nadaReconocido y resumirDictado', () => {
+  const vacia: FichaDictada = { condiciones: [], antecedentes: [] };
+
+  it('una ficha vacía no reconoce nada y no tiene resumen', () => {
+    expect(nadaReconocido(vacia)).toBe(true);
+    expect(resumirDictado(vacia)).toBe('');
+  });
+
+  it('cualquier dato alcanza para que haya algo que cargar', () => {
+    expect(nadaReconocido({ ...vacia, ocupacion: 'Docente' })).toBe(false);
+    expect(nadaReconocido({ ...vacia, pesoKg: 70 })).toBe(false);
+    expect(nadaReconocido({ ...vacia, alturaCm: 170 })).toBe(false);
+    expect(nadaReconocido({ ...vacia, actividad: Actividad.SEDENTARIO })).toBe(false);
+    expect(nadaReconocido({ ...vacia, detalle: 'Camina' })).toBe(false);
+    expect(nadaReconocido({ ...vacia, condiciones: ['HIPERTENSION'] })).toBe(false);
+    expect(
+      nadaReconocido({ ...vacia, antecedentes: [{ tipo: Tipo.MEDICO, descripcion: 'Asma' }] }),
+    ).toBe(false);
+  });
+
+  it('resume un solo dato sin conector', () => {
+    expect(resumirDictado({ ...vacia, pesoKg: 70 })).toBe('Peso');
+    expect(resumirDictado({ ...vacia, detalle: 'Camina' })).toBe('Actividad');
+  });
+
+  it('resume varios datos con comas, «y» y plurales', () => {
+    expect(
+      resumirDictado({
+        ocupacion: 'Docente',
+        pesoKg: 70,
+        alturaCm: 170,
+        actividad: Actividad.SEDENTARIO,
+        condiciones: ['HIPERTENSION', 'DIABETES'],
+        antecedentes: [{ tipo: Tipo.MEDICO, descripcion: 'Asma' }],
+      }),
+    ).toBe('Ocupación, peso, altura, actividad, 2 condiciones y 1 antecedente');
+    expect(
+      resumirDictado({
+        ...vacia,
+        condiciones: ['HIPERTENSION'],
+        antecedentes: [
+          { tipo: Tipo.MEDICO, descripcion: 'Asma' },
+          { tipo: Tipo.ALERGIA, descripcion: 'Polen' },
+        ],
+      }),
+    ).toBe('1 condición y 2 antecedentes');
   });
 });
