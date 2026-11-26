@@ -8,10 +8,11 @@
  * Do not edit the class manually.
  */
 import { ModeloDelMotorResponse } from './modelo-del-motor-response';
+import { ProveedorDelAsistenteResponse } from './proveedor-del-asistente-response';
 
 
 /**
- * Servidor de modelos de lenguaje (Ollama) del despliegue
+ * Servidor de modelos de lenguaje (Ollama) del despliegue y proveedor del asistente
  */
 export interface EstadoDelMotorResponse { 
     /**
@@ -26,6 +27,10 @@ export interface EstadoDelMotorResponse {
      * Un modelo por nombre, con las funciones que lo usan
      */
     modelos: Array<ModeloDelMotorResponse>;
+    /**
+     * Proveedor del agente del asistente configurado en el despliegue; ausente si no se pudo leer. Nunca trae la key, solo si hay una
+     */
+    proveedorAsistente?: ProveedorDelAsistenteResponse;
     /**
      * Direccion del servidor; ausente si ninguna funcion usa Ollama
      */

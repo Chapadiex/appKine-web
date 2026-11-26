@@ -473,6 +473,7 @@ model/limit-usage-response.ts
 model/linea-de-honorario.ts
 model/liquidacion-de-honorarios.ts
 model/lista-de-espera-page.ts
+model/llamada-de-herramienta-del-asistente.ts
 model/login-request.ts
 model/logo-de-marca-response.ts
 model/marca-response.ts
@@ -568,6 +569,8 @@ model/programar-clase.ts
 model/programar-serie-de-clases.ts
 model/proponer-evaluacion-dictada.ts
 model/propuesta-de-evaluacion-dictada.ts
+model/proveedor-alternativo-response.ts
+model/proveedor-del-asistente-response.ts
 model/prueba-del-motor-response.ts
 model/prueba-que-termina-response.ts
 model/punto-de-serie-de-reporte.ts

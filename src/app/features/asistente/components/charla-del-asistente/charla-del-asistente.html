@@ -28,7 +28,7 @@
           [class.asistente__burbuja--error]="m.estado === 'error'"
         >
           @if (m.estado === 'esperando') {
-            <p class="asistente__texto asistente__texto--espera">Consultando…</p>
+            <p class="asistente__texto asistente__texto--espera">Buscando…</p>
           } @else if (!escribiendo($index) && esDelManual(m)) {
             <!-- Respuesta del manual: el pasaje viene en Markdown y se dibuja sin innerHTML. -->
             <app-markdown-seguro
@@ -36,6 +36,9 @@
               [markdown]="m.texto"
               (ampliar)="verCaptura($event)"
             />
+          } @else if (!escribiendo($index) && m.rol === 'asistente' && m.estado === 'listo') {
+            <!-- Texto del agente: párrafos, listas, negritas y enlaces internos, sin innerHTML. -->
+            <app-texto-del-agente class="asistente__texto" [texto]="m.texto" />
           } @else {
             <p class="asistente__texto">{{ textoVisible(m, $index) }}</p>
           }
@@ -87,6 +90,28 @@
                 @if (tabla.total > maxFilas) {
                   <p class="asistente__nota">Se muestran las primeras {{ maxFilas }}.</p>
                 }
+              </details>
+            }
+            @if (m.pasos?.length) {
+              <details class="asistente__datos">
+                <summary>Ver cómo lo resolví</summary>
+                <ol class="asistente__pasos">
+                  @for (p of m.pasos; track $index) {
+                    <li class="asistente__paso">
+                      <span class="asistente__paso-nombre">{{ p.etiqueta }}</span>
+                      @if (p.sinPermiso) {
+                        <span class="marca-estado marca-estado--suspendida">Sin permiso</span>
+                      } @else {
+                        <span class="asistente__paso-filas">
+                          {{ p.filas === 1 ? '1 resultado' : p.filas + ' resultados' }}
+                        </span>
+                      }
+                      @if (p.entrada) {
+                        <span class="asistente__paso-entrada">{{ p.entrada }}</span>
+                      }
+                    </li>
+                  }
+                </ol>
               </details>
             }
             @if (r.consulta) {

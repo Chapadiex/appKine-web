@@ -3,19 +3,14 @@ import { Observable } from 'rxjs';
 
 import { AsistenteService } from '../../../api/generated/api/asistente.service';
 import { ConfirmarAccion } from '../../../api/generated/model/confirmar-accion';
-import { InterpretacionDto } from '../../../api/generated/model/interpretacion-dto';
 import { ResultadoDeAccion } from '../../../api/generated/model/resultado-de-accion';
 import { RespuestaAsistenteResponse } from '../../../api/generated/model/respuesta-asistente-response';
-
-/** Una pregunta anterior de la charla, con la interpretación que devolvió el servidor. */
-export interface TurnoPrevio {
-  readonly pregunta: string;
-  readonly interpretacion: InterpretacionDto;
-}
+import { TurnoPrevioRequest } from '../../../api/generated/model/turno-previo-request';
 
 /**
- * El asistente de datos de la sede (contrato 0.170.0). El servidor no guarda la charla: el
- * historial viaja en cada pregunta.
+ * El asistente de datos de la sede, un agente con herramientas desde el contrato 0.193.0. El
+ * servidor no guarda la charla: el historial (pregunta, texto respondido y personas nombradas)
+ * viaja en cada pregunta.
  */
 @Injectable({ providedIn: 'root' })
 export class AsistenteApi {
@@ -24,7 +19,7 @@ export class AsistenteApi {
   consultar(
     consultorioId: number,
     pregunta: string,
-    historial: readonly TurnoPrevio[],
+    historial: readonly TurnoPrevioRequest[],
     personaId?: number,
     rutaActual?: string,
   ): Observable<RespuestaAsistenteResponse> {

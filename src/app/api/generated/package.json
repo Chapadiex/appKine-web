@@ -1,6 +1,6 @@
 {
   "name": "@akine/api-client",
-  "version": "0.192.0",
+  "version": "0.193.0",
   "description": "OpenAPI client for @akine/api-client",
   "author": "OpenAPI-Generator Contributors",
   "repository": {

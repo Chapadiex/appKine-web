@@ -11,10 +11,22 @@ import { InterpretacionDto } from './interpretacion-dto';
 
 
 /**
- * Una pregunta anterior de la conversacion y la interpretacion que devolvio el servidor
+ * Una pregunta anterior de la conversacion, el texto que respondio el servidor y los ids de las personas que nombro. Nunca resultados de herramientas: el servidor vuelve a pedir cada dato
  */
 export interface TurnoPrevioRequest { 
-    interpretacion: InterpretacionDto;
+    /**
+     * Deprecada desde el agente: se acepta y se ignora
+     * @deprecated
+     */
+    interpretacion?: InterpretacionDto;
+    /**
+     * Ids de las personas que nombro esa respuesta; el servidor los valida contra el tenant
+     */
+    personaIds?: Array<number>;
     pregunta: string;
+    /**
+     * El texto que respondio el servidor
+     */
+    respuesta?: string;
 }
 

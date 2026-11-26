@@ -39,6 +39,13 @@ interface DescripcionDeFuncion {
   readonly pantallas: string;
 }
 
+/** Los proveedores del asistente (contrato 0.193.0). El compatible sin key es lo normal. */
+const PROVEEDORES: Readonly<Record<string, string>> = {
+  claude: 'Claude (Anthropic)',
+  compatible: 'Motor compatible (Ollama u otro)',
+  prueba: 'Proveedor de prueba',
+};
+
 const DESCRIPCIONES: Readonly<Record<FuncionIa, DescripcionDeFuncion>> = {
   ASISTENTE: {
     titulo: 'Asistente de datos',
@@ -248,6 +255,11 @@ export class InteligenciaArtificialPage {
 
   protected nombreDeFuncion(codigo: string): string {
     return DESCRIPCIONES[codigo as FuncionIa]?.titulo ?? codigo;
+  }
+
+  /** El proveedor del asistente en palabras: `claude`, `compatible` o `prueba`. */
+  protected nombreDeProveedor(nombre: string): string {
+    return PROVEEDORES[nombre] ?? nombre;
   }
 
   protected segundos(milisegundos: number): string {

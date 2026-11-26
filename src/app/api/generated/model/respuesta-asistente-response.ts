@@ -9,6 +9,7 @@
  */
 import { AccionPropuesta } from './accion-propuesta';
 import { InterpretacionDto } from './interpretacion-dto';
+import { LlamadaDeHerramientaDelAsistente } from './llamada-de-herramienta-del-asistente';
 import { OpcionDePersonaDelAsistente } from './opcion-de-persona-del-asistente';
 
 
@@ -22,7 +23,7 @@ export interface RespuestaAsistenteResponse {
     accion?: AccionPropuesta;
     advertencias: Array<string>;
     /**
-     * El SELECT que respondio una consulta libre (la pregunta no entraba en ninguna intencion y el usuario tiene asistente:sql); null en las demas
+     * El ultimo SELECT que corrio la herramienta de consulta en SQL para responder (requiere asistente:sql); null si no se uso
      */
     consulta?: string;
     /**
@@ -30,9 +31,17 @@ export interface RespuestaAsistenteResponse {
      */
     enlace?: string;
     /**
-     * Los datos detras del texto, una fila por elemento. Las claves dependen de la intencion; los instantes van en ISO-8601
+     * Los datos detras del texto, una fila por elemento. Las claves dependen de la herramienta; los instantes van en ISO-8601
      */
     filas: Array<{ [key: string]: any; }>;
+    /**
+     * Las herramientas que llamo el asistente para responder, en orden, con su entrada: para mostrar como lo resolvio. Tambien en las propuestas de accion, que terminan con la llamada a proponer_accion
+     */
+    herramientas: Array<LlamadaDeHerramientaDelAsistente>;
+    /**
+     * Deprecada desde el agente: siempre FUERA_DE_ALCANCE. Se mantiene por compatibilidad
+     * @deprecated
+     */
     interpretacion: InterpretacionDto;
     /**
      * Si no esta claro de quien se habla, las personas entre las que elegir
@@ -43,7 +52,7 @@ export interface RespuestaAsistenteResponse {
      */
     resultado: RespuestaAsistenteResponseResultadoEnum;
     /**
-     * La respuesta en texto, armada con una plantilla a partir de los datos: el modelo no la redacta
+     * La respuesta en texto. La redacta el modelo a partir de los resultados de las herramientas que llamo en esta consulta
      */
     texto: string;
 }

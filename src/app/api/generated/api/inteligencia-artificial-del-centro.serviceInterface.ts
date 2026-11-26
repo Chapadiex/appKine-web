@@ -49,7 +49,7 @@ export interface InteligenciaArtificialDelCentroServiceInterface {
 
     /**
      * Estado del servidor de modelos
-     * Si Ollama responde, que modelo usa cada funcion, si esta descargado y cargado, y si corre en GPU o en CPU. Siempre 200: un servidor caido viaja con alcanzable&#x3D;false. Requiere tenant:update.
+     * Si Ollama responde, que modelo usa cada funcion, si esta descargado y cargado, y si corre en GPU o en CPU, y que proveedor usa el asistente (sin la key, solo si hay una). Siempre 200: un servidor caido viaja con alcanzable&#x3D;false. Requiere tenant:update.
      * @endpoint get /api/v1/organizations/{orgId}/ia/motor
 * @param requestParameters
      */
