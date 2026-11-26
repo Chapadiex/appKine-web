@@ -402,6 +402,9 @@ export class InteligenciaArtificialPage {
     if (!f.centro) {
       return { ...base, estado: { texto: 'Apagada para el centro', tono: 'neutra' } };
     }
+    if (this.consentimientoPendiente()) {
+      return { ...base, estado: { texto: 'Falta el consentimiento', tono: 'suspendida' } };
+    }
     if (!f.activa && funcion === 'SUGERENCIAS') {
       const faltan = (['EVOLUCION', 'BIBLIOTECA'] as const)
         .filter((d) => !por.get(d)?.activa)

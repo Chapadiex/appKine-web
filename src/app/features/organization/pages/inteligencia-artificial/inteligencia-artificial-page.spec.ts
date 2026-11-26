@@ -226,6 +226,7 @@ describe('InteligenciaArtificialPage', () => {
       expect(raiz().textContent).toContain('Consentimiento para usar inteligencia artificial');
       expect(raiz().querySelectorAll('.ia__texto-legal li')).toHaveLength(2);
       expect(interruptor('ASISTENTE').disabled).toBe(true);
+      expect(estadoDe('ASISTENTE')).toBe('Falta el consentimiento');
     });
 
     it('aceptar manda la version leida y adopta lo que devuelve', async () => {
