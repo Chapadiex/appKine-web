@@ -37,6 +37,14 @@ export const routes: Routes = [
     data: { [DATA_ANCHO]: ANCHO_AMPLIO },
   },
   {
+    // Pedidos de cambio de plan de los centros (25/11/2026).
+    path: 'cambios-de-plan',
+    loadComponent: () =>
+      import('./pages/cambios-de-plan/cambios-de-plan-page').then((m) => m.CambiosDePlanPage),
+    title: 'AKINE - Cambios de plan',
+    data: { [DATA_ANCHO]: ANCHO_AMPLIO },
+  },
+  {
     // Alta de un centro; con `?solicitud=<id>` aprueba un pedido de prueba.
     path: 'centros/nuevo',
     loadComponent: () =>

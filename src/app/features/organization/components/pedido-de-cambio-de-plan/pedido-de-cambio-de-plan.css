@@ -1,0 +1,51 @@
+/* Pedido de cambio de plan (25/11/2026). Cero colores literales: todo sale de los tokens. */
+
+.ayuda app-icono {
+  vertical-align: -2px;
+}
+
+form {
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.pedido__grupo {
+  display: grid;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.pedido__grupo legend,
+[leyenda] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__grupo legend app-icono,
+[leyenda] app-icono {
+  color: var(--color-acento);
+}
+
+.pedido__grupo .opcion-radio {
+  margin-bottom: 0;
+}
+
+.pedido__resumen {
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.pedido__resumen-titulo {
+  margin: 0 0 var(--esp-2);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__resumen ul {
+  margin: 0;
+  padding-left: var(--esp-6);
+}

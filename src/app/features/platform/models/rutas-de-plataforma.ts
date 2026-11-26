@@ -19,6 +19,9 @@ export const RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA
 /** Pedidos de prueba gratis que llegan desde la landing (18/11/2026). */
 export const RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/pedidos-de-prueba`;
 
+/** Pedidos de cambio de plan de los centros (25/11/2026). */
+export const RUTA_CAMBIOS_DE_PLAN_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/cambios-de-plan`;
+
 /** Alta de un centro desde la plataforma; con `?solicitud=<id>` aprueba un pedido de prueba. */
 export const RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/centros/nuevo`;
 export const RUTA_INICIO_DE_PLATAFORMA = `/${SEGMENTO_PLATAFORMA}/inicio`;

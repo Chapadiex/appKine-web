@@ -7,12 +7,13 @@ import { SessionService } from './session.service';
 
 /** Los numeros que la barra lateral de la consola de plataforma muestra en insignias. */
 export type ContadorDePlataforma =
-  'centros-activos' | 'pedidos-pendientes' | 'solicitudes-pendientes';
+  'centros-activos' | 'pedidos-pendientes' | 'solicitudes-pendientes' | 'cambios-pendientes';
 
 interface Contadores {
   readonly epoca: number;
   readonly centrosActivos: number | null;
   readonly pedidosPendientes: number | null;
+  readonly cambiosPendientes: number | null;
   readonly solicitudesPendientes: number | null;
 }
 
@@ -54,6 +55,11 @@ export class ContadoresDePlataformaStore {
     () => this.vigente()?.pedidosPendientes ?? null,
   );
 
+  /** Pedidos de cambio de plan de los centros sin responder (25/11/2026). */
+  readonly cambiosPendientes: Signal<number | null> = computed(
+    () => this.vigente()?.cambiosPendientes ?? null,
+  );
+
   readonly solicitudesPendientes: Signal<number | null> = computed(
     () => this.vigente()?.solicitudesPendientes ?? null,
   );
@@ -70,6 +76,8 @@ export class ContadoresDePlataformaStore {
         return this.pedidosPendientes();
       case 'solicitudes-pendientes':
         return this.solicitudesPendientes();
+      case 'cambios-pendientes':
+        return this.cambiosPendientes();
     }
   }
 
@@ -112,13 +120,17 @@ export class ContadoresDePlataformaStore {
   private pedirPanel(): Observable<{
     centrosActivos: number | null;
     pedidosPendientes: number | null;
+    cambiosPendientes: number | null;
   }> {
     return this.plataforma.getPanelDePlataforma().pipe(
       map((panel) => ({
         centrosActivos: panel.centros?.activos ?? null,
         pedidosPendientes: panel.pedidosPendientes ?? null,
+        cambiosPendientes: panel.cambiosDePlanPendientes ?? null,
       })),
-      catchError(() => of({ centrosActivos: null, pedidosPendientes: null })),
+      catchError(() =>
+        of({ centrosActivos: null, pedidosPendientes: null, cambiosPendientes: null }),
+      ),
     );
   }
 

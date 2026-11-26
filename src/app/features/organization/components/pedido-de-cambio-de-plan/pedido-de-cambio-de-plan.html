@@ -1,0 +1,146 @@
+<section class="tarjeta" aria-labelledby="titulo-cambio-de-plan">
+  <div class="tarjeta__cabecera">
+    <h2 id="titulo-cambio-de-plan">Cambio de plan</h2>
+    @if (pedido(); as p) {
+      @switch (p.estado) {
+        @case ('PENDIENTE') {
+          <span class="marca-estado marca-estado--suspendida">Esperando respuesta</span>
+        }
+        @case ('APROBADO') {
+          <span class="marca-estado marca-estado--activa">Aprobado</span>
+        }
+        @case ('RECHAZADO') {
+          <span class="marca-estado marca-estado--revocada">Rechazado</span>
+        }
+      }
+    }
+  </div>
+
+  @if (error() && !panelAbierto()) {
+    <app-alerta tipo="error" titulo="No pudimos completar la operación">
+      <p>{{ error() }}</p>
+    </app-alerta>
+  }
+
+  @if (pedido(); as p) {
+    @if (p.estado !== 'CANCELADO') {
+      <dl class="datos-en-filas" aria-label="Último pedido de cambio de plan">
+        <dt>Pediste</dt>
+        <dd>{{ descripcion(p) }}</dd>
+        <dt>Enviado el</dt>
+        <dd>{{ p.pedidoEn | date: 'dd/MM/yyyy' }}</dd>
+        @if (p.estado === 'RECHAZADO' && p.motivoRechazo) {
+          <dt>Motivo</dt>
+          <dd>{{ p.motivoRechazo }}</dd>
+        }
+        @if (p.resueltoEn && p.estado !== 'PENDIENTE') {
+          <dt>Respondido el</dt>
+          <dd>{{ p.resueltoEn | date: 'dd/MM/yyyy' }}</dd>
+        }
+      </dl>
+    }
+  }
+
+  @if (pendiente()) {
+    <p class="ayuda">
+      <app-icono nombre="info" /> La administración de AKINE lo revisa. Si lo aprueba, el cambio se
+      aplica solo.
+    </p>
+    <p class="acciones">
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="enviando()"
+        (click)="cancelarPedido()"
+      >
+        Cancelar el pedido
+      </button>
+    </p>
+  } @else {
+    <p class="ayuda">Para subir o bajar de plan, o sumar servicios, mandá un pedido.</p>
+    <p class="acciones">
+      <button type="button" class="boton" (click)="abrir()">
+        <app-icono nombre="repetir" />
+        Pedir un cambio de plan
+      </button>
+    </p>
+  }
+</section>
+
+@if (panelAbierto()) {
+  <app-panel-lateral
+    titulo="Pedir un cambio de plan"
+    subtitulo="La administración de AKINE lo revisa y, si lo aprueba, se aplica solo."
+    ancho="amplio"
+    (cerrar)="cerrar()"
+  >
+    <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate class="formulario--libre">
+      @if (error(); as mensaje) {
+        <app-alerta tipo="error" titulo="No pudimos enviar el pedido">
+          <p>{{ mensaje }}</p>
+        </app-alerta>
+      }
+
+      <app-opciones-en-tarjetas formControlName="plan" [opciones]="opcionesDePlan()" [columnas]="1">
+        <span leyenda><app-icono nombre="capas" /> Plan</span>
+      </app-opciones-en-tarjetas>
+
+      <fieldset class="grupo pedido__grupo">
+        <legend><app-icono nombre="servicios" /> Servicios y adicionales</legend>
+        <label class="opcion-radio">
+          <input type="checkbox" formControlName="kinesiologia" />
+          Kinesiología y rehabilitación
+        </label>
+        <label class="opcion-radio">
+          <input type="checkbox" formControlName="actividades" />
+          Actividades y clases
+        </label>
+        <label class="opcion-radio">
+          <input type="checkbox" formControlName="ia" />
+          Inteligencia artificial
+        </label>
+        @if (sinServicios()) {
+          <p class="campo__error" role="alert">Elegí al menos un servicio.</p>
+        }
+      </fieldset>
+
+      <div class="campo">
+        <label for="pedido-comentario">
+          Comentario <span class="campo__opcional">(opcional)</span>
+        </label>
+        <textarea
+          id="pedido-comentario"
+          rows="2"
+          maxlength="500"
+          formControlName="comentario"
+          placeholder="Por ejemplo: empezamos con clases de yoga"
+        ></textarea>
+      </div>
+
+      <div class="pedido__resumen" aria-live="polite">
+        @if (resumen().length > 0) {
+          <p class="pedido__resumen-titulo">Lo que pedís</p>
+          <ul>
+            @for (linea of resumen(); track linea) {
+              <li>{{ linea }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="ayuda">Todavía no cambiaste nada respecto de lo que tenés contratado.</p>
+        }
+      </div>
+
+      <div class="acciones">
+        <button
+          type="submit"
+          class="boton"
+          [disabled]="enviando() || sinServicios() || resumen().length === 0"
+        >
+          <app-icono nombre="tilde" />
+          {{ enviando() ? 'Enviando…' : 'Enviar el pedido' }}
+        </button>
+        <button type="button" class="boton boton--secundario" (click)="cerrar()">Cancelar</button>
+      </div>
+    </form>
+  </app-panel-lateral>
+}
