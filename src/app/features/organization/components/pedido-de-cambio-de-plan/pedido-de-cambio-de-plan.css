@@ -54,3 +54,108 @@ form {
   margin: 0;
   padding-left: var(--esp-6);
 }
+
+/* Plan y servicios como tarjetas en una fila (26/11/2026). */
+.pedido__tarjetas {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pedido__tarjetas legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-3);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__tarjetas legend app-icono {
+  color: var(--color-acento);
+}
+
+.pedido__fila {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-3);
+}
+
+@media (max-width: 40rem) {
+  .pedido__fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tarjeta-opcion {
+  display: grid;
+  align-content: start;
+  gap: var(--esp-1);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.tarjeta-opcion:hover {
+  border-color: var(--color-acento);
+}
+
+.tarjeta-opcion:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.tarjeta-opcion__cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.tarjeta-opcion__nombre {
+  font-weight: var(--peso-semi);
+}
+
+.tarjeta-opcion__marca {
+  margin-left: auto;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.tarjeta-opcion__detalle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* Elegida: borde y fondo de selección, además del texto. */
+.tarjeta-opcion--elegida {
+  border: var(--borde-medio) solid var(--color-acento);
+  background: var(--color-seleccion);
+}
+
+.tarjeta-opcion--suma {
+  border: var(--borde-medio) solid var(--color-exito);
+  background: var(--color-exito-fondo);
+}
+
+.tarjeta-opcion--suma .tarjeta-opcion__detalle {
+  color: var(--color-exito-texto);
+  font-weight: var(--peso-semi);
+}
+
+.tarjeta-opcion--quita {
+  border: var(--borde-medio) solid var(--color-peligro);
+  background: var(--color-peligro-fondo);
+}
+
+.tarjeta-opcion--quita .tarjeta-opcion__detalle {
+  color: var(--color-peligro-texto);
+  font-weight: var(--peso-semi);
+}

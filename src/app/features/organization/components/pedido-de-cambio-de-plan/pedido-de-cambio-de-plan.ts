@@ -18,12 +18,16 @@ import { textoDeAjuste } from '../../../../core/models/ajustes-de-plan';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { ContratacionStore } from '../../../../core/services/contratacion.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { Icono } from '../../../../shared/components/icono/icono';
-import {
-  OpcionEnTarjeta,
-  OpcionesEnTarjetas,
-} from '../../../../shared/components/opciones-en-tarjetas/opciones-en-tarjetas';
+import { Icono, NombreDeIcono } from '../../../../shared/components/icono/icono';
+import type { OpcionEnTarjeta } from '../../../../shared/components/opciones-en-tarjetas/opciones-en-tarjetas';
 import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-lateral';
+
+interface TarjetaDeServicio {
+  readonly control: 'kinesiologia' | 'actividades' | 'ia';
+  readonly etiqueta: string;
+  readonly icono: NombreDeIcono;
+  readonly clave: string;
+}
 
 const NOMBRE_DEL_SERVICIO: Readonly<Record<string, string>> = {
   KINESIOLOGIA: 'Kinesiología',
@@ -37,7 +41,7 @@ const NOMBRE_DEL_SERVICIO: Readonly<Record<string, string>> = {
  */
 @Component({
   selector: 'app-pedido-de-cambio-de-plan',
-  imports: [ReactiveFormsModule, DatePipe, Alerta, Icono, OpcionesEnTarjetas, PanelLateral],
+  imports: [ReactiveFormsModule, DatePipe, Alerta, Icono, PanelLateral],
   templateUrl: './pedido-de-cambio-de-plan.html',
   styleUrl: './pedido-de-cambio-de-plan.css',
 })
@@ -66,6 +70,36 @@ export class PedidoDeCambioDePlan {
   });
 
   private readonly valores = signal(this.formulario.getRawValue());
+
+  /** El plan que el centro tiene hoy, para marcarlo como "Actual". */
+  protected readonly planActual = computed(() => this.contratacion.contratacion()?.planCode ?? '');
+
+  /** Las tres casillas de servicios y adicionales, en una fila. */
+  protected readonly servicios: readonly TarjetaDeServicio[] = [
+    {
+      control: 'kinesiologia',
+      etiqueta: 'Kinesiología',
+      icono: 'pacientes',
+      clave: 'KINESIOLOGIA',
+    },
+    {
+      control: 'actividades',
+      etiqueta: 'Actividades y clases',
+      icono: 'actividades',
+      clave: 'ACTIVIDADES',
+    },
+    { control: 'ia', etiqueta: 'Inteligencia artificial', icono: 'chispa', clave: 'IA' },
+  ];
+
+  /** Lo tiene y lo deja (quita), no lo tiene y lo pide (suma), o queda igual. */
+  protected estadoDe(s: TarjetaDeServicio): 'suma' | 'quita' | 'tiene' | 'no' {
+    const c = this.contratacion.contratacion();
+    const actuales = [...(c?.servicios ?? []), ...(c?.adicionales ?? [])] as readonly string[];
+    const tenia = actuales.includes(s.clave);
+    const marcado = this.valores()[s.control];
+    if (marcado) return tenia ? 'tiene' : 'suma';
+    return tenia ? 'quita' : 'no';
+  }
 
   protected readonly pendiente = computed(() => this.pedido()?.estado === 'PENDIENTE');
 
@@ -265,13 +299,15 @@ function topes(plan: PlanResponse): string {
     const limite = plan.limits?.find((l) => l.code === codigo);
     if (!limite) return null;
     if (limite.unlimited || limite.value === undefined) return `${plural} sin tope`;
-    return `${limite.value} ${limite.value === 1 ? singular : plural}`;
+    return `hasta ${limite.value} ${limite.value === 1 ? singular : plural}`;
   };
   const partes = [
     tope('MAX_CONSULTORIOS', 'sede', 'sedes'),
     tope('MAX_PROFESIONALES', 'profesional', 'profesionales'),
   ].filter((p): p is string => p !== null);
-  return partes.length > 0 ? `Hasta ${partes.join(' · ')}` : 'Sin topes declarados';
+  if (partes.length === 0) return 'Sin topes declarados';
+  const texto = partes.join(' · ');
+  return texto[0].toUpperCase() + texto.slice(1);
 }
 
 function mensaje(e: unknown): string {

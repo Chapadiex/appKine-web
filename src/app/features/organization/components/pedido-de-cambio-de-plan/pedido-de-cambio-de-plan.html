@@ -92,24 +92,71 @@
         </app-alerta>
       }
 
-      <app-opciones-en-tarjetas formControlName="plan" [opciones]="opcionesDePlan()" [columnas]="1">
-        <span leyenda><app-icono nombre="capas" /> Plan</span>
-      </app-opciones-en-tarjetas>
+      <!--
+        Plan y servicios como tarjetas en una fila (26/11/2026). En servicios, lo que se suma va en
+        verde y lo que se saca en rojo, con texto además del color.
+      -->
+      <fieldset class="pedido__tarjetas">
+        <legend><app-icono nombre="capas" /> Plan</legend>
+        <div class="pedido__fila">
+          @for (op of opcionesDePlan(); track op.valor) {
+            <label
+              class="tarjeta-opcion"
+              [class.tarjeta-opcion--elegida]="valores().plan === op.valor"
+            >
+              <input
+                type="radio"
+                class="visualmente-oculto"
+                formControlName="plan"
+                [value]="op.valor"
+                [attr.value]="op.valor"
+              />
+              <span class="tarjeta-opcion__cabeza">
+                <span class="tarjeta-opcion__nombre">{{ op.etiqueta }}</span>
+                @if (op.valor === planActual()) {
+                  <span class="tarjeta-opcion__marca">Actual</span>
+                }
+              </span>
+              <span class="tarjeta-opcion__detalle">{{ op.descripcion }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
 
-      <fieldset class="grupo pedido__grupo">
+      <fieldset class="pedido__tarjetas">
         <legend><app-icono nombre="servicios" /> Servicios y adicionales</legend>
-        <label class="opcion-radio">
-          <input type="checkbox" formControlName="kinesiologia" />
-          Kinesiología y rehabilitación
-        </label>
-        <label class="opcion-radio">
-          <input type="checkbox" formControlName="actividades" />
-          Actividades y clases
-        </label>
-        <label class="opcion-radio">
-          <input type="checkbox" formControlName="ia" />
-          Inteligencia artificial
-        </label>
+        <div class="pedido__fila">
+          @for (s of servicios; track s.control) {
+            <label
+              class="tarjeta-opcion"
+              [class.tarjeta-opcion--elegida]="estadoDe(s) === 'tiene'"
+              [class.tarjeta-opcion--suma]="estadoDe(s) === 'suma'"
+              [class.tarjeta-opcion--quita]="estadoDe(s) === 'quita'"
+            >
+              <input type="checkbox" class="visualmente-oculto" [formControlName]="s.control" />
+              <span class="tarjeta-opcion__cabeza">
+                <app-icono [nombre]="s.icono" />
+                <span class="tarjeta-opcion__nombre">{{ s.etiqueta }}</span>
+              </span>
+              <span class="tarjeta-opcion__detalle">
+                @switch (estadoDe(s)) {
+                  @case ('suma') {
+                    <app-icono nombre="agregar" /> Se suma
+                  }
+                  @case ('quita') {
+                    <app-icono nombre="menos" /> Se quita
+                  }
+                  @case ('tiene') {
+                    <app-icono nombre="tilde" /> Lo tenés
+                  }
+                  @default {
+                    No incluido
+                  }
+                }
+              </span>
+            </label>
+          }
+        </div>
         @if (sinServicios()) {
           <p class="campo__error" role="alert">Elegí al menos un servicio.</p>
         }
