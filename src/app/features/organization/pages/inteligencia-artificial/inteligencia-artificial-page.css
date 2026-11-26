@@ -30,16 +30,30 @@
   }
 }
 
-/* Cada funcion es una caja propia; el estado va arriba a la derecha. */
+/*
+ * Cada funcion es una caja propia: el interruptor a la izquierda y, a su derecha, el estado arriba
+ * y el texto debajo, a todo el ancho. Con el estado al costado del titulo, un cartel largo como
+ * "No disponible en el servidor" dejaba el texto en una columna de una palabra.
+ */
 .ia__funcion.interruptor {
-  gap: var(--esp-4);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'control estado'
+    'control textos';
+  align-items: start;
+  gap: var(--esp-2) var(--esp-4);
   padding: var(--esp-5);
   border: var(--borde-fino) solid var(--color-borde-sutil);
   border-radius: var(--radio-md);
 }
 
+.ia__funcion input {
+  grid-area: control;
+}
+
 .ia__funcion .interruptor__textos {
-  flex: 1 1 auto;
+  grid-area: textos;
   min-width: 0;
 }
 
@@ -49,8 +63,8 @@
 }
 
 .ia__estado {
-  flex: none;
-  margin-left: auto;
+  grid-area: estado;
+  justify-self: start;
 }
 
 .ia__pantallas {
