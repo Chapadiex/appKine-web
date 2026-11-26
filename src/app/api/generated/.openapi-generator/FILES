@@ -109,6 +109,8 @@ api/organizaciones.service.ts
 api/organizaciones.serviceInterface.ts
 api/pases.service.ts
 api/pases.serviceInterface.ts
+api/pedidos-de-cambio-de-plan.service.ts
+api/pedidos-de-cambio-de-plan.serviceInterface.ts
 api/pedidos-de-prueba.service.ts
 api/pedidos-de-prueba.serviceInterface.ts
 api/personas.service.ts
@@ -532,6 +534,9 @@ model/pase-detalle.ts
 model/pase.ts
 model/password-reset-confirm-request.ts
 model/password-reset-request.ts
+model/pedido-de-cambio-de-plan-page-response.ts
+model/pedido-de-cambio-de-plan-request.ts
+model/pedido-de-cambio-de-plan-response.ts
 model/pedido-reciente-response.ts
 model/perfil-de-invitacion.ts
 model/permisos-otorgables-response.ts
@@ -578,6 +583,7 @@ model/prueba-que-termina-response.ts
 model/punto-de-serie-de-reporte.ts
 model/reabrir-caso-clinico-request.ts
 model/recepcion.ts
+model/rechazar-pedido-de-plan-request.ts
 model/reclasificar-adjunto-clinico-request.ts
 model/recurso-libre.ts
 model/reemplazar-duraciones-propias-request.ts
@@ -728,6 +734,7 @@ model/validacion-de-presentacion.ts
 model/validar-horario-de-turno.ts
 model/validar-recepcion.ts
 model/vender-pase.ts
+model/version-de-pedido-request.ts
 model/version-response.ts
 model/vincular-autorizacion-request.ts
 model/vincular-documento-request.ts
