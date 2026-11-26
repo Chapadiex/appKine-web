@@ -185,6 +185,11 @@
     </section>
   }
 
+  <!-- Pedir subir o bajar de plan; la plataforma lo aprueba o lo rechaza (25/11/2026). -->
+  @if (estado().tipo === 'listo' && puedePedirCambio() && orgId(); as org) {
+    <app-pedido-de-cambio-de-plan [orgId]="org" [catalogo]="catalogo()" [usos]="limites()" />
+  }
+
   <!-- Terminos y condiciones de la cuenta: aceptados, cuando, y para releerlos (21/11/2026). -->
   @if (terminos(); as t) {
     <section class="tarjeta terminos-cuenta" aria-labelledby="titulo-terminos">

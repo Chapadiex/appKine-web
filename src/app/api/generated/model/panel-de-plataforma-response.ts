@@ -19,6 +19,10 @@ import { CentroRecienteResponse } from './centro-reciente-response';
  */
 export interface PanelDePlataformaResponse { 
     /**
+     * Pedidos de cambio de plan sin resolver
+     */
+    cambiosDePlanPendientes?: number;
+    /**
      * Centros vigentes por estado de su suscripcion
      */
     centros?: CentrosDelPanelResponse;

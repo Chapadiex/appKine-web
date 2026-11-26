@@ -1,5 +1,6 @@
 import { Pestana } from '../../../shared/components/pestanas/pestanas';
 import {
+  RUTA_CAMBIOS_DE_PLAN_DE_PLATAFORMA,
   RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
   RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
   RUTA_SOLICITUDES_DE_PLATAFORMA,
@@ -21,6 +22,7 @@ export const ETIQUETA_PESTANAS_DE_PLATAFORMA = 'Pantallas de la plataforma';
 export const PESTANAS_DE_CENTROS: readonly Pestana[] = [
   { etiqueta: 'Centros y suscripciones', ruta: RUTA_SUSCRIPCIONES_DE_PLATAFORMA },
   { etiqueta: 'Pedidos de prueba', ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA },
+  { etiqueta: 'Cambios de plan', ruta: RUTA_CAMBIOS_DE_PLAN_DE_PLATAFORMA },
 ];
 
 export const PESTANAS_DE_CATALOGO_DE_PLATAFORMA: readonly Pestana[] = [

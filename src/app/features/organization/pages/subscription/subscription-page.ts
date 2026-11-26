@@ -26,6 +26,8 @@ import {
   pestanasDeOrganizacion,
 } from '../../../../core/models/pestanas-de-organizacion';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
+import { PERMISO_TENANT_UPDATE } from '../../../../core/models/permisos';
+import { PedidoDeCambioDePlan } from '../../components/pedido-de-cambio-de-plan/pedido-de-cambio-de-plan';
 
 /** Una linea de "Que incluye tu plan": esta o no esta (21/11/2026). */
 interface ItemDelPlan {
@@ -82,13 +84,27 @@ const HECHOS_A_REVISAR = 20;
  */
 @Component({
   selector: 'app-subscription-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, DatePipe, RouterLink, Alerta, Icono],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    DatePipe,
+    RouterLink,
+    Alerta,
+    Icono,
+    PedidoDeCambioDePlan,
+  ],
   templateUrl: './subscription-page.html',
   styleUrl: '../../organization.css',
 })
 export class SubscriptionPage {
   /** Datos del centro, suscripcion, auditoria y politica de enmienda, como hermanas (08/11/2026). */
-  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(inject(PermissionsStore));
+  private readonly permisos = inject(PermissionsStore);
+  protected readonly pestanasDeOrganizacion = pestanasDeOrganizacion(this.permisos);
+
+  /** El pedido de cambio de plan lo hace quien administra el centro (25/11/2026). */
+  protected readonly puedePedirCambio = computed(() => this.permisos.tiene(PERMISO_TENANT_UPDATE));
+  protected readonly orgId = computed(() => this.tenantContext.organizationId());
   protected readonly etiquetaDePestanasDeOrganizacion = ETIQUETA_PESTANAS_DE_ORGANIZACION;
 
   private readonly suscripciones = inject(SuscripcionesService);
@@ -119,7 +135,7 @@ export class SubscriptionPage {
   });
 
   /** Catalogo de planes (21/11/2026): de ahi salen las funciones del plan actual. */
-  private readonly catalogo = signal<readonly PlanResponse[]>([]);
+  protected readonly catalogo = signal<readonly PlanResponse[]>([]);
 
   /**
    * Que incluye el plan del centro, para leerlo de un vistazo: servicios y adicional de IA de la

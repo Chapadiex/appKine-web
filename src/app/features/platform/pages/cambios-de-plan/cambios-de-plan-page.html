@@ -1,0 +1,253 @@
+<app-cabecera-de-pagina titulo="Cambios de plan">
+  <app-ayuda titulo="Sobre esta pantalla">
+    <p>
+      Pedidos que hacen los centros desde su Suscripción para subir o bajar de plan, o sumar y
+      quitar servicios. Aprobar aplica lo pedido; rechazar pide un motivo que el centro ve. Bajar de
+      plan no borra nada: solo rechaza las altas nuevas que pasen el tope.
+    </p>
+  </app-ayuda>
+
+  @if (pendientes(); as cantidad) {
+    <span class="marca-estado marca-estado--info">{{ textoPendientes(cantidad) }}</span>
+  }
+
+  <app-pestanas [pestanas]="pestanasDePlataforma" [etiqueta]="etiquetaDePestanas" />
+</app-cabecera-de-pagina>
+
+<section class="tarjeta" aria-label="Bandeja de pedidos de cambio de plan">
+  <form (submit)="$event.preventDefault(); buscar()">
+    <app-filtros
+      [activos]="filtrosAvanzadosActivos()"
+      [resultados]="paginaDePedidos()?.total ?? null"
+      [unidad]="['pedido', 'pedidos']"
+      limpiable
+      (limpiar)="limpiarFiltros()"
+    >
+      <div class="campo" filtro-principal>
+        <label class="visualmente-oculto" for="cambios-busqueda">Nombre del centro</label>
+        <div class="campo-busqueda">
+          <app-icono class="campo-busqueda__icono" nombre="buscar" />
+          <input
+            id="cambios-busqueda"
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar por centro"
+            [value]="busqueda()"
+            (input)="busqueda.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+      <button filtro-frecuente type="submit" class="boton boton--secundario">Buscar pedidos</button>
+      <div class="campo">
+        <label for="cambios-filtro-estado">Estado</label>
+        <select
+          id="cambios-filtro-estado"
+          [value]="filtroDeEstado()"
+          (change)="filtroDeEstado.set($any($event.target).value); buscar()"
+        >
+          <option value="PENDIENTE">Solo los pendientes</option>
+          <option value="APROBADO">Solo los aprobados</option>
+          <option value="RECHAZADO">Solo los rechazados</option>
+          <option value="CANCELADO">Solo los cancelados</option>
+          <option value="">Todos</option>
+        </select>
+      </div>
+    </app-filtros>
+  </form>
+
+  <div aria-live="polite">
+    @switch (listado().tipo) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Buscando pedidos&hellip;</p>
+      }
+      @case ('error') {
+        <app-alerta tipo="error" titulo="No pudimos leer los pedidos">
+          <p>{{ errorDeListado()?.mensaje }}</p>
+          <p class="alerta__acciones">
+            <button type="button" class="boton" (click)="buscar()">Reintentar</button>
+          </p>
+        </app-alerta>
+      }
+    }
+    @if (paginaDePedidos(); as p) {
+      @if (p.pedidos.length === 0 && !hayFiltros()) {
+        <app-estado-vacio
+          titulo="No hay pedidos pendientes."
+          texto="Cuando un centro pida un cambio de plan desde su Suscripción, aparece acá."
+        />
+      } @else if (p.pedidos.length === 0) {
+        <app-estado-vacio
+          titulo="Ningún pedido coincide con la búsqueda."
+          texto="Probá con otra búsqueda o filtros."
+        >
+          <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </app-estado-vacio>
+      } @else {
+        <div class="tabla-scroll" tabindex="0" role="region" aria-label="Pedidos de cambio de plan">
+          <table class="tabla">
+            <caption class="visualmente-oculto">
+              Pedidos de cambio de plan, del más reciente al más viejo, con el centro y la fecha, lo
+              que tenía, lo que pide y el estado.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" aria-sort="descending">Centro y fecha</th>
+                <th scope="col">Tenía</th>
+                <th scope="col">Pide</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pedido of p.pedidos; track pedido.id) {
+                <tr [class.fila--seleccionada]="seleccionado()?.id === pedido.id">
+                  <th scope="row">
+                    {{ pedido.organizationNombre }}
+                    <span class="pedido__dato-secundario">{{ fecha(pedido.pedidoEn) }}</span>
+                  </th>
+                  <td>
+                    {{
+                      contratacion(
+                        pedido.planNombreAnterior,
+                        pedido.serviciosAnteriores,
+                        pedido.adicionalesAnteriores
+                      )
+                    }}
+                  </td>
+                  <td>
+                    <b>{{
+                      contratacion(pedido.planNombre, pedido.servicios, pedido.adicionales)
+                    }}</b>
+                    @if (ajustes(pedido).length > 0) {
+                      <span class="pedido__dato-secundario cambio__exceso">
+                        <app-icono nombre="advertencia" /> Tiene que ajustarse antes
+                      </span>
+                    }
+                  </td>
+                  <td>
+                    <span [class]="'marca-estado ' + marca(pedido.estado).clase">{{
+                      marca(pedido.estado).texto
+                    }}</span>
+                  </td>
+                  <td class="tabla__acciones">
+                    <button
+                      type="button"
+                      class="boton boton--secundario boton--chico"
+                      [attr.aria-label]="
+                        (pedido.estado === 'PENDIENTE' ? 'Responder' : 'Ver') +
+                        ' el pedido de ' +
+                        pedido.organizationNombre
+                      "
+                      (click)="ver(pedido)"
+                    >
+                      {{ pedido.estado === 'PENDIENTE' ? 'Responder' : 'Ver' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [paginaActual]="p.pagina"
+          [totalPaginas]="p.totalPaginas"
+          [total]="p.total"
+          [porPagina]="porPagina()"
+          etiqueta="Páginas de pedidos"
+          (cambioDePagina)="irAPagina($event)"
+          (cambioDePorPagina)="cambiarPorPagina($event)"
+        />
+      }
+    }
+  </div>
+</section>
+
+@if (seleccionado(); as pedido) {
+  <app-panel-lateral
+    [titulo]="pedido.organizationNombre ?? 'Pedido de cambio de plan'"
+    [subtitulo]="'Pedido el ' + fecha(pedido.pedidoEn)"
+    (cerrar)="cerrar()"
+  >
+    @if (errorAccion(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos responder el pedido">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    <dl class="detalle">
+      <dt>Estado</dt>
+      <dd>
+        <span [class]="'marca-estado ' + marca(pedido.estado).clase">{{
+          marca(pedido.estado).texto
+        }}</span>
+      </dd>
+      <dt>Tenía</dt>
+      <dd>
+        {{
+          contratacion(
+            pedido.planNombreAnterior,
+            pedido.serviciosAnteriores,
+            pedido.adicionalesAnteriores
+          )
+        }}
+      </dd>
+      <dt>Pide</dt>
+      <dd>
+        <b>{{ contratacion(pedido.planNombre, pedido.servicios, pedido.adicionales) }}</b>
+      </dd>
+      <dt>Comentario</dt>
+      <dd>{{ pedido.comentario || 'Sin comentario' }}</dd>
+      @if (pedido.resueltoEn) {
+        <dt>Resuelto el</dt>
+        <dd>{{ fecha(pedido.resueltoEn) }}</dd>
+      }
+      @if (pedido.motivoRechazo) {
+        <dt>Motivo del rechazo</dt>
+        <dd>{{ pedido.motivoRechazo }}</dd>
+      }
+    </dl>
+
+    @if (pedido.estado === 'PENDIENTE' && ajustes(pedido).length > 0) {
+      <app-alerta tipo="advertencia" titulo="No se puede aprobar todavía">
+        <ul class="cambio__ajustes">
+          @for (ajuste of ajustes(pedido); track ajuste) {
+            <li>{{ ajuste }}</li>
+          }
+        </ul>
+        <p>Cuando el centro se ajuste, volvé a abrir el pedido para aprobarlo.</p>
+      </app-alerta>
+    }
+
+    @if (pedido.estado === 'PENDIENTE') {
+      @if (rechazando()) {
+        <app-confirmacion-con-motivo
+          class="pedido__descarte"
+          idCampo="cambio-motivo-rechazo"
+          titulo="Rechazar el pedido"
+          ayuda="El centro lo ve en su Suscripción."
+          textoConfirmar="Rechazar el pedido"
+          [enviando]="enviando()"
+          (confirmado)="rechazar($event)"
+          (cancelado)="rechazando.set(false)"
+        />
+      } @else {
+        <div class="acciones acciones--pie">
+          <button type="button" class="boton boton--secundario" (click)="rechazando.set(true)">
+            Rechazar
+          </button>
+          <button
+            type="button"
+            class="boton"
+            [disabled]="enviando() || ajustes(pedido).length > 0"
+            (click)="aprobar()"
+          >
+            <app-icono nombre="tilde" />
+            {{ enviando() ? 'Aplicando…' : 'Aprobar y aplicar' }}
+          </button>
+        </div>
+      }
+    }
+  </app-panel-lateral>
+}

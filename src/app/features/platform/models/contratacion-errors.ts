@@ -8,7 +8,8 @@ import { AkineHttpError } from '../../../core/interceptors/error.interceptor';
  * `concurrent-modification` en el alta o el descarte es "otra persona ya resolvio el pedido"; en la
  * contratacion es "la version quedo vieja". Por eso el mensaje se elige por operacion.
  */
-export type OperacionDeContratacion = 'lectura' | 'alta' | 'descarte' | 'contratacion';
+export type OperacionDeContratacion =
+  'lectura' | 'alta' | 'descarte' | 'contratacion' | 'pedido-de-plan';
 
 export type CausaContratacion =
   | 'conflicto'
@@ -59,6 +60,12 @@ const POR_OPERACION: Readonly<
       'Otro cambio llegó a la contratación después de que la leíste. No se aplicó nada: ' +
       'volvimos a leerla, revisá cómo quedó y repetí el cambio si sigue haciendo falta.',
     'no-encontrado': 'El centro ya no está vigente, o el plan elegido ya no se ofrece.',
+  },
+  'pedido-de-plan': {
+    conflicto:
+      'El pedido ya se resolvió (lo canceló el centro u otra persona lo respondió), o la ' +
+      'contratación cambió mientras lo revisabas. No se aplicó nada: volvimos a leer la bandeja.',
+    'no-encontrado': 'El pedido ya no existe, o el plan pedido ya no se ofrece.',
   },
 };
 

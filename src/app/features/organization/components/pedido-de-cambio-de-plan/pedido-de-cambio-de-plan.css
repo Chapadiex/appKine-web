@@ -1,0 +1,216 @@
+/* Pedido de cambio de plan (25/11/2026). Cero colores literales: todo sale de los tokens. */
+
+.ayuda app-icono {
+  vertical-align: -2px;
+}
+
+form {
+  display: grid;
+  gap: var(--esp-5);
+}
+
+.pedido__grupo {
+  display: grid;
+  gap: var(--esp-2);
+  margin: 0;
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.pedido__grupo legend,
+[leyenda] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__grupo legend app-icono,
+[leyenda] app-icono {
+  color: var(--color-acento);
+}
+
+.pedido__grupo .opcion-radio {
+  margin-bottom: 0;
+}
+
+.pedido__resumen {
+  padding: var(--esp-4) var(--esp-5);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+}
+
+.pedido__resumen-titulo {
+  margin: 0 0 var(--esp-2);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__resumen ul {
+  margin: 0;
+  padding-left: var(--esp-6);
+}
+
+.pedido__ajustes {
+  margin: 0;
+  padding-left: var(--esp-6);
+}
+
+/* Plan y servicios como tarjetas en una fila (26/11/2026). */
+.pedido__tarjetas {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pedido__tarjetas legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin-bottom: var(--esp-3);
+  font-size: var(--tipo-sm);
+  font-weight: var(--peso-semi);
+}
+
+.pedido__tarjetas legend app-icono {
+  color: var(--color-acento);
+}
+
+.pedido__fila {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-3);
+}
+
+@media (max-width: 40rem) {
+  .pedido__fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tarjeta-opcion {
+  display: grid;
+  align-content: start;
+  gap: var(--esp-1);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  cursor: pointer;
+}
+
+.tarjeta-opcion:hover {
+  border-color: var(--color-acento);
+}
+
+.tarjeta-opcion:has(input:focus-visible) {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.tarjeta-opcion__cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.tarjeta-opcion__nombre {
+  font-weight: var(--peso-semi);
+}
+
+.tarjeta-opcion__marca {
+  margin-left: auto;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie-atenuada);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.tarjeta-opcion__detalle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+/* Elegida: borde y fondo de selección, además del texto. */
+.tarjeta-opcion--elegida {
+  border: var(--borde-medio) solid var(--color-acento);
+  background: var(--color-seleccion);
+}
+
+.tarjeta-opcion--suma {
+  border: var(--borde-medio) solid var(--color-exito);
+  background: var(--color-exito-fondo);
+}
+
+.tarjeta-opcion--suma .tarjeta-opcion__detalle {
+  color: var(--color-exito-texto);
+  font-weight: var(--peso-semi);
+}
+
+.tarjeta-opcion--quita {
+  border: var(--borde-medio) solid var(--color-peligro);
+  background: var(--color-peligro-fondo);
+}
+
+.tarjeta-opcion--quita .tarjeta-opcion__detalle {
+  color: var(--color-peligro-texto);
+  font-weight: var(--peso-semi);
+}
+
+/* La tarjeta ocupa la celda entera de la grilla, como las demás de Suscripción (26/11/2026). */
+:host {
+  display: block;
+}
+
+:host > .tarjeta {
+  display: flex;
+  margin-bottom: 0;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* El botón queda abajo de todo, alineado con el de las tarjetas vecinas. */
+.pedido__pie {
+  margin-top: auto;
+  padding-top: var(--esp-5);
+}
+
+.pedido__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-4);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--radio-md);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  font-size: var(--tipo-sm);
+}
+
+.pedido__aviso app-icono {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* Rótulo y valor en filas, como "Estado y plan". */
+.pedido__datos {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0;
+}
+
+.pedido__datos dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.pedido__datos dd {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}

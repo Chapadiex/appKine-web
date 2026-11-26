@@ -271,7 +271,9 @@ export class NavegacionPrincipal {
     return (
       conPermiso &&
       (seccion.funcionIa === undefined || this.funcionesIa.activa(seccion.funcionIa)) &&
-      (seccion.servicio === undefined || this.contratacion.tiene(seccion.servicio))
+      (seccion.servicio === undefined ||
+        this.contratacion.tiene(seccion.servicio) ||
+        this.contratacion.enLectura(seccion.servicio))
     );
   }
 }

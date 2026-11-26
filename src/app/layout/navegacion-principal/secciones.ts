@@ -1,6 +1,7 @@
 import { RUTA_HORARIOS } from '../../features/resource/models/rutas-de-horarios';
 import {
   RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA,
+  RUTA_CAMBIOS_DE_PLAN_DE_PLATAFORMA,
   RUTA_CATALOGO_FINANCIADORES_DE_PLATAFORMA,
   RUTA_INICIO_DE_PLATAFORMA,
   RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
@@ -330,6 +331,11 @@ export const GRUPOS_DE_PLATAFORMA: readonly GrupoDeSecciones[] = [
         etiqueta: 'Pedidos de prueba',
         ruta: RUTA_PEDIDOS_DE_PRUEBA_DE_PLATAFORMA,
         contador: 'pedidos-pendientes',
+      },
+      {
+        etiqueta: 'Cambios de plan',
+        ruta: RUTA_CAMBIOS_DE_PLAN_DE_PLATAFORMA,
+        contador: 'cambios-pendientes',
       },
       { etiqueta: 'Dar de alta un centro', ruta: RUTA_ALTA_DE_CENTRO_DE_PLATAFORMA },
     ],
