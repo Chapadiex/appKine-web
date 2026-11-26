@@ -1,0 +1,50 @@
+.mi-telegram {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3) var(--esp-4);
+  margin-bottom: var(--esp-4);
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.mi-telegram__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.mi-telegram__texto {
+  flex: 1 1 20rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.mi-telegram__texto p {
+  margin: 0 0 var(--esp-1);
+}
+
+.mi-telegram__comando {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+}
+
+.mi-telegram__comando code {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+  padding: var(--esp-1) var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-codigo);
+  letter-spacing: 0.04em;
+}
+
+.mi-telegram__error {
+  flex-basis: 100%;
+}

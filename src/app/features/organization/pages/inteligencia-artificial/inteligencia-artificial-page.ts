@@ -32,6 +32,7 @@ import { Pestanas } from '../../../../shared/components/pestanas/pestanas';
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { TelegramDelCentro } from '../../components/telegram-del-centro/telegram-del-centro';
 
 /** Lo que la pantalla dice de cada funcion: nombre, para que sirve y que pantallas prende. */
 interface DescripcionDeFuncion {
@@ -116,7 +117,16 @@ interface FilaDeFuncion extends DescripcionDeFuncion {
  */
 @Component({
   selector: 'app-inteligencia-artificial-page',
-  imports: [CabeceraDePagina, Pestanas, Ayuda, Alerta, Icono, ColumnaOrdenable, PieDeTabla],
+  imports: [
+    CabeceraDePagina,
+    Pestanas,
+    Ayuda,
+    Alerta,
+    Icono,
+    ColumnaOrdenable,
+    PieDeTabla,
+    TelegramDelCentro,
+  ],
   templateUrl: './inteligencia-artificial-page.html',
   styleUrls: ['../../organization.css', './inteligencia-artificial-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

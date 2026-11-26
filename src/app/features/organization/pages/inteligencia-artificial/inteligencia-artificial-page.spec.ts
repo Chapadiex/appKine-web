@@ -115,7 +115,13 @@ describe('InteligenciaArtificialPage', () => {
     await fixture.whenStable();
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    // La tarjeta de Telegram pide su estado aparte; aca no se prueba.
+    httpMock
+      .match((r) => r.url.endsWith('/telegram'))
+      .forEach((r) => r.flush({ conectado: false }));
+    httpMock.verify();
+  });
 
   it(
     'pinta las cuatro funciones con su estado y deshabilita la que el servidor no ofrece',

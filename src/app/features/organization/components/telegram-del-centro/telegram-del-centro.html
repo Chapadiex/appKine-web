@@ -1,0 +1,146 @@
+@if (estado() !== 'oculto') {
+  <section class="tarjeta telegram" aria-labelledby="titulo-telegram">
+    <div class="tarjeta__cabecera">
+      <h2 id="titulo-telegram"><app-icono nombre="telefono" /> Carga por Telegram</h2>
+      @if (estado() === 'listo') {
+        @if (bot()?.conectado) {
+          <span class="marca-estado marca-estado--activa">Conectado</span>
+        } @else {
+          <span class="marca-estado marca-estado--neutra">Sin bot</span>
+        }
+      } @else if (estado() === 'apagado') {
+        <span class="marca-estado marca-estado--suspendida">No disponible en el servidor</span>
+      }
+    </div>
+
+    <p class="telegram__intro">
+      Los profesionales le mandan al bot del centro un audio o un mensaje contando lo que hicieron
+      («Juan Strudel: movilidad de hombro, dolor 4 de 10») y queda cargado en AKINE con su cuenta y
+      sus permisos.
+    </p>
+
+    @if (error(); as mensaje) {
+      <app-alerta tipo="error" titulo="No pudimos completar la operación">
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+
+    @switch (estado()) {
+      @case ('cargando') {
+        <p class="estado estado--cargando">Consultando el bot&hellip;</p>
+      }
+      @case ('apagado') {
+        <p class="ayuda">
+          La carga por Telegram la prende quien administra la instalación de AKINE; no se puede
+          prender desde acá.
+        </p>
+      }
+      @case ('error') {
+        <p class="acciones">
+          <button type="button" class="boton boton--secundario" (click)="cargar()">
+            Reintentar
+          </button>
+        </p>
+      }
+      @case ('listo') {
+        @if (bot()?.conectado && !reemplazando()) {
+          <dl class="telegram__datos" aria-label="Bot conectado">
+            <dt>Bot</dt>
+            <dd>
+              <a [href]="'https://t.me/' + bot()?.usuario" target="_blank" rel="noopener noreferrer"
+                >&#64;{{ bot()?.usuario }}</a
+              >
+            </dd>
+            <dt>Último contacto</dt>
+            <dd>
+              {{ bot()?.ultimoContactoEn ? fechaYHora(bot()?.ultimoContactoEn) : 'Todavía no' }}
+            </dd>
+          </dl>
+          @if (bot()?.ultimoError; as falla) {
+            <app-alerta tipo="advertencia" titulo="Telegram respondió con un error">
+              <p>{{ falla }}</p>
+            </app-alerta>
+          }
+          <p class="ayuda">
+            Cada profesional vincula su cuenta desde <b>Asistente de datos → Telegram</b>. Para
+            usarlo en un grupo, agregá el bot al grupo del centro.
+          </p>
+          <p class="acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="guardando()"
+              (click)="reemplazando.set(true)"
+            >
+              Cambiar de bot
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              [disabled]="guardando()"
+              (click)="desconectar()"
+            >
+              Desconectar
+            </button>
+          </p>
+        } @else {
+          <ol class="telegram__pasos">
+            <li>
+              En Telegram, abrí
+              <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer"
+                >&#64;BotFather</a
+              >
+              y mandale <code>/newbot</code>.
+            </li>
+            <li>
+              Elegí un nombre (por ejemplo «Kine Centro Norte») y un usuario que termine en
+              <code>bot</code>.
+            </li>
+            <li>
+              Si lo vas a usar en un grupo, mandale <code>/setprivacy</code>, elegí tu bot y
+              <b>Disable</b>, para que lea los mensajes del grupo.
+            </li>
+            <li>Copiá el token que te da @BotFather y pegalo acá.</li>
+          </ol>
+
+          <form class="telegram__form" (submit)="conectar($event)">
+            <div class="campo">
+              <label for="telegram-token">Token del bot</label>
+              <input
+                id="telegram-token"
+                type="password"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="1234567890:AAH…"
+                [formControl]="token"
+                [attr.aria-invalid]="token.invalid && token.touched"
+                aria-describedby="telegram-token-ayuda"
+              />
+              <span id="telegram-token-ayuda" class="ayuda">
+                Se guarda cifrado y no se vuelve a mostrar.
+              </span>
+              @if (token.invalid && token.touched) {
+                <span class="campo__error" role="alert">Pegá el token que te dio @BotFather.</span>
+              }
+            </div>
+            <p class="acciones">
+              @if (reemplazando()) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  [disabled]="guardando()"
+                  (click)="reemplazando.set(false)"
+                >
+                  Cancelar
+                </button>
+              }
+              <button type="submit" class="boton" [disabled]="guardando()">
+                {{ guardando() ? 'Conectando…' : 'Conectar bot' }}
+              </button>
+            </p>
+          </form>
+        }
+      }
+    }
+  </section>
+}

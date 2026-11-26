@@ -250,6 +250,8 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'slot-no-disponible',
   'subscription-suspended',
   'sugerencia-ya-respondida',
+  'telegram-deshabilitado',
+  'telegram-sin-bot',
   'terminos-pendientes',
   'tratamiento-no-accesible',
   'turno-con-atencion',

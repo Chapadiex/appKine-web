@@ -1,0 +1,73 @@
+@if (visible()) {
+  <section class="mi-telegram" aria-labelledby="titulo-mi-telegram">
+    <h2 id="titulo-mi-telegram" class="mi-telegram__titulo">
+      <app-icono nombre="telefono" /> Telegram
+    </h2>
+
+    @if (vinculo()?.vinculado) {
+      <p class="mi-telegram__texto">
+        <span class="marca-estado marca-estado--activa">Vinculado</span>
+        Lo que le mandes a
+        <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+          >&#64;{{ vinculo()?.botUsuario }}</a
+        >
+        se carga con tu cuenta en esta sede. Mandale un audio contando lo que hiciste.
+      </p>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="ocupado()"
+        (click)="desvincular()"
+      >
+        Desvincular
+      </button>
+    } @else if (comando()) {
+      <div class="mi-telegram__texto">
+        <p>
+          Abrí
+          <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+            >&#64;{{ vinculo()?.botUsuario }}</a
+          >
+          en Telegram y mandale:
+        </p>
+        <p class="mi-telegram__comando">
+          <code>{{ comando() }}</code>
+          <button type="button" class="boton boton--secundario" (click)="copiar()">Copiar</button>
+        </p>
+        <p class="ayuda">
+          Vence a las {{ hora(vinculo()?.codigoVenceEn) }} y sirve una sola vez. Cuando lo mandes,
+          esto se actualiza solo.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        [disabled]="ocupado()"
+        (click)="pedirCodigo()"
+      >
+        Otro código
+      </button>
+    } @else {
+      <p class="mi-telegram__texto">
+        Cargá contando lo que hiciste: un audio a
+        <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+          >&#64;{{ vinculo()?.botUsuario }}</a
+        >
+        y queda en AKINE.
+      </p>
+      <button type="button" class="boton" [disabled]="ocupado()" (click)="pedirCodigo()">
+        Vincular mi Telegram
+      </button>
+    }
+
+    @if (error(); as mensaje) {
+      <app-alerta
+        class="mi-telegram__error"
+        tipo="error"
+        titulo="No pudimos completar la operación"
+      >
+        <p>{{ mensaje }}</p>
+      </app-alerta>
+    }
+  </section>
+}
