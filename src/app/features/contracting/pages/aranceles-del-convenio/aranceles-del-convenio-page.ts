@@ -57,6 +57,7 @@ import { Icono } from '../../../../shared/components/icono/icono';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -106,6 +107,7 @@ type TipoAccion = 'editar' | 'baja';
 @Component({
   selector: 'app-aranceles-del-convenio-page',
   imports: [
+    Importe,
     CabeceraDePagina,
     Alerta,
     ColumnaOrdenable,

@@ -51,6 +51,7 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -101,6 +102,7 @@ interface ResumenDePaciente {
 @Component({
   selector: 'app-presentacion-detalle-page',
   imports: [
+    Importe,
     CabeceraDePagina,
     PanelLateral,
     Alerta,

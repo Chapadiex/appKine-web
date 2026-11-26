@@ -174,14 +174,18 @@
 
       <div class="campo">
         <label for="alta-precio-importe">Importe</label>
-        <input
-          id="alta-precio-importe"
-          type="number"
-          min="0"
-          step="0.01"
-          formControlName="importe"
-          [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
-        />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            appImporte
+            id="alta-precio-importe"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="importe"
+            [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
+          />
+        </div>
         @if (mostrarErrorAlta('importe')) {
           <p class="campo__error" role="alert">El importe es obligatorio, y puede ser cero.</p>
         }

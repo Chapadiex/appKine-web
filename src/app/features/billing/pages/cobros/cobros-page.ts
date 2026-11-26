@@ -47,6 +47,7 @@ import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { Icono } from '../../../../shared/components/icono/icono';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCobros =
@@ -94,6 +95,7 @@ interface OperacionAbierta {
 @Component({
   selector: 'app-cobros-page',
   imports: [
+    Importe,
     PanelLateral,
 
     Alerta,

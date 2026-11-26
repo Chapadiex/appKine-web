@@ -551,21 +551,25 @@
           }
           <div class="campo">
             <label for="pago-importe">Importe</label>
-            <input
-              id="pago-importe"
-              type="number"
-              min="0.01"
-              step="0.01"
-              formControlName="importe"
-              [attr.aria-invalid]="
-                pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
-              "
-              [attr.aria-describedby]="
-                pago.controls.importe.touched && pago.controls.importe.invalid
-                  ? 'pago-importe-error'
-                  : null
-              "
-            />
+            <div class="campo-importe">
+              <span class="campo-importe__signo" aria-hidden="true">$</span>
+              <input
+                appImporte
+                id="pago-importe"
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="importe"
+                [attr.aria-invalid]="
+                  pago.controls.importe.touched && pago.controls.importe.invalid ? 'true' : null
+                "
+                [attr.aria-describedby]="
+                  pago.controls.importe.touched && pago.controls.importe.invalid
+                    ? 'pago-importe-error'
+                    : null
+                "
+              />
+            </div>
             @if (pago.controls.importe.touched && pago.controls.importe.invalid) {
               <p class="campo__error" id="pago-importe-error" role="alert">
                 El importe tiene que ser mayor que cero.
@@ -674,7 +678,17 @@
       </p>
       <div class="campo">
         <label for="debito-importe">Importe debitado</label>
-        <input id="debito-importe" type="number" min="0.01" step="0.01" formControlName="importe" />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            appImporte
+            id="debito-importe"
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="importe"
+          />
+        </div>
       </div>
       <div class="campo campo--6">
         <label for="debito-motivo">Motivo informado por el financiador</label>

@@ -50,6 +50,7 @@ import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { Filtros } from '../../../../shared/components/filtros/filtros';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** En cual de los tres estados esta el listado. No es paginado: el backend devuelve un array. */
 type EstadoCuenta =
@@ -105,6 +106,7 @@ type EstadoCuenta =
 @Component({
   selector: 'app-cuenta-corriente-page',
   imports: [
+    Importe,
     PanelLateral,
     Alerta,
     CabeceraDeFicha,

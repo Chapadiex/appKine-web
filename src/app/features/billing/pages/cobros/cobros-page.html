@@ -342,20 +342,25 @@
 
         <div class="campo">
           <label [for]="'reintegro-importe-' + cobro.id">Importe a devolver</label>
-          <input
-            [id]="'reintegro-importe-' + cobro.id"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="importeReintegro()"
-            [attr.aria-invalid]="reintegroIntentado() && problemaDelImporte() !== null"
-            [attr.aria-describedby]="
-              reintegroIntentado() && problemaDelImporte()
-                ? 'reintegro-importe-error-' + cobro.id + ' reintegro-importe-ayuda-' + cobro.id
-                : 'reintegro-importe-ayuda-' + cobro.id
-            "
-            (input)="editarReintegro('importe', $any($event.target).value)"
-          />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              appImporte
+              placeholder="0,00"
+              [id]="'reintegro-importe-' + cobro.id"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              [value]="importeReintegro()"
+              [attr.aria-invalid]="reintegroIntentado() && problemaDelImporte() !== null"
+              [attr.aria-describedby]="
+                reintegroIntentado() && problemaDelImporte()
+                  ? 'reintegro-importe-error-' + cobro.id + ' reintegro-importe-ayuda-' + cobro.id
+                  : 'reintegro-importe-ayuda-' + cobro.id
+              "
+              (input)="editarReintegro('importe', $any($event.target).value)"
+            />
+          </div>
           @if (reintegroIntentado() && problemaDelImporte(); as problema) {
             <p class="campo__error" [id]="'reintegro-importe-error-' + cobro.id">{{ problema }}</p>
           }

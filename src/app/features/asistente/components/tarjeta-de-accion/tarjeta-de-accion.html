@@ -80,15 +80,19 @@
         <div class="accion__grilla">
           <div class="campo">
             <label [for]="id + '-total'">Monto ({{ p.moneda }})</label>
-            <input
-              [id]="id + '-total'"
-              type="number"
-              inputmode="decimal"
-              min="0"
-              step="0.01"
-              [value]="p.total ?? ''"
-              (input)="cambiarTotal($event)"
-            />
+            <div class="campo-importe">
+              <span class="campo-importe__signo" aria-hidden="true">$</span>
+              <input
+                appImporte
+                [id]="id + '-total'"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                step="0.01"
+                [value]="p.total ?? ''"
+                (input)="cambiarTotal($event)"
+              />
+            </div>
           </div>
           <div class="campo">
             <label [for]="id + '-medio'">Medio de pago</label>
