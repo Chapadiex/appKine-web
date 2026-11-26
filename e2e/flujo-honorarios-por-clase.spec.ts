@@ -255,7 +255,7 @@ test.describe('Servicio en el egreso contra el backend real (DP-39)', () => {
     await page.getByLabel('Servicio u oferta (opcional)').selectOption({ label: oferta.nombre });
     await page.getByLabel('Concepto', { exact: true }).fill(concepto);
     await page.getByLabel('Importe total').fill('2000');
-    await page.getByLabel('Tipo').fill('Factura C');
+    await page.getByLabel('Tipo').selectOption('Factura C');
     await page.getByLabel('Número', { exact: true }).fill(`E2E-${sufijo}`);
     const alta = respuestaDe(page, 'POST', /\/egresos$/);
     await page.getByRole('button', { name: 'Cargar el borrador' }).click();

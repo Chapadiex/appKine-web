@@ -255,3 +255,60 @@
 .acciones__aparte {
   margin-inline-start: auto;
 }
+
+/*
+ * Alta de egreso en el panel: tres grupos con ícono y campos cortos en la misma fila. La grilla del
+ * sistema duplica los anchos en contenedores angostos; aca se fijan (25/11/2026).
+ */
+.egreso__grupo {
+  row-gap: var(--esp-3);
+  margin-block-end: var(--esp-5);
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.egreso__grupo legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2);
+  font-size: var(--tipo-sm);
+}
+
+.egreso__grupo legend app-icono {
+  color: var(--color-acento);
+}
+
+.egreso__grupo .campo {
+  margin-bottom: 0;
+}
+
+.egreso__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2) var(--esp-7);
+}
+
+.egreso__opciones .opcion-radio {
+  margin-bottom: 0;
+}
+
+.egreso__grupo > .egreso__campo--4 {
+  grid-column: span 4;
+}
+
+.egreso__grupo > .egreso__campo--6 {
+  grid-column: span 6;
+}
+
+.egreso__grupo > .egreso__campo--8 {
+  grid-column: span 8;
+}
+
+.egreso__grupo > .egreso__campo--12 {
+  grid-column: 1 / -1;
+}
+
+@container (max-width: 26rem) {
+  .egreso__grupo > [class*='egreso__campo--'] {
+    grid-column: 1 / -1;
+  }
+}
