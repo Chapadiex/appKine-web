@@ -159,3 +159,58 @@ form {
   color: var(--color-peligro-texto);
   font-weight: var(--peso-semi);
 }
+
+/* La tarjeta ocupa la celda entera de la grilla, como las demás de Suscripción (26/11/2026). */
+:host {
+  display: block;
+}
+
+:host > .tarjeta {
+  display: flex;
+  margin-bottom: 0;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* El botón queda abajo de todo, alineado con el de las tarjetas vecinas. */
+.pedido__pie {
+  margin-top: auto;
+  padding-top: var(--esp-5);
+}
+
+.pedido__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-2);
+  margin: 0 0 var(--esp-4);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--radio-md);
+  background: var(--color-aviso-fondo);
+  color: var(--color-aviso-texto);
+  font-size: var(--tipo-sm);
+}
+
+.pedido__aviso app-icono {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* Rótulo y valor en filas, como "Estado y plan". */
+.pedido__datos {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--esp-3) var(--esp-6);
+  margin: 0;
+}
+
+.pedido__datos dt {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-sm);
+}
+
+.pedido__datos dd {
+  margin: 0;
+  color: var(--color-texto-fuerte);
+  font-weight: var(--peso-semi);
+}

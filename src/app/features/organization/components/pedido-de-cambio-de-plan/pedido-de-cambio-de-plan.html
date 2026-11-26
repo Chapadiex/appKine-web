@@ -23,12 +23,24 @@
   }
 
   @if (pedido(); as p) {
+    <!-- Con un pedido esperando, primero el mensaje con su fecha (26/11/2026). -->
+    @if (p.estado === 'PENDIENTE') {
+      <p class="pedido__aviso" role="status">
+        <app-icono nombre="info" />
+        <span>
+          Ya enviaste un pedido el <b>{{ p.pedidoEn | date: 'dd/MM/yyyy' }}</b>. Está esperando la
+          respuesta de la administración de AKINE; si lo aprueba, el cambio se aplica solo.
+        </span>
+      </p>
+    }
     @if (p.estado !== 'CANCELADO') {
-      <dl class="datos-en-filas" aria-label="Último pedido de cambio de plan">
+      <dl class="pedido__datos" aria-label="Último pedido de cambio de plan">
         <dt>Pediste</dt>
         <dd>{{ descripcion(p) }}</dd>
-        <dt>Enviado el</dt>
-        <dd>{{ p.pedidoEn | date: 'dd/MM/yyyy' }}</dd>
+        @if (p.estado !== 'PENDIENTE') {
+          <dt>Enviado el</dt>
+          <dd>{{ p.pedidoEn | date: 'dd/MM/yyyy' }}</dd>
+        }
         @if (p.estado === 'RECHAZADO' && p.motivoRechazo) {
           <dt>Motivo</dt>
           <dd>{{ p.motivoRechazo }}</dd>
@@ -53,11 +65,7 @@
     }
   }
   @if (pendiente()) {
-    <p class="ayuda">
-      <app-icono nombre="info" /> La administración de AKINE lo revisa. Si lo aprueba, el cambio se
-      aplica solo.
-    </p>
-    <p class="acciones">
+    <p class="acciones pedido__pie">
       <button
         type="button"
         class="boton boton--secundario"
@@ -69,7 +77,7 @@
     </p>
   } @else {
     <p class="ayuda">Para subir o bajar de plan, o sumar servicios, mandá un pedido.</p>
-    <p class="acciones">
+    <p class="acciones pedido__pie">
       <button type="button" class="boton" (click)="abrir()">
         <app-icono nombre="repetir" />
         Pedir un cambio de plan
