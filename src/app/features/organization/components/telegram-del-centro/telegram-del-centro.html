@@ -84,23 +84,38 @@
             </button>
           </p>
         } @else {
+          <p class="telegram__intro">
+            El bot se crea en Telegram hablando con <b>&#64;BotFather</b>, el bot oficial de
+            Telegram para crear bots. Te va haciendo preguntas de a una: contestá cada una antes de
+            mandar otro comando.
+          </p>
           <ol class="telegram__pasos">
             <li>
               En Telegram, abrí
               <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer"
                 >&#64;BotFather</a
-              >
-              y mandale <code>/newbot</code>.
+              >, tocá <b>Iniciar</b> y mandale <code>/newbot</code>.
             </li>
             <li>
-              Elegí un nombre (por ejemplo «Kine Centro Norte») y un usuario que termine en
-              <code>bot</code>.
+              Te pide el <b>nombre</b> del bot: es el que ven los profesionales. Mandale, por
+              ejemplo, <code>Kine Centro Norte</code>.
             </li>
             <li>
-              Si lo vas a usar en un grupo, mandale <code>/setprivacy</code>, elegí tu bot y
-              <b>Disable</b>, para que lea los mensajes del grupo.
+              Te pide el <b>usuario</b> del bot: tiene que ser único en todo Telegram, sin espacios,
+              y <b>terminar en <code>bot</code></b
+              >. Por ejemplo <code>kine_centro_norte_bot</code>. Si te dice que ya existe, probá con
+              otro.
             </li>
-            <li>Copiá el token que te da @BotFather y pegalo acá.</li>
+            <li>
+              Te contesta «Done! Congratulations…» con el <b>token</b>: una línea como
+              <code>1234567890:AAH…</code>, debajo de «Use this token to access the HTTP API».
+              Copiala entera y pegala abajo.
+            </li>
+            <li>
+              <b>Solo si lo vas a usar en un grupo:</b> mandale <code>/setprivacy</code>, tocá tu
+              bot en la lista y después <b>Disable</b>. Sin esto, en un grupo el bot no lee los
+              mensajes. Después agregá el bot al grupo del centro. Por chat privado no hace falta.
+            </li>
           </ol>
 
           <form class="telegram__form" (submit)="conectar($event)">
