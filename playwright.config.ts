@@ -80,6 +80,7 @@ export default defineConfig({
         /flujo-/,
         /movil\.spec\.ts/,
         /manual\/capturar\.spec\.ts/,
+        /demo\//,
       ],
       // Casi todos estos tests dan de alta una o dos cuentas, y el alta esta espaciada a 4 por
       // minuto (`esperarCupoDeRegistro`, por el limite del backend). Corridos uno detras de otro
@@ -179,6 +180,12 @@ export default defineConfig({
         viewport: { width: 1280, height: 800 },
         deviceScaleFactor: 2,
       },
+    },
+    // Centro Demo con meses de historia sobre la base de desarrollo (`e2e/demo/`). No es un test: se
+    // corre a mano con `npm run demo:sembrar` y nunca en el CI.
+    {
+      name: 'demo',
+      testMatch: /demo\/sembrar-demo\.spec\.ts/,
     },
   ],
 
