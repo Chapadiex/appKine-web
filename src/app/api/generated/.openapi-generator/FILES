@@ -408,6 +408,7 @@ model/evolucion-del-caso-response.ts
 model/evolucion-del-caso-serie-response.ts
 model/evolucion-del-caso-tratamiento-response.ts
 model/excepcion-response.ts
+model/exceso-de-tope-response.ts
 model/fecha-omitida-de-serie.ts
 model/feriado-response.ts
 model/ficha-de-ingreso-request.ts

@@ -120,6 +120,11 @@
                     <b>{{
                       contratacion(pedido.planNombre, pedido.servicios, pedido.adicionales)
                     }}</b>
+                    @if (ajustes(pedido).length > 0) {
+                      <span class="pedido__dato-secundario cambio__exceso">
+                        <app-icono nombre="advertencia" /> Tiene que ajustarse antes
+                      </span>
+                    }
                   </td>
                   <td>
                     <span [class]="'marca-estado ' + marca(pedido.estado).clase">{{
@@ -204,6 +209,17 @@
       }
     </dl>
 
+    @if (pedido.estado === 'PENDIENTE' && ajustes(pedido).length > 0) {
+      <app-alerta tipo="advertencia" titulo="No se puede aprobar todavía">
+        <ul class="cambio__ajustes">
+          @for (ajuste of ajustes(pedido); track ajuste) {
+            <li>{{ ajuste }}</li>
+          }
+        </ul>
+        <p>Cuando el centro se ajuste, volvé a abrir el pedido para aprobarlo.</p>
+      </app-alerta>
+    }
+
     @if (pedido.estado === 'PENDIENTE') {
       @if (rechazando()) {
         <app-confirmacion-con-motivo
@@ -221,7 +237,12 @@
           <button type="button" class="boton boton--secundario" (click)="rechazando.set(true)">
             Rechazar
           </button>
-          <button type="button" class="boton" [disabled]="enviando()" (click)="aprobar()">
+          <button
+            type="button"
+            class="boton"
+            [disabled]="enviando() || ajustes(pedido).length > 0"
+            (click)="aprobar()"
+          >
             <app-icono nombre="tilde" />
             {{ enviando() ? 'Aplicando…' : 'Aprobar y aplicar' }}
           </button>

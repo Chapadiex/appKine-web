@@ -54,6 +54,8 @@ export enum ProblemType {
 
     HTTPS___AKINE_APP_PROBLEMS_PEDIDO_SIN_CAMBIOS = 'https://akine.app/problems/pedido-sin-cambios',
 
+    HTTPS___AKINE_APP_PROBLEMS_PEDIDO_EXCEDE_LIMITES = 'https://akine.app/problems/pedido-excede-limites',
+
     HTTPS___AKINE_APP_PROBLEMS_SUBSCRIPTION_SUSPENDED = 'https://akine.app/problems/subscription-suspended',
 
     HTTPS___AKINE_APP_PROBLEMS_IDEMPOTENCY_KEY_CONFLICT = 'https://akine.app/problems/idempotency-key-conflict',

@@ -1,4 +1,5 @@
 import { FranjaDePrueba } from './layout/franja-de-prueba/franja-de-prueba';
+import { FranjaDeSoloLectura } from './layout/franja-de-solo-lectura/franja-de-solo-lectura';
 import { DOCUMENT } from '@angular/common';
 import {
   Component,
@@ -67,7 +68,7 @@ import { TenantContextStore } from './core/services/tenant-context.store';
  */
 @Component({
   selector: 'app-root',
-  imports: [BarraSuperiorDiferida, FranjaDePrueba, RouterLink, RouterOutlet],
+  imports: [BarraSuperiorDiferida, FranjaDePrueba, FranjaDeSoloLectura, RouterLink, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

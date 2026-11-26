@@ -7,6 +7,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ExcesoDeTopeResponse } from './exceso-de-tope-response';
 
 
 /**
@@ -17,6 +18,10 @@ export interface PedidoDeCambioDePlanResponse {
     adicionalesAnteriores?: Array<PedidoDeCambioDePlanResponseAdicionalesAnterioresEnum>;
     comentario?: string;
     estado?: PedidoDeCambioDePlanResponseEstadoEnum;
+    /**
+     * Topes del plan pedido que el centro hoy supera; solo en PENDIENTE. Con alguno, no se puede aprobar hasta que el centro se ajuste
+     */
+    excesos?: Array<ExcesoDeTopeResponse>;
     id?: number;
     /**
      * Motivo, si se rechazo

@@ -49,3 +49,8 @@ form {
   margin: 0;
   padding-left: var(--esp-6);
 }
+
+.pedido__ajustes {
+  margin: 0;
+  padding-left: var(--esp-6);
+}

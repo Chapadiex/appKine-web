@@ -41,6 +41,17 @@
     }
   }
 
+  @if (pendiente() && pedido(); as p) {
+    @if (ajustesDelPedido(p).length > 0) {
+      <app-alerta tipo="advertencia" titulo="Para que se apruebe tenés que ajustar el centro">
+        <ul class="pedido__ajustes">
+          @for (ajuste of ajustesDelPedido(p); track ajuste) {
+            <li>{{ ajuste }}</li>
+          }
+        </ul>
+      </app-alerta>
+    }
+  }
   @if (pendiente()) {
     <p class="ayuda">
       <app-icono nombre="info" /> La administración de AKINE lo revisa. Si lo aprueba, el cambio se
@@ -116,6 +127,29 @@
           placeholder="Por ejemplo: empezamos con clases de yoga"
         ></textarea>
       </div>
+
+      <!-- Bajar de plan exige ajustarse; dejar un servicio lo pasa a solo lectura (26/11/2026). -->
+      @if (ajustes().length > 0) {
+        <app-alerta
+          tipo="advertencia"
+          titulo="Antes de que se apruebe vas a tener que ajustar el centro"
+        >
+          <ul class="pedido__ajustes">
+            @for (ajuste of ajustes(); track ajuste) {
+              <li>{{ ajuste }}</li>
+            }
+          </ul>
+          <p>Podés enviar el pedido igual: se aprueba cuando el centro esté dentro de los topes.</p>
+        </app-alerta>
+      }
+      @for (servicio of dejados(); track servicio) {
+        <app-alerta tipo="advertencia" [titulo]="servicio + ' queda en solo lectura'">
+          <p>
+            Vas a poder consultar todo lo cargado, pero no cargar ni cambiar nada. Si más adelante
+            lo volvés a sumar, sigue como estaba.
+          </p>
+        </app-alerta>
+      }
 
       <div class="pedido__resumen" aria-live="polite">
         @if (resumen().length > 0) {

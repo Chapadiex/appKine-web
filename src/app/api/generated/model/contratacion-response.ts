@@ -62,6 +62,10 @@ export interface ContratacionResponse {
      */
     servicios?: Array<ContratacionResponseServiciosEnum>;
     /**
+     * Servicios que el centro dejo de tener contratados: sus pantallas se pueden consultar pero no modificar (26/11/2026)
+     */
+    serviciosEnLectura?: Array<ContratacionResponseServiciosEnLecturaEnum>;
+    /**
      * Donde esta el centro respecto de su periodo pagado: SIN_CONTROL (sin pagadoHasta), AL_DIA, POR_VENCER (15 dias o menos), EN_GRACIA (vencido hace menos de 3 dias, sigue operando), SOLO_LECTURA (de 3 a 18 dias vencido) o SIN_ACCESO (desde los 18 dias)
      */
     situacionDeCobro?: ContratacionResponseSituacionDeCobroEnum;
@@ -84,6 +88,10 @@ export enum ContratacionResponseEstadoEnum {
     CANCELADA = 'CANCELADA'
 };
 export enum ContratacionResponseServiciosEnum {
+    KINESIOLOGIA = 'KINESIOLOGIA',
+    ACTIVIDADES = 'ACTIVIDADES'
+};
+export enum ContratacionResponseServiciosEnLecturaEnum {
     KINESIOLOGIA = 'KINESIOLOGIA',
     ACTIVIDADES = 'ACTIVIDADES'
 };

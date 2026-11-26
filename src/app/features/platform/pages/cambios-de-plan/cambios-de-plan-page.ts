@@ -5,6 +5,8 @@ import { PedidosDeCambioDePlanService } from '../../../../api/generated/api/pedi
 import { ListarPedidosDeCambioDePlanRequestParams } from '../../../../api/generated/api/pedidos-de-cambio-de-plan.serviceInterface';
 import { PedidoDeCambioDePlanResponse } from '../../../../api/generated/model/pedido-de-cambio-de-plan-response';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { textoDeAjuste } from '../../../../core/models/ajustes-de-plan';
+import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { ContadoresDePlataformaStore } from '../../../../core/services/contadores-de-plataforma.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
@@ -71,7 +73,7 @@ const MARCA: Readonly<Record<string, { clase: string; texto: string }>> = {
     Pestanas,
   ],
   templateUrl: './cambios-de-plan-page.html',
-  styleUrl: '../pedidos-de-prueba/pedidos-de-prueba-page.css',
+  styleUrls: ['../pedidos-de-prueba/pedidos-de-prueba-page.css', './cambios-de-plan-page.css'],
 })
 export class CambiosDePlanPage {
   private readonly api = inject(PedidosDeCambioDePlanService);
@@ -199,6 +201,13 @@ export class CambiosDePlanPage {
     return `${plan ?? 'Sin plan'} · ${serviciosEnTexto(servicios)}${ia}`;
   }
 
+  /** Lo que el centro tiene que ajustar antes de poder aprobar (26/11/2026). */
+  protected ajustes(pedido: PedidoDeCambioDePlanResponse): readonly string[] {
+    return (pedido.excesos ?? []).map((e) =>
+      textoDeAjuste(e.limitCode ?? '', e.tope ?? 0, e.uso ?? 0, pedido.planNombre ?? ''),
+    );
+  }
+
   protected marca(estado: string | undefined): { clase: string; texto: string } {
     return MARCA[estado ?? ''] ?? { clase: 'marca-estado--neutra', texto: 'Sin dato' };
   }
@@ -222,6 +231,15 @@ export class CambiosDePlanPage {
   private fallo(error: unknown): void {
     this.enviando.set(false);
     const traducido = traducirErrorContratacion(error, 'pedido-de-plan');
+    if (error instanceof AkineHttpError && error.problemType === 'pedido-excede-limites') {
+      // Se ajusto otra cosa en el medio: el centro sigue pasado de tope. Se relee para mostrar cuanto.
+      this.errorAccion.set(
+        'El centro todavía tiene más sedes o profesionales de los que permite el plan pedido. ' +
+          'Se aprueba cuando se ajuste.',
+      );
+      this.listar(this.paginaActual);
+      return;
+    }
     this.errorAccion.set(traducido.mensaje);
     if (traducido.causa === 'conflicto' || traducido.causa === 'no-encontrado') {
       this.rechazando.set(false);

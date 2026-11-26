@@ -95,6 +95,15 @@ export class ContratacionStore {
     return (c.servicios as readonly string[]).includes(servicio);
   }
 
+  /**
+   * `true` si el centro dejó el servicio y sus pantallas quedan en solo lectura (26/11/2026): se
+   * ven en el menú y el servidor rechaza las escrituras.
+   */
+  enLectura(servicio: ServicioContratable): boolean {
+    const c = this.actual();
+    return ((c?.serviciosEnLectura ?? []) as readonly string[]).includes(servicio);
+  }
+
   recargar(): void {
     const orgId = this.tenant.organizationId();
     this.actual.set(null);

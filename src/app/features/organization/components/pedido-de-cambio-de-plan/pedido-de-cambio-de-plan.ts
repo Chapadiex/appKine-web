@@ -12,6 +12,9 @@ import {
   PedidoDeCambioDePlanRequestServiciosEnum,
 } from '../../../../api/generated/model/pedido-de-cambio-de-plan-request';
 import { PlanResponse } from '../../../../api/generated/model/plan-response';
+import { LimitUsageResponse } from '../../../../api/generated/model/limit-usage-response';
+import { ExcesoDeTopeResponse } from '../../../../api/generated/model/exceso-de-tope-response';
+import { textoDeAjuste } from '../../../../core/models/ajustes-de-plan';
 import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
 import { ContratacionStore } from '../../../../core/services/contratacion.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
@@ -42,6 +45,8 @@ export class PedidoDeCambioDePlan {
   readonly orgId = input.required<number>();
   /** Planes del catalogo; se ofrecen los que estan a la venta. */
   readonly catalogo = input<readonly PlanResponse[]>([]);
+  /** Consumo actual de cada tope (de la suscripcion), para avisar al bajar de plan. */
+  readonly usos = input<readonly LimitUsageResponse[]>([]);
 
   private readonly api = inject(PedidosDeCambioDePlanService);
   private readonly contratacion = inject(ContratacionStore);
@@ -105,6 +110,42 @@ export class PedidoDeCambioDePlan {
     }
     return lineas;
   });
+
+  /**
+   * Lo que el centro tiene que ajustar para bajar al plan elegido (26/11/2026): sedes o
+   * profesionales de mas. El pedido se envia igual; la plataforma no lo aprueba hasta que se ajuste.
+   */
+  protected readonly ajustes = computed<readonly string[]>(() => {
+    const plan = this.catalogo().find((p) => p.code === this.valores().plan);
+    if (!plan) {
+      return [];
+    }
+    return TOPES.flatMap((t) => {
+      const limite = plan.limits?.find((l) => l.code === t.codigo);
+      const uso = this.usos().find((u) => u.code === t.codigo)?.currentUsage ?? 0;
+      if (!limite || limite.unlimited || limite.value === undefined || uso <= limite.value) {
+        return [];
+      }
+      return [textoDeAjuste(t.codigo, limite.value, uso, plan.name ?? plan.code ?? '')];
+    });
+  });
+
+  /** Servicios que el centro tiene y destildó: quedan en solo lectura. */
+  protected readonly dejados = computed<readonly string[]>(() => {
+    const v = this.valores();
+    const actuales = (this.contratacion.contratacion()?.servicios ?? []) as readonly string[];
+    return [
+      ...(actuales.includes('KINESIOLOGIA') && !v.kinesiologia ? ['KINESIOLOGIA'] : []),
+      ...(actuales.includes('ACTIVIDADES') && !v.actividades ? ['ACTIVIDADES'] : []),
+    ].map((s) => NOMBRE_DEL_SERVICIO[s]);
+  });
+
+  /** Lo que el pedido pendiente necesita que el centro ajuste, segun el servidor. */
+  protected ajustesDelPedido(p: PedidoDeCambioDePlanResponse): readonly string[] {
+    return (p.excesos ?? []).map((e: ExcesoDeTopeResponse) =>
+      textoDeAjuste(e.limitCode ?? '', e.tope ?? 0, e.uso ?? 0, p.planNombre ?? p.planCode ?? ''),
+    );
+  }
 
   protected readonly sinServicios = computed(
     () => !this.valores().kinesiologia && !this.valores().actividades,
@@ -215,6 +256,8 @@ export class PedidoDeCambioDePlan {
     });
   }
 }
+
+const TOPES = [{ codigo: 'MAX_CONSULTORIOS' }, { codigo: 'MAX_PROFESIONALES' }] as const;
 
 /** "Hasta 3 sedes · 6 profesionales" a partir de los topes del plan. */
 function topes(plan: PlanResponse): string {

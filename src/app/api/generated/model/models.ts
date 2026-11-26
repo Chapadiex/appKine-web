@@ -251,6 +251,7 @@ export * from './evolucion-del-caso-response';
 export * from './evolucion-del-caso-serie-response';
 export * from './evolucion-del-caso-tratamiento-response';
 export * from './excepcion-response';
+export * from './exceso-de-tope-response';
 export * from './fecha-omitida-de-serie';
 export * from './feriado-response';
 export * from './ficha-de-ingreso-request';

@@ -195,6 +195,7 @@ export const PROBLEMAS_DEL_CONTRATO = [
   'pase-con-cobros',
   'pase-no-ajustable',
   'pedido-de-plan-pendiente',
+  'pedido-excede-limites',
   'pedido-sin-cambios',
   'permiso-no-otorgable-al-rol',
   'persona-documento-taken',

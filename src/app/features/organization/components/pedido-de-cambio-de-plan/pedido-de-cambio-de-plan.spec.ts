@@ -87,6 +87,38 @@ describe('PedidoDeCambioDePlan', () => {
     expect(boton(fixture, 'Cancelar el pedido')).toBeTruthy();
   });
 
+  it('al bajar avisa qué ajustar y que el servicio que deja queda en solo lectura', async () => {
+    const fixture = await montar();
+    fixture.componentRef.setInput('catalogo', [
+      ...CATALOGO,
+      {
+        code: 'MINI',
+        name: 'Plan Mini',
+        ofrecido: true,
+        limits: [{ code: 'MAX_CONSULTORIOS', value: 1 }],
+      },
+    ]);
+    fixture.componentRef.setInput('usos', [{ code: 'MAX_CONSULTORIOS', currentUsage: 3 }]);
+    http.expectOne(RUTA).flush(null, { status: 204, statusText: 'No Content' });
+    await estable(fixture);
+
+    boton(fixture, 'Pedir un cambio de plan').click();
+    await estable(fixture);
+    (
+      fixture.nativeElement.querySelector('input[type="radio"][value="MINI"]') as HTMLInputElement
+    ).click();
+    (
+      fixture.nativeElement.querySelectorAll('input[type="checkbox"]')[0] as HTMLInputElement
+    ).click();
+    (
+      fixture.nativeElement.querySelectorAll('input[type="checkbox"]')[1] as HTMLInputElement
+    ).click();
+    await estable(fixture);
+
+    expect(texto(fixture)).toContain('Tenés 3 sedes y el Plan Mini permite 1: cerrá 2 sedes.');
+    expect(texto(fixture)).toContain('Kinesiología queda en solo lectura');
+  });
+
   async function montar(): Promise<ComponentFixture<PedidoDeCambioDePlan>> {
     const fixture = TestBed.createComponent(PedidoDeCambioDePlan);
     fixture.componentRef.setInput('orgId', ORG);

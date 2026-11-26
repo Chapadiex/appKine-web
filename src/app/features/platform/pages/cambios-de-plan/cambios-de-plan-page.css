@@ -1,0 +1,12 @@
+/* Pedido que no se puede aprobar hasta que el centro se ajuste (26/11/2026). */
+.cambio__exceso {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  color: var(--color-aviso-texto);
+}
+
+.cambio__ajustes {
+  margin: 0;
+  padding-left: var(--esp-6);
+}
