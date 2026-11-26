@@ -484,11 +484,11 @@
               <dt>Saldo inicial</dt>
               <dd>{{ importe(abierta.saldoInicial) }}</dd>
             </div>
-            <div>
+            <div class="importe--suma">
               <dt>+ Entró en efectivo</dt>
               <dd>{{ importe(r.efectivoIngresos) }}</dd>
             </div>
-            <div>
+            <div class="importe--resta">
               <dt>− Salió en efectivo</dt>
               <dd>{{ importe(r.efectivoEgresos) }}</dd>
             </div>
@@ -514,12 +514,26 @@
         </div>
 
         <p class="ayuda ayuda--fija" role="status">
+          <!-- Faltante en rojo, sobrante en ámbar y coincidencia en verde, con ícono (25/11/2026). -->
           @if (diferenciaCentavos() === null) {
             Contá el cajón y anotá el total.
           } @else if (requiereMotivo()) {
-            <b>{{ diferenciaEnPalabras() }}</b>. Se registra tal cual, pero hay que explicarla.
+            <span
+              class="arqueo-veredicto"
+              [class.arqueo-veredicto--falta]="(diferenciaCentavos() ?? 0) < 0"
+              [class.arqueo-veredicto--sobra]="(diferenciaCentavos() ?? 0) > 0"
+            >
+              <app-icono nombre="advertencia" />
+              <span
+                ><b>{{ diferenciaEnPalabras() }}</b
+                >. Se registra tal cual, pero hay que explicarla.</span
+              >
+            </span>
           } @else {
-            El contado coincide con lo que debería haber.
+            <span class="arqueo-veredicto arqueo-veredicto--coincide">
+              <app-icono nombre="exito" />
+              El contado coincide con lo que debería haber.
+            </span>
           }
         </p>
 
@@ -537,10 +551,14 @@
           </div>
         }
 
-        <p class="ayuda ayuda--fija">Un cierre no se revierte y una caja cerrada no se reabre.</p>
+        <p class="ayuda ayuda--fija arqueo-aviso">
+          <app-icono nombre="candado" />
+          Un cierre no se revierte y una caja cerrada no se reabre.
+        </p>
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="!arqueoValido() || enviando()">
+            <app-icono nombre="candado" />
             Cerrar la caja
           </button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">

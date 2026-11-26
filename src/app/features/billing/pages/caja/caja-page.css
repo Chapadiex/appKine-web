@@ -59,6 +59,32 @@
   color: var(--color-exito-texto);
 }
 
+/* Arqueo: la diferencia con color e ícono, y el aviso de que el cierre no vuelve atrás. */
+.arqueo-veredicto,
+.arqueo-aviso {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--esp-2);
+}
+
+.arqueo-veredicto app-icono,
+.arqueo-aviso app-icono {
+  flex: none;
+  margin-top: 2px;
+}
+
+.arqueo-veredicto--coincide {
+  color: var(--color-exito);
+}
+
+.arqueo-veredicto--falta {
+  color: var(--color-peligro);
+}
+
+.arqueo-veredicto--sobra {
+  color: var(--color-aviso-texto);
+}
+
 /* --- Banda de indicadores ---------------------------------------------------------------- */
 
 .banda-de-caja {
@@ -239,6 +265,12 @@
 
 .cuenta-del-cajon dt {
   color: var(--color-texto-suave);
+}
+
+.cuenta-del-cajon .importe--suma dt,
+.cuenta-del-cajon .importe--resta dt {
+  color: inherit;
+  font-weight: var(--peso-normal);
 }
 
 .cuenta-del-cajon dd {
