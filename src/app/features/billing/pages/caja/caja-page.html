@@ -314,7 +314,13 @@
                     <span class="celda-nota">({{ movimiento.motivo }})</span>
                   }
                 </td>
-                <td class="importe">{{ importeConSigno(movimiento) }}</td>
+                <td
+                  class="importe"
+                  [class.importe--suma]="!restaDelSaldo(movimiento.tipo)"
+                  [class.importe--resta]="restaDelSaldo(movimiento.tipo)"
+                >
+                  {{ importeConSigno(movimiento) }}
+                </td>
                 <td class="tabla__acciones">
                   @if (yaRevertido(movimiento)) {
                     <span class="ayuda">Revertido</span>

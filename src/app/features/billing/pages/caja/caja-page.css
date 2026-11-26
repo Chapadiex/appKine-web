@@ -40,6 +40,20 @@
   }
 }
 
+/*
+ * Lo que suma al cajón en verde y lo que resta en rojo. El signo "+"/"−" sigue escrito: el color
+ * acompaña, no reemplaza (WCAG 1.4.1). Los dos tokens pasan AA en claro y en oscuro (25/11/2026).
+ */
+.importe--suma {
+  color: var(--color-exito);
+  font-weight: var(--peso-fuerte);
+}
+
+.importe--resta {
+  color: var(--color-peligro);
+  font-weight: var(--peso-fuerte);
+}
+
 /* --- Banda de indicadores ---------------------------------------------------------------- */
 
 .banda-de-caja {
