@@ -114,9 +114,7 @@ export class NuevoAdjunto {
         // UX-12: el resultado es un aviso global.
         this.avisos.exito('Adjunto subido', {
           descripcion:
-            subida !== null
-              ? 'Queda sin revisar hasta que lo vea un profesional.'
-              : 'Ya aparece en el timeline.',
+            subida !== null ? 'Queda en la historia clínica.' : 'Ya aparece en el timeline.',
         });
         this.subido.emit(adjunto);
       },

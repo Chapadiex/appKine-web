@@ -60,100 +60,16 @@
 
   @case ('lista') {
     @if (historia(); as hc) {
-      <!-- DP-47: lo que declaro el paciente espera revision del profesional. -->
-      @if (declaradosSinRevisar() > 0) {
-        <app-alerta tipo="advertencia" titulo="Datos declarados por el paciente sin revisar">
-          <p>
-            Hay {{ declaradosSinRevisar() }}
-            {{ declaradosSinRevisar() === 1 ? 'dato declarado' : 'datos declarados' }} por el
-            paciente sin revisar. Lo que cuenta el paciente puede no ser exacto: revisalo antes de
-            usarlo.
-          </p>
-          @if (antecedentesPendientes().length || adjuntosPendientes().length) {
-            <ul class="historia__declarados">
-              @for (antecedente of antecedentesPendientes(); track antecedente.id) {
-                <li>
-                  <span class="marca-estado marca-estado--suspendida">Sin revisar</span>
-                  <span>
-                    <b>{{ rotuloDeAntecedente(antecedente) }}:</b> {{ antecedente.descripcion }}
-                    @if (detalleDe(antecedente); as detalle) {
-                      <span class="historia__detalle">· {{ detalle }}</span>
-                    }
-                    @if (antecedente.cargadoPorNombre) {
-                      <span class="ayuda">· cargado por {{ antecedente.cargadoPorNombre }}</span>
-                    }
-                  </span>
-                  @if (puedeRevisar()) {
-                    <button
-                      type="button"
-                      class="boton boton--secundario boton--chico"
-                      [disabled]="revisando() === antecedente.id"
-                      (click)="revisarAntecedente(antecedente.id!)"
-                    >
-                      <app-icono nombre="tilde" />
-                      Revisado<span class="visualmente-oculto"
-                        >: {{ antecedente.descripcion }}</span
-                      >
-                    </button>
-                  }
-                </li>
-              }
-              @for (adjunto of adjuntosPendientes(); track adjunto.id) {
-                <li>
-                  <span class="marca-estado marca-estado--suspendida">Sin revisar</span>
-                  <button
-                    type="button"
-                    class="accion-texto"
-                    [attr.aria-expanded]="adjuntoDeclaradoAbierto() === adjunto.id"
-                    (click)="alternarAdjuntoDeclarado(adjunto.id!)"
-                  >
-                    <app-icono nombre="documento" />
-                    {{ adjunto.titulo || adjunto.nombreArchivo }}
-                  </button>
-                  @if (puedeRevisar()) {
-                    <button
-                      type="button"
-                      class="boton boton--secundario boton--chico"
-                      [disabled]="revisando() === adjunto.id"
-                      (click)="revisarAdjunto(adjunto.id!)"
-                    >
-                      <app-icono nombre="tilde" />
-                      Revisado<span class="visualmente-oculto"
-                        >: {{ adjunto.titulo || adjunto.nombreArchivo }}</span
-                      >
-                    </button>
-                  }
-                  @if (adjuntoDeclaradoAbierto() === adjunto.id) {
-                    <app-visor-de-adjunto
-                      [historiaClinicaId]="hc.id!"
-                      [adjuntoId]="adjunto.id!"
-                      [justificacion]="justificacion()"
-                    />
-                  }
-                </li>
-              }
-            </ul>
-          }
-        </app-alerta>
-      }
-
-      @if (ficha() || puedeRevisar()) {
-        <app-ficha-de-ingreso
-          class="historia__ficha"
-          [ficha]="ficha()"
-          [ocupaciones]="ocupaciones()"
-          [enfermedadesTildadas]="enfermedadesTildadas()"
-          [enfermedadesFijas]="enfermedadesTildadas()"
-          motivoFijo="Ya registrado: se da de baja desde los antecedentes"
-          [guardando]="guardandoFicha()"
-          [puedeRevisar]="puedeRevisar()"
-          [soloLectura]="!puedeRevisar()"
-          (guardar)="guardarFicha($event)"
-          (agregarOcupacion)="agregarOcupacion($event)"
-          (tildar)="tildarEnfermedad($event)"
-          (revisar)="revisarFicha()"
-        />
-      }
+      <!-- DP-47: la ficha de ingreso y lo declarado se cargan en un solo lugar, Datos declarados. -->
+      <p class="historia__declarados-enlace">
+        <a
+          class="boton boton--secundario"
+          [routerLink]="['/pacientes', idDePersona(), 'datos-declarados']"
+        >
+          <app-icono nombre="documento" />
+          Ficha de ingreso y datos declarados
+        </a>
+      </p>
 
       <section class="tarjeta" aria-labelledby="titulo-paciente">
         <h2 id="titulo-paciente">Historia clínica</h2>
@@ -184,7 +100,7 @@
           <div>
             <div class="historia__subtitulo">
               <h3>Resumen clínico</h3>
-              @if (puedeRevisar() && !editandoResumen()) {
+              @if (puedeEscribir() && !editandoResumen()) {
                 <button
                   type="button"
                   class="boton boton--secundario boton--chico"
@@ -234,7 +150,7 @@
           <div>
             <div class="historia__subtitulo">
               <h3>Antecedentes vigentes</h3>
-              @if (puedeRevisar() && !agregandoAntecedente()) {
+              @if (puedeEscribir() && !agregandoAntecedente()) {
                 <button
                   type="button"
                   class="boton boton--secundario boton--chico"
@@ -349,12 +265,7 @@
                       <span class="historia__detalle">· {{ detalle }}</span>
                     }
                     @if (marcaDeclarado(antecedente); as marca) {
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--suspendida]="marca === 'Declarado · sin revisar'"
-                        [class.marca-estado--info]="marca !== 'Declarado · sin revisar'"
-                        >{{ marca }}</span
-                      >
+                      <span class="marca-estado marca-estado--info">{{ marca }}</span>
                     }
                   </li>
                 }
@@ -404,12 +315,7 @@
                 @case ('ADJUNTO_CLINICO') {
                   @if (marcasDeAdjuntos().get(evento.referencia!); as marca) {
                     <p>
-                      <span
-                        class="marca-estado"
-                        [class.marca-estado--suspendida]="marca === 'Declarado · sin revisar'"
-                        [class.marca-estado--info]="marca !== 'Declarado · sin revisar'"
-                        >{{ marca }}</span
-                      >
+                      <span class="marca-estado marca-estado--info">{{ marca }}</span>
                     </p>
                   }
                   <app-visor-de-adjunto

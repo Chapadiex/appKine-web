@@ -96,17 +96,14 @@ export class FichaDeIngreso {
   /** Codigos que ya no se destildan desde aca (revisados por un profesional). */
   readonly enfermedadesFijas = input<ReadonlySet<string>>(new Set());
   readonly guardando = input(false);
-  /** Muestra el boton "Revisado" (pantalla del profesional). */
-  readonly puedeRevisar = input(false);
   /** Sin permiso de escritura: se ve y no se edita. */
   readonly soloLectura = input(false);
   /** Por que una enfermedad tildada no se puede destildar aca. */
-  readonly motivoFijo = input('Revisado: se cambia desde la historia clínica');
+  readonly motivoFijo = input('Ya registrado: se da de baja desde los antecedentes');
 
   readonly guardar = output<FichaDeIngresoRequest>();
   readonly agregarOcupacion = output<string>();
   readonly tildar = output<TildeDeEnfermedad>();
-  readonly revisar = output<void>();
   /** Muestra las condiciones tipicas y "Otra" (datos declarados). */
   readonly conOtraCondicion = input(false);
   /** Antecedentes medicos sin codigo vigentes: tipicas tildadas y las "Otra". */
@@ -168,11 +165,6 @@ export class FichaDeIngreso {
             ? ['Sobrepeso', 'aviso']
             : ['Obesidad', 'peligro'];
     return { valor: valor.toFixed(1).replace('.', ','), categoria, tono };
-  });
-
-  protected readonly sinRevisar = computed(() => {
-    const ficha = this.ficha();
-    return ficha !== null && ficha.origen === 'DECLARADO' && !ficha.revisadoEn;
   });
 
   /** Peso o altura escritos de una forma que no es un numero: no se guarda hasta corregirlo. */

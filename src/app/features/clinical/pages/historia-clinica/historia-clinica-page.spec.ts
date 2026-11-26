@@ -17,7 +17,6 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { By } from '@angular/platform-browser';
 import { PermissionsStore } from '../../../../core/services/permissions.store';
 import { PERMISO_HC_DECLARAR, PERMISO_HC_WRITE } from '../../../../core/models/permisos';
-import { FichaDeIngreso } from '../../components/ficha-de-ingreso/ficha-de-ingreso';
 import { TimelineClinico } from './components/timeline-clinico';
 
 const PERSONA = 12;
@@ -90,10 +89,6 @@ describe('HistoriaClinicaPage', () => {
   afterEach(() => {
     // Las ofertas de la sede son accesorias (nombres en los casos): se contestan vacias.
     httpMock.match((r) => r.url.endsWith('/ofertas')).forEach((r) => r.flush([]));
-    // La ficha de ingreso se pide aparte: sin ficha, 204.
-    httpMock
-      .match((r) => r.url.endsWith('/ficha'))
-      .forEach((r) => r.flush(null, { status: 204, statusText: 'No Content' }));
     // Los permisos de la cabecera de la persona también son accesorios.
     httpMock
       .match((r) => r.url.endsWith('/me/permissions'))
@@ -370,277 +365,13 @@ describe('HistoriaClinicaPage', () => {
     });
   });
 
-  describe('ficha de ingreso', () => {
-    const FICHA_GUARDADA = { id: 3, ocupacionId: 1, version: 0 };
-
-    it('sin hc:write ni ficha cargada no se muestra; con ficha se muestra sólo para leer', async () => {
-      darPermisos();
-      let fixture = await abrirLista();
-      expect(fixture.debugElement.query(By.directive(FichaDeIngreso))).toBeNull();
-      fixture.destroy();
-
-      fixture = await abrirLista(HISTORIA, { ficha: FICHA_GUARDADA });
-      const ficha = componenteFicha(fixture);
-      expect(ficha.ficha()).toEqual(FICHA_GUARDADA);
-      expect(ficha.soloLectura()).toBe(true);
-      expect(texto(fixture)).toContain('Por relación asistencial');
-    });
-
-    it('guardar la ficha la muestra y relee la historia; un 409 avisa y la relee', async () => {
-      darPermisos(PERMISO_HC_WRITE);
-      const fixture = await abrirLista(HISTORIA, {
-        ocupaciones: [{ id: 1, nombre: 'Docente' }],
-      });
-      const ficha = componenteFicha(fixture);
-      expect(ficha.ocupaciones()).toEqual([{ id: 1, nombre: 'Docente' }]);
-      const fallo = vi.spyOn(ficha, 'fallo');
-
-      salidaDeFicha(fixture, 'guardar', { ocupacionId: 1 });
-      await estabilizar(fixture);
-      expect(ficha.guardando()).toBe(true);
-      const guardado = httpMock.expectOne((r) => r.url === FICHA && r.method !== 'GET');
-      expect(guardado.request.body).toEqual({ ocupacionId: 1 });
-      guardado.flush(FICHA_GUARDADA);
-      httpMock
-        .expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'GET')
-        .flush(HISTORIA);
-      await drenar(fixture);
-      expect(ficha.ficha()).toEqual(FICHA_GUARDADA);
-      expect(ficha.guardando()).toBe(false);
-
-      salidaDeFicha(fixture, 'guardar', { ocupacionId: 2 });
-      httpMock
-        .expectOne((r) => r.url === FICHA && r.method !== 'GET')
-        .flush(
-          { type: 'https://akine.app/problems/concurrent-modification', status: 409 },
-          { status: 409, statusText: 'Conflict' },
-        );
-      await estabilizar(fixture);
-      expect(fallo).toHaveBeenCalledTimes(1);
-      expect(ultimoAviso()).toBe('No pudimos guardar la ficha');
-      httpMock
-        .expectOne((r) => r.url === FICHA && r.method === 'GET')
-        .flush({ ...FICHA_GUARDADA, version: 1 });
-      await estabilizar(fixture);
-      expect(ficha.ficha()).toEqual({ ...FICHA_GUARDADA, version: 1 });
-
-      // Otro error no relee: no hay nada nuevo que traer.
-      salidaDeFicha(fixture, 'guardar', { ocupacionId: 2 });
-      httpMock
-        .expectOne((r) => r.url === FICHA && r.method !== 'GET')
-        .flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      httpMock.expectNone((r) => r.url === FICHA && r.method === 'GET');
-      expect(fallo).toHaveBeenCalledTimes(2);
-    });
-
-    it('revisar la ficha avisa y relee; si falla, avisa el error', async () => {
-      darPermisos(PERMISO_HC_WRITE);
-      const fixture = await abrirLista(HISTORIA, { ficha: FICHA_GUARDADA });
-
-      salidaDeFicha(fixture, 'revisar', undefined);
-      httpMock
-        .expectOne(`${FICHA}/revision`)
-        .flush({ ...FICHA_GUARDADA, revisadoEn: '2026-11-18T10:00:00Z' });
-      httpMock
-        .expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'GET')
-        .flush(HISTORIA);
-      await drenar(fixture);
-      expect(ultimoAviso()).toBe('Ficha revisada');
-      expect(componenteFicha(fixture).ficha()).toEqual({
-        ...FICHA_GUARDADA,
-        revisadoEn: '2026-11-18T10:00:00Z',
-      });
-
-      salidaDeFicha(fixture, 'revisar', undefined);
-      httpMock
-        .expectOne(`${FICHA}/revision`)
-        .flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      expect(ultimoAviso()).toBe('No pudimos marcarla como revisada');
-    });
-
-    it('agregar una ocupación la suma ordenada y la elige; si ya estaba no la duplica', async () => {
-      darPermisos(PERMISO_HC_WRITE);
-      const fixture = await abrirLista(HISTORIA, {
-        ocupaciones: [{ id: 1, nombre: 'Docente' }],
-      });
-      const ficha = componenteFicha(fixture);
-      const elegir = vi.spyOn(ficha, 'guardarOcupacion').mockImplementation(() => undefined);
-
-      salidaDeFicha(fixture, 'agregarOcupacion', 'Abogada');
-      const alta = httpMock.expectOne(OCUPACIONES);
-      expect(alta.request.body).toEqual({ nombre: 'Abogada' });
-      alta.flush({ id: 7, nombre: 'Abogada' });
-      await estabilizar(fixture);
-      expect(ficha.ocupaciones().map((o) => o.nombre)).toEqual(['Abogada', 'Docente']);
-      expect(elegir).toHaveBeenCalledWith(7);
-
-      salidaDeFicha(fixture, 'agregarOcupacion', 'docente');
-      httpMock.expectOne(OCUPACIONES).flush({ id: 1, nombre: 'Docente' });
-      await estabilizar(fixture);
-      expect(ficha.ocupaciones()).toHaveLength(2);
-      expect(elegir).toHaveBeenLastCalledWith(1);
-
-      salidaDeFicha(fixture, 'agregarOcupacion', 'X');
-      httpMock.expectOne(OCUPACIONES).flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      expect(ultimoAviso()).toBe('No pudimos agregar la ocupación');
-    });
-
-    it('tildar una enfermedad la registra como antecedente; destildar no hace nada', async () => {
-      darPermisos(PERMISO_HC_WRITE);
-      const fixture = await abrirLista(
-        {
-          ...HISTORIA,
-          antecedentes: [
-            ...HISTORIA.antecedentes,
-            { id: 6, tipo: 'MEDICO', descripcion: 'Asma', codigo: 'ASMA', vigente: true },
-          ],
-        },
-        { ocupaciones: 'error' },
-      );
-      expect([...componenteFicha(fixture).enfermedadesTildadas()]).toEqual(['ASMA']);
-      expect(componenteFicha(fixture).ocupaciones()).toEqual([]);
-
-      salidaDeFicha(fixture, 'tildar', { codigo: 'ASMA', etiqueta: 'Asma', marcado: false });
-      httpMock.expectNone(ANTECEDENTES);
-
-      salidaDeFicha(fixture, 'tildar', { codigo: 'DIABETES', etiqueta: 'Diabetes', marcado: true });
-      const alta = httpMock.expectOne((r) => r.url === ANTECEDENTES && r.method === 'POST');
-      expect(alta.request.body).toEqual({
-        tipo: 'MEDICO',
-        descripcion: 'Diabetes',
-        codigo: 'DIABETES',
-      });
-      alta.flush({ id: 10 });
-      httpMock
-        .expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'GET')
-        .flush(HISTORIA);
-      await drenar(fixture);
-
-      // Si falla avisa, y relee igual: la casilla tiene que volver a lo que dice el servidor. Si
-      // también falla la relectura, se carga de cero.
-      salidaDeFicha(fixture, 'tildar', { codigo: 'HTA', etiqueta: 'Hipertensión', marcado: true });
-      httpMock
-        .expectOne((r) => r.url === ANTECEDENTES && r.method === 'POST')
-        .flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      expect(ultimoAviso()).toBe('No pudimos guardar el tilde');
-      httpMock
-        .expectOne((r) => r.url === HISTORIA_POR_PERSONA && r.method === 'GET')
-        .flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      expect(texto(fixture)).toContain('Cargando la historia clínica');
-      await responderCarga(fixture, HISTORIA, {});
-      expect(texto(fixture)).toContain('Penicilina');
-    });
-  });
-
-  describe('datos declarados por el paciente (DP-47)', () => {
-    const DECLARADOS_RESPUESTA = {
-      antecedentes: [
-        {
-          id: 7,
-          tipo: 'QUIRURGICO',
-          descripcion: 'Ligamento cruzado',
-          zona: 'Rodilla',
-          anio: 2019,
-          origen: 'DECLARADO',
-          cargadoPorNombre: 'Lucia Prueba',
-        },
-        { id: 8, tipo: 'ALERGIA', descripcion: 'Polen', origen: 'DECLARADO', revisadoEn: 'x' },
-      ],
-      adjuntos: [
-        { id: 31, titulo: 'Radiografía', origen: 'DECLARADO' },
-        {
-          id: 32,
-          nombreArchivo: 'eco.pdf',
-          origen: 'DECLARADO',
-          revisadoEn: 'x',
-          revisadoPorNombre: 'Dra. Pérez',
-        },
-        { id: 33, nombreArchivo: 'rm.pdf', origen: 'DECLARADO', revisadoEn: 'x' },
-        { id: 34, nombreArchivo: 'propio.pdf', origen: 'PROFESIONAL' },
-      ],
-    };
-    const CON_DECLARADOS = {
-      ...HISTORIA,
-      declaradosSinRevisar: 2,
-      antecedentes: [
-        { id: 7, tipo: 'QUIRURGICO', descripcion: 'Ligamento cruzado', origen: 'DECLARADO' },
-        {
-          id: 8,
-          tipo: 'ALERGIA',
-          descripcion: 'Polen',
-          origen: 'DECLARADO',
-          revisadoEn: 'x',
-          revisadoPorNombre: 'Dra. Pérez',
-        },
-      ],
-    };
-
-    it('lista lo pendiente, marca cada antecedente y revisarlo relee todo', async () => {
-      darPermisos(PERMISO_HC_WRITE, PERMISO_HC_DECLARAR);
-      const fixture = await abrirLista(CON_DECLARADOS, { declarados: DECLARADOS_RESPUESTA });
-
-      expect(texto(fixture)).toContain('Hay 2 datos declarados');
-      expect(texto(fixture)).toContain('· Rodilla · 2019');
-      expect(texto(fixture)).toContain('cargado por Lucia Prueba');
-      expect(texto(fixture)).toContain('Radiografía');
-      expect(texto(fixture)).not.toContain('Polen:'); // ya revisado: no está pendiente
-      expect(texto(fixture)).toContain('Declarado · sin revisar');
-      expect(texto(fixture)).toContain('Declarado · revisado por Dra. Pérez');
-      const marcas = componenteTimeline(fixture).marcasDeAdjuntos();
-      expect([...marcas.entries()]).toEqual([
-        [31, 'Declarado · sin revisar'],
-        [32, 'Declarado · revisado por Dra. Pérez'],
-        [33, 'Declarado · revisado'],
-      ]);
-
-      // Abrir y cerrar el adjunto declarado sin dejar que el visor pida nada.
-      const adjunto = fixture.nativeElement.querySelector(
-        '.historia__declarados .accion-texto',
-      ) as HTMLButtonElement;
-      adjunto.click();
-      adjunto.click();
-      await estabilizar(fixture);
-      expect(adjunto.getAttribute('aria-expanded')).toBe('false');
-
-      botonQueDice(fixture, 'Revisado: Ligamento cruzado').click();
-      const revision = httpMock.expectOne(`${HISTORIA_POR_PERSONA}/antecedentes/7/revision`);
-      botonQueDice(fixture, 'Revisado: Radiografía').click(); // uno a la vez
-      httpMock.expectNone(`/api/v1/historias-clinicas/${HC}/adjuntos/31/revision`);
-      revision.flush({ id: 7 });
-      await estabilizar(fixture);
-      expect(ultimoAviso()).toBe('Marcado como revisado');
-      await responderCarga(
-        fixture,
-        { ...CON_DECLARADOS, declaradosSinRevisar: 1 },
-        {
-          declarados: {
-            ...DECLARADOS_RESPUESTA,
-            antecedentes: [{ ...DECLARADOS_RESPUESTA.antecedentes[0], revisadoEn: 'y' }],
-          },
-        },
-      );
-      expect(texto(fixture)).toContain('Hay 1 dato declarado por el');
-
-      botonQueDice(fixture, 'Revisado: Radiografía').click();
-      httpMock
-        .expectOne(`/api/v1/historias-clinicas/${HC}/adjuntos/31/revision`)
-        .flush({ status: 500 }, { status: 500, statusText: 'Error' });
-      await estabilizar(fixture);
-      expect(ultimoAviso()).toBe('No pudimos marcarlo como revisado');
-    });
-
-    it('sin hc:write no ofrece revisar, y si la lista falla queda sólo el aviso', async () => {
-      darPermisos(PERMISO_HC_DECLARAR);
-      const fixture = await abrirLista(CON_DECLARADOS, { declarados: 'error' });
-      expect(texto(fixture)).toContain('Hay 2 datos declarados');
-      expect(fixture.nativeElement.querySelector('.historia__declarados')).toBeNull();
-      expect(texto(fixture)).not.toContain('Agregar');
-    });
+  it('la ficha de ingreso y lo declarado se cargan en Datos declarados: la historia enlaza ahí', async () => {
+    const fixture = await abrirLista();
+    const enlace = (fixture.nativeElement as HTMLElement).querySelector(
+      '.historia__declarados-enlace a',
+    ) as HTMLAnchorElement;
+    expect(enlace.textContent).toContain('Ficha de ingreso y datos declarados');
+    expect(enlace.getAttribute('href')).toBe(`/pacientes/${PERSONA}/datos-declarados`);
   });
 
   describe('detalle de lo elegido en el timeline', () => {
@@ -688,7 +419,7 @@ describe('HistoriaClinicaPage', () => {
 
       elegirEvento(fixture, { origen: 'ADJUNTO_CLINICO', referencia: 32 });
       await drenar(fixture);
-      expect(textoDetalle(fixture)).toContain('Declarado · revisado');
+      expect(textoDetalle(fixture)).toContain('Declarado');
 
       elegirEvento(fixture, { origen: 'ADJUNTO_CLINICO', referencia: 40 });
       await drenar(fixture);
@@ -748,14 +479,10 @@ describe('HistoriaClinicaPage', () => {
   });
 
   const DECLARADOS = `/api/v1/personas/${PERSONA}/datos-declarados`;
-  const FICHA = `${HISTORIA_POR_PERSONA}/ficha`;
-  const OCUPACIONES = '/api/v1/ocupaciones';
   const ANTECEDENTES = `${HISTORIA_POR_PERSONA}/antecedentes`;
 
   interface OpcionesDeCarga {
     declarados?: object | 'error';
-    ficha?: object;
-    ocupaciones?: object[] | 'error';
   }
 
   function darPermisos(...permisos: string[]): void {
@@ -786,14 +513,6 @@ describe('HistoriaClinicaPage', () => {
       if (opciones.declarados === 'error') fallar(r);
       else r.flush(opciones.declarados ?? {});
     }
-    for (const r of httpMock.match((r) => r.url === FICHA && r.method === 'GET')) {
-      if (opciones.ficha) r.flush(opciones.ficha);
-      else r.flush(null, { status: 204, statusText: 'No Content' });
-    }
-    for (const r of httpMock.match((r) => r.url === OCUPACIONES && r.method === 'GET')) {
-      if (opciones.ocupaciones === 'error') fallar(r);
-      else r.flush(opciones.ocupaciones ?? []);
-    }
     await drenar(fixture);
   }
 
@@ -812,24 +531,6 @@ describe('HistoriaClinicaPage', () => {
         .forEach((r) => r.error(new ProgressEvent('error')));
     }
     await estabilizar(fixture);
-  }
-
-  function componenteFicha(fixture: ComponentFixture<HistoriaClinicaPage>): FichaDeIngreso {
-    return fixture.debugElement.query(By.directive(FichaDeIngreso))
-      .componentInstance as FichaDeIngreso;
-  }
-
-  function componenteTimeline(fixture: ComponentFixture<HistoriaClinicaPage>): TimelineClinico {
-    return fixture.debugElement.query(By.directive(TimelineClinico))
-      .componentInstance as TimelineClinico;
-  }
-
-  function salidaDeFicha(
-    fixture: ComponentFixture<HistoriaClinicaPage>,
-    salida: string,
-    valor: unknown,
-  ): void {
-    fixture.debugElement.query(By.directive(FichaDeIngreso)).triggerEventHandler(salida, valor);
   }
 
   function elegirEvento(

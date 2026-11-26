@@ -435,7 +435,7 @@ export class DatosDeclaradosPage {
       });
     } else {
       this.avisos.exito('Dictado cargado', {
-        descripcion: `${resumirDictado(dictado)}. Queda sin revisar hasta que lo vea un profesional.`,
+        descripcion: `${resumirDictado(dictado)} en la historia clínica.`,
       });
     }
   }
@@ -587,7 +587,7 @@ export class DatosDeclaradosPage {
           this.anioInvalido.set(false);
           this.lugarNuevo.set('');
           this.avisos.exito('Antecedente cargado', {
-            descripcion: 'Queda sin revisar hasta que lo vea un profesional.',
+            descripcion: 'Queda en la historia clínica.',
           });
           this.cargar();
         },
@@ -676,7 +676,7 @@ export class DatosDeclaradosPage {
     }
     if (alguno) {
       this.avisos.exito(archivos.length === 1 ? 'Archivo cargado' : 'Archivos cargados', {
-        descripcion: 'Quedan sin revisar hasta que los vea un profesional.',
+        descripcion: 'Quedan en la historia clínica.',
       });
       this.cargar();
     }
