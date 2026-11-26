@@ -35,7 +35,7 @@ const NOMBRE_DEL_SERVICIO: Readonly<Record<string, string>> = {
 };
 
 /**
- * Pedido de cambio de plan del centro (25/11/2026, contrato 0.194.0): el centro elige plan,
+ * Pedido de cambio de plan del centro (25/11/2026, contrato 0.196.0): el centro elige plan,
  * servicios e IA y la plataforma lo aprueba o lo rechaza. La tarjeta muestra el ultimo pedido;
  * el panel arma uno nuevo. Solo la ve quien tiene `tenant:update` (lo decide la pantalla).
  */

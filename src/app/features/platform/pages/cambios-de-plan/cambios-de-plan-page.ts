@@ -51,7 +51,7 @@ const MARCA: Readonly<Record<string, { clase: string; texto: string }>> = {
 };
 
 /**
- * Bandeja de pedidos de cambio de plan de los centros (25/11/2026, contrato 0.194.0).
+ * Bandeja de pedidos de cambio de plan de los centros (25/11/2026, contrato 0.196.0).
  *
  * <p>Aprobar aplica la contratacion pedida —plan, servicios e IA— sin pasar una prueba a ACTIVA;
  * rechazar pide un motivo que el centro ve en su Suscripcion. Las dos mandan la version leida: si
