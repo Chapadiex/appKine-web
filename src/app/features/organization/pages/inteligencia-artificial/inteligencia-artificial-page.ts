@@ -51,7 +51,7 @@ const DESCRIPCIONES: Readonly<Record<FuncionIa, DescripcionDeFuncion>> = {
   ASISTENTE: {
     titulo: 'Asistente de datos',
     uso: 'Responde preguntas sobre turnos, sesiones, clases y reportes de la sede.',
-    pantallas: 'Atención → Asistente de datos y el botón flotante.',
+    pantallas: 'Inteligencia artificial → Asistente de datos y el botón flotante.',
   },
   EVOLUCION: {
     titulo: 'Evolución del caso',
@@ -66,7 +66,7 @@ const DESCRIPCIONES: Readonly<Record<FuncionIa, DescripcionDeFuncion>> = {
   BIBLIOTECA: {
     titulo: 'Biblioteca del centro',
     uso: 'Libros del centro con búsqueda y consulta con el modelo.',
-    pantallas: 'Configuración → Bibliografía de la IA y Atención → Consultar bibliografía.',
+    pantallas: 'Inteligencia artificial → Bibliografía de la IA y Consultar bibliografía.',
   },
 };
 
