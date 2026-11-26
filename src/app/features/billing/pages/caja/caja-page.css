@@ -23,8 +23,9 @@
 /*
  * Si titulo, cinco pestañas y tres acciones no entran en una fila, las pestañas bajan a la suya
  * antes que superponerse. El selector repetido le gana al de la cabecera para pestañas centradas.
+ * Desde 48rem para abajo manda la cabecera compartida: esta grilla desbordaba a 375 px (26/11).
  */
-@container cabecera-pagina (max-width: 92rem) {
+@container cabecera-pagina (min-width: 48.01rem) and (max-width: 92rem) {
   :host ::ng-deep .cabecera-pagina__fila.cabecera-pagina__fila.cabecera-pagina__fila {
     grid-template-columns: minmax(min(12rem, 40%), max-content) minmax(0, 1fr) minmax(
         0,
