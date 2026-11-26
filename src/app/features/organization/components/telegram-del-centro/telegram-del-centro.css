@@ -48,3 +48,76 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* Guia de cuatro pasos: numero (o tilde si ya esta hecho), titulo y estado en una linea. */
+.guia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guia__paso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+}
+
+.guia__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.guia__numero {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--color-accion-fondo);
+  color: var(--color-accion-texto);
+  font-weight: var(--peso-semi);
+}
+
+.guia__paso--hecho .guia__numero {
+  background: var(--color-superficie-secundaria);
+  color: var(--color-texto);
+}
+
+.guia__titulo {
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.guia__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  padding-left: calc(1.75rem + var(--esp-3));
+}
+
+.guia__cuerpo > p {
+  margin: 0;
+  max-width: 70ch;
+}
+
+.guia__paso--pendiente .guia__numero {
+  background: var(--color-superficie-secundaria);
+  color: var(--color-texto-suave);
+}
+
+@media (max-width: 47.99rem) {
+  .guia__cuerpo {
+    padding-left: 0;
+  }
+}

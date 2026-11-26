@@ -4,42 +4,48 @@ import {
   computed,
   effect,
   inject,
+  input,
   signal,
   untracked,
 } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { TelegramService } from '../../../../api/generated/api/telegram.service';
-import { VinculoDeTelegram } from '../../../../api/generated/model/vinculo-de-telegram';
-import { AkineHttpError } from '../../../../core/interceptors/error.interceptor';
-import { AvisosStore } from '../../../../core/services/avisos.store';
-import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { Alerta } from '../../../../shared/components/alerta/alerta';
-import { Icono } from '../../../../shared/components/icono/icono';
+import { TelegramService } from '../../api/generated/api/telegram.service';
+import { VinculoDeTelegram as Vinculo } from '../../api/generated/model/vinculo-de-telegram';
+import { AkineHttpError } from '../../core/interceptors/error.interceptor';
+import { AvisosStore } from '../../core/services/avisos.store';
+import { TenantContextStore } from '../../core/services/tenant-context.store';
+import { Alerta } from '../components/alerta/alerta';
+import { Icono } from '../components/icono/icono';
 
 const ESPERA_DEL_CODIGO_MS = 4000;
 
 /**
- * "Telegram" en el asistente de datos (contrato 0.197.0): vincular la cuenta propia con el bot del
- * centro para cargar contando lo que se hizo, por audio o mensaje.
+ * Vincular la cuenta propia con el bot de Telegram del centro (contrato 0.197.0), para cargar
+ * contando lo que se hizo, por audio o mensaje. Vive en `shared/` porque la usan dos features: la
+ * franja del asistente de datos (para quien no entra a Organizacion) y el paso 3 de la guia de
+ * Organizacion → Inteligencia artificial.
  *
- * <p>Una franja compacta arriba de la charla. No se muestra si el despliegue no tiene Telegram (409
+ * <p>No se muestra si el despliegue no tiene Telegram (409
  * `telegram-deshabilitado`), si el centro no conecto un bot, o sin `asistente:acciones` (403): en
  * los tres casos no hay nada que la persona pueda hacer desde aca.
  */
 @Component({
-  selector: 'app-mi-telegram',
+  selector: 'app-vinculo-de-telegram',
   imports: [Alerta, Icono],
-  templateUrl: './mi-telegram.html',
-  styleUrl: './mi-telegram.css',
+  templateUrl: './vinculo-de-telegram.html',
+  styleUrl: './vinculo-de-telegram.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MiTelegram {
+export class VinculoDeTelegram {
+  /** `franja`: caja propia arriba del asistente. `paso`: dentro de la guia de configuracion. */
+  readonly variante = input<'franja' | 'paso'>('franja');
+
   private readonly api = inject(TelegramService);
   private readonly tenant = inject(TenantContextStore);
   private readonly avisos = inject(AvisosStore);
 
-  protected readonly vinculo = signal<VinculoDeTelegram | null>(null);
+  protected readonly vinculo = signal<Vinculo | null>(null);
   protected readonly ocupado = signal(false);
   protected readonly error = signal<string | null>(null);
 

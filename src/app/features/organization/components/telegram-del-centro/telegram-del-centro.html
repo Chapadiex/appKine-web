@@ -3,7 +3,7 @@
     <div class="tarjeta__cabecera">
       <h2 id="titulo-telegram"><app-icono nombre="avion" /> Carga por Telegram</h2>
       @if (estado() === 'listo') {
-        @if (bot()?.conectado) {
+        @if (conectado()) {
           <span class="marca-estado marca-estado--activa">Conectado</span>
         } @else {
           <span class="marca-estado marca-estado--neutra">Sin bot</span>
@@ -16,7 +16,7 @@
     <p class="telegram__intro">
       Los profesionales le mandan al bot del centro un audio o un mensaje contando lo que hicieron
       («Juan Strudel: movilidad de hombro, dolor 4 de 10») y queda cargado en AKINE con su cuenta y
-      sus permisos.
+      sus permisos. Se configura en cuatro pasos.
     </p>
 
     @if (error(); as mensaje) {
@@ -43,119 +43,202 @@
         </p>
       }
       @case ('listo') {
-        @if (bot()?.conectado && !reemplazando()) {
-          <dl class="telegram__datos" aria-label="Bot conectado">
-            <dt>Bot</dt>
-            <dd>
-              <a [href]="'https://t.me/' + bot()?.usuario" target="_blank" rel="noopener noreferrer"
-                >&#64;{{ bot()?.usuario }}</a
-              >
-            </dd>
-            <dt>Último contacto</dt>
-            <dd>
-              {{ bot()?.ultimoContactoEn ? fechaYHora(bot()?.ultimoContactoEn) : 'Todavía no' }}
-            </dd>
-          </dl>
-          @if (bot()?.ultimoError; as falla) {
-            <app-alerta tipo="advertencia" titulo="Telegram respondió con un error">
-              <p>{{ falla }}</p>
-            </app-alerta>
-          }
-          <p class="ayuda">
-            Cada profesional vincula su cuenta desde <b>Asistente de datos → Telegram</b>. Para
-            usarlo en un grupo, agregá el bot al grupo del centro.
-          </p>
-          <p class="acciones">
-            <button
-              type="button"
-              class="boton boton--secundario"
-              [disabled]="guardando()"
-              (click)="reemplazando.set(true)"
-            >
-              <app-icono nombre="repetir" /> Cambiar de bot
-            </button>
-            <button
-              type="button"
-              class="boton boton--secundario"
-              [disabled]="guardando()"
-              (click)="desconectar()"
-            >
-              <app-icono nombre="salir" /> Desconectar
-            </button>
-          </p>
-        } @else {
-          <p class="telegram__intro">
-            El bot se crea en Telegram hablando con <b>&#64;BotFather</b>, el bot oficial de
-            Telegram para crear bots. Te va haciendo preguntas de a una: contestá cada una antes de
-            mandar otro comando. Si te equivocás, mandá un mensaje nuevo: @BotFather no lee los
-            mensajes editados.
-          </p>
-          <ol class="telegram__pasos">
-            <li>
-              En Telegram, abrí
-              <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer"
-                >&#64;BotFather</a
-              >, tocá <b>Iniciar</b> y mandale <code>/newbot</code>.
-            </li>
-            <li>
-              Te pide el <b>nombre</b> del bot: es el que ven los profesionales. Mandale, por
-              ejemplo, <code>Kine Centro Norte</code>.
-            </li>
-            <li>
-              Te pide el <b>usuario</b> del bot: tiene que ser único en todo Telegram, sin espacios,
-              y <b>terminar en <code>bot</code></b
-              >. Por ejemplo <code>kine_centro_norte_bot</code>. Si te dice que ya existe, probá con
-              otro.
-            </li>
-            <li>
-              Te contesta «Done! Congratulations…» con el <b>token</b>: una línea como
-              <code>1234567890:AAH…</code>, debajo de «Use this token to access the HTTP API».
-              Copiala entera y pegala abajo.
-            </li>
-            <li>
-              <b>Solo si lo vas a usar en un grupo:</b> mandale <code>/setprivacy</code>, tocá tu
-              bot en la lista y después <b>Disable</b>. Sin esto, en un grupo el bot no lee los
-              mensajes. Después agregá el bot al grupo del centro. Por chat privado no hace falta.
-            </li>
-          </ol>
-
-          <form class="telegram__form" (submit)="conectar($event)">
-            <div class="campo">
-              <label for="telegram-token">Token del bot</label>
-              <input
-                id="telegram-token"
-                type="password"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="1234567890:AAH…"
-                [formControl]="token"
-                [attr.aria-invalid]="token.invalid && token.touched"
-                aria-describedby="telegram-token-ayuda"
-              />
-              <span id="telegram-token-ayuda" class="ayuda">
-                Se guarda cifrado y no se vuelve a mostrar.
+        <ol class="guia">
+          <!-- Paso 1: crear el bot en Telegram -->
+          <li class="guia__paso" [class.guia__paso--hecho]="conectado()">
+            <div class="guia__cabecera">
+              <span class="guia__numero" aria-hidden="true">
+                @if (conectado()) {
+                  <app-icono nombre="tilde" />
+                } @else {
+                  1
+                }
               </span>
-              @if (token.invalid && token.touched) {
-                <span class="campo__error" role="alert">Pegá el token que te dio @BotFather.</span>
+              <h3 class="guia__titulo">Crear el bot en Telegram</h3>
+              @if (conectado()) {
+                <span class="marca-estado marca-estado--activa">Hecho</span>
               }
             </div>
-            <p class="acciones">
-              @if (reemplazando()) {
-                <button
-                  type="button"
-                  class="boton boton--secundario"
-                  [disabled]="guardando()"
-                  (click)="reemplazando.set(false)"
-                >
-                  <app-icono nombre="cerrar" /> Cancelar
-                </button>
+            @if (!conectado()) {
+              <div class="guia__cuerpo">
+                <p>
+                  El bot se crea hablando con <b>&#64;BotFather</b>, el bot oficial de Telegram para
+                  crear bots. Te hace preguntas de a una: contestá cada una antes de mandar otro
+                  comando. Si te equivocás, mandá un mensaje nuevo: @BotFather no lee los mensajes
+                  editados.
+                </p>
+                <ol class="telegram__pasos">
+                  <li>
+                    En Telegram, abrí
+                    <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer"
+                      >&#64;BotFather</a
+                    >, tocá <b>Iniciar</b> y mandale <code>/newbot</code>.
+                  </li>
+                  <li>
+                    Te pide el <b>nombre</b> del bot: es el que ven los profesionales. Por ejemplo
+                    <code>Kine Centro Norte</code>.
+                  </li>
+                  <li>
+                    Te pide el <b>usuario</b>: único en todo Telegram, sin espacios y
+                    <b>terminado en <code>bot</code></b
+                    >. Por ejemplo <code>kine_centro_norte_bot</code>. Si ya existe, probá otro.
+                  </li>
+                  <li>
+                    Te contesta «Done! Congratulations…» con el <b>token</b>, una línea como
+                    <code>1234567890:AAH…</code> debajo de «Use this token to access the HTTP API».
+                    Copiala entera para el paso 2.
+                  </li>
+                  <li>
+                    <b>Solo para usarlo en un grupo:</b> mandale <code>/setprivacy</code>, tocá tu
+                    bot y elegí <b>Disable</b>, y después agregá el bot al grupo del centro. Por
+                    chat privado no hace falta.
+                  </li>
+                </ol>
+              </div>
+            }
+          </li>
+
+          <!-- Paso 2: conectar el bot a AKINE -->
+          <li class="guia__paso" [class.guia__paso--hecho]="conectado()">
+            <div class="guia__cabecera">
+              <span class="guia__numero" aria-hidden="true">
+                @if (conectado()) {
+                  <app-icono nombre="tilde" />
+                } @else {
+                  2
+                }
+              </span>
+              <h3 class="guia__titulo">Conectar el bot a AKINE</h3>
+              @if (conectado()) {
+                <span class="marca-estado marca-estado--activa">Conectado</span>
               }
-              <button type="submit" class="boton" [disabled]="guardando()">
-                <app-icono nombre="avion" /> {{ guardando() ? 'Conectando…' : 'Conectar bot' }}
-              </button>
-            </p>
-          </form>
-        }
+            </div>
+            <div class="guia__cuerpo">
+              @if (conectado()) {
+                <dl class="telegram__datos" aria-label="Bot conectado">
+                  <dt>Bot</dt>
+                  <dd>
+                    <a [href]="enlaceDelBot()" target="_blank" rel="noopener noreferrer"
+                      >&#64;{{ bot()?.usuario }}</a
+                    >
+                  </dd>
+                  <dt>Último contacto</dt>
+                  <dd>
+                    {{
+                      bot()?.ultimoContactoEn ? fechaYHora(bot()?.ultimoContactoEn) : 'Todavía no'
+                    }}
+                  </dd>
+                </dl>
+                @if (bot()?.ultimoError; as falla) {
+                  <app-alerta tipo="advertencia" titulo="Telegram respondió con un error">
+                    <p>{{ falla }}</p>
+                  </app-alerta>
+                }
+                <p class="acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="guardando()"
+                    (click)="reemplazando.set(true)"
+                  >
+                    <app-icono nombre="repetir" /> Cambiar de bot
+                  </button>
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    [disabled]="guardando()"
+                    (click)="desconectar()"
+                  >
+                    <app-icono nombre="salir" /> Desconectar
+                  </button>
+                </p>
+              } @else {
+                <form class="telegram__form" (submit)="conectar($event)">
+                  <div class="campo">
+                    <label for="telegram-token">Token del bot</label>
+                    <input
+                      id="telegram-token"
+                      type="password"
+                      autocomplete="off"
+                      spellcheck="false"
+                      placeholder="1234567890:AAH…"
+                      [formControl]="token"
+                      [attr.aria-invalid]="token.invalid && token.touched"
+                      aria-describedby="telegram-token-ayuda"
+                    />
+                    <span id="telegram-token-ayuda" class="ayuda">
+                      Se guarda cifrado y no se vuelve a mostrar.
+                    </span>
+                    @if (token.invalid && token.touched) {
+                      <span class="campo__error" role="alert"
+                        >Pegá el token que te dio @BotFather.</span
+                      >
+                    }
+                  </div>
+                  <p class="acciones">
+                    @if (reemplazando()) {
+                      <button
+                        type="button"
+                        class="boton boton--secundario"
+                        [disabled]="guardando()"
+                        (click)="reemplazando.set(false)"
+                      >
+                        <app-icono nombre="cerrar" /> Cancelar
+                      </button>
+                    }
+                    <button type="submit" class="boton" [disabled]="guardando()">
+                      <app-icono nombre="avion" />
+                      {{ guardando() ? 'Conectando…' : 'Conectar bot' }}
+                    </button>
+                  </p>
+                </form>
+              }
+            </div>
+          </li>
+
+          <!-- Paso 3: vincular la cuenta de cada persona -->
+          <li class="guia__paso" [class.guia__paso--pendiente]="!conectado()">
+            <div class="guia__cabecera">
+              <span class="guia__numero" aria-hidden="true">3</span>
+              <h3 class="guia__titulo">Vincular tu Telegram</h3>
+            </div>
+            <div class="guia__cuerpo">
+              @if (conectado()) {
+                <app-vinculo-de-telegram variante="paso" />
+                <p class="ayuda">
+                  Cada profesional hace este paso con su propia cuenta, desde
+                  <b>Atención → Asistente de datos</b>, en la franja <b>Telegram</b>.
+                </p>
+              } @else {
+                <p class="ayuda">Disponible cuando el bot esté conectado.</p>
+              }
+            </div>
+          </li>
+
+          <!-- Paso 4: usarlo -->
+          <li class="guia__paso" [class.guia__paso--pendiente]="!conectado()">
+            <div class="guia__cabecera">
+              <span class="guia__numero" aria-hidden="true">4</span>
+              <h3 class="guia__titulo">Cargar contando lo que hiciste</h3>
+            </div>
+            <div class="guia__cuerpo">
+              <ul class="telegram__pasos">
+                <li>
+                  Mandale al bot un <b>audio</b> o un <b>mensaje</b>, en privado o en el grupo del
+                  centro: «Juan Strudel: movilidad de hombro y electro, dolor 4 de 10».
+                </li>
+                <li>
+                  Si el paciente tiene turno hoy con vos, lo carga en esa atención y te contesta qué
+                  cargó, con el enlace para revisarlo.
+                </li>
+                <li>
+                  Si hay dos pacientes con ese nombre, te pregunta con botones. Si no puede decidir
+                  algo solo, te lo dice y no carga nada.
+                </li>
+              </ul>
+            </div>
+          </li>
+        </ol>
       }
     }
   </section>

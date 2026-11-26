@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   signal,
@@ -16,19 +17,21 @@ import { AvisosStore } from '../../../../core/services/avisos.store';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { Icono } from '../../../../shared/components/icono/icono';
+import { VinculoDeTelegram } from '../../../../shared/telegram/vinculo-de-telegram';
 
 /**
- * Organizacion → Inteligencia artificial → Telegram: conectar el bot del centro (contrato 0.197.0).
+ * Organizacion → Inteligencia artificial → Telegram (contrato 0.197.0): toda la configuracion en un
+ * solo lugar, en cuatro pasos. 1) crear el bot en @BotFather, 2) pegar el token, 3) vincular la
+ * cuenta propia, 4) como se usa. Los pasos hechos quedan marcados con un tilde.
  *
- * <p>Guia paso a paso para crear el bot en @BotFather y un solo campo para pegar el token. El token
- * no vuelve nunca del servidor: lo que se muestra despues es el usuario del bot.
+ * <p>El token no vuelve nunca del servidor: lo que se muestra despues es el usuario del bot.
  *
  * <p>Con el interruptor del despliegue apagado (409 `telegram-deshabilitado`) la tarjeta lo dice y
  * no ofrece nada; sin `tenant:update` (403) no se muestra.
  */
 @Component({
   selector: 'app-telegram-del-centro',
-  imports: [ReactiveFormsModule, Alerta, Icono],
+  imports: [ReactiveFormsModule, Alerta, Icono, VinculoDeTelegram],
   templateUrl: './telegram-del-centro.html',
   styleUrl: './telegram-del-centro.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +49,9 @@ export class TelegramDelCentro {
   protected readonly error = signal<string | null>(null);
   /** Con un bot conectado, la guia y el campo se abren solo para reemplazarlo. */
   protected readonly reemplazando = signal(false);
+  /** Conectado y sin estar reemplazandolo: los pasos 1 y 2 quedan hechos. */
+  protected readonly conectado = computed(() => !!this.bot()?.conectado && !this.reemplazando());
+  protected readonly enlaceDelBot = computed(() => `https://t.me/${this.bot()?.usuario ?? ''}`);
 
   protected readonly token = new FormControl('', {
     nonNullable: true,

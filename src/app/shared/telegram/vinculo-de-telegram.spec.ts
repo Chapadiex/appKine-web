@@ -2,16 +2,16 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { provideApi } from '../../../../api/generated/provide-api';
-import { errorInterceptor } from '../../../../core/interceptors/error.interceptor';
-import { TenantContextStore } from '../../../../core/services/tenant-context.store';
-import { TIMEOUT_AXE, esperarSinViolaciones } from '../../../../core/testing/axe';
-import { MiTelegram } from './mi-telegram';
+import { provideApi } from '../../api/generated/provide-api';
+import { errorInterceptor } from '../../core/interceptors/error.interceptor';
+import { TenantContextStore } from '../../core/services/tenant-context.store';
+import { TIMEOUT_AXE, esperarSinViolaciones } from '../../core/testing/axe';
+import { VinculoDeTelegram } from './vinculo-de-telegram';
 
 const URL = '/api/v1/consultorios/7/telegram/vinculo';
 
-describe('MiTelegram', () => {
-  let fixture: ComponentFixture<MiTelegram>;
+describe('VinculoDeTelegram', () => {
+  let fixture: ComponentFixture<VinculoDeTelegram>;
   let httpMock: HttpTestingController;
 
   const html = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -22,7 +22,7 @@ describe('MiTelegram', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MiTelegram],
+      imports: [VinculoDeTelegram],
       providers: [
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
@@ -35,7 +35,7 @@ describe('MiTelegram', () => {
       organizationName: 'Centro A',
       consultorioId: 7,
     });
-    fixture = TestBed.createComponent(MiTelegram);
+    fixture = TestBed.createComponent(VinculoDeTelegram);
     await fixture.whenStable();
   });
 

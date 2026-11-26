@@ -1,0 +1,69 @@
+.vinculo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+/* En el asistente es una caja propia; en la configuracion vive dentro de un paso. */
+.vinculo--franja {
+  margin-bottom: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde-fino) solid var(--color-borde-sutil);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+}
+
+.vinculo__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-2) var(--esp-3);
+}
+
+.vinculo__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  margin: 0;
+  font-size: var(--tipo-base);
+  font-weight: var(--peso-semi);
+}
+
+.vinculo__texto {
+  margin: 0;
+  max-width: 70ch;
+}
+
+.vinculo__pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  margin: 0;
+  padding-left: var(--esp-5);
+}
+
+.vinculo__comando {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-3);
+  margin-left: var(--esp-2);
+  vertical-align: middle;
+}
+
+.vinculo__comando code {
+  font-family: var(--fuente-mono);
+  font-size: var(--tipo-lg);
+  font-weight: var(--peso-semi);
+  padding: var(--esp-1) var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-codigo);
+  letter-spacing: 0.04em;
+}
+
+.vinculo__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+  margin: 0;
+}
