@@ -194,6 +194,7 @@ export class InteligenciaArtificialPage {
         this.prueba.set(null);
         this.textoDelConsentimiento.set(null);
         this.errorDelConsentimiento.set(null);
+        this.aceptando.set(false);
         this.cargar();
         this.consultarMotor();
       });
@@ -255,6 +256,7 @@ export class InteligenciaArtificialPage {
             : mensajeDe(error),
         );
         if (cambio) {
+          this.textoDelConsentimiento.set(null);
           this.cargar();
         }
       },
