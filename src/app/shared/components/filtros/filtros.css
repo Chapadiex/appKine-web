@@ -26,6 +26,14 @@
   max-width: 36rem;
 }
 
+/*
+ * Sin buscador (el backend no busca por texto), el lugar vacio no ocupa la fila: si no, el boton
+ * de filtros quedaba suelto en el medio (25/11/2026).
+ */
+.filtros-barra__principal:not(:has(*)) {
+  display: none;
+}
+
 .filtros-barra__principal .campo {
   margin-bottom: 0;
 }

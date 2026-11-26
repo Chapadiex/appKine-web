@@ -392,7 +392,12 @@ export class CoberturasDelPacientePage {
 
   protected abrirAlta(): void {
     this.cerrarPaneles();
-    this.formularioAlta.reset({ tipo: 'PARTICULAR', principal: false });
+    // Arranca hoy: el caso normal. Se cambia en "Más" si empieza otro día (25/11/2026).
+    this.formularioAlta.reset({
+      tipo: 'PARTICULAR',
+      principal: false,
+      vigenciaDesde: this.diaDeLaSede.hoy(),
+    });
     this.planes.set([]);
     this.altaAbierta.set(true);
     this.cargarFinanciadores();

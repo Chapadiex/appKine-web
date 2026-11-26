@@ -1,24 +1,10 @@
 /* Datos declarados (DP-47). Compacta: dos paneles en una pantalla. Solo tokens del sistema. */
 
-.declarados__motivo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--esp-2) var(--esp-3);
-  margin-block-end: var(--esp-3);
-  color: var(--color-texto-suave);
-  font-size: var(--tipo-sm);
-}
-
-.declarados__motivo input {
-  flex: 1 1 18rem;
-  max-inline-size: 32rem;
-}
-
 .declarados {
   display: grid;
   gap: var(--esp-4);
-  align-items: start;
+  /* Las dos tarjetas del mismo alto. */
+  align-items: stretch;
 }
 
 /* Dos columnas solo si cada panel tiene lugar (26rem); si no, uno debajo del otro. */
@@ -29,6 +15,7 @@
 .declarados__panel {
   display: grid;
   gap: var(--esp-3);
+  align-content: start;
   margin: 0;
 }
 
@@ -99,6 +86,10 @@
 .declarados__soltar-fila {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.declarados__soltar-fila .boton {
   gap: var(--esp-2);
 }
 
@@ -176,8 +167,7 @@
 }
 
 /* Controles en linea: mismos tokens que `.campo input` del sistema, sin la columna de etiqueta. */
-.declarados :is(input[type='text'], input[type='number'], select),
-.declarados__motivo input {
+.declarados :is(input[type='text'], input[type='number'], select) {
   padding: var(--esp-2) 0.625rem;
   min-height: var(--alto-control);
   box-sizing: border-box;
@@ -188,8 +178,7 @@
   font: inherit;
 }
 
-.declarados :is(input[type='text'], input[type='number'], select):focus-visible,
-.declarados__motivo input:focus-visible {
+.declarados :is(input[type='text'], input[type='number'], select):focus-visible {
   outline: var(--foco-grosor) solid var(--color-foco);
   outline-offset: 1px;
 }
@@ -221,4 +210,131 @@
 .declarados__rotulo {
   color: var(--color-texto-suave);
   font-size: var(--tipo-sm);
+}
+
+/* --- Rediseño 24/11/2026: listas con etiqueta de tipo y "Quitar", cirugía y observaciones --- */
+
+.declarados__tipo {
+  flex: none;
+  padding: 0 var(--esp-2);
+  border-radius: var(--radio-sm);
+  background: var(--color-superficie-atenuada);
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-medio);
+}
+
+.declarados__tipo[data-tipo='ALERGIA'] {
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro-texto);
+}
+
+.declarados__quitar,
+.declarados__ver {
+  flex: none;
+  font-size: var(--tipo-xs);
+}
+
+.declarados__quitar {
+  color: var(--color-texto-suave);
+}
+
+.declarados__revisado {
+  flex: none;
+  color: var(--color-exito-texto);
+  font-size: var(--tipo-2xs);
+}
+
+.declarados__lista {
+  max-block-size: 14rem;
+  border: var(--borde-fino) solid var(--color-borde);
+  border-radius: var(--radio-md);
+  padding-inline: var(--esp-3);
+}
+
+.declarados__cirugia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.declarados__campo-chico {
+  display: grid;
+  gap: var(--esp-1);
+}
+
+.declarados__campo-chico label {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-xs);
+}
+
+.declarados__pista-titulo {
+  color: var(--color-texto-suave);
+  font-size: var(--tipo-2xs);
+  font-weight: var(--peso-normal, 400);
+}
+
+.declarados__observaciones textarea {
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-2) 0.625rem;
+  border: var(--borde-fino) solid var(--color-borde-control);
+  border-radius: var(--radio-md);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+  resize: vertical;
+}
+
+.declarados__observaciones textarea:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+/* --- Compacto (25/11/2026): paneles más bajos para que entren las observaciones debajo --- */
+
+.declarados__panel {
+  gap: var(--esp-2);
+  padding-block: var(--esp-4);
+}
+
+.declarados__panel h2,
+.declarados__observaciones h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: var(--tipo-sm);
+}
+
+.declarados :is(input[type='text'], input[type='number'], select),
+.declarados .boton {
+  min-height: 2.25rem;
+  padding-block: var(--esp-1);
+}
+
+.declarados__soltar {
+  padding: var(--esp-2);
+}
+
+.declarados__soltar-fila {
+  align-items: center;
+}
+
+.declarados__item {
+  padding-block: var(--esp-1);
+}
+
+.declarados__lista {
+  max-block-size: 9rem;
+}
+
+.declarados__observaciones {
+  display: grid;
+  gap: var(--esp-2);
+  margin-block-start: var(--esp-3);
+  padding-block: var(--esp-3);
+}
+
+.declarados__observaciones label {
+  font-weight: inherit;
 }

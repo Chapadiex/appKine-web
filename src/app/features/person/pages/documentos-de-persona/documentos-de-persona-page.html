@@ -19,7 +19,7 @@
   @if (!fichaCerrada()) {
     <div cabeceraAcciones *akinePermiso="permisoManage">
       <button type="button" class="boton" (click)="abrirSubida()">
-        <app-icono nombre="agregar" />
+        <app-icono nombre="subir" />
         Subir un documento
       </button>
     </div>
@@ -107,7 +107,7 @@
           (click)="abrirSubida()"
           *akinePermiso="permisoManage"
         >
-          Subir el primer documento
+          <app-icono nombre="subir" /> Subir el primer documento
         </button>
       }
     </app-estado-vacio>
@@ -181,7 +181,7 @@
                       (click)="descargar(adjunto)"
                       [disabled]="adjuntoNoDisponible(adjunto)"
                     >
-                      Descargar
+                      <app-icono nombre="descargar" /> Descargar
                     </button>
                     <button type="button" (click)="abrirReclasificacion(adjunto)">
                       Reclasificar
@@ -197,7 +197,7 @@
                     (click)="descargar(adjunto)"
                     [disabled]="adjuntoNoDisponible(adjunto)"
                   >
-                    Descargar
+                    <app-icono nombre="descargar" /> Descargar
                   </button>
                 }
               </td>
@@ -233,25 +233,72 @@
       }
 
       <div class="campo campo--ancho">
-        <label for="subida-archivo">Archivo</label>
-        <input
-          id="subida-archivo"
-          type="file"
-          accept="application/pdf,image/png,image/jpeg"
-          (change)="elegirArchivo($event.target)"
-          [attr.aria-invalid]="archivoRechazado() ? 'true' : null"
-          [attr.aria-describedby]="
-            archivoRechazado()
-              ? 'subida-archivo-ayuda subida-archivo-error'
-              : 'subida-archivo-ayuda'
-          "
-        />
-        <p class="ayuda ayuda--fija" id="subida-archivo-ayuda">
+        <span class="subida__rotulo" id="subida-archivo-rotulo">Archivo</span>
+        <!-- Zona para soltar con dos botones: el selector nativo queda oculto (25/11/2026). -->
+        <div
+          class="subida"
+          [class.subida--activa]="arrastrando()"
+          [class.subida--error]="archivoRechazado()"
+          (dragover)="alArrastrar($event, true)"
+          (dragleave)="alArrastrar($event, false)"
+          (drop)="soltarArchivo($event)"
+        >
           @if (archivo(); as elegido) {
-            Elegido: {{ elegido.name }} ({{ tamanoEnPalabras(elegido.size) }})
+            <div class="subida__elegido">
+              <app-icono nombre="documento" />
+              <span class="subida__nombre">{{ elegido.name }}</span>
+              <span class="subida__peso">{{ tamanoEnPalabras(elegido.size) }}</span>
+              <button type="button" class="boton-texto" (click)="selector.click()">Cambiar</button>
+            </div>
           } @else {
-            PDF, PNG o JPEG. El tipo se verifica <b>por el contenido</b>, no por la extensión.
+            <app-icono nombre="subir" class="subida__icono" />
+            <p class="subida__texto">Arrastrá el archivo acá o elegilo</p>
+            <div class="subida__botones">
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                (click)="selector.click()"
+              >
+                <app-icono nombre="subir" /> Elegir archivo
+              </button>
+              <button
+                type="button"
+                class="boton boton--secundario boton--chico"
+                (click)="camara.click()"
+              >
+                <app-icono nombre="camara" /> Sacar foto
+              </button>
+            </div>
           }
+          <input
+            #selector
+            id="subida-archivo"
+            type="file"
+            class="visualmente-oculto"
+            tabindex="-1"
+            accept="application/pdf,image/png,image/jpeg"
+            aria-labelledby="subida-archivo-rotulo"
+            (change)="elegirArchivo($event.target)"
+            [attr.aria-invalid]="archivoRechazado() ? 'true' : null"
+            [attr.aria-describedby]="
+              archivoRechazado()
+                ? 'subida-archivo-ayuda subida-archivo-error'
+                : 'subida-archivo-ayuda'
+            "
+          />
+          <input
+            #camara
+            type="file"
+            class="visualmente-oculto"
+            tabindex="-1"
+            aria-hidden="true"
+            accept="image/jpeg,image/png"
+            capture="environment"
+            (change)="elegirArchivo($event.target)"
+          />
+        </div>
+        <p class="ayuda ayuda--fija" id="subida-archivo-ayuda">
+          PDF, PNG o JPEG. El tipo se verifica <b>por el contenido</b>, no por la extensión.
         </p>
         @if (archivoRechazado()) {
           <p class="campo__error" id="subida-archivo-error">{{ errorAccion() }}</p>
@@ -291,6 +338,7 @@
 
       <div class="acciones">
         <button type="submit" class="boton" [disabled]="enviando() || archivo() === null">
+          <app-icono nombre="subir" />
           {{ enviando() ? 'Subiendo...' : 'Subir' }}
         </button>
         <button type="button" class="boton boton--secundario" (click)="cerrarPaneles()">

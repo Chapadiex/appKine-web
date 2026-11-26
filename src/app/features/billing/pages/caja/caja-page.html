@@ -10,26 +10,31 @@
       nunca estuvieron en el cajón.
     </p>
   </app-ayuda>
-  @if (jornada()) {
+  <!--
+    La jornada va pegada a la insignia y no en la region de contexto: con cinco pestañas y tres
+    acciones no entraba en la fila y se superponia (25/11/2026).
+  -->
+  @if (jornada(); as abierta) {
     <span class="marca-estado marca-estado--activa">Abierta</span>
+    <span class="caja-contexto" [title]="'Jornada ' + fechaEnPalabras(abierta.fechaNegocio)"
+      >abrió {{ horaDeLaJornada(abierta.abiertaEn) }}</span
+    >
   } @else if (cerrada()) {
     <span class="marca-estado marca-estado--neutra">Cerrada</span>
-  }
-  @if (jornada(); as abierta) {
-    <span cabeceraContexto class="caja-contexto">
-      Jornada {{ fechaEnPalabras(abierta.fechaNegocio) }} · abrió
-      {{ horaDeLaJornada(abierta.abiertaEn) }}
-    </span>
   }
   @if (jornada()) {
     <div cabeceraAcciones>
       <button
         type="button"
-        class="boton boton--secundario boton--chico"
+        class="boton boton--secundario boton--chico boton--icono"
         [disabled]="actualizando()"
+        [title]="actualizando() ? 'Actualizando…' : 'Actualizar'"
         (click)="recargar()"
       >
-        {{ actualizando() ? 'Actualizando…' : 'Actualizar' }}
+        <app-icono nombre="repetir" />
+        <span class="visualmente-oculto">{{
+          actualizando() ? 'Actualizando…' : 'Actualizar'
+        }}</span>
       </button>
       <button
         type="button"
@@ -155,15 +160,20 @@
       <div class="grilla-12">
         <div class="campo campo--2">
           <label for="apertura-saldo">Saldo inicial contado</label>
-          <input
-            id="apertura-saldo"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="saldoInicial()"
-            [attr.aria-invalid]="saldoInicial() !== '' && !saldoInicialValido()"
-            (input)="saldoInicial.set($any($event.target).value)"
-          />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              id="apertura-saldo"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="0,00"
+              [value]="saldoInicial()"
+              [attr.aria-invalid]="saldoInicial() !== '' && !saldoInicialValido()"
+              (input)="saldoInicial.set($any($event.target).value)"
+              (blur)="saldoInicial.set(importeConDecimales(saldoInicial()))"
+            />
+          </div>
         </div>
 
         <div class="campo campo--2">
@@ -304,7 +314,13 @@
                     <span class="celda-nota">({{ movimiento.motivo }})</span>
                   }
                 </td>
-                <td class="importe">{{ importeConSigno(movimiento) }}</td>
+                <td
+                  class="importe"
+                  [class.importe--suma]="!restaDelSaldo(movimiento.tipo)"
+                  [class.importe--resta]="restaDelSaldo(movimiento.tipo)"
+                >
+                  {{ importeConSigno(movimiento) }}
+                </td>
                 <td class="tabla__acciones">
                   @if (yaRevertido(movimiento)) {
                     <span class="ayuda">Revertido</span>
@@ -357,31 +373,47 @@
           <div class="segmento" role="group" aria-labelledby="movimiento-tipo-rotulo">
             <button
               type="button"
+              class="segmento__ingreso"
               [attr.aria-pressed]="tipoMovimiento() === tipoIngreso"
               (click)="cambiarTipo(tipoIngreso)"
             >
-              <span aria-hidden="true">+</span> Ingreso
+              <app-icono nombre="agregar" /> Ingreso
             </button>
             <button
               type="button"
+              class="segmento__egreso"
               [attr.aria-pressed]="tipoMovimiento() === tipoEgreso"
               (click)="cambiarTipo(tipoEgreso)"
             >
-              <span aria-hidden="true">−</span> Egreso
+              <app-icono nombre="menos" /> Egreso
             </button>
           </div>
         </div>
 
         <div class="campo campo--3">
           <label for="movimiento-importe">Importe</label>
-          <input
-            id="movimiento-importe"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="importeMovimiento()"
-            (input)="cambiarImporte($any($event.target).value)"
-          />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              id="movimiento-importe"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="0,00"
+              aria-describedby="movimiento-importe-ayuda"
+              [attr.aria-invalid]="importeMovimientoInvalido() ? 'true' : null"
+              [value]="importeMovimiento()"
+              (input)="cambiarImporte($any($event.target).value)"
+              (blur)="cambiarImporte(importeConDecimales(importeMovimiento()))"
+            />
+          </div>
+          @if (importeMovimientoInvalido()) {
+            <p class="campo__error" id="movimiento-importe-ayuda" role="alert">
+              Escribí un importe mayor a cero, por ejemplo 1500 o 1500,50.
+            </p>
+          } @else {
+            <p class="ayuda ayuda--fija" id="movimiento-importe-ayuda">En pesos, con centavos.</p>
+          }
         </div>
 
         <div class="campo campo--3">
@@ -406,6 +438,8 @@
             type="text"
             autocomplete="off"
             maxlength="200"
+            placeholder="Por ejemplo: cambio para el día, compra de insumos"
+            aria-required="true"
             [value]="conceptoMovimiento()"
             (input)="cambiarConcepto($any($event.target).value)"
           />
@@ -413,6 +447,7 @@
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="!movimientoValido() || enviando()">
+            <app-icono nombre="tilde" />
             Registrar el movimiento
           </button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">
@@ -449,11 +484,11 @@
               <dt>Saldo inicial</dt>
               <dd>{{ importe(abierta.saldoInicial) }}</dd>
             </div>
-            <div>
+            <div class="importe--suma">
               <dt>+ Entró en efectivo</dt>
               <dd>{{ importe(r.efectivoIngresos) }}</dd>
             </div>
-            <div>
+            <div class="importe--resta">
               <dt>− Salió en efectivo</dt>
               <dd>{{ importe(r.efectivoEgresos) }}</dd>
             </div>
@@ -463,23 +498,42 @@
       <form (submit)="$event.preventDefault(); cerrar()">
         <div class="campo campo--ancho">
           <label for="cierre-declarado">Efectivo contado</label>
-          <input
-            id="cierre-declarado"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            [value]="saldoDeclarado()"
-            (input)="saldoDeclarado.set($any($event.target).value)"
-          />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              id="cierre-declarado"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="0,00"
+              [value]="saldoDeclarado()"
+              (input)="saldoDeclarado.set($any($event.target).value)"
+              (blur)="saldoDeclarado.set(importeConDecimales(saldoDeclarado()))"
+            />
+          </div>
         </div>
 
         <p class="ayuda ayuda--fija" role="status">
+          <!-- Faltante en rojo, sobrante en ámbar y coincidencia en verde, con ícono (25/11/2026). -->
           @if (diferenciaCentavos() === null) {
             Contá el cajón y anotá el total.
           } @else if (requiereMotivo()) {
-            <b>{{ diferenciaEnPalabras() }}</b>. Se registra tal cual, pero hay que explicarla.
+            <span
+              class="arqueo-veredicto"
+              [class.arqueo-veredicto--falta]="(diferenciaCentavos() ?? 0) < 0"
+              [class.arqueo-veredicto--sobra]="(diferenciaCentavos() ?? 0) > 0"
+            >
+              <app-icono nombre="advertencia" />
+              <span
+                ><b>{{ diferenciaEnPalabras() }}</b
+                >. Se registra tal cual, pero hay que explicarla.</span
+              >
+            </span>
           } @else {
-            El contado coincide con lo que debería haber.
+            <span class="arqueo-veredicto arqueo-veredicto--coincide">
+              <app-icono nombre="exito" />
+              El contado coincide con lo que debería haber.
+            </span>
           }
         </p>
 
@@ -497,10 +551,14 @@
           </div>
         }
 
-        <p class="ayuda ayuda--fija">Un cierre no se revierte y una caja cerrada no se reabre.</p>
+        <p class="ayuda ayuda--fija arqueo-aviso">
+          <app-icono nombre="candado" />
+          Un cierre no se revierte y una caja cerrada no se reabre.
+        </p>
 
         <div class="acciones">
           <button type="submit" class="boton" [disabled]="!arqueoValido() || enviando()">
+            <app-icono nombre="candado" />
             Cerrar la caja
           </button>
           <button type="button" class="boton boton--secundario" (click)="cerrarPanel()">

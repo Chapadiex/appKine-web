@@ -14,8 +14,9 @@ import { FichaDeIngresoRequest } from '../../../../api/generated/model/ficha-de-
 import { FichaDeIngresoResponse } from '../../../../api/generated/model/ficha-de-ingreso-response';
 import { OcupacionResponse } from '../../../../api/generated/model/ocupacion-response';
 import { BuscadorConAlta } from '../../../../shared/components/buscador-con-alta/buscador-con-alta';
-import { Chips, OpcionChip } from '../../../../shared/components/chips/chips';
+import { OpcionChip } from '../../../../shared/components/chips/chips';
 import { NumeroConPasos } from '../../../../shared/components/numero-con-pasos/numero-con-pasos';
+import { Segmentado } from '../../../../shared/components/segmentado/segmentado';
 import { TextoOpcional } from '../../../../shared/components/texto-opcional/texto-opcional';
 
 /** Las diez enfermedades que pregunta la ficha (lista del producto, `EnfermedadDeIngreso`). */
@@ -39,6 +40,36 @@ const ACTIVIDADES: readonly OpcionChip[] = [
   { valor: 'DEPORTISTA', etiqueta: 'Deportista' },
 ];
 
+/**
+ * Condiciones habituales en kinesiologia que el enum del backend no tiene. Se tildan igual que las
+ * de arriba y se guardan como antecedente medico con este nombre (sin codigo): no piden contrato.
+ */
+export const CONDICIONES_TIPICAS: readonly string[] = [
+  'Artrosis',
+  'Artritis',
+  'Hernia de disco',
+  'Escoliosis',
+  'Fibromialgia',
+  'Prótesis / implante',
+  'Celiaquía',
+  'Depresión / ansiedad',
+];
+
+/** Un antecedente medico sin codigo: una condicion tipica tildada o una "Otra". */
+export interface CondicionSuelta {
+  readonly id: number;
+  readonly descripcion: string;
+  /** Revisada por un profesional: no se destilda desde aca. */
+  readonly fija: boolean;
+}
+
+/** Tildar o destildar una condicion sin codigo. Al destildar trae el id a dar de baja. */
+export interface TildeSuelto {
+  readonly descripcion: string;
+  readonly id: number | null;
+  readonly marcado: boolean;
+}
+
 export interface TildeDeEnfermedad {
   codigo: string;
   etiqueta: string;
@@ -53,7 +84,7 @@ export interface TildeDeEnfermedad {
 @Component({
   selector: 'app-ficha-de-ingreso',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, BuscadorConAlta, Chips, NumeroConPasos, TextoOpcional],
+  imports: [ReactiveFormsModule, BuscadorConAlta, NumeroConPasos, Segmentado, TextoOpcional],
   templateUrl: './ficha-de-ingreso.html',
   styleUrl: './ficha-de-ingreso.css',
 })
@@ -76,6 +107,30 @@ export class FichaDeIngreso {
   readonly agregarOcupacion = output<string>();
   readonly tildar = output<TildeDeEnfermedad>();
   readonly revisar = output<void>();
+  /** Muestra las condiciones tipicas y "Otra" (datos declarados). */
+  readonly conOtraCondicion = input(false);
+  /** Antecedentes medicos sin codigo vigentes: tipicas tildadas y las "Otra". */
+  readonly condicionesSueltas = input<readonly CondicionSuelta[]>([]);
+  /** Una condición que no está en la lista: la página la carga como antecedente médico. */
+  readonly otraCondicion = output<string>();
+  /** Tildar o destildar una condicion tipica o una "Otra". */
+  readonly tildarSuelta = output<TildeSuelto>();
+
+  /** Las tipicas, con su tilde segun lo declarado. */
+  protected readonly condicionesTipicas = computed(() =>
+    CONDICIONES_TIPICAS.map((etiqueta) => {
+      const vigente = this.condicionesSueltas().find(
+        (c) => normalizar(c.descripcion) === normalizar(etiqueta),
+      );
+      return { etiqueta, marcada: !!vigente, id: vigente?.id ?? null, fija: !!vigente?.fija };
+    }),
+  );
+
+  /** Las "Otra" ya cargadas: las sueltas que no son ninguna tipica. */
+  protected readonly otrasMarcadas = computed(() => {
+    const tipicas = new Set(CONDICIONES_TIPICAS.map(normalizar));
+    return this.condicionesSueltas().filter((c) => !tipicas.has(normalizar(c.descripcion)));
+  });
 
   protected readonly enfermedades = ENFERMEDADES_DE_INGRESO;
   protected readonly actividades = ACTIVIDADES;
@@ -84,7 +139,15 @@ export class FichaDeIngreso {
   protected readonly peso = signal<number | null>(null);
   protected readonly altura = signal<number | null>(null);
   protected readonly actividad = signal('');
-  protected readonly detalle = signal('');
+  /** El detalle de la actividad se guarda en un solo texto: "Fútbol · 2 veces por semana". */
+  protected readonly queHace = signal('');
+  protected readonly veces = signal<number | null>(null);
+
+  /** "Guardando…" mientras viaja; "Guardado" despues del primer guardado de esta visita. */
+  private readonly guardoAlgo = signal(false);
+  protected readonly estadoDeGuardado = computed(() =>
+    this.guardando() ? 'Guardando…' : this.guardoAlgo() ? 'Guardado' : '',
+  );
 
   protected readonly nombresDeOcupacion = computed(() => this.ocupaciones().map((o) => o.nombre));
 
@@ -95,7 +158,16 @@ export class FichaDeIngreso {
     if (!peso || !altura) {
       return null;
     }
-    return (peso / (altura * altura)).toFixed(1).replace('.', ',');
+    const valor = peso / (altura * altura);
+    const [categoria, tono] =
+      valor < 18.5
+        ? ['Bajo peso', 'aviso']
+        : valor < 25
+          ? ['Normal', 'exito']
+          : valor < 30
+            ? ['Sobrepeso', 'aviso']
+            : ['Obesidad', 'peligro'];
+    return { valor: valor.toFixed(1).replace('.', ','), categoria, tono };
   });
 
   protected readonly sinRevisar = computed(() => {
@@ -132,6 +204,7 @@ export class FichaDeIngreso {
         // Si fallo, la pagina ya llamo a `fallo()` y no queda nada en cola.
         if (this.guardandoAntes && !guardando) {
           this.enviando = false;
+          this.guardoAlgo.set(true);
           if (this.pendiente !== null) {
             const cambio = this.pendiente;
             this.pendiente = null;
@@ -159,6 +232,43 @@ export class FichaDeIngreso {
     this.enviando = false;
   }
 
+  /**
+   * Lo dictado de la ficha (Dictar todo): lo lleva a los campos y lo guarda como si se hubiera
+   * escrito. La ocupacion pasa por el mismo camino que elegirla en el buscador.
+   */
+  aplicarDictado(dictado: {
+    readonly ocupacion?: string;
+    readonly pesoKg?: number;
+    readonly alturaCm?: number;
+    readonly actividad?: string;
+    readonly detalle?: string;
+  }): void {
+    if (this.soloLectura()) {
+      return;
+    }
+    if (dictado.pesoKg !== undefined) {
+      this.pesoInvalido.set(false);
+      this.peso.set(dictado.pesoKg);
+    }
+    if (dictado.alturaCm !== undefined) {
+      this.alturaInvalida.set(false);
+      this.altura.set(dictado.alturaCm);
+    }
+    if (dictado.actividad !== undefined) {
+      this.actividad.set(dictado.actividad);
+    }
+    if (dictado.detalle !== undefined) {
+      const partes = partirDetalle(dictado.detalle);
+      this.queHace.set(partes.queHace);
+      this.veces.set(partes.veces ?? this.veces());
+    }
+    this.salirDeCampo();
+    if (dictado.ocupacion) {
+      this.ocupacion.setValue(dictado.ocupacion, { emitEvent: false });
+      this.elegirOcupacion(dictado.ocupacion);
+    }
+  }
+
   /** Lo llama la pagina despues de crear la ocupacion. */
   guardarOcupacion(ocupacionId: number): void {
     this.emitir({ ocupacionId });
@@ -181,8 +291,8 @@ export class FichaDeIngreso {
     (campo === 'peso' ? this.pesoInvalido : this.alturaInvalida).set(invalido);
   }
 
-  protected elegirActividad(valor: string | readonly string[] | null): void {
-    this.actividad.set(typeof valor === 'string' ? valor : '');
+  protected elegirActividad(valor: string | null): void {
+    this.actividad.set(valor ?? '');
     this.salirDeCampo();
   }
 
@@ -195,9 +305,33 @@ export class FichaDeIngreso {
       (this.peso() ?? undefined) !== (actual?.pesoKg ?? undefined) ||
       (this.altura() ?? undefined) !== (actual?.alturaCm ?? undefined) ||
       this.actividad() !== (actual?.actividad ?? '') ||
-      this.detalle().trim() !== (actual?.detalle ?? '');
+      this.detalleCompuesto() !== (actual?.detalle ?? '');
     if (cambio) {
       this.emitir({});
+    }
+  }
+
+  protected enviarOtra(campo: HTMLInputElement): void {
+    this.enviarTexto(campo, (texto) => this.otraCondicion.emit(texto));
+  }
+
+  protected alTildarSuelta(descripcion: string, id: number | null, evento: Event): void {
+    this.tildarSuelta.emit({
+      descripcion,
+      id,
+      marcado: (evento.target as HTMLInputElement).checked,
+    });
+  }
+
+  private detalleCompuesto(): string {
+    return componerDetalle(this.queHace(), this.veces());
+  }
+
+  private enviarTexto(campo: HTMLInputElement, emitir: (texto: string) => void): void {
+    const texto = campo.value.trim();
+    if (texto) {
+      emitir(texto.charAt(0).toUpperCase() + texto.slice(1));
+      campo.value = '';
     }
   }
 
@@ -225,8 +359,10 @@ export class FichaDeIngreso {
     if (this.actividad() === (antes?.actividad ?? '')) {
       this.actividad.set(ahora?.actividad ?? '');
     }
-    if (this.detalle().trim() === (antes?.detalle ?? '')) {
-      this.detalle.set(ahora?.detalle ?? '');
+    if (this.detalleCompuesto() === (antes?.detalle ?? '')) {
+      const partes = partirDetalle(ahora?.detalle ?? '');
+      this.queHace.set(partes.queHace);
+      this.veces.set(partes.veces);
     }
   }
 
@@ -245,7 +381,7 @@ export class FichaDeIngreso {
       pesoKg: this.peso() ?? undefined,
       alturaCm: this.altura() ?? undefined,
       actividad: (this.actividad() || undefined) as FichaDeIngresoRequest['actividad'],
-      detalle: this.detalle().trim() || undefined,
+      detalle: this.detalleCompuesto() || undefined,
       version: actual?.version,
       ...cambio,
     });
@@ -255,4 +391,34 @@ export class FichaDeIngreso {
 
 function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+const VECES_POR_SEMANA =
+  /\s*(?:·\s*)?(\d{1,2})\s*(?:o\s*\d{1,2}\s*)?(?:vez|veces)\s*(?:por|a la|x)\s*semana\s*/i;
+
+/** "Fútbol · 2 veces por semana" a partir de los dos campos. */
+export function componerDetalle(queHace: string, veces: number | null): string {
+  const frecuencia = veces ? `${veces} ${veces === 1 ? 'vez' : 'veces'} por semana` : '';
+  return [queHace.trim(), frecuencia].filter(Boolean).join(' · ').slice(0, 120);
+}
+
+/** Separa del detalle guardado (o dictado) cuántas veces por semana y qué hace. */
+export function partirDetalle(detalle: string): { queHace: string; veces: number | null } {
+  const hallado = VECES_POR_SEMANA.exec(detalle);
+  if (!hallado) {
+    return { queHace: detalle.trim(), veces: null };
+  }
+  const resto = (
+    detalle.slice(0, hallado.index) +
+    ' ' +
+    detalle.slice(hallado.index + hallado[0].length)
+  )
+    .replace(/\s*·\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const queHace = resto.replace(/^(realiza|hace|practica)\s+/i, '');
+  return {
+    queHace: queHace.charAt(0).toUpperCase() + queHace.slice(1),
+    veces: Number(hallado[1]),
+  };
 }

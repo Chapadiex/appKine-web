@@ -1,0 +1,33 @@
+@if (dictado.disponible()) {
+  @switch (paso()) {
+    @case ('reposo') {
+      <button
+        type="button"
+        class="dictado-ficha"
+        aria-label="Dictar la ficha"
+        title="Dictar la ficha: decí ocupación, peso, altura, actividad, condiciones, antecedentes y observaciones"
+        (click)="grabar()"
+      >
+        <app-icono nombre="microfono" />
+      </button>
+    }
+    @case ('grabando') {
+      <button
+        type="button"
+        class="dictado-ficha dictado-ficha--grabando"
+        aria-label="Terminar el dictado y cargar"
+        title="Terminar y cargar"
+        (click)="terminar()"
+        (keydown.escape)="descartar()"
+      >
+        <app-icono nombre="detener" />
+      </button>
+    }
+    @case ('procesando') {
+      <button type="button" class="dictado-ficha" aria-label="Cargando lo dictado" disabled>
+        <span class="dictado-ficha__giro" aria-hidden="true"></span>
+      </button>
+    }
+  }
+  <span class="visualmente-oculto" role="status">{{ anuncio() }}</span>
+}

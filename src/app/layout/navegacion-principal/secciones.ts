@@ -24,6 +24,7 @@ import {
   PERMISO_PRODUCTO_READ,
   PERMISO_REPORTE_READ,
   PERMISO_SESION_REGISTER,
+  PERMISO_TENANT_UPDATE,
   PERMISO_TURNO_READ,
 } from '../../core/models/permisos';
 import { RUTA_CLASES } from '../../features/activity/models/rutas-de-clases';
@@ -158,6 +159,21 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         permisos: [PERMISO_SESION_REGISTER],
         servicio: 'KINESIOLOGIA',
       },
+    ],
+  },
+  {
+    // Todo lo de IA junto (25/11/2026): antes el asistente y la consulta estaban en Atención y la
+    // bibliografía en Configuración. Cada entrada sigue atada a su función: si el centro la apaga,
+    // desaparece, y si no queda ninguna el grupo no se dibuja.
+    etiqueta: 'Inteligencia artificial',
+    icono: 'chispa',
+    secciones: [
+      {
+        etiqueta: 'Asistente de datos',
+        ruta: '/asistente',
+        permisos: [PERMISO_ASISTENTE_USE],
+        funcionIa: 'ASISTENTE',
+      },
       {
         etiqueta: 'Consultar bibliografía',
         ruta: '/consulta',
@@ -165,10 +181,16 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         funcionIa: 'BIBLIOTECA',
       },
       {
-        etiqueta: 'Asistente de datos',
-        ruta: '/asistente',
-        permisos: [PERMISO_ASISTENTE_USE],
-        funcionIa: 'ASISTENTE',
+        etiqueta: 'Bibliografía de la IA',
+        ruta: '/biblioteca',
+        permisos: [PERMISO_BIBLIOTECA_MANAGE],
+        funcionIa: 'BIBLIOTECA',
+      },
+      {
+        // Es una pestaña de Organización; aca es el atajo para prender o apagar cada función.
+        etiqueta: 'Configurar la IA',
+        ruta: '/organizacion/inteligencia-artificial',
+        permisos: [PERMISO_TENANT_UPDATE],
       },
     ],
   },
@@ -281,12 +303,6 @@ export const GRUPOS: readonly GrupoDeSecciones[] = [
         etiqueta: 'Colaboradores',
         ruta: '/organizacion/colaboradores',
         permisos: [PERMISO_COLABORADOR_READ],
-      },
-      {
-        etiqueta: 'Bibliografía de la IA',
-        ruta: '/biblioteca',
-        permisos: [PERMISO_BIBLIOTECA_MANAGE],
-        funcionIa: 'BIBLIOTECA',
       },
     ],
   },

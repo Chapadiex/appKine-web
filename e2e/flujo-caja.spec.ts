@@ -282,7 +282,7 @@ test.describe('Egreso pagado en efectivo contra el backend real', () => {
     await colaborador.selectOption({ index: 1 });
     await page.getByLabel('Concepto', { exact: true }).fill(concepto);
     await page.getByLabel('Importe total').fill('3000');
-    await page.getByLabel('Tipo').fill('Factura C');
+    await page.getByLabel('Tipo').selectOption('Factura C');
     await page.getByLabel('Número', { exact: true }).fill(`E2E-${sufijo}`);
     const alta = respuestaDe(page, 'POST', /\/egresos$/);
     await page.getByRole('button', { name: 'Cargar el borrador' }).click();

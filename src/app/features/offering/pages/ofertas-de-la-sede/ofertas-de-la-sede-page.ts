@@ -80,6 +80,7 @@ import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-vacio';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'editar' | 'baja';
@@ -146,6 +147,7 @@ type Heredable = '' | 'true' | 'false';
 @Component({
   selector: 'app-ofertas-de-la-sede-page',
   imports: [
+    Importe,
     CabeceraDePagina,
     Pestanas,
     AccionesDeFila,

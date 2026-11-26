@@ -214,7 +214,7 @@ describe('EgresosPage', () => {
     elegir(fixture, '#alta-colaborador', '7');
     escribir(fixture, '#alta-concepto', 'Honorarios septiembre');
     escribir(fixture, '#alta-importe', '150000,50');
-    escribir(fixture, '#alta-comprobante-tipo', 'Factura C');
+    elegir(fixture, '#alta-comprobante-tipo', 'Factura C');
     escribir(fixture, '#alta-comprobante-numero', '0001-00000042');
     enviar(fixture, 1);
 

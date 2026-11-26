@@ -173,15 +173,19 @@
 
       <div class="campo">
         <label for="alta-honorario-importe">Importe por participante presente</label>
-        <input
-          id="alta-honorario-importe"
-          type="number"
-          min="0.01"
-          step="0.01"
-          formControlName="importe"
-          [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
-          aria-describedby="alta-honorario-importe-ayuda"
-        />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            appImporte
+            id="alta-honorario-importe"
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="importe"
+            [attr.aria-invalid]="mostrarErrorAlta('importe') ? 'true' : null"
+            aria-describedby="alta-honorario-importe-ayuda"
+          />
+        </div>
         @if (mostrarErrorAlta('importe')) {
           <p class="campo__error" role="alert">Un importe mayor que cero.</p>
         }

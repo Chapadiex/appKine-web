@@ -25,7 +25,7 @@ import {
 } from '../../../../api/generated/model/registrar-movimiento-de-caja';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ErrorCaja, traducirErrorCaja } from '../../models/caja-errors';
-import { aCentavos, centavosDeTexto, deCentavos } from '../../models/dinero';
+import { aCentavos, centavosDeTexto, deCentavos, importeConDecimales } from '../../models/dinero';
 import { restaDelSaldo, tipoDeMovimientoEnPalabras } from '../../models/etiquetas-de-caja';
 import {
   MEDIOS_DE_COBRO,
@@ -388,6 +388,16 @@ export class CajaPage {
     this.claveDeMovimiento = '';
   }
 
+  /** Al salir de un campo de importe se completan los decimales: `1500` queda `1500,00`. */
+  protected readonly importeConDecimales = importeConDecimales;
+
+  /** El importe tipeado no es un numero: se marca el campo y se dice como escribirlo. */
+  protected readonly importeMovimientoInvalido = computed(
+    () =>
+      this.importeMovimiento().trim() !== '' &&
+      (centavosDeTexto(this.importeMovimiento()) ?? 0) <= 0,
+  );
+
   protected cambiarImporte(valor: string): void {
     this.importeMovimiento.set(valor);
     this.claveDeMovimiento = '';
@@ -560,6 +570,9 @@ export class CajaPage {
   protected importe(valor: number | undefined, moneda?: string): string {
     return importeEnPalabras(valor, moneda ?? this.jornada()?.moneda);
   }
+
+  /** Si el movimiento resta del cajón: pinta el importe en rojo, y en verde si suma. */
+  protected readonly restaDelSaldo = restaDelSaldo;
 
   protected importeConSigno(movimiento: MovimientoDeCaja): string {
     const texto = importeEnPalabras(movimiento.importe, movimiento.moneda);

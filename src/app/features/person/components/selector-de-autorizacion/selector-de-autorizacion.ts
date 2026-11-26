@@ -15,6 +15,7 @@ import {
 } from '../../models/etiquetas-de-consumo';
 import { Ayuda } from '../../../../shared/components/ayuda/ayuda';
 import { Alerta } from '../../../../shared/components/alerta/alerta';
+import { Icono } from '../../../../shared/components/icono/icono';
 
 type Estado =
   | { readonly tipo: 'inicial' }
@@ -44,7 +45,7 @@ type Estado =
  */
 @Component({
   selector: 'app-selector-de-autorizacion',
-  imports: [Alerta, Ayuda, ReactiveFormsModule],
+  imports: [Alerta, Ayuda, Icono, ReactiveFormsModule],
   templateUrl: './selector-de-autorizacion.html',
   styleUrl: '../../person.css',
 })

@@ -1,0 +1,75 @@
+/*
+ * Micrófono redondo con contorno rojo en la cabecera de la ficha; grabando se rellena. Solo tokens.
+ */
+
+:host {
+  display: inline-flex;
+}
+
+.dictado-ficha {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--alto-tocable);
+  block-size: var(--alto-tocable);
+  padding: 0;
+  border: var(--borde-medio, 2px) solid var(--color-peligro);
+  border-radius: 50%;
+  background: var(--color-superficie);
+  color: var(--color-peligro-texto);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+@media (hover: hover) {
+  .dictado-ficha:not(:disabled):hover {
+    transform: scale(1.06);
+  }
+}
+
+.dictado-ficha:focus-visible {
+  outline: var(--foco-grosor) solid var(--color-foco);
+  outline-offset: var(--foco-offset);
+}
+
+.dictado-ficha:disabled {
+  cursor: progress;
+}
+
+/* Grabando: se rellena de rojo y late; el ícono cambia a detener. */
+.dictado-ficha--grabando {
+  background: var(--color-peligro);
+  color: var(--color-accion-texto);
+  animation: latido 1.2s ease-out infinite;
+}
+
+@keyframes latido {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-peligro) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0.6rem transparent;
+  }
+}
+
+.dictado-ficha__giro {
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: giro 0.8s linear infinite;
+}
+
+@keyframes giro {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictado-ficha--grabando,
+  .dictado-ficha__giro {
+    animation: none;
+  }
+}

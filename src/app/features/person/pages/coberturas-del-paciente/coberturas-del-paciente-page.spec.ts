@@ -268,6 +268,8 @@ describe('CoberturasDelPacientePage', () => {
     apretar(fixture, 'Agregar una cobertura');
     httpMock.expectOne(esFinanciadores()).flush([]);
     await estabilizar(fixture);
+    // Viene con hoy: se borra para probar que sin fecha no sale.
+    escribirEn(fixture, '#alta-cobertura-desde', '');
 
     apretar(fixture, 'Agregar cobertura');
 

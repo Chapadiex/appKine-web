@@ -230,16 +230,21 @@
               @if (estaElegida(deuda)) {
                 <div class="campo campo--sangrado">
                   <label [for]="'imputacion-' + deuda.id">Importe a imputar a esta deuda</label>
-                  <input
-                    [id]="'imputacion-' + deuda.id"
-                    type="text"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    [value]="importeDe(deuda)"
-                    [attr.aria-invalid]="excede(deuda)"
-                    [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
-                    (input)="cambiarImporte(deuda, $any($event.target).value)"
-                  />
+                  <div class="campo-importe">
+                    <span class="campo-importe__signo" aria-hidden="true">$</span>
+                    <input
+                      appImporte
+                      placeholder="0,00"
+                      [id]="'imputacion-' + deuda.id"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      [value]="importeDe(deuda)"
+                      [attr.aria-invalid]="excede(deuda)"
+                      [attr.aria-describedby]="'ayuda-imputacion-' + deuda.id"
+                      (input)="cambiarImporte(deuda, $any($event.target).value)"
+                    />
+                  </div>
                   <p class="ayuda ayuda--fija" [id]="'ayuda-imputacion-' + deuda.id">
                     Hasta {{ saldoEnPalabras(deuda) }}. Un saldo no puede quedar negativo: el
                     servidor descuenta solo si alcanza.
@@ -281,15 +286,20 @@
 
             <div class="campo campo--2">
               <label [for]="'importe-medio-' + $index">Importe recibido</label>
-              <input
-                [id]="'importe-medio-' + $index"
-                type="text"
-                inputmode="decimal"
-                autocomplete="off"
-                [value]="linea.importe"
-                [attr.aria-invalid]="medioInvalido(linea)"
-                (input)="cambiarImporteDeMedio(linea, $any($event.target).value)"
-              />
+              <div class="campo-importe">
+                <span class="campo-importe__signo" aria-hidden="true">$</span>
+                <input
+                  appImporte
+                  placeholder="0,00"
+                  [id]="'importe-medio-' + $index"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  [value]="linea.importe"
+                  [attr.aria-invalid]="medioInvalido(linea)"
+                  (input)="cambiarImporteDeMedio(linea, $any($event.target).value)"
+                />
+              </div>
             </div>
 
             <div class="campo campo--3">

@@ -23,6 +23,7 @@ import {
   sumaDeImputaciones,
 } from '../../models/tarjeta-de-accion';
 import { AsistenteApi } from '../../services/asistente-api';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 let siguienteId = 0;
 
@@ -49,7 +50,7 @@ const DINERO = new Intl.NumberFormat('es-AR', {
 @Component({
   selector: 'app-tarjeta-de-accion',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Dictado, RouterLink],
+  imports: [Importe, Dictado, RouterLink],
   templateUrl: './tarjeta-de-accion.html',
   styleUrl: './tarjeta-de-accion.css',
 })

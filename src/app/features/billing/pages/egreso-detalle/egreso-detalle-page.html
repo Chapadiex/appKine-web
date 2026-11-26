@@ -241,17 +241,22 @@
               </div>
               <div class="campo campo--2">
                 <label for="edicion-importe">Importe total</label>
-                <input
-                  id="edicion-importe"
-                  type="text"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  formControlName="importe"
-                  [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
-                  [attr.aria-describedby]="
-                    campoDeEdicionInvalido('importe') ? 'edicion-importe-error' : null
-                  "
-                />
+                <div class="campo-importe">
+                  <span class="campo-importe__signo" aria-hidden="true">$</span>
+                  <input
+                    appImporte
+                    placeholder="0,00"
+                    id="edicion-importe"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    formControlName="importe"
+                    [attr.aria-invalid]="campoDeEdicionInvalido('importe') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      campoDeEdicionInvalido('importe') ? 'edicion-importe-error' : null
+                    "
+                  />
+                </div>
                 @if (campoDeEdicionInvalido('importe')) {
                   <p class="campo__error" id="edicion-importe-error" role="alert">
                     Un importe mayor que cero.
@@ -473,15 +478,20 @@
             }
             <div class="campo campo--3">
               <label for="pago-importe">Importe del pago</label>
-              <input
-                id="pago-importe"
-                type="text"
-                inputmode="decimal"
-                autocomplete="off"
-                formControlName="importe"
-                [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
-                [attr.aria-describedby]="importeDePagoInvalido() ? 'pago-importe-error' : null"
-              />
+              <div class="campo-importe">
+                <span class="campo-importe__signo" aria-hidden="true">$</span>
+                <input
+                  appImporte
+                  placeholder="0,00"
+                  id="pago-importe"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  formControlName="importe"
+                  [attr.aria-invalid]="importeDePagoInvalido() ? 'true' : null"
+                  [attr.aria-describedby]="importeDePagoInvalido() ? 'pago-importe-error' : null"
+                />
+              </div>
               @if (importeDePagoInvalido()) {
                 <p class="campo__error" id="pago-importe-error" role="alert">
                   Un importe mayor que cero.

@@ -16,6 +16,20 @@ export const CATEGORIAS_DE_EGRESO: readonly RegistrarEgresoCategoriaEnum[] = Obj
   RegistrarEgresoCategoriaEnum,
 );
 
+/**
+ * Tipos de comprobante que se ofrecen al cargar un egreso. El contrato guarda texto libre (40): la
+ * lista evita variantes de escritura que despues no se pueden filtrar (25/11/2026).
+ */
+export const TIPOS_DE_COMPROBANTE: readonly string[] = [
+  'Factura A',
+  'Factura B',
+  'Factura C',
+  'Recibo',
+  'Ticket',
+  'Nota de débito',
+  'Otro',
+];
+
 export const MEDIOS_DE_PAGO_DE_EGRESO: readonly RegistrarPagoDeEgresoMedioEnum[] = Object.values(
   RegistrarPagoDeEgresoMedioEnum,
 );

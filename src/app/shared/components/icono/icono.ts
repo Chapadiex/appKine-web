@@ -81,6 +81,12 @@ const TRAZOS = {
   repetir: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
   microfono: rectangulo(9, 3, 6, 11, 3) + 'M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7',
   detener: rectangulo(6.5, 6.5, 11, 11, 2),
+  /** Sacar una foto con la camara del equipo. */
+  camara: 'M4 8h3l1.5-2.5h7L17 8h3v11H4z' + circulo(12, 13, 3.5),
+  /** Subir un archivo: flecha hacia arriba sobre una bandeja. */
+  subir: 'M12 15V4M7.5 8.5 12 4l4.5 4.5M4 14v6h16v-6',
+  /** Descargar un archivo: flecha hacia abajo sobre una bandeja. */
+  descargar: 'M12 4v11M7.5 10.5 12 15l4.5-4.5M4 14v6h16v-6',
   /** La inteligencia artificial: una chispa grande y una chica. */
   chispa:
     'M10 3l1.9 5.1L17 10l-5.1 1.9L10 17l-1.9-5.1L3 10l5.1-1.9z' +
