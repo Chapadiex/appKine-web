@@ -817,15 +817,3 @@
   gap: var(--esp-1);
   color: var(--color-aviso-texto);
 }
-
-/* Celda en dos renglones: dato arriba, complemento chico abajo (25/11/2026). */
-.celda-doble {
-  display: grid;
-  gap: 2px;
-  white-space: nowrap;
-}
-
-.celda-doble > .ayuda {
-  margin: 0;
-  font-size: var(--tipo-xs);
-}
