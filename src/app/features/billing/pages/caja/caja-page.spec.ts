@@ -169,7 +169,7 @@ describe('CajaPage', () => {
     const fixture = await montarAbierta([]);
 
     apretar(fixture, 'Registrar movimiento');
-    apretar(fixture, '− Egreso');
+    apretar(fixture, 'Egreso');
     tipear(fixture, '#movimiento-importe', '100');
     tipear(fixture, '#movimiento-concepto', 'Articulos de limpieza');
     apretar(fixture, 'Registrar el movimiento');

@@ -114,6 +114,16 @@ export function textoDeCentavos(centavos: number): string {
 }
 
 /**
+ * Lo tipeado en un campo de importe, con sus dos decimales y coma, para mostrar al salir del campo:
+ * `1500` → `1500,00`, `8,5` → `8,50`. Si no es un importe lo deja como esta, para que el
+ * operador vea y corrija lo que escribio (25/11/2026).
+ */
+export function importeConDecimales(texto: string): string {
+  const centavos = centavosDeTexto(texto);
+  return centavos === null ? texto : textoDeCentavos(centavos).replace('.', ',');
+}
+
+/**
  * Suma de centavos enteros.
  *
  * <p>Existe para que en la pantalla no haya ni un `reduce` sobre importes decimales sueltos: la

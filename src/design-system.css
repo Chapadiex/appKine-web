@@ -1840,3 +1840,28 @@ input[type='checkbox']:disabled {
   margin: 0;
   font-size: var(--tipo-xs);
 }
+
+/*
+ * Campo de importe: el "$" fijo a la izquierda, fuera del valor. El operador no lo borra al corregir
+ * y el lector de pantalla no lo lee como parte del numero (25/11/2026).
+ */
+.campo-importe {
+  position: relative;
+}
+
+.campo-importe__signo {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--esp-4);
+  display: flex;
+  align-items: center;
+  color: var(--color-texto-suave);
+  pointer-events: none;
+}
+
+.campo-importe > input {
+  width: 100%;
+  padding-inline-start: calc(var(--esp-4) + 1.25ch);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
