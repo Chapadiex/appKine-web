@@ -34,3 +34,29 @@
   width: 100%;
   justify-content: center;
 }
+
+/* Cuenta corriente con el formato estándar de las fichas (25/11/2026). */
+.tabla .celda-doble {
+  white-space: normal;
+}
+
+.deuda__revisar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-1);
+  margin-top: var(--esp-1);
+  font-size: var(--tipo-xs);
+  color: var(--color-aviso-texto);
+}
+
+.deuda__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-2);
+}
+
+.deuda__nota app-icono,
+.deuda__revisar app-icono {
+  flex: none;
+  margin-top: 2px;
+}

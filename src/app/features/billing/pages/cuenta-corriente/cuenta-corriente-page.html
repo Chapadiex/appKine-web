@@ -20,7 +20,10 @@
       detras del permiso: ofrecerlo a quien no lo tiene seria mandarlo a llenar un formulario
       entero para recibir un 403 al confirmar.
     -->
-    <a class="boton boton--secundario" [routerLink]="rutaCobros()">Ver los cobros registrados</a>
+    <a class="boton boton--secundario" [routerLink]="rutaCobros()">
+      <app-icono nombre="economia" />
+      Ver los cobros registrados
+    </a>
     <a class="boton" [routerLink]="rutaCobrar()" *akinePermiso="PERMISO_COBRO_REGISTER">
       <app-icono nombre="agregar" />
       Registrar un cobro
@@ -107,27 +110,37 @@
                 [class.fila--seleccionada]="obligacionEnPanel()?.id === obligacion.id"
               >
                 <td>{{ fechaEnPalabras(obligacion.devengadaEn) }}</td>
+                <!-- Dato arriba en negrita y complemento abajo, como coberturas (25/11/2026). -->
                 <td>
-                  {{ obligacion.snapshotNombre }}
-                  @if (esDeClase(obligacion)) {
-                    <div class="ayuda">{{ conceptoDeClase(obligacion) }}</div>
-                  } @else if (origenEnPalabras(obligacion.origen); as origen) {
-                    <div class="ayuda">{{ origen }}</div>
-                  }
+                  <span class="celda-doble">
+                    <b>{{ obligacion.snapshotNombre }}</b>
+                    @if (esDeClase(obligacion)) {
+                      <span class="ayuda">{{ conceptoDeClase(obligacion) }}</span>
+                    } @else if (origenEnPalabras(obligacion.origen); as origen) {
+                      <span class="ayuda">{{ origen }}</span>
+                    }
+                  </span>
                 </td>
                 <td>
-                  {{ conceptoEnPalabras(obligacion.concepto) }}
-                  @if (obligacion.convenio?.convenioNombre; as convenio) {
-                    <div class="ayuda">Convenio {{ convenio }}</div>
-                  }
+                  <span class="celda-doble">
+                    <span>{{ conceptoEnPalabras(obligacion.concepto) }}</span>
+                    @if (obligacion.convenio?.convenioNombre; as convenio) {
+                      <span class="ayuda">Convenio {{ convenio }}</span>
+                    }
+                  </span>
                   <!--
-                DP-11: es una alerta para revisar, no un rechazo. La deuda existe y se cobra igual;
-                lo que hay que mirar es por que se facturo una practica que la oferta no declara.
-              -->
+                    DP-11: es una alerta para revisar, no un rechazo. La deuda existe y se cobra
+                    igual; lo que hay que mirar es por que se facturo una practica que la oferta no
+                    declara.
+                  -->
                   @if (obligacion.alertaPracticaNoHabilitada) {
-                    <div class="ayuda">
-                      <b>Revisar:</b> la práctica facturada no está habilitada en la actividad.
-                    </div>
+                    <span class="deuda__revisar">
+                      <app-icono nombre="advertencia" />
+                      <span
+                        ><b>Revisar:</b> la práctica facturada no está habilitada en la
+                        actividad.</span
+                      >
+                    </span>
                   }
                 </td>
 
@@ -140,7 +153,9 @@
                   {{ importe(obligacion, obligacion.snapshotPrecio) }}
                 </td>
                 <td class="importe">{{ importe(obligacion, obligacion.importeOriginal) }}</td>
-                <td class="importe">{{ importe(obligacion, obligacion.saldo) }}</td>
+                <td class="importe">
+                  <b>{{ importe(obligacion, obligacion.saldo) }}</b>
+                </td>
                 <td>
                   <span [class]="claseDeEstado(obligacion.estado)">
                     {{ estadoEnPalabras(obligacion.estado) }}
@@ -153,20 +168,25 @@
                   obligacion-de-venta porque dejaria el pase activo con sus creditos. Se anula el
                   pase, que anula pase y deuda juntos (contrato 0.114.0).
                 -->
-                    <a class="boton boton--secundario boton--chico" [routerLink]="rutaPases()">
-                      Anular desde los pases
-                    </a>
-                    <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
+                    <span class="celda-doble">
+                      <a class="boton boton--secundario boton--chico" [routerLink]="rutaPases()">
+                        Anular desde los pases
+                      </a>
+                      <span class="ayuda">Se anula el pase y esta deuda juntos.</span>
+                    </span>
                   } @else if (sePuedeAnular(obligacion)) {
                     <button
                       type="button"
                       class="boton boton--secundario boton--chico"
                       (click)="abrirAnulacion(obligacion)"
                     >
+                      <app-icono nombre="cerrar" />
                       Anular
                     </button>
                   } @else if (obligacion.motivoAnulacion) {
-                    <span class="ayuda">Motivo: {{ obligacion.motivoAnulacion }}</span>
+                    <span class="ayuda deuda__motivo"
+                      >Motivo: {{ obligacion.motivoAnulacion }}</span
+                    >
                   }
                 </td>
               </tr>
@@ -184,7 +204,8 @@
     alguien puede preguntarse donde quedo el resto de la prestacion.
   -->
   @if (hayCoseguros()) {
-    <p class="ayuda">
+    <p class="ayuda deuda__nota">
+      <app-icono nombre="info" />
       En las prestaciones con cobertura acá se ve solo el <b>coseguro</b>, que es lo que paga la
       persona. La parte de la obra social no es una deuda del paciente: se gestiona en las
       presentaciones a financiadores.
@@ -203,7 +224,7 @@
 @if (estado().tipo === 'listo') {
   <section class="tarjeta" aria-labelledby="titulo-saldo-a-favor">
     <div class="titulo-con-ayuda titulo-con-ayuda--seccion">
-      <h2 id="titulo-saldo-a-favor">Saldo a favor</h2>
+      <h2 id="titulo-saldo-a-favor"><app-icono nombre="economia" /> Saldo a favor</h2>
       <app-ayuda titulo="Saldo a favor">
         <p>
           Plata que entro y todavía no se aplico a ninguna deuda (anticipos y sobrantes). Se imputa
@@ -267,6 +288,7 @@
                     class="boton boton--secundario boton--chico"
                     (click)="abrirImputacion(cobro)"
                   >
+                    <app-icono nombre="tilde" />
                     Imputar a deudas
                   </button>
                 </td>
@@ -410,7 +432,7 @@
               : null
           "
         >
-          <legend>Deudas pendientes de la misma sede</legend>
+          <legend><app-icono nombre="economia" /> Deudas pendientes de la misma sede</legend>
           @for (deuda of deudasDelImputando(); track deuda.id) {
             <div class="campo campo--6">
               <label [for]="'imputar-' + cobro.id + '-' + deuda.id">
@@ -441,7 +463,10 @@
 
       <div class="acciones">
         @if (deudasDelImputando().length > 0) {
-          <button type="submit" class="boton" [disabled]="enviandoImputacion()">Imputar</button>
+          <button type="submit" class="boton" [disabled]="enviandoImputacion()">
+            <app-icono nombre="tilde" />
+            Imputar
+          </button>
         }
         <button type="button" class="boton boton--secundario" (click)="cerrarImputacion()">
           Cancelar
