@@ -571,6 +571,9 @@ export class CajaPage {
     return importeEnPalabras(valor, moneda ?? this.jornada()?.moneda);
   }
 
+  /** Si el movimiento resta del cajón: pinta el importe en rojo, y en verde si suma. */
+  protected readonly restaDelSaldo = restaDelSaldo;
+
   protected importeConSigno(movimiento: MovimientoDeCaja): string {
     const texto = importeEnPalabras(movimiento.importe, movimiento.moneda);
     return restaDelSaldo(movimiento.tipo) ? `− ${texto}` : `+ ${texto}`;
