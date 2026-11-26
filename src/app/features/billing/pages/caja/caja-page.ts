@@ -25,7 +25,7 @@ import {
 } from '../../../../api/generated/model/registrar-movimiento-de-caja';
 import { TenantContextStore } from '../../../../core/services/tenant-context.store';
 import { ErrorCaja, traducirErrorCaja } from '../../models/caja-errors';
-import { aCentavos, centavosDeTexto, deCentavos } from '../../models/dinero';
+import { aCentavos, centavosDeTexto, deCentavos, importeConDecimales } from '../../models/dinero';
 import { restaDelSaldo, tipoDeMovimientoEnPalabras } from '../../models/etiquetas-de-caja';
 import {
   MEDIOS_DE_COBRO,
@@ -387,6 +387,16 @@ export class CajaPage {
     this.medioMovimiento.set(valor as RegistrarMovimientoDeCajaMedioEnum);
     this.claveDeMovimiento = '';
   }
+
+  /** Al salir de un campo de importe se completan los decimales: `1500` queda `1500,00`. */
+  protected readonly importeConDecimales = importeConDecimales;
+
+  /** El importe tipeado no es un numero: se marca el campo y se dice como escribirlo. */
+  protected readonly importeMovimientoInvalido = computed(
+    () =>
+      this.importeMovimiento().trim() !== '' &&
+      (centavosDeTexto(this.importeMovimiento()) ?? 0) <= 0,
+  );
 
   protected cambiarImporte(valor: string): void {
     this.importeMovimiento.set(valor);

@@ -156,6 +156,34 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* Ingreso en verde y egreso en rojo: el icono siempre, y el fondo cuando está elegido (25/11/2026). */
+.segmento button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+}
+
+.segmento__ingreso app-icono {
+  color: var(--color-exito);
+}
+
+.segmento__egreso app-icono {
+  color: var(--color-peligro);
+}
+
+.segmento button.segmento__ingreso[aria-pressed='true'] {
+  background: var(--color-exito-fondo);
+  box-shadow: inset 0 calc(-1 * var(--borde-medio)) 0 var(--color-exito);
+  color: var(--color-exito-texto);
+}
+
+.segmento button.segmento__egreso[aria-pressed='true'] {
+  background: var(--color-peligro-fondo);
+  box-shadow: inset 0 calc(-1 * var(--borde-medio)) 0 var(--color-peligro);
+  color: var(--color-peligro-texto);
+}
+
 .segmento button:focus-visible {
   outline-offset: calc(-1 * var(--foco-grosor));
 }
