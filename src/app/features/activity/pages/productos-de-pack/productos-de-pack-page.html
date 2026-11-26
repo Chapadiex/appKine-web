@@ -292,15 +292,20 @@
       </div>
       <div class="campo campo--2">
         <label for="producto-precio">Precio</label>
-        <input
-          id="producto-precio"
-          type="text"
-          inputmode="decimal"
-          autocomplete="off"
-          formControlName="precio"
-          [attr.aria-invalid]="invalido('precio')"
-          [attr.aria-describedby]="descritoPor('precio')"
-        />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            appImporte
+            placeholder="0,00"
+            id="producto-precio"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="precio"
+            [attr.aria-invalid]="invalido('precio')"
+            [attr.aria-describedby]="descritoPor('precio')"
+          />
+        </div>
         @if (invalido('precio')) {
           <p class="campo__error" id="producto-precio-error">
             Un importe mayor que cero, con hasta dos decimales.

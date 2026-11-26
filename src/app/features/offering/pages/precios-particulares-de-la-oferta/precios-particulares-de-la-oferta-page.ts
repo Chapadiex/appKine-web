@@ -41,6 +41,7 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** Operacion abierta sobre una fila. Solo una a la vez. */
 type TipoAccion = 'fin' | 'baja';
@@ -71,6 +72,7 @@ interface SituacionDelPrecio {
 @Component({
   selector: 'app-precios-particulares-de-la-oferta-page',
   imports: [
+    Importe,
     CabeceraDePagina,
 
     Alerta,

@@ -60,6 +60,7 @@ import { EstadoVacio } from '../../../../shared/components/estado-vacio/estado-v
 import { ColumnaOrdenable } from '../../../../shared/components/tabla/columna-ordenable';
 import { PieDeTabla } from '../../../../shared/components/tabla/pie-de-tabla';
 import { tablaLocal } from '../../../../shared/components/tabla/tabla-local';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 type EstadoCarga =
   | { readonly tipo: 'cargando' }
@@ -111,6 +112,7 @@ type FalloDeEgreso = ErrorEgreso & { readonly en: Operacion };
 @Component({
   selector: 'app-egreso-detalle-page',
   imports: [
+    Importe,
     CabeceraDePagina,
     PanelLateral,
     Ayuda,

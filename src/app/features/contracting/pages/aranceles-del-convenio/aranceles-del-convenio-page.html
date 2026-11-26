@@ -449,19 +449,23 @@
 
       <div class="campo">
         <label for="alta-arancel-financiador">Paga la obra social</label>
-        <input
-          id="alta-arancel-financiador"
-          type="number"
-          min="0"
-          step="0.01"
-          formControlName="importeFinanciador"
-          [attr.aria-invalid]="mostrarErrorAlta('importeFinanciador') ? 'true' : null"
-          [attr.aria-describedby]="
-            mostrarErrorAlta('importeFinanciador')
-              ? 'alta-arancel-financiador-error alta-arancel-importes-ayuda'
-              : 'alta-arancel-importes-ayuda'
-          "
-        />
+        <div class="campo-importe">
+          <span class="campo-importe__signo" aria-hidden="true">$</span>
+          <input
+            appImporte
+            id="alta-arancel-financiador"
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="importeFinanciador"
+            [attr.aria-invalid]="mostrarErrorAlta('importeFinanciador') ? 'true' : null"
+            [attr.aria-describedby]="
+              mostrarErrorAlta('importeFinanciador')
+                ? 'alta-arancel-financiador-error alta-arancel-importes-ayuda'
+                : 'alta-arancel-importes-ayuda'
+            "
+          />
+        </div>
         @if (mostrarErrorAlta('importeFinanciador')) {
           <p class="campo__error" id="alta-arancel-financiador-error" role="alert">
             Es obligatorio, y puede ser cero.
@@ -567,15 +571,19 @@
 
         <div class="campo">
           <label for="editar-arancel-financiador">Paga la obra social</label>
-          <input
-            id="editar-arancel-financiador"
-            type="number"
-            min="0"
-            step="0.01"
-            formControlName="importeFinanciador"
-            [attr.aria-invalid]="errorImportes() ? 'true' : null"
-            [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
-          />
+          <div class="campo-importe">
+            <span class="campo-importe__signo" aria-hidden="true">$</span>
+            <input
+              appImporte
+              id="editar-arancel-financiador"
+              type="number"
+              min="0"
+              step="0.01"
+              formControlName="importeFinanciador"
+              [attr.aria-invalid]="errorImportes() ? 'true' : null"
+              [attr.aria-describedby]="errorImportes() ? 'editar-arancel-importes-error' : null"
+            />
+          </div>
         </div>
 
         @if (errorImportes(); as mensaje) {

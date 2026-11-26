@@ -446,27 +446,6 @@ form > .acciones.formulario-servicio__descartar {
   color: var(--color-acento);
 }
 
-/* Importe con el signo pesos adelante y el numero alineado a la derecha, como se lee la plata. */
-.campo-importe {
-  position: relative;
-}
-
-.campo-importe__signo {
-  position: absolute;
-  top: 50%;
-  left: var(--esp-5);
-  color: var(--color-texto-suave);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.campo-importe input {
-  width: 100%;
-  padding-left: calc(var(--esp-5) + 1.25rem);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
 /*
  * Interruptor (switch): el mismo de Organización → Inteligencia artificial (organization.css),
  * para que se vea igual en toda la app. Pista gris, perilla blanca y color de acento al prenderse.

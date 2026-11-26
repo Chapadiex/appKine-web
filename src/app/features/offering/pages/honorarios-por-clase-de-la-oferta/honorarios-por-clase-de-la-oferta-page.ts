@@ -38,6 +38,7 @@ import { PanelLateral } from '../../../../shared/components/panel-lateral/panel-
 import { AccionesDeFila } from '../../../../shared/components/acciones-de-fila/acciones-de-fila';
 import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagina/cabecera-de-pagina';
 import { publicarMigas } from '../../../../core/services/migas.store';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** La moneda que se propone cuando la oferta no tiene precio de lista: la del producto. */
 const MONEDA_POR_DEFECTO = 'ARS';
@@ -67,6 +68,7 @@ interface SituacionDeLaTarifa {
 @Component({
   selector: 'app-honorarios-por-clase-de-la-oferta-page',
   imports: [
+    Importe,
     CabeceraDePagina,
 
     Alerta,

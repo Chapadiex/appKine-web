@@ -55,6 +55,7 @@ import { CabeceraDePagina } from '../../../../shared/components/cabecera-de-pagi
 
 import { Alerta } from '../../../../shared/components/alerta/alerta';
 import { AvisosStore } from '../../../../core/services/avisos.store';
+import { Importe } from '../../../../shared/directives/importe.directive';
 
 /** El esquema de cobro que exige cada tipo de producto (RN-M29-005, RF-M29-007). */
 const ESQUEMA_DEL_TIPO: Readonly<Record<CrearProductoTipoEnum, string>> = {
@@ -90,6 +91,7 @@ const VIGENCIA_DIAS_MAXIMA = 3660;
 @Component({
   selector: 'app-productos-de-pack-page',
   imports: [
+    Importe,
     CabeceraDePagina,
     Pestanas,
     Alerta,

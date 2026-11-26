@@ -439,17 +439,22 @@
                 {{ deuda.snapshotNombre }} — {{ fechaEnPalabras(deuda.devengadaEn) }} — saldo
                 {{ importe(deuda, deuda.saldo) }}
               </label>
-              <input
-                [id]="'imputar-' + cobro.id + '-' + deuda.id"
-                type="text"
-                inputmode="decimal"
-                autocomplete="off"
-                [value]="importeTipeado(deuda)"
-                [attr.aria-invalid]="
-                  imputacionIntentada() && problemaDeImputacion() ? 'true' : null
-                "
-                (input)="cambiarImporteDeImputacion(deuda, $any($event.target).value)"
-              />
+              <div class="campo-importe">
+                <span class="campo-importe__signo" aria-hidden="true">$</span>
+                <input
+                  appImporte
+                  placeholder="0,00"
+                  [id]="'imputar-' + cobro.id + '-' + deuda.id"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  [value]="importeTipeado(deuda)"
+                  [attr.aria-invalid]="
+                    imputacionIntentada() && problemaDeImputacion() ? 'true' : null
+                  "
+                  (input)="cambiarImporteDeImputacion(deuda, $any($event.target).value)"
+                />
+              </div>
             </div>
           }
         </fieldset>
